@@ -8,14 +8,14 @@
 #
 # Since the CLI became a full-screen interactive TUI (no `insrc daemon
 # start/stop/status` subcommands), this script controls the daemon
-# process DIRECTLY: it spawns the compiled entry, SIGTERM's the pid for
-# a graceful drain, and queries `daemon.status` over the Unix socket.
+# process through shared lifecycle helpers: it spawns the compiled entry,
+# requests a graceful drain over IPC, and queries `daemon.status` over the Unix socket.
 # The same operations are also available interactively in the TUI's
 # Daemon pane (start / stop / restart / update).
 #
 # Usage:
 #   scripts/daemon-ctl.sh start      # sync origin, install if lock changed, build, start
-#   scripts/daemon-ctl.sh stop       # graceful stop (SIGTERM + drain wait); a daemon
+#   scripts/daemon-ctl.sh stop       # graceful stop (IPC + retained process wait); a daemon
 #                                    # that outlives the wait is killed
 #   scripts/daemon-ctl.sh restart    # stop then start
 #   scripts/daemon-ctl.sh update     # sync + install + build (no start)
@@ -182,70 +182,23 @@ spawn_daemon() {
 	disown 2>/dev/null || true
 }
 
-# SIGTERM the running daemon (graceful drain; the daemon handles the
-# signal and has its own hard-exit backstop).
-signal_stop() {
-	if [ -f "$PID_FILE" ]; then
-		local pid; pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
-		if [ -n "$pid" ] && ps -p "$pid" >/dev/null 2>&1; then
-			log "SIGTERM daemon (pid $pid)"
-			kill "$pid" 2>/dev/null || true
-		fi
-	fi
-}
-
-# Poll for full drain: both pid file AND socket gone. Clears a stale
-# pid file so a subsequent start doesn't refuse. 0 = stopped, 1 = timeout.
-wait_for_daemon_stop() {
-	local deadline=$(( $(date +%s) + STOP_WAIT_SECS ))
-	while [ "$(date +%s)" -lt "$deadline" ]; do
-		if [ -f "$PID_FILE" ]; then
-			local pid; pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
-			if [ -n "$pid" ] && ! ps -p "$pid" >/dev/null 2>&1; then rm -f "$PID_FILE"; fi
-		fi
-		if [ ! -f "$PID_FILE" ] && [ ! -S "$SOCK_FILE" ]; then return 0; fi
-		sleep 0.5
-	done
-	return 1
-}
-
-# True while the pid is a running process. A killed process whose parent has
-# not yet collected it (state Z) still answers `ps -p`, but it is gone.
-pid_running() {
-	local state; state=$(ps -o stat= -p "$1" 2>/dev/null || echo "")
-	[ -n "$state" ] && [ "${state#Z}" = "$state" ]
-}
-
-# End a daemon that outlived wait_for_daemon_stop. The ONE forced stop of
-# this script, used by cmd_stop and by the stale-daemon branch of cmd_start,
-# so neither leaves a daemon half down.
-#
-# The pid is killed only when its command line ends in daemon/index.js (the
-# same rule as the CLI's stop). A live pid that does not match is left alone
-# and its pid file is kept: removing the pid file and socket of a live daemon
-# would let a second one start on the same store.
-force_stop_daemon() {
-	local pid=""
-	if [ -f "$PID_FILE" ]; then pid=$(cat "$PID_FILE" 2>/dev/null || echo ""); fi
-	if [ -z "$pid" ] || ! ps -p "$pid" >/dev/null 2>&1; then
-		die "daemon did not stop within $STOP_WAIT_SECS s: its socket is still present and the pid file names no live process (see $DAEMON_LOG)" 4
-	fi
-
-	local cmd; cmd=$(ps -o command= -p "$pid" 2>/dev/null || echo "")
-	cmd="${cmd%"${cmd##*[![:space:]]}"}"   # trim trailing blanks
-	case "$cmd" in
-		*daemon/index.js) ;;
-		*) die "daemon did not stop within $STOP_WAIT_SECS s, and pid $pid from the pid file is not a daemon process (command line: ${cmd:-unreadable}); it was not killed and its pid file was left in place" 4 ;;
-	esac
-
-	kill -KILL "$pid" 2>/dev/null || true
-	local deadline=$(( $(date +%s) + 5 ))
-	while pid_running "$pid" && [ "$(date +%s)" -lt "$deadline" ]; do sleep 0.1; done
-	if pid_running "$pid"; then
-		die "daemon (pid $pid) did not stop within $STOP_WAIT_SECS s and is still alive after SIGKILL; its pid file was left in place" 4
-	fi
-	rm -f "$PID_FILE" "$SOCK_FILE"
-	log "daemon did not stop within $STOP_WAIT_SECS s; killed (pid $pid)"
+# One Node invocation captures the kernel process capability before the RPC and
+# retains it through waiting, forced termination and ownership-guarded cleanup.
+# Missing packaging and every lifecycle error fail closed, including callers in
+# shell conditional contexts where errexit is disabled.
+stop_managed_daemon() {
+ local helper="$DAEMON_ROOT/out/bin/insrc-daemon-control.js"
+ if [ ! -f "$helper" ]; then
+  log "ERROR: lifecycle helper missing at $helper; rebuild before stop/restart"
+  return 4
+ fi
+ local result
+ if result=$(node "$helper" "$STOP_WAIT_SECS" 2>&1); then
+  log "$result"
+ else
+  log "ERROR: $result"
+  return 4
+ fi
 }
 
 # Poll for the pid file + socket to appear AND the pid to be alive.
@@ -295,14 +248,10 @@ cmd_start() {
 	[ "$SKIP_INSTALL" -eq 1 ] || npm_install_if_needed
 	[ "$SKIP_BUILD"   -eq 1 ] || npm_build
 
-	# Stop a stale daemon first + wait for full drain.
-	if [ -f "$PID_FILE" ] && ps -p "$(cat "$PID_FILE" 2>/dev/null || echo 0)" >/dev/null 2>&1; then
-		log "stopping stale daemon (pid $(cat "$PID_FILE"))"
-		signal_stop
-		wait_for_daemon_stop || force_stop_daemon
-	fi
+	# Stop/clean through the retained-target contract even when paths look stale.
+	stop_managed_daemon || return $?
+	spawn_daemon || return $?
 
-	spawn_daemon
 	local pid
 	if ! pid=$(wait_for_daemon_ready); then
 		die "daemon did not become ready within 60 s (see $DAEMON_LOG)" 4
@@ -313,13 +262,12 @@ cmd_start() {
 
 cmd_stop() {
 	log "stopping daemon"
-	signal_stop
-	if wait_for_daemon_stop; then log "daemon shut down"; else force_stop_daemon; fi
+	stop_managed_daemon || return $?
 }
 
 cmd_restart() {
-	cmd_stop || true
-	cmd_start
+	cmd_stop || return $?
+	cmd_start || return $?
 }
 
 cmd_update() {

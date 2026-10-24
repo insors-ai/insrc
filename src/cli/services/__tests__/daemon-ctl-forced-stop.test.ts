@@ -1,172 +1,87 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Procix Software India. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-/**
- * Control script forced stop (Epic c2ba6fa6, Story s4, t2). Runs the REAL
- * scripts/daemon-ctl.sh against real stand-in processes in a temporary home:
- * the script reads its pid file and socket from $HOME, so the user's daemon is
- * never touched. A stand-in is recognised as a daemon by the tail of its
- * command line, hence the file name `daemon/index.js`.
- *
- * Run: npx tsx --test src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts
- */
-
-import { after, test } from 'node:test';
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const REPO   = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const SCRIPT = join(REPO, 'scripts/daemon-ctl.sh');
-
-const children: ChildProcess[] = [];
-const strayPids: number[] = [];
-const homes: string[] = [];
-after(() => {
-	for (const c of children) { try { c.kill('SIGKILL'); } catch { /* gone */ } }
-	for (const pid of strayPids) { try { process.kill(pid, 'SIGKILL'); } catch { /* gone */ } }
-	for (const h of homes) rmSync(h, { recursive: true, force: true });
+import { captureStopTarget } from '../../../shared/daemon-process-client.js';
+import type { StopTarget } from '../../../shared/daemon-process-client.js';
+const repo = fileURLToPath(new URL('../../../../', import.meta.url)), script = join(repo, 'scripts/daemon-ctl.sh');
+const children: ChildProcess[] = [], targets: StopTarget[] = [], homes: string[] = [];
+before(() => { execFileSync('npm', ['run', 'build'], { cwd: repo, stdio: 'pipe', timeout: 120000 }); });
+after(async () => {
+ for (const c of children) if (c.exitCode === null && c.signalCode === null) { const ended = once(c, 'exit'); c.kill('SIGKILL'); await ended; }
+ for (const target of targets) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
+ for (const home of homes) rmSync(home, { recursive: true, force: true });
 });
-
-interface Home { home: string; pidFile: string; sockFile: string; }
-
-/** A short root: a Unix socket path is limited to ~104 bytes on macOS. */
-function tempHome(): Home {
-	const home = mkdtempSync('/tmp/insrc-ctl-');
-	homes.push(home);
-	mkdirSync(join(home, '.insrc'), { recursive: true });
-	return { home, pidFile: join(home, '.insrc/daemon.pid'), sockFile: join(home, '.insrc/daemon.sock') };
+function fixture() {
+ const home = mkdtempSync('/tmp/insrc-ctl-'); homes.push(home);
+ const root = join(home, 'root'), pid = join(home, '.insrc/daemon.pid'), sock = join(home, '.insrc/daemon.sock');
+ for (const path of ['.insrc', 'root/.git', 'root/src', 'root/out/daemon']) mkdirSync(join(home, path), { recursive: true });
+ writeFileSync(join(root, 'package.json'), '{}'); symlinkSync(join(repo, 'node_modules'), join(root, 'node_modules'));
+ symlinkSync(join(repo, 'out/bin'), join(root, 'out/bin'));
+ assert.ok(pid.startsWith('/tmp/insrc-ctl-')); assert.ok(sock.startsWith('/tmp/insrc-ctl-'));
+ return { home, root, pid, sock, guard: join(home, '.insrc/daemon.run-files.guard') };
 }
+type Fixture = ReturnType<typeof fixture>;
+function source(f: Fixture, mode: string): string {
+ return `const net = require('node:net'), fs = require('node:fs');
+ const mode = ${JSON.stringify(mode)};
+ const stop = () => { if (mode === 'stubborn') return; fs.rmSync(${JSON.stringify(f.pid)}, { force: true }); fs.rmSync(${JSON.stringify(f.sock)}, { force: true }); process.exit(0); };
+ const server = net.createServer(sock => { sock.on('error', () => {}); sock.on('data', data => {
+  const req = JSON.parse(String(data).split('\\n')[0]);
+  if (mode === 'remove') { fs.rmSync(${JSON.stringify(f.pid)}, { force: true }); fs.rmSync(${JSON.stringify(f.sock)}, { force: true }); sock.destroy(); return; }
+  if (mode === 'replace') { fs.writeFileSync(${JSON.stringify(f.pid)}, '123456789'); fs.rmSync(${JSON.stringify(f.sock)}); fs.writeFileSync(${JSON.stringify(f.sock)}, 'foreign'); sock.destroy(); return; }
+  sock.write(JSON.stringify({ id: req.id, result: { ok: true } }) + '\\n'); if (mode === 'clean') setTimeout(stop, 20);
+ }); });
+ process.on('SIGTERM', stop); server.listen(${JSON.stringify(f.sock)}, () => { fs.writeFileSync(${JSON.stringify(f.pid)}, String(process.pid)); process.stdout.write('ready'); });
+ setTimeout(() => process.exit(0), 90000);`;
+}
+async function standIn(f: Fixture, mode: string, valid = true) {
+ const folder = join(f.home, valid ? 'stub/daemon' : 'other'); mkdirSync(folder, { recursive: true });
+ const entry = join(folder, valid ? 'index.js' : 'server.js'); writeFileSync(entry, source(f, mode));
+ const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); await once(child.stdout!, 'data'); return child;
+}
+function ctl(f: Fixture, command: string) {
+ const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1' }, encoding: 'utf8', timeout: 15000 });
+ return { status: r.status, output: r.stdout + r.stderr };
+}
+async function ended(child: ChildProcess) { if (child.exitCode !== null || child.signalCode !== null) return [child.exitCode, child.signalCode]; return once(child, 'exit'); }
 
-/** A stand-in daemon: writes the pid file and listens on the socket.
- *  `stubborn` — ignores SIGTERM and never exits; otherwise drains like a
- *  healthy daemon (removes its pid file and socket, then exits). */
-function standInSource(h: Home, stubborn: boolean): string {
-	return `
-const net = require('node:net');
-const fs = require('node:fs');
-const server = net.createServer(sock => { sock.on('error', () => {}); });
-process.on('SIGTERM', () => {
-	if (${String(stubborn)}) return;
-	try { fs.rmSync(${JSON.stringify(h.pidFile)}, { force: true }); } catch {}
-	server.close();
-	try { fs.rmSync(${JSON.stringify(h.sockFile)}, { force: true }); } catch {}
-	process.exit(0);
+test('Control script retains the original target across run-file removal', { timeout: 10000 }, async () => {
+ const f = fixture(), child = await standIn(f, 'remove'); const r = ctl(f, 'stop');
+ assert.equal(r.status, 0, r.output); assert.match(r.output, /; killed/); assert.equal((await ended(child))[1], 'SIGKILL');
 });
-server.listen(${JSON.stringify(h.sockFile)}, () => {
-	fs.writeFileSync(${JSON.stringify(h.pidFile)}, String(process.pid));
-	process.stdout.write('ready\\n');
+test('Control script refuses reused identity, replacement files and orphan guards', { timeout: 15000 }, async () => {
+ const other = fixture(), unrelated = await standIn(other, 'stubborn', false);
+ const refused = ctl(other, 'restart'); assert.notEqual(refused.status, 0); assert.match(refused.output, /wrong-target/); assert.equal(unrelated.signalCode, null); assert.equal(readFileSync(other.pid, 'utf8'), String(unrelated.pid));
+ const replacement = fixture(), old = await standIn(replacement, 'replace');
+ const replaced = ctl(replacement, 'restart'); assert.notEqual(replaced.status, 0); assert.match(replaced.output, /ownership conflict/); assert.equal((await ended(old))[1], 'SIGKILL'); assert.equal(readFileSync(replacement.pid, 'utf8'), '123456789'); assert.equal(readFileSync(replacement.sock, 'utf8'), 'foreign');
+ const orphan = fixture(), original = await standIn(orphan, 'stubborn');
+ execFileSync(process.execPath, ['--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(new URL('../../../../out/shared/daemon-run-files.js', import.meta.url).href)}; acquireRunFileGuard(${JSON.stringify(orphan.guard)});`], { env: { ...process.env, HOME: orphan.home } });
+ const guarded = ctl(orphan, 'restart'); assert.notEqual(guarded.status, 0); assert.match(guarded.output, /state=gone/); assert.equal(original.signalCode, null); assert.equal(existsSync(orphan.guard), true);
 });
-// Never outlive the test run.
-setTimeout(() => process.exit(0), 90_000);
-`;
-}
-
-function writeEntry(dir: string, name: string, source: string): string {
-	mkdirSync(dir, { recursive: true });
-	const entry = join(dir, name);
-	writeFileSync(entry, source);
-	return entry;
-}
-
-async function startStandIn(entry: string): Promise<ChildProcess> {
-	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] });
-	children.push(child);
-	await new Promise<void>((res, rej) => {
-		child.stdout?.once('data', () => res());
-		child.once('exit', code => rej(new Error(`stand-in exited early (${code})`)));
-	});
-	return child;
-}
-
-function exited(child: ChildProcess): Promise<NodeJS.Signals | null> {
-	return new Promise(res => {
-		if (child.exitCode !== null || child.signalCode !== null) res(child.signalCode);
-		else child.once('exit', (_code, signal) => res(signal));
-	});
-}
-
-function alive(pid: number): boolean {
-	try { process.kill(pid, 0); return true; } catch { return false; }
-}
-
-function ctl(h: Home, args: string[], env: Record<string, string> = {}): { status: number | null; out: string } {
-	const r = spawnSync('bash', [SCRIPT, ...args], {
-		encoding: 'utf8',
-		env: { ...process.env, HOME: h.home, INSRC_CTL_LOG_DIR: join(h.home, 'ctl-logs'), INSRC_CTL_STOP_WAIT_SECS: '2', ...env },
-		timeout: 60_000,
-	});
-	return { status: r.status, out: `${r.stdout}${r.stderr}` };
-}
-
-test('control script stop against a stubborn child', async () => {
-	const h = tempHome();
-	const child = await startStandIn(writeEntry(join(h.home, 'stub/daemon'), 'index.js', standInSource(h, true)));
-
-	const r = ctl(h, ['stop']);
-
-	assert.equal(r.status, 0, r.out);
-	assert.match(r.out, new RegExp(`daemon did not stop within 2 s; killed \\(pid ${child.pid}\\)`));
-	assert.equal(await exited(child), 'SIGKILL');
-	assert.equal(existsSync(h.pidFile), false, 'pid file removed');
-	assert.equal(existsSync(h.sockFile), false, 'socket removed');
+test('Disposable clean and forced script restart paths preserve commands', { timeout: 15000 }, async () => {
+ for (const mode of ['clean', 'stubborn']) {
+  const f = fixture(), old = await standIn(f, mode); writeFileSync(join(f.root, 'out/daemon/index.js'), source(f, 'clean'));
+  const r = ctl(f, 'restart'); assert.equal(r.status, 0, r.output); assert.match(r.output, /daemon running/);
+  assert.equal((await ended(old))[1], mode === 'clean' ? null : 'SIGKILL');
+  const target = await captureStopTarget(Number(readFileSync(f.pid, 'utf8'))); assert.ok(target); targets.push(target);
+  assert.equal(await target.handle.hasExited(), false);
+  const stop = ctl(f, 'stop'); assert.equal(stop.status, 0, stop.output); assert.match(stop.output, /daemon shut down/);
+ }
 });
-
-test('control script start against a stubborn running child', async () => {
-	const h = tempHome();
-	const stale = await startStandIn(writeEntry(join(h.home, 'stub/daemon'), 'index.js', standInSource(h, true)));
-
-	// A minimal installed-daemon tree whose entry is a healthy stand-in.
-	const root = join(h.home, 'root');
-	mkdirSync(join(root, '.git'), { recursive: true });
-	mkdirSync(join(root, 'src'), { recursive: true });
-	writeFileSync(join(root, 'package.json'), '{}');
-	symlinkSync(join(REPO, 'node_modules'), join(root, 'node_modules'));   // `--import tsx/esm` resolves here
-	writeEntry(join(root, 'out/daemon'), 'index.js', standInSource(h, false));
-
-	const r = ctl(h, ['start', '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { INSRC_DAEMON_ROOT: root });
-
-	const fresh = existsSync(h.pidFile) ? Number(readFileSync(h.pidFile, 'utf8')) : NaN;
-	if (Number.isInteger(fresh)) strayPids.push(fresh);
-
-	assert.equal(r.status, 0, r.out);
-	assert.match(r.out, new RegExp(`daemon did not stop within 2 s; killed \\(pid ${stale.pid}\\)`), 'killed through the shared function');
-	assert.equal(await exited(stale), 'SIGKILL');
-	assert.match(r.out, new RegExp(`daemon running \\(pid ${fresh},`));
-	assert.notEqual(fresh, stale.pid);
-	assert.ok(alive(fresh), 'a new daemon is running');
-	assert.ok(existsSync(h.sockFile), 'the new daemon owns the socket');
-});
-
-test('control script leaves a live non-matching pid alone and exits non-zero', async () => {
-	const h = tempHome();
-	// Same stubborn process, but its command line does not end in daemon/index.js.
-	const other = await startStandIn(writeEntry(join(h.home, 'other'), 'server.js', standInSource(h, true)));
-
-	const r = ctl(h, ['stop']);
-
-	assert.notEqual(r.status, 0, r.out);
-	assert.match(r.out, new RegExp(`pid ${other.pid} from the pid file is not a daemon process \\(command line: .*other/server\\.js\\)`));
-	assert.doesNotMatch(r.out, /; killed \(pid/);
-	assert.ok(alive(other.pid ?? -1), 'the process was not killed');
-	assert.equal(readFileSync(h.pidFile, 'utf8'), String(other.pid), 'pid file kept');
-	assert.ok(existsSync(h.sockFile), 'socket kept');
-});
-
-test('control script stop of a healthy daemon behaves and exits as before', async () => {
-	const h = tempHome();
-	const child = await startStandIn(writeEntry(join(h.home, 'stub/daemon'), 'index.js', standInSource(h, false)));
-
-	const r = ctl(h, ['stop']);
-
-	assert.equal(r.status, 0, r.out);
-	assert.match(r.out, /daemon shut down/);
-	assert.doesNotMatch(r.out, /; killed \(pid/);
-	assert.equal(await exited(child), null, 'exited by itself, not by a signal');
-	assert.equal(existsSync(h.pidFile), false);
+test('Shell start and restart refuse spawn after lifecycle failures even in conditional contexts', { timeout: 5000 }, () => {
+ const f = fixture(), marker = join(f.home, 'spawned');
+ const definitions = readFileSync(script, 'utf8').split('# Arg parsing')[0]!;
+ const harness = join(f.home, 'conditional.sh');
+ writeFileSync(harness, definitions + `\nSKIP_SYNC=1; SKIP_INSTALL=1; SKIP_BUILD=1; BRANCH=main\nrequire_daemon_dir() { return 0; }\nstop_managed_daemon() { return 4; }\nspawn_daemon() { touch ${JSON.stringify(marker)}; }\nif cmd_start; then exit 91; fi\nif cmd_restart; then exit 92; fi\nexit 0\n`);
+ const r = spawnSync('bash', [harness], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs') }, encoding: 'utf8' });
+ assert.equal(r.status, 0, r.stderr); assert.equal(existsSync(marker), false);
+ // Missing packaging must also fail through the actual start path.
+ rmSync(join(f.root, 'out/bin')); writeFileSync(join(f.root, 'out/daemon/index.js'), `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unsafe');`);
+ const missing = ctl(f, 'start'); assert.notEqual(missing.status, 0); assert.match(missing.output, /helper missing/); assert.equal(existsSync(marker), false);
 });

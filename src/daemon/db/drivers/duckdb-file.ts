@@ -32,6 +32,8 @@
  *     rdbms-common helpers.
  */
 import { createHash } from 'node:crypto';
+import { listValue } from '@duckdb/node-api';
+import { readdir } from 'node:fs/promises';
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, sep, resolve } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
@@ -45,12 +47,12 @@ import { clampFileLimit } from './file-common.js';
 import { POSTGRES_DIALECT, compileAggregateExprs, compileDistinct, compileWhere, executeCorrelationMatrix, executeHistogram, executeOutliers, executeTemporalTrend, readAggregateRow, readDistinctCount, readDistinctRows, } from './rdbms-common.js';
 import type { OrchestratorDeps } from './rdbms-common.js';
 import { inferShape } from './shape-common.js';
-import { cacheDirFor, destForSource, ensureCached } from '../converter-cache.js';
+import { savedCacheIdentity, ensureCached } from '../converter-cache.js';
 import { avroConverter } from './converters/avro.js';
 import { bsonConverter } from './converters/bson.js';
 import { fixedWidthConverter } from './converters/fixed-width.js';
 import { xlsxConverter } from './converters/xlsx.js';
-import { parquetGlobFor, walkSourceTree } from './converters/shared.js';
+import { walkSourceTree } from './converters/shared.js';
 import type { FileConverter } from './converters/types.js';
 const log = getLogger('db-duckdb-file');
 /**
@@ -273,6 +275,8 @@ class DuckDBFileDriver implements FileDriver {
 	readonly kind: DuckDBFileKind;
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private memoryReady: Promise<void> | undefined;
+	private closed = false;
+	private readonly cachePins = new Map<string, () => void>();
 	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined) {
 		this.kind = kind;
 	}
@@ -448,8 +452,16 @@ class DuckDBFileDriver implements FileDriver {
 		};
 	}
 	async close(): Promise<void> {
+		this.closed = true;
 		this.schemaCache.clear();
-		await this.execution.close();
+		try {
+			await this.execution.close();
+		}
+		finally {
+			for (const release of this.cachePins.values())
+				release();
+			this.cachePins.clear();
+		}
 	}
 	// ---------------------------------------------------------------------------
 	// Helpers
@@ -487,7 +499,9 @@ class DuckDBFileDriver implements FileDriver {
 	 * other kind `target` is ignored (the connection is already a
 	 * single logical table).
 	 */
-	private async readerPath(target?: string): Promise<string> {
+	private async readerPath(target?: string): Promise<string | ReturnType<typeof listValue>> {
+		if (this.closed)
+			throw new Error('File driver closed');
 		if (this.execution instanceof MemoryFileExecution) {
 			const execution = this.execution;
 			if (!this.memoryReady) {
@@ -519,46 +533,49 @@ class DuckDBFileDriver implements FileDriver {
 	 * tree. `target` is not yet plumbed for directory-of-xlsx --
 	 * uncommon enough to defer.
 	 */
-	private async ensureConvertedAndGlob(kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx', target?: string): Promise<string> {
-		const converter = CONVERTERS[kind];
-		const opts = this.connectionOptions;
-		if (!this.isDirectory) {
-			const sourceRoot = dirname(this.path);
-			const dest = destForSource(this.id, sourceRoot, this.path);
-			await ensureCached(this.id, this.path, dest, kind, async (s, d) => {
-				const r = await converter.convertFile(s, d, opts);
-				return { rowCount: r.rowCount, durationMs: r.durationMs };
-			});
-			if (kind === 'xlsx') {
-				// Per-sheet parquets live inside the dest directory.
-				// Target -> specific sheet; else glob everything (DuckDB
-				// unions schemas, errors clearly if they diverge).
-				if (target !== undefined && target.length > 0) {
-					return join(dest, `${slugifySheetName(target)}.parquet`);
-				}
-				return join(dest, '*.parquet');
-			}
-			return dest;
-		}
-		const pattern = sourceWalkPattern(kind, opts);
-		const sources = await walkSourceTree(this.path, {
-			recursive: this.recursive,
-			...(pattern !== undefined ? { pattern } : {}),
+	private async cacheSource(kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx', source: string): Promise<string> {
+		const identity = await savedCacheIdentity(this.execution.policy, source, kind);
+		const lease = await ensureCached(identity, async (input, dest) => {
+			const result = await CONVERTERS[kind].convertFile(input, dest, this.connectionOptions);
+			return { rowCount: result.rowCount, durationMs: result.durationMs };
 		});
-		for (const src of sources) {
-			const dest = destForSource(this.id, this.path, src);
-			await ensureCached(this.id, src, dest, kind, async (s, d) => {
-				const r = await converter.convertFile(s, d, opts);
-				return { rowCount: r.rowCount, durationMs: r.durationMs };
-			});
+		if (this.closed) {
+			lease.release();
+			throw new Error('File driver closed');
 		}
-		const cacheDir = cacheDirFor(this.id);
-		// xlsx mirrors source tree but each `.xlsx` becomes a directory
-		// of per-sheet `.parquet`s -- always one extra depth than the
-		// source layout, so always use `**`.
-		if (kind === 'xlsx')
-			return join(cacheDir, '**', '*.parquet');
-		return parquetGlobFor(cacheDir, this.recursive);
+		if (this.cachePins.has(lease.path))
+			lease.release();
+		else
+			this.cachePins.set(lease.path, lease.release);
+		return lease.path;
+	}
+	private async ensureConvertedAndGlob(kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx', target?: string): Promise<string | ReturnType<typeof listValue>> {
+		if (!this.isDirectory) {
+			const dest = await this.cacheSource(kind, this.path);
+			if (kind !== 'xlsx')
+				return dest;
+			if (target) {
+				const selected = join(dest, `${slugifySheetName(target)}.parquet`);
+				if (!existsSync(selected))
+					throw new Error('Unknown converted target');
+				return selected;
+			}
+			return join(dest, '*.parquet');
+		}
+		const pattern = sourceWalkPattern(kind, this.connectionOptions);
+		const sources = await walkSourceTree(this.path, { recursive: this.recursive, ...(pattern === undefined ? {} : { pattern }) });
+		const outputs: string[] = [];
+		for (const source of sources) {
+			const dest = await this.cacheSource(kind, source);
+			if (kind === 'xlsx')
+				for (const sheet of (await readdir(dest)).filter(name => name.endsWith('.parquet')).sort())
+					outputs.push(join(dest, sheet));
+			else
+				outputs.push(dest);
+		}
+		if (!outputs.length)
+			throw new Error('No matching file sources');
+		return listValue(outputs);
 	}
 }
 /** Mirror the xlsx converter's sheet-name slug rule so callers can

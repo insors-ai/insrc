@@ -25,6 +25,7 @@ async function snapshot(dir: string): Promise<Record<string, string>> {
 			result[path] = (await readFile(join(dir, path))).toString('base64');
 		}
 		catch {
+			result[path] = '<directory>';
 		}
 	}
 	return result;

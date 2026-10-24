@@ -372,12 +372,18 @@ export function savedFileExecution(policy: FileExecutionPolicy): OwnedFileExecut
 	if (policy.persistence !== 'saved-cache')
 		throw new Error('Invalid saved execution policy');
 	let closed = false;
+	const pending = new Set<Promise<unknown>>();
+	let closing: Promise<void> | undefined;
 	return { policy, async withConnection(use) {
 			if (closed)
 				throw new Error('File execution closed');
-			return withSavedConnection(use);
+			const work = withSavedConnection(use);
+			pending.add(work);
+			try { return await work; } finally { pending.delete(work); }
 		}, async close() {
 			closed = true;
+			closing ??= (async () => { while (pending.size) await Promise.allSettled([...pending]); })();
+			await closing;
 		} };
 }
 function safeExecutionError(error: unknown): Error {

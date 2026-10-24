@@ -1,283 +1,335 @@
-/**
- * Format-converter cache (Phase 3 of plans/data-driver-duckdb-files.md).
- *
- * Layout (`~/.insrc/cache/file-converted/<connection-id>/`):
- *
- *   .meta.json                 -- connection-level metadata
- *   files/
- *     data.bson.parquet        -- single-file connection
- *     data.bson.parquet.meta   -- sidecar (sourceMtime + sourceSize)
- *     events/2024-01.bson.parquet
- *     events/2024-01.bson.parquet.meta
- *     ...
- *
- * Per-source-file invalidation: the sidecar carries the source's
- * `(mtime, size)`. A query checks the sidecar against the source's
- * current stat; mismatch triggers a re-convert. Each file's cache is
- * independent -- changing one file in a 1000-file directory
- * re-converts that one file, the others stay cached.
- *
- * Cap + eviction: the cache root is bounded (5 GB default). After
- * each successful write the manager checks total size and evicts
- * oldest-mtime entries (with their sidecars) until the cap is met.
- *
- * Concurrent-access guard: a per-source-path in-memory mutex
- * (`Map<sourcePath, Promise>`) ensures two parallel queries against
- * the same source converge on a single conversion -- the second
- * awaits the first instead of starting its own. Cross-process races
- * are out of scope (the daemon is the sole writer).
- */
-
-import { existsSync, statSync } from 'node:fs';
-import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, join, relative, sep } from 'node:path';
-
-import { getLogger } from '../../shared/logger.js';
+/** Saved-only, content-addressed conversion generations with exact owner identity. */
+import { createHash, randomUUID } from 'node:crypto';
+import { open, mkdir, readFile, readdir, rm, stat, lstat, realpath, rename, writeFile } from 'node:fs/promises';
+import { join, relative, isAbsolute, resolve, dirname } from 'node:path';
 import { PATHS } from '../../shared/paths.js';
-
+import type { FileExecutionPolicy } from '../../shared/connection-management.js';
+import { getLogger } from '../../shared/logger.js';
 const log = getLogger('converter-cache');
-
-// 5 GB default cap, total across all converted files in the cache root.
-// Configurable via INSRC_CONVERTER_CACHE_MB env var (numeric, megabytes).
-const DEFAULT_CACHE_CAP_BYTES = 5 * 1024 * 1024 * 1024;
-
-interface SidecarMeta {
-	readonly sourcePath: string;
-	readonly sourceMtime: number;
-	readonly sourceSize: number;
-	readonly convertedAt: string;
-	readonly converter: string;
+export const CONVERTER_VERSION = 'cm-typed-v2';
+export interface SavedCacheIdentity {
+	readonly canonicalRoot: string;
+	readonly connectionId: string;
+	readonly revision: string;
+	readonly sourceIdentity: string;
+	readonly converterVersion: string;
+	readonly optionsDigest: string;
 }
-
-const INFLIGHT = new Map<string, Promise<void>>();
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/** Root of the converter cache (`~/.insrc/cache/file-converted/`). */
+export interface SavedCacheLease {
+	readonly path: string;
+	release(): void;
+}
+interface Sidecar {
+	readonly version: 2;
+	readonly identity: SavedCacheIdentity;
+	readonly sourceFingerprint: string;
+	readonly outputFingerprint: string;
+}
+const INFLIGHT = new Map<string, Promise<string>>(), PINS = new Map<string, number>(), CLEARING = new Set<string>();
+function identityJson(identity: SavedCacheIdentity): string {
+	const values = [identity.canonicalRoot, identity.connectionId, identity.revision, identity.sourceIdentity, identity.converterVersion, identity.optionsDigest];
+	if (values.some(value => typeof value !== 'string' || !value.length) || !isAbsolute(identity.canonicalRoot) || !isAbsolute(identity.sourceIdentity))
+		throw new Error('Invalid saved cache identity');
+	return JSON.stringify(values);
+}
+function key(identity: SavedCacheIdentity): string {
+	return createHash('sha256').update(identityJson(identity)).digest('hex');
+}
 export function cacheRoot(): string {
-	return join(PATHS.insrc, 'cache', 'file-converted');
+	return join(PATHS.insrc, 'cache', 'file-converted', 'v2');
 }
-
-/** Per-connection cache directory. */
-export function cacheDirFor(connectionId: string): string {
-	return join(cacheRoot(), connectionId, 'files');
+export async function savedCacheIdentity(policy: FileExecutionPolicy, source: string, converter: string): Promise<SavedCacheIdentity> {
+	if (policy.persistence !== 'saved-cache')
+		throw new Error('Memory-only execution cannot use saved cache');
+	const canonicalRoot = await realpath(policy.identity.lookupRoot), sourceIdentity = await realpath(source);
+	const rel = relative(resolve(cacheRoot()), sourceIdentity);
+	if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel)))
+		throw new Error('Cache artifacts cannot be source files');
+	return Object.freeze({ canonicalRoot, connectionId: policy.identity.connectionId, revision: policy.identity.revision, sourceIdentity, converterVersion: CONVERTER_VERSION + '/' + converter, optionsDigest: policy.identity.converterOptionsDigest });
 }
-
-/**
- * Map a source-file path under a connection's source root to its
- * cache destination. The cache mirrors the source tree under
- * `<connection>/files/`, with `.parquet` appended to preserve
- * uniqueness when the source has no extension or a clashing one.
- */
-export function destForSource(
-	connectionId: string,
-	sourceRoot: string,
-	sourcePath: string,
-): string {
-	const rel = relative(sourceRoot, sourcePath);
-	return join(cacheDirFor(connectionId), `${rel}.parquet`);
+/** All six identity components fence directory, work, metadata and deletion. */
+export function cacheDirFor(identity: SavedCacheIdentity): string {
+	return join(cacheRoot(), key(identity));
 }
-
-/**
- * Cache freshness check. The dest is fresh when:
- *   1. dest + sidecar both exist
- *   2. sidecar's recorded sourceMtime + sourceSize match current
- *
- * mtime comparison is millisecond-granular; subsecond changes count
- * as an edit. Size comparison catches truncations / replacements
- * that share an mtime.
- */
-export async function isCached(sourcePath: string, destPath: string): Promise<boolean> {
-	if (!existsSync(destPath)) return false;
+export function destForSource(identity: SavedCacheIdentity, fingerprint: string): string {
+	if (!/^[a-f0-9]{64}$/.test(fingerprint))
+		throw new Error('Invalid source fingerprint');
+	return join(cacheDirFor(identity), 'files', fingerprint + '.parquet');
+}
+function stamp(s: {
+	dev: bigint;
+	ino: bigint;
+	size: bigint;
+	mtimeNs: bigint;
+	ctimeNs: bigint;
+}): string {
+	return [s.dev, s.ino, s.size, s.mtimeNs, s.ctimeNs].join(':');
+}
+async function fingerprint(path: string): Promise<{
+	digest: string;
+	stamp: string;
+}> {
+	const before = await lstat(path, { bigint: true });
+	if (!before.isFile() || before.isSymbolicLink())
+		throw new Error('Invalid saved conversion source');
+	const file = await open(path, 'r');
 	try {
-		const sidecar = await readSidecar(destPath);
-		if (sidecar === null) return false;
-		const cur = await stat(sourcePath);
-		return sidecar.sourceMtime === cur.mtimeMs
-			&& sidecar.sourceSize === cur.size;
-	} catch {
+		const initial = await file.stat({ bigint: true });
+		if (stamp(initial) !== stamp(before))
+			throw new Error('Saved conversion source changed');
+		const hash = createHash('sha256'), buffer = Buffer.allocUnsafe(64 * 1024);
+		let offset = 0;
+		for (;;) {
+			const { bytesRead } = await file.read(buffer, 0, buffer.length, offset);
+			if (!bytesRead)
+				break;
+			hash.update(buffer.subarray(0, bytesRead));
+			offset += bytesRead;
+		}
+		const after = await file.stat({ bigint: true }), current = await lstat(path, { bigint: true });
+		if (stamp(initial) !== stamp(after) || stamp(after) !== stamp(current))
+			throw new Error('Saved conversion source changed');
+		return { digest: hash.digest('hex'), stamp: stamp(after) };
+	}
+	finally {
+		await file.close();
+	}
+}
+async function outputFingerprint(path: string): Promise<string> {
+	const info = await lstat(path);
+	if (info.isSymbolicLink())
+		throw new Error('Invalid cache artifact');
+	if (info.isFile())
+		return (await fingerprint(path)).digest;
+	if (!info.isDirectory())
+		throw new Error('Invalid cache artifact');
+	const hash = createHash('sha256');
+	for (const entry of (await readdir(path)).sort()) {
+		hash.update(JSON.stringify(entry));
+		hash.update(await outputFingerprint(join(path, entry)));
+	}
+	return hash.digest('hex');
+}
+async function privateDirectory(path: string): Promise<void> {
+	// Every cache ancestor is daemon-owned; reject links rather than following them.
+	const base = resolve(PATHS.insrc), rel = relative(base, resolve(path));
+	if (rel.startsWith('..') || isAbsolute(rel))
+		throw new Error('Invalid cache destination');
+	await mkdir(base, { recursive: true, mode: 0o700 });
+	if ((await lstat(base)).isSymbolicLink())
+		throw new Error('Invalid cache destination');
+	let current = base;
+	for (const part of rel.split('/').filter(Boolean)) {
+		current = join(current, part);
+		await mkdir(current, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => {
+			if (error.code !== 'EEXIST')
+				throw error;
+		});
+		const info = await lstat(current);
+		if (!info.isDirectory() || info.isSymbolicLink())
+			throw new Error('Invalid cache destination');
+	}
+}
+async function fresh(identity: SavedCacheIdentity, dest: string, sourceFingerprint: string): Promise<boolean> {
+	try {
+		const metadataInfo = await lstat(dest + '.meta');
+		if (!metadataInfo.isFile() || metadataInfo.isSymbolicLink() || metadataInfo.size > 64 * 1024)
+			return false;
+		const meta = JSON.parse(await readFile(dest + '.meta', 'utf8')) as Sidecar;
+		return meta.version === 2 && identityJson(meta.identity) === identityJson(identity) && meta.sourceFingerprint === sourceFingerprint && meta.outputFingerprint === await outputFingerprint(dest);
+	}
+	catch {
 		return false;
 	}
 }
-
-/**
- * Run `convert(sourcePath, destPath)` if the cache says it's stale.
- * Concurrent callers for the same `sourcePath` share a single
- * conversion -- the second awaits the first's promise instead of
- * starting its own. Writes the sidecar on success + enforces the
- * cache cap.
- */
-export async function ensureCached(
-	connectionId: string,
-	sourcePath: string,
-	destPath: string,
-	converterName: string,
-	convert: (source: string, dest: string) => Promise<{ rowCount: number; durationMs: number }>,
-): Promise<void> {
-	if (await isCached(sourcePath, destPath)) return;
-
-	const inflight = INFLIGHT.get(sourcePath);
-	if (inflight !== undefined) {
-		await inflight;
-		return;
+export async function isCached(identity: SavedCacheIdentity): Promise<boolean> {
+	const source = await fingerprint(identity.sourceIdentity);
+	return fresh(identity, destForSource(identity, source.digest), source.digest);
+}
+function pin(path: string): SavedCacheLease {
+	PINS.set(path, (PINS.get(path) ?? 0) + 1);
+	let live = true;
+	return { path, release() {
+			if (!live)
+				return;
+			live = false;
+			const remaining = (PINS.get(path) ?? 1) - 1;
+			if (remaining)
+				PINS.set(path, remaining);
+			else
+				PINS.delete(path);
+			scheduleCap();
+		} };
+}
+export async function ensureCached(identity: SavedCacheIdentity, convert: (source: string, dest: string) => Promise<{
+	rowCount: number;
+	durationMs: number;
+}>): Promise<SavedCacheLease> {
+	const identityKey = key(identity), existing = INFLIGHT.get(identityKey);
+	if (CLEARING.has(identityKey))
+		throw new Error('Saved cache generation busy');
+	if (existing) {
+		await existing;
+		return ensureCached(identity, convert);
 	}
-
-	const work = (async (): Promise<void> => {
-		await mkdir(dirname(destPath), { recursive: true });
-		const tStart = Date.now();
-		const result = await convert(sourcePath, destPath);
-		const sourceStat = await stat(sourcePath);
-		const meta: SidecarMeta = {
-			sourcePath,
-			sourceMtime: sourceStat.mtimeMs,
-			sourceSize: sourceStat.size,
-			convertedAt: new Date().toISOString(),
-			converter: converterName,
-		};
-		await writeSidecar(destPath, meta);
-		log.info(
-			{ connectionId, sourcePath, destPath, rowCount: result.rowCount, durationMs: Date.now() - tStart },
-			'converted file cached',
-		);
-		// Best-effort eviction; failures here don't block the caller.
-		enforceCap().catch((err: unknown) => {
-			log.warn({ err: errMsg(err) }, 'cache eviction failed (non-fatal)');
-		});
-	})();
-
-	INFLIGHT.set(sourcePath, work);
-	try { await work; }
-	finally { INFLIGHT.delete(sourcePath); }
-}
-
-/**
- * Drop everything under a connection's cache directory. Called by
- * connection deletion / reconfiguration. Safe to call when the
- * directory doesn't exist.
- */
-export async function clearConnectionCache(connectionId: string): Promise<void> {
-	const dir = join(cacheRoot(), connectionId);
-	try { await rm(dir, { recursive: true, force: true }); }
-	catch (err) { log.warn({ connectionId, err: errMsg(err) }, 'clearConnectionCache failed'); }
-}
-
-/**
- * Test-only. Resets the in-memory inflight map. Production code
- * doesn't need this; the map is per-process and managed via the
- * lifecycle of `ensureCached`.
- */
-export function _resetForTests(): void {
-	INFLIGHT.clear();
-}
-
-// ---------------------------------------------------------------------------
-// Sidecar I/O
-// ---------------------------------------------------------------------------
-
-function sidecarPathFor(destPath: string): string {
-	return `${destPath}.meta`;
-}
-
-async function readSidecar(destPath: string): Promise<SidecarMeta | null> {
-	try {
-		const txt = await readFile(sidecarPathFor(destPath), 'utf8');
-		const parsed = JSON.parse(txt);
-		// Cheap shape check; missing fields = invalid sidecar.
-		if (typeof parsed['sourceMtime'] === 'number'
-			&& typeof parsed['sourceSize'] === 'number'
-			&& typeof parsed['sourcePath'] === 'string') {
-			return parsed as SidecarMeta;
-		}
-	} catch { /* fall through to null */ }
-	return null;
-}
-
-async function writeSidecar(destPath: string, meta: SidecarMeta): Promise<void> {
-	await writeFile(sidecarPathFor(destPath), JSON.stringify(meta, null, 2), 'utf8');
-}
-
-// ---------------------------------------------------------------------------
-// Cap + eviction
-// ---------------------------------------------------------------------------
-
-interface CachedEntry {
-	readonly path: string;
-	readonly sidecarPath: string;
-	readonly size: number;
-	readonly mtimeMs: number;
-}
-
-async function enforceCap(): Promise<void> {
-	const cap = readCapBytes();
-	const root = cacheRoot();
-	if (!existsSync(root)) return;
-
-	const entries: CachedEntry[] = [];
-	let total = 0;
-	await walkParquet(root, (path, statRes) => {
-		const sidecarPath = sidecarPathFor(path);
-		entries.push({ path, sidecarPath, size: statRes.size, mtimeMs: statRes.mtimeMs });
-		total += statRes.size;
-	});
-	if (total <= cap) return;
-
-	// Oldest first. Sidecars don't move the meter -- we evict the
-	// .parquet whose mtime tells us when it was last regenerated;
-	// the sidecar follows.
-	entries.sort((a, b) => a.mtimeMs - b.mtimeMs);
-	let evicted = 0;
-	for (const e of entries) {
-		if (total <= cap) break;
+	const work = (async () => {
+		const source = await fingerprint(identity.sourceIdentity), dest = destForSource(identity, source.digest);
+		if (await fresh(identity, dest, source.digest))
+			return dest;
+		await privateDirectory(dirname(dest));
+		const staging = join(dirname(dest), '.pending-' + randomUUID()), retired = join(dirname(dest), '.retired-' + randomUUID());
+		let moved = false;
 		try {
-			await rm(e.path, { force: true });
-			await rm(e.sidecarPath, { force: true });
-			total -= e.size;
-			evicted++;
-		} catch (err) {
-			log.warn({ path: e.path, err: errMsg(err) }, 'evict failed');
-		}
-	}
-	if (evicted > 0) {
-		log.info({ evicted, totalAfter: total, cap }, 'cache eviction complete');
-	}
-}
-
-async function walkParquet(
-	dir: string,
-	visit: (path: string, stat: { size: number; mtimeMs: number }) => void,
-): Promise<void> {
-	let entries;
-	try { entries = await readdir(dir, { withFileTypes: true }); }
-	catch { return; }
-	for (const e of entries) {
-		const full = join(dir, e.name);
-		if (e.isDirectory()) {
-			await walkParquet(full, visit);
-		} else if (e.isFile() && full.endsWith('.parquet')) {
+			const result = await convert(identity.sourceIdentity, staging), after = await fingerprint(identity.sourceIdentity);
+			if (after.digest !== source.digest || after.stamp !== source.stamp)
+				throw new Error('Saved conversion source changed');
+			const output = await outputFingerprint(staging), metadata: Sidecar = { version: 2, identity, sourceFingerprint: source.digest, outputFingerprint: output };
+			// Invalid/corrupt same-content outputs may be replaced; pinned generations are never removed.
+			if (await lstat(dest).then(() => true).catch(() => false)) {
+				if (PINS.has(dest))
+					throw new Error('Saved cache generation busy');
+				await rename(dest, retired);
+				moved = true;
+			}
 			try {
-				const s = statSync(full);
-				visit(full, { size: s.size, mtimeMs: s.mtimeMs });
-			} catch { /* skip */ }
+				await rename(staging, dest);
+			}
+			catch (error) {
+				if (moved)
+					await rename(retired, dest);
+				throw error;
+			}
+			const metaStage = dest + '.meta.pending-' + randomUUID();
+			try {
+				await writeFile(metaStage, JSON.stringify(metadata), { mode: 0o600, flag: 'wx' });
+				await rename(metaStage, dest + '.meta');
+			}
+			finally {
+				await rm(metaStage, { force: true });
+			}
+			if (moved)
+				await rm(retired, { recursive: true, force: true });
+			log.info({ identity: identityKey, rowCount: result.rowCount }, 'saved conversion cached');
+			return dest;
 		}
+		finally {
+			await rm(staging, { recursive: true, force: true });
+			await rm(retired, { recursive: true, force: true });
+		}
+	})();
+	INFLIGHT.set(identityKey, work);
+	try {
+		const path = await work;
+		const lease = pin(path);
+		scheduleCap();
+		return lease;
+	}
+	finally {
+		if (INFLIGHT.get(identityKey) === work)
+			INFLIGHT.delete(identityKey);
 	}
 }
-
-function readCapBytes(): number {
-	const raw = process.env['INSRC_CONVERTER_CACHE_MB'];
-	if (raw === undefined || raw.length === 0) return DEFAULT_CACHE_CAP_BYTES;
-	const parsed = Number.parseInt(raw, 10);
-	if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_CACHE_CAP_BYTES;
-	return parsed * 1024 * 1024;
+/** Invalidates only this full owner/source/options generation; sources are outside this tree. */
+export async function clearConnectionCache(identity: SavedCacheIdentity): Promise<void> {
+	const identityKey = key(identity);
+	if (CLEARING.has(identityKey))
+		throw new Error('Saved cache generation busy');
+	CLEARING.add(identityKey);
+	try {
+		const work = INFLIGHT.get(identityKey);
+		if (work)
+			await work;
+		const directory = cacheDirFor(identity);
+		if ([...PINS].some(([path, count]) => count > 0 && path.startsWith(directory + '/')))
+			throw new Error('Saved cache generation busy');
+		await privateDirectory(dirname(directory));
+		await rm(directory, { recursive: true, force: true });
+	}
+	finally {
+		CLEARING.delete(identityKey);
+	}
 }
-
-function errMsg(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
+export function _resetForTests(): void {
+	if (INFLIGHT.size || PINS.size || CLEARING.size)
+		throw new Error('Cache owners still active');
 }
-
-// Test-only: silence unused-import warning when the file's only
-// side-effect-using import is `sep`. The sep import lets future
-// directory-mirroring helpers join paths in a portable way; we keep
-// the import to avoid churn when those helpers land.
-void sep;
+let capWork: Promise<void> | undefined;
+let capRequested = false;
+function scheduleCap(): void {
+	capRequested = true;
+	if (capWork)
+		return;
+	capWork = (async () => {
+		while (capRequested) {
+			capRequested = false;
+			await enforceCap();
+		}
+	})().catch(() => {
+		log.warn('saved cache eviction failed');
+	}).finally(() => {
+		capWork = undefined;
+		if (capRequested)
+			scheduleCap();
+	});
+}
+async function artifactSize(path: string): Promise<number> {
+	const info = await lstat(path);
+	if (info.isSymbolicLink())
+		throw new Error('Invalid cache artifact');
+	if (info.isFile())
+		return info.size;
+	if (!info.isDirectory())
+		return 0;
+	let size = 0;
+	for (const entry of await readdir(path))
+		size += await artifactSize(join(path, entry));
+	return size;
+}
+async function enforceCap(): Promise<void> {
+	const configured = Number(process.env['INSRC_CONVERTER_CACHE_MB']), cap = Number.isFinite(configured) && configured > 0 ? configured * 1024 * 1024 : 5 * 1024 * 1024 * 1024;
+	const root = cacheRoot();
+	const info = await lstat(root).catch(() => null);
+	if (!info)
+		return;
+	if (info.isSymbolicLink())
+		throw new Error('Invalid cache root');
+	const entries: {
+		identity: string;
+		path: string;
+		size: number;
+		mtime: number;
+	}[] = [];
+	let total = 0;
+	for (const identity of await readdir(root)) {
+		if (!/^[a-f0-9]{64}$/.test(identity))
+			continue;
+		const files = join(root, identity, 'files');
+		const directory = await lstat(files).catch(() => null);
+		if (!directory?.isDirectory() || directory.isSymbolicLink())
+			continue;
+		for (const name of await readdir(files)) {
+			if (!/^[a-f0-9]{64}\.parquet$/.test(name))
+				continue;
+			const path = join(files, name), artifact = await lstat(path).catch(() => null);
+			if (!artifact || artifact.isSymbolicLink())
+				continue;
+			const size = await artifactSize(path) + (await stat(path + '.meta').catch(() => ({ size: 0 }))).size;
+			entries.push({ identity, path, size, mtime: artifact.mtimeMs });
+			total += size;
+		}
+	}
+	entries.sort((a, b) => a.mtime - b.mtime);
+	for (const entry of entries) {
+		if (total <= cap)
+			break;
+		if (PINS.has(entry.path) || INFLIGHT.has(entry.identity))
+			continue;
+		await rm(entry.path, { recursive: true, force: true });
+		await rm(entry.path + '.meta', { force: true });
+		total -= entry.size;
+	}
+}
+export async function _settleForTests(): Promise<void> {
+	while (capWork)
+		await capWork;
+}

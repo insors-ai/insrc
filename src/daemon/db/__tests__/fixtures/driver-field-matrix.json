@@ -2330,7 +2330,7 @@
     "src/daemon/db/drivers/converters/bson.ts": "1b827625a6e453f2b0bf6994f5077ee564ec6fb52cf1e336da04229a16c8a0da",
     "src/daemon/db/drivers/converters/fixed-width.ts": "e1e8d06eadd7a03fdec3dcf8958063f36c9d5725230d37814d1306531cfdd364",
     "src/daemon/db/drivers/converters/xlsx.ts": "d7edeb3262a53e60ac6c9f457d70c789a79748f7126922da202c8a93a8fddee1",
-    "src/daemon/db/drivers/duckdb-file.ts": "24fce16f07d5f95c15520a167fd2f356561ab033d415a42e9e6ee1e9241c4f51",
+    "src/daemon/db/drivers/duckdb-file.ts": "76e62c1b004df46566c6f77ab4c4fb80f05fa40ee56804d36095df6703b85f40",
     "src/daemon/db/drivers/dynamodb.ts": "a377a571eb482d672ed16857618c0483a9ef0d08b049bba04cdddb2ecb69aade",
     "src/daemon/db/drivers/etcd.ts": "5ecfe742cda8c82b945c3c9701548ca5ac709e48c3fa6bd433e63e45bc261772",
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
@@ -2450,6 +2450,11 @@
       "task": "t19",
       "source": "src/daemon/db-rpc.ts",
       "reason": "Legacy private probes build profile-validated snapshots using classified existing config fields and same-record server-owned secret references; file probes receive memory-only authority and awaited disposal."
+    },
+    {
+      "task": "t20",
+      "source": "src/daemon/db/drivers/duckdb-file.ts",
+      "reason": "Saved conversion uses canonical root/id/revision/source/options/version identities and exact current output lists; cache generations are content-addressed and pinned through owned query use. Existing ConnectionConfig fields/classification unchanged."
     }
   ]
 }

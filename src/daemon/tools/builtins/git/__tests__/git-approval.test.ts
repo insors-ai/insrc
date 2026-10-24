@@ -145,7 +145,8 @@ function classOf(id: string, input: Record<string, unknown>): string {
 test('each work-destroying operation is destructive and each read is none', () => {
 	registerForTests();
 	for (const [id, input, cls] of CLASSES) { assert.equal(classOf(id, input), cls, `${id} ${JSON.stringify(input)}`); }
-	// every one of the 22 existing tools is in the table
+	// every one of the 22 existing tools is in the table, and each declares a typed result
+	for (const id of GIT_IDS) { assert.ok(listTools().find(t => t.id === id)?.outputSchema, `${id} declares an outputSchema`); }
 	assert.deepEqual([...new Set(CLASSES.map(r => r[0]))].sort(), [...GIT_IDS].sort());
 	// no mutation that asked before stops asking: nothing in the table that is not a read is none
 	const reads = new Set(['git_status', 'git_log', 'git_diff', 'git_show', 'git_blame', 'git_fetch']);

@@ -88,6 +88,20 @@ export function rejectInput(label: string, msg: string): ToolResult {
   return withFailure({ output: `[${label}] failed: ${msg}`, format: 'text', success: false, error: msg }, 'rejected');
 }
 
+export class UnsafeArgError extends Error {}
+
+/**
+ * The one argument check. A value that goes before the option terminator (a ref, revision, remote or branch name) is
+ * rejected when it starts with '-' or holds a NUL; a path that goes after '--' may start with '-' and is rejected only
+ * for a NUL. Throws UnsafeArgError; withFailureNet turns it into a rejected failure.
+ */
+export function assertSafeArg(value: string, position: 'ref' | 'path'): void {
+  if (value.includes('\0')) { throw new UnsafeArgError(`unsafe ${position}: it holds a NUL byte`); }
+  if (position === 'ref' && value.startsWith('-')) {
+    throw new UnsafeArgError(`unsafe ref ${JSON.stringify(value)}: it starts with '-' and would be read as an option`);
+  }
+}
+
 /**
  * Registration net: any unsuccessful result without a failure gets kind 'rejected' (message from its error
  * text); a failure the tool set itself is left as it is.
@@ -97,7 +111,12 @@ export function withFailureNet(tool: Tool): Tool {
   return {
     ...tool,
     async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
-      const r = await execute(input, deps);
+      let r: ToolResult;
+      try { r = await execute(input, deps); }
+      catch (err) {
+        if (err instanceof UnsafeArgError) { return rejectInput(tool.id, err.message); }
+        throw err;
+      }
       if (r.success || r.failure !== undefined) { return r; }
       return withFailure(r, 'rejected');
     },

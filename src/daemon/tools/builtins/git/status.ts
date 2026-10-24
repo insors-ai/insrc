@@ -10,6 +10,7 @@
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 import { fail, spawnFail } from './helpers.js';
+import { parseOutput, parseStatusV2 } from './parsers.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,7 +74,9 @@ export const gitStatusTool: Tool = {
       return fail('git:status', result);
     }
 
-    const parsed = parsePorcelainV2(result.stdout);
+    const parsedRead = parseOutput('git:status', result, parseStatusV2);
+    if (!parsedRead.ok) { return parsedRead.failure; }
+    const parsed = parsedRead.value;
     const report = renderReport(parsed, cwd);
 
     return {
@@ -84,109 +87,6 @@ export const gitStatusTool: Tool = {
     };
   },
 };
-
-// ---------------------------------------------------------------------------
-// Parser -- porcelain v2 with -z (null-terminated, no quoting).
-// https://git-scm.com/docs/git-status#_porcelain_format_version_2
-// ---------------------------------------------------------------------------
-
-function parsePorcelainV2(raw: string): GitStatusData {
-  const data: GitStatusData = {
-    clean: true,
-    branch: '(detached)',
-    staged: [],
-    unstaged: [],
-    untracked: [],
-    conflicts: [],
-  };
-
-  // Entries are null-terminated; rename / copy entries are two-part:
-  //   "2 <XY> ... <path>\0<origPath>\0"
-  // Split on NUL then walk with an index so we can consume the extra token.
-  const parts = raw.split('\0');
-  for (let i = 0; i < parts.length; i++) {
-    const line = parts[i];
-    if (!line) { continue; }
-
-    // Header lines start with '# '.
-    if (line.startsWith('# branch.head ')) {
-      data.branch = line.slice('# branch.head '.length).trim();
-      continue;
-    }
-    if (line.startsWith('# branch.upstream ')) {
-      data.upstream = line.slice('# branch.upstream '.length).trim();
-      continue;
-    }
-    if (line.startsWith('# branch.ab ')) {
-      const tail = line.slice('# branch.ab '.length).trim();
-      const match = tail.match(/^\+(\d+)\s+-(\d+)$/);
-      if (match) {
-        data.ahead = Number(match[1]);
-        data.behind = Number(match[2]);
-      }
-      continue;
-    }
-
-    // Changed entry: "1 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <path>"
-    if (line.startsWith('1 ')) {
-      const tokens = line.split(' ');
-      const xy = tokens[1] ?? '  ';
-      const path = tokens.slice(8).join(' ');
-      pushEntry(data, xy, path, undefined);
-      continue;
-    }
-
-    // Renamed / copied: "2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path>"
-    // followed by a separate NUL-terminated orig-path token.
-    if (line.startsWith('2 ')) {
-      const tokens = line.split(' ');
-      const xy = tokens[1] ?? '  ';
-      const path = tokens.slice(9).join(' ');
-      const origPath = parts[++i] ?? '';
-      pushEntry(data, xy, path, origPath);
-      continue;
-    }
-
-    // Unmerged / conflict: "u <XY> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>"
-    if (line.startsWith('u ')) {
-      const tokens = line.split(' ');
-      const xy = tokens[1] ?? '  ';
-      const path = tokens.slice(10).join(' ');
-      data.conflicts.push({ path, code: xy });
-      data.clean = false;
-      continue;
-    }
-
-    // Untracked: "? <path>"
-    if (line.startsWith('? ')) {
-      data.untracked.push(line.slice(2));
-      data.clean = false;
-      continue;
-    }
-
-    // Ignored: "! <path>" -- we don't surface these.
-  }
-
-  return data;
-}
-
-function pushEntry(
-  data: GitStatusData,
-  xy: string,
-  path: string,
-  origPath: string | undefined,
-): void {
-  const staged = xy[0] ?? '.';
-  const unstaged = xy[1] ?? '.';
-  if (staged !== '.') {
-    data.staged.push({ path, code: staged, ...(origPath ? { origPath } : {}) });
-    data.clean = false;
-  }
-  if (unstaged !== '.') {
-    data.unstaged.push({ path, code: unstaged, ...(origPath ? { origPath } : {}) });
-    data.clean = false;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Report rendering

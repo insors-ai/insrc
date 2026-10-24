@@ -11,7 +11,7 @@ import { resolveSecrets } from './secrets.js';
 import { loadConnections } from './config.js';
 import { safeConnection } from './driver-profiles.js';
 import { RevisionLeaseGate, ConnectionUseError } from './lease-gate.js';
-import { guardedDriver } from './driver-guard.js';
+import { guardedDriver, driverFailure } from './driver-guard.js';
 const log = getLogger('db-pool');
 const IDLE_CLOSE_MS = 10 * 60 * 1000;
 interface PoolEntry {
@@ -137,9 +137,15 @@ export class DriverPool {
 			guard = guardedDriver(driver);
 			return await use(guard.driver);
 		}
+		catch (error) {
+			throw driverFailure(error);
+		}
 		finally {
 			try {
 				await guard?.finish();
+			}
+			catch (error) {
+				throw driverFailure(error);
 			}
 			finally {
 				await lease.release();

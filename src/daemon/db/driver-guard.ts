@@ -112,17 +112,24 @@ export function guardedDriver(driver: Driver): {
 			const iterator = (value as AsyncIterable<unknown>)[Symbol.asyncIterator]();
 			iterators.add(iterator);
 			const call = (kind: 'next' | 'return' | 'throw', arg?: unknown) => {
-				check();
-				const method = iterator[kind];
-				if (!method) {
-					iterators.delete(iterator);
-					return Promise.resolve({ done: true, value: undefined });
-				}
-				return track(Promise.resolve(method.call(iterator, arg)).then(result => {
-					if (result.done)
+				try {
+					check();
+					const method = iterator[kind];
+					if (!method) {
 						iterators.delete(iterator);
-					return { done: result.done, value: wrap(result.value) };
-				}));
+						return Promise.resolve({ done: true, value: undefined });
+					}
+					return track(Promise.resolve(method.call(iterator, arg)).then(result => {
+						if (result.done)
+							iterators.delete(iterator);
+						return { done: result.done, value: wrap(result.value) };
+					}).catch(error => {
+						throw driverFailure(error);
+					}));
+				}
+				catch (error) {
+					throw driverFailure(error);
+				}
 			};
 			return { [Symbol.asyncIterator]() {
 					return this;
@@ -133,19 +140,40 @@ export function guardedDriver(driver: Driver): {
 	const target = Object.create(null) as Record<string, unknown>;
 	for (const key of ['id', 'kind', 'family'])
 		Object.defineProperty(target, key, { enumerable: true, configurable: true, get: () => {
-				check();
-				return Reflect.get(driver, key);
+				try {
+					check();
+					const value: unknown = Reflect.get(driver, key);
+					if (typeof value !== 'string')
+						throw new ConnectionUseError('conflict');
+					return value;
+				}
+				catch (error) {
+					throw driverFailure(error);
+				}
 			} });
 	for (const key of METHODS) {
-		const method = Reflect.get(driver, key);
+		let method: unknown;
+		try {
+			method = Reflect.get(driver, key);
+		}
+		catch (error) {
+			throw driverFailure(error);
+		}
 		if (typeof method !== 'function')
 			continue;
 		Object.defineProperty(target, key, { enumerable: true, configurable: true, value: (...args: unknown[]) => {
-				check();
-				const result = Reflect.apply(method, driver, args);
-				if (result && (typeof result === 'object' || typeof result === 'function') && typeof Reflect.get(result, 'then') === 'function')
-					return track(Promise.resolve(result).then(wrap));
-				return wrap(result);
+				try {
+					check();
+					const result = Reflect.apply(method, driver, args);
+					if (result && (typeof result === 'object' || typeof result === 'function') && typeof Reflect.get(result, 'then') === 'function')
+						return track(Promise.resolve(result).then(wrap).catch(error => {
+							throw driverFailure(error);
+						}));
+					return wrap(result);
+				}
+				catch (error) {
+					throw driverFailure(error);
+				}
 			} });
 	}
 	Object.defineProperty(target, 'close', { value: () => {
@@ -158,12 +186,37 @@ export function guardedDriver(driver: Driver): {
 				const closing: Promise<unknown>[] = [];
 				for (const iterator of iterators) {
 					iterators.delete(iterator);
-					if (iterator.return)
-						closing.push(Promise.resolve().then(() => iterator.return!()));
+					closing.push(Promise.resolve().then(() => {
+						const finish = iterator.return;
+						return finish ? Reflect.apply(finish, iterator, []) : undefined;
+					}));
 				}
 				await Promise.allSettled(closing);
 				if (pending.size)
 					await Promise.allSettled([...pending]);
 			}
 		} };
+}
+/** Exceptions cross the capability boundary as fresh errors, never as source-owned objects. */
+export function driverFailure(error: unknown): Error {
+	try {
+		if (error instanceof ConnectionUseError) {
+			const code = Object.getOwnPropertyDescriptor(error, 'code');
+			if (code && Object.hasOwn(code, 'value') && ['busy', 'conflict', 'not-found', 'duplicate-id'].includes(code.value))
+				return new ConnectionUseError(code.value);
+		}
+		if (!(error instanceof Error))
+			return new ConnectionUseError('conflict');
+		const message = Object.getOwnPropertyDescriptor(error, 'message');
+		const result = new Error(message && Object.hasOwn(message, 'value') && typeof message.value === 'string' ? message.value : 'Connection operation failed.');
+		for (const key of ['name', 'code']) {
+			const descriptor = Object.getOwnPropertyDescriptor(error, key);
+			if (descriptor && Object.hasOwn(descriptor, 'value') && (typeof descriptor.value === 'string' || typeof descriptor.value === 'number'))
+				Object.defineProperty(result, key, { value: descriptor.value, enumerable: true, configurable: true });
+		}
+		return result;
+	}
+	catch {
+		return new ConnectionUseError('conflict');
+	}
 }

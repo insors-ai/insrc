@@ -399,3 +399,71 @@ test('CM-S1-M: executable function-held references reject while date binary and 
 		await f.cleanup();
 	}
 });
+test('CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out', async () => {
+	const f = await fixture();
+	const check = (error: unknown) => {
+		assert.ok(error instanceof Error);
+		assert.notEqual(error, f.raw);
+		assert.equal((error as Record<string, unknown>)['driver'], undefined);
+		assert.equal((error as Error & {
+			cause?: unknown;
+		}).cause, undefined);
+		return true;
+	};
+	try {
+		const source = Object.assign(new Error('backend failure'), { driver: f.raw, cause: f.raw });
+		for (const fail of [() => {
+				throw f.raw;
+			}, () => Promise.reject(f.raw), () => {
+				throw source;
+			}, () => Promise.reject(source)]) {
+			(f.raw as unknown as Record<string, unknown>)['sample'] = fail;
+			await assert.rejects(f.pool.withConnection('fixture', async (driver) => driver.sample!('x', { limit: 1 })), check);
+			assert.equal(f.pool.leaseState('fixture').active, 0);
+		}
+		for (const asynchronous of [false, true]) {
+			(f.raw as unknown as Record<string, unknown>)['scan'] = () => ({ [Symbol.asyncIterator]() {
+					return this;
+				}, next() {
+					if (asynchronous)
+						return Promise.reject(source);
+					throw source;
+				}, return: async () => ({ done: true, value: undefined }) });
+			await assert.rejects(f.pool.withConnection('fixture', async (driver) => {
+				for await (const _value of (driver as unknown as {
+					scan(): AsyncIterable<unknown>;
+				}).scan()) {
+				}
+				;
+			}), check);
+			assert.equal(f.pool.leaseState('fixture').active, 0);
+		}
+		Object.defineProperty(f.raw, 'kind', { get() {
+				throw f.raw;
+			}, configurable: true });
+		const captured = await f.pool.withConnection('fixture', async (driver) => {
+			try {
+				return driver.kind;
+			}
+			catch (error) {
+				check(error);
+				return error;
+			}
+		});
+		check(captured);
+		Object.defineProperty(f.raw, 'kind', { value: 'postgres', configurable: true });
+		const other = new DriverPool(f.root, { factory: () => async () => {
+				throw f.raw;
+			} });
+		try {
+			await other.reload();
+			await assert.rejects(other.withConnection('fixture', async () => undefined), check);
+		}
+		finally {
+			await other.closeAll();
+		}
+	}
+	finally {
+		await f.cleanup();
+	}
+});

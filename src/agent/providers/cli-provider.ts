@@ -56,6 +56,7 @@ import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
+import { ModelResponseShapeError } from './model-call-error.js';
 
 const log = getLogger('cli-provider');
 
@@ -125,7 +126,7 @@ function codexSchemaJson(schema: StructuredSchema): string {
 function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string): T {
 	const checked = validateCodexReply<T>(schema, parsed);
 	if (!checked.ok) {
-		throw new Error(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`);
+		throw new ModelResponseShapeError(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`, checked.errors);
 	}
 	return checked.value;
 }

@@ -63,7 +63,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);
 			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause, detail: failure.detail }, 'review pipeline: a call did not complete');
-			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now() });
+			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now(), ...(failure.reasons !== undefined ? { reasons: failure.reasons } : {}) });
 			continue;
 		}
 		// An answer that arrives after a cancel is not applied.
@@ -102,11 +102,12 @@ function sessionPrompt(messages: readonly LLMMessage[]): string {
 }
 
 /** Why a call did not complete. Anything not recognised is treated as transient: re-issued once, as today's retries would. */
-function classify(err: unknown): { cause: FailureCause; maxChars?: number | undefined; detail: string } {
+function classify(err: unknown): { cause: FailureCause; maxChars?: number | undefined; detail: string; reasons?: readonly string[] | undefined } {
 	const detail = err instanceof Error ? err.message : String(err);
 	if (err instanceof InputTooLargeError) return { cause: 'size-refusal', maxChars: err.maxChars, detail };
 	if (err instanceof CliStallError) return { cause: 'stall', detail };
-	if (err instanceof ModelResponseShapeError || /^structured-output: validation failed/.test(detail)) return { cause: 'invalid-answer', detail };
+	if (err instanceof ModelResponseShapeError) return { cause: 'invalid-answer', detail, ...(err.reasons.length > 0 ? { reasons: err.reasons } : {}) };
+	if (/^structured-output: validation failed/.test(detail)) return { cause: 'invalid-answer', detail };
 	return { cause: 'transient', detail };
 }
 

@@ -22,6 +22,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { CliProvider } from '../cli-provider.js';
+import { ModelResponseShapeError } from '../model-call-error.js';
 import { codexStrictSchema } from '../structured-output.js';
 import { modelFacingBundleSchema } from '../../../analyze/context/schema.js';
 import type { StructuredSchema } from '../../../shared/types.js';
@@ -221,6 +222,18 @@ test('a codex structured completion rejects a reply that breaks a keyword (also 
 		dupFirst.cleanup();
 		good.cleanup();
 	}
+});
+
+test("a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons", async () => {
+	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
+	try {
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: dup.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
+			(e: unknown) => e instanceof ModelResponseShapeError
+				&& e.reasons.length === 1 && /duplicate items/.test(e.reasons[0]!)
+				&& e.message.includes(e.reasons[0]!),
+		);
+	} finally { dup.cleanup(); }
 });
 
 test('a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them', async () => {

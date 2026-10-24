@@ -19,6 +19,7 @@ import { test } from 'node:test';
 
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
+import { ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
 import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
@@ -1210,4 +1211,21 @@ test('a call that did not complete is logged with the failure detail (ISSUE-d3a6
 	const warned = warnings.map(w => JSON.stringify(w)).find(w => w.includes('a call did not complete'));
 	assert.ok(warned !== undefined, 'the failed call is logged');
 	assert.ok(warned.includes('not parseable JSON: Unexpected token'), 'with its detail');
+});
+
+test('a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons', async () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap);
+	const sent: LLMMessage[][] = [];
+	await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT), adapter, {
+		completeStructured: async (messages: LLMMessage[]) => {
+			sent.push(messages);
+			if (sent.length === 1) throw new ModelResponseShapeError("codex answer does not satisfy the caller's schema: /answer/seen: must be array", ['/answer/seen: must be array']);
+			return seeingModel().answer({ messages } as unknown as ReviewCall);
+		},
+	} as unknown as LLMProvider);
+	assert.equal(sent.length, 2, 're-issued once');
+	const second = asSent(sent[1]!);
+	assert.ok(second.includes('REJECTED') && second.includes('/answer/seen: must be array'), 'the re-issue carries the reasons as its correction');
+	assert.ok(!asSent(sent[0]!).includes('REJECTED'), 'the first call carried no correction');
 });

@@ -9,7 +9,7 @@ export function enforcePrivatePaths(storagePath: string, socketPath: string, uid
     if (stat.uid !== uid || stat.isSymbolicLink() || (kind === 'directory' ? !stat.isDirectory()
       : kind === 'socket' ? !stat.isSocket() : !stat.isFile())) throw new AssessmentError('unavailable');
     const mode = kind === 'directory' ? 0o700 : 0o600;
-    chmodSync(path, mode);
+    if ((stat.mode & 0o777) !== mode) chmodSync(path, mode);
     if ((lstatSync(path).mode & 0o777) !== mode) throw new AssessmentError('unavailable');
   }
   try {

@@ -23,7 +23,7 @@ import { getStoreHealth } from '../db/graph/store.js';
 import type { StoreHealth } from '../db/graph/store.js';
 import { PATHS } from '../shared/paths.js';
 import { clearPid } from './lifecycle.js';
-import { daemonRunFiles, endForRunFileConflict } from './run-file-ownership.js';
+import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError } from './run-file-ownership.js';
 
 type LocksLost = Exclude<StoreHealth, { state: 'ok' }>;
 
@@ -74,7 +74,9 @@ export function lastLineFor(reason: string, health: LocksLost, now: Date = new D
  * would lose it), and SIGKILL. Does not return in production.
  */
 export function endAfterStoreFailure(reason: string, health: LocksLost, deps: EndDeps = realEndDeps): void {
-	try { deps.clearPid(); } catch { /* best effort */ }
+	try { deps.clearPid(); } catch (error) {
+		if (error instanceof RunFileOwnershipError) endForRunFileConflict(error, { logPath: deps.lastLinePath, killSelf: () => {} });
+	}
 	try {
 		mkdirSync(dirname(deps.lastLinePath), { recursive: true });
 		appendFileSync(deps.lastLinePath, lastLineFor(reason, health));

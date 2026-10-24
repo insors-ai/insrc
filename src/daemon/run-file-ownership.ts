@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { appendFileSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import { readProcessIdentity } from '../shared/daemon-process.js';
@@ -69,6 +69,7 @@ export class DaemonRunFileOwnership {
 	claimSocket(): void {
 		this.within(() => {
 			if (!lstatSync(this.paths.socketFile).isSocket()) throw new RunFileOwnershipError(`published endpoint is not a socket at ${this.paths.socketFile}`);
+			chmodSync(this.paths.socketFile, 0o600);
 			this.socketIdentity = runFileIdentity(this.paths.socketFile);
 			if (!this.socketIdentity) throw new RunFileOwnershipError('published socket disappeared');
 			this.listenerMayUnlink = true;

@@ -76,7 +76,7 @@ test('Startup-error, fatal and stale-file cleanup honor ownership', async () => 
 });
 
 test('Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks', async () => {
- for (const mode of ['startup', 'fatal', 'backstop']) {
+ for (const mode of ['startup', 'fatal', 'backstop', 'locks-lost']) {
   for (const replacement of [false, true]) {
    const f = fixture(); const home = join(f.dir, 'home');
    const { mkdirSync } = await import('node:fs'); mkdirSync(home);
@@ -91,7 +91,9 @@ test('Real startup-error, fatal and backstop paths preserve replacements and ski
     client?.destroy();
     if (mode === 'startup' && !replacement) { assert.equal(code, 1); assert.equal(existsSync(join(home, '.insrc/exit-hook')), true); }
     else { assert.equal(signal, 'SIGKILL', `${mode} replacement=${replacement}, code=${code}`); assert.equal(existsSync(join(home, '.insrc/exit-hook')), false); }
-    if (replacement) { assert.equal(readFileSync(pid, 'utf8'), 'replacement'); assert.equal(readFileSync(socket, 'utf8'), 'foreign'); }
+    if (replacement) { assert.equal(readFileSync(pid, 'utf8'), 'replacement'); assert.equal(readFileSync(socket, 'utf8'), 'foreign');
+     if (mode === 'locks-lost') assert.match(readFileSync(join(home, '.insrc/last.log'), 'utf8'), /ownership conflict/);
+    }
     else { assert.equal(existsSync(pid), false); assert.equal(existsSync(socket), false); }
    } finally { if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); f.cleanup(); }
   }

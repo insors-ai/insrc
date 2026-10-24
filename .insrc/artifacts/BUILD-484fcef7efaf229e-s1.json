@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s1",
     "createdAt": "2026-10-24T08:23:58.478Z",
-    "updatedAt": "2026-10-24T11:49:32.000Z",
+    "updatedAt": "2026-10-24T18:04:39.785Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -29,7 +29,7 @@
       },
       {
         "id": "t5",
-        "passed": false
+        "passed": true
       },
       {
         "id": "t6",
@@ -46,9 +46,65 @@
       {
         "id": "t8",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": true
+      },
+      {
+        "id": "t15",
+        "passed": true
+      },
+      {
+        "id": "t16",
+        "passed": true
+      },
+      {
+        "id": "t17",
+        "passed": true
+      },
+      {
+        "id": "t18",
+        "passed": true
+      },
+      {
+        "id": "t19",
+        "passed": true
+      },
+      {
+        "id": "t20",
+        "passed": true
+      },
+      {
+        "id": "t21",
+        "passed": true
+      },
+      {
+        "id": "t22",
+        "passed": true
+      },
+      {
+        "id": "t23",
+        "passed": true
       }
     ],
-    "summary": "Implemented in-flight same-request join, full keyed fingerprint replay checks, signed expiry-aware status and receipt pruning, exact-inode uncertainty reconciliation, durable initial outcome phases, read-only activation retry and refresh-only retry. Full service subprocess lost-response/restart evidence and all named focused scenarios pass. Full sweep deferred until all tasks built.",
+    "summary": "All 23 tasks built before full 719-file sweep, per user. Actual sweep: 6449 tests, 6299 pass, 9 fail, 6 cancelled, 132 skipped, 3 todo. Own runtime fixture/lease cancellation failures fixed with focused reruns. Final 27-file S001 suite 157 pass, npm run build clean. Remaining unrelated search-filter/threads-boot/file-refusal failures and two idle-file timeouts are recorded, never claimed green; release asset deliberately ready:false. Runner provides drift-pinned runtime manifest only after future completely passing full sweep. No live registry/keychain adoption or daemon stop. See tracked t23-regression.json, t23-test-timeouts.json, t23-follow-up-results.json.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/TESTS.md"
     },
@@ -58,240 +114,877 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/driver-field-audit.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence/t1-validation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-source-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/driver-field-audit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/connection-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/driver-field-matrix.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/shared/db-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/management-tickets.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-tickets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/driver-profile-policy.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/driver-profiles.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/driver-profiles.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/managed-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/config.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/managed-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/credential-generations.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/credential-crash-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/secrets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-leases.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/driver-guard.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/lease-gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool-cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/saved-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/saved-lost-response-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/saved-management-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/saved-replay.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-24T11:49:32.000Z"
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/connection-consumers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/fixtures/leased-data-pool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/connection-access.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/failed-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-connections-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-table-describe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-tables-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/_shared.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/discovery-connections.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/discovery-objects.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/schema-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/measure-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/measurement-leases.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/measure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/data/schema-drift.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/db/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/driver-work.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/mssql.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/mysql.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/oracle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/pg.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/rdbms-common.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/typed-row-source.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/normalization.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/typed-parquet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/typed-row-source.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/bounded-converters.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bounded-input.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bson-framing.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bson.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/decoder-budget.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/fixed-width.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/bounded-avro.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/avro-binary.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/avro.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/bounded-xlsx-archive.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bounded-xml.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bounded-zip.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/typed-xlsx.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/xlsx-reader.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/xlsx-values.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/xlsx.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/file-execution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/duckdb-pool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/file-execution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/owned-file-driver.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/duckdb-file.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/file-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/memory-file-sources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/saved-cache-identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/converter-cache.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/connection-request-context.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/connection-management-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/request-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/channel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/MAINTENANCE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/connection-management-gates.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-connection-maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/connection-maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/connection-maintenance-control.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/management-adoption.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/management-maintenance-foundation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-adoption.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-enablement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-owner-lease.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-startup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/management-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/assert-parquet-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/row-admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/avro-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/bounded-inflate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/converters/bounded-inflate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/private-execution-fs-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence/t23-follow-up-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence/t23-regression.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence/t23-test-timeouts.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
+      },
+      {
+        "target": {
+          "file": "scripts/connection-management-regression.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:04:39.785Z"
       }
     ],
-    "commit": "b82d9190d"
+    "commit": "da9bc0f7e"
   }
 }

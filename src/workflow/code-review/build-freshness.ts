@@ -29,21 +29,9 @@ export function reviewBuildGap(build: unknown, review: unknown, repoPath: string
 	if (!['pass', 'warn', 'block'].includes(String(reviewBody['verdict'])) || !Array.isArray(subject['changedFiles'])
 		|| !subject['changedFiles'].every(f => typeof f === 'string')) return 'the code review structure cannot be verified';
 	const fingerprint = subject['buildFingerprint'];
-	if (fingerprint !== undefined) {
-		if (fingerprint !== reviewedBuildFingerprint(build)) return 'the BUILD content has changed since this code review';
-	} else {
-		// Older records lack a binding. Their review must at least postdate the build.
-		const times = [meta['createdAt'], meta['updatedAt']].filter(t => t !== undefined);
-		if (times.length === 0) return 'the BUILD has no timestamp, so review freshness cannot be verified';
-		if (times.length > 0) {
-			const stamps = times.map(t => typeof t === 'string' ? Date.parse(t) : Number.NaN);
-			const at = record(r['meta'])['createdAt'];
-			const reviewedAt = typeof at === 'string' ? Date.parse(at) : Number.NaN;
-			if (stamps.some(t => !Number.isFinite(t)) || !Number.isFinite(reviewedAt) || reviewedAt < Math.max(...stamps)) {
-				return 'the code review predates the latest BUILD, or its freshness cannot be verified';
-			}
-		}
-	}
+	if (fingerprint === undefined) return 'the code review has no BUILD binding, so freshness cannot be verified; run a new code review';
+	if (fingerprint !== reviewedBuildFingerprint(build)) return 'the BUILD content has changed since this code review';
+
 	const targets = Array.isArray(body['changeLog']) ? body['changeLog'] : [];
 	const files = subject['changedFiles'];
 	const covered = new Set(Array.isArray(files) ? files.filter((f): f is string => typeof f === 'string').map(f => resolve(repoPath, f)) : []);

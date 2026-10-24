@@ -14,7 +14,7 @@ const AFTER = '2026-10-02T00:00:00.000Z';
 const build = () => ({ meta: { workflow: 'build', epicHash: H, storyId: 's1', authoredBy: 'controller', createdAt: BEFORE, updatedAt: BEFORE }, body: { commit: 'commit-a', changeLog: [{ target: { file: 'src/a.ts' }, timestamp: BEFORE }] } });
 const review = (at = BEFORE) => ({ meta: { workflow: 'code-review', createdAt: at, reviewedBy: 'daemon' }, body: { verdict: 'pass', subject: { changedFiles: ['src/a.ts'] }, counts: { high: 0, med: 0, low: 0 } } });
 
-test('legacy review is refused after a rebuild, until a fresh review covers the latest build', async () => {
+test('legacy review is refused until a fresh bound review covers the latest build', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-freshness-'));
 	try {
 		const dir = join(repo, '.insrc/artifacts'); mkdirSync(dir, { recursive: true });
@@ -23,9 +23,9 @@ test('legacy review is refused after a rebuild, until a fresh review covers the 
 		writeFileSync(path, JSON.stringify(b)); writeFileSync(crPath, JSON.stringify(review()));
 		assert.equal(enforceCodeReviewGate(repo, H, 's1', { enforce: false }).status, 'blocked');
 		assert.deepEqual(await createCompletionEvidence(repo, { enforce: false }).storyCodeReview(H, 's1'), { kind: 'blocked' });
-		await assert.rejects(approveJson(path), /predates the latest BUILD/);
+		await assert.rejects(approveJson(path), /no BUILD binding/);
 		assert.equal(JSON.parse(readFileSync(path, 'utf8')).meta.lifecycle?.approval, undefined);
-		writeFileSync(crPath, JSON.stringify(review(AFTER)));
+		writeFileSync(crPath, JSON.stringify({ ...review(AFTER), body: { ...review(AFTER).body, subject: { changedFiles: ['src/a.ts'], buildFingerprint: reviewedBuildFingerprint(b) } } }));
 		assert.equal(enforceCodeReviewGate(repo, H, 's1', { enforce: false }).status, 'pass');
 		assert.deepEqual(await createCompletionEvidence(repo, { enforce: false }).storyCodeReview(H, 's1'), { kind: 'clean' });
 		await approveJson(path);
@@ -49,7 +49,7 @@ test('a stale review can be explicitly overridden in both completion gates', asy
 });
 
 test('review coverage must include every BUILD path, with absolute and relative paths equivalent', () => {
-	const b = build(), r = review(AFTER);
+	const b = build(), r = { ...review(AFTER), body: { ...review(AFTER).body, subject: { changedFiles: ['src/a.ts'], buildFingerprint: reviewedBuildFingerprint(b) } } };
 	r.body.subject.changedFiles = [];
 	assert.match(reviewBuildGap(b, r, '/repo')!, /does not cover BUILD file/);
 	r.body.subject.changedFiles = ['/repo/src/a.ts'];
@@ -92,7 +92,7 @@ test('an existing structurally invalid BUILD cannot satisfy completion with a pa
 
 test('a legacy review cannot establish freshness for an undated BUILD', () => {
  const b = { meta: {}, body: build().body };
- assert.match(reviewBuildGap(b, review(), '/repo')!, /BUILD has no timestamp/);
+ assert.match(reviewBuildGap(b, review(), '/repo')!, /no BUILD binding/);
  const bound = { ...review(), body: { ...review().body, subject: { changedFiles: ['src/a.ts'], buildFingerprint: reviewedBuildFingerprint(b) } } };
  assert.equal(reviewBuildGap(b, bound, '/repo'), undefined);
 });

@@ -23,6 +23,10 @@ test('CM-S2-A1: private worker messages validate auth and exact nonce correlatio
 	assert.deepEqual(parseProbeWorkerStart(start),start);
 	for (const options of [{runtimeAuth:{}},{nested:[{runtimeAuth:{}}]}]) assert.throws(()=>parseProbeWorkerStart({...start,config:{...start.config,options}}),ManagementInputError);
 	const result={type:'result',requestId:start.requestId,nonce:start.nonce,code:'reachable'};
+	const oversized='x'.repeat(DRAFT_TEST_MAX_BYTES);
+	assert.throws(()=>parseProbeWorkerStart({...start,config:{...start.config,options:{payload:oversized}}}),ManagementInputError);
+	assert.throws(()=>parseProbeWorkerCancel({type:'cancel',requestId:start.requestId,nonce:oversized}),ManagementInputError);
+	assert.throws(()=>parseProbeWorkerResult({...result,code:oversized},start),ManagementInputError);
 	assert.deepEqual(parseProbeWorkerResult(result,start),result);
 	assert.deepEqual(parseProbeWorkerCancel({type:'cancel',requestId:start.requestId,nonce:start.nonce}),{type:'cancel',requestId:start.requestId,nonce:start.nonce});
 	for(const bad of [{...result,nonce:'b'.repeat(64)},{...result,requestId:randomUUID()},{...result,error:'private-canary'},{...result,code:'raw-server-exception'}]) assert.throws(()=>parseProbeWorkerResult(bad,start),ManagementInputError);

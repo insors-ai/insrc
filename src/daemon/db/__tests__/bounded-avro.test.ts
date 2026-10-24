@@ -67,7 +67,7 @@ test('CM-S1-W: Avro explicit writer schemas and full normalized values match sav
 						assert.equal(memory[0]?.optional, null);
 					}
 					await avroConverter.convertFile(sourcePath, dest);
- await assertParquetSchema(dest,columns);
+					await assertParquetSchema(dest, columns);
 					const db = await DuckDBInstance.create(':memory:'), connection = await db.connect();
 					try {
 						const saved = (await connection.runAndReadAll('SELECT * FROM read_parquet(?)', [dest])).getRowObjectsJS().map(row => ({ ...row, count: Number(row.count) }));
@@ -163,5 +163,26 @@ test('CM-S1-W: standard avsc container encoder remains readable without saved-ou
 		finally {
 			await source.close();
 		}
+	});
+});
+test('CM-S1-W: tiny deflate Avro records preserve saved parity within a small admitted memory budget', async () => {
+	await fixture(async (dir) => {
+		const schema: avsc.Schema = { type: 'record', name: 'Small', fields: [{ name: 'value', type: 'string' }] }, type = avsc.Type.forSchema(schema), path = join(dir, 'small.avro'), dest = join(dir, 'small.parquet');
+		await writeFile(path, Buffer.concat([header(schema, 'deflate'), block(type.toBuffer({ value: 'valid small record' }), 1, 'deflate')]));
+		const budget = new DecoderBudget(1024 * 1024), source = await avroConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget });
+		try {
+			const columns = (await source.describe())[0]!.columns;
+			assert.deepEqual(await all(source), [{ value: 'valid small record' }]);
+			await avroConverter.convertFile(path, dest);
+			await assertParquetSchema(dest, columns);
+			const db=await DuckDBInstance.create(':memory:'),connection=await db.connect();
+			try { assert.deepEqual((await connection.runAndReadAll('SELECT * FROM read_parquet(?)',[dest])).getRowObjectsJS(),await all(source)); }
+			finally {connection.closeSync();db.closeSync();}
+			assert(budget.snapshot().peak <= budget.limit);
+		}
+		finally {
+			await source.close();
+		}
+		assert.equal(budget.snapshot().retained, 0);
 	});
 });

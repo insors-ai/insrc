@@ -3,6 +3,7 @@ import avsc from 'avsc';
 import { inflateRawSync } from 'node:zlib';
 import { BoundedInput, sourceStamp } from './bounded-input.js';
 import type { SourceStamp } from './bounded-input.js';
+import type { DecoderReservation } from './decoder-budget.js';
 import { DecoderBudget } from './decoder-budget.js';
 import { AvroCursor, avroStructure, validateAvroRecord, validateAvroSchema } from './avro-binary.js';
 import { convertedColumn, normalizeScalar } from './normalization.js';
@@ -186,7 +187,7 @@ async function* records(path: string, stamp: SourceStamp, h: Header, budget: Dec
 			if (count <= 0 || count > 1024 * 1024 || size < 0 || size > MAX_BLOCK)
 				throw new Error('resource-limit');
 			const compressed = await input.read(size, MAX_BLOCK);
-			let releaseExpansion: (() => void) | undefined;
+			let releaseExpansion: DecoderReservation | undefined;
 			try {
 				let data = compressed.bytes;
 				if (h.codec === 'deflate') {
@@ -197,6 +198,7 @@ async function* records(path: string, stamp: SourceStamp, h: Header, budget: Dec
 					releaseExpansion = budget.reserve(allowance);
 					try {
 						data = inflateRawSync(compressed.bytes, { maxOutputLength: allowance });
+						releaseExpansion.shrinkTo(data.length);
 					}
 					catch {
 						throw new Error('resource-limit');

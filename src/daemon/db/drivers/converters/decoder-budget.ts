@@ -4,6 +4,10 @@ export interface AdmissionSnapshot {
 	readonly peak: number;
 	readonly units: number;
 }
+export interface DecoderReservation {
+	(): void;
+	shrinkTo(bytes: number): void;
+}
 export class DecoderBudget {
 	#retained = 0;
 	#peak = 0;
@@ -12,7 +16,7 @@ export class DecoderBudget {
 		if (!Number.isSafeInteger(limit) || limit <= 0)
 			throw new Error('resource-limit');
 	}
-	reserve(bytes: number): () => void {
+	reserve(bytes: number): DecoderReservation {
 		if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > this.limit - this.#retained)
 			throw new Error('resource-limit');
 		this.#retained += bytes;
@@ -20,7 +24,7 @@ export class DecoderBudget {
 		this.#peak = Math.max(this.#peak, this.#retained);
 		this.#publish();
 		let active = true;
-		return () => {
+		const release: DecoderReservation = () => {
 			if (!active)
 				return;
 			active = false;
@@ -28,6 +32,14 @@ export class DecoderBudget {
 			this.#units--;
 			this.#publish();
 		};
+		release.shrinkTo = next => {
+			if (!active || !Number.isSafeInteger(next) || next < 0 || next > bytes)
+				throw new Error('resource-limit');
+			this.#retained -= bytes - next;
+			bytes = next;
+			this.#publish();
+		};
+		return release;
 	}
 	snapshot(): AdmissionSnapshot {
 		return { retained: this.#retained, peak: this.#peak, units: this.#units };

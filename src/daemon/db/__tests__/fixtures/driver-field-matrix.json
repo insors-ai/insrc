@@ -2355,7 +2355,7 @@
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
     "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
-    "src/daemon/db/drivers/converters/avro.ts": "0f310dfe9c8e212c07710a0bfb39229e8affb52be67b68b5394d705d5b51fa45",
+    "src/daemon/db/drivers/converters/avro.ts": "9174d04bb985f7614f344ae8757a84182916e35bb66f913d22966a62bba495fe",
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
     "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",
     "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
@@ -2520,6 +2520,11 @@
       "task": "t14",
       "source": "src/daemon/db/drivers/converters/xlsx.ts",
       "reason": "Shares DecoderBudget with typed source for pre-retention normalized row and batch admission, automatic rejection cleanup, and fixed-width row preallocation. Classified converter fields and secret slots unchanged."
+    },
+    {
+      "task": "t15",
+      "source": "src/daemon/db/drivers/converters/avro.ts",
+      "reason": "Shrinks the pre-admitted expansion reservation to actual output after capped synchronous inflation; retains the same classified Avro schema and normalization fields."
     }
   ]
 }

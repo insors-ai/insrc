@@ -478,6 +478,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Keep IDs; filter by operation — Confirmed by the user on 2026-10-24: a rule for one operation filters on input.op; ac4 keeps the seven multi-operation ids _(2026-10-24T18:15:15.741Z)_
 - `q931a951f` — This LLD was narrowed on the user's decision on 2026-10-24 after six review rounds in two cycles: the long tail of git (about 55 commands, their family tools, stdin delivery and the destructive classes of their modes) moved to the new Story s8, appended to the Epic with HLD amendment AMD-b7a68147dcf72034-8. DEF s4 ac1 is met by s4 and s8 together. The user accepted the ac1 exclusions (a person or GUI, mail, server or transport role, credential helpers); out-of-range legacy inputs are rejected; a failed git_show diff is a real failure.
   - **resolved**: Proceed with narrowed s4 — The split was the user's decision; s4 and s8 together meet DEF s4 ac1 _(2026-10-24T18:16:58.416Z)_
+- `qa278e949` — Review cycle 2, round 3 (2 HIGH, 2 MED) was addressed without a further review: git_merge_base returns bases, the commit numstat read is an inventoried secondary read, git_fetch depth below 1 is in the compatibility audit, and the coverage test uses three owners. A further review needs the user's go-ahead.
+  - **ignored**: left to implementer judgment — Review-history note, superseded: the user approved the LLD (revision 12) with an override _(2026-10-24T18:18:08.802Z)_
 
 ## Citations
 

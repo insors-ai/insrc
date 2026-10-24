@@ -112,6 +112,12 @@
         "choice": "Proceed with narrowed s4",
         "rationale": "The split was the user's decision; s4 and s8 together meet DEF s4 ac1",
         "resolvedAt": "2026-10-24T18:16:58.416Z"
+      },
+      "qa278e949": {
+        "question": "Review cycle 2, round 3 (2 HIGH, 2 MED) was addressed without a further review: git_merge_base returns bases, the commit numstat read is an inventoried secondary read, git_fetch depth below 1 is in the compatibility audit, and the coverage test uses three owners. A further review needs the user's go-ahead.",
+        "status": "ignored",
+        "rationale": "Review-history note, superseded: the user approved the LLD (revision 12) with an override",
+        "resolvedAt": "2026-10-24T18:18:08.802Z"
       }
     }
   },

@@ -1,5 +1,4 @@
-import { writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
-import { PATHS } from '../shared/paths.js';
+import { daemonRunFiles } from './run-file-ownership.js';
 import {
   EMBEDDING_DIM,
   ensureEmbeddingModel,
@@ -18,53 +17,14 @@ const log = getLogger('daemon');
 // PID file management
 // ---------------------------------------------------------------------------
 
-/** Write the current process PID to daemon.pid. */
-export function writePid(): void {
-  mkdirSync(PATHS.insrc, { recursive: true });
-  writeFileSync(PATHS.pidFile, String(process.pid), 'utf8');
-}
+/** Publish only under the managed run-file guard; never overwrite foreign evidence. */
+export function writePid(): void { daemonRunFiles.writePid(); }
 
-/** Remove daemon.pid and daemon.sock (best-effort). */
-export function clearPid(): void {
-  try { rmSync(PATHS.pidFile); } catch { /* ignore */ }
-  try { rmSync(PATHS.sockFile); } catch { /* ignore */ }
-}
+/** Remove only this process's captured publications under the shared guard. */
+export function clearPid(): void { daemonRunFiles.clearRunFiles(); }
 
-/**
- * Return true if a daemon is already running.
- * If daemon.pid exists but the process is dead, cleans up the stale files
- * and returns false so startup can proceed normally.
- */
-export function isAlreadyRunning(): boolean {
-  if (!existsSync(PATHS.pidFile)) return false;
-
-  let pid: number;
-  try {
-    pid = parseInt(readFileSync(PATHS.pidFile, 'utf8').trim(), 10);
-    if (isNaN(pid)) { clearPid(); return false; }
-  } catch {
-    clearPid();
-    return false;
-  }
-
-  try {
-    process.kill(pid, 0); // signal 0: probe only, no actual signal
-    return true;           // process is alive
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code === 'ESRCH') {
-      // No such process — stale PID
-      clearPid();
-      return false;
-    }
-    if (code === 'EPERM') {
-      // Process exists, we just don't have permission to signal it
-      return true;
-    }
-    clearPid();
-    return false;
-  }
-}
+/** Guarded stale cleanup requires a positively exited PID; uncertainty refuses startup. */
+export function isAlreadyRunning(): boolean { return daemonRunFiles.isAlreadyRunning(); }
 
 // ---------------------------------------------------------------------------
 // Embedding model bootstrap

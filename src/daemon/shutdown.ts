@@ -23,6 +23,7 @@ import { getStoreHealth } from '../db/graph/store.js';
 import type { StoreHealth } from '../db/graph/store.js';
 import { PATHS } from '../shared/paths.js';
 import { clearPid } from './lifecycle.js';
+import { daemonRunFiles, endForRunFileConflict } from './run-file-ownership.js';
 
 type LocksLost = Exclude<StoreHealth, { state: 'ok' }>;
 
@@ -41,7 +42,18 @@ export interface EndDeps {
 
 export const realEndDeps: EndDeps = {
 	clearPid,
-	exit: code => { process.exit(code); },
+	exit: code => {
+		try {
+			daemonRunFiles.assertCurrentOwnership();
+			// A fatal/backstop exit with an open listener must not leave a
+			// libuv exit hook capable of unlinking a future owner's socket.
+			if (daemonRunFiles.hasSocketPublication) {
+				daemonRunFiles.clearRunFiles();
+				process.kill(process.pid, 'SIGKILL'); return;
+			}
+		} catch (error) { endForRunFileConflict(error); return; }
+		process.exit(code);
+	},
 	killSelf: () => { process.kill(process.pid, 'SIGKILL'); },
 	lastLinePath: PATHS.daemonLog,
 	storeHealth: getStoreHealth,

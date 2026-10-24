@@ -16,6 +16,7 @@ export const PATHS = {
   feedback:    join(INSRC_DIR, 'feedback'),     // global config feedback
   conventions: join(INSRC_DIR, 'conventions'),  // global config conventions
   pidFile:     join(INSRC_DIR, 'daemon.pid'),
+  daemonRunGuard: join(INSRC_DIR, 'daemon.run-files.guard'),
   sockFile:    join(INSRC_DIR, 'daemon.sock'),
   // Terminal record of the last daemon self-update (Story S001 / sc1).
   // The detached update+restart helper writes a DaemonUpdateOutcome here

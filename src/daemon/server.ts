@@ -1,6 +1,6 @@
 import { onUtf8Data } from '../shared/utf8-stream.js';
 import { createServer, type Server, type Socket } from 'node:net';
-import { rmSync } from 'node:fs';
+import { DaemonRunFileOwnership, daemonRunFiles } from './run-file-ownership.js';
 import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
@@ -81,6 +81,8 @@ export class IpcServer {
   private readonly handlers: RpcHandlers;
   private readonly streamHandlers: StreamHandlers;
   private server: Server | null = null;
+  private closing: Promise<void> | null = null;
+  private readonly ownership: DaemonRunFileOwnership;
   private readonly pendingWrites = new Set<Promise<boolean>>();
   private writeFailed = false;
 
@@ -131,10 +133,11 @@ export class IpcServer {
   private connSeq = 0;
   private readonly now: () => number;
 
-  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
+  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile, ownership?: DaemonRunFileOwnership | undefined) {
     this.handlers = handlers;
     this.streamHandlers = streamHandlers;
     this.now = now;
+    this.ownership = ownership ?? (socketPath === PATHS.sockFile ? daemonRunFiles : new DaemonRunFileOwnership({ socketFile: socketPath, guardPath: `${socketPath}.guard` }));
   }
 
   /** Snapshot of the attached-client registry, sorted by connectedAt (Story s4).
@@ -152,29 +155,35 @@ export class IpcServer {
   }
 
   async listen(): Promise<void> {
-    // Remove stale socket file if present
-    try { rmSync(this.socketPath); } catch { /* ignore */ }
-
-    return new Promise((resolve, reject) => {
-      this.server = createServer((socket: Socket) => {
-        this.handleConnection(socket);
+    const lease = this.ownership.lease();
+    try {
+      this.ownership.assertSocketVacant();
+      this.closing = null;
+      await new Promise<void>((resolve, reject) => {
+        this.server = createServer((socket: Socket) => this.handleConnection(socket));
+        this.server.on('error', reject);
+        this.server.listen(this.socketPath, () => {
+          try { this.ownership.claimSocket(); log.info(`listening on ${this.socketPath}`); resolve(); }
+          catch (error) { reject(error); }
+        });
       });
-
-      this.server.on('error', reject);
-
-      this.server.listen(this.socketPath, () => {
-        log.info(`listening on ${this.socketPath}`);
-        resolve();
-      });
-    });
+    } finally { lease.release(); }
   }
 
-  async close(): Promise<void> {
-    await new Promise<void>((resolve) => {
-      if (!this.server) { resolve(); return; }
-      this.server.close(() => resolve());
-    });
-    try { rmSync(this.socketPath); } catch { /* ignore */ }
+  close(): Promise<void> {
+    if (this.closing) return this.closing;
+    const server = this.server;
+    if (!server || (!server.listening && !this.ownership.hasSocketPublication)) return Promise.resolve();
+    this.closing = (async () => {
+      const lease = this.ownership.lease();
+      try {
+        // Refuse before server.close: libuv may unlink the pathname implicitly.
+        this.ownership.assertSocketOwned();
+        await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+        this.ownership.removeSocket(); this.server = null;
+      } finally { lease.release(); }
+    })();
+    return this.closing;
   }
 
   private handleConnection(socket: Socket): void {

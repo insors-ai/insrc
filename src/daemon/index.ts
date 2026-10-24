@@ -124,10 +124,15 @@ import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
+import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError } from './run-file-ownership.js';
+import type { RunFileLease } from './run-file-ownership.js';
 
 // ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------
+
+let startupRunFiles: RunFileLease | undefined;
+let startupServer: IpcServer | undefined;
 
 async function main(): Promise<void> {
 	// 0. This process owns the live graph store; every other process is
@@ -137,9 +142,11 @@ async function main(): Promise<void> {
 	// the code that drops the daemon's lock on the store is not identified.
 	installStoreFileOpenDiagnostic();
 
-	// 1. Check for existing daemon
+	// 1. Serialize stale cleanup and publication through socket readiness.
+	startupRunFiles = daemonRunFiles.lease();
 	if (isAlreadyRunning()) {
 		log.error('already running — exiting');
+		startupRunFiles.release(); startupRunFiles = undefined;
 		process.exit(1);
 	}
 
@@ -2021,11 +2028,14 @@ async function main(): Promise<void> {
 	registerParkOffer();
 	registerSignoff();
 	const server = new IpcServer(rpcHandlers, streamHandlers);
+	startupServer = server;
 
 	// Initialize chat session pool
 	initChatHandlers();
 
 	await server.listen();
+	startupRunFiles.release(); startupRunFiles = undefined;
+	startupServer = undefined;
 	try {
 		understandingService = await UnderstandingService.open(PATHS.sockFile);
 		understandingHostId = understandingService.hostId;
@@ -2089,6 +2099,7 @@ async function main(): Promise<void> {
 	//
 	// With the graph store's locks lost none of this applies: see
 	// ./shutdown.ts, which holds the sequence.
+	let serverClosing: Promise<void> | undefined;
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
@@ -2100,12 +2111,14 @@ async function main(): Promise<void> {
 			queue.stop();
 			void disposeChatHandlers();
 			void watcher.close();
-			void server.close();
+			serverClosing = server.close();
+			void serverClosing.catch(endForRunFileConflict);
 		},
 		queueDone,
 		closeStores: async () => {
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();
+			await serverClosing;
 			// closeDb() is a no-op post-LMDB migration (kept for
 			// caller back-compat). The in-memory DuckDB pool +
 			// per-source analyzer pools still hold connections that
@@ -2124,7 +2137,14 @@ async function main(): Promise<void> {
 	process.on('SIGINT',  () => shutdown('SIGINT'));
 }
 
-main().catch(err => {
+main().catch(async err => {
 	log.fatal({ err }, 'fatal error');
+	if (err instanceof RunFileOwnershipError) { endForRunFileConflict(err); return; }
+	try {
+		startupServer?.disconnectClients();
+		await startupServer?.close();
+		if (startupRunFiles) daemonRunFiles.clearRunFiles();
+		startupRunFiles?.release(); startupRunFiles = undefined;
+	} catch (cleanupError) { endForRunFileConflict(cleanupError); return; }
 	exitRespectingStoreHealth(1, 'a failed start');
 });

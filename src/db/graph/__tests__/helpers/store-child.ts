@@ -189,6 +189,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			const { IpcServer } = await import('../../../../daemon/server.js');
 			const { IndexQueue } = await import('../../../../daemon/queue.js');
 			const { writePid } = await import('../../../../daemon/lifecycle.js');
+			const { daemonRunFiles, endForRunFileConflict } = await import('../../../../daemon/run-file-ownership.js');
 			const { createShutdown, realEndDeps } = await import('../../../../daemon/shutdown.js');
 			const { reportFatal } = await import('../../../../daemon/fatal.js');
 			const { buildDaemonStatus } = await import('../../../../daemon/status.js');
@@ -202,6 +203,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 				logFatal: (o, m) => { log.fatal(o, m); }, crashLogDir: cmd.crashLogDir, end,
 			}));
 
+			const publication = daemonRunFiles.lease();
 			writePid();
 			const queue = new IndexQueue();
 			const queueDone = queue.start(async job => {
@@ -226,14 +228,16 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 					return { ok: true };
 				},
 			});
+			let serverClosing: Promise<void> | undefined;
 			const shutdown = createShutdown({
 				log,
-				stopBackgroundWork: () => { queue.stop(); void server.close(); },
+				stopBackgroundWork: () => { queue.stop(); serverClosing = server.close(); void serverClosing.catch(endForRunFileConflict); },
 				queueDone,
-				closeStores: async () => { await closeGraphStore(); },
+				closeStores: async () => { await server.flushPendingWrites(1000); server.disconnectClients(); await serverClosing; await closeGraphStore(); },
 				end,
 			});
 			await server.listen();
+			publication.release();
 			return { ok: true, value: PATHS.sockFile };
 		}
 		case 'seed-repo': {

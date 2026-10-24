@@ -50,6 +50,7 @@ export function parseStatusV2(raw: string): GitStatusData {
     clean: true, branch: '(detached)', staged: [], unstaged: [], untracked: [], conflicts: [],
   };
   // Entries are null-terminated; rename / copy entries are two-part: "2 <XY> ... <path>\0<origPath>\0".
+  if (raw !== '' && !raw.endsWith('\0')) { throw new ParseError('the last status record is not NUL-terminated'); }
   const parts = raw.split('\0');
   for (let i = 0; i < parts.length; i++) {
     const line = parts[i];
@@ -69,19 +70,20 @@ export function parseStatusV2(raw: string): GitStatusData {
     const xy = tokens[1] ?? '';
     switch (line[0]) {
       case '1': { // "1 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <path>"
-        needFields(line, tokens, 9, xy);
+        needFields(line, tokens, 9, xy, [3, 4, 5], [6, 7]);
         pushEntry(data, xy, tokens.slice(8).join(' '), undefined);
         break;
       }
       case '2': { // "2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path>" then the original path
-        needFields(line, tokens, 10, xy);
+        needFields(line, tokens, 10, xy, [3, 4, 5], [6, 7]);
+        if (!/^[RC]\d+$/.test(tokens[8]!)) { throw new ParseError(`malformed rename score: ${JSON.stringify(line)}`); }
         const origPath = parts[++i];
         if (!origPath) { throw new ParseError(`rename entry without its original path: ${JSON.stringify(line)}`); }
         pushEntry(data, xy, tokens.slice(9).join(' '), origPath);
         break;
       }
       case 'u': { // "u <XY> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>"
-        needFields(line, tokens, 11, xy);
+        needFields(line, tokens, 11, xy, [3, 4, 5, 6], [7, 8, 9]);
         data.conflicts.push({ path: tokens.slice(10).join(' '), code: xy });
         data.clean = false;
         break;
@@ -92,17 +94,23 @@ export function parseStatusV2(raw: string): GitStatusData {
         data.clean = false;
         break;
       }
-      case '!': break; // ignored paths are not surfaced
+      case '!': { // "! <path>": ignored paths are not surfaced
+        if (line[1] !== ' ' || line.length < 3) { throw new ParseError(`malformed ignored entry: ${JSON.stringify(line)}`); }
+        break;
+      }
       default: throw new ParseError(`unknown status record: ${JSON.stringify(line)}`);
     }
   }
   return data;
 }
 
-function needFields(line: string, tokens: string[], min: number, xy: string): void {
-  if (line[1] !== ' ' || tokens.length < min || xy.length !== 2) {
-    throw new ParseError(`malformed status entry: ${JSON.stringify(line)}`);
-  }
+/** The fixed fields of a changed, renamed or unmerged entry: the XY codes, the submodule state, the modes and the object names. */
+function needFields(line: string, tokens: string[], min: number, xy: string, modes: number[], shas: number[]): void {
+  const ok = line[1] === ' ' && tokens.length >= min && /^[.MTADRCU]{2}$/.test(xy)
+    && /^[NS][C.][M.][U.]$/.test(tokens[2] ?? '')
+    && modes.every(i => /^\d{6}$/.test(tokens[i] ?? ''))
+    && shas.every(i => SHA.test(tokens[i] ?? ''));
+  if (!ok) { throw new ParseError(`malformed status entry: ${JSON.stringify(line)}`); }
 }
 
 function pushEntry(data: GitStatusData, xy: string, path: string, origPath: string | undefined): void {

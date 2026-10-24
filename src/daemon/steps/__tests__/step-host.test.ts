@@ -346,6 +346,31 @@ test("insrc_code_review_step through step.call: the step's progress is threaded 
 	assert.match(JSON.stringify(frames[1]!.data), /\\"next\\": \\"done\\"/);
 });
 
+test("insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'", async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-relay-'));
+	try {
+		const dir = join(repo, 'docs', 'stub');
+		mkdirSync(dir, { recursive: true });
+		const md = join(dir, 's1.md');
+		writeFileSync(md, '# Doc\n\nThe body.\n');
+		writeFileSync(join(dir, 's1.json'), JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'controller' }, body: {} }) + '\n');
+		const STAGE = { kind: 'stage', operation: 'workflow.review', stageId: 'template', stageLabel: 'template', index: 0, total: null };
+		const BEAT = { kind: 'heartbeat', operation: 'workflow.review', elapsedMs: 60_000 };
+		const host = createStepCallHandler(stepToolTable({ reviewDeps: {
+			reviewByDaemon: async (_params, opts) => {
+				opts.onFrame?.('progress', STAGE);
+				opts.onFrame?.('progress', BEAT);
+				opts.onFrame?.('progress', { ...BEAT, elapsedMs: 120_000 });
+				return { artifactPath: md, verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, reviewedBy: 'daemon', model: 'm', applied: 0, pending: 0, report: 'R' };
+			},
+		} }));
+		const frames = await collect(host, { tool: 'insrc_review_step', args: { phase: 'start', artifact: md, repo }, context: CTX });
+		assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'progress', 'done']);
+		assert.deepEqual(frames.slice(0, 3).map(f => f.data), [STAGE, BEAT, { ...BEAT, elapsedMs: 120_000 }]);
+		assert.match(JSON.stringify(frames[3]!.data), /\\"next\\": \\"done\\"/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 // --- the state stores' miss message -------------------------------------------------
 
 test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', async () => {

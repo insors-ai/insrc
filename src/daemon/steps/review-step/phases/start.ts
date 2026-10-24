@@ -139,6 +139,12 @@ export const DESIGN_REVIEW_WAIT_MS = 31 * 60_000;
  *  itself is deliberately not changed here. */
 export const PIPELINE_REVIEW_WAIT_MS = 90 * 60_000;
 
+/** How long the tool waits with no frame from the daemon before it gives up.
+ *  workflow.review sends a heartbeat every minute while a review runs
+ *  (WORKFLOW_REVIEW_HEARTBEAT_MS), so only a daemon that has stopped sending
+ *  is cut; the ceilings above still bound the whole review (ISSUE-562b1bb5). */
+export const DESIGN_REVIEW_IDLE_MS = 5 * 60_000;
+
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);
 
@@ -147,11 +153,15 @@ async function reviewByDaemon(
 	deps: ReviewStepDeps,
 ): Promise<ReviewStepDone | ReviewStepError> {
 	const timeoutMs = isDesignStage(a.stage) ? DESIGN_REVIEW_WAIT_MS : PIPELINE_REVIEW_WAIT_MS;
-	log.info({ stage: a.stage, mdPath: a.mdPath, timeoutMs }, 'insrc_review_step[start]: not daemon-authored; asking the daemon to review');
+	log.info({ stage: a.stage, mdPath: a.mdPath, timeoutMs, idleMs: DESIGN_REVIEW_IDLE_MS }, 'insrc_review_step[start]: not daemon-authored; asking the daemon to review');
 	try {
 		const done = await (deps.reviewByDaemon ?? stepDaemonClient().reviewArtifactStream)(
 			{ artifactPath: a.mdPath, repo: a.repo },
-			{ timeoutMs, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
+			{
+				timeoutMs, idleMs: DESIGN_REVIEW_IDLE_MS,
+				...(deps.progress !== undefined ? { onFrame: (_stream: 'progress' | 'delta', data: unknown) => deps.progress!(data) } : {}),
+				...(deps.signal !== undefined ? { signal: deps.signal } : {}),
+			},
 		);
 		return {
 			next:       'done',

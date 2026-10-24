@@ -37,7 +37,8 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../../../w
 import { reviewArtifactStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
 import { handleReviewStep } from '../handler.js';
-import { DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.js';
+import { DESIGN_REVIEW_IDLE_MS, DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.js';
+import { runReviewStream, type ReviewStreamSink } from '../../../../shared/review-stream.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import type { ReviewStepDeps } from '../types.js';
 
@@ -167,6 +168,85 @@ test('T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a
 	}
 });
 
+/** A clock the stream's timers run on: `advance` fires every timer that falls due, in order. */
+function fakeClock() {
+	let now = 0;
+	let next = 0;
+	const timers = new Map<number, { fn: () => void; at: number }>();
+	return {
+		setTimer: (fn: () => void, ms: number): unknown => { const h = ++next; timers.set(h, { fn, at: now + ms }); return h; },
+		clearTimer: (h: unknown): void => { timers.delete(h as number); },
+		advance(ms: number): void {
+			const end = now + ms;
+			for (;;) {
+				const due = [...timers.entries()].filter(([, t]) => t.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+				if (due === undefined) break;
+				now = due[1].at;
+				timers.delete(due[0]);
+				due[1].fn();
+			}
+			now = end;
+		},
+	};
+}
+
+test('a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit', async () => {
+	await _clearReviewStateStoreForTests();
+	assert.equal(DESIGN_REVIEW_IDLE_MS, 5 * MIN);
+	const settle = () => new Promise<void>(r => setImmediate(r));
+	// The real stream wait (ceiling + idle limit) over a transport the test drives, on a fake clock.
+	const daemon = () => {
+		const clock = fakeClock();
+		let sink: ReviewStreamSink | undefined;
+		const seen: ReviewStreamOpts[] = [];
+		const relayed: unknown[] = [];
+		const deps: ReviewStepDeps = {
+			progress: data => { relayed.push(data); },
+			reviewByDaemon: (_params, opts) => {
+				seen.push(opts);
+				return runReviewStream('workflow.review', opts, s => { sink = s; return { end: () => {}, cancel: () => {} }; }, clock);
+			},
+		};
+		const opened = async () => { while (sink === undefined) await settle(); return sink; };
+		return { clock, deps, seen, relayed, opened };
+	};
+	// 17 minutes, a heartbeat each minute: done.
+	{
+		const fx = fixture('design.story', 'controller');
+		try {
+			const d = daemon();
+			const out = start(fx, d.deps);
+			const sink = await d.opened();
+			for (let i = 1; i <= 17; i++) {
+				d.clock.advance(MIN);
+				sink.frame({ stream: 'progress', data: { kind: 'heartbeat', operation: 'workflow.review', elapsedMs: i * MIN } });
+			}
+			sink.frame({ stream: 'done', data: DONE });
+			const res = await out;
+			assert.equal(res['next'], 'done', JSON.stringify(res));
+			assert.equal(d.seen[0]!.idleMs, DESIGN_REVIEW_IDLE_MS, 'the wait has the idle limit');
+			assert.equal(d.seen[0]!.timeoutMs, DESIGN_REVIEW_WAIT_MS, 'beside the ceiling');
+			assert.equal(d.relayed.length, 17, 'every heartbeat relayed');
+		} finally { fx.cleanup(); }
+	}
+	// No frame for 5 minutes: an idle timeout naming the idle limit.
+	{
+		const fx = fixture('design.story', 'controller');
+		try {
+			const d = daemon();
+			const out = start(fx, d.deps);
+			await d.opened();
+			d.clock.advance(5 * MIN);
+			const res = await out;
+			assert.equal(res['next'], 'error');
+			const err = res['error'] as { code: string; message: string; retryable: boolean };
+			assert.equal(err.code, 'daemon-review-timeout');
+			assert.match(err.message, /no progress from the daemon for 5 minutes/);
+			assert.equal(err.retryable, true);
+		} finally { fx.cleanup(); }
+	}
+});
+
 const FAILURES = [
 	['unreachable', new ReviewStreamError('unreachable', 'daemon is not running — start it with: insrc daemon start'), true],
 	['daemon-error', new ReviewStreamError('daemon-error', 'The design review passed its time limit of 6 minutes', undefined), false],
@@ -227,7 +307,7 @@ test('T11 against an older daemon (a plain unknown-method line, socket kept open
 			}),
 		};
 		const out = await start(fx, deps);
-		assert.deepEqual(armedMs, [31 * MIN], 'the 31 minute wait limit was armed, and it never fired');
+		assert.deepEqual(armedMs, [31 * MIN, DESIGN_REVIEW_IDLE_MS], 'the 31 minute wait limit and the 5 minute idle limit were armed, and neither fired');
 		assert.equal(out['next'], 'error');
 		const err = out['error'] as { code: string; message: string };
 		assert.equal(err.code, 'daemon-review-unknown-method');

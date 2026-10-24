@@ -7,7 +7,7 @@ import { closeGraphStore, getGraphStore, setGraphStorePath } from '../graph/stor
 import { decodeEntityRow, encodeEntityRow } from '../graph/codec.js';
 import { encodeEntityFileKey, encodeEntityKey, encodeRepoKey } from '../graph/keys.js';
 import { addRepo, lookupRepoId } from '../repos.js';
-import { deleteEntitiesForFile, deleteEntitiesForRepo, findEntitiesByFile, listEntitiesForRepo, listEntityFilesForRepo, reindexFile, upsertEntities } from '../entities.js';
+import { deleteEntitiesForFile, deleteEntitiesForRepo, getEntity, findEntitiesByFile, listEntitiesForRepo, listEntityFilesForRepo, reindexFile, upsertEntities } from '../entities.js';
 import type { Entity } from '../../shared/types.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
 
@@ -38,12 +38,19 @@ test('scoped reads, deletion collectors and reindex snapshots never scan the ent
 	assert.deepEqual([...(await listEntityFilesForRepo(null, A))], [[`${A}/a.ts`, ['a1', 'a2']], [`${A}/other.ts`, ['other-a']]]);
 	const unrelated = encodeEntityKey(BigInt(s.entityIdByString.get('b1') as bigint)).toString('hex');
 	assert.ok(!seen.includes(unrelated));
-	reads.mock.restore();
+	const otherFile = encodeEntityKey(BigInt(s.entityIdByString.get('other-a') as bigint)).toString('hex');
+	seen.length = 0;
 	await reindexFile(null, A, `${A}/a.ts`, [entity('replacement')]);
+	assert.ok(!seen.includes(unrelated) && !seen.includes(otherFile), 'reindex snapshot reads no unrelated rows');
+	seen.length = 0;
 	assert.deepEqual((await findEntitiesByFile(null, `${A}/a.ts`)).map(e => e.id), ['replacement']);
 	await deleteEntitiesForFile(null, `${A}/a.ts`);
+	assert.ok(!seen.includes(unrelated) && !seen.includes(otherFile), 'file collector/cascade reads no unrelated rows');
+	seen.length = 0;
 	assert.deepEqual(await findEntitiesByFile(null, `${A}/a.ts`), []);
 	await deleteEntitiesForRepo(null, A);
+	assert.ok(!seen.includes(unrelated), 'repo collector/cascade reads no unrelated repository rows');
+	reads.mock.restore();
 	assert.deepEqual(await listEntitiesForRepo(null, A), []);
 	assert.deepEqual((await listEntitiesForRepo(null, B)).map(e => e.id), ['b1']);
 	assert.deepEqual(await listEntitiesForRepo(null, '/not-registered'), []);
@@ -93,4 +100,24 @@ test('dangling membership rows, missing string IDs and missing registry roots fa
 	await s.entityStringByU64.put(id, 'a1');
 	await s.repo.remove(encodeRepoKey((await lookupRepoId(A))!));
 	await assert.rejects(findEntitiesByFile(null, `${A}/a.ts`), /unregistered repository/);
+});
+
+
+test('indexed entity contents and ordering match an authoritative row-scan oracle', async () => {
+ const s = await getGraphStore(), repoId = (await lookupRepoId(A))!;
+ const expected: Entity[] = [];
+ const expectedFiles = new Map<string, string[]>();
+ for (const { key, value } of s.entity.getRange()) {
+  const row = decodeEntityRow(value as Buffer);
+  if (row.repoId !== repoId) continue;
+  const id = s.entityStringByU64.get(key as Buffer) as string;
+  const valueById = (await getEntity(null, id))!;
+  expected.push(valueById);
+  const ids = expectedFiles.get(valueById.file);
+  if (ids === undefined) expectedFiles.set(valueById.file, [id]); else ids.push(id);
+ }
+ mock.method(s.entity, 'getRange', () => { throw new Error('oracle setup is over; scoped reads must use indexes'); });
+ assert.deepEqual(await listEntitiesForRepo(null, A), expected);
+ assert.deepEqual(await findEntitiesByFile(null, `${A}/a.ts`), expected.filter(e => e.file === `${A}/a.ts`));
+ assert.deepEqual(await listEntityFilesForRepo(null, A), expectedFiles);
 });

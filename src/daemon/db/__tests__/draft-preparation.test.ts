@@ -11,6 +11,7 @@ import {openManagedRoot} from '../management-startup.js';
 import {makeSecretRef,referencedSecrets,_setKeystoreForTests} from '../secrets.js';
 import {savedManagementFor,withSavedRootGate} from '../management.js';
 import {DriverPool} from '../pool.js';
+import {PreparationJournal} from '../managed-store.js';
 import type {Driver} from '../../../shared/db-driver.js';
 import '../drivers/index.js';
 
@@ -18,8 +19,8 @@ test('CM-S2-F1: production metadata admission precedes secrets and prepares only
  const directory=await realpath(await mkdtemp(join(tmpdir(),'draft-prepare-'))),root=join(directory,'repo'),old=PATHS.insrc;
  await mkdir(root);Object.defineProperty(PATHS,'insrc',{value:join(directory,'state'),configurable:true});
  const values=new Map<string,string>(),reads:string[]=[],writes:string[]=[];
- let pause: (()=>Promise<void>) | undefined;
- const keystore={getKey:async(ref:string)=>{reads.push(ref);if(ref.startsWith('db:v2:'))await pause?.();return values.get(ref)??null;},setKey:async(ref:string,value:string)=>{writes.push(ref);values.set(ref,value);},deleteKey:async(ref:string)=>{writes.push(ref);values.delete(ref);}};
+ let pause: (()=>Promise<void>) | undefined,failStages=false;
+ const keystore={getKey:async(ref:string)=>{reads.push(ref);if(ref.startsWith('db:v2:'))await pause?.();return values.get(ref)??null;},setKey:async(ref:string,value:string)=>{writes.push(ref);if(failStages && ref.startsWith('db:v2:'))throw new Error('stage failure');values.set(ref,value);},deleteKey:async(ref:string)=>{writes.push(ref);values.delete(ref);}};
  const previous=_setKeystoreForTests(keystore),path=connectionsPath(root);
  const ports={isRegistered:async(r:string)=>r===root,keystore,enablement:async()=>({ready:true,digest:'a'.repeat(64)}),stopped:{source:'safe-stop-control' as const,pid:2147483647,processIdentity:'b'.repeat(64),stoppedAt:new Date().toISOString()}};
  const pool=new DriverPool(root,{factory:()=>async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{}} as Driver)});
@@ -53,5 +54,12 @@ test('CM-S2-F1: production metadata admission precedes secrets and prepares only
   const signing=[...values.keys()].find(ref=>ref.startsWith('db-management:'))!;const signingValue=values.get(signing)!;values.delete(signing);await assert.rejects(service.prepareDraft(context,base));values.set(signing,signingValue);
   await chmod(path,0o600);reads.length=0;await assert.rejects(service.prepareDraft(context,base));assert.deepEqual(reads,[]);await chmod(path,0o400);
   reload.mock.restore();
+  const ticket=await service.ticket(context,key,'update');failStages=true;
+  const failed=await service.mutate(context,{ticket,operationId:ticket.operationId,key,mode:'update',expectedRevision:revision,publicPatch:{},credentials:{'url.password':{action:'replace',value:'uncommitted'}}});
+  assert.equal(failed.status,'rejected');failStages=false;
+  const journal=await PreparationJournal.open(path,document._management.registryId);assert.ok((await journal.pending()).length>0);
+  const pendingBytes=await readFile(path),pendingVault=[...values];reads.length=0;writes.length=0;
+  await assert.rejects(service.prepareDraft(context,base));
+  assert.deepEqual(reads,[]);assert.deepEqual(writes,[]);assert.deepEqual(await readFile(path),pendingBytes);assert.deepEqual([...values],pendingVault);
  } finally {await owner?.close();await pool.closeAll();_setKeystoreForTests(previous);Object.defineProperty(PATHS,'insrc',{value:old,configurable:true});await rm(directory,{recursive:true,force:true});}
 });

@@ -146,6 +146,8 @@ export class SavedConnectionManagement {
 			if (!this.ports.probeMetadataReady) throw new ManagementServiceError('upgrade-required');
 			const current = this.validateSnapshot(await this.ports.probeMetadataReady());
 			signal?.throwIfAborted();
+			if ((await this.ports.generations.journal.pending()).length) throw new ManagementServiceError('recovery-required');
+			signal?.throwIfAborted();
 			const config = current.file.connections.find(c => c.id === key.id), revision = current.file._management!.revisions[key.id];
 			const editing = request.expectedRevision !== undefined;
 			if (editing && !config) throw new ManagementServiceError('not-found');

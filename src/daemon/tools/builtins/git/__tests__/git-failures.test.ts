@@ -646,13 +646,54 @@ function scanSources(sources: Record<string, string>): { offenders: string[]; lo
 	return { offenders, lookups, helperUses, readHelpers };
 }
 
+/** Every lookup the tools make, by what it is: the audit fails for a read that is not listed here. */
+const KNOWN_LOOKUPS: Record<string, 'secondary' | 'precondition' | 'preview'> = {
+	'amend.ts: long': 'secondary', 'amend.ts: msgRes': 'secondary', 'amend.ts: head': 'precondition', 'amend.ts: upstream': 'precondition', 'amend.ts: merge': 'precondition',
+	'branch.ts: head': 'secondary', 'commit.ts: sha': 'secondary', 'commit.ts: short': 'secondary', 'commit.ts: stat': 'secondary',
+	'merge.ts: rev': 'preview', 'rebase.ts: count': 'preview', 'rebase.ts: head': 'secondary',
+	'reset.ts: priorShort': 'secondary', 'reset.ts: afterShort': 'secondary', 'stage.ts: post': 'secondary',
+};
+/** Reads through the typed helpers, with their number of calls per file. */
+const KNOWN_HELPER_READS: Record<string, 'secondary' | 'precondition'> = {
+	'amend.ts: branchForReport x1': 'secondary', 'amend.ts: readShortSha x1': 'secondary',
+	'checkout.ts: readBranch x1': 'precondition', 'cherry-pick.ts: branchForReport x1': 'secondary', 'cherry-pick.ts: readBranch x1': 'precondition', 'rebase.ts: readBranch x1': 'precondition',
+	'commit.ts: readBranch x1': 'precondition', 'commit.ts: readStagedCount x1': 'precondition',
+	'merge.ts: branchForReport x2': 'secondary', 'pull.ts: readBranch x1': 'precondition',
+	'push.ts: readBranch x2': 'precondition', 'push.ts: readShortSha x1': 'secondary',
+	'rebase.ts: branchForReport x2': 'secondary', 'reset.ts: branchForReport x1': 'secondary', 'revert.ts: branchForReport x1': 'secondary',
+};
+/** The helpers that swallow a failure are used only for the preview of an approval request, where a failure is a placeholder. */
+const KNOWN_SWALLOWING = ['merge.ts: currentBranch', 'pull.ts: currentBranch', 'rebase.ts: currentBranch', 'reset.ts: currentBranch'];
+const TOOL_OF_FILE: Record<string, string> = { 'amend.ts': 'git_amend', 'branch.ts': 'git_branch', 'cherry-pick.ts': 'git:cherry-pick', 'commit.ts': 'git_commit', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert', 'stage.ts': 'git_stage' };
+
+/**
+ * The problems of the git tool sources: a runShell result whose process flags are never looked at, a lookup or a typed-helper
+ * read that is not listed, a call of a helper that swallows a failure that is not a listed preview, and a secondary read whose
+ * tool has no INVENTORY entry (the entry proves it keeps its placeholder, succeeds and warns).
+ */
+function auditProblems(sources: Record<string, string>): string[] {
+	const { offenders, lookups, helperUses, readHelpers } = scanSources(sources);
+	const problems: string[] = offenders.map(o => `a runShell result whose process flags are never looked at: ${o}`);
+	const diff = (found: string[], known: string[], what: string): void => {
+		for (const f of found) { if (!known.includes(f)) { problems.push(`${what} that is not listed: ${f}`); } }
+		for (const k of known) { if (!found.includes(k)) { problems.push(`${what} listed but not found: ${k}`); } }
+	};
+	diff(lookups, Object.keys(KNOWN_LOOKUPS), 'a lookup');
+	diff(readHelpers, Object.keys(KNOWN_HELPER_READS), 'a read through a typed helper');
+	diff(helperUses, KNOWN_SWALLOWING, 'a call of a helper that swallows a failure');
+	for (const [key, kind] of [...Object.entries(KNOWN_LOOKUPS), ...Object.entries(KNOWN_HELPER_READS)]) {
+		const tool = TOOL_OF_FILE[key.split(':')[0]!];
+		if (kind === 'secondary' && !INVENTORY.some(l => l.tool.id === tool)) { problems.push(`${key} is secondary: ${tool} needs an INVENTORY entry`); }
+	}
+	return problems;
+}
+
 function audit(): void {
 	const dir = dirname(fileURLToPath(import.meta.url)) + '/..';
 	const skip = new Set(['helpers.ts', 'parsers.ts', 'index.ts', 'schemas.ts', 'coverage.ts']);
 	const sources = Object.fromEntries(readdirSync(dir).filter(n => n.endsWith('.ts') && !skip.has(n)).map(n => [n, readFileSync(join(dir, n), 'utf8')]));
-	const { offenders, lookups, helperUses, readHelpers } = scanSources(sources);
 
-	// the scan itself: it flags a result that is never looked at, a lookup that is not in the list, and a swallowing helper
+	// the scan itself, on planted sources
 	const planted = scanSources({
 		'x.ts': "const r = await runShell(['git', 'status']);\nif (r.code !== 0) { return undefined; }\nconst b = await currentBranch(cwd);\n"
 			+ "const l = await runShell(['git', 'log']);\nconst ok = ranToExit(l);\nconst main = await runShell(['git', 'push']);\nif (main.code !== 0) { return fail('git_x', main); }\n",
@@ -663,41 +704,20 @@ function audit(): void {
 	const plantedHelpers = scanSources({ 'y.ts': "const ignored = await readShortSha(cwd, 'HEAD');\nawait branchForReport(cwd, w, 'x');\nawait branchForReport(cwd, w, 'x');\n" });
 	assert.deepEqual(plantedHelpers.readHelpers, ['y.ts: readShortSha x1', 'y.ts: branchForReport x2']);
 
-	assert.deepEqual(offenders, [], 'a runShell result whose process flags are never looked at');
-	// A lookup is any other runShell result. Adding one fails here until it is listed with what it is; a secondary one
-	// also needs an entry in INVENTORY (which proves that it keeps its placeholder, succeeds and warns).
-	const KNOWN: Record<string, 'secondary' | 'precondition' | 'preview'> = {
-		'amend.ts: long': 'secondary', 'amend.ts: msgRes': 'secondary', 'amend.ts: head': 'precondition', 'amend.ts: upstream': 'precondition', 'amend.ts: merge': 'precondition',
-		'branch.ts: head': 'secondary', 'commit.ts: sha': 'secondary', 'commit.ts: short': 'secondary', 'commit.ts: stat': 'secondary',
-		'merge.ts: rev': 'preview', 'rebase.ts: count': 'preview', 'rebase.ts: head': 'secondary',
-		'reset.ts: priorShort': 'secondary', 'reset.ts: afterShort': 'secondary', 'stage.ts: post': 'secondary',
-	};
-	assert.deepEqual(lookups.sort(), Object.keys(KNOWN).sort(), 'a lookup that is not listed (list it, and add it to INVENTORY when it is secondary)');
-	const TOOL_OF: Record<string, string> = { 'amend.ts': 'git_amend', 'branch.ts': 'git_branch', 'commit.ts': 'git_commit', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'stage.ts': 'git_stage' };
-	for (const [key, kind] of Object.entries(KNOWN)) {
-		if (kind !== 'secondary') { continue; }
-		assert.ok(INVENTORY.some(l => l.tool.id === TOOL_OF[key.split(':')[0]!]), `${key} is secondary: ${TOOL_OF[key.split(':')[0]!]} needs an INVENTORY entry`);
-	}
-	// Reads through the typed helpers. A precondition read stops the call; a secondary one keeps its placeholder and warns, and
-	// its tool needs an INVENTORY entry. A new call fails here until it is listed.
-	const HELPERS: Record<string, 'secondary' | 'precondition'> = {
-		'amend.ts: branchForReport x1': 'secondary', 'amend.ts: readShortSha x1': 'secondary',
-		'checkout.ts: readBranch x1': 'precondition', 'cherry-pick.ts: branchForReport x1': 'secondary', 'cherry-pick.ts: readBranch x1': 'precondition', 'rebase.ts: readBranch x1': 'precondition',
-		'commit.ts: readBranch x1': 'precondition', 'commit.ts: readStagedCount x1': 'precondition',
-		'merge.ts: branchForReport x2': 'secondary', 'pull.ts: readBranch x1': 'precondition',
-		'push.ts: readBranch x2': 'precondition', 'push.ts: readShortSha x1': 'secondary',
-		'rebase.ts: branchForReport x2': 'secondary', 'reset.ts: branchForReport x1': 'secondary', 'revert.ts: branchForReport x1': 'secondary',
-	};
-	assert.deepEqual(readHelpers.sort(), Object.keys(HELPERS).sort(), 'a read through a typed helper that is not listed');
-	const HELPER_TOOL: Record<string, string> = { 'amend.ts': 'git_amend', 'cherry-pick.ts': 'git:cherry-pick', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert' };
-	for (const [key, kind] of Object.entries(HELPERS)) {
-		if (kind !== 'secondary') { continue; }
-		assert.ok(INVENTORY.some(l => l.tool.id === HELPER_TOOL[key.split(':')[0]!]), `${key} is secondary: ${HELPER_TOOL[key.split(':')[0]!]} needs an INVENTORY entry`);
-	}
-	// the helpers that swallow a failure are used only for the preview of an approval request, where a failure is a placeholder
-	assert.deepEqual(helperUses.sort(), [
-		'merge.ts: currentBranch', 'pull.ts: currentBranch', 'rebase.ts: currentBranch', 'reset.ts: currentBranch',
-	], 'a call of a helper that swallows a failure that is not a listed preview placeholder');
+	// the tools as they are pass the audit ...
+	assert.deepEqual(auditProblems(sources), []);
+
+	// ... and each kind of unlisted, ignored lookup added to a real tool fails it
+	const withLookup = auditProblems({ ...sources, 'merge.ts': `${sources['merge.ts']}\nconst extra = await runShell(['git', 'log', '-1'], { cwd });\nconst extraOk = ranToExit(extra);\n` });
+	assert.deepEqual(withLookup, ['a lookup that is not listed: merge.ts: extra']);
+	const withHelper = auditProblems({ ...sources, 'merge.ts': `${sources['merge.ts']}\nconst ignored = await readShortSha(cwd, 'HEAD');\n` });
+	assert.deepEqual(withHelper, ['a read through a typed helper that is not listed: merge.ts: readShortSha x1']);
+	const moreOfAListed = auditProblems({ ...sources, 'merge.ts': `${sources['merge.ts']}\nawait branchForReport(cwd, [], 'x');\n` });
+	assert.equal(moreOfAListed.length, 2, 'a further call of a listed helper changes the count and fails');
+	const withSwallowing = auditProblems({ ...sources, 'tag.ts': `${sources['tag.ts']}\nconst b = await currentBranch(cwd);\n` });
+	assert.deepEqual(withSwallowing, ['a call of a helper that swallows a failure that is not listed: tag.ts: currentBranch']);
+	const unchecked = auditProblems({ ...sources, 'tag.ts': `${sources['tag.ts']}\nconst raw = await runShell(['git', 'tag'], { cwd });\nconst n = raw.stdout.length;\n` });
+	assert.ok(unchecked.includes('a runShell result whose process flags are never looked at: tag.ts: raw'));
 }
 
 test('git_amend wasPushed, git_reset willNeedForcePush and git_merge listConflicts keep their expected non-zero answers and fail or warn on process failures', async () => {

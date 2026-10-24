@@ -22,11 +22,14 @@ const NETWORK_RE = /could not resolve host|unable to access|network is unreachab
  * spawned, 'timed-out' when we killed it, 'missing-signin' or 'unreachable' when a network call's message
  * shows it, else 'rejected'.
  */
-export function failureKind(r: ShellResult, opts: { network?: boolean } = {}): ToolFailureKind {
+/** What the failure helpers read of a finished command: the result of runShell or of runShellBytes. */
+export type Outcome = Pick<ShellResult, 'spawnError' | 'timedOut' | 'stdoutTruncated' | 'code' | 'stderr'> & { stdout?: unknown };
+
+export function failureKind(r: Outcome, opts: { network?: boolean } = {}): ToolFailureKind {
   if (r.spawnError) { return 'missing-tool'; }
   if (r.timedOut) { return 'timed-out'; }
   if (opts.network === true) {
-    const text = `${r.stderr}\n${r.stdout}`;
+    const text = `${r.stderr}\n${typeof r.stdout === 'string' ? r.stdout : ''}`;
     if (SIGNIN_RE.test(text)) { return 'missing-signin'; }
     if (NETWORK_RE.test(text)) { return 'unreachable'; }
   }
@@ -34,7 +37,7 @@ export function failureKind(r: ShellResult, opts: { network?: boolean } = {}): T
 }
 
 /** True when the command ran to an exit, so its exit code is an answer; false when it was not spawned, was killed or its output was cut. */
-export function ranToExit(r: ShellResult): boolean {
+export function ranToExit(r: Outcome): boolean {
   return !r.spawnError && !r.timedOut && !r.stdoutTruncated && r.code !== null;
 }
 
@@ -81,6 +84,16 @@ export function readFailure(label: string, r: ShellResult, opts: { network?: boo
 export function conflictFailure(result: ToolResult, r: ShellResult): ToolResult {
   const kind = failureKind(r);
   return withFailure(result, kind, r.stderr.trim() || r.stdout.trim(), kind === 'timed-out' ? `${result.error ?? ''} (${UNKNOWN_OUTCOME})` : undefined);
+}
+
+/** A read-only git command run for a tool's answer: its result, or the failure to return when it could not give one. */
+export async function readGit(
+  label: string, argv: readonly string[], cwd: string, timeoutMs: number,
+): Promise<{ ok: true; r: ShellResult } | { ok: false; failure: ToolResult }> {
+  const r = await runShell(argv, { cwd, timeoutMs });
+  if (r.spawnError) { return { ok: false, failure: spawnFail(label, r.stderr) }; }
+  if (r.code !== 0) { return { ok: false, failure: fail(label, r) }; }
+  return { ok: true, r };
 }
 
 /** A call refused before any command ran (missing or malformed input): the default shape with kind 'rejected'. */

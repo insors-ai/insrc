@@ -30,6 +30,12 @@ import { gitCherryPickTool } from './cherry-pick.js';
 import { gitTagTool } from './tag.js';
 import { gitRemoteTool } from './remote.js';
 import { gitWorktreeTool } from './worktree.js';
+import { gitForEachRefTool } from './for-each-ref.js';
+import { gitCatFileTool } from './cat-file.js';
+import { gitLsTreeTool } from './ls-tree.js';
+import { gitLsFilesTool } from './ls-files.js';
+import { gitRevListTool } from './rev-list.js';
+import { gitRevParseTool } from './rev-parse.js';
 
 export function registerGitTools(): void {
   register(withFailureNet(gitStatusTool));
@@ -54,4 +60,10 @@ export function registerGitTools(): void {
   register(withFailureNet(gitTagTool));
   register(withFailureNet(gitRemoteTool));
   register(withFailureNet(gitWorktreeTool));
+  register(withFailureNet(gitForEachRefTool));
+  register(withFailureNet(gitCatFileTool));
+  register(withFailureNet(gitLsTreeTool));
+  register(withFailureNet(gitLsFilesTool));
+  register(withFailureNet(gitRevListTool));
+  register(withFailureNet(gitRevParseTool));
 }

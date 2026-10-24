@@ -331,3 +331,45 @@ export const GitCherryPickDataSchema = Type.Object({
   warnings: warnings(),
 });
 export type GitCherryPickData = Static<typeof GitCherryPickDataSchema>;
+
+// ---- the new read tools ----------------------------------------------------
+
+export const GitRevParseDataSchema = Type.Object({ values: Type.Array(Type.String()) });
+export type GitRevParseData = Static<typeof GitRevParseDataSchema>;
+
+export const GitRevListDataSchema = Type.Union([
+  Type.Object({ commits: Type.Array(Type.String()) }),
+  Type.Object({ count: Type.Number() }),
+]);
+export type GitRevListData = Static<typeof GitRevListDataSchema>;
+
+export const GitLsFilesDataSchema = Type.Object({ files: Type.Array(Type.String()) });
+export type GitLsFilesData = Static<typeof GitLsFilesDataSchema>;
+
+export const GitTreeEntrySchema = Type.Object({ mode: Type.String(), type: lits('blob', 'tree', 'commit'), sha: Type.String(), path: Type.String() });
+export const GitLsTreeDataSchema = Type.Union([
+  Type.Object({ entries: Type.Array(GitTreeEntrySchema) }),
+  Type.Object({ names: Type.Array(Type.String()) }),
+]);
+export type GitLsTreeData = Static<typeof GitLsTreeDataSchema>;
+
+export const GitCatFileObjectSchema = Type.Object({
+  rev: Type.String(),
+  exists: Type.Boolean(),
+  sha: Type.Optional(Type.String()),
+  type: Type.Optional(Type.String()),
+  size: Type.Optional(Type.Number()),
+  /** The object's bytes as UTF-8 text (encoding 'utf8'). */
+  content: Type.Optional(Type.String()),
+  /** The object's bytes, base64 (encoding 'base64'): lossless for binary. */
+  contentBase64: Type.Optional(Type.String()),
+});
+export const GitCatFileDataSchema = Type.Union([
+  Type.Object({ objects: Type.Array(GitCatFileObjectSchema) }),
+  Type.Object({ type: Type.String(), size: Type.Number() }),
+  Type.Object({ exists: Type.Boolean() }),
+]);
+export type GitCatFileData = Static<typeof GitCatFileDataSchema>;
+
+export const GitForEachRefDataSchema = Type.Object({ refs: Type.Array(Type.Record(Type.String(), Type.String())) });
+export type GitForEachRefData = Static<typeof GitForEachRefDataSchema>;

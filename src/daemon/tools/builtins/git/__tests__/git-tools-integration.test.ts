@@ -14,7 +14,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { execFileSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
 import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
+import { gitCatFileTool } from '../cat-file.js';
 import type { ApprovalGate, ApprovalRequest } from '../../../types.js';
 import { git, newRepo, registerForTests, toolDeps } from './_repo.js';
 
@@ -235,5 +238,221 @@ test('git_fetch depth 0 and 0.5 are rejected and git_fetch depth 1 runs as befor
 		assert.equal((await executeTool('git_fetch', { cwd: repo }, d)).success, true);
 	} finally {
 		rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); rmSync(dirname(wt), { recursive: true, force: true });
+	}
+});
+
+
+/** A repository holding a binary file, a text file with a non-ASCII character, and a bigger file. */
+function binaryRepo(): { repo: string; bytes: Buffer; sha: Record<string, string> } {
+	const repo = newRepo();
+	const bytes = Buffer.from(Array.from({ length: 256 }, (_, i) => i));
+	writeFileSync(join(repo, 'bin.bin'), bytes);
+	writeFileSync(join(repo, 't.txt'), 'h\u00e9llo\n');
+	writeFileSync(join(repo, 'big.txt'), 'x'.repeat(5000));
+	git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'files');
+	const sha = (rev: string): string => git(repo, 'rev-parse', rev).trim();
+	return { repo, bytes, sha: { bin: sha('HEAD:bin.bin'), txt: sha('HEAD:t.txt'), head: sha('HEAD') } };
+}
+
+/** A `git` on PATH that runs `body` (a shell script) instead of git. */
+function scriptedGit(dir: string, body: string): string {
+	const bin = join(dir, 'scripted-bin');
+	mkdirSync(bin, { recursive: true });
+	writeFileSync(join(bin, 'git'), `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+	return bin;
+}
+
+test('every new read tool returns data that fits its outputSchema', async () => {
+	registerForTests();
+	const { repo } = binaryRepo();
+	const unborn = newRepo();
+	try {
+		git(repo, 'branch', 'side'); git(repo, 'tag', 'v1');
+		const d = toolDeps(repo);
+		const calls: [string, Record<string, unknown>, (data: any) => void][] = [
+			['git_rev_parse', { rev: 'HEAD' }, data => assert.match(data.values[0], /^[0-9a-f]{40}$/)],
+			['git_rev_parse', { rev: 'HEAD', short: true }, data => assert.match(data.values[0], /^[0-9a-f]{7,}$/)],
+			['git_rev_parse', { rev: 'HEAD', abbrevRef: true }, data => assert.deepEqual(data.values, ['main'])],
+			['git_rev_parse', { rev: 'v1', verify: true }, data => assert.equal(data.values.length, 1)],
+			['git_rev_parse', { showToplevel: true, isInsideWorkTree: true }, data => assert.equal(data.values[1], 'true')],
+			['git_rev_parse', { isShallow: true }, data => assert.deepEqual(data.values, ['false'])],
+			['git_rev_parse', { gitDir: true }, data => assert.match(data.values[0], /\.git$/)],
+			['git_rev_list', { rev: 'HEAD' }, data => assert.equal(data.commits.length, 1)],
+			['git_rev_list', { rev: 'HEAD', count: true }, data => assert.equal(data.count, 1)],
+			['git_rev_list', { rev: 'HEAD', maxParents: 0, firstParent: true, limit: 5 }, data => assert.equal(data.commits.length, 1)],
+			['git_ls_files', {}, data => assert.deepEqual(data.files.sort(), ['big.txt', 'bin.bin', 't.txt'])],
+			['git_ls_files', { paths: ['t.txt'] }, data => assert.deepEqual(data.files, ['t.txt'])],
+			['git_ls_files', { others: true }, data => assert.deepEqual(data.files, [])],
+			['git_ls_tree', { rev: 'HEAD' }, data => assert.equal(data.entries.length, 3)],
+			['git_ls_tree', { rev: 'HEAD', nameOnly: true, recursive: true }, data => assert.equal(data.names.length, 3)],
+			['git_ls_tree', { rev: 'HEAD', paths: ['bin.bin'] }, data => assert.equal(data.entries[0].path, 'bin.bin')],
+			['git_cat_file', { rev: 'HEAD:t.txt' }, data => assert.equal(data.objects[0].content, 'h\u00e9llo\n')],
+			['git_cat_file', { rev: 'HEAD:t.txt', exists: true }, data => assert.deepEqual(data, { exists: true })],
+			['git_cat_file', { rev: 'HEAD:t.txt', type: true }, data => assert.deepEqual(data, { type: 'blob', size: 7 })],
+			['git_for_each_ref', {}, data => assert.deepEqual(data.refs.map((r: Record<string, string>) => r['refname']).sort(), ['refs/heads/main', 'refs/heads/side', 'refs/tags/v1'])],
+			['git_for_each_ref', { pattern: ['refs/tags'], fields: ['refname:short', 'objecttype'] }, data => assert.deepEqual(data.refs, [{ 'refname:short': 'v1', objecttype: 'commit' }])],
+		];
+		for (const [id, input, check] of calls) {
+			const r = await executeTool(id, { cwd: repo, ...input }, d);
+			assert.equal(r.success, true, `${id} ${JSON.stringify(input)}: ${r.output}`);
+			check(r.data);
+		}
+
+		// a detached HEAD
+		git(repo, 'checkout', '-q', '--detach');
+		const detached = await executeTool('git_rev_parse', { cwd: repo, rev: 'HEAD', abbrevRef: true }, d);
+		assert.deepEqual((detached.data as { values: string[] }).values, ['HEAD']);
+		assert.equal((await executeTool('git_rev_list', { cwd: repo, rev: 'HEAD', count: true }, d)).success, true);
+
+		// an unborn branch: the tools that can answer do, the others fail with a failure rather than invalid data
+		const u = toolDeps(unborn);
+		assert.deepEqual((await executeTool('git_ls_files', { cwd: unborn }, u)).data, { files: [] });
+		assert.deepEqual((await executeTool('git_for_each_ref', { cwd: unborn }, u)).data, { refs: [] });
+		assert.equal((await executeTool('git_rev_parse', { cwd: unborn, gitDir: true }, u)).success, true);
+		for (const [id, input] of [['git_rev_list', { rev: 'HEAD' }], ['git_ls_tree', { rev: 'HEAD' }], ['git_rev_parse', { rev: 'HEAD', verify: true }], ['git_cat_file', { rev: 'HEAD:x' , type: true }]] as const) {
+			const r = await executeTool(id, { cwd: unborn, ...input }, u);
+			assert.equal(r.success, false, id);
+			assert.ok(r.failure !== undefined, id);
+		}
+
+		// unsafe arguments are refused before git runs, and every new tool is a read
+		for (const [id, input] of [['git_rev_parse', { rev: '--exec-path' }], ['git_rev_list', { rev: '--all' }], ['git_ls_tree', { rev: '-r' }], ['git_cat_file', { rev: '--batch-all-objects' }],
+			['git_for_each_ref', { contains: '--help' }], ['git_ls_files', { paths: ['a\0b'] }]] as const) {
+			const r = await executeTool(id, { cwd: repo, ...input }, d);
+			assert.equal(r.success, false, id);
+			assert.match(r.output, /unsafe/, id);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(unborn, { recursive: true, force: true }); }
+});
+
+test('git_cat_file returns a binary blob unchanged in base64, batches several revs through stdin, ignores a replacement ref when isolated, rejects an object over maxBytes and stops on cancellation', async () => {
+	registerForTests();
+	const { repo, bytes, sha } = binaryRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		const d = toolDeps(repo);
+		// binary: lossless as base64, an error as utf8
+		const b64 = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:bin.bin', encoding: 'base64' }, d);
+		const obj = (b64.data as { objects: { contentBase64: string; sha: string; size: number; type: string }[] }).objects[0]!;
+		assert.deepEqual(Buffer.from(obj.contentBase64, 'base64'), bytes);
+		assert.equal(obj.sha, sha['bin']);
+		assert.deepEqual([obj.type, obj.size], ['blob', 256]);
+		const asText = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:bin.bin' }, d);
+		assert.equal(asText.success, false);
+		assert.match(asText.output, /not valid UTF-8/);
+
+		// several revs in one process, a missing one in the middle, and a path applied to each
+		const batch = await executeTool('git_cat_file', { cwd: repo, revs: ['HEAD:t.txt', 'HEAD:nope.txt', sha['head']!, 'HEAD'], encoding: 'base64' }, d);
+		const objects = (batch.data as { objects: { rev: string; exists: boolean; type?: string; contentBase64?: string }[] }).objects;
+		assert.deepEqual(objects.map(o => [o.rev, o.exists, o.type]), [['HEAD:t.txt', true, 'blob'], ['HEAD:nope.txt', false, undefined], [sha['head'], true, 'commit'], ['HEAD', true, 'commit']]);
+		assert.equal(Buffer.from(objects[0]!.contentBase64!, 'base64').toString('utf8'), 'h\u00e9llo\n');
+		const withPath = await executeTool('git_cat_file', { cwd: repo, revs: ['HEAD', 'HEAD~0'], path: 't.txt' }, d);
+		assert.deepEqual((withPath.data as { objects: { content: string }[] }).objects.map(o => o.content), ['h\u00e9llo\n', 'h\u00e9llo\n']);
+
+		// exists, type and size
+		assert.deepEqual((await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:nope.txt', exists: true }, d)).data, { exists: false });
+		assert.deepEqual((await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:bin.bin', size: true }, d)).data, { type: 'blob', size: 256 });
+		const noType = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:nope.txt', type: true }, d);
+		assert.equal(noType.success, false);
+
+		// a replacement ref changes what a plain read sees and does not change an isolated one
+		const replacement = execFileSync('git', ['hash-object', '-w', '--stdin'], { cwd: repo, input: 'replaced\n', encoding: 'utf8' }).trim();
+		git(repo, 'replace', sha['txt']!, replacement);
+		const isolated = await executeTool('git_cat_file', { cwd: repo, rev: sha['txt']! }, d);
+		assert.equal((isolated.data as { objects: { content: string }[] }).objects[0]?.content, 'h\u00e9llo\n', 'isolated: the original object');
+		const plain = await executeTool('git_cat_file', { cwd: repo, rev: sha['txt']!, isolated: false }, d);
+		assert.equal((plain.data as { objects: { content: string }[] }).objects[0]?.content, 'replaced\n', 'not isolated: the replacement');
+
+		// inherited configuration does not reach an isolated read
+		process.env['GIT_NO_REPLACE_OBJECTS'] = '';
+		process.env['GIT_DIR'] = '/nonexistent-git-dir';
+		try {
+			const viaEnv = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:t.txt' }, d);
+			assert.equal(viaEnv.success, true, `GIT_DIR in the environment is ignored: ${viaEnv.output}`);
+		} finally { delete process.env['GIT_DIR']; delete process.env['GIT_NO_REPLACE_OBJECTS']; }
+
+		// an object over maxBytes, and a read cut by the whole-call budget, fail
+		const big = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:big.txt', maxBytes: 100 }, d);
+		assert.equal(big.success, false);
+		assert.match(big.output, /5000 bytes, over maxBytes 100/);
+		assert.equal((await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:big.txt', maxBytes: 5000 }, d)).success, true);
+		const cut = await executeTool('git_cat_file', { cwd: repo, rev: 'HEAD:big.txt', stdoutLimit: 100 }, d);
+		assert.equal(cut.success, false);
+		assert.match(cut.output, /byte limit/);
+
+		// cancellation kills the process
+		process.env['PATH'] = `${scriptedGit(repo + '-fake', 'exec sleep 5')}:${savedPath ?? ''}`;
+		const ctl = new AbortController();
+		setTimeout(() => ctl.abort(), 100);
+		const started = Date.now();
+		const cancelled = await gitCatFileTool.execute({ cwd: repo, rev: 'HEAD' }, { ...d, signal: ctl.signal });
+		assert.equal(cancelled.success, false);
+		assert.match(cancelled.output, /cancelled/);
+		assert.ok(Date.now() - started < 4000, 'the process was killed, not waited for');
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(repo, { recursive: true, force: true }); rmSync(repo + '-fake', { recursive: true, force: true });
+	}
+});
+
+test('git_for_each_ref contains, merged, pointsAt and noMerged select the right refs', async () => {
+	registerForTests();
+	const repo = newRepo();
+	try {
+		writeFileSync(join(repo, 'a'), '1'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'c1');
+		const c1 = git(repo, 'rev-parse', 'HEAD').trim();
+		git(repo, 'branch', 'old'); git(repo, 'tag', 'v1');
+		writeFileSync(join(repo, 'a'), '2'); git(repo, 'commit', '-q', '-am', 'c2');
+		git(repo, 'checkout', '-q', '-b', 'feat');
+		writeFileSync(join(repo, 'b'), 'b'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'f1');
+		const f1 = git(repo, 'rev-parse', 'HEAD').trim();
+		git(repo, 'checkout', '-q', 'main');
+		const d = toolDeps(repo);
+		const names = async (input: Record<string, unknown>): Promise<string[]> => {
+			const r = await executeTool('git_for_each_ref', { cwd: repo, pattern: ['refs/heads'], fields: ['refname:short'], ...input }, d);
+			assert.equal(r.success, true, r.output);
+			return (r.data as { refs: Record<string, string>[] }).refs.map(x => x['refname:short']!).sort();
+		};
+		assert.deepEqual(await names({ contains: c1 }), ['feat', 'main', 'old']);
+		assert.deepEqual(await names({ contains: f1 }), ['feat']);
+		assert.deepEqual(await names({ merged: 'main' }), ['main', 'old']);
+		assert.deepEqual(await names({ noMerged: 'main' }), ['feat']);
+		assert.deepEqual(await names({ merged: 'feat' }), ['feat', 'main', 'old']);
+		assert.deepEqual(await names({ noMerged: 'feat' }), []);
+		assert.deepEqual(await names({ pointsAt: c1 }), ['old']);
+		assert.deepEqual(await names({ pointsAt: f1 }), ['feat']);
+		assert.deepEqual(await names({ merged: 'main', contains: c1 }), ['main', 'old']);
+		// remote-tracking refs and tags through patterns
+		const remote = mkdtempSync(join(tmpdir(), 'insrc-feremote-'));
+		git(remote, 'init', '-q', '--bare', '-b', 'main');
+		git(repo, 'remote', 'add', 'origin', remote); git(repo, 'push', '-q', 'origin', 'main', 'feat');
+		const tracking = await names({ pattern: ['refs/remotes/origin'], contains: f1 });
+		assert.deepEqual(tracking, ['origin/feat']);
+		assert.deepEqual(await names({ pattern: ['refs/tags'], pointsAt: c1 }), ['v1']);
+		rmSync(remote, { recursive: true, force: true });
+		// sort and count
+		const sorted = await executeTool('git_for_each_ref', { cwd: repo, pattern: ['refs/heads'], fields: ['refname:short'], sort: '-refname', count: 2 }, d);
+		assert.deepEqual((sorted.data as { refs: Record<string, string>[] }).refs.map(x => x['refname:short']), ['old', 'main']);
+		// bad input
+		for (const input of [{ sort: 'x;y' }, { fields: ['nope'] }, { count: 0 }, { merged: '--all' }, { pattern: ['-x'] }]) {
+			const r = await executeTool('git_for_each_ref', { cwd: repo, ...input }, d);
+			assert.equal(r.success, false, JSON.stringify(input));
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('git_cat_file reports git diagnostics exceed byte limit when stderr passes its limit', async () => {
+	registerForTests();
+	const repo = newRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		process.env['PATH'] = `${scriptedGit(repo + '-fake', 'yes diagnostics >&2')}:${savedPath ?? ''}`;
+		const r = await gitCatFileTool.execute({ cwd: repo, rev: 'HEAD', stderrLimit: 100 }, toolDeps(repo));
+		assert.equal(r.success, false);
+		assert.equal(r.output, '[git_cat_file] failed: git diagnostics exceed byte limit');
+		assert.equal(r.failure?.kind, 'rejected');
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(repo, { recursive: true, force: true }); rmSync(repo + '-fake', { recursive: true, force: true });
 	}
 });

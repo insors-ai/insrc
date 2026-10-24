@@ -76,6 +76,10 @@
     "src/shared/db-driver.ts": {
       "classification": "factory-contract",
       "rationale": "t2/t19: shared factory type declaration, no actual construction"
+    },
+    "src/daemon/db/management.ts": {
+      "classification": "management-owner",
+      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
     }
   },
   "sites": [
@@ -388,6 +392,46 @@
       "file": "src/daemon/db/index.ts",
       "expression": "getFactory",
       "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.beginMutation",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.safeList",
+      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",

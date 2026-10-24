@@ -186,6 +186,11 @@ export class ManagedRegistry {
 	get snapshot(): RegistrySnapshot {
 		return structuredClone(this.#snapshot);
 	}
+	/** Read-only drift check used before credential ports and mutation admission. */
+	async inspect(): Promise<RegistrySnapshot> {
+		await this.#check(this.#snapshot);
+		return this.snapshot;
+	}
 	async close(): Promise<void> {
 		await this.#tail;
 		if (stores.get(this.path) === this)

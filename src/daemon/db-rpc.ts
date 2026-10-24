@@ -30,6 +30,7 @@ import {
 	listRegisteredKinds,
 } from './db/registry.js';
 import {
+	connectionsPath,
 	loadConnections,
 	repoIdOf,
 	saveConnections,
@@ -41,6 +42,8 @@ import {
 	resolveSecrets,
 } from './db/secrets.js';
 import { reloadAll } from './db/pool-cache.js';
+import { assertUnmanagedWrite } from './db/managed-store.js';
+import { savedManagementFor, withSavedRootGate } from './db/management.js';
 import type {
 	ConnectionConfig,
 	Driver,
@@ -131,41 +134,70 @@ export interface SaveConnectionResult {
 export async function saveConnectionRpc(params: {
 	readonly repoRoot?: unknown;
 	readonly config?: unknown;
-}): Promise<SaveConnectionResult | { error: string }> {
+}): Promise<SaveConnectionResult | {
+	error: string;
+}> {
 	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
-	if (repoRoot === '') { return { error: 'repoRoot is required' }; }
-
-	const cfg = parseSaveInput(params.config);
-	if (typeof cfg === 'string') { return { error: cfg }; }
-	const validation = validateForFamily(cfg);
-	if (validation !== null) { return { error: validation }; }
-
-	const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
-	const ref = makeSecretRef(repoIdOf(repoRoot), cfg.id);
-
-	let urlForFile = cfg.url;
-	if (family !== 'file' && cfg.url !== undefined && !cfg.url.includes('${secret:')) {
-		urlForFile = await extractUrlPassword(cfg.url, ref);
+	if (repoRoot === '') {
+		return { error: 'repoRoot is required' };
 	}
-	const next: ConnectionConfig = buildPersistedConfig(cfg, family, urlForFile, ref);
-
-	const existing = await loadConnections(repoRoot)
-		.then(r => r.resolved)
-		.catch(() => [] as readonly ConnectionConfig[]);
-	const filtered = existing.filter(c => c.id !== cfg.id);
-	const wrotePath = await saveConnections(repoRoot, {
-		connections: [...filtered, next],
+	const cfg = parseSaveInput(params.config);
+	if (typeof cfg === 'string') {
+		return { error: cfg };
+	}
+	const validation = validateForFamily(cfg);
+	if (validation !== null) {
+		return { error: validation };
+	}
+	const managed = savedManagementFor(repoRoot);
+	if (managed) {
+		const outcome = await managed.legacyUpsert({ connectionIdentity: 'legacy-rpc', access: { lookupRoot: repoRoot, managementRepoRoot: repoRoot, daemonEpoch: 'legacy-rpc' } }, cfg);
+		if (outcome.status === 'rejected')
+			return { error: `${outcome.code}: ${outcome.message}` };
+		const connection = managed.legacyProjection(cfg.id);
+		const endpoint = connection?.publicConfig['endpoint'];
+		return { id: cfg.id, family: connection?.family ?? cfg.family ?? familyOf(cfg.kind) ?? 'rdbms', wrotePath: connectionsPath(repoRoot), ...(typeof endpoint === 'string' ? { redactedUrl: endpoint } : {}) };
+	}
+	return withSavedRootGate(repoRoot, async () => {
+		// Read and guard BEFORE any credential extraction. Only ENOENT is unmanaged empty.
+		let loaded: Awaited<ReturnType<typeof loadConnections>>;
+		try {
+			loaded = await loadConnections(repoRoot);
+		}
+		catch {
+			return { error: 'registry-unreadable: Connection registry cannot be read safely.' };
+		}
+		try {
+			await assertUnmanagedWrite(connectionsPath(repoRoot), loaded.file);
+		}
+		catch {
+			return { error: 'recovery-required: Connection management requires recovery.' };
+		}
+		const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
+		const ref = makeSecretRef(repoIdOf(repoRoot), cfg.id);
+		let urlForFile = cfg.url;
+		if (family !== 'file' && cfg.url !== undefined && !cfg.url.includes('${secret:')) {
+			urlForFile = await extractUrlPassword(cfg.url, ref);
+		}
+		const next: ConnectionConfig = buildPersistedConfig(cfg, family, urlForFile, ref);
+		const existing = loaded.file.connections;
+		const filtered = existing.filter(c => c.id !== cfg.id);
+		const wrotePath = await saveConnections(repoRoot, {
+			...loaded.file,
+			connections: [...filtered, next],
+		});
+		try {
+			await reloadAll();
+		}
+		catch (err) {
+			log.warn({ err: (err as Error).message }, 'pool reload after save failed');
+		}
+		const result: SaveConnectionResult = next.url !== undefined
+			? { id: next.id, family, redactedUrl: next.url, wrotePath }
+			: { id: next.id, family, wrotePath };
+		return result;
 	});
-
-	try { await reloadAll(); }
-	catch (err) { log.warn({ err: (err as Error).message }, 'pool reload after save failed'); }
-
-	const result: SaveConnectionResult = next.url !== undefined
-		? { id: next.id, family, redactedUrl: next.url, wrotePath }
-		: { id: next.id, family, wrotePath };
-	return result;
 }
-
 // ---------------------------------------------------------------------------
 // deleteConnection
 // ---------------------------------------------------------------------------

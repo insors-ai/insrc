@@ -108,6 +108,13 @@
         "status": "ignored",
         "rationale": "k1-k6 are not touched by a post-success rule stage",
         "resolvedAt": "2026-10-24T14:18:48.777Z"
+      },
+      "q9062bed4": {
+        "question": "sbdry3 (partial): ToolHookContext.caller allows undefined (ToolDeps.caller is optional since s3) and ToolResultHookReport is merged into ToolResult; both refine the sc1 sketch and may need a sharedContract amendment.",
+        "status": "resolved",
+        "choice": "Confirm existing contract coverage",
+        "rationale": "Accepted refinements, no amendment (amendment tool is HLD-only); recorded in docs/plans/tool-registry.md",
+        "resolvedAt": "2026-10-24T14:19:14.831Z"
       }
     }
   },

@@ -157,6 +157,7 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 						<ApprovalPrompt
 							request={approvals.pending[0]}
 							more={approvals.pending.length - 1}
+							notice={approvals.notice}
 							onAnswer={decision => approvals.answer(approvals.pending[0]!.requestId, decision)}
 						/>
 					)}

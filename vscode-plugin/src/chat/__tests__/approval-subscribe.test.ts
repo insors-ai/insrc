@@ -22,7 +22,7 @@ import { ApprovalBroker } from '../../../../src/daemon/approval-broker.js';
 import { IpcServer } from '../../../../src/daemon/server.js';
 import { createIpcClient } from '../../../../src/shared/ipc-client.js';
 import type { ApprovalRequest } from '../../../../src/shared/types.js';
-import { approvalText, createApprovalPrompter, type ApprovalChoice, type ApprovalNotifier } from '../approval-subscribe.js';
+import { approvalDetails, approvalText, createApprovalPrompter, type ApprovalChoice, type ApprovalNotifier } from '../approval-subscribe.js';
 
 let seq = 0;
 function req(): ApprovalRequest {
@@ -135,7 +135,36 @@ test('approval-subscribe.test.ts: a cancel frame closes the notification and the
 test('approval-subscribe.test.ts: the extension attaches the prompter and shows Approve and Decline', () => {
 	const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'extension.ts'), 'utf8');
 	assert.match(src, /createApprovalPrompter\(\{/);
-	assert.match(src, /showWarningMessage\(text, 'Approve', 'Decline'\)/);
+	assert.match(src, /showWarningMessage\(text, 'Approve', 'Decline', 'Show details'\)/);
 	assert.match(src, /approvals\.start\(\)/);
 	assert.match(approvalText(req()), /^Destructive call: k8s_delete in \/work\/repo with \{/);
+});
+
+test('approval-subscribe.test.ts: a long call keeps its length in the text, the details hold the whole call, and a late answer is reported', async () => {
+	const long: ApprovalRequest = { ...req(), arguments: { script: 'x'.repeat(2000), target: 'prod' } };
+	const text = approvalText(long);
+	assert.match(text, /characters in total; see the full call\]/);
+	assert.ok(text.length < 600);
+	const details = JSON.parse(approvalDetails(long)) as { tool: string; repository: string; arguments: { script: string; target: string } };
+	assert.equal(details.arguments.script.length, 2000, 'the details hold the whole call');
+	assert.equal(details.tool, 'k8s_delete');
+
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-ed-approval-'));
+	const path = join(dir, 'd.sock');
+	const { broker, server } = await startServer(path);
+	const surface = fakeSurface(); const notices: string[] = [];
+	const prompter = createApprovalPrompter({ client: createIpcClient(() => createConnection(path)), notifier: { ...surface.notifier, notice: t => notices.push(t) }, reconnectMs: 50 });
+	try {
+		prompter.start();
+		await new Promise(r => setTimeout(r, 100));
+		const r = req(); const out = broker.ask(r);
+		await until(() => surface.shown.length === 1);
+		(broker as unknown as { finish: (id: string, o: unknown, why: string) => void }).finish(r.requestId, 'timed-out', 'no-client'); // closed without a cancel frame
+		assert.equal(await out, 'timed-out');
+		surface.shown[0]!.click('approve');
+		await until(() => notices.length === 1);
+		assert.match(notices[0]!, /no longer open/);
+	} finally {
+		prompter.stop(); server.disconnectClients(); await server.close(); rmSync(dir, { recursive: true, force: true });
+	}
 });

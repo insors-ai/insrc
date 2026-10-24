@@ -1396,9 +1396,11 @@ A destructive call ignores all of this: no setting, chat mode, argument or calle
 
 The daemon holds each pending request, with a 300 second wait. A client (the terminal client, the editor) opens the `approval.subscribe` stream when it attaches and receives each request as a `gate` frame: the tool, the repository, the exact arguments (long values truncated for display), a preview and the time left. It answers with one `approval.answer` call (`{ requestId, decision: "approve" | "decline" }`, reply `{ accepted }`). The first answer wins; the others see their prompt close.
 
+The arguments in a request are a display copy: values under keys that look secret (password, token, api key, credential, authorization, cookie and the like) are shown as `[redacted]`, strings over the display limit are cut with their full length noted, and cyclic or very deep values are summarised. The call that runs is the original, untouched. A client answers a request only when the answer carries its own `requestId`, and an answer that arrives after the 300 second expiry is not accepted (`{ accepted: false }`); the client then tells you the request is no longer open. If the client cannot send your answer, the prompt comes back with the reason.
+
 The call is **denied, and the tool does not run**, when you decline, when nobody answers in time, when no client has the stream open, or when the caller cancels. The caller gets a failed result with kind `denied` and a reason (`declined`, `timed-out`, `no-client`, `cancelled`). Closing the last client resolves every pending request as `no-client`; pending requests are not kept across a daemon restart, and the clients reopen the stream by themselves.
 
-In the terminal client the question appears above the panes and takes the keys until answered (`y` approve, `n` decline). In the editor it is a warning toast with Approve and Decline; VS Code cannot dismiss a toast programmatically, so after a cancel the old toast stays on screen but a click on it sends nothing.
+In the terminal client the question appears above the panes and takes the keys until answered (`y` approve, `n` decline). In the editor it is a warning toast with Approve and Decline; VS Code cannot dismiss a toast programmatically, so after a cancel the old toast stays on screen but a click on it sends nothing. The toast also has **Show details**, which opens the full call as JSON and then asks again.
 
 ## CLI reference
 

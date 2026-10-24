@@ -24,7 +24,7 @@ export function readCommonApprovalMode(configPath: string = PATHS.config): Commo
 	if (!existsSync(configPath)) return 'auto';
 	let value: unknown;
 	try {
-		const parsed = JSON.parse(readFileSync(configPath, 'utf8')) as { tools?: { commonApproval?: unknown } };
+		const parsed = JSON.parse(readFileSync(configPath, 'utf8')) as { tools?: { commonApproval?: unknown | undefined } | undefined };
 		value = parsed.tools?.commonApproval;
 	} catch (err) {
 		log.warn({ configPath, err: (err as Error).message }, 'config.json cannot be read; tools.commonApproval defaults to auto');

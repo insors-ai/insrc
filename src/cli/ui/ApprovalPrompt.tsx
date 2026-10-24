@@ -24,6 +24,8 @@ export function ApprovalPrompt(props: {
 	request: ApprovalRequest;
 	/** How many more requests wait behind this one. */
 	more: number;
+	/** Why the last answer did not go through, shown under the prompt. */
+	notice?: string | undefined;
 	onAnswer: (decision: 'approve' | 'decline') => void;
 }): ReactElement {
 	const { request: r } = props;
@@ -49,6 +51,7 @@ export function ApprovalPrompt(props: {
 			<Text>Arguments: {JSON.stringify(r.arguments)}</Text>
 			{r.preview !== undefined && <Text dimColor>{r.preview.title}: {r.preview.content}</Text>}
 			<Text dimColor>{r.reason} · {left}s left</Text>
+			{props.notice !== undefined && <Text color="red">{props.notice}</Text>}
 			<Text><Text color="green">y</Text> approve   <Text color="red">n</Text> decline</Text>
 		</Box>
 	);

@@ -10,11 +10,9 @@
  * restart (a restart loses the pending requests, so the list is cleared when the stream ends).
  */
 
-import { getLogger } from '../../shared/logger.js';
-import type { IpcClient, IpcStreamHandle } from '../../shared/ipc-client.js';
-import type { ApprovalAnswerResult, ApprovalGateFrame, ApprovalRequest } from '../../shared/types.js';
-
-const log = getLogger('cli-approval');
+import type { IpcClient } from '../../shared/ipc-client.js';
+import { createApprovalStream } from '../../shared/approval-stream.js';
+import type { ApprovalAnswerResult, ApprovalRequest } from '../../shared/types.js';
 
 export interface ApprovalWatcher {
 	/** The requests waiting for an answer, oldest first. */
@@ -24,59 +22,49 @@ export interface ApprovalWatcher {
 	/** Open the stream (and reopen it when it ends) until stop(). */
 	start(): void;
 	stop(): void;
-	/** Answer a request; it leaves the list at once. */
+	/** A one-line message about the last answer that did not go through, or undefined. */
+	notice(): string | undefined;
+	/** Answer a request; it leaves the list at once and comes back if the answer cannot be sent. */
 	answer(requestId: string, decision: 'approve' | 'decline'): Promise<ApprovalAnswerResult>;
 }
 
-export function createApprovalWatcher(opts: { readonly client: IpcClient; readonly reconnectMs?: number }): ApprovalWatcher {
-	const { client } = opts;
-	const reconnectMs = opts.reconnectMs ?? 2000;
+export function createApprovalWatcher(opts: { readonly client: IpcClient; readonly reconnectMs?: number | undefined }): ApprovalWatcher {
 	let requests: ApprovalRequest[] = [];
+	let note: string | undefined;
 	const listeners = new Set<() => void>();
-	let handle: IpcStreamHandle | undefined;
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	let stopped = true;
-
 	const changed = (): void => { for (const l of [...listeners]) l(); };
 	const set = (next: ApprovalRequest[]): void => { requests = next; changed(); };
+	const setNote = (text: string | undefined): void => { note = text; changed(); };
 
-	const onFrame = (msg: { stream: string; data: unknown }): void => {
-		if (msg.stream !== 'gate') return;
-		const frame = msg.data as ApprovalGateFrame;
-		if (frame.type === 'request') {
-			if (!requests.some(r => r.requestId === frame.request.requestId)) set([...requests, frame.request]);
-		} else if (frame.type === 'cancel') {
-			if (requests.some(r => r.requestId === frame.requestId)) set(requests.filter(r => r.requestId !== frame.requestId));
-		}
-	};
-
-	const open = (): void => {
-		if (stopped || handle !== undefined || client.stream === undefined) return;
-		handle = client.stream('approval.subscribe', {}, onFrame, err => {
-			handle = undefined;
-			// The daemon denies what was pending when the stream ended, so nothing is left to answer.
-			if (requests.length > 0) set([]);
-			if (stopped) return;
-			if (err !== undefined) log.debug({ err: err.message }, 'approval stream ended; reopening');
-			timer = setTimeout(open, reconnectMs);
-			timer.unref?.();
-		});
-	};
+	const stream = createApprovalStream({
+		client: opts.client,
+		reconnectMs: opts.reconnectMs,
+		onRequest: r => { if (!requests.some(x => x.requestId === r.requestId)) set([...requests, r]); },
+		onCancel: id => { if (requests.some(x => x.requestId === id)) set(requests.filter(x => x.requestId !== id)); },
+		// The daemon denies what was pending when the stream ended, so nothing is left to answer.
+		onEnd: () => { if (requests.length > 0) set([]); },
+	});
 
 	return {
 		pending: () => requests,
+		notice: () => note,
 		subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
-		start() { stopped = false; open(); },
-		stop() {
-			stopped = true;
-			if (timer !== undefined) clearTimeout(timer);
-			const h = handle; handle = undefined;
-			h?.close();
-			if (requests.length > 0) set([]);
-		},
+		start() { stream.start(); },
+		stop() { stream.stop(); },
 		async answer(requestId, decision) {
-			if (requests.some(r => r.requestId === requestId)) set(requests.filter(r => r.requestId !== requestId));
-			return client.rpc<ApprovalAnswerResult>('approval.answer', { requestId, decision });
+			const request = requests.find(r => r.requestId === requestId);
+			if (request === undefined) return { accepted: false };
+			// The prompt leaves at once; if the answer does not reach the daemon it comes back, with the reason.
+			set(requests.filter(r => r.requestId !== requestId));
+			try {
+				const result = await opts.client.rpc<ApprovalAnswerResult>('approval.answer', { requestId, decision });
+				setNote(result.accepted ? undefined : `${request.toolId}: that request was no longer open (it timed out, was cancelled or was answered elsewhere)`);
+				return result;
+			} catch (err) {
+				if (!requests.some(r => r.requestId === requestId)) set([request, ...requests]);
+				setNote(`could not send your answer for ${request.toolId}: ${err instanceof Error ? err.message : String(err)}`);
+				throw err;
+			}
 		},
 	};
 }

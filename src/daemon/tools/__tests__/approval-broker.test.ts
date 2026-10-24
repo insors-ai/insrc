@@ -101,3 +101,12 @@ test('approval-broker.test.ts: a late subscriber receives the still-pending requ
 	assert.equal((await p as { decision: string }).decision, 'approve');
 	assert.equal((await p2 as { decision: string }).decision, 'approve');
 });
+
+test('approval-broker.test.ts: an answer that arrives after the expiry is not accepted', async () => {
+	const b = new ApprovalBroker(); const s = sink(); b.subscribe(s.send);
+	const r = req(40);
+	const p = b.ask(r);
+	await new Promise(res => setTimeout(res, 45)); // past expiresAt; the timer callback may not have run yet
+	assert.deepEqual(b.answer(r.requestId, 'approve'), { accepted: false });
+	assert.equal(await p, 'timed-out');
+});

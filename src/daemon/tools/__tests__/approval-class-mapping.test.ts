@@ -29,7 +29,7 @@ interface SnapshotTool {
 	inputSchema: unknown;
 	requiresApproval: 'true' | 'false' | 'absent' | 'function';
 	destructive: boolean;
-	probes?: Array<{ input: Record<string, unknown>; asks: boolean }>;
+	probes?: Array<{ input: Record<string, unknown>; asks: boolean }> | undefined;
 }
 const snapshot = (JSON.parse(readFileSync(join(HERE, 'fixtures', 'approval-snapshot.json'), 'utf8')) as { tools: SnapshotTool[] }).tools;
 

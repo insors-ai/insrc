@@ -49,7 +49,7 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createApprovalPrompter } from './chat/approval-subscribe.js';
+import { approvalDetails, createApprovalPrompter } from './chat/approval-subscribe.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
@@ -108,13 +108,24 @@ export function activate(context: vscode.ExtensionContext): void {
   const approvals = createApprovalPrompter({
     client,
     notifier: {
-      show: (text) => {
+      show: (text, request) => {
         let closed = false;
-        const choice = Promise.resolve(vscode.window.showWarningMessage(text, 'Approve', 'Decline')).then(
-          (c) => (closed || c === undefined ? undefined : c === 'Approve' ? 'approve' as const : 'decline' as const),
-        );
-        return { choice, close: () => { closed = true; } };
+        // 'Show details' opens the whole call in an editor (the toast cannot hold it), then asks again.
+        const ask = async (): Promise<'approve' | 'decline' | undefined> => {
+          for (;;) {
+            const c = await vscode.window.showWarningMessage(text, 'Approve', 'Decline', 'Show details');
+            if (closed || c === undefined) return undefined;
+            if (c === 'Show details') {
+              const doc = await vscode.workspace.openTextDocument({ content: approvalDetails(request), language: 'json' });
+              await vscode.window.showTextDocument(doc, { preview: true });
+              continue;
+            }
+            return c === 'Approve' ? 'approve' : 'decline';
+          }
+        };
+        return { choice: ask(), close: () => { closed = true; } };
       },
+      notice: (text) => { void vscode.window.showInformationMessage(text, {}); },
     },
   });
   approvals.start();

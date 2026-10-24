@@ -35,7 +35,7 @@ test('tools-common-approval.test.ts: config catalog entry tools.commonApproval: 
 		const configPath = join(dir, 'config.json');
 		// A fresh config gets the default from the boot reconcile.
 		assert.equal(reconcileConfigFile({ configPath, catalog: CONFIG_CATALOG }).kind, 'first-boot');
-		const fresh = JSON.parse(readFileSync(configPath, 'utf8')) as { tools?: { commonApproval?: string } };
+		const fresh = JSON.parse(readFileSync(configPath, 'utf8')) as { tools?: { commonApproval?: string | undefined } | undefined };
 		assert.equal(fresh.tools?.commonApproval, 'auto');
 		assert.equal(readCommonApprovalMode(configPath), 'auto');
 

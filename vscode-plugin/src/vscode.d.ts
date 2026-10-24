@@ -145,6 +145,8 @@ declare module 'vscode' {
     export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
     /** Surface a non-blocking error toast (sc8 Notifier — a rejected config write). */
     export function showErrorMessage(message: string): PromiseLike<string | undefined>;
+    /** Show a document in an editor (the approval prompt's full call). */
+    export function showTextDocument(document: unknown, options?: { readonly preview?: boolean | undefined; readonly preserveFocus?: boolean | undefined }): PromiseLike<unknown>;
     /** Surface a non-blocking warning toast (S006 edit-governance notes, e.g. non-git revert). */
     export function showWarningMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
     /** Create a webview panel in `showOptions` column (S004 sc9 WebviewPanelHost). */
@@ -226,6 +228,8 @@ declare module 'vscode' {
     export function onDidChangeConfiguration(listener: (e: ConfigurationChangeEvent) => unknown): Disposable;
     /** Register a read-only content provider for a custom URI scheme (S006 baseline diff side). */
     export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
+    /** Open an unsaved document from content (the approval prompt's full call). */
+    export function openTextDocument(options: { readonly content?: string | undefined; readonly language?: string | undefined }): PromiseLike<unknown>;
     /** Watch files matching a pattern for changes on disk (the review pane's open document). */
     export function createFileSystemWatcher(pattern: RelativePattern): FileSystemWatcher;
   }

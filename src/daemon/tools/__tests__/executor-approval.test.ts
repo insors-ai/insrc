@@ -124,3 +124,32 @@ test('executor-approval.test.ts: a bad input is rejected before any prompt', asy
 	assert.equal(requests.length, 0, 'no prompt for a call that cannot go ahead');
 	assert.equal(t.ran, 0);
 });
+
+test('executor-approval.test.ts: only a matching approval runs the tool; a decline object, another request id or a gate that cannot describe the call do not', async () => {
+	_resetRegistryForTests();
+	const t = tool('ap_destructive', 'destructive'); registerTool(t);
+
+	// A gate may answer with an object that says decline: the tool must not run.
+	gate(r => ({ requestId: r.requestId, decision: 'decline' }));
+	const declined = await executeTool('ap_destructive', {}, deps());
+	assert.equal(declined.failure?.denial, 'declined');
+	assert.equal(t.ran, 0);
+
+	// An approval for a different request is not an approval for this one.
+	gate(() => ({ requestId: 'some-other-request', decision: 'approve' }));
+	const other = await executeTool('ap_destructive', {}, deps());
+	assert.equal(other.failure?.kind, 'denied');
+	assert.equal(t.ran, 0);
+
+	// A call that cannot be described (a circular argument is fine, a throwing preview is fine) never throws out of executeTool.
+	const circular: Record<string, unknown> = {}; circular['self'] = circular;
+	const requests = gate(approve);
+	const r = await executeTool('ap_destructive', circular, deps());
+	assert.equal(r.success, true, 'a circular argument is shown as [circular] and the call goes ahead once approved');
+	assert.deepEqual(requests[0]!.arguments, { self: '[circular]' });
+
+	const broken = tool('ap_broken_gate', 'destructive', { buildApprovalGate: () => { throw new Error('preview exploded'); } });
+	registerTool(broken);
+	const ok = await executeTool('ap_broken_gate', { a: 1 }, deps());
+	assert.equal(ok.success, true, 'a throwing preview falls back to the generic one');
+});

@@ -16,8 +16,9 @@
  * to close it, which a notifier built on a closable surface can do.
  */
 
-import type { IpcClient, IpcStreamHandle } from '../../../src/shared/ipc-client.js';
-import type { ApprovalAnswerResult, ApprovalGateFrame, ApprovalRequest } from '../../../src/shared/types.js';
+import type { IpcClient } from '../../../src/shared/ipc-client.js';
+import { createApprovalStream } from '../../../src/shared/approval-stream.js';
+import type { ApprovalAnswerResult, ApprovalRequest } from '../../../src/shared/types.js';
 
 export type ApprovalChoice = 'approve' | 'decline';
 
@@ -31,6 +32,8 @@ export interface ShownApproval {
 
 export interface ApprovalNotifier {
 	show(text: string, request: ApprovalRequest): ShownApproval;
+	/** Tell the user something that is not a question (an answer that arrived too late). */
+	notice?(text: string): void;
 }
 
 export interface ApprovalPrompter {
@@ -42,25 +45,29 @@ export interface ApprovalPrompter {
 
 const ARG_MAX = 300;
 
-/** The notification text: tool, repository and the exact arguments. */
+/** The notification text: tool, repository and the exact arguments; a long one keeps its length. */
 export function approvalText(r: ApprovalRequest): string {
 	const args = JSON.stringify(r.arguments);
-	const shown = args.length > ARG_MAX ? `${args.slice(0, ARG_MAX)}...` : args;
+	const shown = args.length > ARG_MAX ? `${args.slice(0, ARG_MAX)}... [${args.length} characters in total; see the full call]` : args;
 	const kind = r.approvalClass === 'destructive' ? 'Destructive call' : 'Approval needed';
 	return `${kind}: ${r.toolId} in ${r.repoPath} with ${shown}`;
+}
+
+/** The whole request, as the user can inspect it before answering (what the notification cannot hold). */
+export function approvalDetails(r: ApprovalRequest): string {
+	return JSON.stringify({
+		tool: r.toolId, class: r.approvalClass, repository: r.repoPath, arguments: r.arguments,
+		...(r.preview !== undefined ? { preview: r.preview } : {}), reason: r.reason, expiresAt: r.expiresAt,
+	}, null, 2);
 }
 
 export function createApprovalPrompter(opts: {
 	readonly client: IpcClient;
 	readonly notifier: ApprovalNotifier;
-	readonly reconnectMs?: number;
+	readonly reconnectMs?: number | undefined;
 }): ApprovalPrompter {
 	const { client, notifier } = opts;
-	const reconnectMs = opts.reconnectMs ?? 2000;
 	const shown = new Map<string, ShownApproval>();
-	let handle: IpcStreamHandle | undefined;
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	let stopped = true;
 
 	const forget = (requestId: string, close: boolean): void => {
 		const s = shown.get(requestId);
@@ -73,42 +80,30 @@ export function createApprovalPrompter(opts: {
 		if (shown.has(request.requestId)) return;
 		const s = notifier.show(approvalText(request), request);
 		shown.set(request.requestId, s);
-		void Promise.resolve(s.choice).then(choice => {
+		void Promise.resolve(s.choice).then(async choice => {
 			// Closed by a cancel frame (or by a restart) before the user clicked: send nothing.
 			if (shown.get(request.requestId) !== s) return;
 			shown.delete(request.requestId);
 			if (choice === undefined) return; // dismissed: the request stays open on other screens until it times out
-			return client.rpc<ApprovalAnswerResult>('approval.answer', { requestId: request.requestId, decision: choice });
-		}).catch(() => { /* the daemon went away; the request is denied with it */ });
-	};
-
-	const onFrame = (msg: { stream: string; data: unknown }): void => {
-		if (msg.stream !== 'gate') return;
-		const frame = msg.data as ApprovalGateFrame;
-		if (frame.type === 'request') onRequest(frame.request);
-		else if (frame.type === 'cancel') forget(frame.requestId, true);
-	};
-
-	const connect = (): void => {
-		if (stopped || handle !== undefined || client.stream === undefined) return;
-		handle = client.stream('approval.subscribe', {}, onFrame, () => {
-			handle = undefined;
-			for (const id of [...shown.keys()]) forget(id, true); // the daemon denied them when the stream ended
-			if (stopped) return;
-			timer = setTimeout(connect, reconnectMs);
-			timer.unref?.();
+			const result = await client.rpc<ApprovalAnswerResult>('approval.answer', { requestId: request.requestId, decision: choice });
+			if (!result.accepted) notifier.notice?.(`${request.toolId}: that approval request was no longer open (it timed out, was cancelled or was answered elsewhere)`);
+		}).catch(err => {
+			notifier.notice?.(`${request.toolId}: your answer could not be sent (${err instanceof Error ? err.message : String(err)}); the call was denied`);
 		});
 	};
 
+	const stream = createApprovalStream({
+		client,
+		reconnectMs: opts.reconnectMs,
+		onRequest,
+		onCancel: id => forget(id, true),
+		// The daemon denied what was open when the stream ended.
+		onEnd: () => { for (const id of [...shown.keys()]) forget(id, true); },
+	});
+
 	return {
-		start() { stopped = false; connect(); },
-		stop() {
-			stopped = true;
-			if (timer !== undefined) clearTimeout(timer);
-			const h = handle; handle = undefined;
-			h?.close();
-			for (const id of [...shown.keys()]) forget(id, true);
-		},
+		start: () => stream.start(),
+		stop: () => stream.stop(),
 		open: () => [...shown.keys()],
 	};
 }

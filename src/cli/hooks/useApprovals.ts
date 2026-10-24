@@ -13,17 +13,19 @@ import { useEffect, useState } from 'react';
 import type { ApprovalRequest } from '../../shared/types.js';
 import { useServices } from '../ui/context.js';
 
-export function useApprovals(): { readonly pending: readonly ApprovalRequest[]; answer(requestId: string, decision: 'approve' | 'decline'): void } {
+export function useApprovals(): { readonly pending: readonly ApprovalRequest[]; readonly notice: string | undefined; answer(requestId: string, decision: 'approve' | 'decline'): void } {
 	const watcher = useServices().approvals;
 	const [pending, setPending] = useState<readonly ApprovalRequest[]>(watcher?.pending() ?? []);
+	const [notice, setNotice] = useState<string | undefined>(watcher?.notice());
 	useEffect(() => {
 		if (watcher === undefined) return;
-		const off = watcher.subscribe(() => setPending([...watcher.pending()]));
+		const off = watcher.subscribe(() => { setPending([...watcher.pending()]); setNotice(watcher.notice()); });
 		watcher.start();
 		return () => { off(); watcher.stop(); };
 	}, [watcher]);
 	return {
 		pending,
+		notice,
 		answer: (requestId, decision) => { void watcher?.answer(requestId, decision).catch(() => { /* the daemon went away; the prompt is already gone */ }); },
 	};
 }

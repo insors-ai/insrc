@@ -76,6 +76,11 @@ export class ApprovalBroker implements ApprovalGate {
 			log.warn({ requestId }, 'answer for an unknown, expired or already answered approval request');
 			return { accepted: false };
 		}
+		// An answer that arrives after the expiry but before the timer callback ran does not count.
+		if (Date.parse(p.request.expiresAt) <= Date.now()) {
+			this.finish(requestId, 'timed-out', 'timed-out');
+			return { accepted: false };
+		}
 		this.finish(requestId, decision === 'approve' ? { requestId, decision } : 'declined', 'answered');
 		return { accepted: true };
 	}

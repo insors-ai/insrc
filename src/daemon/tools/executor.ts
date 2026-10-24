@@ -99,7 +99,15 @@ export async function executeTool(
 	// destructive call asks whatever the caller, the mode, the setting or the arguments say.
 	const cls = resolveApprovalClass(tool, input);
 	if (cls !== 'none' && shouldAsk(cls, deps, cls === 'common' ? commonSetting() : 'auto')) {
-		const request = await buildApprovalRequest({ tool, cls, input, deps });
+		let request: Awaited<ReturnType<typeof buildApprovalRequest>>;
+		try {
+			request = await buildApprovalRequest({ tool, cls, input, deps });
+		} catch (err) {
+			// A call that cannot be described to the user must not run; this is a failed result, never a throw.
+			const message = `cannot describe ${tool.id} for approval (${err instanceof Error ? err.message : String(err)}); it was not run`;
+			log.error({ id: tool.id, err: err instanceof Error ? err.message : String(err) }, 'approval request could not be built; tool not run');
+			return failed('rejected', message);
+		}
 		log.info({ id: tool.id, approvalClass: cls, requestId: request.requestId, caller: deps.caller }, 'asking for approval');
 		let outcome: Awaited<ReturnType<ApprovalGate['ask']>>;
 		try {
@@ -108,9 +116,14 @@ export async function executeTool(
 			log.error({ id: tool.id, err: err instanceof Error ? err.message : String(err) }, 'approval gate failed; denying');
 			outcome = 'no-client';
 		}
-		if (typeof outcome === 'string') {
-			log.warn({ id: tool.id, requestId: request.requestId, denial: outcome }, 'approval not given; tool not run');
-			return failed('denied', DENIAL_TEXT[outcome](tool.id), undefined, outcome);
+		// Only a matching approval runs the tool: a denial, a decline, or an answer for another request does not.
+		const denial: ApprovalDenial | undefined =
+			typeof outcome === 'string' ? outcome
+			: outcome.requestId !== request.requestId || outcome.decision !== 'approve' ? 'declined'
+			: undefined;
+		if (denial !== undefined) {
+			log.warn({ id: tool.id, requestId: request.requestId, denial }, 'approval not given; tool not run');
+			return failed('denied', DENIAL_TEXT[denial](tool.id), undefined, denial);
 		}
 	}
 

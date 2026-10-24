@@ -125,3 +125,40 @@ test('approval-subscribe.test.ts: a cancel frame removes the prompt and the stre
 		watcher.stop(); server.disconnectClients(); await server.close(); rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+test('approval-subscribe.test.ts: an answer that cannot be sent brings the prompt back with the reason, and a late answer says the request was no longer open', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-cli-approval-'));
+	const path = join(dir, 'd.sock');
+	const { broker, server } = await startServer(path);
+	let failNext = true;
+	const real = createIpcClient(() => createConnection(path));
+	// The first approval.answer call fails as if the daemon had dropped the connection.
+	const client = { ...real, rpc: (async (m: string, p?: unknown) => { if (m === 'approval.answer' && failNext) { failNext = false; throw new Error('socket closed'); } return real.rpc(m, p); }) as typeof real.rpc };
+	const watcher = createApprovalWatcher({ client, reconnectMs: 50 });
+	try {
+		watcher.start();
+		await new Promise(r => setTimeout(r, 100));
+		const r = req(); const outcome = broker.ask(r);
+		await until(() => watcher.pending().length === 1);
+
+		await assert.rejects(watcher.answer(r.requestId, 'approve'), /socket closed/);
+		assert.equal(watcher.pending().length, 1, 'the prompt is back');
+		assert.match(watcher.notice() ?? '', /could not send your answer for git_push: socket closed/);
+
+		// the retry goes through
+		assert.deepEqual(await watcher.answer(r.requestId, 'approve'), { accepted: true });
+		assert.equal(watcher.notice(), undefined);
+		assert.deepEqual(await outcome, { requestId: r.requestId, decision: 'approve' });
+
+		// answering a request the daemon already closed says so
+		const late = req(); const abort = new AbortController();
+		const closed = broker.ask(late, abort.signal);
+		await until(() => watcher.pending().length === 1);
+		(broker as unknown as { finish: (id: string, o: unknown, r: string) => void }).finish(late.requestId, 'timed-out', 'no-client'); // closed without telling this client
+		assert.equal(await closed, 'timed-out');
+		assert.deepEqual(await watcher.answer(late.requestId, 'approve'), { accepted: false });
+		assert.match(watcher.notice() ?? '', /no longer open/);
+	} finally {
+		watcher.stop(); server.disconnectClients(); await server.close(); rmSync(dir, { recursive: true, force: true });
+	}
+});

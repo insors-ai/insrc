@@ -187,7 +187,7 @@ export interface Tool {
 	 * 'common' asks per the tools.commonApproval setting or the chat's edits mode;
 	 * 'destructive' always asks, whatever the caller, setting, mode or arguments.
 	 */
-	readonly approval?: ApprovalClass | ((input: ToolInput) => ApprovalClass);
+	readonly approval?: ApprovalClass | ((input: ToolInput) => ApprovalClass) | undefined;
 
 	/**
 	 * Optional alias IDs. Lets legacy tool names (Read, Bash, WebSearch, ...)

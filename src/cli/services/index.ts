@@ -100,7 +100,7 @@ export interface Services {
 	};
 	readonly debug: DebugService;
 	/** Approval requests waiting for this terminal's answer. Absent in a test double. */
-	readonly approvals?: ApprovalWatcher;
+	readonly approvals?: ApprovalWatcher | undefined;
 }
 
 export function makeServices(): Services {

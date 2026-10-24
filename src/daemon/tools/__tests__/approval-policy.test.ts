@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { APPROVAL_WAIT_MS } from '../../approval-broker.js';
-import { ARGUMENT_DISPLAY_MAX, buildApprovalRequest, resolveApprovalClass, shouldAsk } from '../approval-policy.js';
+import { ARGUMENT_DISPLAY_MAX, REDACTED, UNKNOWN_REPO, buildApprovalRequest, resolveApprovalClass, shouldAsk } from '../approval-policy.js';
 import type { CommonApprovalMode, ToolInput } from '../types.js';
 
 const MODES: Array<CommonApprovalMode | undefined> = [undefined, 'manual', 'edit-auto', 'auto'];
@@ -71,4 +71,24 @@ test('approval-policy.test.ts: the request takes the repository from input cwd t
 	const broken = await buildApprovalRequest({ tool: { id: 'k8s', buildApprovalGate: () => { throw new Error('no preview'); } }, cls: 'destructive', input: { a: 1 }, deps: { repoPath: '/r' } });
 	assert.equal(broken.preview?.title, 'k8s');
 	assert.match(broken.preview!.content, /"a": 1/);
+});
+
+test('approval-policy.test.ts: nested strings are truncated, secret values are masked, and cycles, BigInts and an unknown repository are handled', async () => {
+	const big = 'y'.repeat(ARGUMENT_DISPLAY_MAX + 10);
+	// nested deeper than the old cutoff of four levels
+	const deep = { a: { b: { c: { d: { e: { f: big } } } } } };
+	const r = await buildApprovalRequest({ tool: { id: 't' }, cls: 'common', input: deep, deps: { repoPath: '' } });
+	const f = (((((r.arguments['a'] as any).b).c).d).e).f as string;
+	assert.ok(f.endsWith(`[${big.length} characters in total]`), 'a string at depth six is cut with its length noted');
+	assert.equal(r.repoPath, UNKNOWN_REPO, 'no cwd and no default: the request says so');
+
+	const masked = await buildApprovalRequest({ tool: { id: 'ssh' }, cls: 'common', deps: { repoPath: '/r' }, input: {
+		host: 'h', password: 'hunter2', nested: { bearerToken: 'abc', smtpPass: 'p', accountKey: 'k', apiKey: '', fine: 'visible' },
+	} });
+	assert.deepEqual(masked.arguments, { host: 'h', password: REDACTED, nested: { bearerToken: REDACTED, smtpPass: REDACTED, accountKey: REDACTED, apiKey: '', fine: 'visible' } });
+	assert.doesNotMatch(masked.preview!.content, /hunter2|abc/, 'the generic preview carries no secret either');
+
+	const odd: Record<string, unknown> = { n: 10n, fn: () => 1 }; odd['loop'] = { back: odd };
+	const shown = (await buildApprovalRequest({ tool: { id: 't' }, cls: 'common', input: odd, deps: { repoPath: '/r' } })).arguments;
+	assert.deepEqual(shown, { n: '10', fn: '[function]', loop: { back: '[circular]' } });
 });

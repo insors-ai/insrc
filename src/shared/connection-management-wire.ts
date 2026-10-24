@@ -56,3 +56,9 @@ export function parseMutationRequest(value: unknown): MutationRequest {
  assertTicketTarget(ticket, key, o['mode'] as OperationTicket['mode'], o['operationId']);
  return value as MutationRequest;
 }
+
+/** Safe structural-error projection for v2 adapters; never forwards arbitrary exception text. */
+export function rejectManagementInput(error: unknown): import('./connection-management.js').MutationOutcome {
+ const safe = new ManagementInputError(error instanceof ManagementInputError && error.code === 'operation-mismatch' ? 'operation-mismatch' : 'invalid-input');
+ return { status:'rejected', code:safe.code, message:safe.code === 'operation-mismatch' ? 'Operation target does not match its ticket.' : 'Invalid connection request.' };
+}

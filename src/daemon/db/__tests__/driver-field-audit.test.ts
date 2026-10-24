@@ -65,7 +65,7 @@ test('CM-S1-A: every registered kind has a grounded fail-closed field classifica
 	const isolated = mkdtempSync(join(tmpdir(), 'cm-field-roundtrip-'));
 	const previous = PATHS.insrc;
 	try {
-		PATHS.insrc = isolated;
+		Object.defineProperty(PATHS, 'insrc', { value: isolated });
 		const original = { connections: matrix.rows.map(row => row.fixture as unknown as ConnectionConfig),
 			legacyMetadata: { retain: ['top-level', 'unknown'] } };
 		await saveConnections('/synthetic/audit', original);
@@ -84,7 +84,7 @@ test('CM-S1-A: every registered kind has a grounded fail-closed field classifica
 			}
 		}
 	} finally {
-		PATHS.insrc = previous;
+		Object.defineProperty(PATHS, 'insrc', { value: previous });
 		rmSync(isolated, { recursive: true, force: true });
 	}
 	for (const kind of ['etcd','memcached']) {

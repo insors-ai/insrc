@@ -3,7 +3,10 @@ import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { parseMutationRequest, parseOperationTicket, ManagementInputError } from '../connection-management-wire.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { parseMutationRequest, parseOperationTicket, ManagementInputError, rejectManagementInput } from '../connection-management-wire.js';
 import type { MutationRequest, ManagementCapabilities, ManagementEnvelope, MemoryRowSource, SafeConnection } from '../connection-management.js';
 import type { ConnectionsFile } from '../db-driver.js';
 
@@ -39,4 +42,38 @@ test('CM-S1-J: legacy document remains readable and v2 declarations preserve saf
 test('CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments', () => {
  const program=ts.createProgram([fileURLToPath(import.meta.url)], {strict:true,exactOptionalPropertyTypes:true,noUncheckedIndexedAccess:true,noEmit:true,skipLibCheck:true,esModuleInterop:true,verbatimModuleSyntax:true,module:ts.ModuleKind.NodeNext,moduleResolution:ts.ModuleResolutionKind.NodeNext,target:ts.ScriptTarget.ES2022,types:['node']});
  assert.deepEqual(ts.getPreEmitDiagnostics(program).map(d=>ts.flattenDiagnosticMessageText(d.messageText,'\n')),[]);
+});
+
+
+test('CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials', async () => {
+ const { PATHS } = await import('../paths.js');
+ const { saveConnectionRpc } = await import('../../daemon/db-rpc.js');
+ const { _setKeystoreForTests } = await import('../../daemon/db/secrets.js');
+ const actualKeystore = await import('../keystore.js');
+ await import('../../daemon/db/drivers/index.js');
+ const isolated = mkdtempSync(join(tmpdir(),'cm-wire-legacy-'));
+ const previous = PATHS.insrc;
+ const vault = new Map<string,string>();
+ const secret = 'synthetic-stored-password-canary';
+ try {
+  Object.defineProperty(PATHS,'insrc',{value:isolated});
+  _setKeystoreForTests({getKey:async ref=>vault.get(ref)??null,setKey:async(ref,value)=>{vault.set(ref,value);},deleteKey:async ref=>{vault.delete(ref);}});
+  const legacy=await saveConnectionRpc({repoRoot:isolated,config:{id:'legacy',kind:'postgres',url:`postgresql://fixture:${secret}@localhost/fixture`}});
+  assert.ok(!('error' in legacy));
+  assert.equal(legacy.id,'legacy'); assert.equal(legacy.family,'rdbms'); assert.equal(typeof legacy.wrotePath,'string');
+  assert.ok(!('status' in legacy));
+  assert.ok(Object.keys(legacy).every(key=>['id','family','wrotePath','redactedUrl'].includes(key)));
+  assert.ok([...vault.values()].includes(secret), 'fake keychain contains the actual stored value');
+  assert.ok(!JSON.stringify(legacy).includes(secret));
+  let failure:unknown;
+  try { parseMutationRequest({...request,key:{...request.key,id:secret}}); } catch(error) { failure=error; }
+  const rejected=rejectManagementInput(failure);
+  assert.deepEqual(rejected,{status:'rejected',code:'operation-mismatch',message:'Operation target does not match its ticket.'});
+  const arbitrary=rejectManagementInput(new Error(secret));
+  assert.deepEqual(arbitrary,{status:'rejected',code:'invalid-input',message:'Invalid connection request.'});
+  for (const response of [legacy,rejected,arbitrary]) {
+   assert.ok(!JSON.stringify(response).includes(secret));
+   assert.ok(!Object.hasOwn(response,'config') && !Object.hasOwn(response,'credentials') && !Object.hasOwn(response,'secretRef'));
+  }
+ } finally { Object.defineProperty(PATHS,'insrc',{value:previous}); _setKeystoreForTests(actualKeystore); rmSync(isolated,{recursive:true,force:true}); }
 });

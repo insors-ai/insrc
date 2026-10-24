@@ -21,7 +21,7 @@ export function connectionSourceInventory(root: string): InventorySite[] {
 	const program = ts.createProgram(filesUnder(join(root, 'src')), parsed.options);
 	const checker = program.getTypeChecker();
 	const sites: InventorySite[] = [];
-	const roots = new Set(['acquirePool', 'acquireDataPool', 'acquireDriver', 'getFactory', 'DriverPool', 'DriverFactory', 'registerEphemeral']);
+	const roots = new Set(['acquirePool', 'acquireDataPool', 'acquireDriver', 'getFactory', 'DriverPool', 'DriverFactory', 'registerEphemeral', 'ConnectionResolver', 'createConnectionResolver', 'dataConnectionResolver', 'savedConnectionResolver']);
 	function canonical(node: ts.Node): ts.Symbol | undefined {
 		let symbol = checker.getSymbolAtLocation(node);
 		if (symbol && (symbol.flags & ts.SymbolFlags.Alias)) symbol = checker.getAliasedSymbol(symbol);
@@ -30,6 +30,9 @@ export function connectionSourceInventory(root: string): InventorySite[] {
 	function isPool(type: ts.Type): boolean {
 		return type.symbol?.name === 'DriverPool' || type.isUnionOrIntersection() && type.types.some(isPool);
 	}
+	function isResolver(type: ts.Type): boolean {
+		return type.symbol?.name === 'ConnectionResolver' || type.aliasSymbol?.name === 'ConnectionResolver' || type.isUnionOrIntersection() && type.types.some(isResolver);
+	}
 	for (const source of program.getSourceFiles()) {
 		const file = relative(root, source.fileName).replaceAll('\\', '/');
 		if (!file.startsWith('src/') || file.includes('/__tests__/') || source.isDeclarationFile) continue;
@@ -37,18 +40,20 @@ export function connectionSourceInventory(root: string): InventorySite[] {
 			let boundary: string | undefined;
 			if (ts.isIdentifier(node)) {
 				const symbol = canonical(node);
-				if (symbol && roots.has(symbol.name) && symbol.declarations?.some(d => /\/src\/(daemon\/|analyze\/runtimes\/data|shared\/db-driver)/.test(d.getSourceFile().fileName))) {
+				if (symbol && roots.has(symbol.name) && symbol.declarations?.some(d => /\/src\/(daemon\/|analyze\/runtimes\/data|shared\/(?:db-driver|connection-management))/.test(d.getSourceFile().fileName))) {
 					boundary = `symbol:${symbol.name}`;
 				}
 			}
 			if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
 				if (isPool(checker.getTypeAtLocation(node.expression))) boundary = 'pool-member';
+				if (isResolver(checker.getTypeAtLocation(node.expression))) boundary = 'resolver-member';
 			}
 			if (ts.isCallExpression(node)) {
 				const signature = checker.getResolvedSignature(node);
 				const result = signature && checker.getReturnTypeOfSignature(signature);
 				// Awaited injected aliases need not share an import symbol.
 				if (result && isPool(checker.getAwaitedType(result) ?? result)) boundary = 'pool-port-call';
+				if (result && isResolver(checker.getAwaitedType(result) ?? result)) boundary = 'resolver-port-call';
 				if (result?.symbol?.name === 'DriverFactory') boundary = 'factory-port-call';
 				const awaited = result && (checker.getAwaitedType(result) ?? result);
 				if (awaited?.aliasSymbol?.name === 'Driver') boundary = 'driver-port-call';

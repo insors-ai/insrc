@@ -108,7 +108,10 @@ test('CM-S1-L: typed production acquisition aliases and factory sites have expli
 		assert.ok(entry?.classification && entry.rationale.length > 20, site.file);
 	}
 	for (const file of ['db-connections-list','db-table-describe','db-tables-list']) {
-		assert.ok(actual.some(s=>s.file===`src/analyze/explore/${file}.ts` && s.expression==='acquire(ctx.repoPath)' && s.boundary==='pool-port-call'));
+		const path = `src/analyze/explore/${file}.ts`;
+		assert.ok(actual.some(s=>s.file===path && s.expression==='createConnectionResolver({ poolSource: acquire })' && s.boundary==='resolver-port-call'));
+		assert.ok(actual.some(s=>s.file===path && s.expression===`resolver.${file==='db-connections-list'?'list':'withConnection'}` && s.boundary==='resolver-member'));
+		assert.ok(!actual.some(s=>s.file===path && (s.expression==='acquire(ctx.repoPath)' || s.boundary==='driver-port-call')), 'Injected aliases must not acquire a raw driver');
 	}
 	assert.ok(actual.some(s=>s.file==='src/analyze/measure.ts' && s.expression==='pool.acquire(id)'));
 	assert.ok(actual.some(s=>s.file==='src/daemon/db-rpc.ts' && s.boundary==='driver-port-call'));

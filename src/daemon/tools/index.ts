@@ -4,8 +4,10 @@
 
 export type {
   Tool, ToolDeps, ToolInput, ToolResult, ToolFormat, ToolApprovalGate,
+  ToolHook, ToolHookContext, HookFailure,
 } from './types.js';
 export {
   registerTool, getTool, listTools,
 } from './registry.js';
 export { executeTool } from './executor.js';
+export { registerToolHook } from './hooks.js';

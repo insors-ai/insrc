@@ -319,7 +319,13 @@ export interface StructuredCompletionOpts {
   readonly cwd?: string | undefined;
   /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
    *  the provider's own default when unset. ISSUE-d4b2cd1c. */
-  readonly timeoutMs?: number | undefined;  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
+  readonly timeoutMs?: number | undefined;
+  /** Silence limit in milliseconds for a codex run: when set and below the
+   *  call's timeout, the run is killed and CliStallError thrown once codex has
+   *  printed nothing new for this long. Absent: no watchdog. The claude branch
+   *  ignores it. ISSUE-562b1bb5. */
+  readonly stallMs?: number | undefined;
+  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
    *  structured-output retry); the caller owns every retry. Absent or `true`:
    *  today's retries. The review pipeline sets it (Epic 8315a11f s1). */
   readonly internalRetry?: boolean | undefined;

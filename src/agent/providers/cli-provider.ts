@@ -340,7 +340,9 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal);
+			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
+			const { agentText } = await this.runCodex(args, prompt, silence);
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
@@ -552,10 +554,12 @@ export class CliProvider implements LLMProvider {
 
 
 	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const stall = exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
+		const stall = exec?.stallMs !== undefined
+			? { ms: exec.stallMs, started: () => false, silence: true }
+			: exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
 		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal);
 		if (out.stalled === true) {
-			throw new CliStallError('codex', this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
+			throw new CliStallError('codex', stall?.ms ?? this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
 		}
 		const events: CodexEvent[] = [];
 		for (const line of out.stdout.split('\n')) {
@@ -634,6 +638,10 @@ interface ExecOverride {
 	/** Kill a codex run that shows no model output within the first-output limit
 	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
 	readonly watchStall?: boolean | undefined;
+	/** Kill a codex run that prints nothing new for this long (CliStallError).
+	 *  Set by a structured call that passes `stallMs` (ISSUE-562b1bb5); takes
+	 *  the place of `watchStall` when both are set. */
+	readonly stallMs?: number | undefined;
 	/** Cancels the run in flight: its process group is killed and AbortError thrown (Epic 8315a11f s1). */
 	readonly signal?: AbortSignal | undefined;
 }

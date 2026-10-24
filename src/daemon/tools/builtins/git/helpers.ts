@@ -33,6 +33,11 @@ export function failureKind(r: ShellResult, opts: { network?: boolean } = {}): T
   return 'rejected';
 }
 
+/** True when the command ran to an exit, so its exit code is an answer; false when it was not spawned, was killed or its output was cut. */
+export function ranToExit(r: ShellResult): boolean {
+  return !r.spawnError && !r.timedOut && !r.stdoutTruncated && r.code !== null;
+}
+
 /** Attach a failure to a legacy failed result; output, format, success, error and data are untouched. */
 export function withFailure(result: ToolResult, kind: ToolFailureKind, original?: string, message?: string): ToolResult {
   return {

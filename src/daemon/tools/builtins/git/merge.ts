@@ -10,7 +10,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, spawnFail, withFailure, currentBranch, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, spawnFail, withFailure, currentBranch, rejectInput } from './helpers.js';
 
 export interface GitMergeData {
   ref: string;
@@ -102,7 +102,7 @@ export const gitMergeTool: Tool = {
     // A non-zero exit on merge can mean conflicts. Detect that so the
     // caller sees "inConflict: true" rather than a raw failure.
     if (result.code !== 0) {
-      const conflicts = await listConflicts(cwd);
+      const { files: conflicts, problem } = await listConflicts(cwd);
       if (conflicts.length > 0) {
         const data: GitMergeData = { ref, branch, strategy, merged: false, inConflict: true, conflicts };
         return withFailure({
@@ -121,7 +121,9 @@ export const gitMergeTool: Tool = {
           data,
         }, failureKind(result), result.stderr.trim() || result.stdout.trim());
       }
-      return fail('git_merge', result, { mutating: true });
+      const failed = fail('git_merge', result, { mutating: true });
+      return problem === undefined || failed.failure === undefined ? failed
+        : { ...failed, failure: { ...failed.failure, message: `${failed.failure.message} (could not tell whether the merge left conflicts: ${problem})` } };
     }
 
     const data: GitMergeData = { ref, branch, strategy, merged: true, inConflict: false, conflicts: [] };
@@ -140,8 +142,10 @@ export const gitMergeTool: Tool = {
   },
 };
 
-async function listConflicts(cwd: string): Promise<string[]> {
+/** The conflicted paths; `problem` names a read that did not run to an exit (the merge outcome is then not known to be a conflict). */
+async function listConflicts(cwd: string): Promise<{ files: string[]; problem?: string }> {
   const r = await runShell(['git', 'diff', '--name-only', '--diff-filter=U'], { cwd, timeoutMs: 10_000 });
-  if (r.code !== 0) { return []; }
-  return r.stdout.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!ranToExit(r)) { return { files: [], problem: failureKind(r) }; }
+  if (r.code !== 0) { return { files: [] }; }
+  return { files: r.stdout.split('\n').map(s => s.trim()).filter(Boolean) };
 }

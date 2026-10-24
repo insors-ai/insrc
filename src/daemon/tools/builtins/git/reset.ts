@@ -13,7 +13,8 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import type { ShellResult } from '../../shell-helper.js';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
@@ -23,6 +24,8 @@ export interface GitResetData {
   branch: string;
   previousShortSha: string;
   requiresForcePush: boolean;
+  /** Set when a read that only informs the result could not run. */
+  warnings?: string[];
 }
 
 export const gitResetTool: Tool = {
@@ -45,7 +48,8 @@ export const gitResetTool: Tool = {
     const mode = (str(input, 'mode') ?? 'mixed') as GitResetMode;
     const ref = str(input, 'ref') ?? '(missing)';
     const branch = (await currentBranch(cwd)) ?? '(detached)';
-    const forcePush = await willNeedForcePush(cwd, ref);
+    const forceRead = await willNeedForcePush(cwd, ref);
+    const forcePush = forceRead.ok && forceRead.value;
 
     const lines: string[] = [];
     lines.push(`Repo: \`${cwd}\``);
@@ -57,6 +61,10 @@ export const gitResetTool: Tool = {
         lines.push('');
         lines.push('⚠️ **HARD RESET -- DISCARDS WORKTREE EDITS.** Uncommitted changes will be lost.');
         break;
+    }
+    if (!forceRead.ok) {
+      lines.push('');
+      lines.push(`⚠️ Could not tell whether a force push will be needed (${failureKind(forceRead.failed)}).`);
     }
     if (forcePush) {
       lines.push('');
@@ -79,7 +87,12 @@ export const gitResetTool: Tool = {
     const branch = (await currentBranch(cwd)) ?? '(detached)';
     const priorShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
     const previousShortSha = priorShort.code === 0 ? priorShort.stdout.trim() : '';
-    const requiresForcePush = await willNeedForcePush(cwd, ref);
+    // Whether the new HEAD is behind the upstream is a precondition of a hard reset (it discards work); for the
+    // other modes an unknown answer is reported as a warning.
+    const forceRead = await willNeedForcePush(cwd, ref);
+    if (!forceRead.ok && mode === 'hard') { return fail('git_reset', forceRead.failed); }
+    const requiresForcePush = forceRead.ok && forceRead.value;
+    const warnings = forceRead.ok ? [] : [`force-push check (git merge-base --is-ancestor) ${failureKind(forceRead.failed)}`];
 
     const r = await runShell(['git', 'reset', `--${mode}`, ref], { cwd, timeoutMs: 30_000 });
     if (r.spawnError) { return spawnFail('git_reset', r.stderr); }
@@ -90,6 +103,7 @@ export const gitResetTool: Tool = {
       mode, ref, branch,
       previousShortSha,
       requiresForcePush,
+      ...(warnings.length > 0 ? { warnings } : {}),
     };
     const body = [
       `Reset ${mode} on **${branch}**: \`${previousShortSha}\` -> \`${afterShort.stdout.trim()}\`.`,
@@ -100,11 +114,17 @@ export const gitResetTool: Tool = {
   },
 };
 
-async function willNeedForcePush(cwd: string, ref: string): Promise<boolean> {
+type ForceRead = { ok: true; value: boolean } | { ok: false; failed: ShellResult };
+
+async function willNeedForcePush(cwd: string, ref: string): Promise<ForceRead> {
   // Force push is needed when HEAD, after reset, is behind @{upstream}.
   // We approximate by checking whether the target `ref` is an ancestor
   // of the upstream -- if so, moving HEAD there rewinds history relative
   // to the remote.
   const r = await runShell(['git', 'merge-base', '--is-ancestor', ref, '@{upstream}'], { cwd, timeoutMs: 5_000 });
-  return r.code === 0;
+  if (!ranToExit(r)) { return { ok: false, failed: r }; }
+  // exit 0 is true, exit 1 is false; exit 128 with no upstream configured is the answer false
+  if (r.code === 0) { return { ok: true, value: true }; }
+  if (r.code === 1 || /upstream/i.test(r.stderr)) { return { ok: true, value: false }; }
+  return { ok: false, failed: r };
 }

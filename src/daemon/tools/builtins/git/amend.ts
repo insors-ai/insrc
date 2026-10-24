@@ -14,7 +14,8 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
+import type { ShellResult } from '../../shell-helper.js';
 
 export type GitAmendMode = 'message' | 'staged';
 
@@ -49,7 +50,9 @@ export const gitAmendTool: Tool = {
     const cwd = String(input['cwd'] ?? process.cwd());
     const mode = String(input['mode'] ?? 'message');
     const message = str(input, 'message');
-    const pushedWarning = await wasPushed(cwd);
+    const pushed = await wasPushed(cwd);
+    const pushedWarning = pushed.ok && pushed.value;
+    const pushedUnknown = pushed.ok ? '' : `\n⚠️ **Could not tell whether HEAD was already pushed (${failureKind(pushed.failed)}).**`;
 
     return {
       title: 'git_amend',
@@ -58,6 +61,7 @@ export const gitAmendTool: Tool = {
         `Mode: **${mode}**${mode === 'message' ? ' (rewrite message only)' : ' (fold staged changes + optional message rewrite)'}`,
         message ? `\n**New message**\n\`\`\`\n${message}\n\`\`\`` : '',
         pushedWarning ? '\n⚠️ **HEAD is already at/behind the tracked upstream -- amending will require `git push --force-with-lease` afterward.**' : '',
+        pushedUnknown,
       ].filter(Boolean).join('\n'),
       actions: [
         { name: 'approve', label: 'Approve' },
@@ -79,7 +83,10 @@ export const gitAmendTool: Tool = {
     const verifyHooks = input['verifyHooks'] !== false;
 
     const branch = await currentBranch(cwd) ?? '(detached)';
-    const requiresForcePush = await wasPushed(cwd);
+    // Amending a pushed commit is the risk this read guards, so a read that did not run is not an answer.
+    const pushed = await wasPushed(cwd);
+    if (!pushed.ok) { return fail('git_amend', pushed.failed); }
+    const requiresForcePush = pushed.value;
 
     const argv = ['git', 'commit', '--amend'];
     if (mode === 'staged') {
@@ -127,11 +134,20 @@ export const gitAmendTool: Tool = {
  * True when HEAD matches (or is an ancestor of) the upstream branch --
  * i.e. this commit has already been published.
  */
-async function wasPushed(cwd: string): Promise<boolean> {
+type PushedRead = { ok: true; value: boolean } | { ok: false; failed: ShellResult };
+
+/**
+ * A missing HEAD, a missing upstream (git's exit 128) and 'not an ancestor' (exit 1) are the answer false;
+ * a read that did not run to an exit (not spawned, timed out, cut) is not an answer.
+ */
+async function wasPushed(cwd: string): Promise<PushedRead> {
   const head = await runShell(['git', 'rev-parse', 'HEAD'], { cwd, timeoutMs: 5_000 });
-  if (head.code !== 0) { return false; }
+  if (!ranToExit(head)) { return { ok: false, failed: head }; }
+  if (head.code !== 0) { return { ok: true, value: false }; }
   const upstream = await runShell(['git', 'rev-parse', '@{upstream}'], { cwd, timeoutMs: 5_000 });
-  if (upstream.code !== 0) { return false; }
+  if (!ranToExit(upstream)) { return { ok: false, failed: upstream }; }
+  if (upstream.code !== 0) { return { ok: true, value: false }; }
   const merge = await runShell(['git', 'merge-base', '--is-ancestor', head.stdout.trim(), upstream.stdout.trim()], { cwd, timeoutMs: 5_000 });
-  return merge.code === 0;  // 0 = HEAD is an ancestor of upstream, i.e. already pushed
+  if (!ranToExit(merge)) { return { ok: false, failed: merge }; }
+  return { ok: true, value: merge.code === 0 };  // 0 = HEAD is an ancestor of upstream, i.e. already pushed
 }

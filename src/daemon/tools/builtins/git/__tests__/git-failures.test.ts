@@ -19,8 +19,28 @@ import { runShell } from '../../../shell-helper.js';
 import type { ShellResult } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolResult } from '../../../types.js';
 import { fail, failureKind, rejectInput, spawnFail, UNKNOWN_OUTCOME, withFailure, withFailureNet } from '../helpers.js';
+import { gitAmendTool } from '../amend.js';
+import { gitBlameTool } from '../blame.js';
+import { gitBranchTool } from '../branch.js';
+import { gitCheckoutTool } from '../checkout.js';
+import { gitCherryPickTool } from '../cherry-pick.js';
+import { gitCommitTool } from '../commit.js';
+import { gitDiffTool, setGitDiffShellForTests } from '../diff.js';
+import { gitFetchTool } from '../fetch.js';
+import { gitLogTool } from '../log.js';
 import { gitMergeTool } from '../merge.js';
+import { gitPullTool } from '../pull.js';
+import { gitPushTool } from '../push.js';
+import { gitRebaseTool } from '../rebase.js';
+import { gitRemoteTool } from '../remote.js';
+import { gitResetTool } from '../reset.js';
+import { gitRevertTool } from '../revert.js';
+import { gitShowTool } from '../show.js';
+import { gitStageTool } from '../stage.js';
+import { gitStashTool } from '../stash.js';
 import { gitStatusTool } from '../status.js';
+import { gitTagTool } from '../tag.js';
+import { gitWorktreeTool } from '../worktree.js';
 
 const shell = (over: Partial<ShellResult> = {}): ShellResult =>
 	({ stdout: '', stderr: '', code: 1, spawnError: false, timedOut: false, stdoutTruncated: false, ...over });
@@ -96,19 +116,57 @@ test('the registration wrapper adds kind rejected to an unsuccessful result with
 	assert.equal(await withFailureNet(make(ok)).execute({}, deps('/tmp')), ok);
 });
 
+/** One call of each of the 22 existing tools that reaches git (or its own input check) outside a repository. */
+const EVERY_TOOL: readonly (readonly [Tool, Record<string, unknown>])[] = [
+	[gitStatusTool, {}], [gitLogTool, {}], [gitDiffTool, {}], [gitShowTool, { ref: 'HEAD' }],
+	[gitBlameTool, { path: 'x' }], [gitBranchTool, { op: 'list' }], [gitStageTool, { op: 'stage', paths: ['x'] }],
+	[gitCommitTool, { message: 'm', allowDetached: true }], [gitAmendTool, { mode: 'message', message: 'm' }],
+	[gitPushTool, { remote: 'origin', ref: 'main' }], [gitPullTool, { remote: 'origin', ref: 'main' }],
+	[gitFetchTool, {}], [gitCheckoutTool, { mode: 'ref', ref: 'main' }], [gitMergeTool, { ref: 'main' }],
+	[gitRebaseTool, { onto: 'main' }], [gitStashTool, { op: 'list' }], [gitResetTool, { ref: 'HEAD', mode: 'mixed' }],
+	[gitRevertTool, { refs: ['HEAD'] }], [gitCherryPickTool, { refs: ['HEAD'] }], [gitTagTool, { op: 'list' }],
+	[gitRemoteTool, { op: 'list' }], [gitWorktreeTool, { op: 'list' }],
+];
+
 test('the legacy output and error text of every existing failure path is unchanged', async () => {
 	assert.equal(rejectInput('git_branch', 'missing name for create').output, '[git_branch] failed: missing name for create');
 	assert.equal(rejectInput('git_branch', 'missing name for create').error, 'missing name for create');
 	assert.equal(rejectInput('git_branch', 'x').failure?.kind, 'rejected');
+	assert.equal(EVERY_TOOL.length, 22);
 
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gitfail-nogit-'));
+	const savedPath = process.env['PATH'];
 	try {
-		const res = await gitStatusTool.execute({ cwd: dir }, deps(dir));
-		assert.equal(res.success, false);
-		assert.match(res.output, /^\[git:status\] failed: .*not a git repository/i);
-		assert.equal(res.output, `[git:status] failed: ${res.error}`);
-		assert.equal(res.format, 'text');
-	} finally { rmSync(dir, { recursive: true, force: true }); }
+		// Outside a repository: '[label] failed: <message>' with error the same message.
+		for (const [tool, input] of EVERY_TOOL) {
+			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
+			assert.equal(res.success, false, tool.id);
+			assert.equal(res.format, 'text', tool.id);
+			assert.match(res.output, /^\[git[:_][a-z-]+\] failed: /, `${tool.id}: ${res.output}`);
+			assert.equal(res.output.endsWith(res.error ?? '\u0000'), true, `${tool.id}: error is the output's message`);
+			assert.equal(res.failure?.kind, 'rejected', tool.id);
+		}
+		// The labels the status, diff and stage tools print are the legacy ones.
+		assert.match((await gitStatusTool.execute({ cwd: dir }, deps(dir))).output, /^\[git:status\] failed: .*not a git repository/i);
+		assert.match((await gitDiffTool.execute({ cwd: dir }, deps(dir))).output, /^\[git:diff\] failed: /);
+		assert.match((await gitStageTool.execute({ cwd: dir, op: 'stage', paths: ['x'] }, deps(dir))).output, /^\[git:stage\] failed: /);
+
+		// With git missing: '[label] cannot spawn git -- ...' with error 'git not found' (or the tool's own input check first).
+		process.env['PATH'] = join(dir, 'nowhere');
+		for (const [tool, input] of EVERY_TOOL) {
+			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
+			assert.equal(res.success, false, tool.id);
+			assert.match(res.output, /^\[git[:_][a-z-]+\] (cannot spawn git -- |failed: )/, `${tool.id}: ${res.output}`);
+			if (res.output.includes('cannot spawn git')) {
+				assert.equal(res.error, 'git not found', tool.id);
+				assert.equal(res.failure?.kind, 'missing-tool', tool.id);
+			}
+		}
+		assert.equal((await gitStatusTool.execute({ cwd: dir }, deps(dir))).output.startsWith('[git:status] cannot spawn git -- '), true);
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(dir, { recursive: true, force: true });
+	}
 });
 
 test('a git tool in a directory that is not a repository, with git missing from PATH, and past its time limit returns a failure of the right kind', async () => {
@@ -125,9 +183,15 @@ test('a git tool in a directory that is not a repository, with git missing from 
 			assert.equal(noGit.error, 'git not found');
 		} finally { process.env['PATH'] = savedPath; }
 
+		// A git tool whose command passes its time limit: git_diff's shell is the one a test may replace.
 		const slow = await runShell(['sleep', '5'], { timeoutMs: 50 });
 		assert.equal(slow.timedOut, true);
-		assert.equal(fail('git_x', slow).failure?.kind, 'timed-out');
+		setGitDiffShellForTests(async () => slow);
+		try {
+			const res = await gitDiffTool.execute({ cwd: dir }, deps(dir));
+			assert.equal(res.success, false);
+			assert.equal(res.failure?.kind, 'timed-out');
+		} finally { setGitDiffShellForTests(undefined); }
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -153,7 +217,7 @@ test('git_merge with a conflict keeps its data and its merge conflict error and 
 });
 
 test('a timed-out mutating call carries kind timed-out and the unknown-outcome sentence in failure.message', () => {
-	const t = shell({ timedOut: true, code: null, stderr: 'partial' });
+	const t: ShellResult = { ...shell({ code: null }), timedOut: true, stderr: 'partial' };
 	const mutating = fail('git_push', t, { network: true, mutating: true });
 	assert.equal(mutating.failure?.kind, 'timed-out');
 	assert.ok(mutating.failure?.message.includes(UNKNOWN_OUTCOME));
@@ -163,4 +227,32 @@ test('a timed-out mutating call carries kind timed-out and the unknown-outcome s
 	const read = fail('git_log', t);
 	assert.equal(read.failure?.kind, 'timed-out');
 	assert.ok(!read.failure?.message.includes(UNKNOWN_OUTCOME));
+});
+
+test('the helper reads of amend and reset keep git\'s documented answers apart from process failures', async () => {
+	const repo = newRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		writeFileSync(join(repo, 'f.txt'), 'a\n');
+		git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'one');
+		writeFileSync(join(repo, 'f.txt'), 'b\n');
+		git(repo, 'commit', '-q', '-am', 'two');
+
+		// No upstream configured (git exits 128) is the answer false: both calls run.
+		const amended = await gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'two again' }, deps(repo));
+		assert.equal(amended.success, true, amended.output);
+		assert.equal((amended.data as { requiresForcePush: boolean }).requiresForcePush, false);
+		const reset = await gitResetTool.execute({ cwd: repo, ref: 'HEAD~1', mode: 'hard' }, deps(repo));
+		assert.equal(reset.success, true, reset.output);
+		assert.equal((reset.data as { requiresForcePush: boolean }).requiresForcePush, false);
+
+		// A read that cannot run is not an answer: the call fails before anything changes.
+		process.env['PATH'] = join(repo, 'nowhere');
+		const blocked = await gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'x' }, deps(repo));
+		assert.equal(blocked.success, false);
+		assert.equal(blocked.failure?.kind, 'missing-tool');
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(repo, { recursive: true, force: true });
+	}
 });

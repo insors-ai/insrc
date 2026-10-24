@@ -16,7 +16,7 @@ function fixture(options: { clean?: boolean | undefined; rpcError?: boolean | un
  const deps: StopDeps = {
   capture: async () => { order.push('capture'); return { target, pidFile: undefined, socketFile: undefined }; },
   requestShutdown: async () => { order.push('rpc'); if (options.rpcError) throw new Error('connection refused'); return 'replied'; },
-  waitForStop: async (_ms, observed) => { assert.equal(observed, target); order.push('wait original handle'); if (options.clean) alive = false; return !alive; },
+  waitForStop: async (_ms, observed) => { assert.equal(observed, target); order.push('wait original handle'); if (options.clean) { alive = false; cleaned++; } return !alive; },
   cleanup: () => { if (options.conflict) throw new Error(options.conflict); cleaned++; },
   sleep: async () => {}, replyBoundMs: 5, stopWaitMs: 0, killWaitMs: 0,
  };

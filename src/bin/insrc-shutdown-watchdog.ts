@@ -7,7 +7,7 @@ import type { StopTarget } from '../shared/daemon-process-client.js';
 
 const parent = Number(process.argv[2]), deadline = Number(process.argv[3]);
 const logPath = process.argv[4], executable = process.argv[5];
-if (!Number.isSafeInteger(parent) || parent <= 0 || process.ppid !== parent || !Number.isSafeInteger(deadline) || !logPath || !executable || !process.send) process.exit(2);
+if (!Number.isSafeInteger(parent) || parent <= 0 || process.ppid !== parent || !Number.isSafeInteger(deadline) || !logPath || !executable) process.exit(2);
 let stage = 'watchdog capture', finished = false, checking = false;
 let target: StopTarget | undefined;
 const cancellation = new AbortController();
@@ -19,19 +19,19 @@ function finish(code = 0): void {
  finished = true; cancellation.abort();
  void (async () => { try { await target?.handle.close(); } finally { process.exit(code); } })();
 }
-/** A callback handles the connected-check/send race; failed readiness never remains armed. */
+/** IPC is advisory after capability capture: transport loss cannot disarm the deadline. */
 function send(message: object): Promise<boolean> {
  return new Promise(resolve => {
   if (!process.connected || !process.send) { resolve(false); return; }
-  try { process.send(message, error => { resolve(!error); if (error) finish(); }); }
-  catch { resolve(false); finish(); }
+  try { process.send(message, error => { resolve(!error); }); }
+  catch { resolve(false); }
  });
 }
 async function fail(reason: string): Promise<void> {
  if (finished) return;
  diagnostic(reason); await send({ type: 'failed', reason }); finish(1);
 }
-process.on('disconnect', () => finish());
+process.on('disconnect', () => { if (process.ppid !== parent) finish(); });
 process.on('message', (message: unknown) => {
  if (typeof message !== 'object' || message === null) return;
  const value = message as { type?: string | undefined; stage?: string | undefined };
@@ -42,7 +42,7 @@ void (async () => {
  try {
   target = await captureStopTarget(parent, { executable, signal: cancellation.signal, readyTimeoutMs: 1000, requestTimeoutMs: 1000 });
   if (!target || finished || process.ppid !== parent) { finish(); return; }
-  if (!(await send({ type: 'ready', pid: process.pid }))) { finish(); return; }
+  if (!(await send({ type: 'ready', pid: process.pid }))) stage = 'capability captured; parent IPC unavailable';
   const timer = setInterval(() => {
    if (finished || checking) return;
    if (process.ppid !== parent) { clearInterval(timer); finish(); return; }

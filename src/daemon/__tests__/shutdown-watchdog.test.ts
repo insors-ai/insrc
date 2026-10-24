@@ -28,10 +28,15 @@ async function run(mode: string) {
  if (mode === 'timeout') options.helperPath = ${JSON.stringify(silent)};
  if (mode === 'broker') options.brokerPath = '/missing-broker';
  try {
- if (mode === 'ipc-disconnect') {
+ if (mode.startsWith('ipc-disconnect')) {
   const { fork } = require('node:child_process');
   const child = fork(${JSON.stringify(new URL('../../../out/bin/insrc-shutdown-watchdog.js', import.meta.url).pathname)}, [String(process.pid), String(Date.now() + 500), ${JSON.stringify(log)}, ${JSON.stringify(join(root, 'out/bin/insrc-process-broker'))}], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-  child.on('message', () => { child.disconnect(); process.stdout.write(JSON.stringify({ ready: true, watchdog: child.pid }) + '\\n'); setTimeout(() => process.exit(0), 100); });
+  child.on('message', () => {
+   child.disconnect(); process.stdout.write(JSON.stringify({ ready: true, watchdog: child.pid }) + '\\n');
+   if (mode === 'ipc-disconnect-blocked') Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0);
+   if (mode === 'ipc-disconnect-exit-hook') { process.on('exit', () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)); process.exit(0); }
+   setTimeout(() => process.exit(0), 100);
+  });
   return;
  }
  const watchdog = await armShutdownWatchdog(options);
@@ -85,5 +90,14 @@ test('Watchdog IPC disconnect during readiness releases its shared broker sessio
  for (let i = 0; i < 5; i++) {
   const p = await run('ipc-disconnect'); assert.equal(p.value.ready, true);
   assert.equal((await p.ended)[0], 0); await gone(p.value.watchdog); assert.equal(existsSync(p.log), false);
+ }
+});
+
+
+test('IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook', { timeout: 10000 }, async () => {
+ for (const mode of ['ipc-disconnect-blocked', 'ipc-disconnect-exit-hook']) {
+  const started = Date.now(), p = await run(mode); assert.equal(p.value.ready, true);
+  assert.equal((await p.ended)[1], 'SIGKILL'); assert.ok(Date.now() - started < 3000);
+  assert.match(readFileSync(p.log, 'utf8'), /shutdown deadline exceeded/); await gone(p.value.watchdog);
  }
 });

@@ -106,6 +106,7 @@ export interface StopDeps {
 	 *  error, and resolves `'no-reply'` when `boundMs` passes first. */
 	readonly requestShutdown: (boundMs: number) => Promise<'replied' | 'no-reply'>;
  readonly capture: () => Promise<CapturedDaemon>;
+ /** True includes verified managed-state cleanup; the caller must not clean it twice. */
  readonly waitForStop: (timeoutMs: number, target: StopTarget) => Promise<boolean>;
  readonly cleanup: (captured: CapturedDaemon) => void;
 	readonly sleep:           (ms: number) => Promise<void>;
@@ -159,7 +160,8 @@ export async function stopDaemonWith(deps: StopDeps): Promise<StopOutcome> {
   // An RPC error cannot discard a target captured before the request.
   try { await deps.requestShutdown(deps.replyBoundMs); } catch { /* retain and observe original */ }
   if (await deps.waitForStop(deps.stopWaitMs, target)) {
-   deps.cleanup(captured); return { stopped: true, forced: false };
+   // waitForStop owns the clean-stop completion/cleanup boundary.
+   return { stopped: true, forced: false };
   }
   try { await target.handle.terminate(); }
   catch (error) { throw new Error(`daemon (pid ${target.pid}) SIGKILL failed: ${error instanceof Error ? error.message : String(error)}; restart withheld`); }

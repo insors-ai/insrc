@@ -221,3 +221,26 @@ test('Retained waitForStop ignores path disappearance until original exit and pr
   assert.equal(await captured.target.handle.hasExited(), true, 'caller still owns its usable handle');
  } finally { await captured.target.handle.close(); }
 });
+
+test('Clean stop has one completion boundary and never cleans a later publication twice', async () => {
+ const { captureDaemon, waitForStop } = await import('../lifecycle.js');
+ const child = await startStubborn(true), captured = await captureDaemon(); assert.ok(captured.target);
+ let extraCleanups = 0;
+ try {
+  const outcome = await stopDaemon({ capture: async () => captured,
+   requestShutdown: async () => { await captured.target!.handle.terminate(); await exited(child); return 'replied'; },
+   waitForStop: async (timeout, target) => {
+    assert.equal(await waitForStop(timeout, target), true);
+    assert.equal(existsSync(PATHS.pidFile), false); assert.equal(existsSync(PATHS.sockFile), false);
+    // A later publisher starts after the successful clean-stop boundary.
+    const { acquireRunFileGuard } = await import('../../../shared/daemon-run-files.js');
+    const guard = acquireRunFileGuard(PATHS.daemonRunGuard);
+    try { writeFileSync(PATHS.pidFile, 'later owner'); writeFileSync(PATHS.sockFile, 'later socket'); }
+    finally { guard.release(); }
+    return true;
+   }, cleanup: () => { extraCleanups++; throw new Error('second cleanup must not run'); },
+  });
+  assert.deepEqual(outcome, { stopped: true, forced: false }); assert.equal(extraCleanups, 0);
+  assert.equal(readFileSync(PATHS.pidFile, 'utf8'), 'later owner'); assert.equal(readFileSync(PATHS.sockFile, 'utf8'), 'later socket');
+ } finally { await captured.target.handle.close(); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
+});

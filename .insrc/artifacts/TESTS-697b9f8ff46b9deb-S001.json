@@ -1,0 +1,1735 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "697b9f8ff46b9deb",
+    "storyId": "S001",
+    "createdAt": "2026-10-24T07:24:47.778Z",
+    "updatedAt": "2026-10-24T17:54:57.031Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-23T14:01:46.590Z",
+    "epicSlug": "stop-codex-review-calls-stalling-keep"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "31fc8410",
+        "ranAt": "2026-10-24T07:24:47.778Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30030,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c46a4e8b",
+        "ranAt": "2026-10-24T07:27:57.715Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+                "title": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1585,
+            "titles": [
+              {
+                "title": "a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword",
+                "result": "pass"
+              },
+              {
+                "title": "a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not",
+                "result": "pass"
+              },
+              {
+                "title": "a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 590,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "23a8c90a",
+        "ranAt": "2026-10-24T07:31:50.261Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "VERIFY_SCHEMA and VERDICTS_SCHEMA bound evidence, action, rationale, edits and options, and an answer over a bound fails validation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/verify-answer.test.ts",
+                "title": "VERIFY_SCHEMA and VERDICTS_SCHEMA bound evidence, action, rationale, edits and options, and an answer over a bound fails validation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the verify SYSTEM rules ask for an always-present proposedFix with empty fields when there is no fix and no longer tell the model to omit fields, in both the single and batched prompts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/verify-answer.test.ts",
+                "title": "the verify SYSTEM rules ask for an always-present proposedFix with empty fields when there is no fix and no longer tell the model to omit fields, in both the single and batched prompts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a no-fix answer with an empty rationale normalises to a finding without proposedFix, and one with a rationale keeps a rationale-only proposedFix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/verify-answer.test.ts",
+                "title": "a no-fix answer with an empty rationale normalises to a finding without proposedFix, and one with a rationale keeps a rationale-only proposedFix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/verify-answer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 667,
+            "titles": [
+              {
+                "title": "VERIFY_SCHEMA and VERDICTS_SCHEMA bound evidence, action, rationale, edits and options, and an answer over a bound fails validation",
+                "result": "pass"
+              },
+              {
+                "title": "the verify SYSTEM rules ask for an always-present proposedFix with empty fields when there is no fix and no longer tell the model to omit fields, in both the single and batched prompts",
+                "result": "pass"
+              },
+              {
+                "title": "a no-fix answer with an empty rationale normalises to a finding without proposedFix, and one with a rationale keeps a rationale-only proposedFix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "dcd6b674",
+        "ranAt": "2026-10-24T07:36:00.828Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 705,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5b3ac0e5d",
+        "ranAt": "2026-10-24T11:51:42.621Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37066,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 831,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b63b2c408",
+        "ranAt": "2026-10-24T12:02:58.443Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/call-limits.test.ts",
+                "title": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/review.test.ts",
+                "title": "every premise judgement carries the design-verify cap and silence limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/call-limits.test.ts",
+                "title": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/call-limits.test.ts",
+                "title": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/call-limits.test.ts",
+                "title": "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+                "title": "the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15047,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree still yields the Story's committed change set, and an unrelated uncommitted file is left out (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              },
+              {
+                "title": "when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn",
+                "result": "pass"
+              },
+              {
+                "title": "a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live",
+                "result": "pass"
+              },
+              {
+                "title": "on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build",
+                "result": "pass"
+              },
+              {
+                "title": "builder text in the judge's evidence is kept to one line",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 666,
+            "titles": [
+              {
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              },
+              {
+                "title": "adherence makes no call without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a mock added or removed after prepare does not change the ux result",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit HLD review makes one reviewer-session call and gives today's report",
+                "result": "pass"
+              },
+              {
+                "title": "the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema",
+                "result": "pass"
+              },
+              {
+                "title": "an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/call-limits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 539,
+            "titles": [
+              {
+                "title": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row",
+                "result": "pass"
+              },
+              {
+                "title": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap",
+                "result": "pass"
+              },
+              {
+                "title": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap",
+                "result": "pass"
+              },
+              {
+                "title": "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 574,
+            "titles": [
+              {
+                "title": "HIGH inventory finding when claim says two but ripgrep finds three",
+                "result": "pass"
+              },
+              {
+                "title": "citation confirmed by path:line read is LOW",
+                "result": "pass"
+              },
+              {
+                "title": "verdict is block when HIGH present, pass when all LOW",
+                "result": "pass"
+              },
+              {
+                "title": "gatherEvidence sets truncated when matches exceed the cap",
+                "result": "pass"
+              },
+              {
+                "title": "auto finding yields artifactEdits whose find is a real substring; manual yields options and no edits",
+                "result": "pass"
+              },
+              {
+                "title": "renderReviewReport emits a verdict header, a table, and orders HIGH first",
+                "result": "pass"
+              },
+              {
+                "title": "gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)",
+                "result": "pass"
+              },
+              {
+                "title": "a premise call that fails once is retried as a fresh call and judged; the review completes",
+                "result": "pass"
+              },
+              {
+                "title": "a premise call that fails twice is recorded as not judged, never as a pass, and every other premise is kept",
+                "result": "pass"
+              },
+              {
+                "title": "every premise judgement carries the design-verify cap and silence limit",
+                "result": "pass"
+              },
+              {
+                "title": "a cancelled review still ends at once instead of recording the premise as not judged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b54856692",
+        "ranAt": "2026-10-24T12:05:33.665Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/template-review.test.ts",
+                "title": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/template-review.test.ts",
+                "title": "T10 a second invalid answer fails the review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/template-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 685,
+            "titles": [
+              {
+                "title": "T9 a design stage runs ONE reviewer session and no extract, probe or per-premise call",
+                "result": "pass"
+              },
+              {
+                "title": "T9 the prompt carries the template for the intent, the insrc analyze instruction, and the design last",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an HLD is a design stage too",
+                "result": "pass"
+              },
+              {
+                "title": "T10 an invalid first answer causes exactly one repeat carrying the validation errors",
+                "result": "pass"
+              },
+              {
+                "title": "T10 a second invalid answer fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a session failure fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a timeout fails the review with a message naming the limit that applied",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a provider with no session capability fails at once and the old pipeline is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled before or during its session returns no report",
+                "result": "pass"
+              },
+              {
+                "title": "T12 a DEF review and an ISSUE review still run extract, probe and verify with the same extraction prompt, byte for byte",
+                "result": "pass"
+              },
+              {
+                "title": "T16 the first session gets the whole limit, and the limit defaults by intent",
+                "result": "pass"
+              },
+              {
+                "title": "T16 no review gets more than 30 minutes, whatever it is given",
+                "result": "pass"
+              },
+              {
+                "title": "T16 the validation repeat is started with only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "T16 a review whose deadline has passed fails before a repeat is started",
+                "result": "pass"
+              },
+              {
+                "title": "a design answering an ISSUE is reviewed once with the ISSUE template and the ISSUE limit, and is not edited",
+                "result": "pass"
+              },
+              {
+                "title": "a design under an Epic gets the SPEC template and the Epic limit; a standalone feature design the feature limit",
+                "result": "pass"
+              },
+              {
+                "title": "a failed design review stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "03539ccc0",
+        "ranAt": "2026-10-24T12:07:50.751Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/workflow-review-rpc.test.ts",
+                "title": "workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/workflow-review-rpc.test.ts",
+                "title": "T12 a controller-authored LLD: progress frames, then done with the verdict and reviewedBy daemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/workflow-review-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 764,
+            "titles": [
+              {
+                "title": "T12 a controller-authored LLD: progress frames, then done with the verdict and reviewedBy daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T12 a controller-authored DEF is reviewed through the pipeline and ends in done",
+                "result": "pass"
+              },
+              {
+                "title": "T12 a daemon-authored DEF ends in one error frame; no provider call, nothing stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T12 a daemon-authored LLD ends in one error frame; no provider call, nothing stamped",
+                "result": "pass"
+              },
+              {
+                "title": "a bad request, a missing artifact and a failing review each end in one error frame",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "18d2672b2",
+        "ranAt": "2026-10-24T12:11:58.905Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1132,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 585,
+            "titles": [
+              {
+                "title": "T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an older artifact with no author field is routed by its attribution labels",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF",
+                "result": "pass"
+              },
+              {
+                "title": "a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored LLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored HLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the verdicts phase refuses a controller-authored DEF and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "a3f10db3e",
+        "ranAt": "2026-10-24T17:54:57.031Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "codex accepts the strict copy of the bounded VERIFY_SCHEMA and a real verify call returns a finding that passes the reply check",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-live-verify.md (commit 4992fdc2)"
+            }
+          },
+          {
+            "name": "a real DEF review on the rebuilt daemon completes without a stall and relays progress to the controller",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-def-smoke.md + t10-progress-capture.json (commit a3f10db3): 97 notifications received by an MCP client over a 19m53s real DEF review"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

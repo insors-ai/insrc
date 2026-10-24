@@ -9,6 +9,7 @@ import { saveConnectionRpc, listConnectionsRpc, deleteConnectionRpc, testConnect
 import { managementHandshake } from '../../../shared/connection-management-wire.js';
 import { connectionsPath } from '../config.js';
 import { _resetCacheForTests } from '../pool-cache.js';
+import { _setKeystoreForTests } from '../secrets.js';
 import type { OperationTicket, MutationOutcome, ManagementCapabilities, SafeConnection } from '../../../shared/connection-management.js';
 const transport = { connectionIdentity: 'fixture-socket', daemonEpoch: 'fixture-epoch' };
 const call = (method: typeof CONNECTION_V2_METHODS[number], params: unknown) => connectionManagementRpc(method, params, transport);
@@ -159,12 +160,24 @@ test('CM-S1-R: a v2 refresh failure retries only safe list and preserves exact c
 });
 test('CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state', async () => {
 	const env = await environment();
+	const secrets = new Map<string, string>();
+	const previous = _setKeystoreForTests({ getKey: async ref => secrets.get(ref) ?? null, setKey: async (ref, value) => { secrets.set(ref, value); }, deleteKey: async ref => { secrets.delete(ref); } });
 	const root = join(env.directory, 'unmanaged');
 	await mkdir(root);
 	const f = await env.rootFixture('managed');
 	try {
-		const result = await saveConnectionRpc({ repoRoot: root, config: { id: 'file', kind: 'csv', path: 'data.csv' } }, transport);
+		const result = await saveConnectionRpc({ repoRoot: root, config: { id: 'file', kind: 'postgres', url: 'postgres://user:legacy-private-canary@host/db' } }, transport);
 		assert.ok(!('error' in result));
+		assert.equal(secrets.size, 1);
+		const persisted = await readFile(connectionsPath(root), 'utf8');
+		assert.ok(persisted.includes('${secret:'));
+		assert.ok(!persisted.includes('legacy-private-canary'));
+		assert.deepEqual(Object.keys(result).sort(), ['family', 'id', 'redactedUrl', 'wrotePath']);
+		for (const response of [result, await listConnectionsRpc({ repoRoot: root }, transport)]) {
+			const serialized = JSON.stringify(response);
+			assert.ok(!serialized.includes('${secret:') && !serialized.includes('legacy-private-canary'));
+			for (const ref of secrets.keys()) assert.ok(!serialized.includes(ref));
+		}
 		assert.equal((await deleteConnectionRpc({ repoRoot: root, id: 'file' }, transport) as {
 			removed: boolean;
 		}).removed, true);
@@ -176,6 +189,7 @@ test('CM-S1-J: legacy unmanaged success hides secret references and managed remo
 		assert.ok(!JSON.stringify(badProbe).includes(root) && !JSON.stringify(badProbe).includes('private-filename'));
 	}
 	finally {
+		_setKeystoreForTests(previous);
 		_resetCacheForTests();
 		await env.cleanup();
 	}

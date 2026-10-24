@@ -174,3 +174,9 @@ s3 t1 to t10 are built and gated; t11 adds the docs and the matrix test. The fac
 ## s3 BUILD approved (2026-10-24)
 
 Code review: round 1 warn (0 HIGH / 20 MED / 9 LOW, degraded); fixes in de209395 (secret masking and truncation in the displayed arguments, a matching requestId required before a tool runs, request-building failure denies the call, late answers after the 300 s expiry not accepted, prompt restored when an answer cannot be sent, a "no longer open" notice, the editor's Show details, one shared reconnect stream in `src/shared/approval-stream.ts`). Round 2 block (7 HIGH / 27 MED / 3 LOW) was reviewer evidence gaps ("the supplied evidence does not show ..."), not defects; coverage and quality had 0 findings. The 3 LOW `| undefined` items were fixed in 7652ad702. BUILD approved with an override reason on the user's yes. Not done: a toast cannot be dismissed in VS Code (documented), no JetBrains prompt.
+
+## s1 LLD approved (2026-10-24)
+
+LLD-b7a68147dcf72034-s1 (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S001/LLD.md): review round 1 block (4 HIGH: alias keys, shallow freeze, unguarded failure text, signal claim), all fixed in revision 2; round 2 warn (0 blocking). Approved by the user.
+
+Accepted refinements of sc1 (no amendment; the amendment tool is HLD-only): `ToolHookContext.caller` may be `undefined` (s3 made `ToolDeps.caller` optional); `ToolResultHookReport` is merged into `ToolResult` as the optional `hookFailures`; `TypedToolResult`'s success variant gains the same optional field (additive on s2's type); `runToolHooks(tool, input, result, deps)` is the executor-internal run point. Binding on the s1 plan and build: hooks are keyed by the canonical `tool.id`; each hook gets its own `structuredClone` of input and result; failure text is built inside its own guard; the hook stage has no cancellation bound.

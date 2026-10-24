@@ -183,6 +183,9 @@ Inject an independent watchdog arm/ready seam for deterministic tests. A new int
 - **smoke** — Check the installed shutdown lifecycle only when explicitly authorized, after unit/integration checks.
   - Subjects: `Record original PID and start marker, restart once, confirm original identity is gone before replacement becomes ready; inspect synchronous diagnostics`
   - Fixtures: `Stakeholder-authorized installed-daemon restart; never run during another workflow automatically`
+- **smoke** — Required manual documentation acceptance for ac4; this is not an automated or already-passed test.
+  - Subjects: `docs/standalone/daemon-stop-must-wait-process-end-E20261013fd8d70c3/S001/shutdown-investigation.md: record the controlled blocked-exit reproduction command, timestamp, disposable process identity, configured deadlines, observed exit, healthy control and source log references. Explicitly state that reproducing a blocked exit does not establish the original 2026-10-13 native cause. The reviewer must verify all of these fields before accepting ac4; unresolved historical diagnosis remains visible unless the stakeholder defers it.`
+  - Fixtures: `Controlled disposable-process run evidence; original historical smoke/log references where available`
 
 **Acceptance mapping**
 
@@ -191,7 +194,7 @@ Inject an independent watchdog arm/ready seam for deterministic tests. A new int
 | `ac1` | `Retained target remains live after PID/socket deletion; both CLI and script wait and force-stop that identity before reporting stopped.` |
 | `ac2` | `A blocked post-bye exit hook is terminated by the independent helper; a healthy parent exit leaves no surviving helper.` |
 | `ac3` | `PID reuse/replacement and identity failures never kill another process or launch a replacement after failed stop.` |
-| `ac4` | `Record reproducible blocked-exit evidence and state explicitly that the historical 2026-10-13 native cause is not established.` |
+| `ac4` | `Required manual documentation acceptance: inspect docs/standalone/daemon-stop-must-wait-process-end-E20261013fd8d70c3/S001/shutdown-investigation.md for reproduction command/time/identity/deadline/outcome, healthy control, source references and the explicit historical-cause caveat. This check is not yet performed and cannot be claimed as historical diagnosis.` |
 
 ## 7. Migration
 
@@ -238,4 +241,3 @@ Capture stop-target identity before RPC and retain it across PID-file deletion. 
 ## 10. Open questions
 
 - The exact cause of the 2026-10-13 native hang is not recoverable from available evidence. Is a controlled blocked-exit reproduction plus explicit diagnostic caveat acceptable, or must implementation wait for a reproduction of that original native failure?
-- The standalone Story has no structured acceptance criteria. ac1-ac4 in this design are derived from the approved ISSUE fix intent; confirm that mapping before plan.

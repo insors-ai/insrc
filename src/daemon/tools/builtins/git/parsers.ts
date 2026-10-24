@@ -9,8 +9,7 @@
 
 import type { ToolResult } from '../../types.js';
 import { withFailure } from './helpers.js';
-import type { GitLogCommit } from './log.js';
-import type { GitStatusData, GitStatusEntry } from './status.js';
+import type { GitLogCommit, GitStatusData, GitStatusEntry } from './schemas.js';
 
 export class ParseError extends Error {}
 

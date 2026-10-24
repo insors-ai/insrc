@@ -17,8 +17,9 @@
  * payload was truncated.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import { fail, failureKind, spawnFail, withFailure } from './helpers.js';
+import { assertSafeArg, fail, failureKind, spawnFail, withFailure } from './helpers.js';
 
 /** The shell runner; a test replaces it to make one of the two git commands fail. */
 let shell: typeof runShell = runShell;
@@ -28,33 +29,14 @@ export function setGitDiffShellForTests(fn?: typeof runShell): void {
   shell = fn ?? runShell;
 }
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import { GitDiffDataSchema } from './schemas.js';
+import type { GitDiffData, GitDiffFileStat } from './schemas.js';
+
+export type { GitDiffData, GitDiffFileStat } from './schemas.js';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export interface GitDiffFileStat {
-  path: string;
-  /** Previous path when the file was renamed. */
-  origPath?: string | undefined;
-  insertions: number;
-  deletions: number;
-  /** 'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'binary' */
-  change: string;
-}
-
-export interface GitDiffData {
-  /** Resolved mode label: 'unstaged' | 'staged' | 'range' | 'commit'. */
-  mode: string;
-  /** Git revision pair actually diffed (e.g. "HEAD -- worktree"). */
-  range: string;
-  files: GitDiffFileStat[];
-  totalInsertions: number;
-  totalDeletions: number;
-  truncated: boolean;
-  /** Bytes of diff body returned. */
-  diffBytes: number;
-}
 
 // ---------------------------------------------------------------------------
 // Tool
@@ -66,36 +48,28 @@ const MAX_MAX_BYTES = 2 * 1024 * 1024; // 2 MB hard cap
 export const gitDiffTool: Tool = {
   id: 'git_diff',
   description: 'Show a unified diff. Supports unstaged (default), staged, arbitrary commit ranges, or a specific path.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root. Defaults to process cwd.' },
-      staged: { type: 'boolean', description: 'When true, diff index vs HEAD (what `git commit` would record).' },
-      from: { type: 'string', description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' },
-      to: { type: 'string', description: 'Ending ref. When omitted with `from`, defaults to HEAD.' },
-      path: { type: 'string', description: 'Restrict the diff to this file or directory.' },
-      paths: {
-        type: 'array',
-        items: { type: 'string', minLength: 1 },
-        minItems: 1,
-        description: 'Restrict the diff to exactly these repository-root-relative paths, matched literally (no globs). Not with `path`. Combines with `exclude`.',
-      },
-      exclude: {
-        type: 'array',
-        items: { type: 'string', minLength: 1 },
-        description: 'Globs, relative to the repository root, to leave out of the diff (git glob pathspec: `*` does not cross `/`, `**` does). Applied to both the diff body and the file list.',
-      },
-      context: { type: 'number', description: 'Lines of context around each change (git -U). Default 3.', minimum: 0, maximum: 50 },
-      ignoreWhitespace: { type: 'boolean', description: 'Pass -w to git diff.' },
-      maxBytes: {
-        type: 'number',
-        description: `Max diff body bytes to return (default ${DEFAULT_MAX_BYTES}, hard cap ${MAX_MAX_BYTES}).`,
-        minimum: 1024,
-        maximum: MAX_MAX_BYTES,
-      },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
+    staged: Type.Optional(Type.Boolean({ description: 'When true, diff index vs HEAD (what `git commit` would record).' })),
+    from: Type.Optional(Type.String({ description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' })),
+    to: Type.Optional(Type.String({ description: 'Ending ref. When omitted with `from`, defaults to HEAD.' })),
+    path: Type.Optional(Type.String({ description: 'Restrict the diff to this file or directory.' })),
+    paths: Type.Optional(Type.Array(Type.String({ minLength: 1 }), {
+      minItems: 1,
+      description: 'Restrict the diff to exactly these repository-root-relative paths, matched literally (no globs). Not with `path`. Combines with `exclude`.',
+    })),
+    exclude: Type.Optional(Type.Array(Type.String({ minLength: 1 }), {
+      description: 'Globs, relative to the repository root, to leave out of the diff (git glob pathspec: `*` does not cross `/`, `**` does). Applied to both the diff body and the file list.',
+    })),
+    context: Type.Optional(Type.Number({ description: 'Lines of context around each change (git -U). Default 3.', minimum: 0, maximum: 50 })),
+    ignoreWhitespace: Type.Optional(Type.Boolean({ description: 'Pass -w to git diff.' })),
+    maxBytes: Type.Optional(Type.Number({
+      description: `Max diff body bytes to return (default ${DEFAULT_MAX_BYTES}, hard cap ${MAX_MAX_BYTES}).`,
+      minimum: 1024,
+      maximum: MAX_MAX_BYTES,
+    })),
+  }, { additionalProperties: false }),
+  outputSchema: GitDiffDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = strInput(input, 'cwd') ?? process.cwd();
@@ -103,6 +77,8 @@ export const gitDiffTool: Tool = {
     const from = strInput(input, 'from');
     const to = strInput(input, 'to');
     const path = strInput(input, 'path');
+    for (const ref of [from, to]) { if (ref !== undefined) { assertSafeArg(ref, 'ref'); } }
+    if (path !== undefined) { assertSafeArg(path, 'path'); }
     // Validated BEFORE git runs: a malformed list must not degrade into "no
     // exclusion", which would silently put the excluded paths back in the diff.
     const rawExclude = input['exclude'];

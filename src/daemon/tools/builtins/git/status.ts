@@ -7,34 +7,19 @@
  * spaces / unicode / \n in filenames don't confuse the parser.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 import { fail, spawnFail } from './helpers.js';
 import { parseOutput, parseStatusV2 } from './parsers.js';
+import { GitStatusDataSchema } from './schemas.js';
+import type { GitStatusData } from './schemas.js';
+
+export type { GitStatusData, GitStatusEntry } from './schemas.js';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export interface GitStatusData {
-  clean: boolean;
-  branch: string;
-  upstream?: string;
-  ahead?: number;
-  behind?: number;
-  staged: GitStatusEntry[];
-  unstaged: GitStatusEntry[];
-  untracked: string[];
-  conflicts: GitStatusEntry[];
-}
-
-export interface GitStatusEntry {
-  path: string;
-  /** For rename / copy operations, the original path. */
-  origPath?: string | undefined;
-  /** Git porcelain status letter for this side (M / A / D / R / C / U / ?). */
-  code: string;
-}
 
 // ---------------------------------------------------------------------------
 // Tool
@@ -43,16 +28,12 @@ export interface GitStatusEntry {
 export const gitStatusTool: Tool = {
   id: 'git_status',
   description: 'Show working tree status -- staged, unstaged, untracked, and conflicted paths.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: {
-        type: 'string',
-        description: 'Repository root to run status in. Defaults to the daemon\'s current working directory.',
-      },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({
+      description: 'Repository root to run status in. Defaults to the daemon\'s current working directory.',
+    })),
+  }, { additionalProperties: false }),
+  outputSchema: GitStatusDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = typeof input['cwd'] === 'string' && input['cwd'].length > 0

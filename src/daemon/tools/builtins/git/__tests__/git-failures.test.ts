@@ -18,6 +18,9 @@ import { join } from 'node:path';
 import { runShell, setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import type { ShellResult } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolResult } from '../../../types.js';
+import { executeTool } from '../../../executor.js';
+import { _resetRegistryForTests } from '../../../registry.js';
+import { registerGitTools } from '../index.js';
 import { conflictFailure, fail, failureKind, rejectInput, spawnFail, UNKNOWN_OUTCOME, withFailure, withFailureNet } from '../helpers.js';
 import { FAILURE_CALLS } from './fixtures/failure-calls.js';
 import { gitAmendTool } from '../amend.js';
@@ -328,4 +331,100 @@ test('git_commit and git_push keep their legacy refusals in a repository and fai
 		process.env['PATH'] = savedPath;
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+/** A `git` on PATH that fails one named read of git_show (the diff, or the numstat) and otherwise runs the real git. */
+function fakeGit(dir: string, realGit: string): string {
+	const bin = join(dir, 'bin');
+	mkdirSync(bin, { recursive: true });
+	writeFileSync(join(bin, 'git'), [
+		'#!/bin/sh', 'mode=other',
+		'for a in "$@"; do [ "$a" = "--numstat" ] && mode=numstat; done',
+		'if [ "$mode" = other ]; then for a in "$@"; do [ "$a" = "--pretty=format:" ] && mode=diff; done; fi',
+		'if [ "$mode" = "$FAKE_FAIL" ]; then echo "$mode boom" >&2; exit 1; fi',
+		`exec ${realGit} "$@"`, '',
+	].join('\n'), { mode: 0o755 });
+	return bin;
+}
+
+test('a failing git_show diff read is a failure and a failing numstat read is a warning', async () => {
+	const repo = newRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		writeFileSync(join(repo, 'f.txt'), 'a\n');
+		git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'one');
+		const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
+		process.env['PATH'] = `${fakeGit(repo, realGit)}:${savedPath ?? ''}`;
+
+		// the diff is the answer: a failing read fails the call, with the kind of the failure
+		process.env['FAKE_FAIL'] = 'diff';
+		const diffFailed = await gitShowTool.execute({ cwd: repo, ref: 'HEAD' }, deps(repo));
+		assert.equal(diffFailed.success, false);
+		assert.equal(diffFailed.failure?.kind, 'rejected');
+		assert.equal(diffFailed.output, '[git:show] failed: diff boom');
+
+		// a diff that cannot be spawned or times out is a failure too
+		process.env['FAKE_FAIL'] = '';
+		setShellTimeoutScaleForTests(0.0001);
+		try {
+			const sleepGit = join(repo, 'bin2');
+			mkdirSync(sleepGit);
+			writeFileSync(join(sleepGit, 'git'), '#!/bin/sh\nexec sleep 5\n', { mode: 0o755 });
+			process.env['PATH'] = `${sleepGit}:${savedPath ?? ''}`;
+			const slow = await gitShowTool.execute({ cwd: repo, ref: 'HEAD' }, deps(repo));
+			assert.equal(slow.success, false);
+			assert.equal(slow.failure?.kind, 'timed-out');
+		} finally { setShellTimeoutScaleForTests(undefined); }
+		process.env['PATH'] = `${join(repo, 'bin')}:${savedPath ?? ''}`;
+
+		// the file list only adds detail: the diff is returned without it, with a warning
+		process.env['FAKE_FAIL'] = 'numstat';
+		const warned = await gitShowTool.execute({ cwd: repo, ref: 'HEAD' }, deps(repo));
+		assert.equal(warned.success, true, warned.output);
+		const data = warned.data as { files: unknown[]; totalInsertions: number; warnings?: string[] };
+		assert.deepEqual(data.files, []);
+		assert.equal(data.totalInsertions, 0);
+		assert.equal(data.warnings?.length, 1);
+		assert.match(data.warnings?.[0] ?? '', /numstat rejected/);
+
+		// neither failing: no warnings at all
+		process.env['FAKE_FAIL'] = '';
+		const ok = await gitShowTool.execute({ cwd: repo, ref: 'HEAD' }, deps(repo));
+		assert.equal(ok.success, true);
+		assert.equal((ok.data as { warnings?: string[] }).warnings, undefined);
+		assert.equal((ok.data as { files: unknown[] }).files.length, 1);
+	} finally {
+		delete process.env['FAKE_FAIL'];
+		process.env['PATH'] = savedPath;
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('git_diff exclude and git_stage empty paths fail with the executor\'s message through executeTool and with the legacy text directly', async () => {
+	_resetRegistryForTests();
+	registerGitTools();
+	const repo = newRepo();
+	try {
+		writeFileSync(join(repo, 'f.txt'), 'a\n');
+		git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'one');
+
+		// through the executor the schema refuses a malformed list before git runs, naming the field
+		for (const input of [{ exclude: [''] }, { exclude: ['ok', ''] }, { paths: [''] }, { paths: [] }]) {
+			const r = await executeTool('git_diff', { cwd: repo, ...input }, deps(repo));
+			assert.equal(r.success, false, JSON.stringify(input));
+			assert.equal(r.failure?.kind, 'rejected');
+			assert.match(r.failure?.message ?? '', /does not fit its input schema/);
+			assert.match(r.failure?.message ?? '', /exclude|paths/);
+		}
+		// called directly, the tool keeps its legacy invalid-input text
+		const direct = await gitDiffTool.execute({ cwd: repo, exclude: [''] }, deps(repo));
+		assert.equal(direct.output, '[git:diff] invalid-input: `exclude` must be an array of non-empty strings');
+		assert.equal(direct.error, 'invalid-input');
+		assert.equal(direct.failure?.kind, 'rejected');
+
+		// path together with paths is not expressible in the schema: the legacy failure stays, through the executor too
+		const both = await executeTool('git_diff', { cwd: repo, path: 'f.txt', paths: ['f.txt'] }, deps(repo));
+		assert.equal(both.success, false);
+		assert.match(both.output, /cannot be combined with `path`/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

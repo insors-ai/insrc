@@ -8,45 +8,26 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import { Type } from '@sinclair/typebox';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { fail, spawnFail, withFailure } from './helpers.js';
+import { assertSafeArg, fail, spawnFail, withFailure } from './helpers.js';
+import { GitBlameDataSchema } from './schemas.js';
+import type { GitBlameData, GitBlameLine } from './schemas.js';
 
-export interface GitBlameLine {
-  line: number;
-  sha: string;
-  shortSha: string;
-  author: string;
-  authorEmail: string;
-  /** Epoch seconds. */
-  authorTime: number;
-  summary: string;
-  content: string;
-}
-
-export interface GitBlameData {
-  path: string;
-  ref: string;
-  lines: GitBlameLine[];
-  /** Per-SHA line count. */
-  commits: Array<{ sha: string; shortSha: string; author: string; summary: string; lineCount: number }>;
-}
+export type { GitBlameData, GitBlameLine } from './schemas.js';
 
 export const gitBlameTool: Tool = {
   id: 'git_blame',
   description: 'Show line-level authorship for a file (optionally a range).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root. Defaults to process cwd.' },
-      path: { type: 'string', description: 'File path relative to the repo root.' },
-      ref:  { type: 'string', description: 'Revision to blame (default HEAD).' },
-      startLine: { type: 'number', description: '1-based start line for a range blame.', minimum: 1 },
-      endLine:   { type: 'number', description: '1-based end line (inclusive).', minimum: 1 },
-      ignoreWhitespace: { type: 'boolean', description: 'Pass -w.' },
-    },
-    required: ['path'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
+    path: Type.String({ description: 'File path relative to the repo root.' }),
+    ref: Type.Optional(Type.String({ description: 'Revision to blame (default HEAD).' })),
+    startLine: Type.Optional(Type.Number({ description: '1-based start line for a range blame.', minimum: 1 })),
+    endLine: Type.Optional(Type.Number({ description: '1-based end line (inclusive).', minimum: 1 })),
+    ignoreWhitespace: Type.Optional(Type.Boolean({ description: 'Pass -w.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitBlameDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -55,6 +36,8 @@ export const gitBlameTool: Tool = {
       return badInput('missing path');
     }
     const ref = str(input, 'ref') ?? 'HEAD';
+    assertSafeArg(ref, 'ref');
+    assertSafeArg(path, 'path');
     const start = numInput(input, 'startLine');
     const end = numInput(input, 'endLine');
     const ignoreWhitespace = input['ignoreWhitespace'] === true;

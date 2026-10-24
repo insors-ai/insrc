@@ -7,31 +7,15 @@
  * result.data.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import { fail, spawnFail } from './helpers.js';
+import { assertSafeArg, fail, spawnFail } from './helpers.js';
+import { LOG_FORMAT, parseLogRecords, parseOutput } from './parsers.js';
+import { GitLogDataSchema } from './schemas.js';
+import type { GitLogData } from './schemas.js';
+
+export type { GitLogCommit, GitLogData } from './schemas.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface GitLogCommit {
-  sha: string;
-  shortSha: string;
-  author: string;
-  authorEmail: string;
-  /** ISO-8601 author date. */
-  date: string;
-  subject: string;
-  /** Commit body, may be empty. Trailing whitespace trimmed. */
-  body: string;
-}
-
-export interface GitLogData {
-  commits: GitLogCommit[];
-  /** Git revision range actually queried (resolved ref or HEAD). */
-  ref: string;
-}
 
 // ---------------------------------------------------------------------------
 // Tool
@@ -40,32 +24,27 @@ export interface GitLogData {
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 500;
 
-// Unit-separator delimits fields; NUL delimits commits (from -z).
-const FS = '\x1f';
-const PRETTY = `%H${FS}%h${FS}%an${FS}%ae${FS}%aI${FS}%s${FS}%b`;
-
 export const gitLogTool: Tool = {
   id: 'git_log',
   description: 'Show commit history, optionally filtered by ref, path, author, message, or date range.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root. Defaults to process cwd.' },
-      ref: { type: 'string', description: 'Revision or range to log (e.g. "HEAD", "main..feature", "v1.0..HEAD"). Default: HEAD.' },
-      path: { type: 'string', description: 'Restrict history to changes touching this path (file or directory).' },
-      limit: { type: 'number', description: `Max commits to return (default ${DEFAULT_LIMIT}, cap ${MAX_LIMIT}).`, minimum: 1, maximum: MAX_LIMIT },
-      author: { type: 'string', description: 'Filter by author name / email substring (git --author=).' },
-      grep: { type: 'string', description: 'Filter by commit message substring (git --grep=).' },
-      since: { type: 'string', description: 'ISO date -- only commits after this time (git --since=).' },
-      until: { type: 'string', description: 'ISO date -- only commits before this time (git --until=).' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
+    ref: Type.Optional(Type.String({ description: 'Revision or range to log (e.g. "HEAD", "main..feature", "v1.0..HEAD"). Default: HEAD.' })),
+    path: Type.Optional(Type.String({ description: 'Restrict history to changes touching this path (file or directory).' })),
+    limit: Type.Optional(Type.Number({ description: `Max commits to return (default ${DEFAULT_LIMIT}, cap ${MAX_LIMIT}).`, minimum: 1, maximum: MAX_LIMIT })),
+    author: Type.Optional(Type.String({ description: 'Filter by author name / email substring (git --author=).' })),
+    grep: Type.Optional(Type.String({ description: 'Filter by commit message substring (git --grep=).' })),
+    since: Type.Optional(Type.String({ description: 'ISO date -- only commits after this time (git --since=).' })),
+    until: Type.Optional(Type.String({ description: 'ISO date -- only commits before this time (git --until=).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitLogDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = strInput(input, 'cwd') ?? process.cwd();
     const ref = strInput(input, 'ref') ?? 'HEAD';
     const path = strInput(input, 'path');
+    assertSafeArg(ref, 'ref');
+    if (path !== undefined) { assertSafeArg(path, 'path'); }
     const limit = clampLimit(input['limit']);
     const author = strInput(input, 'author');
     const grep = strInput(input, 'grep');
@@ -77,7 +56,7 @@ export const gitLogTool: Tool = {
       '-z',
       '--no-color',
       `--max-count=${limit}`,
-      `--pretty=format:${PRETTY}`,
+      `--pretty=format:${LOG_FORMAT}`,
     ];
     if (author) { argv.push(`--author=${author}`); }
     if (grep)   { argv.push(`--grep=${grep}`); }
@@ -96,7 +75,9 @@ export const gitLogTool: Tool = {
       return fail('git:log', result);
     }
 
-    const commits = parseLog(result.stdout);
+    const commitsRead = parseOutput('git:log', result, parseLogRecords);
+    if (!commitsRead.ok) { return commitsRead.failure; }
+    const commits = commitsRead.value;
     const data: GitLogData = { commits, ref };
     const report = renderReport(data, cwd, { path, author, grep, since, until, limit });
 
@@ -122,28 +103,6 @@ function strInput(input: ToolInput, key: string): string | undefined {
 function clampLimit(raw: unknown): number {
   if (typeof raw !== 'number' || !Number.isFinite(raw)) { return DEFAULT_LIMIT; }
   return Math.max(1, Math.min(MAX_LIMIT, Math.floor(raw)));
-}
-
-function parseLog(raw: string): GitLogCommit[] {
-  if (!raw) { return []; }
-  // `-z` separates commits by NUL. Trim a possible trailing NUL before splitting.
-  const chunks = raw.replace(/\0$/, '').split('\0');
-  const out: GitLogCommit[] = [];
-  for (const chunk of chunks) {
-    if (!chunk) { continue; }
-    const fields = chunk.split(FS);
-    if (fields.length < 7) { continue; }
-    out.push({
-      sha: fields[0] ?? '',
-      shortSha: fields[1] ?? '',
-      author: fields[2] ?? '',
-      authorEmail: fields[3] ?? '',
-      date: fields[4] ?? '',
-      subject: fields[5] ?? '',
-      body: (fields[6] ?? '').trimEnd(),
-    });
-  }
-  return out;
 }
 
 interface FilterContext {

@@ -6,26 +6,14 @@
  * when the commit touches many files.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { fail, spawnFail, withFailure } from './helpers.js';
-import type { GitDiffFileStat } from './diff.js';
+import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
+import type { GitDiffFileStat, GitShowData } from './schemas.js';
+import { GitShowDataSchema } from './schemas.js';
 
-export interface GitShowData {
-  sha: string;
-  shortSha: string;
-  author: string;
-  authorEmail: string;
-  date: string;
-  subject: string;
-  body: string;
-  parents: string[];
-  files: GitDiffFileStat[];
-  totalInsertions: number;
-  totalDeletions: number;
-  truncated: boolean;
-  diffBytes: number;
-}
+export type { GitShowData } from './schemas.js';
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const MAX_MAX_BYTES = 2 * 1024 * 1024;
@@ -36,21 +24,20 @@ const HEADER_PRETTY = `%H${FS}%h${FS}%P${FS}%an${FS}%ae${FS}%aI${FS}%s${FS}%b`;
 export const gitShowTool: Tool = {
   id: 'git_show',
   description: 'Show a single commit: metadata + full diff.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root. Defaults to process cwd.' },
-      ref: { type: 'string', description: 'Commit ref to show (SHA / branch / tag / HEAD~N). Default HEAD.' },
-      path: { type: 'string', description: 'Limit the diff to this file or directory.' },
-      maxBytes: { type: 'number', description: `Diff byte cap (default ${DEFAULT_MAX_BYTES}, max ${MAX_MAX_BYTES}).` },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
+    ref: Type.Optional(Type.String({ description: 'Commit ref to show (SHA / branch / tag / HEAD~N). Default HEAD.' })),
+    path: Type.Optional(Type.String({ description: 'Limit the diff to this file or directory.' })),
+    maxBytes: Type.Optional(Type.Number({ description: `Diff byte cap (default ${DEFAULT_MAX_BYTES}, max ${MAX_MAX_BYTES}).` })),
+  }, { additionalProperties: false }),
+  outputSchema: GitShowDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const ref = str(input, 'ref') ?? 'HEAD';
     const path = str(input, 'path');
+    assertSafeArg(ref, 'ref');
+    if (path !== undefined) { assertSafeArg(path, 'path'); }
     const maxBytes = Math.min(
       Math.max(typeof input['maxBytes'] === 'number' ? input['maxBytes'] : DEFAULT_MAX_BYTES, 1024),
       MAX_MAX_BYTES,
@@ -90,7 +77,17 @@ export const gitShowTool: Tool = {
       runShell(statArgv, { cwd, timeoutMs: 15_000 }),
     ]);
 
-    const files = stat.code === 0 ? parseNumstat(stat.stdout) : [];
+    // The diff is the answer: a read that failed, timed out or could not be spawned is a failure, not an empty diff.
+    // (Its byte cap is the designed truncation, reported as data.truncated.)
+    if (diff.spawnError) { return spawnFail('git:show', diff.stderr); }
+    if (diff.code !== 0) { return fail('git:show', diff); }
+
+    // The file list only adds detail: the diff is returned without it, with a warning.
+    const warnings: string[] = [];
+    if (!ranToExit(stat) || stat.code !== 0 || stat.stdoutTruncated) {
+      warnings.push(`git show --numstat ${stat.stdoutTruncated ? 'was cut' : failureKind(stat)}: the file list is empty`);
+    }
+    const files = warnings.length === 0 ? parseNumstat(stat.stdout) : [];
     const totalInsertions = files.reduce((n, f) => n + f.insertions, 0);
     const totalDeletions  = files.reduce((n, f) => n + f.deletions, 0);
     const truncated = diff.stdout.length >= maxBytes;
@@ -103,6 +100,7 @@ export const gitShowTool: Tool = {
       totalDeletions,
       truncated,
       diffBytes: diffBody.length,
+      ...(warnings.length > 0 ? { warnings } : {}),
     };
 
     return {

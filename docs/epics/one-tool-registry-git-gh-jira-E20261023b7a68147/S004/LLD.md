@@ -472,6 +472,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
 
 - `q69911691` — ep3 (partial): invariantsToPreserve rest on the s1 bundle; the source field holds a citation id as the schema requires.
   - **ignored**: left to implementer judgment — Schema note; the invariants are explicit in the LLD _(2026-10-24T18:11:53.607Z)_
+- `q1c7e28d9` — alt2 (partial): k1, k3, k4 and k6 were not scored per alternative; none of them is touched by the choice between the three shapes.
+  - **resolved**: Record as non-discriminating — k1, k3, k4, k6 are not touched by the choice between the three shapes _(2026-10-24T18:13:40.476Z)_
 
 ## Citations
 

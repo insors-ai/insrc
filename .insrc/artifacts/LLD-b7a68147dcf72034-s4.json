@@ -91,6 +91,13 @@
         "status": "ignored",
         "rationale": "Schema note; the invariants are explicit in the LLD",
         "resolvedAt": "2026-10-24T18:11:53.607Z"
+      },
+      "q1c7e28d9": {
+        "question": "alt2 (partial): k1, k3, k4 and k6 were not scored per alternative; none of them is touched by the choice between the three shapes.",
+        "status": "resolved",
+        "choice": "Record as non-discriminating",
+        "rationale": "k1, k3, k4, k6 are not touched by the choice between the three shapes",
+        "resolvedAt": "2026-10-24T18:13:40.476Z"
       }
     }
   },

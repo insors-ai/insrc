@@ -194,16 +194,17 @@ test('restoreCarriedDocSummaries works through more carry rows than one batch, a
 	assert.equal(await carryRows(), 1, 'only the other repository\'s row is left');
 });
 
-test('a v5 store opened with this build has an empty doc_summary_carry and schema version 5', async () => {
+test('a v5 store opened with this build has an empty doc_summary_carry and current schema version', async () => {
 	// A store without the database, as every v5 store written before this build is.
 	const s = await getGraphStore();
 	await s.docSummaryCarry.drop();
+	await s.meta.put('schema_version', 5);
 	assert.ok(!s.root.getKeys({}).asArray.includes('doc_summary_carry'), 'the database is gone');
 	await closeGraphStore();
 
 	const reopened = await getGraphStore();
-	assert.equal(SCHEMA_VERSION, 5);
-	assert.equal(reopened.meta.get('schema_version'), 5);
+	assert.equal(SCHEMA_VERSION, 6);
+	assert.equal(reopened.meta.get('schema_version'), 6);
 	assert.ok(reopened.root.getKeys({}).asArray.includes('doc_summary_carry'), 'opened again');
 	assert.equal(await carryRows(), 0);
 });

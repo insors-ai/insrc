@@ -47,6 +47,8 @@ import {
 	encodeNameIndexKey,
 	encodeRepoKey,
 	ENTITY_KIND_BYTE,
+	absoluteEntityFilePath,
+	encodeEntityFileKey,
 } from './keys.js';
 import {
 	decodeEntityRow,
@@ -424,6 +426,32 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
 	return typeof v === 'string' ? v : (v as Buffer).toString('utf8');
 }
 
+/** Derived memberships are rebuilt atomically by the migration runner's child transaction. */
+export const MIGRATION_V5_TO_V6: Migration = {
+	from: 5,
+	to: 6,
+	description: 'Index entity memberships by exact file and repository',
+	run(store) {
+		for (const index of [store.entityByFile, store.entityByRepo]) {
+			for (const { key } of index.getRange()) index.remove(key as Buffer);
+		}
+		const roots = new Map<number, string>();
+		for (const { value } of store.repo.getRange()) {
+			const repo = decodeRepoRow(value as Buffer);
+			roots.set(repo.id, repo.path);
+		}
+		for (const { key, value } of store.entity.getRange()) {
+			const row = decodeEntityRow(value as Buffer);
+			const root = roots.get(row.repoId);
+			if (root === undefined) throw new Error(`Cannot migrate entity membership: unregistered repository ${row.repoId}`);
+			const id = key as Buffer;
+			store.entityByFile.put(encodeEntityFileKey(absoluteEntityFilePath(row.filePath, root)), id);
+			store.entityByRepo.put(encodeRepoKey(row.repoId), id);
+		}
+	},
+};
+
+
 /**
  * Production migration registry. Add new entries here as new
  * SCHEMA_VERSION bumps land; never edit or remove an
@@ -433,11 +461,13 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
  * migrations (e.g. 1→3 fast path) are allowed but should always have
  * a corresponding 1→2 + 2→3 chain so older clients can step through.
  */
+
 export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V1_TO_V2,
 	MIGRATION_V2_TO_V3,
 	MIGRATION_V3_TO_V4,
 	MIGRATION_V4_TO_V5,
+	MIGRATION_V5_TO_V6,
 ];
 
 /**

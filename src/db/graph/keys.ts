@@ -15,6 +15,19 @@
  * these helpers.
  */
 
+import { createHash } from 'node:crypto';
+
+/** Preserve the entity store's exact absolute-path representation (no normalization). */
+export function absoluteEntityFilePath(filePath: string, repoRoot: string): string {
+	if (filePath.startsWith('/') || repoRoot === '') return filePath;
+	return repoRoot.endsWith('/') ? `${repoRoot}${filePath}` : `${repoRoot}/${filePath}`;
+}
+
+/** Fixed-size file membership key; readers must verify authoritative path equality. */
+export function encodeEntityFileKey(absolutePath: string): Buffer {
+	return createHash('sha256').update(absolutePath, 'utf8').digest();
+}
+
 // ---------------------------------------------------------------------------
 // Relation kinds (12-kind enum, encoded as u8 in edge keys)
 // ---------------------------------------------------------------------------

@@ -134,8 +134,9 @@ export const MAX_DBS = 64;
  *         The v4 -> v5 migration writes an IndexStateRow for every
  *         workspace repository with fullIndexFinished false and its
  *         pending counts recounted from the stored rows.
+ *   v6 -- transactional entity_by_file and entity_by_repo memberships.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -262,6 +263,8 @@ export interface GraphStore {
 	meta:                AnyDb;
 	repo:                AnyDb;
 	entity:              AnyDb;
+	entityByFile:        AnyDb;
+	entityByRepo:        AnyDb;
 	entityIdByString:    AnyDb;
 	entityStringByU64:   AnyDb;
 	nameIndex:           AnyDb;
@@ -584,6 +587,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			meta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),
 			repo:               open_('repo'),
 			entity:             open_('entity'),
+			entityByFile:       open_('entity_by_file', { dupSort: true }),
+			entityByRepo:       open_('entity_by_repo', { dupSort: true }),
 			entityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),
 			entityStringByU64:  root.openDB({
 				name:        'entity_string_by_u64',

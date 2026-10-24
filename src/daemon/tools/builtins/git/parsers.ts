@@ -171,7 +171,7 @@ export function parseShowRef(raw: string): GitRef[] {
   if (raw === '') { return []; }
   if (!raw.endsWith('\n')) { throw new ParseError('the last line is not newline-terminated'); }
   return raw.slice(0, -1).split('\n').map(line => {
-    const m = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) (\S.*)$/.exec(line);
+    const m = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) (\S+)$/.exec(line);
     if (!m) { throw new ParseError(`unknown show-ref record: ${JSON.stringify(line)}`); }
     return { sha: m[1]!, name: m[2]! };
   });

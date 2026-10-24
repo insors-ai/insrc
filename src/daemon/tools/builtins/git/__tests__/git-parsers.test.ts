@@ -69,8 +69,8 @@ test('each parser turns fixed sample output into the expected records and handle
 	]);
 	assert.deepEqual(parseRevList(`${SHA_A}\n${SHA_B}\n`), [SHA_A, SHA_B]);
 	assert.deepEqual(parseRevList(''), []);
-	assert.deepEqual(parseShowRef(`${SHA_A} refs/heads/main\n${SHA_B} refs/tags/v 1\n`), [
-		{ sha: SHA_A, name: 'refs/heads/main' }, { sha: SHA_B, name: 'refs/tags/v 1' },
+	assert.deepEqual(parseShowRef(`${SHA_A} refs/heads/main\n${SHA_B} refs/tags/v1\n`), [
+		{ sha: SHA_A, name: 'refs/heads/main' }, { sha: SHA_B, name: 'refs/tags/v1' },
 	]);
 	assert.equal(forEachRefFormat(['refname', 'objectname']), '%(refname)%1f%(objectname)%00');
 	assert.deepEqual(parseForEachRef('refs/heads/main\x1f' + SHA_A + '\0\nrefs/tags/v1\x1f' + SHA_B + '\0\n', ['refname', 'objectname']), [
@@ -136,6 +136,7 @@ test('a parser refuses cut output and unknown records', () => {
 		['rev-list: not an object name', () => parseRevList('nope\n')],
 		['rev-list: unterminated', () => parseRevList(SHA_A)],
 		['show-ref: unknown record', () => parseShowRef('garbage\n')],
+		['show-ref: a ref name cannot hold a space', () => parseShowRef(`${SHA_A} refs/tags/v 1\n`)],
 		['for-each-ref: wrong field count', () => parseForEachRef('refs/heads/x\0\n', ['refname', 'objectname'])],
 		['for-each-ref: unterminated', () => parseForEachRef('refs/heads/x\x1f' + SHA_A, ['refname', 'objectname'])],
 		['log: unknown record', () => parseLogRecords('abc\x1fdef')],

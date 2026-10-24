@@ -115,6 +115,13 @@
         "choice": "Confirm existing contract coverage",
         "rationale": "Accepted refinements, no amendment (amendment tool is HLD-only); recorded in docs/plans/tool-registry.md",
         "resolvedAt": "2026-10-24T14:19:14.831Z"
+      },
+      "q70b2c228": {
+        "question": "Review round 1 (4 HIGH) revised this LLD: hooks keyed by canonical tool.id, a per-hook deep copy instead of a shallow freeze, guarded failure text, and an accurate statement that the hook stage has no cancellation bound.",
+        "status": "resolved",
+        "choice": "Proceed with revised LLD",
+        "rationale": "All four review revisions are in revision 2",
+        "resolvedAt": "2026-10-24T14:19:29.991Z"
       }
     }
   },

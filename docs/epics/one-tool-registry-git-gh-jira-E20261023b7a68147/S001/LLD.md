@@ -322,6 +322,8 @@ The success variant gains hookFailures?: readonly HookFailure[] | undefined; cal
   - **ignored**: left to implementer judgment — k1-k6 are not touched by a post-success rule stage _(2026-10-24T14:18:48.777Z)_
 - `q9062bed4` — sbdry3 (partial): ToolHookContext.caller allows undefined (ToolDeps.caller is optional since s3) and ToolResultHookReport is merged into ToolResult; both refine the sc1 sketch and may need a sharedContract amendment.
   - **resolved**: Confirm existing contract coverage — Accepted refinements, no amendment (amendment tool is HLD-only); recorded in docs/plans/tool-registry.md _(2026-10-24T14:19:14.831Z)_
+- `q70b2c228` — Review round 1 (4 HIGH) revised this LLD: hooks keyed by canonical tool.id, a per-hook deep copy instead of a shallow freeze, guarded failure text, and an accurate statement that the hook stage has no cancellation bound.
+  - **resolved**: Proceed with revised LLD — All four review revisions are in revision 2 _(2026-10-24T14:19:29.991Z)_
 
 ## Citations
 

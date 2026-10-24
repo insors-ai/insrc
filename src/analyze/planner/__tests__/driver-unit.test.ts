@@ -61,6 +61,7 @@ import {
 	_buildInitialMessagesForTest,
 	_classifyErrorForTest,
 } from '../driver.js';
+import { plannerWireSchema } from '../wire-schema.js';
 import type {
 	AnalyzeTaskTemplate,
 	ClassifiedIntent,
@@ -251,6 +252,7 @@ test('buildInitialMessages: emits 2 messages (system, user) with all the require
 		bundleMd:      'BUNDLE BODY',
 		intent:        SAMPLE_INTENT,
 		catalog:       [SAMPLE_TEMPLATE, SAMPLE_AGGREGATOR],
+		wire:          plannerWireSchema([SAMPLE_TEMPLATE, SAMPLE_AGGREGATOR]),
 	});
 	assert.equal(msgs.length, 2);
 	assert.equal(msgs[0]!.role, 'system');
@@ -280,6 +282,7 @@ test('buildInitialMessages: child-plan parentTaskPath emits the warning note', (
 		bundleMd:      'B',
 		intent:        SAMPLE_INTENT,
 		catalog:       [SAMPLE_TEMPLATE],
+		wire:          plannerWireSchema([SAMPLE_TEMPLATE]),
 		parentTaskPath: 't02',
 	});
 	const user = msgs[1]!.content as string;

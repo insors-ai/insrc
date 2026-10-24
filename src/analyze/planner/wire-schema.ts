@@ -300,3 +300,29 @@ export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[]
 	});
 	return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: { ...plan, tasks } };
 }
+
+/** Write the objects at a slot path as JSON strings, on a copy: the inverse of decodeSlot. */
+function encodeSlot(value: unknown, path: SlotPath): unknown {
+	if (path.length === 0) return value === undefined || typeof value === 'string' ? value : JSON.stringify(value);
+	const [step, ...rest] = path;
+	if (step === ITEMS) return Array.isArray(value) ? value.map(v => encodeSlot(v, rest)) : value;
+	if (value === null || typeof value !== 'object' || Array.isArray(value) || !(step! in (value as Schema))) return value;
+	return { ...(value as Schema), [step!]: encodeSlot((value as Schema)[step!], rest) };
+}
+
+/** A plan with each task's slot values written back as JSON strings: the wire form a correction retry echoes. */
+export function encodePlanParams<P extends { readonly tasks: readonly TaskLike[] }>(plan: P, wire: PlannerWireSchema): P {
+	const tasks = plan.tasks.map(task => {
+		const slots = typeof task.template === 'string' ? wire.slots.get(task.template) : undefined;
+		if (slots === undefined) return task;
+		let params = task.params;
+		for (const path of slots) params = encodeSlot(params, path);
+		return { ...task, params };
+	});
+	return { ...plan, tasks };
+}
+
+/** A slot path as the prompt names it: `params`, `params.upstreamContext`, `params.constraints[]`. */
+export function slotLabel(path: SlotPath): string {
+	return 'params' + path.map(step => step === ITEMS ? '[]' : `.${step}`).join('');
+}

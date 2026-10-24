@@ -21,21 +21,23 @@
  */
 
 import type { AnalyzeTaskTemplate } from '../../shared/analyze-types.js';
+import { slotLabel, type SlotPath } from './wire-schema.js';
 
 /**
  * Render the catalog as a single Markdown block. The result is
  * intended for splicing into the user message of the Plan Builder
- * call.
+ * call. Given the planner's wire slots, each template also lists the
+ * params paths it emits as JSON text (ISSUE-8d39ef09).
  */
-export function renderCatalog(catalog: readonly AnalyzeTaskTemplate[]): string {
+export function renderCatalog(catalog: readonly AnalyzeTaskTemplate[], slots?: ReadonlyMap<string, readonly SlotPath[]> | undefined): string {
 	if (catalog.length === 0) {
 		return '_(no templates registered)_\n';
 	}
-	const sections = catalog.map(renderTemplate);
+	const sections = catalog.map(t => renderTemplate(t, slots?.get(t.id) ?? []));
 	return sections.join('\n');
 }
 
-function renderTemplate(t: AnalyzeTaskTemplate): string {
+function renderTemplate(t: AnalyzeTaskTemplate, slots: readonly SlotPath[]): string {
 	const head =
 		`### \`${t.id}\`\n` +
 		`- **target**: \`${t.target}\`\n` +
@@ -51,6 +53,10 @@ function renderTemplate(t: AnalyzeTaskTemplate): string {
 		? '- **inputSchema**:\n```json\n' + JSON.stringify(t.inputSchema, null, 2) + '\n```\n'
 		: '';
 
+	const slotSection = slots.length > 0
+		? `- **emit as JSON text**: ${slots.map(p => p.length === 0 ? '`params` (whole params is a slot)' : `\`${slotLabel(p)}\``).join(', ')}\n`
+		: '';
+
 	const producesSection = t.produces !== undefined
 		? `- **produces**: ${t.produces.map(p => `\`${p}\``).join(', ')}\n`
 		: '';
@@ -59,7 +65,7 @@ function renderTemplate(t: AnalyzeTaskTemplate): string {
 		? '- **outputSchema**:\n```json\n' + JSON.stringify(t.outputSchema, null, 2) + '\n```\n'
 		: '';
 
-	return [head, desc, inputSection, producesSection, outputSection].join('');
+	return [head, desc, inputSection, slotSection, producesSection, outputSection].join('');
 }
 
 /**

@@ -480,6 +480,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Proceed with narrowed s4 — The split was the user's decision; s4 and s8 together meet DEF s4 ac1 _(2026-10-24T18:16:58.416Z)_
 - `qa278e949` — Review cycle 2, round 3 (2 HIGH, 2 MED) was addressed without a further review: git_merge_base returns bases, the commit numstat read is an inventoried secondary read, git_fetch depth below 1 is in the compatibility audit, and the coverage test uses three owners. A further review needs the user's go-ahead.
   - **ignored**: left to implementer judgment — Review-history note, superseded: the user approved the LLD (revision 12) with an override _(2026-10-24T18:18:08.802Z)_
+- `q3250c96d` — Review cycle 3, round 1 (0 HIGH, 2 MED) revised this LLD: git_reset and git_push lookups joined the secondary-read inventory with a grep test, and the executor-level rejection of schema-forbidden git_diff and git_stage inputs is a documented compatibility change.
+  - **resolved**: Proceed with revised LLD — The rejection of schema-forbidden git_diff and git_stage inputs is a documented, accepted compatibility change _(2026-10-24T18:19:15.253Z)_
 
 ## Citations
 

@@ -1,3 +1,5 @@
+import type { ManagementEnvelope } from './connection-management.js';
+
 /**
  * Data-driver family interfaces -- shared between daemon + browser.
  *
@@ -87,6 +89,8 @@ export interface ConnectionConfig {
 }
 
 export interface ConnectionsFile {
+	readonly _management?: ManagementEnvelope | undefined;
+	readonly [field: string]: unknown;
 	readonly connections: readonly ConnectionConfig[];
 }
 

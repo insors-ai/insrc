@@ -10,7 +10,7 @@ export function boundedInflateRaw(input: Buffer, budget: DecoderBudget, maximum:
 	const available = budget.limit - budget.snapshot().retained;
 	const chunkSize = Math.min(CHUNK, Math.floor((available - WORKSPACE) / 4));
 	const limit = Math.min(maximum, Math.floor((available - WORKSPACE - 2 * chunkSize) / 2));
-	if (!Number.isSafeInteger(maximum) || maximum <= 0 || chunkSize < 64 || limit <= 0)
+	if (!Number.isSafeInteger(maximum) || maximum <= 0 || maximum > 8 * 1024 * 1024 || chunkSize < 64 || limit <= 0)
 		throw new Error('resource-limit');
 	// processChunkSync can allocate one extra chunk before checking its output
 	// limit, then Buffer.concat can coexist with every preceding output chunk.

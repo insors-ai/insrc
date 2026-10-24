@@ -7,6 +7,7 @@
  * ("my-dev") or the canonical form ("user@host[:port]").
  */
 
+import { onUtf8Data } from '../../../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 import { runShell } from '../../shell-helper.js';
 import { registerTool } from '../../registry.js';
@@ -247,14 +248,14 @@ export const sshExecDetachedTool: Tool = {
       const onAbort = () => child.kill('SIGKILL');
       deps.signal?.addEventListener('abort', onAbort, { once: true });
 
-      child.stdout?.on('data', (chunk: Buffer) => {
-        stdoutBytes += chunk.length;
-        stdoutBuf += chunk.toString('utf8');
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        stdoutBytes += chunkBytes;
+        stdoutBuf += decodedChunk;
         if (stdoutBuf.length >= LINE_FLUSH_CHARS || stdoutBuf.includes('\n')) { flushStdout(); }
       });
-      child.stderr?.on('data', (chunk: Buffer) => {
-        stderrBytes += chunk.length;
-        stderrBuf += chunk.toString('utf8');
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+        stderrBytes += chunkBytes;
+        stderrBuf += decodedChunk;
         if (stderrBuf.length >= LINE_FLUSH_CHARS || stderrBuf.includes('\n')) { flushStderr(); }
       });
 
@@ -509,7 +510,7 @@ export const sshPortForwardTool: Tool = {
       const onAbort = () => child.kill('SIGTERM');
       deps.signal?.addEventListener('abort', onAbort, { once: true });
 
-      child.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString('utf8'); });
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
 
       child.on('error', err => {
         clearTimeout(timer);

@@ -8,6 +8,7 @@
  * over the raw output.
  */
 
+import { onUtf8Data } from '../../../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -453,14 +454,14 @@ export const testWatchTool: Tool = {
         if (errBuf) { deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + errBuf } }); errBuf = ''; }
       };
 
-      child.stdout?.on('data', (c: Buffer) => {
-        stdoutBytes += c.length;
-        outBuf += c.toString('utf8');
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        stdoutBytes += chunkBytes;
+        outBuf += decodedChunk;
         if (outBuf.length >= LINE_FLUSH_CHARS || outBuf.includes('\n')) { flushOut(); }
       });
-      child.stderr?.on('data', (c: Buffer) => {
-        stderrBytes += c.length;
-        errBuf += c.toString('utf8');
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+        stderrBytes += chunkBytes;
+        errBuf += decodedChunk;
         if (errBuf.length >= LINE_FLUSH_CHARS || errBuf.includes('\n')) { flushErr(); }
       });
 

@@ -1,3 +1,4 @@
+import { onUtf8Data } from './utf8-stream.js';
 import { createConnection, type Socket } from 'node:net';
 import type { IpcRequest, IpcResponse, IpcStreamMessage, DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from './types.js';
 import { PATHS } from './paths.js';
@@ -84,8 +85,8 @@ export async function rpc<T = unknown>(
       socket.write(JSON.stringify(req) + '\n');
     });
 
-    socket.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString();
+    onUtf8Data(socket, (decodedChunk, chunkBytes) => {
+      buffer += decodedChunk;
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
 
@@ -173,8 +174,8 @@ export function openStream(
     const req: IpcRequest = { id: _nextId++, method, params, stream: true, client: { label: 'cli', pid: process.pid } };
     socket.write(JSON.stringify(req) + '\n');
   });
-  socket.on('data', (chunk: Buffer) => {
-    buffer += chunk.toString();
+  onUtf8Data(socket, (decodedChunk, chunkBytes) => {
+    buffer += decodedChunk;
     const lines = buffer.split('\n');
     buffer = lines.pop() ?? '';
     for (const line of lines) {

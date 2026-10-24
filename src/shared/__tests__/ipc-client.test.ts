@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { rpc, createIpcClient, sockFilePath } from '../ipc-client.js';
+import { rpc, openStream, createIpcClient, sockFilePath } from '../ipc-client.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '..', '..');
@@ -44,6 +44,22 @@ function errno(code: string): NodeJS.ErrnoException {
   e.code = code;
   return e;
 }
+
+test('rpc preserves a multi-byte response character split across socket reads', async () => {
+  const sock = new FakeSocket();
+  const promise = rpc<{ value: string }>('test', {}, () => sock as unknown as import('node:net').Socket);
+  const bytes = Buffer.from(JSON.stringify({ id: 1, result: { value: '—é🙂' } }) + '\n');
+  for (const byte of bytes) sock.emit('data', Buffer.from([byte]));
+  assert.deepEqual(await promise, { value: '—é🙂' });
+});
+
+test('openStream preserves multi-byte characters split across frame chunks', () => {
+  const sock = new FakeSocket(), frames: unknown[] = [];
+  openStream('test', {}, f => frames.push(f), undefined, () => sock as unknown as import('node:net').Socket);
+  const frame = { id: 1, stream: 'progress', data: { text: '—é🙂' } };
+  for (const byte of Buffer.from(JSON.stringify(frame) + '\n')) sock.emit('data', Buffer.from([byte]));
+  assert.deepEqual(frames, [frame]);
+});
 
 test('rpc resolves the daemon result and writes the { label, pid } identity envelope on connect', async () => {
   const sock = new FakeSocket();
@@ -130,14 +146,14 @@ test('src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surfa
   assert.match(cli, /export \{ rpc \} from '\.\.\/shared\/ipc-client\.js'/);
 });
 
-test('src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)', () => {
+test('src/shared/ipc-client imports only node:net and shared IPC/text helpers (no daemon internals/indexer/storage)', () => {
   const mod = readFileSync(join(SRC, 'shared', 'ipc-client.ts'), 'utf8');
   const importLines = mod.split('\n').filter((l) => /^\s*import\b/.test(l) || /^\s*export\b.*\bfrom\b/.test(l));
   for (const line of importLines) {
     const m = line.match(/from '([^']+)'/);
     if (!m) continue;
     const spec = m[1]!;
-    const ok = spec === 'node:net' || spec === './types.js' || spec === './paths.js';
+    const ok = spec === 'node:net' || spec === './types.js' || spec === './paths.js' || spec === './utf8-stream.js';
     assert.ok(ok, `unexpected import in the thin ipc-client boundary: ${spec}`);
   }
   // It re-exports the real IPC types (no parallel definitions).

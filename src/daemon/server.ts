@@ -1,3 +1,4 @@
+import { onUtf8Data } from '../shared/utf8-stream.js';
 import { createServer, type Server, type Socket } from 'node:net';
 import { rmSync } from 'node:fs';
 import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
@@ -183,8 +184,8 @@ export class IpcServer {
     this.conns.set(socket, { id: ++this.connSeq, connectedAt: this.now(), label: 'unknown' });
     socket.on('close', () => { this.conns.delete(socket); });
 
-    socket.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString();
+    onUtf8Data(socket, (decodedChunk, chunkBytes) => {
+      buffer += decodedChunk;
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
 

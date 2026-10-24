@@ -7,6 +7,7 @@
  * so scripted callers can hop between clusters without env vars.
  */
 
+import { onUtf8Data } from '../../../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -508,15 +509,15 @@ export const k8sLogsTool: Tool = {
         }
       };
 
-      child.stdout?.on('data', (chunk: Buffer) => {
-        bytes += chunk.length;
-        buf += chunk.toString('utf8');
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        bytes += chunkBytes;
+        buf += decodedChunk;
         if (buf.length >= 512 || buf.includes('\n')) { flush(); }
       });
       let stderrCapture = '';
-      child.stderr?.on('data', (chunk: Buffer) => {
-        stderrCapture += chunk.toString('utf8');
-        deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + chunk.toString('utf8') } });
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+        stderrCapture += decodedChunk;
+        deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + decodedChunk } });
       });
 
       child.on('error', err => {
@@ -648,8 +649,8 @@ export const k8sExecTool: Tool = {
       const onAbort = () => child.kill('SIGKILL');
       deps.signal?.addEventListener('abort', onAbort, { once: true });
 
-      child.stdout?.on('data', (c: Buffer) => { stdout += c.toString('utf8'); });
-      child.stderr?.on('data', (c: Buffer) => { stderr += c.toString('utf8'); });
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => { stdout += decodedChunk; });
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
 
       child.on('error', err => {
         clearTimeout(timer);
@@ -771,11 +772,11 @@ export const k8sPortForwardTool: Tool = {
       const onAbort = () => child.kill('SIGTERM');
       deps.signal?.addEventListener('abort', onAbort, { once: true });
 
-      child.stdout?.on('data', (c: Buffer) => {
-        deps.send({ id: deps.requestId, stream: 'progress', data: { message: c.toString('utf8') } });
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        deps.send({ id: deps.requestId, stream: 'progress', data: { message: decodedChunk } });
       });
-      child.stderr?.on('data', (c: Buffer) => {
-        deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + c.toString('utf8') } });
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+        deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + decodedChunk } });
       });
 
       child.on('error', err => {

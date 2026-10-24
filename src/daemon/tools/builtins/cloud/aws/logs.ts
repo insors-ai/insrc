@@ -6,6 +6,7 @@
  * bounded one-shot pull.
  */
 
+import { onUtf8Data } from '../../../../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 import { runShell } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../../types.js';
@@ -112,13 +113,13 @@ export const awsLogsTailTool: Tool = {
           buf = '';
         }
       };
-      child.stdout?.on('data', (c: Buffer) => {
-        bytes += c.length;
-        buf += c.toString('utf8');
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        bytes += chunkBytes;
+        buf += decodedChunk;
         if (buf.length >= 512 || buf.includes('\n')) { flush(); }
       });
       let stderrCapture = '';
-      child.stderr?.on('data', (c: Buffer) => { stderrCapture += c.toString('utf8'); });
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderrCapture += decodedChunk; });
 
       child.on('error', err => {
         clearTimeout(timer);

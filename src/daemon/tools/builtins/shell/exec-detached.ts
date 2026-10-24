@@ -11,6 +11,7 @@
  * long the process may run.
  */
 
+import { onUtf8Data } from '../../../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 import type { Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { SHELL_EXEC_ACCESS } from './access-policies.js';
@@ -136,18 +137,16 @@ export const shellExecDetachedTool: Tool = {
       const onAbort = () => { child.kill('SIGKILL'); };
       deps.signal?.addEventListener('abort', onAbort, { once: true });
 
-      child.stdout?.on('data', (chunk: Buffer) => {
-        const text = chunk.toString('utf8');
-        stdoutBytes += chunk.length;
-        stdoutBuffer += text;
+      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+        stdoutBytes += chunkBytes;
+        stdoutBuffer += decodedChunk;
         if (stdoutBuffer.length >= LINE_STREAM_FLUSH_CHARS || stdoutBuffer.includes('\n')) {
           flushStdout();
         }
       });
-      child.stderr?.on('data', (chunk: Buffer) => {
-        const text = chunk.toString('utf8');
-        stderrBytes += chunk.length;
-        stderrBuffer += text;
+      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+        stderrBytes += chunkBytes;
+        stderrBuffer += decodedChunk;
         if (stderrBuffer.length >= LINE_STREAM_FLUSH_CHARS || stderrBuffer.includes('\n')) {
           flushStderr();
         }

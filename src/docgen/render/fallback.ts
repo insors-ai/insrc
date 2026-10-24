@@ -25,6 +25,7 @@
  * render/shell.ts — shell.ts imports from here (the dispatch direction).
  */
 
+import { onUtf8Data } from '../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
@@ -147,8 +148,8 @@ function runCandidate(cand: Candidate, dot: string): Promise<AttemptResult> {
 			if (err.code === 'ENOENT') done({ kind: 'enoent' });
 			else done({ kind: 'failed', reason: `${cand.cmd} spawn error: ${err.message}` });
 		});
-		child.stdout?.on('data', (c: Buffer) => { stdout += c.toString('utf8'); });
-		child.stderr?.on('data', (c: Buffer) => { stderr += c.toString('utf8'); });
+		onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => { stdout += decodedChunk; });
+		onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
 		child.on('close', (code: number | null) => {
 			if (timedOut) { done({ kind: 'failed', reason: `${cand.cmd} timed out after ${RENDER_TIMEOUT_MS}ms` }); return; }
 			if (code === 0 && stdout.includes('<svg')) { done({ kind: 'ok', svg: stdout }); return; }

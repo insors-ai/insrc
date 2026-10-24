@@ -20,6 +20,8 @@
  * so destroying the socket is a REAL mid-run abort, not just a stop-forwarding.
  */
 
+import { onUtf8Data } from '../shared/utf8-stream.js';
+import { StringDecoder } from 'node:string_decoder';
 import { createConnection, type Socket } from 'node:net';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
@@ -150,8 +152,9 @@ export function runWorkflowStream(
 			socket.write(JSON.stringify(req) + '\n');
 		});
 
+		const decoder = new StringDecoder('utf8');
 		function onData(chunk: Buffer): void {
-			buffer += chunk.toString();
+			buffer += decoder.write(chunk);
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';   // keep the partial trailing line
 
@@ -229,8 +232,8 @@ function unaryRpc<T>(method: string, params: unknown, deps: UnaryRpcDeps): Promi
 		socket.on('connect', () => {
 			socket.write(JSON.stringify({ id: _nextId++, method, params, client: { label: 'mcp', pid: process.pid } }) + '\n');
 		});
-		socket.on('data', (chunk: Buffer) => {
-			buffer += chunk.toString();
+		onUtf8Data(socket, (decodedChunk, chunkBytes) => {
+			buffer += decodedChunk;
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
 			for (const line of lines) {
@@ -428,8 +431,8 @@ function reviewStreamRequest<T>(
 			socket.write(JSON.stringify({ id: _nextId++, method, stream: true, client: { label: 'mcp', pid: process.pid }, params }) + '\n');
 		});
 
-		socket.on('data', (chunk: Buffer) => {
-			buffer += chunk.toString();
+		onUtf8Data(socket, (decodedChunk, chunkBytes) => {
+			buffer += decodedChunk;
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
 			for (const line of lines) {

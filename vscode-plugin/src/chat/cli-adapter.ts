@@ -27,6 +27,7 @@
  *   codex:  `codex exec --json <prompt>` (+ `codex exec resume <id> --json`).
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
  */
+import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
@@ -1292,8 +1293,8 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
   });
   let cursor = out?.cursor;
   let stderrBuf = '';
-  child.stderr?.on('data', (d: Buffer) => {
-    stderrBuf += d.toString('utf8');
+  onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+    stderrBuf += decodedChunk;
   });
 
   let resolveSpawnErr!: (e: NodeJS.ErrnoException | undefined) => void;
@@ -1330,8 +1331,9 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     let buf = '';
     const stdout = child.stdout;
     if (stdout === null) return;
+    stdout.setEncoding('utf8');
     for await (const chunk of stdout) {
-      buf += (chunk as Buffer).toString('utf8');
+      buf += chunk as string;
       let nl = buf.indexOf('\n');
       while (nl !== -1) {
         yield buf.slice(0, nl);

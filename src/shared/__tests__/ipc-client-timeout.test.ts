@@ -22,10 +22,10 @@ class FakeSocket extends EventEmitter {
 const reply = (id: number, result: unknown): string => JSON.stringify({ id, result }) + '\n';
 
 test('rpc without opts is unchanged for a reply, an error and a split reply', async () => {
-  // A reply: resolves, ends the socket, adds no timer, no end/close listener and never destroys.
+  // A reply: resolves, ends the socket, adds only the UTF-8 decoder's end listener and never destroys.
   const ok = new FakeSocket();
   const p = rpc<{ v: number }>('m', {}, () => ok.asSocket());
-  assert.equal(ok.listenerCount('end'), 0);
+  assert.equal(ok.listenerCount('end'), 1);
   assert.equal(ok.listenerCount('close'), 0);
   ok.emit('connect');
   ok.emit('data', Buffer.from(reply(1, { v: 1 })));

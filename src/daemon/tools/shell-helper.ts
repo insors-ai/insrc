@@ -10,6 +10,7 @@
  * here -- arguments are passed as an array to avoid injection.
  */
 
+import { onUtf8Data } from '../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
 
 export interface ShellResult {
@@ -86,13 +87,13 @@ export function runShell(
     const onAbort = () => child.kill('SIGKILL');
     options.signal?.addEventListener('abort', onAbort, { once: true });
 
-    child.stdout?.on('data', (chunk: Buffer) => {
-      stdoutBytes += chunk.length;
-      if (stdoutBytes <= maxBytes) { stdout += chunk.toString('utf8'); }
+    onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      stdoutBytes += chunkBytes;
+      if (stdoutBytes <= maxBytes) { stdout += decodedChunk; }
     });
-    child.stderr?.on('data', (chunk: Buffer) => {
-      stderrBytes += chunk.length;
-      if (stderrBytes <= maxBytes) { stderr += chunk.toString('utf8'); }
+    onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      stderrBytes += chunkBytes;
+      if (stderrBytes <= maxBytes) { stderr += decodedChunk; }
     });
 
     child.on('error', err => {

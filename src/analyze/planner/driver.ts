@@ -55,6 +55,7 @@ import {
 	validatePlanShapeWithErrors,
 } from './schema.js';
 import { getTemplatesForTarget } from './templates/registry.js';
+import { decodePlanParams, plannerWireSchema } from './wire-schema.js';
 import type {
 	PlanBuilderInput,
 	PlanBuilderOpts,
@@ -162,6 +163,10 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		? catalogArg
 		: getTemplatesForTarget(intent.target);
 
+	// The schema sent to the model: PLAN_TASK_SCHEMA with each task's params
+	// in a form codex's strict grammar can express (ISSUE-8d39ef09).
+	const wire = plannerWireSchema(catalog);
+
 	// (2) Prompt load.
 	const promptContent = loadPromptFile();
 
@@ -211,7 +216,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		try {
 			raw = await provider.completeStructured<PlanTask>(
 				messages,
-				PLAN_TASK_SCHEMA as Record<string, unknown>,
+				wire.schema as Record<string, unknown>,
 				{
 					maxAttempts:     cfg.shaper.structuredOutputRetries,
 					disableThinking: true,
@@ -225,6 +230,11 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		} catch (err) {
 			throw classifyError(err);
 		}
+
+		// Back to the templates' own params: wire nulls removed, JSON-string slots parsed.
+		const decoded = decodePlanParams(raw, wire, catalog);
+		if (!decoded.ok) throw new PlanBuilderSchemaUnrecoverable(decoded.errors);
+		raw = decoded.plan;
 
 		// Stamp parentTaskPath from the call site (INV-15). The LLM
 		// may or may not have emitted it; either way the call site is

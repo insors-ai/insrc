@@ -217,3 +217,76 @@ export function plannerWireSchema(catalog: readonly AnalyzeTaskTemplate[]): Plan
 	cache.set(key, built);
 	return built;
 }
+
+// ---------------------------------------------------------------------------
+// Decoding a reply back to the template's own params
+// ---------------------------------------------------------------------------
+
+/** Whether a schema admits null. */
+function admitsNull(schema: Schema | undefined): boolean {
+	if (schema === undefined) return true;
+	const type = schema['type'];
+	if (type === 'null' || (Array.isArray(type) && type.includes('null'))) return true;
+	if (Array.isArray(schema['enum']) && (schema['enum'] as unknown[]).includes(null)) return true;
+	for (const k of ['anyOf', 'oneOf']) if (Array.isArray(schema[k]) && (schema[k] as Schema[]).some(admitsNull)) return true;
+	return false;
+}
+
+/** Remove nulls the original schema does not admit: a wire null means the property is absent. */
+function dropWireNulls(value: unknown, schema: Schema | undefined): unknown {
+	if (schema === undefined || value === null || typeof value !== 'object') return value;
+	if (Array.isArray(value)) {
+		const items = schema['items'];
+		return items !== null && typeof items === 'object' && !Array.isArray(items) ? value.map(v => dropWireNulls(v, items as Schema)) : value;
+	}
+	const props = schema['properties'] as Record<string, Schema> | undefined;
+	if (props === undefined) return value;
+	const out: Schema = {};
+	for (const [k, v] of Object.entries(value as Schema)) {
+		if (v === null && k in props && !admitsNull(props[k])) continue;
+		out[k] = dropWireNulls(v, props[k]);
+	}
+	return out;
+}
+
+/** Parse the JSON strings at a slot path back into objects, in place on a copy; throws with the path on bad JSON. */
+function decodeSlot(value: unknown, path: SlotPath, at: string): unknown {
+	if (path.length === 0) {
+		if (typeof value !== 'string') return value;
+		try { return JSON.parse(value); } catch (err) { throw new Error(`the JSON at ${at} is not valid: ${(err as Error).message}`); }
+	}
+	const [step, ...rest] = path;
+	if (step === ITEMS) return Array.isArray(value) ? value.map((v, i) => decodeSlot(v, rest, `${at}[${i}]`)) : value;
+	if (value === null || typeof value !== 'object' || Array.isArray(value) || !(step! in (value as Schema))) return value;
+	return { ...(value as Schema), [step!]: decodeSlot((value as Schema)[step!], rest, `${at}.${step}`) };
+}
+
+/** A plan task's params, as decodePlanParams reads and returns them. */
+interface TaskLike { readonly taskId?: unknown; readonly template?: unknown; readonly params?: unknown }
+
+/**
+ * Turn a reply in wire form back into the templates' own params: for each task,
+ * nulls its template's schema does not admit are removed, then the JSON strings
+ * at its slot paths are parsed back into objects. A slot that is not valid JSON
+ * is an error, and no task is returned half-decoded.
+ */
+export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[] }>(
+	plan: P, wire: PlannerWireSchema, catalog: readonly AnalyzeTaskTemplate[],
+): { ok: true; plan: P } | { ok: false; errors: string[] } {
+	const errors: string[] = [];
+	const tasks = plan.tasks.map(task => {
+		const template = catalog.find(t => t.id === task.template);
+		const slots = typeof task.template === 'string' ? wire.slots.get(task.template) : undefined;
+		if (template === undefined || slots === undefined) return task;   // an unknown template is INV-5's to report
+		const whole = slots.length === 1 && slots[0]!.length === 0;
+		let params = whole ? task.params : dropWireNulls(task.params, template.inputSchema as Schema | undefined);
+		try {
+			for (const path of slots) params = decodeSlot(params, path, 'params');
+		} catch (err) {
+			errors.push(`task '${String(task.taskId)}' (${template.id}): ${(err as Error).message}`);
+			return task;
+		}
+		return { ...task, params };
+	});
+	return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: { ...plan, tasks } };
+}

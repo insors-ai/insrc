@@ -18,10 +18,12 @@
 
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { once } from 'node:events';
+import { fileURLToPath } from 'node:url';
 
 // A short root: a Unix socket path is limited to ~104 bytes on macOS.
 const testHome = mkdtempSync('/tmp/insrc-stop-');
@@ -154,4 +156,41 @@ test('Real ownership and guard conflicts prevent maintenance restart', async () 
   assert.equal(result.ok, false); assert.match(result.error!, /ownership conflict/); assert.equal(starts, 0);
   assert.equal(await exited(child), 'SIGKILL'); assert.equal(existsSync(PATHS.pidFile), true);
  } finally { guard?.release(); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
+});
+
+
+test('Injected same-PID reincarnation preserves forced outcome and never retargets the held native capability', async () => {
+ const root = fileURLToPath(new URL('../../../../', import.meta.url));
+ const binary = join(testHome, 'reused-pid-broker'), signalLog = join(testHome, 'signals'), table = join(testHome, 'process-table');
+ execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-Wall', '-Wextra', '-Werror', '-I', join(root, 'src/native/process-broker'), join(root, 'src/native/process-broker/main.c'), join(root, 'src/cli/services/__tests__/fixtures/reused-pid-backend.c'), '-o', binary]);
+ const { captureStopTarget } = await import('../../../shared/daemon-process-client.js');
+ const { stopDaemonWith } = await import('../daemon.js');
+ const prior = process.env['INSRC_REUSE_SIGNAL_LOG']; process.env['INSRC_REUSE_SIGNAL_LOG'] = signalLog;
+ let target;
+ try { target = await captureStopTarget(71, { executable: binary }); }
+ finally { if (prior === undefined) delete process.env['INSRC_REUSE_SIGNAL_LOG']; else process.env['INSRC_REUSE_SIGNAL_LOG'] = prior; }
+ assert.ok(target); writeFileSync(table, '71 original-incarnation');
+ const out = await stopDaemonWith({ capture: async () => ({ target, pidFile: undefined, socketFile: undefined }),
+  requestShutdown: async () => { writeFileSync(table, '71 replacement-incarnation alive'); return 'no-reply'; },
+  waitForStop: async () => false, cleanup: () => {}, sleep: async () => {}, replyBoundMs: 10, stopWaitMs: 0, killWaitMs: 100,
+ });
+ assert.deepEqual(out, { stopped: true, forced: true, pid: 71 });
+ assert.equal(readFileSync(signalLog, 'utf8'), '71 original-incarnation\n');
+ assert.equal(readFileSync(table, 'utf8'), '71 replacement-incarnation alive');
+});
+
+test('Real orphaned guard owner death prevents maintenance restart', async () => {
+ const { restart } = await import('../maintenance.js');
+ const child = await startStubborn(true); let starts = 0;
+ let guardOwner: ChildProcess | undefined;
+ try {
+  const result = await restart(() => {}, { stopDaemon: () => stopDaemon({ stopWaitMs: 0, requestShutdown: async () => {
+   const module = new URL('../../../shared/daemon-run-files.ts', import.meta.url).href;
+   guardOwner = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(module)}; acquireRunFileGuard(${JSON.stringify(PATHS.daemonRunGuard)}); process.stdout.write('ready'); setInterval(() => {}, 1000);`], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(guardOwner);
+   await once(guardOwner.stdout!, 'data'); const ended = once(guardOwner, 'exit'); guardOwner.kill('SIGKILL'); await ended;
+   return 'no-reply';
+  } }), startDaemon: async () => { starts++; return { started: true, alreadyRunning: false, logPath: '' }; } });
+  assert.equal(result.ok, false); assert.match(result.error!, /owner pid=.*state=gone/); assert.equal(starts, 0);
+  assert.equal(await exited(child), 'SIGKILL'); assert.equal(existsSync(PATHS.daemonRunGuard), true);
+ } finally { guardOwner?.kill('SIGKILL'); rmSync(PATHS.daemonRunGuard, { recursive: true, force: true }); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
 });

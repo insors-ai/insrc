@@ -14,7 +14,23 @@
  * slot is placed only where the template's schema admits nothing but an object,
  * so a string there can only be encoded JSON and decoding it back is exact.
  * The template's own inputSchema stays the validation source (INV-5).
+ *
+ * A template whose params cannot be embedded that way is sent as ONE slot for
+ * its whole params: no inputSchema, a reference or identity keyword (it would
+ * resolve against the plan root once embedded), a union, conditional or
+ * multi-type value (a string there might be a real value), or a branch that
+ * does not compile in the wire validators' own dialects.
  */
+
+import { createHash } from 'node:crypto';
+
+import { Ajv } from 'ajv';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+
+import { codexStrictSchema } from '../../agent/providers/structured-output.js';
+import type { AnalyzeTaskTemplate } from '../../shared/analyze-types.js';
+import type { StructuredSchema } from '../../shared/types.js';
+import { PLAN_TASK_SCHEMA, PLANNED_TASK_SCHEMA } from './schema.js';
 
 /** Where a slot sits, from the params root: property names, and `[]` for array items. */
 export type SlotPath = readonly string[];
@@ -74,4 +90,130 @@ export function wireBranchFor(inputSchema: Readonly<Record<string, unknown>>): W
 	const slots: SlotPath[] = [];
 	const schema = wireNode(root, [], slots);
 	return { schema, slots };
+}
+
+// ---------------------------------------------------------------------------
+// Whole-params fallback
+// ---------------------------------------------------------------------------
+
+/** Keywords that make a template's params a whole-params slot wherever they appear. */
+const FALLBACK_KEYWORDS = ['$ref', '$defs', 'definitions', '$id', '$anchor', '$dynamicRef', '$dynamicAnchor', 'anyOf', 'oneOf', 'allOf', 'not', 'if', 'then', 'else'] as const;
+/** Keywords whose value maps names to schemas: their keys are names, not keywords. */
+const NAME_MAPS = new Set(['properties', 'patternProperties', 'dependentSchemas', '$defs', 'definitions']);
+/** Keywords whose value is data, not a schema. */
+const DATA = new Set(['enum', 'const', 'default', 'examples', 'required', 'description', 'title']);
+
+/** Why a template's params must be one whole-params slot, from its schema's keywords; undefined when they can be embedded. */
+export function wholeParamsReason(inputSchema: Readonly<Record<string, unknown>> | undefined): string | undefined {
+	if (inputSchema === undefined) return 'no inputSchema';
+	const root: Schema = { ...inputSchema };
+	if (isRequiredOnlyAnyOf(root['anyOf'])) delete root['anyOf'];
+	return keywordReason(root, '(root)');
+}
+
+function keywordReason(node: unknown, path: string): string | undefined {
+	if (Array.isArray(node)) {
+		for (const [i, n] of node.entries()) { const r = keywordReason(n, `${path}[${i}]`); if (r !== undefined) return r; }
+		return undefined;
+	}
+	if (node === null || typeof node !== 'object') return undefined;
+	const n = node as Schema;
+	for (const k of FALLBACK_KEYWORDS) if (k in n) return `${k} at ${path}`;
+	if (Array.isArray(n['type'])) return `a multi-type value at ${path}`;
+	for (const [k, v] of Object.entries(n)) {
+		if (DATA.has(k)) continue;
+		if (NAME_MAPS.has(k) && v !== null && typeof v === 'object') {
+			for (const [name, sub] of Object.entries(v as Schema)) { const r = keywordReason(sub, `${path}.${name}`); if (r !== undefined) return r; }
+		} else {
+			const r = keywordReason(v, `${path}.${k}`);
+			if (r !== undefined) return r;
+		}
+	}
+	return undefined;
+}
+
+/** A branch compiles in both wire validators' dialects (fresh instances, configured as they are), and codex's strict copy of it can be made. */
+function compilesOnTheWire(branch: Schema): boolean {
+	const embedded = { type: 'object', additionalProperties: false, required: ['params'], properties: { params: branch } };
+	const options = { allErrors: true, useDefaults: false, removeAdditional: false, strict: false } as const;
+	try {
+		new Ajv(options).compile(embedded);
+		new Ajv2020(options).compile(embedded);
+		new Ajv2020(options).compile(codexStrictSchema(embedded));
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** The branch a whole-params slot sends: the JSON text of the params object. */
+const WHOLE_PARAMS: Schema = { type: 'string', description: 'The JSON text of this task\'s params object.' };
+
+/** One template's wire branch, falling back to a whole-params slot when its params cannot be embedded. */
+export function templateWireBranch(template: Pick<AnalyzeTaskTemplate, 'inputSchema'>): WireBranch {
+	if (wholeParamsReason(template.inputSchema) === undefined) {
+		const branch = wireBranchFor(template.inputSchema!);
+		if (compilesOnTheWire(branch.schema)) return branch;
+	}
+	return { schema: WHOLE_PARAMS, slots: [[]] };
+}
+
+// ---------------------------------------------------------------------------
+// The planner's wire schema, per catalog
+// ---------------------------------------------------------------------------
+
+/** What runPlanner sends for one catalog, and where each template's slots are. */
+export interface PlannerWireSchema {
+	readonly schema: StructuredSchema;
+	/** Slot paths per template id; `[[]]` is a whole-params slot. */
+	readonly slots:  ReadonlyMap<string, readonly SlotPath[]>;
+}
+
+/** JSON with object keys sorted, so equal content gives an equal string. */
+function canonical(value: unknown): string {
+	if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+	if (value !== null && typeof value === 'object') {
+		return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical((value as Schema)[k])}`).join(',')}}`;
+	}
+	return JSON.stringify(value) ?? 'null';
+}
+
+/** A catalog's fingerprint: its templates' ids, revisions and inputSchemas, in catalog order. */
+export function catalogFingerprint(catalog: readonly AnalyzeTaskTemplate[]): string {
+	const content = canonical(catalog.map(t => ({ id: t.id, revision: t.revision, inputSchema: t.inputSchema ?? null })));
+	return createHash('sha256').update(content).digest('hex');
+}
+
+/** Built once per distinct catalog: the validators cache compiled schemas by object, so one object per catalog compiles once. */
+const cache = new Map<string, PlannerWireSchema>();
+
+/**
+ * The schema runPlanner sends for its effective catalog: PLAN_TASK_SCHEMA
+ * without its $id (a fixed id would collide in the validators' shared Ajv
+ * registries on a second compile), with each task's params an anyOf over the
+ * catalog's wire branches.
+ */
+export function plannerWireSchema(catalog: readonly AnalyzeTaskTemplate[]): PlannerWireSchema {
+	const key = catalogFingerprint(catalog);
+	const hit = cache.get(key);
+	if (hit !== undefined) return hit;
+	const slots = new Map<string, readonly SlotPath[]>();
+	const branches: Schema[] = [];
+	let whole = false;
+	for (const t of catalog) {
+		const b = templateWireBranch(t);
+		slots.set(t.id, b.slots);
+		if (b.schema === WHOLE_PARAMS) whole = true;
+		else branches.push(b.schema);
+	}
+	if (whole) branches.push(WHOLE_PARAMS);
+	const { $id: _id, ...plan } = structuredClone(PLAN_TASK_SCHEMA) as unknown as Schema;
+	const task = structuredClone(PLANNED_TASK_SCHEMA) as unknown as Schema;
+	const taskProps = task['properties'] as Schema;
+	taskProps['params'] = { anyOf: branches };
+	const planProps = plan['properties'] as Schema;
+	planProps['tasks'] = { ...(planProps['tasks'] as Schema), items: task };
+	const built: PlannerWireSchema = { schema: plan as StructuredSchema, slots };
+	cache.set(key, built);
+	return built;
 }

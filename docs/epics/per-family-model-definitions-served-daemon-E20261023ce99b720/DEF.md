@@ -142,9 +142,9 @@ A user can choose a model insrc does not yet know, see what it actually supports
 
 **Acceptance criteria:**
 
-- **ac1:** Given a user selects a model that is not in the definitions for its family, when they ask to use it, then insrc checks the model through its CLI, one check at a time: for the Codex CLI it takes the model's supported effort levels from the CLI's own model list and confirms the model runs; for the Claude CLI it runs the model once per claimed effort level and records any rejection or warning. _(operationalizes `k1`, `k3`)_
-- **ac2:** Given the checks have finished, when the results are shown to the user, then each claimed effort level is shown as accepted or rejected with the CLI's evidence, and the model is not used until the user approves. _(operationalizes `k5`)_
-- **ac3:** Given the user approves the checked profile, when a tier is set to that model, then the daemon accepts it with only the effort levels that passed. _(operationalizes `k5`)_
+- **ac1:** Given a user selects a model that is not in the definitions for its family, when they ask to use it, then insrc checks the model through its CLI, one check at a time: for the Codex CLI it takes the model's supported effort levels from the CLI's own model list and confirms the model runs; for the Claude CLI it confirms the model runs, reads the model's input limit from the CLI's JSON output, and confirms each claimed effort name is one the CLI recognises, because no Claude CLI output shows whether a given model supports a given level. _(operationalizes `k1`, `k3`)_
+- **ac2:** Given the checks have finished, when the results are shown to the user, then each claimed effort level is shown with the CLI's evidence, for Codex as accepted or rejected and for Claude as rejected or as recognised with support the CLI cannot confirm, and the model is not used until the user approves which levels to allow. _(operationalizes `k5`)_
+- **ac3:** Given the user approves the checked profile, when a tier is set to that model, then the daemon accepts it with only the effort levels that passed their check and that the user approved. _(operationalizes `k5`)_
 - **ac4:** Given the user rejects the profile, or a check cannot reach the CLI, when a tier is set to that model, then the daemon refuses the model and says why. _(operationalizes `k5`)_
 - **ac5:** Given the user has approved a checked profile for a model that is not in the shipped definitions, when a client asks the daemon for the model definitions, then that model appears under its family, marked as user-approved, with only its approved effort levels. _(operationalizes `k2`, `k5`)_
 
@@ -152,6 +152,7 @@ A user can choose a model insrc does not yet know, see what it actually supports
 
 - `lc1` (invariant) Checks reach the model only through the installed claude or codex CLI or local Ollama; no provider web API is called. [[c4]]
 - `lc2` (invariant) A codex run succeeding at an effort level is not proof the model supports that level; the CLI's own model list is the authority for codex. [[c11]]
+- `lc3` (invariant) No Claude CLI run shows whether a model supports an effort level; for a Claude model the user's approval, not a test run, admits each level, and the results say so. [[c15]]
 
 ### 6.5 E20261023ce99b720:S005 — Pick tier models and efforts in the TUI from the daemon's definitions
 
@@ -217,6 +218,7 @@ In JetBrains settings a user sees the same families, models and effort levels as
 - **[[c12]]** `code` `src/cli/panes/model-tiers.ts:63` — "tiers[t] = resolveTier(tiering, t);"
 - **[[c13]]** `stakeholder` `user 2026-10-23` — "remove the per-repo override for tiers"
 - **[[c14]]** `code` `src/analyze/context/role-router.ts:138` — "const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];"
+- **[[c15]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:40` — "Every recognised level runs without a warning on every model tried (probes 8 to 10), and the output never states the effort used (probe 11). So no Claude CLI run shows whether a given model supports a given level."
 
 <!-- insrc:review -->
 

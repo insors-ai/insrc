@@ -24,6 +24,8 @@ import { CommandBar } from './ui/CommandBar.js';
 import { formatUptime } from './ui/format.js';
 import { runCommand } from './command.js';
 import { useDaemonStatus } from './hooks/useDaemonStatus.js';
+import { useApprovals } from './hooks/useApprovals.js';
+import { ApprovalPrompt } from './ui/ApprovalPrompt.js';
 import { DaemonPane } from './panes/DaemonPane.js';
 import { ReposPane } from './panes/ReposPane.js';
 import { WorkflowsPane } from './panes/WorkflowsPane.js';
@@ -64,6 +66,9 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 
 	const pollMs = props.pollMs ?? 2000;
 	const daemon = useDaemonStatus(pollMs, nonce);
+	// A tool call waiting for the user's yes: shown above the panes, and it takes the keys until answered.
+	const approvals = useApprovals();
+	const prompting = approvals.pending.length > 0;
 
 	// Monotonic id per line (React key + transient-dismiss target) and the set
 	// of pending transient-dismiss timers, cleared on unmount so no setState
@@ -129,11 +134,11 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 		if (key.tab)              { setPane(p => (p + 1) % TABS.length); return; }
 		if (input === 'r') { setNonce(n => n + 1); ui.toast('refreshed'); return; }
 		if (input === '?') { ui.toast(': command · 1-6/Tab switch · r refresh · q quit'); return; }
-	}, { isActive: !captured });
+	}, { isActive: !captured && !prompting });
 
 	return (
 		<UiContext.Provider value={ui}>
-			<CaptureContext.Provider value={captured}>
+			<CaptureContext.Provider value={captured || prompting}>
 				<Box flexDirection="column" paddingX={1}>
 					<Header pane={pane} daemon={daemon} />
 					<Box flexGrow={1} flexDirection="column">
@@ -148,6 +153,13 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 									{pane === 5 && <DebugPane services={services} />}
 								</>}
 					</Box>
+					{approvals.pending[0] !== undefined && (
+						<ApprovalPrompt
+							request={approvals.pending[0]}
+							more={approvals.pending.length - 1}
+							onAnswer={decision => approvals.answer(approvals.pending[0]!.requestId, decision)}
+						/>
+					)}
 					{/* The one and only message render site — docked at the bottom. */}
 					<MessageBox messages={messages} />
 					{!cmdMode && (

@@ -30,6 +30,8 @@ import { registerParkOfferProvider } from '../../workflow/team/gate.js';
 import { registerSignoffHook } from '../../workflow/team/signoff.js';
 import { draftParkOffer } from '../../workflow/team/handoff.js';
 import * as debug from './debug.js';
+import { createApprovalWatcher, type ApprovalWatcher } from './approval.js';
+import { createIpcClient } from '../../shared/ipc-client.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
 import type { PullTick, PullResult } from './setup.js';
@@ -97,6 +99,8 @@ export interface Services {
 		teamSettle(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
 	};
 	readonly debug: DebugService;
+	/** Approval requests waiting for this terminal's answer. Absent in a test double. */
+	readonly approvals?: ApprovalWatcher;
 }
 
 export function makeServices(): Services {
@@ -105,6 +109,7 @@ export function makeServices(): Services {
 	// The same gate holds a stage that awaits signoff; the hook only reads the recorded state, so the terminal needs no tracker for it.
 	registerSignoffHook();
 	return {
+		approvals: createApprovalWatcher({ client: createIpcClient() }),
 		daemon: {
 			isRunning,
 			getStatus:   daemon.getStatus,

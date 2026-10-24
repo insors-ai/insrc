@@ -61,7 +61,8 @@ export function parseStatusV2(raw: string): GitStatusData {
       else if (line.startsWith('# branch.upstream ')) { data.upstream = line.slice('# branch.upstream '.length).trim(); }
       else if (line.startsWith('# branch.ab ')) {
         const match = line.slice('# branch.ab '.length).trim().match(/^\+(\d+)\s+-(\d+)$/);
-        if (match) { data.ahead = Number(match[1]); data.behind = Number(match[2]); }
+        if (!match) { throw new ParseError(`malformed branch.ab header: ${JSON.stringify(line)}`); }
+        data.ahead = Number(match[1]); data.behind = Number(match[2]);
       }
       continue; // other headers (branch.oid, stash) are not surfaced
     }
@@ -71,7 +72,7 @@ export function parseStatusV2(raw: string): GitStatusData {
     switch (line[0]) {
       case '1': { // "1 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <path>"
         needFields(line, tokens, 9, xy, [3, 4, 5], [6, 7]);
-        pushEntry(data, xy, tokens.slice(8).join(' '), undefined);
+        pushEntry(data, xy, pathOf(line, tokens, 8), undefined);
         break;
       }
       case '2': { // "2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path>" then the original path
@@ -79,12 +80,12 @@ export function parseStatusV2(raw: string): GitStatusData {
         if (!/^[RC]\d+$/.test(tokens[8]!)) { throw new ParseError(`malformed rename score: ${JSON.stringify(line)}`); }
         const origPath = parts[++i];
         if (!origPath) { throw new ParseError(`rename entry without its original path: ${JSON.stringify(line)}`); }
-        pushEntry(data, xy, tokens.slice(9).join(' '), origPath);
+        pushEntry(data, xy, pathOf(line, tokens, 9), origPath);
         break;
       }
       case 'u': { // "u <XY> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>"
         needFields(line, tokens, 11, xy, [3, 4, 5, 6], [7, 8, 9]);
-        data.conflicts.push({ path: tokens.slice(10).join(' '), code: xy });
+        data.conflicts.push({ path: pathOf(line, tokens, 10), code: xy });
         data.clean = false;
         break;
       }
@@ -102,6 +103,12 @@ export function parseStatusV2(raw: string): GitStatusData {
     }
   }
   return data;
+}
+
+function pathOf(line: string, tokens: string[], from: number): string {
+  const path = tokens.slice(from).join(' ');
+  if (path === '') { throw new ParseError(`status entry without a path: ${JSON.stringify(line)}`); }
+  return path;
 }
 
 /** The fixed fields of a changed, renamed or unmerged entry: the XY codes, the submodule state, the modes and the object names. */
@@ -188,9 +195,17 @@ export function parseForEachRef(raw: string, fields: readonly string[]): Record<
     if (values.length !== fields.length) {
       throw new ParseError(`expected ${fields.length} fields, got ${values.length}: ${JSON.stringify(rec)}`);
     }
+    fields.forEach((f, i) => {
+      // object names are checked; a peeled name (*objectname) is empty for a ref that is not a tag
+      if (OBJECT_FIELDS.has(f) && !(values[i] === '' && f.startsWith('*')) && !SHA.test(values[i]!)) {
+        throw new ParseError(`${f} is not an object name: ${JSON.stringify(values[i])}`);
+      }
+    });
     return Object.fromEntries(fields.map((f, i) => [f, values[i]!]));
   });
 }
+
+const OBJECT_FIELDS = new Set(['objectname', '*objectname', 'tree']);
 
 // ---------------------------------------------------------------------------
 // log with a fixed format

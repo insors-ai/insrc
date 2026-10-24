@@ -17,9 +17,7 @@
  * `${secret:db:<repoId>:<connId>}`. Edit semantics follow naturally
  * by upserting on `id`.
  */
-import { isAbsolute, relative, resolve } from 'node:path';
-import { access } from 'node:fs/promises';
-import { constants as fsConst } from 'node:fs';
+import { resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import type { TrustedRpcContext } from './request-context.js';
 import { managementContext } from './connection-management-rpc.js';
@@ -32,6 +30,7 @@ import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store
 import { savedManagementFor, withSavedRootGate } from './db/management.js';
 import { materializeDraft, safeConnection } from './db/driver-profiles.js';
 import { fileExecutionPolicy } from './db/file-policy.js';
+import { prepareRuntimeConfig } from './db/runtime-config.js';
 import type { ConnectionConfig, Driver, DriverFamily, } from '../shared/db-driver.js';
 const log = getLogger('db-rpc');
 // ---------------------------------------------------------------------------
@@ -410,7 +409,8 @@ function validateForFamily(cfg: SaveConnectionInput): string | null {
 		return `Unknown driver kind '${cfg.kind}'. Registered: `
 			+ listRegisteredKinds().map(k => k.kind).sort().join(', ');
 	}
-	const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
+	const family: DriverFamily = familyOf(cfg.kind) ?? cfg.family ?? 'rdbms';
+	if (cfg.kind === 'sqlite') return cfg.path || cfg.url ? null : 'SQLite connections require path or url';
 	if (family === 'file') {
 		if (cfg.path === undefined || cfg.path === '') {
 			return 'file connections require `path`';
@@ -486,24 +486,8 @@ async function materializeTransientConfig(input: SaveConnectionInput, family: Dr
 	if (input.pii !== undefined) {
 		base.pii = input.pii;
 	}
-	if (family === 'file') {
-		if (input.path === undefined) {
-			throw new Error('file connection missing path');
-		}
-		const abs = isAbsolute(input.path) ? input.path : resolve(repoRoot, input.path);
-		const rel = relative(repoRoot, abs);
-		if (rel.startsWith('..') || isAbsolute(rel)) {
-			throw new Error(`file connection '${input.id}' path '${input.path}' resolves outside the repo root`);
-		}
-		await access(abs, fsConst.R_OK);
-		base.path = abs;
-	}
-	else {
-		if (input.url === undefined) {
-			throw new Error(`${family} connection missing url`);
-		}
-		base.url = input.url;
-	}
+	if (input.path !== undefined) base.path = input.path;
+	if (input.url !== undefined) base.url = input.url;
 	const suppliedRefs = referencedSecrets(base);
 	let allowedRefs: ReadonlySet<string> = new Set();
 	if (suppliedRefs.size > 0) {
@@ -517,5 +501,5 @@ async function materializeTransientConfig(input: SaveConnectionInput, family: Dr
 		mode: 'update', current: { config: base, revision: 'private-probe' }, expectedRevision: 'private-probe', publicPatch: {},
 		readSecret: async (ref) => allowedRefs.has(ref) ? credentialKeystore.getKey(ref) : null,
 	});
-	return effective.config;
+	return prepareRuntimeConfig(effective.config, repoRoot);
 }

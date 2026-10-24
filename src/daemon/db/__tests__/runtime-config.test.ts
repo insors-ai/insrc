@@ -9,7 +9,8 @@ import {PATHS} from '../../../shared/paths.js';
 import {prepareRuntimeConfig} from '../runtime-config.js';
 import {DriverPool} from '../pool.js';
 import {connectionsPath} from '../config.js';
-import {familyOf} from '../registry.js';
+import {familyOf,getFactory,registerDriver} from '../registry.js';
+import {testConnectionRpc} from '../../db-rpc.js';
 import '../drivers/index.js';
 
 test('CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes',async()=>{
@@ -25,6 +26,19 @@ test('CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs 
    await pool.reload();
    for(const config of configs) {const prepared=await prepareRuntimeConfig(config,root);await pool.withConnection(config.id,async()=>{});assert.deepEqual(received.get(config.id),{...prepared,family:config.family??familyOf(config.kind)});if(config.kind!=='postgres') assert.equal(await readFile(prepared.path!,'utf8'),'correct');else assert.equal(prepared.schemaSource?.path,join(root,'schema.prisma'));}
   } finally {await pool.closeAll();}
+  const originals=['csv','sqlite','postgres'].map(kind=>({kind,family:familyOf(kind)!,factory:getFactory(kind)!}));
+  try {
+   for(const {kind,family} of originals) registerDriver({kind,family,factory:async config=>{received.set(config.id,config);return {id:config.id,kind,family,close:async()=>{}} as Driver;}});
+   for(const config of configs) {
+    const response=await testConnectionRpc({repoRoot:root,config});
+    assert.ok('ok' in response && response.ok,JSON.stringify(response));
+    const prepared=await prepareRuntimeConfig(config,root);
+    assert.deepEqual(received.get(config.id),{...prepared,family:config.family??familyOf(config.kind)});
+   }
+   for(const config of [{id:'x',kind:'csv',path:'../cwd/data file.csv'},{id:'x',kind:'sqlite',url:'file://remote/db'},{id:'x',kind:'sqlite',path:'missing.db'}]) {
+    const response=await testConnectionRpc({repoRoot:root,config});assert.ok('error' in response || !response.ok);
+   }
+  } finally {for(const registration of originals) registerDriver(registration);}
   for(const config of [{id:'x',kind:'csv',path:'../cwd/data file.csv'},{id:'x',kind:'sqlite',url:'https://host/db'},{id:'x',kind:'sqlite',url:'file://remote/db'},{id:'x',kind:'sqlite',url:'missing.db'},{id:'x',kind:'csv',path:join(other,'data file.csv')},{id:'x',kind:'postgres',schemaSource:{type:'prisma',path:'../cwd/data file.csv'}}] as ConnectionConfig[]) await assert.rejects(prepareRuntimeConfig(config,root));
   await assert.rejects(prepareRuntimeConfig(configs[0]!,root,AbortSignal.abort()));
   const unreadable=join(root,'unreadable.csv');await writeFile(unreadable,'secret',{mode:0o000});

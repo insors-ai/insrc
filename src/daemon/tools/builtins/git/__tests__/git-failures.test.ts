@@ -128,41 +128,68 @@ const EVERY_TOOL: readonly (readonly [Tool, Record<string, unknown>])[] = [
 	[gitRemoteTool, { op: 'list' }], [gitWorktreeTool, { op: 'list' }],
 ];
 
+/**
+ * What each of the 22 tools returned before this Story, recorded from the commit before it for the call in EVERY_TOOL:
+ * outside a repository ('failed' is the exact text before git's own message, which is the error; `fixedError` is set where
+ * the message is the tool's own) and with git missing from PATH (the exact output and error).
+ */
+const BASELINE: Readonly<Record<string, { failed: string; fixedError: string | null; noGit: readonly [string, string] }>> = {
+	"git_status": { failed: "[git:status] failed: ", fixedError: null, noGit: ["[git:status] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_log": { failed: "[git:log] failed: ", fixedError: null, noGit: ["[git:log] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_diff": { failed: "[git:diff] failed: ", fixedError: null, noGit: ["[git:diff] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_show": { failed: "[git:show] failed: ", fixedError: null, noGit: ["[git:show] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_blame": { failed: "[git:blame] failed: ", fixedError: null, noGit: ["[git:blame] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_branch": { failed: "[git_branch] failed: ", fixedError: null, noGit: ["[git_branch] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_stage": { failed: "[git:stage] failed: ", fixedError: null, noGit: ["[git:stage] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_commit": { failed: "[git_commit] failed: ", fixedError: "nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit", noGit: ["[git_commit] failed: nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit", "nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit"] },
+	"git_amend": { failed: "[git_amend] failed: ", fixedError: null, noGit: ["[git_amend] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_push": { failed: "[git_push] failed: ", fixedError: null, noGit: ["[git_push] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_pull": { failed: "[git_pull] failed: ", fixedError: null, noGit: ["[git_pull] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_fetch": { failed: "[git_fetch] failed: ", fixedError: null, noGit: ["[git_fetch] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_checkout": { failed: "[git_checkout] failed: ", fixedError: null, noGit: ["[git_checkout] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_merge": { failed: "[git_merge] failed: ", fixedError: null, noGit: ["[git_merge] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_rebase": { failed: "[git_rebase] failed: ", fixedError: null, noGit: ["[git_rebase] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_stash": { failed: "[git_stash] failed: ", fixedError: null, noGit: ["[git_stash] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_reset": { failed: "[git_reset] failed: ", fixedError: null, noGit: ["[git_reset] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_revert": { failed: "[git_revert] failed: ", fixedError: null, noGit: ["[git_revert] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git:cherry-pick": { failed: "[git:cherry-pick] failed: ", fixedError: null, noGit: ["[git:cherry-pick] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_tag": { failed: "[git_tag] failed: ", fixedError: null, noGit: ["[git_tag] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_remote": { failed: "[git_remote] failed: ", fixedError: null, noGit: ["[git_remote] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+	"git_worktree": { failed: "[git_worktree] failed: ", fixedError: null, noGit: ["[git_worktree] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
+};
+
 test('the legacy output and error text of every existing failure path is unchanged', async () => {
 	assert.equal(rejectInput('git_branch', 'missing name for create').output, '[git_branch] failed: missing name for create');
 	assert.equal(rejectInput('git_branch', 'missing name for create').error, 'missing name for create');
 	assert.equal(rejectInput('git_branch', 'x').failure?.kind, 'rejected');
 	assert.equal(EVERY_TOOL.length, 22);
+	assert.deepEqual(EVERY_TOOL.map(([t]) => t.id).sort(), Object.keys(BASELINE).sort());
 
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gitfail-nogit-'));
 	const savedPath = process.env['PATH'];
 	try {
-		// Outside a repository: '[label] failed: <message>' with error the same message.
+		// Outside a repository: the recorded prefix, then the message, which is also the error.
 		for (const [tool, input] of EVERY_TOOL) {
+			const want = BASELINE[tool.id]!;
 			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
 			assert.equal(res.success, false, tool.id);
 			assert.equal(res.format, 'text', tool.id);
-			assert.match(res.output, /^\[git[:_][a-z-]+\] failed: /, `${tool.id}: ${res.output}`);
-			assert.equal(res.output.endsWith(res.error ?? '\u0000'), true, `${tool.id}: error is the output's message`);
+			assert.ok(res.error !== undefined && res.error.length > 0, tool.id);
+			assert.equal(res.output, want.failed + res.error, `${tool.id}: ${res.output}`);
+			if (want.fixedError !== null) { assert.equal(res.error, want.fixedError, tool.id); }
 			assert.equal(res.failure?.kind, 'rejected', tool.id);
 		}
-		// The labels the status, diff and stage tools print are the legacy ones.
-		assert.match((await gitStatusTool.execute({ cwd: dir }, deps(dir))).output, /^\[git:status\] failed: .*not a git repository/i);
-		assert.match((await gitDiffTool.execute({ cwd: dir }, deps(dir))).output, /^\[git:diff\] failed: /);
-		assert.match((await gitStageTool.execute({ cwd: dir, op: 'stage', paths: ['x'] }, deps(dir))).output, /^\[git:stage\] failed: /);
 
-		// With git missing: '[label] cannot spawn git -- ...' with error 'git not found' (or the tool's own input check first).
+		// With git missing: the recorded output and error, exactly.
 		process.env['PATH'] = join(dir, 'nowhere');
 		for (const [tool, input] of EVERY_TOOL) {
+			const want = BASELINE[tool.id]!;
 			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
 			assert.equal(res.success, false, tool.id);
-			assert.match(res.output, /^\[git[:_][a-z-]+\] (cannot spawn git -- |failed: )/, `${tool.id}: ${res.output}`);
-			if (res.output.includes('cannot spawn git')) {
-				assert.equal(res.error, 'git not found', tool.id);
-				assert.equal(res.failure?.kind, 'missing-tool', tool.id);
-			}
+			assert.equal(res.output, want.noGit[0], tool.id);
+			assert.equal(res.error, want.noGit[1], tool.id);
+			assert.equal(res.failure?.kind, res.error === 'git not found' ? 'missing-tool' : 'rejected', tool.id);
 		}
-		assert.equal((await gitStatusTool.execute({ cwd: dir }, deps(dir))).output.startsWith('[git:status] cannot spawn git -- '), true);
 	} finally {
 		process.env['PATH'] = savedPath;
 		rmSync(dir, { recursive: true, force: true });
@@ -223,7 +250,7 @@ test('a timed-out mutating call carries kind timed-out and the unknown-outcome s
 	try {
 		const bin = join(dir, 'bin');
 		mkdirSync(bin);
-		writeFileSync(join(bin, 'git'), '#!/bin/sh\nsleep 5\n', { mode: 0o755 });
+		writeFileSync(join(bin, 'git'), '#!/bin/sh\nexec sleep 5\n', { mode: 0o755 });
 		process.env['PATH'] = `${bin}:${savedPath ?? ''}`;
 		setShellTimeoutScaleForTests(0.002);
 		const res = await gitStageTool.execute({ cwd: dir, op: 'stage', paths: ['x'] }, deps(dir));

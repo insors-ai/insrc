@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792762303272-bpzmgx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-23T13:32:30.472Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 47198,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "562b1bb52f476d81",
+    "epicSlug": "stop-codex-review-calls-stalling-keep",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-23T13:55:54.033Z",
+    "parentRef": {
+      "slug": "stop-codex-review-calls-stalling-keep"
+    }
+  },
+  "body": {
+    "title": "Stop codex review calls stalling and keep long design reviews alive",
+    "reproduction": "Run a daemon design review of an artifact authored by the controller, e.g. insrc_review_step phase=start on docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md with core tier = cli-codex gpt-6.1-sol. Observed on 2026-10-23: each run took 36-45 minutes for a ~200-line DEF; the daemon log shows 5-7 'review pipeline: a call did not complete' warnings per run, each 180 s after the call started, with codex exit -9; one claim per run is recorded as 'Not judged: the reviewing model call failed twice'; and Claude Code aborts the MCP call with 'sent no response or progress for 1800s'. The stalls continued after a change of network (5 of 67 calls in the 12:47-13:24 UTC run). In codex's session files every stalled call completed its reasoning item about 5 s in and then emitted nothing until killed; about 4% of review calls stall across Oct 20, 21 and 23 (7/165, 44/1021, 10/290) on gpt-6-astra/medium and gpt-6.1-sol/high alike. Replaying one stalled prompt is intermittent: 4 of 50 full-schema runs stalled across the day, and a later set of 16 runs with a 600 s allowance all completed in 8-35 s with about 200 output tokens each, so the stall is neither tied to that prompt nor a runaway answer. Evidence: docs/standalone/stop-codex-review-calls-stalling-keep-E20261023562b1bb5/evidence/stall-replays.md. Expected: a stalled call is detected and retried within about a minute, every claim is judged, and the review call stays alive so the controller never aborts it.",
+    "rootCause": "The stall itself is intermittent and its origin (codex CLI or the model service) is not established; the defect is that the review pipeline handles it badly. (1) Each review call is bounded only by a total wait, VERIFY_CALL_TIMEOUT_MS = 180_000 (src/workflow/review/verify.ts:212, used at src/workflow/review-pipeline/design-review.ts:106), with a single re-issue. A call that has gone silent 5 s in therefore still costs 3 minutes, a second stall on the same claim costs 6, and a claim whose retry also stalls is dropped as unjudged. With about 70 calls per DEF review and a ~4-7% stall rate, this adds 15-21 minutes to every review. (2) The design-review step does not relay progress: the code-review step passes a progress callback and idle limit (src/daemon/steps/code-review-step/handler.ts:106-107, :718-745, added by ISSUE-1973e125), but src/daemon/steps/review-step has no equivalent, so the MCP client sees no activity for the whole review and aborts at its 30-minute no-progress limit. (3) Contributing weaknesses in the schema codex receives, not shown to cause the stall: codexStrictSchema (src/agent/providers/structured-output.ts:375), whose only caller codexSchemaJson (src/agent/providers/cli-provider.ts:119) writes every codex --output-schema file, makes every property required with no null alternative, so the optional proposedFix, artifactEdits and options of the verify schema (src/workflow/review/verify.ts:52-82) are always forced, including a rationale for verified findings and fields the verify prompt says to omit; and the verify schema sets no maxLength on its strings or maxItems on its arrays, so nothing bounds the answer.",
+    "fixIntent": "Make design reviews finish reliably and promptly, without lowering review accuracy. (a) A review call that produces no output for a short silence window is ended and re-issued promptly, an active call may continue up to an overall cap, and a stalled claim gets more than one retry before it is recorded as unjudged. (b) While the daemon runs a design review, the controller receives progress so its tool call is not aborted, matching the code-review path. (c) The schema codex receives no longer forces optional fields: an optional field may be left empty, and the reply is still held to the caller's original schema. Strings and arrays in the review answer have upper bounds, so an answer cannot grow without limit."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:375",
+      "quotedText": "export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:119",
+      "quotedText": "function codexSchemaJson(schema: StructuredSchema): string {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/verify.ts:212",
+      "quotedText": "export const VERIFY_CALL_TIMEOUT_MS = 180_000;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/design-review.ts:106",
+      "quotedText": "execution: { mode: 'structured', cwd: opts.repo, timeoutMs: VERIFY_CALL_TIMEOUT_MS },"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/verify.ts:52",
+      "quotedText": "required: ['severity', 'evidence', 'action', 'fixability'], ... proposedFix: { ... required: ['rationale'], properties: { rationale, artifactEdits, options } }"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/handler.ts:106",
+      "quotedText": "/** The step tool's progress callback: each frame of the daemon review is relayed to it. */"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step 2026-10-23 codexStrictSchema callers / VERIFY_CALL_TIMEOUT_MS / progress relay",
+      "quotedText": "codexStrictSchema is the only caller of processSchemaForOpenAIStrict, and its only caller is codexSchemaJson, which writes every codex --output-schema file ... the progress search over src/daemon/steps found no progress hits in src/daemon/steps/review-step"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-23",
+      "quotedText": "the 21 mins of stalling is the deal breaker"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-1973e125995f971e"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023562b1bb5/evidence/stall-replays.md",
+      "quotedText": "Across every full-schema replay, 4 of 50 runs stalled, against 0 of 52 for the other variants. That difference is too small to show that the schema causes the stalls."
+    }
+  ]
+}

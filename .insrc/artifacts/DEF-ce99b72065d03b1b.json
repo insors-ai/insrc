@@ -1,0 +1,1616 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792747313946-5fm99m",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-23T09:24:56.590Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 182638,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "seededFromSpec": "1aa3094047d2617b",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p01",
+          "ref": "Summary/c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "DEF-ce99b72065d03b1b is seeded from the artifact identified as SPEC-1aa3094047d2617b.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:8 explicitly states **Seeded from:** `SPEC-1aa3094047d2617b`. docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md:1 confirms that exact artifact identifier in its insrc:artifact marker.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The seed reference matches the SPEC artifact identifier exactly."
+          }
+        },
+        {
+          "claimId": "p02",
+          "ref": "Problem; s1/ac1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The supported built-in model families are exactly local Ollama, Claude CLI and Codex CLI.",
+          "evidence": "src/config/analyze.ts:88 defines AnalyzeShaperProviderKind exactly as 'ollama' | 'cli-claude' | 'cli-codex', confirming the three supported families. Concrete implementations appear at src/agent/providers/ollama.ts:163 (OllamaProvider) and src/agent/providers/cli-provider.ts:182 (CliProvider).",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise."
+          }
+        },
+        {
+          "claimId": "p03",
+          "ref": "Problem; FR003; c1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The migration covers the daemon, terminal UI, VS Code plugin and JetBrains plugin.",
+          "evidence": "SPEC.md:3 explicitly names daemon-owned definitions exposed through IPC to the TUI, VS Code plugin and JetBrains plugin, with staged migration. DEF.md:30 (FR003) explicitly requires the terminal UI and both IDE plugins to obtain descriptions from the background service. SPEC.md:31 records an earlier scope/coordination uncertainty; FR003 establishes the claimed coverage.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied requirements confirm the migration's intended scope."
+          }
+        },
+        {
+          "claimId": "p04",
+          "ref": "Problem",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Runner identity and model identifiers are currently encoded as literals in multiple consumers rather than supplied exclusively by one daemon-owned definition.",
+          "evidence": "Unverifiable from the supplied evidence. src/config/analyze.ts:134 shows only the DEFAULT_TIERS declaration, without its values. docs/daemon.md:380–382 shows runner/model literals in documentation, while DEF.md:24 repeats the problem claim. Neither truncated grep provides source matches from the other three anchors or establishes how consumers obtain these identifiers. The evidence therefore does not establish duplicated consumer definitions or exclusive daemon ownership.",
+          "action": "Gather targeted source matches and surrounding reads from all four anchors, including imports and identifier resolution, before accepting the premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports neither verification nor a mechanical correction to the premise.",
+            "options": [
+              "Retain the premise pending targeted evidence confirming duplicated literals and their use.",
+              "Qualify the premise as unverified until consumer definitions and daemon ownership are demonstrated."
+            ]
+          }
+        },
+        {
+          "claimId": "p05",
+          "ref": "Problem",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Tier defaults, summariser selection, accepted effort levels and input limits currently depend on code literals or family-specific branches.",
+          "evidence": "Partially verified. src/config/analyze.ts:115 defines TIER_EFFORTS as the literal list ['low', 'medium', 'high', 'xhigh', 'max']; :134 declares DEFAULT_TIERS but the supplied read omits its values. :277 assigns summariserProvider from tiers.cheap.runner. src/analyze/context/shaper-provider.ts:303 constructs OllamaProvider using cfg.summariserModel. The truncated input-limit search supplies no current production-source implementation establishing literal limits or family-specific limit branches. The full premise is therefore unverifiable; no concrete build-breaking contradiction is established.",
+          "action": "Narrow the premise to the verified observations, or obtain production-source evidence for tier-default values, summariser model resolution, and input-limit handling before retaining the full claim.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports only part of this compound premise; completing or narrowing its meaning requires review.",
+            "options": [
+              "Narrow the premise to the literal TIER_EFFORTS list and summariser provider selection through tiers.cheap.runner.",
+              "Retain the full premise pending source reads showing DEFAULT_TIERS values, summariser model resolution, and literal or family-specific input-limit handling."
+            ]
+          }
+        },
+        {
+          "claimId": "p06",
+          "ref": "Problem; FR002",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Introducing model versions or capabilities currently requires edits to model facts embedded in code and updates to clients that retain those facts.",
+          "evidence": "Unverifiable from the supplied evidence. Both greps are truncated at 50 matches and provide no production-source reads establishing that introducing models or capabilities requires code edits and client updates. DEF.md:24 repeats the premise; DEF.md:232 records an earlier unverifiable assessment. These artifact statements do not independently establish the claimed requirement.",
+          "action": "Ground the premise with production-source reads showing embedded facts and how they restrict new models or capabilities, or qualify it as an unverified concern.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither verifies the update requirement nor establishes a concrete implementation failure. No mechanical correction is supported.",
+            "options": [
+              "Retain the premise after obtaining source evidence for embedded model facts and the client update requirement.",
+              "Reword the premise as a concern to verify, rather than an established requirement for introducing models or capabilities."
+            ]
+          }
+        },
+        {
+          "claimId": "p07",
+          "ref": "Problem; FR004",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing system lacks an explicit user-approved per-model capability profile for a selected model absent from its known model descriptions.",
+          "evidence": "UNVERIFIABLE. The capability/approval search is truncated at 50 matches and supplies documentation matches rather than relevant production implementation. src/daemon/model-catalog.ts:42 and src/config/analyze.ts:106 show only interface declarations, without their fields. src/config/analyze.ts:115,118 confirms a global effort list and membership check, but does not establish whether user-approved per-model profiles exist. DEF.md:24 repeats the claimed absence; it is not independent implementation evidence.",
+          "action": "Gather focused source reads of the catalog/config interfaces, model persistence and approval handling before asserting that unknown models lack an explicit user-approved capability profile.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the claimed absence; no safe factual replacement is established.",
+            "options": [
+              "Retain the premise as unverified pending focused production-source evidence covering profile storage and approval handling.",
+              "Reword the premise as an FR004 requirement to provide explicit user-approved capability profiles for models absent from known descriptions, without asserting current absence."
+            ]
+          }
+        },
+        {
+          "claimId": "p08",
+          "ref": "FR001; c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "SPEC-1aa3094047d2617b calls for consolidating family identity, tier defaults, summariser selection, reasoning capabilities and input limits into daemon-owned definitions.",
+          "evidence": "SPEC.md:9 explicitly requires daemon-owned definitions consolidating runner identity, tier defaults, summariser fallback, reasoning-effort capabilities, and input-size limits. DEF.md:28 (E20261023ce99b720:FR001) confirms one authoritative family/model description covering tier defaults, summariser model, accepted effort levels, and input limits. Both support the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the cross-artifact premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p09",
+          "ref": "Non-goals/c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "SPEC-1aa3094047d2617b keeps model families, transport and structured-output handling built into code while allowing model selection and capability overrides.",
+          "evidence": "SPEC.md:13 explicitly keeps families, transport, and structured-output handling in code while configuring models through data; SPEC.md:35 confirms model selection and capability overrides. DEF.md:58 and :62 repeat these boundaries in Non-goals. The premise is confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "FR005; Non-goals/c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "SPEC-1aa3094047d2617b requires migration of all consumers in stages rather than one coordinated release.",
+          "evidence": "SPEC.md:13 explicitly states, “Every hardcoded runner/model string is migrated, in stages,” and identifies the TUI and both IDE plugins as consumers. SPEC.md:31 labels the scope “All consumers, delivered in stages,” while leaving coordination details unresolved. DEF.md:32 (E20261023ce99b720:FR005) likewise requires literal runner, CLI-kind and model references to use the shared description, “migrated in stages.” These lines support staged migration rather than a required single coordinated release.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "FR003; Non-goals/c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "SPEC-1aa3094047d2617b makes the daemon the single definitions authority and requires clients to use IPC without mirrored definitions or a shared versioned definitions package.",
+          "evidence": "SPEC.md:13 explicitly makes the daemon the single authority and requires the TUI and both IDE plugins to read definitions over IPC and keep no copy. SPEC.md:37 confirms daemon-owned definitions exposed through IPC. DEF.md:63 explicitly excludes a shared versioned definitions package and mirrored client definitions. These lines confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The gathered evidence confirms the premise."
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "FR004; Non-goals/c1/c3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "SPEC-1aa3094047d2617b requires an explicit probed and user-approved capability profile for an unfamiliar model instead of inherited or conservative family defaults.",
+          "evidence": "SPEC.md:13 requires CLI probing for each claimed effort level, displaying results, and user approval or rejection for models absent from built-in definitions. SPEC.md:39 reiterates the explicit capability-profile requirement. DEF.md:64 explicitly excludes conservative or inherited family defaults for unknown models. These lines confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "FR002; k4; c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The stakeholder statement attributed to user 2026-10-23 requires model structure in a separate repository-shipped data file rather than the user's config.json.",
+          "evidence": "DEF.md:207 and SPEC.md:45 both attribute [[c2]] to stakeholder user 2026-10-23 and explicitly request a “separate config file in the repo, not user's config.json that stores the model structure,” confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence directly confirms the cited stakeholder requirement."
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "FR002; c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The stakeholder statement attributed to user 2026-10-23 identifies frequent model-version updates as the reason model updates must not require code changes.",
+          "evidence": "DEF.md:207 and SPEC.md:45 both identify [[c2]] as stakeholder testimony from user 2026-10-23, explicitly linking frequent model-version updates to code changes being cumbersome and requesting a separate repository configuration file. Both confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the attribution and stated reason."
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "FR004; k5; c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The stakeholder statement attributed to user 2026-10-23 requires testing an unknown model and letting the user approve or reject it.",
+          "evidence": "DEF.md:208 and SPEC.md:46 at the supplied paths both identify [[c3]] as stakeholder `user 2026-10-23` and quote: \"test and approve or reject the unknown model\". This confirms the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms both the attribution and the stated requirement."
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "c6; k6/c13",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The stakeholder statements attributed to user 2026-10-23 require removal of per-repo tier overrides while preserving repo-specific selection of tiers for functions.",
+          "evidence": "DEF.md:211 (c6) explicitly states \"no per-repo override, only the model tiers, per-repo can only override the functions these tiers are used for\". DEF.md:218 (c13) confirms \"remove the per-repo override for tiers\". Both entries attribute the statements to user 2026-10-23 and support the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied citations confirm both removal of per-repo tier overrides and preservation of repo-specific function-to-tier selection."
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "k1; s4/lc1; c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md prohibits direct cloud REST calls from the process and delegates cloud LLM access to the locally installed Claude and Codex CLIs through CliProvider.",
+          "evidence": "CLAUDE.md:12 explicitly prohibits direct cloud REST calls and delegates cloud LLM access to the locally installed claude/codex CLI binaries via CliProvider. src/agent/providers/cli-provider.ts:182 declares `export class CliProvider implements LLMProvider`, confirming the named provider exists.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "k2/c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md assigns all database access to the daemon and requires CLI, MCP and IDE workbench communication through IPC.",
+          "evidence": "CLAUDE.md:136 explicitly states: “Daemon owns all DB access” and “CLI, MCP, and the IDE workbench communicate via IPC only.” This confirms the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited source directly confirms both parts of the premise."
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "k2/c4",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Constraint k2 extends the daemon-ownership and IPC rule cited from CLAUDE.md to ownership and delivery of model definitions.",
+          "evidence": "CLAUDE.md:136 establishes daemon-owned DB access through IPC. SPEC.md:13 extends that architecture to model definitions: the daemon is the single authority, and the TUI and both IDE plugins read definitions over IPC without keeping copies. DEF.md:79 explicitly states k2: daemon ownership of definitions with CLI, MCP server, and IDE plugin access only through daemon IPC. These lines confirm the stated extension.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "k3/c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md requires sequential awaits for calls reaching any LLM provider and explicitly prohibits Promise.all for those calls.",
+          "evidence": "CLAUDE.md:122 explicitly prohibits Promise.all for anything reaching an LLM provider and requires serial for...of with sequential awaits, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "Assumptions/c5; s1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon already has a curated model catalog backed by a shipped JSON asset and a structural validator.",
+          "evidence": "src/daemon/model-catalog.ts:10 identifies the maintainer-curated JSON asset at src/assets/models/cloud-model-catalog.json. Lines 102–107 identify its structural validator, validateShape; lines 157–163 describe structural validation and expose validateModelCatalog(), which resolves CATALOG_FILE. src/daemon/__tests__/model-catalog.test.ts:195–202 references both built and source catalog assets and parses the built JSON.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the existing catalog asset and structural validation mechanism."
+          }
+        },
+        {
+          "claimId": "p22",
+          "ref": "k7/c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/model-catalog.ts documents missing or malformed catalog data as a fail-fast daemon startup refusal.",
+          "evidence": "src/daemon/model-catalog.ts:12 documents loading and validation at boot; line 14 explicitly calls a missing/malformed catalog a “fail-fast startup refusal.” Lines 171 and 178 throw ModelCatalogValidationError, with line 178 explicitly identifying malformed JSON.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied source reads directly confirm the premise."
+          }
+        },
+        {
+          "claimId": "p23",
+          "ref": "k7/c5; s1/ac3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Daemon startup invokes validateModelCatalog before serving requests that consume the catalog.",
+          "evidence": "src/daemon/index.ts:377–378 imports and awaits validateModelCatalog(). src/daemon/model-catalog.ts:194 describes a boot-validated catalog accessor. However, no supplied source lines show when request serving starts or catalog consumers run relative to validation. The truncated grep contains historical test output, so the claimed ordering remains unverifiable.",
+          "action": "Obtain source evidence establishing validation completes before request serving and catalog consumption, or narrow the premise to the verified awaited invocation.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The invocation is supported; its ordering relative to request serving is not established by the supplied evidence.",
+            "options": [
+              "Retain the premise and gather startup, server activation, and catalog-consumer source lines establishing the ordering.",
+              "Narrow the premise to: “src/daemon/index.ts imports and awaits validateModelCatalog().”"
+            ]
+          }
+        },
+        {
+          "claimId": "p24",
+          "ref": "Assumptions/c5; s1/ac1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing catalog loader caches a frozen validated parse that getCuratedCatalog exposes through modelsFor.",
+          "evidence": "src/daemon/model-catalog.ts:181 confirms `cached = validateShape(parsed, path)`; :199 declares getCuratedCatalog(), and :208 declares modelsFor(). The supplied reads omit validateShape's return value and both accessors' bodies, so freezing and exposure of the cached parse remain unverified. The truncated grep contains documentation and historical test output, which do not establish the missing source behavior.",
+          "action": "Obtain source reads showing validateShape's freezing and return behavior, plus getCuratedCatalog/modelsFor's access to cached, before relying on the full premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports validation-result caching and accessor declarations, but neither confirms nor contradicts the complete data flow.",
+            "options": [
+              "Retain the premise pending source-body evidence confirming freezing and cached-value access.",
+              "Narrow the premise to the verified assignment of validateShape's result to cached and the existence of the accessor declarations."
+            ]
+          }
+        },
+        {
+          "claimId": "p25",
+          "ref": "Assumptions/c5",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing curated catalog asset, schema validator and boot integration can be extended to carry per-model capability facts without replacing the catalog mechanism.",
+          "evidence": "src/daemon/model-catalog.ts:40 documents a catalogued model entry; :107 declares validateShape returning CloudModelCatalogFile; src/daemon/index.ts:378 calls validateModelCatalog at boot. These confirm catalog validation and boot integration exist, but the supplied lines omit the model fields, validator body and asset structure needed to verify capability extensibility. The truncated grep supplies historical test logs rather than those definitions. The extensibility premise remains unverifiable; no concrete failure is established.",
+          "action": "Obtain the catalog interfaces, validator body and representative asset entry to verify that per-model capability facts can pass through the existing mechanism.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports the mechanism's existence but does not establish its proposed extensibility.",
+            "options": [
+              "Retain the premise pending source evidence showing how capability fields would be represented and validated.",
+              "Narrow the premise to the verified existence of catalog validation and boot integration, leaving capability extensibility unresolved."
+            ]
+          }
+        },
+        {
+          "claimId": "p26",
+          "ref": "s2/ac2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An existing daemon IPC request provides per-provider model lists and can be redirected to the shared definitions.",
+          "evidence": "src/daemon/handler-runtime.ts:1429 registers 'providers.listModels' and delegates to listModels(params). src/daemon/list-models.ts:100 exports that function; :127 obtains provider-specific models through deps.catalog().modelsFor(provider).map(toModelInfo), confirming an existing dispatch and model-source seam that can be redirected to shared definitions.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied source reads confirm the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p27",
+          "ref": "s3/Extends/c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/config/analyze.ts:242 declares resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel>.",
+          "evidence": "The source grep match and direct read at src/config/analyze.ts:242 both confirm: function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited declaration and signature exactly match the evidence."
+          }
+        },
+        {
+          "claimId": "p28",
+          "ref": "Assumptions/c12",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveTier currently resolves a configured tier or falls back to DEFAULT_TIERS with the configured effort.",
+          "evidence": "src/config/analyze.ts:254 returns tiering.tiers?.[tier] when configured; otherwise it spreads DEFAULT_TIERS[tier] and conditionally adds effort. The comment at line 250 explicitly describes the fallback as using the tier's configured effort.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p29",
+          "ref": "Assumptions/c12",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The configuration path reaches resolveTier through resolveTiers.",
+          "evidence": "src/config/analyze.ts:271 calls resolveTiers(tiering). resolveTiers is declared at :242 and calls resolveTier for core, mid, and cheap at :244–246, confirming the stated configuration resolution chain.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p30",
+          "ref": "Assumptions/c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The TUI effective-tier view directly assigns tiers[t] = resolveTier(tiering, t) at src/cli/panes/model-tiers.ts:63.",
+          "evidence": "The source grep match and direct read of src/cli/panes/model-tiers.ts:63 both confirm `tiers[t] = resolveTier(tiering, t);`, exactly matching the cited assignment and location.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p31",
+          "ref": "Assumptions/c12; s3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "Migrating default-tier resolution requires covering every resolveTier caller and every direct DEFAULT_TIERS read, including consumers outside resolveTiers.",
+          "evidence": "resolveTier callers appear at src/config/analyze.ts:244–246 and src/cli/panes/model-tiers.ts:63. Direct DEFAULT_TIERS reads outside resolveTiers are confirmed at src/cli/panes/model-tiers.ts:59 (initializing core, mid and cheap) and src/analyze/context/role-router.ts:139 (runtime fallback). These establish that migrating defaults must cover consumers beyond resolveTiers.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied source matches and reads support the required migration scope."
+          }
+        },
+        {
+          "claimId": "p32",
+          "ref": "s3/Extends/c14",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/context/role-router.ts:138 selects byRepo?.tiers?.[tier] before cfg.tiering.tiers?.[tier] for configuredTier.",
+          "evidence": "The read at src/analyze/context/role-router.ts:138 confirms: `const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];`. The repository-specific tier takes precedence, with the global tier as the nullish fallback.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is directly confirmed by the supplied source read."
+          }
+        },
+        {
+          "claimId": "p33",
+          "ref": "k6; s3/ac4/ac5",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing repo configuration can carry tier runner, model or effort overrides that must be ignored and removed by the migration.",
+          "evidence": "Partially verified: src/analyze/context/role-router.ts:138 reads `byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier]`, confirming repo tier overrides take precedence. docs/daemon.md:474–485 describes repo tier settings and their resolution; the supplied S005/LLD.md:40 describes runner/model leaves. No supplied source read establishes an effort leaf in TierModel or its parsing. DEF.md:133 prescribes removing runner/model/effort overrides but does not independently verify their existing representation. No concrete build-breaking contradiction is established.",
+          "action": "Confirm the stored representation and parsing of per-repo effort overrides, or narrow the existing-configuration claim to the verified runner/model overrides while retaining effort cleanup as a defensive migration requirement.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Runner/model overrides are supported by the evidence; existing effort support remains unverified. The evidence does not justify removing the migration requirement.",
+            "options": [
+              "Obtain TierModel, TieringOverride, and parser reads establishing whether per-repo effort overrides are supported.",
+              "Reword the premise to distinguish verified runner/model overrides from defensive cleanup of any stale effort fields."
+            ]
+          }
+        },
+        {
+          "claimId": "p34",
+          "ref": "Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The installed Codex CLI rejects an unknown model with exit status 1.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:11 records probe 3: `codex exec -m gpt-nonexistent-9 \"Reply with: ok\"` exited with status 1 and reported that the model is not supported when using Codex with a ChatGPT account.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The recorded probe confirms the premise."
+          }
+        },
+        {
+          "claimId": "p35",
+          "ref": "Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The installed Claude CLI rejects an unknown model with exit status 1.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:13 records probe 5: `claude -p --model claude-nonexistent-9 \"Reply with: ok\"` exited with status 1 and reported an issue with the selected model, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The recorded probe confirms the premise."
+          }
+        },
+        {
+          "claimId": "p36",
+          "ref": "Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The installed Codex CLI rejects an unrecognized reasoning-effort value with exit status 1.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:10 records probe 2: `codex exec -m gpt-6.1-sol -c model_reasoning_effort=bogus \"Reply with: ok\"` exited with status 1 and reported `Invalid value: 'bogus'`, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p37",
+          "ref": "Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The installed Claude CLI warns about an unknown effort value, substitutes its default effort and can finish with exit status 0.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:14 records probe 6: `claude --effort bogus` warns that it is using the default effort, answers `ok`, and exits 0. Line 19 independently summarizes the same behavior.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied probe evidence confirms the premise."
+          }
+        },
+        {
+          "claimId": "p38",
+          "ref": "Assumptions/c11; s4/lc2",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The installed Codex CLI can successfully run a model with a recognized effort level absent from that model's supported-level listing.",
+          "evidence": "def-cli-probes.md:12 records probe 4 exiting 0 and answering `ok` with `reasoning effort: ultra`, although ultra is absent from gpt-6-luna’s listed levels. Line 20 explicitly confirms Codex does not reject this known but unlisted level.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p39",
+          "ref": "Assumptions/c11; s4/ac1",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "codex debug models provides a local JSON model listing containing model slugs and supported_reasoning_levels.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 records `codex debug models` exiting 0 and returning a JSON list whose models contain `slug` and `supported_reasoning_levels`, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied probe result directly confirms the claimed command and JSON fields."
+          }
+        },
+        {
+          "claimId": "p40",
+          "ref": "Problem; Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "Supported reasoning-effort levels differ between models within the Codex family.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 records successful `codex debug models` output: gpt-6.1-sol lists low/medium/high/xhigh/max/ultra, while gpt-6-luna lists low/medium/high/xhigh/max without ultra. This confirms model-specific supported reasoning levels within Codex.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied model-catalog evidence directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p41",
+          "ref": "Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The installed Claude CLI has no local model-listing command equivalent to codex debug models.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:21 repeats that Claude has no local model-listing command, but the supplied evidence contains no installed CLI help or probe output establishing that external contract. The premise remains unverifiable.",
+          "action": "Supply installed Claude CLI command-discovery evidence, or qualify the statement as an unverified assumption.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied documentation asserts the premise without exposing the CLI evidence needed to verify it.",
+            "options": [
+              "Retain the premise after adding installed CLI version and command-discovery probe output.",
+              "Reword the premise as an unverified assumption pending CLI probing."
+            ]
+          }
+        },
+        {
+          "claimId": "p42",
+          "ref": "s4/ac1/ac2; Assumptions/c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "CLI probe results expose warnings and rejection evidence needed to distinguish accepted effort levels from silently substituted defaults.",
+          "evidence": "def-cli-probes.md:10 records Codex rejecting effort 'bogus' with exit status 1 and an invalid-value diagnostic. The same file at :14 records Claude returning status 0 while warning that effort 'bogus' is ignored and the default used. These results expose rejection and substitution evidence, confirming that exit status alone cannot establish effort acceptance.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied probe records directly confirm the premise."
+          }
+        },
+        {
+          "claimId": "p43",
+          "ref": "s4/lc2; c11",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A successful Codex execution is insufficient evidence of per-model effort support, so the Codex model listing must determine accepted effort levels.",
+          "evidence": "def-cli-probes.md:9 lists gpt-6-luna's supported_reasoning_levels without ultra; :12 records a successful ultra execution anyway. This directly supports DEF.md:154 (lc2): execution success cannot establish per-model effort support, so validation must use the model listing.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p44",
+          "ref": "c11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI probe evidence document explicitly concludes that Codex accepted levels must come from codex debug models rather than successful test execution.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:20 explicitly states that Codex accepted levels must come from `codex debug models` (probe 1), not whether a test run succeeds, because Codex does not reject a known level absent from a model’s listed levels (probe 4).",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied read directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p45",
+          "ref": "c7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Reference c7 resolves to the earlier reasoning-effort story's live CLI effort evidence document.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:212 explicitly maps [[c7]] to the stated prior-artifact path. That document's line 1 identifies it as “S001/t8 live CLI effort checks”; line 3 records the live-test command and 2 of 2 passing. Lines 6–7 show the passing Codex and Claude effort checks.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the reference and document identity."
+          }
+        },
+        {
+          "claimId": "p46",
+          "ref": "c9; c10",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Reference c10 identifies the first analyze bundle of step-output s1, which c9 identifies as a workflow step output.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:214 identifies c9 as `step-output` `s1`; line 215 identifies c10 as `analyze-bundle` `s1.analyzeBundles[0]`, confirming the stated relationship.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "No correction is needed."
+          }
+        },
+        {
+          "claimId": "p47",
+          "ref": "s1/Extends; s2/Extends; s3/Extends; s5/Extends; s6/Extends; s7/Extends; c10",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The cited analyze bundle reports no clear existing implementation match and identifies only partial consumer-side slices.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:215 explicitly cites s1.analyzeBundles[0] and quotes: \"No clear match. Partial, consumer-side slices in vscode-plugin/src/models/model-tier-picker.ts and src/cli/panes/model-tiers.ts.\" This confirms the premise's characterization of the cited report.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied citation directly supports the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p48",
+          "ref": "c10; s5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/panes/model-tiers.ts contains an existing TUI model-tier implementation that consumes local tier defaults and effort choices.",
+          "evidence": "src/cli/panes/model-tiers.ts:19 imports DEFAULT_TIERS, resolveTier and TIER_EFFORTS; :59 initializes core, mid and cheap from DEFAULT_TIERS; :101 exports EFFORT_CYCLE as ['', ...TIER_EFFORTS]. These source reads confirm the existing model-tier implementation consumes local tier defaults and effort choices.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The provided source reads directly confirm the premise."
+          }
+        },
+        {
+          "claimId": "p49",
+          "ref": "c10; s6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The analyze-bundle citation names vscode-plugin/src/models/model-tier-picker.ts as an existing VS Code consumer-side model-tier implementation.",
+          "evidence": "DEF.md:215 confirms c10 names vscode-plugin/src/models/model-tier-picker.ts as a partial consumer-side slice. However, the supplied grep is truncated at 50 matches and contains no implementation match or source read for that file. Its existence and model-tier behavior are therefore unverifiable; absence is not established either.",
+          "action": "Obtain a targeted existence check and source read for the cited file, then substantiate or correct c10.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence verifies the citation's wording but supplies no grounding for the claimed implementation. No replacement implementation is established.",
+            "options": [
+              "Retain the citation pending a targeted source check that establishes the file and its behavior.",
+              "Qualify c10 to state that the reported VS Code consumer-side implementation remains unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p50",
+          "ref": "s2/Depends on",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "S002 depends on S001 supplying validated daemon-owned definitions before the definitions IPC surface is delivered.",
+          "evidence": "DEF.md:108 explicitly states “Depends on: `s1`”. DEF.md:98 requires daemon startup loading and retaining definitions as the single source for later requests. These support a dependency and daemon ownership, but do not establish S001's validation responsibility or S002's IPC delivery scope. The full ordering premise is therefore only partially verifiable.",
+          "action": "Verify the S001 validation and S002 IPC responsibilities, or narrow the premise to the documented dependency.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The dependency is supported, but the supplied reads do not establish its full stated prerequisite.",
+            "options": [
+              "Provide evidence establishing S001's validation responsibility and S002's definitions IPC scope.",
+              "Narrow the premise to the explicit dependency on s1, omitting the unverified validation and IPC assertions."
+            ]
+          }
+        },
+        {
+          "claimId": "p51",
+          "ref": "s3/Depends on",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "S003 depends on S001 supplying definitions before runtime model selection is migrated.",
+          "evidence": "DEF.md:123 records “Depends on: `s1`”, and DEF.md:98 requires definitions loaded at daemon startup as the single source for later requests. Neither supplied line establishes that S001 supplies those definitions or that S003 migrates runtime model selection. The full ordering premise is unverifiable; no concrete implementation failure is demonstrated.",
+          "action": "Verify the S001/S003 section identities and responsibilities before accepting the stated ordering rationale.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports a dependency on s1 but does not establish the attributed story responsibilities.",
+            "options": [
+              "Provide the S001 and S003 headings and scope lines to verify the full premise.",
+              "Narrow the premise to the evidenced dependency on s1, pending verification of its rationale."
+            ]
+          }
+        },
+        {
+          "claimId": "p52",
+          "ref": "s4/Depends on",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S004 depends on S002 providing the definitions contract that can represent subsequently approved unknown models.",
+          "evidence": "DEF.md:141 explicitly declares `Depends on: s2`. DEF.md:114 (s2/ac1) requires a definitions shape that can carry models approved later; DEF.md:149 (s4/ac5) requires approved models absent from shipped definitions to appear under their family with approved effort levels. These confirm the stated dependency.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The dependency and required contract capability are supported by the supplied evidence."
+          }
+        },
+        {
+          "claimId": "p53",
+          "ref": "s5/Depends on",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S005 depends on S002, S003 and S004 before the TUI migration is delivered.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:162 explicitly states '**Depends on:** `s2`, `s3`, `s4`', confirming the stated S005 dependencies.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The gathered dependency declaration confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p54",
+          "ref": "s6/Depends on",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S006 depends on S002, S003 and S004 before the VS Code migration is delivered.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:178 explicitly states '**Depends on:** `s2`, `s3`, `s4`', confirming the stated dependencies.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The gathered evidence confirms the dependency ordering; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p55",
+          "ref": "s7/Depends on",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S007 depends on S002, S003 and S004 before the JetBrains migration is delivered.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:194 explicitly states **Depends on:** `s2`, `s3`, `s4`, confirming the stated dependency ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The recorded dependencies match the premise."
+          }
+        },
+        {
+          "claimId": "p56",
+          "ref": "s1/ac1/ac3; k7",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S001 requires definition loading and validation to complete before the daemon serves requests.",
+          "evidence": "DEF.md:92 explicitly requires a broken definitions file to be caught before the daemon serves anything. DEF.md:98 (ac1) requires loading definitions once at startup; DEF.md:100 (ac3) requires refusing startup for missing or invalid definitions. These confirm the required ordering; they do not establish the current implementation's startup order.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied acceptance criteria directly support the premise."
+          }
+        },
+        {
+          "claimId": "p57",
+          "ref": "s2/ac1; s4/ac5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The definitions response required by S002 must represent both shipped models and later user-approved models with per-model effort levels.",
+          "evidence": "DEF.md:114 (s2/ac1) requires every family and its models, each model’s accepted effort levels, and a response shape that accommodates later user-approved models. DEF.md:149 (s4/ac5) requires approved non-shipped models to appear under their family, marked user-approved, with only their approved effort levels. These directly confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied acceptance criteria confirm both model populations and per-model effort levels."
+          }
+        },
+        {
+          "claimId": "p58",
+          "ref": "s2/ac2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "S002 requires the existing per-provider model-list response and the full definitions response to derive their models from the same authority.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:115 explicitly requires the existing model-list answer to be drawn from the same definitions and agree with the full definitions answer. This confirms the stated S002 requirement; it does not establish current implementation compliance.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied acceptance criterion directly confirms the premise."
+          }
+        },
+        {
+          "claimId": "p59",
+          "ref": "FR004; s4/ac1; s4/lc2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S004 specializes FR004's per-effort checking requirement by using Codex model-list evidence plus a model execution check, while retaining per-effort executions for Claude.",
+          "evidence": "DEF.md:31 requires checking each claimed effort level. S004 ac1 at DEF.md:145 specifies Codex CLI model-list evidence plus a model execution check, and per-effort executions for Claude. DEF.md:154 (lc2) and evidence/def-cli-probes.md:20 explain that successful Codex execution does not establish effort support, so the CLI model list is authoritative. These lines confirm the stated specialization.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p60",
+          "ref": "s4/ac1; k3",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S004 requires each model check to finish before the next LLM-reaching check starts.",
+          "evidence": "DEF.md:145 in docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720 explicitly requires CLI model checks to run “one check at a time” (ac1, operationalizing k3). CLAUDE.md:122 requires serial for...of with sequential awaits for anything reaching an LLM provider, confirming each check must finish before the next starts.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied acceptance criterion and repository convention confirm the ordering premise."
+          }
+        },
+        {
+          "claimId": "p61",
+          "ref": "s4/ac2/ac3/ac4; k5",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "An unknown model may enter normal use only after capability checks finish, their evidence is shown and the user approves the resulting profile.",
+          "evidence": "DEF.md:146 requires completed checks, presentation of accepted/rejected effort levels with CLI evidence, and user approval before model use. Lines 147–148 permit only passed effort levels after approval and require refusal when the profile is rejected or the CLI is unreachable. These lines confirm the stated ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied acceptance criteria explicitly establish the required sequence."
+          }
+        },
+        {
+          "claimId": "p62",
+          "ref": "S004:FR002; s4/ac3/ac5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An approved unknown-model profile must preserve its family, user-approved status and approved effort levels for both runtime selection and definitions responses.",
+          "evidence": "The supplied DEF.md reads confirm the requirement: line 54 restricts unknown-model use to user-approved effort levels; line 147 requires tier selection to accept the checked model with only passing effort levels; line 149 requires definitions responses to include the model under its family, marked user-approved, with only approved effort levels. The truncated grep adds no relevant implementation evidence, but the cited requirements directly support the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise accurately combines FR002, ac3 and ac5; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p63",
+          "ref": "FR005; s3/ac3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "S003 narrows the literal-removal requirement by allowing runner and model literals inside family implementations while requiring definitions-derived values in routing, provider construction, attribution and workflow code.",
+          "evidence": "DEF.md:32 states FR005 broadly: every runner, CLI kind or model literal must come from the shared description. DEF.md:131 explicitly scopes ac3 to routing, provider construction, attribution and workflow code, with an exception for family implementations. These reads confirm the stated narrowing; the truncated grep results establish no contradiction.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied artifact reads directly confirm the premise."
+          }
+        },
+        {
+          "claimId": "p64",
+          "ref": "S003:FR004; k6; s3/ac4; s5/ac3; s6/ac3; s7/ac3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The repo-settings restrictions consistently require global tier runner, model and effort values while permitting repo-specific role-to-tier selection.",
+          "evidence": "DEF.md:49 explicitly removes per-repo runner, model and effort overrides. DEF.md:83 requires those settings to be global, allowing repo-specific role-to-tier selection and core floor. DEF.md:132 requires resolution to use global runner, model and effort values. The repo settings criteria at DEF.md:170, :186 and :202 consistently permit only role-to-tier editing; :186 and :202 also explicitly exclude runner/model fields. Existing per-repo override support in the grep evidence is behavior the artifact explicitly proposes removing, so it does not contradict the requirement.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied artifact lines consistently support the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p65",
+          "ref": "k6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Constraint k6 explicitly permits a repo-specific core floor in addition to repo-specific role-to-tier selection.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:83 explicitly states in k6: “per-repo configuration may only choose which tier each role uses (and the core floor).” This directly confirms both repo-specific role-to-tier selection and a repo-specific core floor.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The constraint explicitly permits both settings; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p66",
+          "ref": "FR003; s5/ac1; s6/ac1; s7/ac1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The TUI, VS Code and JetBrains acceptance criteria uniformly require daemon-supplied model choices without client-owned runner or model lists.",
+          "evidence": "Not judged: the reviewing model call failed twice. Last error: codex exited with -9. stderr=Reading prompt from stdin...\n stdout={\"type\":\"thread.started\",\"thread_id\":\"01a168ec-1d4a-7963-90bf-df010cf05614\"}\n{\"type\":\"turn.started\"}\n",
+          "action": "Re-run the review, or judge this premise by hand.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p67",
+          "ref": "FR004; s4/ac1; s4/lc1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The artifact includes Ollama among the built-in families and permitted probe transports, but S004's concrete unknown-model checking procedure specifies only Codex and Claude.",
+          "evidence": "DEF.md:98 includes Claude CLI, Codex CLI and Ollama among the shipped families. DEF.md:153 permits checks through claude, codex or local Ollama. However, S004 ac1 at DEF.md:145 specifies unknown-model checks only for Codex and Claude, confirming the stated omission. FR004 at DEF.md:31 requires checking unknown models.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied artifact lines directly confirm the premise."
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 13,
+        "low": 54
+      },
+      "reviewedAt": "2026-10-23T12:47:54.840Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "title": "Per-family model definitions served by the daemon",
+    "flavor": "enhancement",
+    "summary": {
+      "prose": "insrc will hold one authoritative description of each model family it supports and of the models in it, kept by the background service and shared with every screen that shows or changes model settings. Updating to a new model or version becomes a data change rather than a code change, every client shows exactly what the service will run, and a model insrc does not yet know is checked and approved by the user before it is used.",
+      "audience": "product"
+    },
+    "problem": "The facts that describe each model family insrc can run on (the Claude CLI, the Codex CLI and local Ollama) are scattered rather than held in one place. Which runner a family is, which model each capability tier defaults to, which model summarises, which reasoning-effort levels a given model accepts and how large an input it takes are written as repeated literal strings and per-family branches across the daemon, the terminal UI and both IDE plugins. The same fact is therefore stated many times and can drift: a client can offer an effort level or a model the daemon will not honour, or the daemon can run a model with a capability it lacks, and nothing notices. Model releases arrive often (new versions, new effort levels that only some models support), and today each one needs code edits in several places, and a release of each client that keeps its own list, before anyone can use it. When a user picks a model that insrc does not know, there is no record of what that model can actually do, so its effort levels and limits are guessed rather than known. The cost falls on every model update and on every user who switches models: slow, error-prone changes, and settings screens that may not match what actually runs.",
+    "nonGoals": [
+      {
+        "text": "User-defined model families or runner implementations.",
+        "rationale": "Families and their transport stay built in [[c1]]."
+      },
+      {
+        "text": "Migrating only the daemon and TUI.",
+        "rationale": "All consumers are in scope [[c1]]."
+      },
+      {
+        "text": "Migrating every consumer in one coordinated release.",
+        "rationale": "Delivered in stages [[c1]]."
+      },
+      {
+        "text": "Keeping model definitions in code.",
+        "rationale": "A model update must not need a code change [[c2]]."
+      },
+      {
+        "text": "Making every model-level fact configurable (transport, structured-output handling).",
+        "rationale": "Configuration is limited to model selection and capability overrides [[c1]]."
+      },
+      {
+        "text": "A shared versioned definition package, or mirrored definitions in each client.",
+        "rationale": "The daemon is the single authority over IPC [[c1]]."
+      },
+      {
+        "text": "Silently treating an unknown model with conservative or inherited family defaults.",
+        "rationale": "An explicit, user-approved capability profile is required [[c3]]."
+      },
+      {
+        "text": "Per-repo overrides of a tier's runner, model or effort.",
+        "rationale": "Tier settings are global; a repo only chooses which tier a role uses, and existing per-repo tier overrides are removed [[c13]]."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The existing curated model catalog asset and its boot-time validation can be extended to carry the per-model facts rather than replaced.",
+        "confidence": "med",
+        "source": "c5"
+      },
+      {
+        "text": "Each CLI's response to an unknown model or effort is observable: both reject an unknown model with exit 1; codex rejects an unknown effort value with exit 1 while claude warns and exits 0; but codex runs a known effort level that a given model does not list without any error, so a codex model's accepted levels must come from `codex debug models` rather than from a test run.",
+        "confidence": "high",
+        "source": "c11"
+      },
+      {
+        "text": "The Codex CLI lists its models and each model's supported reasoning levels locally via `codex debug models`; the Claude CLI has no equivalent listing command.",
+        "confidence": "high",
+        "source": "c11"
+      },
+      {
+        "text": "Tier defaults are resolved through resolveTier, reached both from the config path (resolveTiers) and directly from the TUI's effective-tier view; every caller of resolveTier and every direct read of DEFAULT_TIERS must take the shared description.",
+        "confidence": "high",
+        "source": "c12"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "No direct cloud REST calls: model probing and listing go only through the locally installed claude and codex CLIs and local Ollama.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k2",
+        "text": "The daemon owns the definitions; the CLI, MCP server and IDE plugins reach them only over daemon IPC.",
+        "type": "contract",
+        "source": "c4"
+      },
+      {
+        "id": "k3",
+        "text": "Probes that reach an LLM provider run serially, never concurrently.",
+        "type": "convention",
+        "source": "c4"
+      },
+      {
+        "id": "k4",
+        "text": "Model-level facts live in a repo-shipped data file, not in code and not in the user's config.json.",
+        "type": "stakeholder",
+        "source": "c2"
+      },
+      {
+        "id": "k5",
+        "text": "An unknown model is usable only after the user approves its probed capability profile.",
+        "type": "stakeholder",
+        "source": "c3"
+      },
+      {
+        "id": "k6",
+        "text": "Tier settings (runner, model and effort) are global only; per-repo configuration may only choose which tier each role uses (and the core floor). Existing per-repo tier overrides are removed.",
+        "type": "stakeholder",
+        "source": "c13"
+      },
+      {
+        "id": "k7",
+        "text": "A missing or malformed definitions file is a fail-fast startup refusal, as the curated catalog is today.",
+        "type": "convention",
+        "source": "c5"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Ship model definitions as data the daemon checks at startup",
+        "userValue": "A maintainer can add a new model, a new version or a new effort level by editing one shipped data file, with no code change, and a broken file is caught before the daemon serves anything.",
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c10",
+          "c5"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the shipped definitions describe the Claude CLI, Codex CLI and Ollama families with their models, tier defaults, summariser model, per-model effort levels and input limits",
+            "when": "the daemon starts",
+            "then": "it loads those definitions once and holds them as the single source for every later request",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a maintainer adds a model with its effort levels to the shipped definitions file and changes nothing else",
+            "when": "the daemon is rebuilt and restarted",
+            "then": "the new model and its effort levels are available without any code change",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the definitions file is missing, malformed, names an unknown family, or gives a tier default that is not one of that family's models",
+            "when": "the daemon starts",
+            "then": "it refuses to start and logs which entry is wrong",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The model definitions for the three built-in families are read from a data file shipped with insrc, separate from the user's settings."
+          },
+          {
+            "statement": "An invalid definitions file stops the daemon at startup with a message naming the faulty entry."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Ask the daemon for family and model definitions",
+        "userValue": "Every client can show exactly the families, models, effort levels and limits the daemon will use, by asking the daemon instead of keeping its own list.",
+        "sizeEstimate": "S",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c10"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the daemon is running with valid definitions",
+            "when": "a client asks for the model definitions",
+            "then": "it receives every family with its models, each model's accepted effort levels and input limit, the tier defaults and the summariser model, in a shape that can also carry models the user approves later",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a client asks for the models of a family",
+            "when": "the existing model-list request is used",
+            "then": "its answer is drawn from the same definitions and agrees with the full definitions answer",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Clients can request the complete family and model definitions from the daemon."
+          },
+          {
+            "statement": "The existing per-provider model list agrees with the full definitions."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "The daemon runs every model by the shared definitions",
+        "userValue": "What the daemon actually runs (runner, default model per tier, summariser, effort passed to the CLI) always follows the definitions, so a model update takes effect everywhere at once and nothing runs with an effort level its model does not accept. A repo can still choose which tier each role uses, but no longer changes what a tier runs.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c10",
+          "c14",
+          "c8"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a tier has no model set in the user's settings",
+            "when": "the daemon resolves that tier",
+            "then": "it uses the tier default from the definitions, not a value written in code",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a tier is set to a model and an effort level that model does not accept",
+            "when": "the daemon resolves that tier",
+            "then": "it does not pass the unsupported effort to the CLI and logs a warning naming the model and the effort",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the daemon's routing, provider construction, attribution and workflow code",
+            "when": "they name a runner, CLI kind or model",
+            "then": "they take it from the definitions, and no runner or model name remains as a literal in that code outside the family implementations",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a repo's settings choose which tier a role uses",
+            "when": "the daemon resolves that role",
+            "then": "the repo's choice of tier applies, while the tier's runner, model and effort come only from the global tier settings and definitions",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a user's settings still carry a per-repo tier override (a runner, model or effort under a repo)",
+            "when": "the daemon starts or its settings are reconciled",
+            "then": "the override is not used, a warning names the repo and tier, and the stale entry is removed from the settings",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Tier defaults, the summariser model and per-model effort and input limits used at run time come from the definitions."
+          },
+          {
+            "statement": "An effort level a model does not accept is never sent to its CLI."
+          },
+          {
+            "statement": "Runner and model names are no longer written as literals across the daemon."
+          },
+          {
+            "statement": "A repo can choose only which tier each role uses; per-repo tier runner, model and effort overrides are no longer honoured and are removed from settings."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Approve an unknown model after checking it against its CLI",
+        "userValue": "A user can choose a model insrc does not yet know, see what it actually supports when checked against its CLI, and decide whether to use it, instead of insrc guessing its capabilities.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a user selects a model that is not in the definitions for its family",
+            "when": "they ask to use it",
+            "then": "insrc checks the model through its CLI, one check at a time: for the Codex CLI it takes the model's supported effort levels from the CLI's own model list and confirms the model runs; for the Claude CLI it runs the model once per claimed effort level and records any rejection or warning",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the checks have finished",
+            "when": "the results are shown to the user",
+            "then": "each claimed effort level is shown as accepted or rejected with the CLI's evidence, and the model is not used until the user approves",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the user approves the checked profile",
+            "when": "a tier is set to that model",
+            "then": "the daemon accepts it with only the effort levels that passed",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user rejects the profile, or a check cannot reach the CLI",
+            "when": "a tier is set to that model",
+            "then": "the daemon refuses the model and says why",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the user has approved a checked profile for a model that is not in the shipped definitions",
+            "when": "a client asks the daemon for the model definitions",
+            "then": "that model appears under its family, marked as user-approved, with only its approved effort levels",
+            "operationalizes": [
+              "k2",
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Checks reach the model only through the installed claude or codex CLI or local Ollama; no provider web API is called.",
+            "type": "invariant",
+            "source": "c4"
+          },
+          {
+            "id": "lc2",
+            "text": "A codex run succeeding at an effort level is not proof the model supports that level; the CLI's own model list is the authority for codex.",
+            "type": "invariant",
+            "source": "c11"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "An unknown model is checked against its CLI per claimed effort level and the results are shown to the user."
+          },
+          {
+            "statement": "An unknown model is used only with the effort levels the user approved."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Pick tier models and efforts in the TUI from the daemon's definitions",
+        "userValue": "In the terminal UI a user only ever sees the models and effort levels the daemon will honour for each family, and can start the approval of an unknown model there.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c10"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the TUI's model-tiers view is open",
+            "when": "the user changes a tier's family, model or effort",
+            "then": "the choices offered are the ones from the daemon's definitions for that model, and the TUI holds no list of its own",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the user enters a model that is not in the definitions",
+            "when": "they save it",
+            "then": "the TUI starts the unknown-model check and shows its results for approval",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the TUI shows a repo's settings",
+            "when": "the user edits model settings for that repo",
+            "then": "only the tier per role can be changed, not a tier's runner, model or effort",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Pick tier models and efforts in VS Code from the daemon's definitions",
+        "userValue": "In VS Code settings a user sees the same families, models and effort levels as every other client, taken from the daemon.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c10"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the VS Code model-tier picker is open",
+            "when": "the user picks a family, model or effort for a tier",
+            "then": "the options come from the daemon's definitions and no runner or model list is kept in the extension",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the user enters a model that is not in the definitions",
+            "when": "they confirm it",
+            "then": "the extension shows the daemon's check results and saves the model only after the user approves",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the VS Code Repo Configuration panel is open for a repo",
+            "when": "the user looks for model settings",
+            "then": "it offers only the choice of tier per role, and no per-tier runner or model field for the repo",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "Pick tier models and efforts in JetBrains from the daemon's definitions",
+        "userValue": "In JetBrains settings a user sees the same families, models and effort levels as every other client, taken from the daemon.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c10"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the JetBrains model-tiers settings section is open",
+            "when": "the user picks a family, model or effort for a tier",
+            "then": "the options come from the daemon's definitions and no runner or model list is kept in the plugin",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the user enters a model that is not in the definitions",
+            "when": "they apply it",
+            "then": "the plugin shows the daemon's check results and saves the model only after the user approves",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the JetBrains settings for a repo are open",
+            "when": "the user looks for model settings",
+            "then": "they offer only the choice of tier per role, and no per-tier runner or model field for the repo",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261023ce99b720:FR001",
+          "statement": "The system keeps one authoritative description of each built-in model family and of the models it offers, including tier defaults, the summariser model, the effort levels each model accepts and its input limit.",
+          "scope": "doc",
+          "rationale": "Removes the repeated, drifting statements of the same facts [[c1]]."
+        },
+        {
+          "id": "E20261023ce99b720:FR002",
+          "statement": "Model-level facts can be added or changed without a code change, from a data file shipped with insrc and separate from the user's personal settings.",
+          "scope": "doc",
+          "rationale": "Model versions change often [[c2]]."
+        },
+        {
+          "id": "E20261023ce99b720:FR003",
+          "statement": "The terminal UI and both IDE plugins obtain family and model descriptions from the background service and never keep their own copy.",
+          "scope": "doc",
+          "rationale": "Keeps what clients show consistent with what runs [[c1]]."
+        },
+        {
+          "id": "E20261023ce99b720:FR004",
+          "statement": "A user-selected model that is not in the shipped descriptions is checked against its CLI for each effort level it claims, the results are shown to the user, and the model is used only after the user approves it.",
+          "scope": "doc",
+          "rationale": "Unknown models need an explicit capability profile [[c3]]."
+        },
+        {
+          "id": "E20261023ce99b720:FR005",
+          "statement": "Every place that today names a runner, CLI kind or model by literal string reads it from the shared description instead, migrated in stages.",
+          "scope": "doc",
+          "rationale": "All consumers, delivered in stages [[c1]]."
+        },
+        {
+          "id": "E20261023ce99b720:S001:FR001",
+          "statement": "The model definitions for the three built-in families are read from a data file shipped with insrc, separate from the user's settings.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261023ce99b720:S001:FR002",
+          "statement": "An invalid definitions file stops the daemon at startup with a message naming the faulty entry.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261023ce99b720:S002:FR001",
+          "statement": "Clients can request the complete family and model definitions from the daemon.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261023ce99b720:S002:FR002",
+          "statement": "The existing per-provider model list agrees with the full definitions.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261023ce99b720:S003:FR001",
+          "statement": "Tier defaults, the summariser model and per-model effort and input limits used at run time come from the definitions.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261023ce99b720:S003:FR002",
+          "statement": "An effort level a model does not accept is never sent to its CLI.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261023ce99b720:S003:FR003",
+          "statement": "Runner and model names are no longer written as literals across the daemon.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261023ce99b720:S004:FR001",
+          "statement": "An unknown model is checked against its CLI per claimed effort level and the results are shown to the user.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261023ce99b720:S004:FR002",
+          "statement": "An unknown model is used only with the effort levels the user approved.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261023ce99b720:S003:FR004",
+          "statement": "A repo can choose only which tier each role uses; per-repo tier runner, model and effort overrides are no longer honoured and are removed from settings.",
+          "scope": "item",
+          "itemRef": "s3"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "SPEC-1aa3094047d2617b"
+    },
+    {
+      "id": "c2",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-23",
+      "quotedText": "models especially their version get updated quite frequently, requiring a code change would be very cumbersome. separate config file in the repo, not user's config.json that stores the model structure"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-23",
+      "quotedText": "test and approve or reject the unknown model"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "CLAUDE.md",
+      "quotedText": "No direct cloud REST calls from our process. ... Daemon owns all DB access ... Never Promise.all anything that reaches an LLM provider"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/model-catalog.ts",
+      "quotedText": "loaded + validated at boot ... so a missing / malformed catalog is a fail-fast startup refusal"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-23",
+      "quotedText": "no per-repo override, only the model tiers, per-repo can only override the functions these tiers are used for"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-live-effort.md"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/config/analyze.ts:242",
+      "quotedText": "resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel>"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c10",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]",
+      "quotedText": "No clear match. Partial, consumer-side slices in vscode-plugin/src/models/model-tier-picker.ts and src/cli/panes/model-tiers.ts."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md",
+      "quotedText": "codex does not reject a known level that a given model does not list (probe 4). For codex, a model's accepted levels must therefore come from `codex debug models`"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/cli/panes/model-tiers.ts:63",
+      "quotedText": "tiers[t] = resolveTier(tiering, t);"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-23",
+      "quotedText": "remove the per-repo override for tiers"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/analyze/context/role-router.ts:138",
+      "quotedText": "const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];"
+    }
+  ]
+}

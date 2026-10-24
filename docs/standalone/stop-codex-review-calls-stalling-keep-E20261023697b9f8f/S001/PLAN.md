@@ -1,0 +1,144 @@
+<!-- insrc:artifact PLAN-697b9f8ff46b9deb-S001 -->
+
+# Plan: E20261024697b9f8f:S001
+
+## Summary
+
+**Epic:** `stop-codex-review-calls-stalling-keep`
+**LLD run:** `wf-1792763798946-g7op3j`
+**LLD effective hash:** `697b9f8ff46b...`
+
+Building this fix touches three layers. The CLI provider gets an opt-in silence watchdog for codex structured calls and a typed schema rejection; the review pipeline uses them with a 60 s silence limit, a 600 s cap, three attempts for stalls and accurate attempt counts, plus a bounded verify answer and a prompt that matches codex's grammar; and the daemon and step tool keep long reviews alive with a heartbeat and progress relay. It ends with a live codex check, one full test sweep and a daemon rollout confirmed on a real review.
+
+## Contents
+
+1. [Tasks](#1-tasks)
+2. [Test-strategy coverage](#2-test-strategy-coverage)
+3. [References](#3-references)
+
+## 1. Tasks
+
+| # | Task | Size | Depends on | Tests | Derived from |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **`t1`** Silence watchdog for opted-in structured codex calls | M | — | unit: a structured codex call with stallMs kills a run that prints no output and throws CliStallError; unit: a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output; unit: a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed; unit: claude ignores stallMs and reviewer sessions keep the first-output watchdog | [[c1]] [[c2]] |
+| 2 | **`t2`** Typed schema rejection with reasons | S | — | unit: a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons; unit: a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons | [[c7]] |
+| 3 | **`t3`** Bound the verify answer and align the verify prompt | S | — | unit: VERIFY_SCHEMA and VERDICTS_SCHEMA bound evidence, action, rationale, edits and options, and an answer over a bound fails validation; unit: the verify SYSTEM rules ask for an always-present proposedFix with empty fields when there is no fix and no longer tell the model to omit fields, in both the single and batched prompts; unit: a no-fix answer with an empty rationale normalises to a finding without proposedFix, and one with a rationale keeps a rationale-only proposedFix | [[c9]] [[c11]] |
+| 4 | **`t4`** Stall retry budget and attempt counts in the review pipeline | M | `t1`, `t2` | unit: a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once; unit: a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts; unit: ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders; unit: the pipeline driver forwards a structured call's stallMs to completeStructured | [[c4]] [[c5]] [[c10]] |
+| 5 | **`t5`** Verify and extract calls use the stall limit and the 600 s cap | S | `t4` | unit: the design-review verify and extract stages send VERIFY_CALL_STALL_MS (60 s) and VERIFY_CALL_TIMEOUT_MS (600 s) with every call; unit: verifyClaim passes VERIFY_CALL_STALL_MS and VERIFY_CALL_TIMEOUT_MS | [[c3]] |
+| 6 | **`t6`** Heartbeat frames from workflow.review | S | — | integration: workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged | [[c8]] |
+| 7 | **`t7`** insrc_review_step relays progress and waits with an idle limit | M | `t6` | integration: insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'; integration: a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit | [[c6]] |
+| 8 | **`t8`** Live check, full sweep and daemon rollout | M | `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7` | live: codex accepts the strict copy of the bounded VERIFY_SCHEMA and a real verify call returns a finding that passes the reply check; smoke: a real DEF review on the rebuilt daemon relays progress to the controller and retries any stall within about a minute | [[c12]] [[c13]] |
+
+### 1.1 E20261024697b9f8f:S001:T001 — Silence watchdog for opted-in structured codex calls
+
+Add stallMs to StructuredCompletionOpts; give ProcessGroupOpts.stall a silence mode that kills the group when no new stdout chunk arrives for stall.ms (reset on each chunk); the codex branch of completeStructured arms it when stallMs is set and below timeoutMs. Reviewer sessions keep the first-output mode; claude ignores stallMs.
+
+**Acceptance checks:**
+- A structured codex call with stallMs kills a silent run and throws CliStallError
+- A run that prints an item event early then goes silent is killed stallMs after its last output
+- A run that keeps printing within stallMs completes
+- Without stallMs no watchdog is armed; reviewer sessions keep first-output behaviour
+
+### 1.2 E20261024697b9f8f:S001:T002 — Typed schema rejection with reasons
+
+ModelResponseShapeError gains an optional reasons list; codexReply throws it with ValidationResult.errors when a codex answer fails the caller's schema; the review pipeline driver's classify returns those reasons with cause 'invalid-answer' and passes them to applyFailure.
+
+**Acceptance checks:**
+- A codex reply that breaks the caller's schema throws ModelResponseShapeError with reasons
+- The pipeline classifies it as invalid-answer and the re-issued prompt carries the correction note when it fits
+- Existing ModelResponseShapeError throw sites are unchanged
+
+### 1.3 E20261024697b9f8f:S001:T003 — Bound the verify answer and align the verify prompt
+
+Add the maxLength/maxItems bounds to VERIFY_SCHEMA (they reach VERDICTS_SCHEMA) and rewrite the SYSTEM fixability rules to ask for an always-present proposedFix with empty fields when there is no fix. Run the review and review-pipeline suites that import VERIFY_SCHEMA or VERDICTS_SCHEMA and update any schema snapshot they hold.
+
+**Acceptance checks:**
+- VERIFY_SCHEMA and VERDICTS_SCHEMA carry the bounds and an over-long answer fails validation
+- SYSTEM no longer tells the model to omit fields and asks for empty fields when there is no fix
+- A no-fix answer normalises as before (no proposedFix with an empty rationale; rationale-only otherwise)
+- Suites that import VERIFY_SCHEMA or VERDICTS_SCHEMA pass
+
+### 1.4 E20261024697b9f8f:S001:T004 — Stall retry budget and attempt counts in the review pipeline
+
+ExecutionMode's structured mode carries stallMs and the driver forwards it (building on t2's classify change in driver.ts); applyFailure re-issues a 'stall' failure while attempt < MAX_STALL_ATTEMPTS (3), other causes keep MAX_CALL_ATTEMPTS; NotJudged gains attempts and notJudgedFinding, ReviewCallFailedError and the applyFailure log report the real count.
+
+**Acceptance checks:**
+- A stalling call is re-issued up to three times; an invalid answer only once
+- A claim exhausted after three attempts is reported as three attempts
+- An older NotJudged without attempts still renders
+- The driver forwards stallMs to completeStructured
+
+### 1.5 E20261024697b9f8f:S001:T005 — Verify and extract calls use the stall limit and the 600 s cap
+
+Set VERIFY_CALL_TIMEOUT_MS to 600_000, add VERIFY_CALL_STALL_MS = 60_000, and pass both from verifyClaim and the design-review verify and extract stages; update the tests that pin the old 180 s value.
+
+**Acceptance checks:**
+- Every design-review verify and extract call is sent with stallMs 60 s and timeoutMs 600 s
+- verifyClaim passes both
+- The pinned-limit tests assert the new values
+
+### 1.6 E20261024697b9f8f:S001:T006 — Heartbeat frames from workflow.review
+
+workflowReviewStart sends a {kind:'heartbeat', operation:'workflow.review', elapsedMs} progress frame every WORKFLOW_REVIEW_HEARTBEAT_MS (60 s) while a review runs and stops before the terminal frame.
+
+**Acceptance checks:**
+- Heartbeats arrive every 60 s during a review
+- No heartbeat after 'done' or 'error'
+- Stage frames are unchanged
+
+### 1.7 E20261024697b9f8f:S001:T007 — insrc_review_step relays progress and waits with an idle limit
+
+ReviewStepDeps gains progress; the step host wires insrc_review_step with its progress callback; reviewByDaemon passes onFrame (relaying every frame) and idleMs = DESIGN_REVIEW_IDLE_MS (5 min) beside the existing ceilings; an idle timeout names the idle limit.
+
+**Acceptance checks:**
+- Through step.call every daemon progress frame, heartbeats included, arrives as a 'progress' frame before 'done'
+- A healthy review longer than 15 minutes completes while heartbeats flow
+- No frame for 5 minutes fails with a daemon-review-timeout naming the idle limit
+
+### 1.8 E20261024697b9f8f:S001:T008 — Live check, full sweep and daemon rollout
+
+Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that progress reaches the controller and stalls are retried within about a minute.
+
+**Acceptance checks:**
+- Live: codex accepts the bounded VERIFY_SCHEMA strict copy and a verified finding passes the reply check
+- Full sweep passes (pre-existing failures named)
+- A real DEF review relays progress and any stall is retried within about a minute
+
+## 2. Test-strategy coverage
+
+| LLD strategy item | Covered by |
+| :--- | :--- |
+| CliProvider.completeStructured | `t1` |
+| runCodex | `t1` |
+| job.ts re-issue decision | `t4` |
+| design-review verify stage execution | `t4`, `t5` |
+| verifyClaim | `t5` |
+| VERIFY_SCHEMA | `t3` |
+| VERDICTS_SCHEMA | `t3` |
+| buildVerifyPrompt | `t3` |
+| buildBatchedVerifyPrompt | `t3` |
+| normalizeFix | `t3` |
+| src/daemon/steps/host.ts insrc_review_step wiring | `t7` |
+| reviewByDaemon | `t7` |
+| handleReviewStep | `t7` |
+| workflowReviewStart heartbeat | `t6` |
+| CliProvider.completeStructured with VERIFY_SCHEMA on codex | `t8` |
+| codexReply | `t2` |
+| driver classify | `t2` |
+| applyFailure | `t2`, `t4` |
+
+## 3. References
+
+- **[[c1]]** `prior-artifact` `LLD S001 contractDetails.api CliProvider.completeStructured`
+- **[[c2]]** `prior-artifact` `LLD S001 dataModelChanges StructuredCompletionOpts`
+- **[[c3]]** `prior-artifact` `LLD S001 contractDetails.api VERIFY_CALL_TIMEOUT_MS`
+- **[[c4]]** `prior-artifact` `LLD S001 contractDetails.api ExecutionMode`
+- **[[c5]]** `prior-artifact` `LLD S001 contractDetails.api MAX_CALL_ATTEMPTS`
+- **[[c6]]** `prior-artifact` `LLD S001 contractDetails.api handleReviewStep and dataModelChanges ReviewStepDeps`
+- **[[c7]]** `prior-artifact` `LLD S001 contractDetails.api ModelResponseShapeError`
+- **[[c8]]** `prior-artifact` `LLD S001 contractDetails.api workflowReviewStart and dataModelChanges workflow.review progress frame`
+- **[[c9]]** `prior-artifact` `LLD S001 contractDetails.api buildVerifyPrompt`
+- **[[c10]]** `prior-artifact` `LLD S001 contractDetails.api NotJudged and dataModelChanges NotJudged`
+- **[[c11]]** `prior-artifact` `LLD S001 dataModelChanges VERIFY_SCHEMA`
+- **[[c12]]** `prior-artifact` `LLD S001 migration (rebuild and restart the installed daemon; confirm on a DEF review)`
+- **[[c13]]** `prior-artifact` `LLD S001 testStrategy live level (CliProvider.completeStructured with VERIFY_SCHEMA on codex)`

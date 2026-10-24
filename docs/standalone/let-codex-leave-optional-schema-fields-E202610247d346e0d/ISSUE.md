@@ -1,0 +1,26 @@
+<!-- insrc:artifact ISSUE-7d346e0dcbafc70e -->
+
+# Let codex leave optional schema fields empty
+
+## Reproduction
+
+Call any codex structured completion or reviewer session with a schema that has an optional property, for example the design-review verify answer (VERIFY_SCHEMA, where proposedFix and its artifactEdits and options are optional) or the template review answer (TEMPLATE_ANSWER_SCHEMA, where severity is optional). The schema file codex receives lists every property in required with no null alternative, so codex must always produce a value for proposedFix (including a rationale for a finding that has no fix) and for severity. Observed on 2026-10-23 by dumping codexStrictSchema(envelopeSchema(callId, VERIFY_SCHEMA)): proposedFix, rationale, artifactEdits and options are all required. Expected: a field the caller's schema leaves optional can be left empty by codex, and the caller still receives a reply that satisfies its own schema.
+
+## Root cause
+
+processSchemaForOpenAIStrict, called only by codexStrictSchema (src/agent/providers/structured-output.ts:375), sets required to every property key of every object and adds no null alternative (src/agent/providers/structured-output.ts:293-303). codexSchemaJson (src/agent/providers/cli-provider.ts:119), its only caller, writes that copy for every codex --output-schema call, so every caller's optional fields become mandatory for codex. Codex strict mode requires every property to be listed in required, so expressing optionality needs null alternatives plus a reply normalisation back to the caller's schema; that normalisation is the hard part. Two designs in LLD-697b9f8ff46b9deb-S001 failed review: a schema walk missed patternProperties and union-branch requiredness, and removing the nulls the validator reports deleted a null that another anyOf branch required. The reply check itself (validateCodexReply, src/agent/providers/structured-output.ts:474) returns formatted strings only, without instance paths.
+
+## Fix intent
+
+Codex can leave a field the caller's schema leaves optional empty, without inventing a value, for every codex structured call and reviewer session. The reply the caller receives still satisfies the caller's own schema exactly; a reply that already satisfies it is returned unchanged; a null the caller's schema permits, in any union branch, $ref target or pattern-matched property, is never removed; and the behaviour is proven against the schema shapes reviews exposed (unions with a branch that requires null, $ref'd definitions, patternProperties overlapping a fixed property, optional enums).
+
+## Citations
+
+- **[[c1]]** `code` `src/agent/providers/structured-output.ts:375` — "export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {"
+- **[[c2]]** `code` `src/agent/providers/structured-output.ts:293` — "// Object-type schemas need additionalProperties:false + full required."
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:119` — "function codexSchemaJson(schema: StructuredSchema): string {"
+- **[[c4]]** `code` `src/agent/providers/structured-output.ts:474` — "export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {"
+- **[[c5]]** `analyze-bundle` `insrc_analyze_step 2026-10-23 codexStrictSchema callers / VERIFY_CALL_TIMEOUT_MS / progress relay` — "codexStrictSchema is the only caller of processSchemaForOpenAIStrict, and its only caller is codexSchemaJson, which writes every codex --output-schema file"
+- **[[c6]]** `prior-artifact` `LLD-697b9f8ff46b9deb-S001`
+- **[[c7]]** `prior-artifact` `ISSUE-562b1bb52f476d81`
+- **[[c8]]** `stakeholder` `user 2026-10-24` — "go with option A"

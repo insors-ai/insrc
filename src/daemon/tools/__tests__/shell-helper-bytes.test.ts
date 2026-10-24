@@ -6,6 +6,9 @@
 /** runShellBytes (Story s4, task t2): stdin, binary stdout, the isolated git environment and independent limits. */
 
 import { test } from 'node:test';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import assert from 'node:assert/strict';
 
 import { GIT_READ_ARGS as READER_ARGS, gitEnvironment as readerEnvironment } from '../../../design/corpus/sources/git-reader.js';
@@ -44,6 +47,23 @@ test('runShellBytes returns stdout bytes unchanged, delivers stdin and applies t
 	} finally {
 		for (const k of ['MY_SECRET', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_CONFIG_COUNT']) { delete process.env[k]; }
 		Object.assign(process.env, saved);
+	}
+
+	// isolate also puts the read arguments before a git subcommand: a fake git on PATH shows what it is given
+	const bin = mkdtempSync(join(tmpdir(), 'insrc-bytes-bin-'));
+	const savedPath = process.env['PATH'];
+	try {
+		writeFileSync(join(bin, 'git'), '#!/bin/sh\nfor a in "$@"; do echo "$a"; done\n', { mode: 0o755 });
+		process.env['PATH'] = `${bin}:${savedPath ?? ''}`;
+		const given = text((await runShellBytes(['git', 'cat-file', '--batch'], { isolate: true })).stdout).split('\n').filter(Boolean);
+		assert.deepEqual(given, [...GIT_READ_ARGS, 'cat-file', '--batch']);
+		const plain = text((await runShellBytes(['git', 'cat-file', '--batch'])).stdout).split('\n').filter(Boolean);
+		assert.deepEqual(plain, ['cat-file', '--batch'], 'without isolate the arguments are passed as given');
+		const other = text((await runShellBytes(['echo', 'x'], { isolate: true })).stdout);
+		assert.equal(other, 'x\n', 'a command that is not git is not given them');
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(bin, { recursive: true, force: true });
 	}
 
 	// one copy: the corpus reader's own definitions stay equal to the shared module until s7 moves it

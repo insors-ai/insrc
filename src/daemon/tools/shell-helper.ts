@@ -12,7 +12,7 @@
 
 import { onUtf8Data } from '../../shared/utf8-stream.js';
 import { spawn } from 'node:child_process';
-import { gitEnvironment } from './git-isolation.js';
+import { GIT_READ_ARGS, gitEnvironment } from './git-isolation.js';
 
 export interface ShellResult {
   stdout: string;
@@ -132,7 +132,7 @@ export function runShell(
 export interface ShellBytesOptions extends ShellOptions {
   /** Bytes (or text) written to the command's standard input, then closed. */
   stdin?: Uint8Array | string | undefined;
-  /** Run in the fresh git environment of git-isolation.ts instead of the daemon's. Ignores `env`. */
+  /** Run in the fresh git environment of git-isolation.ts instead of the daemon's (ignores `env`), and put GIT_READ_ARGS before the subcommand when the command is git. */
   isolate?: boolean | undefined;
   /** Byte budget of stdout (default: maxBytes). Past it the rest is dropped and stdoutTruncated is true. */
   stdoutLimit?: number | undefined;
@@ -170,7 +170,8 @@ export function runShellBytes(argv: readonly string[], options: ShellBytesOption
   if (argv.length === 0) { return Promise.resolve(empty({ stderr: '[runShellBytes] empty argv', spawnError: true })); }
   if (options.signal?.aborted) { return Promise.resolve(empty({ aborted: true })); }
 
-  const [command, ...args] = argv;
+  const [command, ...rest] = argv;
+  const args = options.isolate === true && command === 'git' ? [...GIT_READ_ARGS, ...rest] : rest;
   const timeoutMs = (options.timeoutMs ?? DEFAULT_TIMEOUT_MS) * timeoutScale;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const stdoutLimit = options.stdoutLimit ?? maxBytes;

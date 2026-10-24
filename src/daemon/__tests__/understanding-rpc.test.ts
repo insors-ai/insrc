@@ -139,6 +139,7 @@ test('Healthy shutdown flushes final frames before storage close and stops only 
   let finished!: () => void;
   const done = new Promise<void>(resolve => { finished = resolve; });
   const shutdown = createShutdown({
+    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
     log: { info() {}, warn() {} }, queueDone: Promise.resolve(),
     stopBackgroundWork: () => { order.push('stop'); service.stop(); routes.stop(); void server.close(); },
     closeStores: async () => {

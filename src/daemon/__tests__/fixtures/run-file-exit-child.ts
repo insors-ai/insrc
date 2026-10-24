@@ -20,7 +20,7 @@ process.on('message', async () => {
  } else if (mode === 'fatal') {
   reportFatal('unhandledRejection', new Error('test fatal'), { logFatal: () => {}, crashLogDir: PATHS.insrc, end: realEndDeps });
  } else {
-  const shutdown = createShutdown({ log: { info() {}, warn() {} }, stopBackgroundWork: () => { void server.close().catch(endForRunFileConflict); }, queueDone: new Promise(() => {}), closeStores: async () => {}, hardExitMs: 25 });
+  const shutdown = createShutdown({ armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }), log: { info() {}, warn() {} }, stopBackgroundWork: () => { void server.close().catch(endForRunFileConflict); }, queueDone: new Promise(() => {}), closeStores: async () => {}, hardExitMs: 25 });
   shutdown('test');
  }
 });

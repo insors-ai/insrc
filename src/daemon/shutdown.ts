@@ -22,6 +22,8 @@ import { dirname } from 'node:path';
 import { getStoreHealth } from '../db/graph/store.js';
 import type { StoreHealth } from '../db/graph/store.js';
 import { PATHS } from '../shared/paths.js';
+import { armShutdownWatchdog } from './shutdown-watchdog.js';
+import type { ShutdownWatchdog, WatchdogOptions } from './shutdown-watchdog.js';
 import { clearPid } from './lifecycle.js';
 import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError } from './run-file-ownership.js';
 
@@ -108,6 +110,8 @@ export interface ShutdownParts {
 	/** Fires whether or not the queue drained. Must stay below the IDE's
 	 *  terminate grace (30 s) so the daemon clears its pid before a SIGKILL. */
 	readonly hardExitMs?: number;
+	/** Explicit seam for tests; production always awaits the native-capability handshake. */
+	readonly armWatchdog?: ((options: WatchdogOptions) => Promise<ShutdownWatchdog>) | undefined;
 }
 
 /** Long enough for the answer to a `daemon.shutdown` request to leave the
@@ -115,10 +119,12 @@ export interface ShutdownParts {
 const REPLY_FLUSH_MS = 50;
 
 /**
- * Build the daemon's shutdown handler. Two timelines race, as before:
+ * Build the daemon's shutdown handler. First await an independent watchdog's
+ * kernel-capability readiness; no cleanup begins before it succeeds. Then:
  *
  *   1. the queue drains, the stores close, the pid file is cleared, exit(0);
- *   2. the hard-exit backstop fires at `hardExitMs` regardless of the queue.
+ *   2. the independent watchdog enforces `hardExitMs`, including blocked native
+ *      cleanup and exit hooks. An in-process timer is a secondary fallback.
  *
  * With the store's health `locks-lost` neither is used. A job held in a store
  * call would never finish, so the shutdown does not wait for the queue: it
@@ -144,39 +150,57 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 		// thread transport may not flush this in time, but it's the
 		// best-effort bookend matching the daemon-crash handler.
 		parts.log.info({ signal }, 'shutdown signal received; draining...');
-		parts.stopBackgroundWork();
-
-		const health = end.storeHealth();
-		if (health.state === 'locks-lost') {
-			parts.log.warn({ signal, operation: health.operation }, 'shutdown: the graph store lost its locks; not waiting for the queue, skipping the store close');
-			setTimeout(() => endAfterStoreFailure(`shutdown (${signal})`, health, end), REPLY_FLUSH_MS);
-			return;
-		}
-
-		// Hard-exit backstop -- fires whether or not queueDone resolved.
-		// `unref()` so the timer doesn't keep the event loop alive on
-		// its own; queue drain finishing first lets us exit early.
-		const backstop = setTimeout(() => {
-			parts.log.warn({ ms: hardExitMs }, 'shutdown: hard-exit backstop fired (queue drain stalled)');
-			try { end.clearPid(); } catch { /* nothing */ }
-			exitRespectingStoreHealth(0, `shutdown (${signal}), hard-exit backstop`, end);
-		}, hardExitMs);
-		backstop.unref();
-
-		void parts.queueDone.finally(async () => {
-			// The store may have failed while the queue drained: its close
-			// would then never return.
-			const now = end.storeHealth();
-			if (now.state === 'locks-lost') {
-				clearTimeout(backstop);
-				endAfterStoreFailure(`shutdown (${signal})`, now, end);
+		let watchdog: ShutdownWatchdog | undefined;
+		const stage = (value: string): void => {
+			try {
+				mkdirSync(dirname(end.lastLinePath), { recursive: true });
+				appendFileSync(end.lastLinePath, JSON.stringify({ time: new Date().toISOString(), module: 'shutdown-stage', signal, stage: value, health: end.storeHealth() }) + '\n');
+			} catch { /* final diagnostics are best effort */ }
+			watchdog?.stage(value);
+		};
+		const failClosed = (error: unknown): void => {
+			stage(`shutdown failed: ${error instanceof Error ? error.message : String(error)}`);
+			try { end.clearPid(); } catch (cleanupError) {
+				if (cleanupError instanceof RunFileOwnershipError) endForRunFileConflict(cleanupError, { logPath: end.lastLinePath, killSelf: () => {} });
+			}
+			end.killSelf();
+		};
+		stage('watchdog arm');
+		const begin = async (): Promise<void> => {
+			watchdog = await (parts.armWatchdog ?? armShutdownWatchdog)({ deadline: Date.now() + hardExitMs, logPath: end.lastLinePath, onFailure: failClosed });
+			stage('stop background work');
+			parts.stopBackgroundWork();
+			const health = end.storeHealth();
+			if (health.state === 'locks-lost') {
+				stage('locks lost: skip queue and store close');
+				setTimeout(() => endAfterStoreFailure(`shutdown (${signal})`, health, end), REPLY_FLUSH_MS);
 				return;
 			}
-			await parts.closeStores();
-			end.clearPid();
-			parts.log.info('bye');
-			clearTimeout(backstop);
-			exitRespectingStoreHealth(0, `shutdown (${signal})`, end);
-		});
+			const backstop = setTimeout(() => {
+				stage('in-process deadline fallback');
+				const current = end.storeHealth();
+				if (current.state === 'locks-lost') endAfterStoreFailure(`shutdown (${signal}), hard-exit backstop`, current, end);
+				else failClosed(new Error('shutdown deadline exceeded'));
+			}, hardExitMs);
+			backstop.unref();
+			stage('queue drain');
+			const finish = async (): Promise<void> => {
+				const current = end.storeHealth();
+				if (current.state === 'locks-lost') {
+					clearTimeout(backstop);
+					endAfterStoreFailure(`shutdown (${signal})`, current, end); return;
+				}
+				stage('close stores and request server');
+				await parts.closeStores();
+				end.clearPid();
+				parts.log.info('bye');
+				clearTimeout(backstop);
+				stage('exit hooks');
+				// Do not disarm: a native process.exit hook can itself block.
+				exitRespectingStoreHealth(0, `shutdown (${signal})`, end);
+			};
+			void parts.queueDone.then(finish, finish).catch(failClosed);
+		};
+		void begin().catch(failClosed);
 	};
 }

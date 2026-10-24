@@ -10,16 +10,17 @@
  * has lost its locks hangs in the library's exit hook.
  */
 
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { createInterface } from 'node:readline';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import type { StoreChildCommand, StoreChildReply } from './store-child.js';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const CHILD_ENTRY = join(HERE, 'store-child.ts');
+
+
 // Mirrors the constant in store-child.ts; importing it would run the child's module.
 const REPLY_PREFIX = '@@store-child ';
 
@@ -46,7 +47,11 @@ export function killAllStoreChildren(): void {
  *  module, so that the process has never read from the store. */
 export async function spawnStoreChild(storePath: string, opts: { raw?: boolean; env?: NodeJS.ProcessEnv } = {}): Promise<StoreChild> {
 	const env = opts.env ?? {};
-	const child = spawn(process.execPath, ['--import', 'tsx/esm', CHILD_ENTRY, storePath, ...(opts.raw === true ? ['raw'] : [])], {
+	const shimRoot = mkdtempSync(join(tmpdir(), 'insrc-store-child-'));
+	mkdirSync(join(shimRoot, 'daemon'));
+	const entry = join(shimRoot, 'daemon/index.js');
+	writeFileSync(entry, `process.argv = [process.argv[0], process.argv[1], ${JSON.stringify(storePath)}, ...${JSON.stringify(opts.raw ? ['raw'] : [])}]; import(${JSON.stringify(new URL('./store-child.ts', import.meta.url).href)});`);
+	const child = spawn(process.execPath, ['--import', 'tsx/esm', entry], {
 		stdio: ['pipe', 'pipe', 'inherit'],
 		env: { ...process.env, ...env },
 	});
@@ -64,6 +69,7 @@ export async function spawnStoreChild(storePath: string, opts: { raw?: boolean; 
 	});
 	const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(res => child.once('exit', (code, signal) => {
 		live.delete(child);
+		rmSync(shimRoot, { recursive: true, force: true });
 		gone = new Error(`store child exited (code ${code}, signal ${signal})`);
 		for (const w of waiting.splice(0)) w.reject(gone);
 		res({ code, signal });

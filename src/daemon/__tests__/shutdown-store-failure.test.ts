@@ -170,6 +170,7 @@ test('healthy shutdown is unchanged: queue drained, connections closed in order,
 		storeHealth: () => health,
 	};
 	const shutdown = createShutdown({
+    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
 		log: { info: () => {}, warn: () => {} },
 		stopBackgroundWork: () => { acts.push('stopBackgroundWork'); },
 		queueDone,
@@ -183,7 +184,7 @@ test('healthy shutdown is unchanged: queue drained, connections closed in order,
 	release();
 	await new Promise(r => setTimeout(r, 20));
 	assert.deepEqual(acts, ['stopBackgroundWork', 'closeStores', 'clearPid', 'exit(0)']);
-	assert.equal(existsSync(end.lastLinePath), false);
+	assert.doesNotMatch(readFileSync(end.lastLinePath, 'utf8'), /shutdown failed/);
 
 	// --- A real process: a job in flight is finished before the exit.
 	const h = tempHome('healthy');
@@ -196,7 +197,7 @@ test('healthy shutdown is unchanged: queue drained, connections closed in order,
 	assert.deepEqual(how, { code: 0, signal: null }, 'a normal exit, not a kill');
 	assert.equal(existsSync(h.pid), false);
 	assert.equal(existsSync(h.sock), false);
-	assert.equal(existsSync(h.log), false, 'no last line: that is only for a failed store');
+	assert.doesNotMatch(readFileSync(h.log, 'utf8'), /ending after|deadline exceeded/, 'healthy shutdown records stages without failure');
 
 	const reader = await spawnStoreChild(h.store, { env: { HOME: h.home } });
 	await reader.send({ op: 'open' });
@@ -221,6 +222,7 @@ test('with the store failed no path calls exit: the shutdown, its backstop, a fa
 	// The shutdown: no wait for a queue that never drains, no store close.
 	const a = scene(() => lost, 'a');
 	createShutdown({
+    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
 		log: { info: () => {}, warn: () => {} },
 		stopBackgroundWork: () => { a.acts.push('stopBackgroundWork'); },
 		queueDone: new Promise(() => {}),
@@ -229,13 +231,14 @@ test('with the store failed no path calls exit: the shutdown, its backstop, a fa
 	})('SIGTERM');
 	await new Promise(r => setTimeout(r, 150));
 	assert.deepEqual(a.acts, ['stopBackgroundWork', 'clearPid', 'KILL']);
-	assert.equal(readFileSync(a.end.lastLinePath, 'utf8').replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''), lastLineFor('shutdown (SIGTERM)', lost).replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''));
+	assert.equal(readFileSync(a.end.lastLinePath, 'utf8').split('\n').filter(line => line.startsWith('[insrc-daemon]')).join('\n').concat('\n').replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''), lastLineFor('shutdown (SIGTERM)', lost).replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''));
 
 	// The failure is found while the queue drains: the close is skipped.
 	let now: StoreHealth = { state: 'ok' };
 	let release: () => void = () => {};
 	const b = scene(() => now, 'b');
 	createShutdown({
+    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
 		log: { info: () => {}, warn: () => {} },
 		stopBackgroundWork: () => {},
 		queueDone: new Promise<void>(res => { release = res; }),
@@ -244,13 +247,14 @@ test('with the store failed no path calls exit: the shutdown, its backstop, a fa
 	})('SIGTERM');
 	now = lost;
 	release();
-	await new Promise(r => setTimeout(r, 30));
+	await new Promise(r => setTimeout(r, 90));
 	assert.deepEqual(b.acts, ['clearPid', 'KILL']);
 
 	// The backstop, with the queue stalled and the store failed meanwhile.
 	now = { state: 'ok' };
 	const c = scene(() => now, 'c');
 	createShutdown({
+    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
 		log: { info: () => {}, warn: () => {} },
 		stopBackgroundWork: () => {},
 		queueDone: new Promise(() => {}),
@@ -275,4 +279,18 @@ test('with the store failed no path calls exit: the shutdown, its backstop, a fa
 	endAfterStoreFailure('x', lost as Exclude<StoreHealth, { state: 'ok' }>, { ...f.end, clearPid: () => { throw new Error('EPERM'); } });
 	assert.deepEqual(f.acts, ['KILL']);
 	assert.match(readFileSync(f.end.lastLinePath, 'utf8'), /ending after x: the graph store's close was skipped/);
+});
+
+test('Store-child fixture exercises owned publication watchdog readiness and guarded close', { skip }, async () => {
+ const h = tempHome('watchdog-contract');
+ const child = await spawnStoreChild(h.store, { env: { HOME: h.home } });
+ await child.send({ op: 'open' }); await becomeDaemon(child, h);
+ assert.equal(readFileSync(h.pid, 'utf8'), String(child.pid));
+ assert.equal(existsSync(join(h.home, '.insrc/daemon.run-files.guard')), false);
+ await ask(h.sock, 'daemon.shutdown');
+ assert.deepEqual(await endedWithin(child, 5000), { code: 0, signal: null });
+ const log = readFileSync(h.log, 'utf8');
+ assert.match(log, /watchdog arm/); assert.match(log, /stop background work/); assert.match(log, /exit hooks/);
+ assert.equal(existsSync(h.pid), false); assert.equal(existsSync(h.sock), false);
+ assert.equal(existsSync(join(h.home, '.insrc/daemon.run-files.guard')), false);
 });

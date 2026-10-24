@@ -179,6 +179,15 @@ test('CM-S1-T: saved file-driver roots contents revisions and converter options 
 		await utimes(sourceA, time, time);
 		assert.equal((await drivers[0]!.sample!(undefined, { limit: 10 })).rows[0]?.value, 'CCCC');
 		assert.equal((await drivers[1]!.sample!(undefined, { limit: 10 })).rows[0]?.value, 'BBBB');
+		const revisedConfig = { id: 'same', kind: 'bson', path: sourceA };
+		const revised = await getFactory('bson')!(revisedConfig, { fileExecutionPolicy: authority(a, revisedConfig, 'revision-two') }) as FileDriver;
+		drivers.push(revised);
+		assert.equal((await revised.sample!(undefined, { limit: 10 })).rows[0]?.value, 'CCCC');
+		const identities = [];
+		for (const name of await readdir(cacheRoot(), { recursive: true }))
+			if (name.endsWith('.meta'))
+				identities.push(JSON.parse(await readFile(join(cacheRoot(), name), 'utf8')).identity);
+		assert.deepEqual([...new Set(identities.filter(identity => identity.canonicalRoot === a && identity.connectionId === 'same' && identity.sourceIdentity === sourceA).map(identity => identity.revision))].sort(), ['revision-two', 'same-revision'], 'actual saved-driver callers retain the full supplied revision in distinct cache identities');
 		const fixed = join(a, 'data.txt');
 		await writeFile(fixed, ' a  \n');
 		for (const trim of [true, false]) {

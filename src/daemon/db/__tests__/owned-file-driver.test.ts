@@ -1,3 +1,4 @@
+import { DuckDBConnection } from '@duckdb/node-api';
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
@@ -234,14 +235,64 @@ test('CM-S1-T: transient drafts cannot read another credential reference and nes
 		await env.cleanup();
 	}
 });
-
-test('CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths',async()=>{
- const env=await environment();const root=join(env.directory,'files');await mkdir(root);const path=join(root,'data.csv');await writeFile(path,'value\n1\n');
- try{
-  const config:ConnectionConfig={id:'fixture',kind:'csv',path,options:{persistence:'memory-only',memoryBudgetBytes:1,executionPolicy:{persistence:'memory-only'}}};
-  const driver=await getFactory('csv')!(config);
-  try{assert.equal((driver as unknown as {execution:{policy:{persistence:string}}}).execution.policy.persistence,'saved-cache');}finally{await driver.close();}
-  const missing={...config,path:join(root,'private-missing-source.csv')};
-  await assert.rejects(getFactory('csv')!(missing,context(root,missing)),error=>error instanceof Error&&!error.message.includes(root)&&!error.message.includes('private-missing'));
- }finally{await env.cleanup();}
+test('CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths', async () => {
+	const env = await environment();
+	const root = join(env.directory, 'files');
+	await mkdir(root);
+	const path = join(root, 'data.csv');
+	await writeFile(path, 'value\n1\n');
+	try {
+		const config: ConnectionConfig = { id: 'fixture', kind: 'csv', path, options: { persistence: 'memory-only', memoryBudgetBytes: 1, executionPolicy: { persistence: 'memory-only' } } };
+		const driver = await getFactory('csv')!(config);
+		try {
+			assert.equal((driver as unknown as {
+				execution: {
+					policy: {
+						persistence: string;
+					};
+				};
+			}).execution.policy.persistence, 'saved-cache');
+		}
+		finally {
+			await driver.close();
+		}
+		const missing = { ...config, path: join(root, 'private-missing-source.csv') };
+		await assert.rejects(getFactory('csv')!(missing, context(root, missing)), error => error instanceof Error && !error.message.includes(root) && !error.message.includes('private-missing'));
+	}
+	finally {
+		await env.cleanup();
+	}
+});
+test('CM-S1-T: private native and converted driver initialization issues zero INSTALL calls', async () => {
+	const env = await environment(), root = join(env.directory, 'no-install');
+	await mkdir(root);
+	const statements: string[] = [], run = DuckDBConnection.prototype.run, read = DuckDBConnection.prototype.runAndReadAll;
+	const runSpy = mock.method(DuckDBConnection.prototype, 'run', function (this: DuckDBConnection, ...args: Parameters<typeof run>) {
+		statements.push(args[0]);
+		return Reflect.apply(run, this, args);
+	});
+	const readSpy = mock.method(DuckDBConnection.prototype, 'runAndReadAll', function (this: DuckDBConnection, ...args: Parameters<typeof read>) {
+		statements.push(args[0]);
+		return Reflect.apply(read, this, args);
+	});
+	try {
+		for (const kind of ['csv', 'bson']) {
+			const path = join(root, 'data.' + kind);
+			await writeFile(path, kind === 'csv' ? 'value\nfirst\n' : serialize({ value: 'first' }));
+			const config = { id: 'private', kind, path }, driver = await getFactory(kind)!(config, context(root, config)) as FileDriver;
+			try {
+				assert.equal((await driver.sample!(undefined, { limit: 1 })).rows.length, 1);
+			}
+			finally {
+				await driver.close();
+			}
+		}
+		assert(statements.length > 0);
+		assert.equal(statements.filter(sql => /^\s*INSTALL\b/i.test(sql)).length, 0, 'observes actual driver factory initialization through both native query entrypoints');
+	}
+	finally {
+		runSpy.mock.restore();
+		readSpy.mock.restore();
+		await env.cleanup();
+	}
 });

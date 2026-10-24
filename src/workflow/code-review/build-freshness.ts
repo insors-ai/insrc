@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 
 const record = (value: unknown): Record<string, unknown> =>
-	typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+	typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
 /** Bind a review to build content, excluding lifecycle and regenerated change-log timestamps. */
 export function reviewedBuildFingerprint(build: unknown): string {
@@ -20,9 +20,10 @@ export function reviewedBuildFingerprint(build: unknown): string {
 
 /** A stale or incomplete review cannot satisfy completion, even with verdict enforcement off. */
 export function reviewBuildGap(build: unknown, review: unknown, repoPath: string): string | undefined {
-	if (build === undefined || build === null) return undefined;
+	if (build === undefined) return undefined;
 	const b = record(build), r = record(review);
 	const meta = record(b['meta']), body = record(b['body']);
+	if (b['meta'] !== meta || b['body'] !== body) return 'the current BUILD structure cannot be verified';
 	const subject = record(record(r['body'])['subject']);
 	const fingerprint = subject['buildFingerprint'];
 	if (fingerprint !== undefined) {

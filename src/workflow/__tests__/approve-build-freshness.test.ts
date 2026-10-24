@@ -74,3 +74,17 @@ test('a dated BUILD rejects missing or invalid review timestamps instead of assu
 	assert.match(reviewBuildGap(build(), { meta: {}, body: review().body }, '/repo')!, /freshness cannot be verified/);
 	assert.match(reviewBuildGap(build(), review('not-a-date'), '/repo')!, /freshness cannot be verified/);
 });
+
+
+test('an existing structurally invalid BUILD cannot satisfy completion with a passing review', () => {
+ const repo = mkdtempSync(join(tmpdir(), 'insrc-invalid-build-'));
+ try {
+  const dir = join(repo, '.insrc/artifacts'); mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `CR-${H}-s1.json`), JSON.stringify(review()));
+  for (const invalid of [null, [], false, 'build', {}, { meta: {}, body: null }, { meta: [], body: {} }]) {
+   writeFileSync(join(dir, `BUILD-${H}-s1.json`), JSON.stringify(invalid));
+   assert.match(reviewBuildGap(invalid, review(), repo)!, /BUILD structure cannot be verified/);
+   assert.equal(enforceCodeReviewGate(repo, H, 's1', { enforce: false }).status, 'blocked');
+  }
+ } finally { rmSync(repo, { recursive: true, force: true }); }
+});

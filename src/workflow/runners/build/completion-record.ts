@@ -47,7 +47,7 @@ export async function ensureBuildRecordOnCompletion(
 		// Completion refreshes ledger placement/provenance; it is not another build.
 		// Keep the last build's clock so approval does not invalidate its own review.
 		const priorPath = artifactJsonPath(repoPath, buildArtifactId(ref.epicHash, ref.storyId));
-		const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) as { meta?: { updatedAt?: string; createdAt?: string } } : undefined;
+		const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) as { meta?: { updatedAt?: string | undefined; createdAt?: string | undefined } | undefined } : undefined;
 		const builtAt = prior?.meta?.updatedAt ?? prior?.meta?.createdAt ?? now;
 		// S001/t4 — the placement, INHERITED from the work item's definition artifact.
 		//

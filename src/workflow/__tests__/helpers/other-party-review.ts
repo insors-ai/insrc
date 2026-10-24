@@ -47,7 +47,7 @@ export interface StampedReview {
  * review was written.
  */
 export function stampOtherPartyReview(jsonPath: string): StampedReview {
-	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown>; body?: { changeLog?: { target: { file: string } }[] } };
+	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown>; body?: { changeLog?: { target: { file: string } }[] | undefined } | undefined };
 	const author = authorPartyOf(artifact.meta);
 	const reviewedBy: Party = author === 'unknown' ? 'daemon' : otherParty(author);
 	const at = '2026-10-05T00:00:00.000Z';

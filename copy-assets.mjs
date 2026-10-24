@@ -14,7 +14,7 @@
  * the compiled .js or the daemon's startup fails with
  * AnalyzePromptValidationError.
  *
- * Wired into `npm run build` as `tsc && node copy-assets.mjs`.
+ * Runs after tsc and the native process-capability broker build.
  */
 
 import { cpSync, existsSync, mkdirSync } from 'node:fs';

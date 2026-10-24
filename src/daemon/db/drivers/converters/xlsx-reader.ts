@@ -257,7 +257,8 @@ export class BoundedWorkbook {
 					signal?.throwIfAborted();
 					const name = local(tag.name);
 					if (name === 'row') {
-						if (rowOpen) throw new Error('Invalid worksheet row');
+						if (rowOpen)
+							throw new Error('Invalid worksheet row');
 						rowOpen = true;
 						rowIndex = integer(tag.attributes.r ?? String(lastRow + 1), 1048576);
 						if (rowIndex <= lastRow || rowIndex === 0)
@@ -266,7 +267,8 @@ export class BoundedWorkbook {
 						column = 0;
 					}
 					if (name === 'c') {
-						if (!rowOpen || cellOpen) throw new Error('Invalid worksheet cell');
+						if (!rowOpen || cellOpen)
+							throw new Error('Invalid worksheet cell');
 						cellOpen = true;
 						const cell = tag.attributes.r ? coordinate(tag.attributes.r) : { row: rowIndex, column: column + 1 };
 						if (cell.row !== rowIndex || values.has(cell.column))
@@ -372,6 +374,12 @@ export class BoundedWorkbook {
 	async close(): Promise<void> {
 		for (const release of this.#releases.splice(0))
 			release();
+		for (const sheet of this.sheets) {
+			sheet.merges.clear();
+			sheet.masters.clear();
+			sheet.hyperlinks.clear();
+		}
+		this.sheets.length = 0;
 		this.strings.length = 0;
 		this.dateStyles.length = 0;
 		await this.zip.close();

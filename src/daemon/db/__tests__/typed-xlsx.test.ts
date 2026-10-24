@@ -1,5 +1,5 @@
 import { assertParquetSchema } from './fixtures/assert-parquet-schema.js';
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -7,6 +7,8 @@ import { tmpdir } from 'node:os';
 import ExcelJS from 'exceljs';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { xlsxConverter } from '../drivers/converters/xlsx.js';
+import { BoundedWorkbook } from '../drivers/converters/xlsx-reader.js';
+import { BoundedZip } from '../drivers/converters/bounded-zip.js';
 import { DecoderBudget } from '../drivers/converters/decoder-budget.js';
 import type { MemoryRowSource } from '../drivers/converters/types.js';
 async function fixture(use: (dir: string) => Promise<void>): Promise<void> {
@@ -71,7 +73,8 @@ test('CM-S1-W: XLSX sheet names legacy slugs dates shared strings formula normal
 			await assert.rejects(source.describe(), /Incompatible/);
 			await assert.rejects(rows(source), /Incompatible/);
 			assert.equal((await xlsxConverter.convertFile(path, dest)).rowCount, 3);
- for(const target of await source.targets())await assertParquetSchema(join(dest,target.worksheetSlug!+'.parquet'),target.columns);
+			for (const target of await source.targets())
+				await assertParquetSchema(join(dest, target.worksheetSlug! + '.parquet'), target.columns);
 			assert.deepEqual(await saved(join(dest, 'Sales_Q1.parquet'), ['when']), memory);
 			assert.deepEqual(await saved(join(dest, 'Other_Sheet.parquet')), await rows(source, 'Other Sheet'));
 		}
@@ -122,7 +125,8 @@ test('CM-S1-W: XLSX compatible no-target union merged headers fallback names and
 			assert.deepEqual(first, [{ a: 1, col_2: 'merged', c: '[object Object]' }, { a: 2, col_2: 'merged', c: null }]);
 			assert.deepEqual(await rows(source), [...first, { a: 3, col_2: 'tail', c: 'text' }]);
 			await xlsxConverter.convertFile(path, dest);
- for(const target of await source.targets())await assertParquetSchema(join(dest,target.worksheetSlug!+'.parquet'),target.columns);
+			for (const target of await source.targets())
+				await assertParquetSchema(join(dest, target.worksheetSlug! + '.parquet'), target.columns);
 			assert.deepEqual(await saved(join(dest, 'First.parquet')), first);
 		}
 		finally {
@@ -138,15 +142,42 @@ test('CM-S1-S: XLSX retained shared-string tables fail cumulative admission and 
 			sheet.addRow([`${i}:` + 'x'.repeat(100)]);
 		const path = join(dir, 'strings.xlsx');
 		await workbook.xlsx.writeFile(path);
-		const budget = new DecoderBudget(1024 * 1024);
-		await assert.rejects(xlsxConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget }), /resource-limit/);
-		assert.equal(budget.snapshot().retained, 0);
-		const sufficient = new DecoderBudget(64 * 1024 * 1024), source = await xlsxConverter.openMemory!(path, { memoryBudgetBytes: sufficient.limit, budget: sufficient });
-		const iterator = source.batches('Data')[Symbol.asyncIterator]();
-		await iterator.next();
-		await source.close();
-		assert.equal(sufficient.snapshot().retained, 0);
-		await assert.rejects(iterator.next(), /closed/);
+		const probe = await BoundedZip.open(path, new DecoderBudget(64 * 1024 * 1024));
+		const xmlBytes = probe.entries.find(entry => entry.name === 'xl/sharedStrings.xml')!.expanded;
+		await probe.close();
+		// Admit the XML parser itself, then exhaust capacity while retaining
+		// actual string-table entries. The close spy proves which phase failed.
+		const budget = new DecoderBudget(xmlBytes * 5 + 256 * 1024 + 64 * 1024);
+		const closed: {
+			owner: BoundedWorkbook;
+			strings: number;
+			sheets: number;
+		}[] = [];
+		const original = BoundedWorkbook.prototype.close;
+		const spy = mock.method(BoundedWorkbook.prototype, 'close', async function (this: BoundedWorkbook) {
+			closed.push({ owner: this, strings: this.strings.length, sheets: this.sheets.length });
+			await original.call(this);
+		});
+		try {
+			await assert.rejects(xlsxConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget }), /resource-limit/);
+			assert(closed[0]!.strings > 0 && closed[0]!.strings < 2001, 'failure occurs after shared-string callbacks retained entries');
+			assert.equal(budget.snapshot().retained, 0);
+			const sufficient = new DecoderBudget(64 * 1024 * 1024), source = await xlsxConverter.openMemory!(path, { memoryBudgetBytes: sufficient.limit, budget: sufficient });
+			const iterator = source.batches('Data')[Symbol.asyncIterator]();
+			await iterator.next();
+			await source.close();
+			assert.equal(sufficient.snapshot().retained, 0);
+			await assert.rejects(iterator.next(), /closed/);
+			assert(closed.some(record => record.strings === 2001), 'also observes the full retained table on normal source close');
+			for (const record of closed) {
+				assert.equal(record.owner.strings.length, 0);
+				assert.equal(record.owner.dateStyles.length, 0);
+				assert.equal(record.owner.sheets.length, 0);
+			}
+		}
+		finally {
+			spy.mock.restore();
+		}
 	});
 });
 test('CM-S1-W: directory XLSX conversion preserves all worksheets through its returned recursive Parquet glob', async () => {

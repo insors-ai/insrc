@@ -15,6 +15,8 @@ import { avroConverter } from '../drivers/converters/avro.js';
 import { fixedWidthConverter } from '../drivers/converters/fixed-width.js';
 import { xlsxConverter } from '../drivers/converters/xlsx.js';
 import { createTypedRowSource } from '../drivers/converters/typed-row-source.js';
+import { BoundedZip } from '../drivers/converters/bounded-zip.js';
+import { DecoderBudget } from '../drivers/converters/decoder-budget.js';
 import { convertedColumn } from '../drivers/converters/normalization.js';
 import type { FileExecutionPolicy, MemoryRowSource } from '../../../shared/connection-management.js';
 function policy(root: string): FileExecutionPolicy {
@@ -153,10 +155,26 @@ test('CM-S1-H: typed empty and all-null tables preserve declared types and nulla
 });
 test('CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets', async () => {
 	await fixture(async (dir) => {
-		for (const failure of ['schema', 'budget', 'bson', 'fixed-width', 'avro'] as const) {
-			const resource = await MemoryFileExecution.open(policy(dir));
+		for (const failure of ['schema', 'budget', 'bson', 'fixed-width', 'avro', 'xlsx'] as const) {
+			let executionPolicy = policy(dir);
+			const xlsxPath = join(dir, 'shared-strings.xlsx');
+			if (failure === 'xlsx') {
+				const workbook = new ExcelJS.Workbook(), sheet = workbook.addWorksheet('Data');
+				sheet.addRow(['label']);
+				for (let i = 0; i < 2000; i++)
+					sheet.addRow([i + ':' + 'x'.repeat(100)]);
+				await workbook.xlsx.writeFile(xlsxPath);
+				const probe = await BoundedZip.open(xlsxPath, new DecoderBudget(64 * 1024 * 1024));
+				const expanded = probe.entries.find(entry => entry.name === 'xl/sharedStrings.xml')!.expanded;
+				await probe.close();
+				executionPolicy = { ...executionPolicy, memoryBudgetBytes: expanded * 5 + 256 * 1024 + 64 * 1024 };
+			}
+			const resource = await MemoryFileExecution.open(executionPolicy);
 			let sourceClosed = 0;
-			if (failure === 'avro') {
+			if (failure === 'xlsx') {
+				await assert.rejects(resource.loadRows((budget, signal) => xlsxConverter.openMemory!(xlsxPath, { memoryBudgetBytes: budget.limit, budget, signal })), /resource-limit/);
+			}
+			else if (failure === 'avro') {
 				const long = (n: number) => {
 					let value = n * 2;
 					const bytes = [];

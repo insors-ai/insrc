@@ -624,21 +624,53 @@ test('a failing precondition read fails the call before any change, and no runSh
  * through fail, spawnFail, readFailure, conflictFailure or ranToExit); a helper that swallows a failure (currentBranch,
  * stagedCount, revParse) is used only where it is listed, and a listed use is a preview.
  */
-function audit(): void {
-	const dir = dirname(fileURLToPath(import.meta.url)) + '/..';
-	const skip = new Set(['helpers.ts', 'parsers.ts', 'index.ts', 'schemas.ts', 'coverage.ts']);
+function scanSources(sources: Record<string, string>): { offenders: string[]; lookups: string[]; helperUses: string[] } {
 	const offenders: string[] = [];
+	const lookups: string[] = [];
 	const helperUses: string[] = [];
-	for (const file of readdirSync(dir).filter(n => n.endsWith('.ts') && !skip.has(n))) {
-		const src = readFileSync(join(dir, file), 'utf8');
+	for (const [file, src] of Object.entries(sources)) {
 		for (const m of src.matchAll(/(?:const|let)\s+(\w+)\s*=\s*await\s+runShell(?:Bytes)?\(/g)) {
 			const name = m[1]!;
 			const checked = new RegExp(`(?:ranToExit|failureKind|readFailure|conflictFailure)\\(\\s*${name}\\b|(?:fail|spawnFail)\\([^)]*\\b${name}\\b`).test(src);
 			if (!checked) { offenders.push(`${file}: ${name}`); }
+			// the command that is the tool's answer ends in fail(); any other result is a lookup and must be listed
+			if (!new RegExp(`(?:fail|spawnFail|readFailure|conflictFailure)\\([^)]*\\b${name}\\b`).test(src)) { lookups.push(`${file}: ${name}`); }
 		}
 		for (const m of src.matchAll(/\b(currentBranch|stagedCount|revParse)\(/g)) { helperUses.push(`${file}: ${m[1]}`); }
 	}
+	return { offenders, lookups, helperUses };
+}
+
+function audit(): void {
+	const dir = dirname(fileURLToPath(import.meta.url)) + '/..';
+	const skip = new Set(['helpers.ts', 'parsers.ts', 'index.ts', 'schemas.ts', 'coverage.ts']);
+	const sources = Object.fromEntries(readdirSync(dir).filter(n => n.endsWith('.ts') && !skip.has(n)).map(n => [n, readFileSync(join(dir, n), 'utf8')]));
+	const { offenders, lookups, helperUses } = scanSources(sources);
+
+	// the scan itself: it flags a result that is never looked at, a lookup that is not in the list, and a swallowing helper
+	const planted = scanSources({
+		'x.ts': "const r = await runShell(['git', 'status']);\nif (r.code !== 0) { return undefined; }\nconst b = await currentBranch(cwd);\n"
+			+ "const l = await runShell(['git', 'log']);\nconst ok = ranToExit(l);\nconst main = await runShell(['git', 'push']);\nif (main.code !== 0) { return fail('git_x', main); }\n",
+	});
+	assert.deepEqual(planted.offenders, ['x.ts: r']);
+	assert.deepEqual(planted.lookups, ['x.ts: r', 'x.ts: l']);
+	assert.deepEqual(planted.helperUses, ['x.ts: currentBranch']);
+
 	assert.deepEqual(offenders, [], 'a runShell result whose process flags are never looked at');
+	// A lookup is any other runShell result. Adding one fails here until it is listed with what it is; a secondary one
+	// also needs an entry in INVENTORY (which proves that it keeps its placeholder, succeeds and warns).
+	const KNOWN: Record<string, 'secondary' | 'precondition' | 'preview'> = {
+		'amend.ts: long': 'secondary', 'amend.ts: msgRes': 'secondary', 'amend.ts: head': 'precondition', 'amend.ts: upstream': 'precondition', 'amend.ts: merge': 'precondition',
+		'branch.ts: head': 'secondary', 'commit.ts: sha': 'secondary', 'commit.ts: short': 'secondary', 'commit.ts: stat': 'secondary',
+		'merge.ts: rev': 'preview', 'rebase.ts: count': 'preview', 'rebase.ts: head': 'secondary',
+		'reset.ts: priorShort': 'secondary', 'reset.ts: afterShort': 'secondary', 'stage.ts: post': 'secondary',
+	};
+	assert.deepEqual(lookups.sort(), Object.keys(KNOWN).sort(), 'a lookup that is not listed (list it, and add it to INVENTORY when it is secondary)');
+	const TOOL_OF: Record<string, string> = { 'amend.ts': 'git_amend', 'branch.ts': 'git_branch', 'commit.ts': 'git_commit', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'stage.ts': 'git_stage' };
+	for (const [key, kind] of Object.entries(KNOWN)) {
+		if (kind !== 'secondary') { continue; }
+		assert.ok(INVENTORY.some(l => l.tool.id === TOOL_OF[key.split(':')[0]!]), `${key} is secondary: ${TOOL_OF[key.split(':')[0]!]} needs an INVENTORY entry`);
+	}
 	// the helpers that swallow a failure are used only for the preview of an approval request, where a failure is a placeholder
 	assert.deepEqual(helperUses.sort(), [
 		'merge.ts: currentBranch', 'pull.ts: currentBranch', 'rebase.ts: currentBranch', 'reset.ts: currentBranch',
@@ -674,9 +706,12 @@ test('git_amend wasPushed, git_reset willNeedForcePush and git_merge listConflic
 		assert.equal(hardSlow.success, false, 'a hard reset does not run on an unknown answer');
 		assert.equal(hardSlow.failure?.kind, 'timed-out');
 		assert.equal(git(repo, 'rev-parse', 'HEAD').trim(), headBefore);
-		const softSlow = await withFailingRead(repo, 'merge-base --is-ancestor', 0, () => gitResetTool.execute({ cwd: repo, mode: 'soft', ref: 'HEAD~1' }, deps(repo)), 'sleep');
-		assert.equal(softSlow.success, true, 'a soft reset runs and warns');
-		assert.match((softSlow.data as { warnings: string[] }).warnings.join(' '), /force-push check .* timed-out/);
+		for (const mode of ['soft', 'mixed']) {
+			const slow = await withFailingRead(repo, 'merge-base --is-ancestor', 0, () => gitResetTool.execute({ cwd: repo, mode, ref: 'HEAD~1' }, deps(repo)), 'sleep');
+			assert.equal(slow.success, false, `a ${mode} reset does not run on an unknown answer either`);
+			assert.equal(slow.failure?.kind, 'timed-out');
+			assert.equal(git(repo, 'rev-parse', 'HEAD').trim(), headBefore);
+		}
 
 		// listConflicts: a real conflict is listed; an enumeration that cannot run is named in the failure
 		git(repo, 'reset', '-q', '--hard', 'origin/main');

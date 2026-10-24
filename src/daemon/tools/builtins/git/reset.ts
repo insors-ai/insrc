@@ -86,12 +86,12 @@ export const gitResetTool: Tool = {
     const priorShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
     const priorOk = ranToExit(priorShort) && priorShort.code === 0;
     const previousShortSha = priorOk ? priorShort.stdout.trim() : '';
-    // Whether the new HEAD is behind the upstream is a precondition of a hard reset (it discards work); for the
-    // other modes an unknown answer is reported as a warning.
+    // Whether the new HEAD is behind the upstream is a precondition: a read that could not run is not an answer, so the
+    // call stops before the reset (the approval preview only names the problem).
     const forceRead = await willNeedForcePush(cwd, ref);
-    if (!forceRead.ok && mode === 'hard') { return readFailure('git_reset', forceRead.failed); }
-    const requiresForcePush = forceRead.ok && forceRead.value;
-    const warnings = [...labelWarnings, ...(forceRead.ok ? [] : [`force-push check (git merge-base --is-ancestor) ${failureKind(forceRead.failed)}`])];
+    if (!forceRead.ok) { return readFailure('git_reset', forceRead.failed); }
+    const requiresForcePush = forceRead.value;
+    const warnings = [...labelWarnings];
     if (!priorOk) { warnings.push(`git rev-parse --short HEAD ${failureKind(priorShort)}: the previous short sha is empty`); }
 
     const r = await runShell(['git', 'reset', `--${mode}`, ref], { cwd, timeoutMs: 30_000 });

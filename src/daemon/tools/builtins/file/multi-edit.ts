@@ -49,7 +49,7 @@ export const fileMultiEditTool: Tool = {
     required: ['path', 'edits'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const path = resolvePath(input) ?? '(missing)';

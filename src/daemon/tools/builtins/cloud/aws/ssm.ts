@@ -46,7 +46,7 @@ export const awsSsmGetParameterTool: Tool = {
     required: ['name'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -146,7 +146,7 @@ export const awsSsmPutParameterTool: Tool = {
     required: ['name', 'value', 'type'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

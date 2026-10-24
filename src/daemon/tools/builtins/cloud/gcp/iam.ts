@@ -25,7 +25,6 @@ export const gcpIamWhoAmITool: Tool = {
     properties: { ...GCP_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = gcpFlags(input);

@@ -42,7 +42,7 @@ export const gitCheckoutTool: Tool = {
     required: ['mode'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cwd = String(input['cwd'] ?? process.cwd());

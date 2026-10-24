@@ -55,7 +55,6 @@ export const awsEc2ListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -120,7 +119,7 @@ export const awsEc2StartTool: Tool = {
     required: ['instanceIds'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -184,7 +183,7 @@ export const awsEc2StopTool: Tool = {
     required: ['instanceIds'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -251,8 +250,7 @@ export const awsEc2TerminateTool: Tool = {
     required: ['instanceIds', 'confirmCount'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

@@ -38,7 +38,7 @@ export const gitResetTool: Tool = {
     required: ['ref'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());

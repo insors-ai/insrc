@@ -68,7 +68,6 @@ export const ghPrListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'pr', 'list', '--json', PR_JSON_FIELDS];
@@ -105,7 +104,6 @@ export const ghPrViewTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -138,7 +136,6 @@ export const ghPrDiffTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -172,7 +169,6 @@ export const ghPrChecksTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -209,7 +205,6 @@ export const ghPrFilesTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -259,7 +254,7 @@ export const ghPrCreateTool: Tool = {
     required: ['title'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const title = str(input, 'title') ?? '';
@@ -334,7 +329,7 @@ export const ghPrEditTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -389,7 +384,7 @@ export const ghPrCommentTool: Tool = {
     required: ['number', 'body'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const body = str(input, 'body') ?? '';
@@ -435,7 +430,7 @@ export const ghPrReviewTool: Tool = {
     required: ['number', 'event'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -487,7 +482,7 @@ export const ghPrMergeTool: Tool = {
     required: ['number', 'method'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const method = str(input, 'method') ?? 'merge';
@@ -542,7 +537,7 @@ export const ghPrCloseTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -585,7 +580,7 @@ export const ghPrReadyTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {

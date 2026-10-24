@@ -112,7 +112,6 @@ export const k8sGetTool: Tool = {
     required: ['resource'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const resource = str(input, 'resource');
@@ -189,7 +188,7 @@ export const k8sApplyTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cluster = clusterFlags(input);
@@ -336,8 +335,7 @@ export const k8sDeleteTool: Tool = {
     required: ['resource'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cluster = clusterFlags(input);
@@ -443,7 +441,6 @@ export const k8sLogsTool: Tool = {
     required: ['pod'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
     const pod = str(input, 'pod');
@@ -590,7 +587,7 @@ export const k8sExecTool: Tool = {
     required: ['pod', 'command'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cluster = clusterFlags(input);
@@ -724,7 +721,7 @@ export const k8sPortForwardTool: Tool = {
     required: ['resource', 'mappings'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cluster = clusterFlags(input);

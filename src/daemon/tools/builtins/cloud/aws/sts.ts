@@ -25,7 +25,6 @@ export const awsStsWhoAmITool: Tool = {
     properties: { ...AWS_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);

@@ -35,7 +35,6 @@ export const ghRepoViewTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'repo', 'view', '--json', 'nameWithOwner,description,visibility,isPrivate,isFork,isArchived,pushedAt,stargazerCount,forkCount,defaultBranchRef,primaryLanguage,url'];
@@ -74,7 +73,6 @@ export const ghRepoListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'repo', 'list'];
@@ -120,7 +118,7 @@ export const ghRepoCreateTool: Tool = {
     required: ['name', 'visibility'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -171,7 +169,7 @@ export const ghRepoForkTool: Tool = {
     required: ['repo'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -213,7 +211,7 @@ export const ghRepoDeleteTool: Tool = {
     required: ['repo'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -255,7 +253,7 @@ export const ghRepoCloneTool: Tool = {
     required: ['repo'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {

@@ -13,7 +13,7 @@ import { File as NodeFile } from 'node:buffer';
 import { fetch as undiciFetch, FormData, WebSocket } from 'undici';
 import { registerTool } from '../../registry.js';
 import type {
-  Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
+  ApprovalClass, Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
 } from '../../types.js';
 
 // ---------------------------------------------------------------------------
@@ -129,10 +129,10 @@ export const httpRequestTool: Tool = {
     additionalProperties: false,
   },
 
-  requiresApproval(input: ToolInput): boolean {
-    if (bool(input, 'forceApproval') === true) { return true; }
+  approval(input: ToolInput): ApprovalClass {
+    if (bool(input, 'forceApproval') === true) { return 'common'; }
     const method = (str(input, 'method') ?? 'GET').toUpperCase();
-    return WRITE_METHODS.has(method);
+    return WRITE_METHODS.has(method) ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -319,7 +319,7 @@ export const httpDownloadTool: Tool = {
     required: ['url', 'destPath'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const maxBytes = num(input, 'maxBytes') ?? DEFAULT_DOWNLOAD_MAX_BYTES;
@@ -475,7 +475,7 @@ export const httpUploadTool: Tool = {
     required: ['url', 'filePath'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const filePath = str(input, 'filePath') ?? '';
@@ -661,7 +661,7 @@ export const httpWebSocketTool: Tool = {
     required: ['url'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const maxRuntime = Math.min(num(input, 'maxRuntimeMs') ?? DEFAULT_WS_RUNTIME, MAX_WS_RUNTIME);

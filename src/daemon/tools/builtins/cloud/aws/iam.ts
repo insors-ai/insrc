@@ -47,7 +47,6 @@ export const awsIamListAttachedPoliciesTool: Tool = {
     required: ['target'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const target = str(input, 'target') as AwsIamListAttachedData['target'] | undefined;

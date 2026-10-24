@@ -52,7 +52,6 @@ export const awsLogsTailTool: Tool = {
     required: ['logGroup'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
     const logGroup = str(input, 'logGroup');
@@ -183,7 +182,6 @@ export const awsLogsFilterTool: Tool = {
     required: ['logGroup'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const logGroup = str(input, 'logGroup');

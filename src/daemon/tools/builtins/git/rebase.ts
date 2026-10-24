@@ -43,7 +43,7 @@ export const gitRebaseTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());

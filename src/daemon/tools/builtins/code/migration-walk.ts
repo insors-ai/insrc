@@ -77,7 +77,6 @@ const codeMigrationWalkTool: Tool = {
 		required: ['tool', 'repoPath'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, _deps: ToolDeps): Promise<ToolResult> {
 		const tool     = typeof input['tool']     === 'string' ? input['tool']     : '';

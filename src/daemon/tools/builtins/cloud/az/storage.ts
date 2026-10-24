@@ -66,7 +66,6 @@ export const azStorageBlobLsTool: Tool = {
     required: ['container', 'accountName'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const container = str(input, 'container');
@@ -136,7 +135,7 @@ export const azStorageBlobCpTool: Tool = {
     required: ['direction', 'container', 'blobName', 'localPath', 'accountName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);
@@ -233,7 +232,7 @@ export const azStorageBlobRmTool: Tool = {
     required: ['container', 'blobName', 'accountName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

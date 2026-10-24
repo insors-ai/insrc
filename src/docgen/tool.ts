@@ -53,7 +53,6 @@ export const docgenTool: Tool = {
 	// Registry-derived: the advertised input mirrors listDocTypes() so the tool,
 	// IPC, and MCP surfaces cannot drift and a new doc type needs no edit (k4/ac4).
 	inputSchema: buildDocgenInputSchema(listDocTypes()),
-	requiresApproval: false,
 
 	async execute(input: ToolInput): Promise<ToolResult> {
 		const docType = typeof input['docType'] === 'string' ? input['docType'] : '';

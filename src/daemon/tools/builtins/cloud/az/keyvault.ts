@@ -47,7 +47,7 @@ export const azKeyvaultSecretShowTool: Tool = {
     required: ['vault', 'name'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);
@@ -136,7 +136,7 @@ export const azKeyvaultSecretSetTool: Tool = {
     required: ['vault', 'name', 'value'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

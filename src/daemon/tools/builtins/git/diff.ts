@@ -95,7 +95,6 @@ export const gitDiffTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = strInput(input, 'cwd') ?? process.cwd();

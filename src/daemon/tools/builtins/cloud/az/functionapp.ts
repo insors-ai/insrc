@@ -29,7 +29,6 @@ export const azFunctionAppListTool: Tool = {
     properties: { ...AZ_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = azFlags(input);
@@ -84,7 +83,7 @@ export const azFunctionAppDeployTool: Tool = {
     required: ['name', 'zipPath', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

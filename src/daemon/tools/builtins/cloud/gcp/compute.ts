@@ -40,7 +40,6 @@ export const gcpComputeListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = gcpFlags(input);
@@ -112,7 +111,7 @@ export const gcpComputeStartTool: Tool = {
     required: ['names', 'zone'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);
@@ -176,7 +175,7 @@ export const gcpComputeStopTool: Tool = {
     required: ['names', 'zone'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);
@@ -243,8 +242,7 @@ export const gcpComputeDeleteTool: Tool = {
     required: ['names', 'zone', 'confirmCount'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);

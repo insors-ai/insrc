@@ -202,7 +202,6 @@ export const searchGrepTool: Tool = {
     required: ['pattern'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const pattern = typeof input['pattern'] === 'string' ? input['pattern'] : '';

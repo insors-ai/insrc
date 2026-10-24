@@ -99,7 +99,6 @@ const codeClassLocateTool: Tool = {
 		required: ['className'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, _deps: ToolDeps): Promise<ToolResult> {
 		const className = typeof input['className'] === 'string' ? input['className'] : '';

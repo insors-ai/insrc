@@ -42,7 +42,7 @@ export const shellExecPipelineTool: Tool = {
     required: ['script'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cwd = String(input['cwd'] ?? process.cwd());

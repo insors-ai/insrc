@@ -12,7 +12,7 @@
  */
 
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, fail, spawnFail } from './helpers.js';
 
 export type GitStashOp = 'list' | 'push' | 'pop' | 'apply' | 'drop' | 'clear' | 'show';
@@ -46,9 +46,9 @@ export const gitStashTool: Tool = {
     additionalProperties: false,
   },
 
-  requiresApproval(input: ToolInput): boolean {
+  approval(input: ToolInput): ApprovalClass {
     const op = input['op'];
-    return op !== 'list' && op !== 'show';
+    return op !== 'list' && op !== 'show' ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {

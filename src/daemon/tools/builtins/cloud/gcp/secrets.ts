@@ -47,7 +47,7 @@ export const gcpSecretsAccessTool: Tool = {
     required: ['secret'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);
@@ -123,7 +123,7 @@ export const gcpSecretsAddTool: Tool = {
     required: ['secret', 'value'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);

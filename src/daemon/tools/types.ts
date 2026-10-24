@@ -182,19 +182,10 @@ export interface Tool {
 	readonly outputSchema?: TSchema;
 
 	/**
-	 * When truthy, the executor fires an Approve / Skip / Edit gate before
-	 * calling execute(). A predicate lets a tool opt in per-input (e.g.
-	 * shell:exec auto-runs low-risk commands, gates higher-risk ones).
-	 *
-	 * Gate semantics are deferred to the next backend; the field is
-	 * preserved as metadata for now.
-	 */
-	readonly requiresApproval?: boolean | ((input: ToolInput) => boolean);
-
-	/**
 	 * The approval class of this tool, or a function of the input that gives the
-	 * class of one call. Absent means none. Replaces requiresApproval and
-	 * destructive once every builtin is mapped.
+	 * class of one call. Absent means none: the tool runs without asking.
+	 * 'common' asks per the tools.commonApproval setting or the chat's edits mode;
+	 * 'destructive' always asks, whatever the caller, setting, mode or arguments.
 	 */
 	readonly approval?: ApprovalClass | ((input: ToolInput) => ApprovalClass);
 
@@ -204,9 +195,6 @@ export interface Tool {
 	 * over duplicate registrations.
 	 */
 	readonly aliases?: readonly string[];
-
-	/** Flags the tool as destructive / irreversible. The next backend may apply additional confirms. */
-	readonly destructive?: boolean;
 
 	/**
 	 * Universal Access Gate declaration -- legacy metadata field. The

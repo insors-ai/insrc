@@ -52,7 +52,6 @@ export const ghRunListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'run', 'list', '--json', 'databaseId,number,name,workflowName,displayTitle,conclusion,status,event,headBranch,headSha,url,createdAt,updatedAt'];
@@ -98,7 +97,6 @@ export const ghRunViewTool: Tool = {
     required: ['runId'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const id = num(input, 'runId');
@@ -162,7 +160,7 @@ export const ghRunRerunTool: Tool = {
     required: ['runId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -205,7 +203,7 @@ export const ghRunCancelTool: Tool = {
     required: ['runId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -245,7 +243,6 @@ export const ghWorkflowListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'workflow', 'list'];
@@ -301,7 +298,7 @@ export const ghWorkflowRunTool: Tool = {
     required: ['workflow'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const inputs = input['inputs'] && typeof input['inputs'] === 'object' ? input['inputs'] as Record<string, string> : {};

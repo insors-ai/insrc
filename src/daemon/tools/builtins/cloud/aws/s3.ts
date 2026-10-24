@@ -44,7 +44,6 @@ export const awsS3LsTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -114,7 +113,7 @@ export const awsS3CpTool: Tool = {
     required: ['source', 'destination'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -206,8 +205,7 @@ export const awsS3RmTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -304,7 +302,7 @@ export const awsS3SyncTool: Tool = {
     required: ['source', 'destination'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

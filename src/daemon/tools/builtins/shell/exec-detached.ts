@@ -48,7 +48,7 @@ export const shellExecDetachedTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cwd = String(input['cwd'] ?? process.cwd());

@@ -95,7 +95,7 @@ export const notifySlackTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const text = str(input, 'text') ?? '';
@@ -211,7 +211,7 @@ export const notifyDiscordTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const content = str(input, 'content') ?? '';
@@ -303,7 +303,7 @@ export const notifyTeamsTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const text = str(input, 'text') ?? '';
@@ -476,7 +476,7 @@ export const notifyEmailTool: Tool = {
     required: ['to', 'subject'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const to  = strList(input, 'to');

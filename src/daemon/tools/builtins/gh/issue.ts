@@ -54,7 +54,6 @@ export const ghIssueListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'issue', 'list', '--json', ISSUE_JSON_FIELDS];
@@ -93,7 +92,6 @@ export const ghIssueViewTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -130,7 +128,7 @@ export const ghIssueCreateTool: Tool = {
     required: ['title'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const title = str(input, 'title') ?? '';
@@ -201,7 +199,7 @@ export const ghIssueCommentTool: Tool = {
     required: ['number', 'body'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const n = num(input, 'number');
@@ -264,7 +262,7 @@ export const ghIssueEditTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -334,7 +332,7 @@ function stateChangeTool(id: string, op: 'close' | 'reopen'): Tool {
       required: ['number'],
       additionalProperties: false,
     },
-    requiresApproval: true,
+    approval: 'common',
 
     buildApprovalGate(input: ToolInput): ToolApprovalGate {
       const n = num(input, 'number');
@@ -394,7 +392,7 @@ export const ghIssueLinkTool: Tool = {
     required: ['number', 'target'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const rel = str(input, 'relation') ?? 'relates-to';

@@ -33,7 +33,6 @@ export const ghReleaseListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'release', 'list'];
@@ -86,7 +85,6 @@ export const ghReleaseViewTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const tag = str(input, 'tag');
@@ -131,7 +129,7 @@ export const ghReleaseCreateTool: Tool = {
     required: ['tag'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -196,7 +194,7 @@ export const ghReleaseEditTool: Tool = {
     required: ['tag'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -246,7 +244,7 @@ export const ghReleasePublishTool: Tool = {
     required: ['tag'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -284,7 +282,7 @@ export const ghReleaseDeleteTool: Tool = {
     required: ['tag'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {

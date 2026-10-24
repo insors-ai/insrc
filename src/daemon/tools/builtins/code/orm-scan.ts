@@ -72,7 +72,6 @@ const codeOrmScanTool: Tool = {
 		required: ['orm', 'repoPath'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, _deps: ToolDeps): Promise<ToolResult> {
 		const orm      = typeof input['orm']      === 'string' ? input['orm']      : '';

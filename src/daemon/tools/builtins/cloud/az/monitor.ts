@@ -36,7 +36,6 @@ export const azMonitorLogQueryTool: Tool = {
     required: ['workspace', 'query'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const workspace = str(input, 'workspace');

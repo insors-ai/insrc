@@ -11,7 +11,7 @@ import { spawn } from 'node:child_process';
 import { runShell } from '../../shell-helper.js';
 import { registerTool } from '../../registry.js';
 import type {
-  Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
+  ApprovalClass, Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
 } from '../../types.js';
 
 // ---------------------------------------------------------------------------
@@ -93,7 +93,7 @@ export const sshExecTool: Tool = {
     required: ['host', 'command'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -189,7 +189,7 @@ export const sshExecDetachedTool: Tool = {
     required: ['host', 'command'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const maxRuntime = Math.min(num(input, 'maxRuntimeMs') ?? DEFAULT_DETACHED_RUNTIME, MAX_DETACHED_RUNTIME);
@@ -309,7 +309,7 @@ export const scpUploadTool: Tool = {
     required: ['localPath', 'host', 'remotePath'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -376,9 +376,9 @@ export const scpDownloadTool: Tool = {
     additionalProperties: false,
   },
 
-  requiresApproval(input: ToolInput): boolean {
+  approval(input: ToolInput): ApprovalClass {
     const remote = str(input, 'remotePath') ?? '';
-    return downloadIsSensitive(remote);
+    return downloadIsSensitive(remote) ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -458,7 +458,7 @@ export const sshPortForwardTool: Tool = {
     required: ['host', 'localPort', 'remoteHost', 'remotePort'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const reverse = input['reverse'] === true;

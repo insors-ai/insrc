@@ -25,7 +25,6 @@ export const azAccountShowTool: Tool = {
     properties: { ...AZ_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = azFlags(input);

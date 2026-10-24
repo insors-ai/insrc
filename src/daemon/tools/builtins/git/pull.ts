@@ -34,7 +34,7 @@ export const gitPullTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());

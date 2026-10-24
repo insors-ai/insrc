@@ -52,7 +52,7 @@ export const awsLambdaInvokeTool: Tool = {
     required: ['functionName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -180,7 +180,6 @@ export const awsLambdaListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -248,7 +247,7 @@ export const awsLambdaUpdateCodeTool: Tool = {
     required: ['functionName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

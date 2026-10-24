@@ -36,7 +36,6 @@ export const fileReadTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const path = resolvePath(input);

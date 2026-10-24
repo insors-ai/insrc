@@ -43,7 +43,6 @@ export const gcpStorageLsTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = gcpFlags(input);
@@ -106,7 +105,7 @@ export const gcpStorageCpTool: Tool = {
     required: ['source', 'destination'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);
@@ -185,8 +184,7 @@ export const gcpStorageRmTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);

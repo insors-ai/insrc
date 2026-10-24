@@ -141,7 +141,6 @@ export const dataLineageTool: Tool = {
 		required: ['connectionId', 'target'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		// Cross-agent depth check (Phase 4 of docs/plans/analyzers/data-analyzer.md).

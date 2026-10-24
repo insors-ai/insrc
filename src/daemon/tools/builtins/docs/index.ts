@@ -93,7 +93,6 @@ export const docsRetrieveTool: Tool = {
 		required: ['query'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const query = str(input, 'query');
@@ -174,7 +173,6 @@ export const docsProjectContextTool: Tool = {
 		required: [],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const repo = firstClosureRepo(deps);
@@ -235,7 +233,6 @@ export const docsSummaryGetTool: Tool = {
 		required: ['entityId'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput): Promise<ToolResult> {
 		const entityId = str(input, 'entityId');
@@ -298,7 +295,6 @@ export const docsFamilyListTool: Tool = {
 		required: ['family'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const family = str(input, 'family') as DocFamily | undefined;

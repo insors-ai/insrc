@@ -33,7 +33,6 @@ export const awsEksListTool: Tool = {
     properties: { ...AWS_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -92,7 +91,7 @@ export const awsEksUpdateKubeconfigTool: Tool = {
     required: ['clusterName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

@@ -29,7 +29,6 @@ export const azSqlServerListTool: Tool = {
     properties: { ...AZ_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = azFlags(input);
@@ -83,7 +82,7 @@ export const azSqlServerStartTool: Tool = {
     required: ['server', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);
@@ -150,7 +149,7 @@ export const azSqlServerStopTool: Tool = {
     required: ['server', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

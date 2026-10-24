@@ -199,7 +199,7 @@ export const pkgInstallTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -283,7 +283,7 @@ export const pkgAddTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -356,7 +356,7 @@ export const pkgRemoveTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -427,7 +427,6 @@ export const pkgOutdatedTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -477,7 +476,6 @@ export const pkgAuditTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();

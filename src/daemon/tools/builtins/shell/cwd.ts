@@ -55,7 +55,6 @@ export const shellCwdTool: Tool = {
 		},
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const op = typeof input['op'] === 'string' ? input['op'] : 'get';

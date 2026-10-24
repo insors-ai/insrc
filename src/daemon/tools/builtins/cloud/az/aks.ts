@@ -29,7 +29,6 @@ export const azAksListTool: Tool = {
     properties: { ...AZ_SCHEMA },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = azFlags(input);
@@ -85,7 +84,7 @@ export const azAksGetCredentialsTool: Tool = {
     required: ['cluster', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

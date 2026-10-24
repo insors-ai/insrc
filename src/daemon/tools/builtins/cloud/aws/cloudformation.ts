@@ -39,7 +39,6 @@ export const awsCfnListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -116,7 +115,7 @@ export const awsCfnDeployTool: Tool = {
     required: ['stackName'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -231,8 +230,7 @@ export const awsCfnDeleteTool: Tool = {
     required: ['stackName', 'confirmStack'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

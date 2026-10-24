@@ -58,7 +58,6 @@ export const ghProjectListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'project', 'list', '--format', 'json'];
@@ -95,7 +94,6 @@ export const ghProjectViewTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -134,7 +132,6 @@ export const ghProjectItemListTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -182,7 +179,7 @@ export const ghProjectItemAddTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const ref = str(input, 'url') ?? (str(input, 'repo') && num(input, 'issueNumber') ? `${str(input, 'repo')}#${num(input, 'issueNumber')}` : '(missing)');
@@ -231,7 +228,7 @@ export const ghProjectItemUpdateTool: Tool = {
     required: ['projectId', 'itemId', 'fieldId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -287,7 +284,7 @@ export const ghProjectItemArchiveTool: Tool = {
     required: ['projectId', 'itemId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -327,7 +324,7 @@ export const ghProjectItemDeleteTool: Tool = {
     required: ['projectId', 'itemId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -369,7 +366,6 @@ export const ghProjectFieldListTool: Tool = {
     required: ['number'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');

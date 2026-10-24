@@ -42,7 +42,6 @@ export const azVmListTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = azFlags(input);
@@ -103,7 +102,7 @@ export const azVmStartTool: Tool = {
     required: ['names', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);
@@ -167,7 +166,7 @@ export const azVmStopTool: Tool = {
     required: ['names', 'resourceGroup'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);
@@ -234,8 +233,7 @@ export const azVmDeleteTool: Tool = {
     required: ['names', 'resourceGroup', 'confirmCount'],
     additionalProperties: false,
   },
-  requiresApproval: true,
-  destructive: true,
+  approval: 'destructive',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = azFlags(input);

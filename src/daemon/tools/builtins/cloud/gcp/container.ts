@@ -40,7 +40,7 @@ export const gcpContainerGetCredentialsTool: Tool = {
     required: ['cluster'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);

@@ -28,7 +28,7 @@ export const fileWriteTool: Tool = {
     required: ['path', 'content'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const path = resolvePath(input) ?? '(missing)';

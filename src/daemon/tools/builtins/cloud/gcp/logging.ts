@@ -33,7 +33,6 @@ export const gcpLoggingReadTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = gcpFlags(input);

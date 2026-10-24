@@ -41,7 +41,6 @@ export const awsRdsDescribeTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = awsFlags(input);
@@ -102,7 +101,7 @@ export const awsRdsStartTool: Tool = {
     required: ['dbInstanceId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -164,7 +163,7 @@ export const awsRdsStopTool: Tool = {
     required: ['dbInstanceId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

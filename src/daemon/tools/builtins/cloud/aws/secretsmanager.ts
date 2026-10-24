@@ -50,7 +50,7 @@ export const awsSecretsGetTool: Tool = {
     required: ['secretId'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);
@@ -157,7 +157,7 @@ export const awsSecretsPutTool: Tool = {
     required: ['secretId', 'secretString'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = awsFlags(input);

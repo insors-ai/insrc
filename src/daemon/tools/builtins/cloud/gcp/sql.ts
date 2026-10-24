@@ -36,7 +36,6 @@ export const gcpSqlDescribeTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const flags = gcpFlags(input);
@@ -102,7 +101,7 @@ export const gcpSqlStartTool: Tool = {
     required: ['instance'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);
@@ -157,7 +156,7 @@ export const gcpSqlStopTool: Tool = {
     required: ['instance'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const flags = gcpFlags(input);

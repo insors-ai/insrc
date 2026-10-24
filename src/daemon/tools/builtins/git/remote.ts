@@ -3,7 +3,7 @@
  */
 
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, fail, spawnFail } from './helpers.js';
 
 export type GitRemoteOp = 'list' | 'add' | 'remove' | 'set-url' | 'rename';
@@ -39,8 +39,8 @@ export const gitRemoteTool: Tool = {
     additionalProperties: false,
   },
 
-  requiresApproval(input: ToolInput): boolean {
-    return input['op'] !== 'list';
+  approval(input: ToolInput): ApprovalClass {
+    return input['op'] !== 'list' ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {

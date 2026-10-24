@@ -57,7 +57,6 @@ export const webSearchTool: Tool = {
     required: ['query'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const query = str(input, 'query');
@@ -135,7 +134,6 @@ export const webFetchTool: Tool = {
     required: ['url'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const url = str(input, 'url');

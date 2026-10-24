@@ -45,7 +45,6 @@ export const gitShowTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();

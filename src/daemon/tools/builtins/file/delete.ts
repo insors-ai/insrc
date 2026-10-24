@@ -31,7 +31,7 @@ export const fileDeleteTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const path = resolvePath(input) ?? '(missing)';

@@ -44,7 +44,6 @@ export const searchRecentTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const root = typeof input['path'] === 'string' ? resolve(input['path']) : process.cwd();

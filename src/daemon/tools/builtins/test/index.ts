@@ -243,7 +243,7 @@ export const testRunTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const argv = argvFromInput(input);
@@ -385,7 +385,7 @@ export const testWatchTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const argv = argvFromInput(input);
@@ -565,7 +565,7 @@ export const testCoverageTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const argv = argvFromInput(input);

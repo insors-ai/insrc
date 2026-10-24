@@ -31,7 +31,7 @@ export const fileEditTool: Tool = {
     required: ['path', 'oldString', 'newString'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const path = resolvePath(input) ?? '(missing)';

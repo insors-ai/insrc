@@ -97,7 +97,6 @@ export const graphEntityTool: Tool = {
     required: ['id'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const id = str(input, 'id');
@@ -142,7 +141,6 @@ export const graphSearchTool: Tool = {
     required: ['query'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
     const query = str(input, 'query');
@@ -201,7 +199,6 @@ function buildNeighborsTool(direction: 'callers' | 'callees'): Tool {
       required: ['entityId'],
       additionalProperties: false,
     },
-    requiresApproval: false,
 
     async execute(input: ToolInput): Promise<ToolResult> {
       const entityId = str(input, 'entityId');
@@ -353,7 +350,6 @@ export const graphQueryTool: Tool = {
     required: ['op'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const op = str(input, 'op');

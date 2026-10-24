@@ -40,7 +40,7 @@ export const gitStageTool: Tool = {
     required: ['op', 'paths'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const op = String(input['op'] ?? 'stage');

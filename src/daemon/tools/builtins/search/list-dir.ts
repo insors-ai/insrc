@@ -44,7 +44,6 @@ export const searchListDirTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const pathArg = typeof input['path'] === 'string' ? input['path'] : '';

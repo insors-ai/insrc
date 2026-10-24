@@ -30,7 +30,7 @@ export const fileCopyTool: Tool = {
     required: ['from', 'to'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const from = str(input, 'from') ? resolve(str(input, 'from')!) : '(missing)';

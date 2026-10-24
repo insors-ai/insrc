@@ -24,7 +24,7 @@ export const fileMkdirTool: Tool = {
     required: ['path'],
     additionalProperties: false,
   },
-  requiresApproval: true,
+  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const path = resolvePath(input) ?? '(missing)';

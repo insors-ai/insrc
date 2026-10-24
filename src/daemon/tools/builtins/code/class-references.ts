@@ -94,7 +94,6 @@ const codeClassReferencesTool: Tool = {
 		required: ['entityId'],
 		additionalProperties: false,
 	},
-	requiresApproval: false,
 
 	async execute(input: ToolInput, _deps: ToolDeps): Promise<ToolResult> {
 		const entityId = typeof input['entityId'] === 'string' ? input['entityId'] : '';

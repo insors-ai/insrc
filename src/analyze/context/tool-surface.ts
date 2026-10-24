@@ -14,9 +14,10 @@
  * The surface is an EXPLICIT ALLOWLIST -- not an automated heuristic
  * over the tool registry. Reasoning:
  *
- *   - The Tool.destructive flag is not reliably set across the ~110
- *     built-ins (a sweep on cleanup did not enforce it). Filtering on
- *     it would silently leak the wrong tools.
+ *   - The old Tool.destructive flag was not reliably set across the ~110
+ *     built-ins (a sweep on cleanup did not enforce it); it is now the
+ *     Tool.approval class. That class says what asks the user, not what
+ *     only reads, so filtering on it would still leak the wrong tools.
  *   - The Tool.access field carries the read/write semantic but is
  *     typed `unknown` for the same reason (preserved across cleanup;
  *     widened so the surviving builtins keep their declarations).

@@ -51,7 +51,6 @@ export const gitStatusTool: Tool = {
     },
     additionalProperties: false,
   },
-  requiresApproval: false,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = typeof input['cwd'] === 'string' && input['cwd'].length > 0

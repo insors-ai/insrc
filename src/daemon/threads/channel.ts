@@ -21,6 +21,7 @@
 import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
+import type { TrustedRpcContext } from '../request-context.js';
 
 const log = getLogger('thread-channel');
 
@@ -39,6 +40,8 @@ export interface RequestEnvelope {
 	readonly params: unknown;
 	readonly stream: boolean;
 	readonly session?: SessionId | undefined;
+	/** Constructed by the socket server; session label/pid and params are untrusted. */
+	readonly trustedContext?: TrustedRpcContext | undefined;
 	/**
 	 * Set on a cross-class request made by a handler that already holds the
 	 * daemon maintenance lock (a nested in-daemon call): the serving worker does

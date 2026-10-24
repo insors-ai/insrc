@@ -377,7 +377,12 @@ export class SavedConnectionManagement {
 				if (previous && previous.kind !== config.kind)
 					throw new ManagementServiceError('invalid-input');
 				const key: ConnectionKey = { repoRoot: this.root, scope: 'saved', id: config.id };
-				const safe = safeConnection(config, key, 'draft');
+				// A legacy label/option edit may omit endpoint and credentials. Project the
+				// complete server snapshot; credential intent still comes only from supplied fields below.
+				const projection = previous ? { ...previous, ...config,
+					...(previous.options || config.options ? { options: { ...previous.options, ...config.options } } : {}),
+				} : config;
+				const safe = safeConnection(projection, key, 'draft');
 				if (safe.readOnly)
 					throw new ManagementServiceError('invalid-input');
 				if (config.family !== undefined && config.family !== (previous?.family ?? safe.registeredFamily))

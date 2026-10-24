@@ -1,4 +1,6 @@
 import { createServer, type Server, type Socket } from 'node:net';
+import { randomUUID } from 'node:crypto';
+import type { TrustedRpcContext } from './request-context.js';
 import { rmSync } from 'node:fs';
 import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
@@ -37,7 +39,7 @@ function validClient(client: IpcRequest['client']): { label: string; pid: number
 // ---------------------------------------------------------------------------
 
 /** Standard request → response handler (existing). */
-export type RpcHandler = (params: unknown) => Promise<unknown>;
+export type RpcHandler = (params: unknown, context?: TrustedRpcContext | undefined) => Promise<unknown>;
 
 /** Streaming handler — writes multiple messages, resolves when done. */
 export type StreamHandler = (
@@ -77,7 +79,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
         return () => {};
       }
       let running: Promise<unknown>;
-      try { running = Promise.resolve(handler(request.params)); } catch (err) { running = Promise.reject(err); }
+      try { running = Promise.resolve(handler(request.params, request.trustedContext)); } catch (err) { running = Promise.reject(err); }
       running.then(
         result => deliver({ kind: 'reply', requestId, result }),
         err => deliver({ kind: 'reply', requestId, error: failureMessage(err, method) }),
@@ -177,6 +179,7 @@ export class IpcServer {
   private readonly conns = new Map<Socket, ConnInfo>();
   private connSeq = 0;
   private requestSeq = 0;
+  private readonly daemonEpoch = randomUUID();
   private readonly now: () => number;
   /** In-flight requests per open connection: requestId -> the cancel function forward() returned. */
   private readonly inflight = new Map<Socket, Map<string, () => void>>();
@@ -285,6 +288,7 @@ export class IpcServer {
     // before it touches the registry; a bad envelope leaves the connection
     // 'unknown'/pid undefined.
     const conn = this.conns.get(socket);
+    if (conn === undefined) return Promise.resolve();
     const client = validClient(request.client);
     if (conn !== undefined) {
       if (typeof request.method === 'string') conn.lastMethod = request.method;
@@ -320,6 +324,7 @@ export class IpcServer {
     cancel = this.forward({
       kind: 'request', requestId, method: request.method, params: request.params, stream: request.stream === true,
       ...(client !== undefined ? { session: client } : {}),
+      trustedContext: Object.freeze({ connectionIdentity: `${this.daemonEpoch}:${conn.id}`, daemonEpoch: this.daemonEpoch }),
     }, deliver);
     // Remember it until it ends or its socket closes (unless it was answered already).
     if (!ended && running !== undefined && this.inflight.has(socket)) running.set(requestId, () => { cancel(); settle(); });

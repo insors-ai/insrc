@@ -62,3 +62,17 @@ export function rejectManagementInput(error: unknown): import('./connection-mana
  const safe = new ManagementInputError(error instanceof ManagementInputError && error.code === 'operation-mismatch' ? 'operation-mismatch' : 'invalid-input');
  return { status:'rejected', code:safe.code, message:safe.code === 'operation-mismatch' ? 'Operation target does not match its ticket.' : 'Invalid connection request.' };
 }
+
+/** New clients map an old/unknown-method or malformed handshake to one fixed upgrade result. */
+export function managementHandshake(value: unknown): { readonly status: 'ready'; readonly capabilities: import('./connection-management.js').ManagementCapabilities }
+ | { readonly status: 'rejected'; readonly code: 'upgrade-required'; readonly message: string } {
+ try {
+  const result = object(value); keys(result, ['version', 'daemonEpoch', 'features', 'receiptRetentionDays']);
+  text(result['daemonEpoch']);
+  const features = result['features'];
+  if (result['version'] !== 2 || result['receiptRetentionDays'] !== 30 || !Array.isArray(features)
+   || features.some(feature => typeof feature !== 'string' || !/^[a-z][a-z0-9-]{1,64}$/.test(feature))
+   || new Set(features).size !== features.length) throw new ManagementInputError();
+  return { status: 'ready', capabilities: value as import('./connection-management.js').ManagementCapabilities };
+ } catch { return { status: 'rejected', code: 'upgrade-required', message: 'Connection management requires a newer daemon.' }; }
+}

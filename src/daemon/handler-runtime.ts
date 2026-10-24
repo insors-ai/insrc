@@ -11,6 +11,7 @@
  */
 
 import { createUnderstandingRoutes } from './understanding-rpc.js';
+import { connectionManagementHandlers } from './connection-management-rpc.js';
 import type { UnderstandingService } from '../understanding/service.js';
 import { localIdentityDeps, resolveLearner } from '../understanding/identity.js';
 import { AssessmentError } from '../shared/understanding.js';
@@ -1488,21 +1489,22 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const mod = await import('./artifacts-rpc.js');
 			return mod.resetUserTemplateRpc(params);
 		},
-		'db.listConnections': async (params) => {
+		...connectionManagementHandlers(),
+		'db.listConnections': async (params, context) => {
 			const mod = await import('./db-rpc.js');
-			return mod.listConnectionsRpc(params as { repoRoot?: unknown });
+			return mod.listConnectionsRpc(params as { repoRoot?: unknown }, context);
 		},
 		'db.listDriverKinds': async () => {
 			const mod = await import('./db-rpc.js');
 			return mod.listDriverKindsRpc();
 		},
-		'db.saveConnection': async (params) => {
+		'db.saveConnection': async (params, context) => {
 			const mod = await import('./db-rpc.js');
-			return mod.saveConnectionRpc(params as { repoRoot?: unknown; config?: unknown });
+			return mod.saveConnectionRpc(params as { repoRoot?: unknown; config?: unknown }, context);
 		},
-		'db.deleteConnection': async (params) => {
+		'db.deleteConnection': async (params, context) => {
 			const mod = await import('./db-rpc.js');
-			return mod.deleteConnectionRpc(params as { repoRoot?: unknown; id?: unknown });
+			return mod.deleteConnectionRpc(params as { repoRoot?: unknown; id?: unknown }, context);
 		},
 		'db.testConnection': async (params) => {
 			const mod = await import('./db-rpc.js');

@@ -35,7 +35,7 @@
     },
     "src/daemon/db-rpc.ts": {
       "classification": "bounded-private-probe",
-      "rationale": "t19: bounded private factory probe uses S001 read-only profile materialization, only same-record server-owned credential refs, memory-only file authority, and awaited cleanup; S002 retains worker orchestration."
+      "rationale": "t21: bounded private profile-materialized probe receives daemon memory-only authority and awaits cleanup; legacy writes require transport identity and the shared root gate, and responses use safe projections. S002 owns worker orchestration."
     },
     "src/daemon/db/drivers/mssql.ts": {
       "classification": "driver-internal-library-pool",
@@ -84,6 +84,10 @@
     "src/shared/connection-management.ts": {
       "classification": "protocol-declarations",
       "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
+    },
+    "src/daemon/connection-management-rpc.ts": {
+      "classification": "metadata-only",
+      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
     }
   },
   "sites": [
@@ -378,8 +382,23 @@
       "boundary": "symbol:dataConnectionResolver"
     },
     {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
       "file": "src/daemon/db-rpc.ts",
-      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t}) } : undefined)",
+      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t\t}) } : undefined)",
       "boundary": "driver-port-call"
     },
     {

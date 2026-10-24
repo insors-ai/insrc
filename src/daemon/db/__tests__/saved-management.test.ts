@@ -12,7 +12,8 @@ import { ManagedRegistry, PreparationJournal } from '../managed-store.js';
 import { SavedTicketAuthority } from '../management-tickets.js';
 import { CredentialGenerations, _setKeystoreForTests } from '../secrets.js';
 import { DriverPool } from '../pool.js';
-import { SavedConnectionManagement, installSavedManagement, dispatchSavedMutation } from '../management.js';
+import { SavedConnectionManagement, installSavedManagement } from '../management.js';
+import { connectionManagementRpc } from '../../connection-management-rpc.js';
 import { saveConnectionRpc } from '../../db-rpc.js';
 import type { Driver, ConnectionConfig } from '../../../shared/db-driver.js';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -146,14 +147,14 @@ test('CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable regist
 			});
 			syncBuiltinESMExports();
 			try {
-				const result = await dispatchSavedMutation(f.root, f.context, request);
+				const result = await connectionManagementRpc('db.connections.v2.mutate', request, { connectionIdentity: f.context.connectionIdentity, daemonEpoch: f.context.access.daemonEpoch }) as MutationOutcome;
 				assert.equal(result.status, 'rejected');
 				if (result.status === 'rejected') {
 					assert.equal(result.code, 'registry-unreadable');
 					assert.ok(result.message.length > 0);
 					assert.ok(!JSON.stringify(result).includes('canary'));
 				}
-				const legacy = await saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:replacement-secret-canary@host/db' } });
+				const legacy = await saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:replacement-secret-canary@host/db' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
 				assert.ok('error' in legacy);
 				if ('error' in legacy) {
 					assert.match(legacy.error, /registry-unreadable/);
@@ -180,7 +181,7 @@ test('CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable regist
 			}, deleteKey: async (ref) => {
 				values.delete(ref);
 			} });
-		const empty = await saveConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'csv', path: 'fixture.csv' } });
+		const empty = await saveConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'csv', path: 'fixture.csv' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
 		assert.ok(!('error' in empty));
 		assert.equal(JSON.parse(await readFile(connectionsPath(root), 'utf8')).connections.length, 1);
 		assert.equal(values.size, 0);
@@ -193,7 +194,7 @@ test('CM-S1-B: legacy upsert is serialized through the same managed gate and pre
 	const env = await environment();
 	const f = await env.rootFixture('root');
 	try {
-		const outcomes = await Promise.all([saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:first-secret-canary@host/db', label: 'First' } }), saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:second-secret-canary@host/db', label: 'Second' } })]);
+		const outcomes = await Promise.all([saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:first-secret-canary@host/db', label: 'First' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'}), saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:second-secret-canary@host/db', label: 'Second' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'})]);
 		for (const result of outcomes) {
 			assert.ok(!('error' in result), JSON.stringify(result));
 			assert.ok(!JSON.stringify(result).includes('secret-canary'));
@@ -206,7 +207,7 @@ test('CM-S1-B: legacy upsert is serialized through the same managed gate and pre
 		assert.equal(Object.keys(file._management.receipts).length, 2);
 		assert.deepEqual(file.retainedDocument, { exact: true });
 		const pinned = await env.rootFixture('pinned', { id: 'fixture', kind: 'postgres', family: 'kv', url: 'postgres://u:original-secret-canary@host/db', namespace: { allow: ['retained'] } });
-		const edit = await saveConnectionRpc({ repoRoot: pinned.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:new-secret-canary@host/db', label: 'Pinned edit' } });
+		const edit = await saveConnectionRpc({ repoRoot: pinned.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:new-secret-canary@host/db', label: 'Pinned edit' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
 		assert.ok(!('error' in edit), JSON.stringify(edit));
 		const updated = JSON.parse(await readFile(pinned.path, 'utf8')).connections[0];
 		assert.equal(updated.family, 'kv');
@@ -243,7 +244,7 @@ test('CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry read
 			});
 			syncBuiltinESMExports();
 			try {
-				const result = await saveConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:replacement-secret-canary@host/db' } });
+				const result = await saveConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:replacement-secret-canary@host/db' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
 				assert.ok('error' in result);
 				if ('error' in result) {
 					assert.match(result.error, /registry-unreadable/);

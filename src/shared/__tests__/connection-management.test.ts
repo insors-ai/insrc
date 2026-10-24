@@ -58,7 +58,7 @@ test('CM-S1-J: real legacy save replies retain their shape and v2 errors never r
  try {
   Object.defineProperty(PATHS,'insrc',{value:isolated});
   _setKeystoreForTests({getKey:async ref=>vault.get(ref)??null,setKey:async(ref,value)=>{vault.set(ref,value);},deleteKey:async ref=>{vault.delete(ref);}});
-  const legacy=await saveConnectionRpc({repoRoot:isolated,config:{id:'legacy',kind:'postgres',url:`postgresql://fixture:${secret}@localhost/fixture`}});
+  const legacy=await saveConnectionRpc({repoRoot:isolated,config:{id:'legacy',kind:'postgres',url:`postgresql://fixture:${secret}@localhost/fixture`}}, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
   assert.ok(!('error' in legacy));
   assert.equal(legacy.id,'legacy'); assert.equal(legacy.family,'rdbms'); assert.equal(typeof legacy.wrotePath,'string');
   assert.ok(!('status' in legacy));

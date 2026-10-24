@@ -256,4 +256,4 @@ Every failure of the s1 sweep is still there and none of them is in a file this 
 
 One failure is new since the s1 sweep: `src/workflow/__tests__/artifact-write-inventory.test.ts`, "every writer file is inventoried, annotated and classified as the design says". It names `src/bin/insrc-shutdown-watchdog.ts`, `src/daemon/run-file-ownership.ts` and `src/shared/daemon-run-files.ts` (no inventory entry) and `src/daemon/lifecycle.ts` (an entry that no longer matches). Those files come from the daemon-shutdown commits made on this branch while s4 was being built (`e5468d372`, `873e425dd`, `a61dd8d11`, `77595a1ec`), not from this Story, whose commits touch only `src/daemon/tools/**`, one fixture and the docs. It needs entries in `src/workflow/artifact-write-inventory.ts` by whoever owns the shutdown work.
 
-s4 added and changed no failing test: the git, tools, executor and approval suites all pass (git tools `__tests__`: 85 tests, tools `__tests__`: 120).
+s4 added and changed no failing test: the git, tools, executor and approval suites all pass (git tools `__tests__`: 54 tests, daemon tools `__tests__`: 98 tests, none failing).

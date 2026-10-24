@@ -35,8 +35,10 @@ export const credentialKeystore: KeystoreLike = {
 	setKey: (ref, value) => keystore.setKey(ref, value),
 	deleteKey: ref => keystore.deleteKey(ref),
 };
-export function _setKeystoreForTests(impl: KeystoreLike): void {
+export function _setKeystoreForTests(impl: KeystoreLike): KeystoreLike {
+	const previous = keystore;
 	keystore = impl;
+	return previous;
 }
 export function makeSecretRef(repoId: string, connId: string): string {
 	return `db:${repoId}:${connId}`;

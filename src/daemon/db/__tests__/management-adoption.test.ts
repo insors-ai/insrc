@@ -7,7 +7,7 @@ import { PATHS } from '../../../shared/paths.js';
 import { connectionsPath, repoIdOf } from '../config.js';
 import { adoptManagedRoot } from '../management-adoption.js';
 import { openManagedRoot } from '../management-startup.js';
-import { makeSecretRef, referencedSecrets } from '../secrets.js';
+import { makeSecretRef, referencedSecrets, _setKeystoreForTests } from '../secrets.js';
 import { savedManagementFor } from '../management.js';
 import { DriverPool } from '../pool.js';
 import type { Driver } from '../../../shared/db-driver.js';
@@ -30,7 +30,13 @@ async function fixture(use: (f: {
 			}, deleteKey: async (ref: string) => {
 				values.delete(ref);
 			} };
-		await use({ root, path, values, ports: { isRegistered: async (r) => r === root, keystore, enablement: async () => ({ ready: true, digest: 'a'.repeat(64) }), stopped: { source: 'safe-stop-control', pid: 2147483647, processIdentity: 'b'.repeat(64), stoppedAt: new Date().toISOString() } } });
+		const originalKeystore = _setKeystoreForTests(keystore);
+		try {
+			await use({ root, path, values, ports: { isRegistered: async (r) => r === root, keystore, enablement: async () => ({ ready: true, digest: 'a'.repeat(64) }), stopped: { source: 'safe-stop-control', pid: 2147483647, processIdentity: 'b'.repeat(64), stoppedAt: new Date().toISOString() } } });
+		}
+		finally {
+			_setKeystoreForTests(originalKeystore);
+		}
 	}
 	finally {
 		Object.defineProperty(PATHS, 'insrc', { value: original, configurable: true });
@@ -119,6 +125,9 @@ test('CM-S1-N: adopted fixture supports create update activation failure and sig
 		fail = false;
 		const retry = await service.retryActivation(context, { key, committedRevision: created.value.revision });
 		assert.equal(retry.status, 'committed');
+		if (retry.status !== 'committed')
+			throw new Error();
+		assert.equal(retry.value.activation, 'active');
 		const updateTicket = await service.ticket(context, key, 'update');
 		const changed = await service.mutate(context, { ticket: updateTicket, operationId: updateTicket.operationId, key, mode: 'update', expectedRevision: created.value.revision, publicPatch: { label: 'Updated' } });
 		assert.equal(changed.status, 'committed');

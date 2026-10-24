@@ -9777,5 +9777,531 @@
       "requiresApproval": "false",
       "destructive": false
     }
+  ],
+  "addedByS4": [
+    {
+      "id": "git_rev_parse",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "rev": {
+            "description": "Revision to resolve (HEAD, a branch, a tag, HEAD~2, a sha).",
+            "type": "string"
+          },
+          "abbrevRef": {
+            "description": "With rev: its short ref name (--abbrev-ref), e.g. main for HEAD on main.",
+            "type": "boolean"
+          },
+          "short": {
+            "description": "With rev: an abbreviated object name (--short).",
+            "type": "boolean"
+          },
+          "verify": {
+            "description": "With rev: fail unless it names an object (--verify).",
+            "type": "boolean"
+          },
+          "gitDir": {
+            "description": "Report the path of the .git directory (--git-dir).",
+            "type": "boolean"
+          },
+          "showToplevel": {
+            "description": "Report the repository root (--show-toplevel).",
+            "type": "boolean"
+          },
+          "isInsideWorkTree": {
+            "description": "Report whether cwd is inside a work tree (--is-inside-work-tree).",
+            "type": "boolean"
+          },
+          "isShallow": {
+            "description": "Report whether the repository is shallow (--is-shallow-repository).",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_rev_list",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rev"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "rev": {
+            "description": "Revision or range (HEAD, main..feature, origin/main).",
+            "type": "string"
+          },
+          "count": {
+            "description": "Return only the number of commits (--count).",
+            "type": "boolean"
+          },
+          "maxParents": {
+            "description": "Only commits with at most this many parents (--max-parents); 0 gives root commits.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "firstParent": {
+            "description": "Follow only the first parent of merges (--first-parent).",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "At most this many commits (--max-count).",
+            "minimum": 1,
+            "type": "number"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_ls_files",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "paths": {
+            "description": "Limit to these paths (pathspecs are literal).",
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "cached": {
+            "description": "Files in the index (the default when nothing else is asked).",
+            "type": "boolean"
+          },
+          "others": {
+            "description": "Untracked files, without those git ignores.",
+            "type": "boolean"
+          },
+          "ignored": {
+            "description": "Only files git ignores (with others: untracked ignored files; otherwise tracked ones that match an ignore rule).",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_ls_tree",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rev"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "rev": {
+            "description": "Tree-ish: a commit, a tag or a tree (HEAD, origin/main, HEAD:dir).",
+            "type": "string"
+          },
+          "paths": {
+            "description": "Limit to these paths.",
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "nameOnly": {
+            "description": "Return only the names (--name-only).",
+            "type": "boolean"
+          },
+          "recursive": {
+            "description": "Recurse into subtrees (-r).",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_cat_file",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "rev": {
+            "description": "One rev: a sha, a branch, HEAD, or rev:path.",
+            "type": "string"
+          },
+          "revs": {
+            "minItems": 1,
+            "description": "Several revs, read in one process (git cat-file --batch). Not with rev.",
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "path": {
+            "description": "A path inside each rev: the object read is <rev>:<path>.",
+            "type": "string"
+          },
+          "exists": {
+            "description": "Answer only whether the rev names an object (needs rev).",
+            "type": "boolean"
+          },
+          "type": {
+            "description": "Answer the object type and size (needs rev).",
+            "type": "boolean"
+          },
+          "size": {
+            "description": "Answer the object type and size (needs rev).",
+            "type": "boolean"
+          },
+          "encoding": {
+            "enum": [
+              "utf8",
+              "base64"
+            ],
+            "description": "How object bytes are returned. Default utf8; base64 is lossless for binary.",
+            "type": "string"
+          },
+          "maxBytes": {
+            "description": "Largest object accepted, per object (default 4194304). A larger one is a failure.",
+            "minimum": 1,
+            "type": "number"
+          },
+          "stdoutLimit": {
+            "description": "Byte budget of everything git prints, for the whole call (default 33554432). Past it the read is cut and fails.",
+            "minimum": 1,
+            "type": "number"
+          },
+          "stderrLimit": {
+            "description": "Byte budget of git's diagnostics (default 65536). Past it the process is killed and the call fails.",
+            "minimum": 1,
+            "type": "number"
+          },
+          "isolated": {
+            "description": "Run in a fresh environment with the read-only arguments (default true).",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_for_each_ref",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "Ref patterns, e.g. [\"refs/heads\", \"refs/remotes/origin\"]. Default: every ref.",
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "fields": {
+            "minItems": 1,
+            "description": "Fields to return per ref. Default: refname and objectname.",
+            "type": "array",
+            "items": {
+              "enum": [
+                "refname",
+                "refname:short",
+                "objectname",
+                "objectname:short",
+                "objecttype",
+                "*objectname",
+                "upstream",
+                "upstream:short",
+                "upstream:track",
+                "HEAD",
+                "symref",
+                "subject",
+                "authorname",
+                "authoremail",
+                "committerdate:iso-strict",
+                "creatordate:iso-strict"
+              ],
+              "type": "string"
+            }
+          },
+          "sort": {
+            "description": "Sort key, e.g. refname or -committerdate (a leading - reverses).",
+            "type": "string"
+          },
+          "count": {
+            "description": "At most this many refs.",
+            "minimum": 1,
+            "type": "number"
+          },
+          "contains": {
+            "description": "Only refs whose history contains this commit (--contains).",
+            "type": "string"
+          },
+          "merged": {
+            "description": "Only refs whose tip is reachable from this commit (--merged).",
+            "type": "string"
+          },
+          "noMerged": {
+            "description": "Only refs whose tip is not reachable from this commit (--no-merged).",
+            "type": "string"
+          },
+          "pointsAt": {
+            "description": "Only refs that point at this object (--points-at).",
+            "type": "string"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_symbolic_ref",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ref",
+          "op"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "ref": {
+            "description": "The symbolic ref: HEAD or a full ref name such as refs/remotes/origin/HEAD.",
+            "type": "string"
+          },
+          "op": {
+            "enum": [
+              "get",
+              "set",
+              "delete"
+            ],
+            "description": "get: the ref it points at; set: point it at target; delete: remove the symbolic ref.",
+            "type": "string"
+          },
+          "target": {
+            "description": "For set: the full ref name to point at, e.g. refs/remotes/origin/main.",
+            "type": "string"
+          },
+          "quiet": {
+            "description": "For get: a ref that is not symbolic gives target null instead of a failure (-q).",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "per-input"
+    },
+    {
+      "id": "git_show_ref",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "ref": {
+            "description": "A ref name or pattern, e.g. refs/heads/main or main.",
+            "type": "string"
+          },
+          "verify": {
+            "description": "Require the exact full ref (--verify): a missing one is a failure.",
+            "type": "boolean"
+          },
+          "exists": {
+            "description": "Check that the exact full ref exists (--exists): a missing one is an empty list, not a failure.",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_merge_base",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "a",
+          "b"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "a": {
+            "description": "First revision.",
+            "type": "string"
+          },
+          "b": {
+            "description": "Second revision.",
+            "type": "string"
+          },
+          "isAncestor": {
+            "description": "Answer whether a is an ancestor of b (--is-ancestor) instead of listing bases.",
+            "type": "boolean"
+          },
+          "all": {
+            "description": "List every best common ancestor (--all), not only one.",
+            "type": "boolean"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_hash_object",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "path": {
+            "description": "The file to hash, relative to cwd or absolute.",
+            "type": "string"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_path_history",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "path": {
+            "description": "A path relative to the repository root, matched literally. Default: the whole history.",
+            "type": "string"
+          },
+          "rev": {
+            "description": "Where to start: HEAD (default) or a ref such as origin/main.",
+            "type": "string"
+          },
+          "diffFilter": {
+            "enum": [
+              "A",
+              "D",
+              "M",
+              "R"
+            ],
+            "description": "Only commits that Added, Deleted, Modified or Renamed the path.",
+            "type": "string"
+          },
+          "firstParent": {
+            "description": "Follow only the first parent of merges (--first-parent).",
+            "type": "boolean"
+          },
+          "reverse": {
+            "description": "Oldest first (--reverse).",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "At most this many commits (-n).",
+            "minimum": 1,
+            "type": "number"
+          },
+          "pickaxe": {
+            "description": "Only commits whose change adds or removes this text (-S).",
+            "type": "string"
+          }
+        }
+      },
+      "approval": "none"
+    },
+    {
+      "id": "git_fetch_refs",
+      "inputSchema": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "remote",
+          "refspecs"
+        ],
+        "properties": {
+          "cwd": {
+            "description": "Repository root. Defaults to process cwd.",
+            "type": "string"
+          },
+          "remote": {
+            "description": "Remote name or URL.",
+            "type": "string"
+          },
+          "refspecs": {
+            "minItems": 1,
+            "description": "Explicit src:dst pairs, e.g. +refs/heads/main:refs/remotes/origin/main.",
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "noTags": {
+            "description": "--no-tags.",
+            "type": "boolean"
+          },
+          "noWriteFetchHead": {
+            "description": "--no-write-fetch-head.",
+            "type": "boolean"
+          },
+          "noRecurseSubmodules": {
+            "description": "--no-recurse-submodules.",
+            "type": "boolean"
+          },
+          "noPrune": {
+            "description": "--no-prune.",
+            "type": "boolean"
+          },
+          "refmap": {
+            "description": "--refmap=<value>; an empty string ignores the configured fetch refspecs.",
+            "type": "string"
+          },
+          "depth": {
+            "description": "Shallow-fetch depth.",
+            "minimum": 1,
+            "type": "number"
+          }
+        }
+      },
+      "approval": "per-input"
+    }
   ]
 }

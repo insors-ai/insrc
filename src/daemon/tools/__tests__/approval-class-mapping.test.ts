@@ -31,7 +31,8 @@ interface SnapshotTool {
 	destructive: boolean;
 	probes?: Array<{ input: Record<string, unknown>; asks: boolean }> | undefined;
 }
-const snapshot = (JSON.parse(readFileSync(join(HERE, 'fixtures', 'approval-snapshot.json'), 'utf8')) as { tools: SnapshotTool[] }).tools;
+const snapshotFile = JSON.parse(readFileSync(join(HERE, 'fixtures', 'approval-snapshot.json'), 'utf8')) as { tools: SnapshotTool[]; addedByS4?: { id: string; inputSchema: unknown; approval: string }[] };
+const snapshot = snapshotFile.tools;
 
 /** Former requiresApproval-true tools that Story s4 turned into per-input classes. */
 const PER_INPUT_SINCE_S4 = new Set(['git_reset', 'git_push', 'git_checkout']);
@@ -126,6 +127,16 @@ test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are regis
 		assert.ok(tool.outputSchema !== undefined, `${id} declares a typed result`);
 		assert.equal(snapshot.some(s => s.id === id), false, `${id} is new: it is not in the snapshot of the 228`);
 	}
+	// the ids and input schemas of the twelve are recorded beside the snapshot of the 228
+	const added = snapshotFile.addedByS4 ?? [];
+	assert.equal(added.length, 12);
+	for (const rec of added) {
+		const tool = live.get(rec.id);
+		assert.ok(tool, `${rec.id} is registered`);
+		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), rec.inputSchema, `${rec.id} input schema`);
+		assert.equal(typeof tool.approval === 'function' ? 'per-input' : tool.approval ?? 'none', rec.approval, `${rec.id} approval`);
+	}
+	assert.deepEqual(added.map(a => a.id).sort(), [...reads, 'git_symbolic_ref', 'git_fetch_refs'].sort());
 	const symbolic = live.get('git_symbolic_ref')!;
 	assert.deepEqual(['get', 'set', 'delete'].map(op => resolveApprovalClass(symbolic, { op })), ['none', 'common', 'destructive']);
 	const fetchRefs = live.get('git_fetch_refs')!;

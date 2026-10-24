@@ -180,3 +180,14 @@ Code review: round 1 warn (0 HIGH / 20 MED / 9 LOW, degraded); fixes in de209395
 LLD-b7a68147dcf72034-s1 (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S001/LLD.md): review round 1 block (4 HIGH: alias keys, shallow freeze, unguarded failure text, signal claim), all fixed in revision 2; round 2 warn (0 blocking). Approved by the user.
 
 Accepted refinements of sc1 (no amendment; the amendment tool is HLD-only): `ToolHookContext.caller` may be `undefined` (s3 made `ToolDeps.caller` optional); `ToolResultHookReport` is merged into `ToolResult` as the optional `hookFailures`; `TypedToolResult`'s success variant gains the same optional field (additive on s2's type); `runToolHooks(tool, input, result, deps)` is the executor-internal run point. Binding on the s1 plan and build: hooks are keyed by the canonical `tool.id`; each hook gets its own `structuredClone` of input and result; failure text is built inside its own guard; the hook stage has no cancellation bound.
+
+## s1 built and approved (2026-10-24): what s7 builds against
+
+s1 t1 to t5 built and gated; code review pass (0 findings, full grounding); BUILD approved. Facts for s7 and later Stories:
+
+- **`registerToolHook({ id, toolId, run })`** (`src/daemon/tools/hooks.ts`, exported from `src/daemon/tools/index.ts`) registers a rule under the tool's canonical id; call it from daemon start-up. It throws on a duplicate (`toolId` + `id`), an empty id, or an alias of an already registered tool. A tool registered later is fine.
+- **The rule's context** is `{ toolId, input, result, caller }`: per-rule `structuredClone` copies, `caller` can be `undefined`, no signal. A rule fails by throwing or rejecting.
+- **The report:** a failed rule leaves the call a success and adds `hookFailures` to the result, plus one `[hook failed] <id>: <message>` line at the end of `output`. `callTool` carries `hookFailures` on the success variant. No rule runs for a failed, denied, rejected or schema-mismatch call.
+- **No cancellation bound** on the stage; a rule that never settles holds the call.
+- `registerToolHook` is not yet called anywhere in production; s7 registers the tracker-status refresh and similar rules.
+- **Sweep:** s1 introduced no failures. 18 workflow tests and the daemon `build-start` T33 test started failing at `86fb49d2b` (the `fix(workflow)` build-bound code-review commits, outside this Story); the pre-existing failures are unchanged.

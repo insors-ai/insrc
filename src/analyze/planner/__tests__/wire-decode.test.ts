@@ -72,6 +72,14 @@ test('runPlanner sends a wire schema covering exactly its effective catalog, and
 	const { params, invariant } = firstAttempt(outcome);
 	assert.deepEqual(params, { scopeRef: { kind: 'repo', value: '/r' } }, 'decoded back to the object');
 	assert.notEqual(invariant, 'INV-5', 'INV-5 accepted it');
+	// A slot inside an array: the built-in adherence check's inline constraints, each item sent as JSON text.
+	const code = getTemplatesForTarget('code');
+	const adherence = code.find(t => t.id === 'code.adherence.check')!;
+	const items = [{ constraint: 'every handler logs through getLogger', file: 'CLAUDE.md' }, { constraint: 'no console.log' }];
+	const { outcome: inline } = await plan(code, wirePlan('code.adherence.check', { codeSubject: 'src/handlers', constraints: items.map(i => JSON.stringify(i)) }, [...(adherence.produces ?? [])]));
+	const a = firstAttempt(inline);
+	assert.deepEqual((a.params as { constraints: unknown }).constraints, items, 'each array item decoded back to its object');
+	assert.notEqual(a.invariant, 'INV-5', 'INV-5 accepted the decoded constraints');
 });
 
 test('supplied templates with no inputSchema, local references, a union with a string, and a draft-07 tuple round-trip as whole-params slots and pass INV-5 as today', async () => {

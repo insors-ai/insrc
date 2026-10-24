@@ -6,9 +6,9 @@ export interface ManagementEnablement {
 	readonly ready: boolean;
 	readonly digest: string;
 }
-export async function connectionManagementEnablement(): Promise<ManagementEnablement> {
+export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url)): Promise<ManagementEnablement> {
 	try {
-		const evidence = JSON.parse(await readFile(new URL('../../assets/connection-management-gates.json', import.meta.url), 'utf8')) as {
+		const evidence = JSON.parse(await readFile(evidenceUrl, 'utf8')) as {
 			version: number;
 			ready: boolean;
 			sourceFiles: Record<string, string>;
@@ -28,7 +28,7 @@ export async function connectionManagementEnablement(): Promise<ManagementEnable
 			if (createHash('sha256').update(await readFile(new URL('../../' + path, import.meta.url))).digest('hex') !== expected)
 				throw new Error();
 		}
-		return { ready: true, digest: createHash('sha256').update(canonicalRequestJson(evidence)).digest('hex') };
+		return { ready: true, digest: createHash('sha256').update(canonicalRequestJson({ version: evidence.version, sourceFiles: evidence.sourceFiles, compiledFiles: evidence.compiledFiles, inventoryDigest: evidence.inventoryDigest, scopes: [...evidence.scopes].sort() })).digest('hex') };
 	}
 	catch {
 		return { ready: false, digest: '0'.repeat(64) };

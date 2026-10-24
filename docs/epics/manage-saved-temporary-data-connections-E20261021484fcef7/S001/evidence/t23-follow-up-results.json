@@ -1,0 +1,278 @@
+{
+  "fullSweepReport": "t23-regression.json",
+  "reruns": {
+    "converter_schema_parity": {
+      "log": "/tmp/cm-parity-schema-fixed.log",
+      "sha256": "f50dc34f95b8b3c013539bf7d76ebbf09c7fc400971891f49a6a9dbabf5d2f83",
+      "counts": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "converter_resource_admission": {
+      "log": "/tmp/cm-t14-resources-final.log",
+      "sha256": "e347bacffbf35c8b177803f5bcc1074a74d67b2a7140ed35f8d47d375869c597",
+      "counts": {
+        "tests": 38,
+        "pass": 38,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "automatic_db_cleanup": {
+      "log": "/tmp/cm-t14-integrated-final.log",
+      "sha256": "263811c1c0644dc99e62724674d50fbbbecb852ecb7c4f0f87541f233d010e6a",
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "preabort_and_active_decoder_abort": {
+      "log": "/tmp/cm-t14-abort-final.log",
+      "sha256": "fe2000899797f07507b161b2b987ccaaa07c505b416ceaf01059a71827cdaa2c",
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "runtime_completeness_fixture": {
+      "log": "/tmp/cm-t23-runtime-fixture.log",
+      "sha256": "2bd70bbae4975db621321b265863eee000bc09d9e8956ec3b15eb0c4ecf10300",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "lease_fixture": {
+      "log": "/tmp/cm-t23-leases.log",
+      "sha256": "ac559ddf0cb998f46523908fddc5df886b321d44200522e889b0e3ec7e1677b3",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "maintenance_hardening": {
+      "log": "/tmp/cm-t22-final-hardening.log",
+      "sha256": "4e949d2ca169a7d2107989a988cc98f0a7b5b3c96410e710611e8b4f5c6fb45c",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "unrelated_file_tool_recheck": {
+      "log": "/tmp/cm-t23-unrelated-file-tools.log",
+      "sha256": "5034c90a806dc36f6e4e340e913d1cf9983ec39feec8b725d11213b816ea6666",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "schema_preflight_and_native_cleanup": {
+      "log": "/tmp/cm-t15-instrumented.log",
+      "sha256": "8455aff2975051535afce0b2fc5f3aa5e313472e4e40818757145feca536ac2f",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "actual_native_allocation_peak": {
+      "log": "/tmp/cm-inflate-peak-final.log",
+      "sha256": "139233590bb6d33883b4ca2d66023ec7cd0cfe5d93e2878233b6d56be250dd6d",
+      "counts": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "gate_manifest_integrity": {
+      "log": "/tmp/cm-t23-gates.log",
+      "sha256": "880aab11cf2695a9eb9c61b52301c70445588a581d60bb2f8cd362e08e5ea6a0",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "fake_keychain_activation": {
+      "log": "/tmp/cm-t22-fake-keychain-final.log",
+      "sha256": "466f8565ea46e986f5ee1db6fb709e2b883115307a02722ac95ff3b345294ac3",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "s001_critical_suite": {
+      "log": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence/t23-critical-suite.log",
+      "sha256": "1282f0eb71e1f82d729e84c60c9b41c5688fd812dee4e453d1af0a36b8954e36",
+      "counts": {
+        "tests": 157,
+        "pass": 157,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "isolated_filesystem_and_log_audit": {
+      "log": "/tmp/cm-t18-isolated-roots-fixed.log",
+      "sha256": "f7263b7982d5305fc4d7b1fb80620eb8c90633ad2e498008ab7518859f472b3b",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "xml_preparser_limits": {
+      "log": "/tmp/cm-t16-preparser-final.log",
+      "sha256": "2d5cffe648a7234784ca9139fc980afa793878c3061dfce5240e0c9038b4c114",
+      "counts": {}
+    },
+    "empty_all_null_parquet": {
+      "log": "/tmp/cm-t17-empty-schema-final.log",
+      "sha256": "10c280309abcf4d94303aada5048d16c9d87a35e90ebfeea27a1465a291158cf",
+      "counts": {}
+    },
+    "running_release_identity": {
+      "log": "/tmp/cm-runtime-release-identity.log",
+      "sha256": "c0dc054827c63317f46102cfe0bec34244ee10c17ddadc22069ff0b31ea74c99",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "api_secret_projection": {
+      "log": "/tmp/cm-t21-evidence.log",
+      "sha256": "c2f27c916e8fbb22ce83427352ddbec99ca446365ee7fdd8a2f7993f88a3b651",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "maintenance_exact_replay": {
+      "log": "/tmp/cm-t22-replay-evidence.log",
+      "sha256": "208e9f016b5acf47e5ccfb1e9e6160e456c1b084ebd790fe5da7b90fd013d328",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  },
+  "remainingFullSweepFindings": [
+    {
+      "area": "search-filter",
+      "status": "previously observed in t1 baseline; not changed by S001"
+    },
+    {
+      "area": "threads-boot shutdown",
+      "status": "previously observed in t1 baseline; not changed by S001"
+    },
+    {
+      "area": "file live-store refusal",
+      "status": "reproduces in isolated run; file-tool source unchanged from plan base"
+    },
+    {
+      "area": "worker-stores",
+      "status": "timed out while idle; not a passing run"
+    },
+    {
+      "area": "review-pipeline pipeline-job",
+      "status": "timed out while idle; this file also changed in a concurrent unrelated chat"
+    }
+  ],
+  "releaseReady": false,
+  "criticalFiles": [
+    "src/analyze/__tests__/connection-consumers.test.ts",
+    "src/analyze/__tests__/measurement-leases.test.ts",
+    "src/daemon/__tests__/connection-request-context.test.ts",
+    "src/daemon/db/__tests__/bounded-avro.test.ts",
+    "src/daemon/db/__tests__/bounded-converters.test.ts",
+    "src/daemon/db/__tests__/bounded-inflate.test.ts",
+    "src/daemon/db/__tests__/bounded-xlsx-archive.test.ts",
+    "src/daemon/db/__tests__/connection-leases.test.ts",
+    "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+    "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+    "src/daemon/db/__tests__/credential-generations.test.ts",
+    "src/daemon/db/__tests__/driver-field-audit.test.ts",
+    "src/daemon/db/__tests__/driver-profiles.test.ts",
+    "src/daemon/db/__tests__/duckdb-file-driver.test.ts",
+    "src/daemon/db/__tests__/file-execution.test.ts",
+    "src/daemon/db/__tests__/managed-store.test.ts",
+    "src/daemon/db/__tests__/management-adoption.test.ts",
+    "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+    "src/daemon/db/__tests__/management-tickets.test.ts",
+    "src/daemon/db/__tests__/owned-file-driver.test.ts",
+    "src/daemon/db/__tests__/saved-cache-identity.test.ts",
+    "src/daemon/db/__tests__/saved-management.test.ts",
+    "src/daemon/db/__tests__/saved-replay.test.ts",
+    "src/daemon/db/__tests__/typed-row-source.test.ts",
+    "src/daemon/db/__tests__/typed-xlsx.test.ts",
+    "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts",
+    "src/shared/__tests__/connection-management.test.ts"
+  ],
+  "criticalSuiteLimit": "Final 157-test connection-specific run passes after all task fixes; this does not replace or erase the recorded failed full sweep.",
+  "finalBuild": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "log": "/tmp/cm-s001-final-build.log",
+    "sha256": "4c5da931223772ce63b3fc91a782bbc47349c60e2de0b348ef275895fd4dcde9"
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "pid": 80434,
+    "parent": 11446,
+    "test": "src/daemon/threads/__tests__/worker-stores.test.ts",
+    "reason": "No progress; process idle after more than 10 minutes in full sweep",
+    "at": "2026-10-24T15:28:27.156683+00:00",
+    "signal": "SIGTERM"
+  },
+  {
+    "pid": 81230,
+    "parent": 11446,
+    "test": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+    "reason": "No progress; process idle after more than 10 minutes in full sweep",
+    "at": "2026-10-24T15:34:42.737835+00:00",
+    "signal": "SIGTERM"
+  }
+]

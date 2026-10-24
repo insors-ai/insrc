@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed backend scope covers S002's upstream acceptance obligations and preserves the allocation of client behavior to S005.",
-          "evidence": "DEF S002/ac1 requires merged-draft parity, no persistence, sanitized errors, duration and reachability-only reporting; ac2 requires stale-result protection, bounded execution and cleanup. The LLD designs backend support for each. HLD §6.5 explicitly assigns stale-test suppression and client presentation to S005. No new drivers or temporary-session store are proposed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
-          "action": "Retain the explicit S005 integration dependency when reporting end-to-end acceptance.",
+          "premise": "The design covers S002's upstream reachability, draft parity, sanitization, deadline and cancellation requirements while leaving client presentation to S005.",
+          "evidence": "HLD §5.4 defines correlation fields and reachability-only outcomes; its S002 acceptance mapping requires identical Test/Save materialization, no draft writes, a ten-second deadline and forced cleanup. LLD §§2–3 and §7 address these obligations. HLD §6.2 assigns S002 transient probe transport rather than session storage or manager UI. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md]",
+          "action": "Retain this scope; resolve the preparation-ordering and maintenance-lifetime findings below.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,21 +48,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Legacy connection tests currently construct drivers in-process, request memory-only file execution, await close, and expose raw nonfile exception messages.",
-          "evidence": "Read the complete testConnectionRpc and materializeTransientConfig implementations. The factory executes directly in the daemon; file policy specifies 'memory-only'; finally awaits driver.close() but swallows close errors. The nonfile failure branch returns '(err as Error).message'. Success is selected immediately after factory construction. [files: src/daemon/db-rpc.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
-          "action": "Preserve the successful legacy projection while replacing these execution and failure semantics.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Lazy factory construction, logger import side effects and absent unary cancellation are real current implementation gaps.",
-          "evidence": "MysqlDriver constructs createPool without an awaited query; RedisDriver uses 'lazyConnect: true'. logger.ts executes 'mkdirSync(PATHS.logDir, { recursive: true })' at module scope. TrustedRpcContext has only identity and epoch; directDispatch's unary branch returns '() => {}'. These support the proposed explicit probes, logger bootstrap and optional signal changes. [files: src/daemon/db/drivers/mysql.ts, src/daemon/db/drivers/redis.ts, src/shared/logger.ts, src/daemon/request-context.ts, src/daemon/server.ts]",
-          "action": "Keep explicit negative probe and fresh-process bootstrap tests.",
+          "premise": "Current connection tests run factories in-process without proving reachability, expose nonfile exception messages, and encounter logger import side effects.",
+          "evidence": "testConnectionRpc awaits factory(transient, ...) and immediately returns 'ok: true'; its finally block awaits close, swallowing close errors. Nonfile failures return '(err as Error).message'. Redis construction uses 'lazyConnect: true'; MysqlDriver only constructs createPool. logger.ts executes 'mkdirSync(PATHS.logDir, { recursive: true })' at module scope, and paths.ts fixes that directory under /tmp. [files: src/daemon/db-rpc.ts, src/daemon/db/drivers/redis.ts, src/daemon/db/drivers/mysql.ts, src/shared/logger.ts, src/shared/paths.ts]",
+          "action": "Preserve the proposed explicit awaited probes and worker logger bootstrap requirements.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -71,10 +59,22 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Calling current() before checking existence and expectedRevision permits not-found/conflict rejection before reading secrets.",
+          "evidence": "LLD §3.6 orders current() before snapshot existence/revision checks, while §2.1 promises 'not-found/conflict fail before secrets/spawn'. SavedConnectionManagement.current() first executes 'await this.ports.enabled()'. The production enabled callback in management-startup.ts calls tickets.assertAvailable() and loops over every saved connection's references, executing 'await keystore.getKey(ref)'. Consequently stale or missing targets can read credentials, including unrelated connections' credentials, before the proposed revision rejection. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/management.ts, src/daemon/db/management-startup.ts]",
+          "action": "Define a metadata-only admission path that checks the selected snapshot's existence/revision before credential-bearing readiness checks. Then perform the required owner-scoped credential validation under the root gate. Add coverage using the production readiness callback rather than only an always-true fixture.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "Shared draft materialization and owned memory-only file execution exist with the stated reusable boundaries.",
-          "evidence": "materializeDraft accepts current config/revision, credential actions and a readSecret-only port; SavedConnectionManagement.apply already uses it. MemoryFileExecution owns native/converted loading and close. createPrivateDuckDB disables spill, automatic extension installation and logging. DuckDBFileDriver.readerPath performs lazy loading, so adding an awaited test-specific operation is necessary. Repository search found no existing DraftProbe, probeReachability or prepareDraft implementation. The analyzer returned incomplete relationships, so these conclusions were checked against source bodies. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/duckdb-pool.ts, src/daemon/db/drivers/duckdb-file.ts]",
-          "action": "Reuse these boundaries and retain the explicit probe requirement.",
+          "premise": "S001 already supplies the memory-only file execution foundation that S002 proposes to reuse.",
+          "evidence": "fileExecutionPolicy exposes persistence, ownership identity, memory budget and allowSpill:false. DuckDB file factories accept DriverFactoryContext, select MemoryFileExecution for memory-only policy, and readerPath lazily loads native or converted sources. close awaits execution.close(). Existing owned-file-driver tests exercise owned-resource disposal and bypass of persistent BSON/XLSX conversion. [files: src/daemon/db/file-policy.ts, src/daemon/db/file-execution.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
+          "action": "Implement the probe through these existing paths without adding a separate converter or cache policy.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -83,12 +83,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Returning materializeDraft's effective config directly is sufficient preparation for the v2 worker factory.",
-          "evidence": "The proposed prepareDraft stops after materializeDraft, which preserves path strings without repo-relative runtime resolution. Actual activation separately calls 'resolveConfigPath(withSecrets, this.repoPath)'; that function resolves and checks file/SQLite paths and schemaSource.path. Legacy materializeTransientConfig likewise resolves file paths. DuckDBFileDriver's factory directly calls 'existsSync(config.path)', and SQLite directly opens the supplied filename. As designed, a valid relative draft can probe the daemon's working directory, fail incorrectly, or read a different file; root containment is also omitted from this v2 path. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/pool.ts, src/daemon/db-rpc.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/drivers/sqlite.ts]",
-          "action": "Specify a readonly runtime-path preparation boundary before worker construction, using the same registered-kind path rules as activation. Include it in the change inventory and test relative paths from another working directory, SQLite, outside-root paths and pinned-family records.",
+          "severity": "LOW",
+          "premise": "The identified transport and adapter sites are the actual boundaries required to propagate unary cancellation.",
+          "evidence": "TrustedRpcContext currently contains only connectionIdentity and daemonEpoch. directDispatch passes that context to unary handlers and returns a no-op cancellation callback. handler-runtime's db.testConnection adapter currently omits context. The v2 method catalog and method-class table currently omit test/cancelTest. Router routes non-worker classes locally through holdingForward. [files: src/daemon/request-context.ts, src/daemon/server.ts, src/daemon/handler-runtime.ts, src/daemon/connection-management-rpc.ts, src/daemon/threads/method-class.ts, src/daemon/threads/router.ts]",
+          "action": "Apply the additive context, adapter and method-inventory changes described in §3.5.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.2",
@@ -96,47 +96,23 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "HIGH",
-          "premise": "Unary abort can suppress directDispatch delivery without changing the surrounding request-lifetime wrappers.",
-          "evidence": "holdingForward resolves its request hold on a delivered reply; its cancel path explicitly releases only when 'request.stream'. Router.forward similarly calls ended() on replies and only calls it during cancellation for streams. Suppressing unary completion delivery inside directDispatch therefore prevents both wrappers from observing completion after disconnect, leaking the maintenance request hold and activity bookkeeping. Neither wrapper is included in the LLD's transport change sites. [files: src/daemon/server.ts, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/router.ts, src/daemon/index.ts]",
-          "action": "Separate internal handler completion from socket response delivery. Update maintenance-entry.ts and router.ts so canceled unary operations finish bookkeeping exactly once without delivering a late socket response. Add disconnect tests with maintenance locking and router activity tracking enabled.",
+          "premise": "Returning a timeout reply while preparation/reaping continues preserves maintenance exclusion until the actual operation finishes.",
+          "evidence": "LLD §2.2 permits timeout/canceled results at ten seconds while a reaper retains capacity; §6 likewise settles timeout while preparation remains pending. But §3.5 releases the unary maintenance hold on the internal reply. Existing holdingForward explicitly resolves its hold when 'envelope.kind === reply', and Router also ends request activity on that reply. Keeping a supervisor capacity slot does not retain either hold or activity. The design specifies no separate lifetime mechanism for work continuing after the response. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/router.ts, src/shared/locks/maintenance-lock.ts, src/daemon/server.ts]",
+          "action": "Specify separate response and drain lifetimes, with maintenance ownership retained through outstanding preparation and relevant cleanup after the terminal client reply. Add a real-lock test that attempts maintenance after timeout while preparation is deliberately still pending.",
           "fixability": "manual",
           "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design adequately documents the new operation, transport, child and resource ownership relationships.",
-          "evidence": "PendingProbe specifies transport-to-operation 0..1, operation-to-child 0..1, child ownership of one disposable driver, bounded reaping and capacity retention through close. Compatibility and the future readonly S003 resolver are described. The linked sequence source identifies client, supervisor and child and includes private IPC and cancellation escalation. This is adequate relationship documentation without an additional ERD. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
-          "action": "When regenerating the companion, make the explicit probe and successful-exit gate visible to match the detailed prose.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.4",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The linked sequence companion renders correctly and visually agrees with the design.",
-          "evidence": "Inspected the generated HTML and extracted Mermaid sequence source, including its rendering initialization. Attempted to open it through computer-use browser tooling; the in-app browser was unavailable and browser inventory was empty. Actual rendering, clipping and visual consistency could not be verified. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
-          "action": "Render the existing companion and inspect the result before claiming visual verification; correct or regenerate any rendering defect.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
         },
         {
           "claimId": "data-compatibility.1",
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A credential-free inherited worker environment preserves existing DynamoDB authentication behavior using effective ConnectionConfig alone.",
-          "evidence": "DynamoDriver constructs DynamoDBClient with region, optional fromIni(profile), and endpoint; without an explicit profile it uses the SDK default credential chain. The installed chain calls 'fromEnv(init)()', whose implementation reads 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY' and 'AWS_SESSION_TOKEN'. The driver profile exposes no corresponding credential slots, and materializeDraft does not capture this runtime identity. Removing inherited credentials without an IPC replacement makes an existing environment-authenticated saved connection fail testing or select a different fallback identity. [files: src/daemon/db/drivers/dynamodb.ts, src/daemon/db/driver-profiles.ts, node_modules/@aws-sdk/credential-provider-node/dist-cjs/index.js, node_modules/@aws-sdk/credential-provider-env/dist-cjs/index.js]",
-          "action": "Design explicit authentication preparation for DynamoDB that preserves the activation identity while keeping secrets out of argv/environment. Specify any worker-local adapter or private IPC credential shape and test environment-only credentials, session tokens and profile selection.",
+          "severity": "LOW",
+          "premise": "The proposed draft snapshot and runtime-path preparation can remain transient while preserving saved records and legacy success projections.",
+          "evidence": "EffectiveDraft already contains config and credentialActions. materializeDraft merges a copied current config and preserves its family. Pool resolveConfigPath returns copied configs with absolute path/schemaSource values rather than persisting them. SQLite pathOf gives config.path precedence over URL. Legacy TestConnectionResult contains ok, kind, family, optional error and tookMs, matching the fields the adapter promises to preserve. [files: src/shared/connection-management.ts, src/daemon/db/driver-profiles.ts, src/daemon/db/pool.ts, src/daemon/db/drivers/sqlite.ts, src/daemon/db-rpc.ts]",
+          "action": "Keep the planned byte-equality, pinned-family and activation/probe path-parity regression tests.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.2",
@@ -144,9 +120,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The additive sc4 contract and request-local test state require no persisted connection-data rewrite and can preserve legacy successful response fields.",
-          "evidence": "Existing stored management metadata contains revisions and receipts; the proposed test records add neither. TestConnectionResult already consists of ok, kind, family, optional error and tookMs, matching the compatibility projection described. The checked release evidence currently has 'ready: false', consistent with retaining disabled foundation gates. [files: src/shared/connection-management.ts, src/daemon/db-rpc.ts, src/assets/connection-management-gates.json, src/daemon/db/management-enablement.ts]",
-          "action": "Keep tests out of persistence and preserve the legacy successful projection during supervisor adaptation.",
+          "premise": "The DynamoDB identity snapshot accounts for the existing explicit-profile versus default-chain authentication distinction.",
+          "evidence": "DynamoDriver currently supplies 'credentials: fromIni({ profile })' when a profile is specified and otherwise leaves credentials to DynamoDBClient's default resolution. The installed credential-providers package exports fromNodeProviderChain. Resolving the corresponding identity in the parent and supplying it privately avoids relying on the stripped worker environment. [files: src/daemon/db/drivers/dynamodb.ts, node_modules/@aws-sdk/credential-providers/dist-types/index.d.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md]",
+          "action": "Retain the activation/probe signing-boundary comparisons and rejection of missing worker runtimeAuth.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,11 +132,23 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed ownership split respects the HLD's shared contracts and adjacent Story boundaries.",
-          "evidence": "HLD sc4 assigns transient testing to S002; sc8 assigns conversion and private DuckDB lifecycle to S001; sc5 assigns temporary storage to S003; sc7 assigns client state to S005. The LLD consumes existing file policy and materialization, adds an internal probe interface without changing BaseDriver/factory signatures, and defers session storage and UI implementation. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/shared/db-driver.ts, src/shared/connection-management.ts]",
-          "action": "Address the identified runtime preparation and authentication gaps through explicit additive boundaries, retaining the stated ownership split.",
+          "premise": "The proposed ownership relationships are sufficiently documented without a separate ERD, and session/UI/conversion responsibilities remain with their HLD owners.",
+          "evidence": "HLD assigns sc4 to S002, sc5 to S003, sc7 to S005 and sc8 to S001. LLD §3.2 documents transport→0..1 pending operation, operation→0..1 child, child→1 disposable driver and driver→0..1 private resource, including ownership and cleanup. It uses an injected temporary snapshot resolver and existing file execution policy rather than implementing the adjacent stores or converters. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "Retain the ownership prose. When updating the sequence companion, explicitly show awaited reachability and the DynamoDB private-auth exception to make the critical flow clearer.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders correctly and visually matches the design.",
+          "evidence": "Read the generated HTML and extracted its Mermaid source: it contains client, supervisor and child participants, deadline/materialization, private IPC, exit and cancellation messages. Browser rendering was attempted, but the in-app browser was unavailable and the browser inventory was empty. SVG generation, clipping and visual consistency could not be checked. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "Have the author render and inspect the existing companion, correcting or regenerating it if needed.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.1",
@@ -168,9 +156,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design states detectable, bounded handling for preparation stalls, child failures, cancellation and cleanup failure.",
-          "evidence": "The LLD starts the deadline before asynchronous preparation, forbids late spawning, retains capacity while preparation/reaping remains outstanding, validates child correlation and withholds reachable until cleanup and exit. It explicitly handles malformed IPC, crashes, hanging close and forced termination. Existing ProfileError/managementRejection and file execution errors provide concrete admission and resource-error projection boundaries. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/duckdb-pool.ts]",
-          "action": "Retain these failure rules and incorporate the request-wrapper completion correction identified under change-sites.",
+          "premise": "The design states detection and safe responses for admission errors, worker faults, malformed IPC, cancellation and unsupported memory-only execution.",
+          "evidence": "LLD §§2 and 6 specify strict parsing, owned revision checks, nonce/message validation, spawn/exit/disconnect detection, first-terminal-wins handling and fixed public messages. Existing managementRejection already projects recognized management errors through fixed ManagementServiceError messages. File execution already uses resource-limit/unsupported-temporary failures. The lifetime and credential-ordering exceptions are reported separately above. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/drivers/duckdb-file.ts]",
+          "action": "Preserve fixed projections across legacy and v2 routes; include unknown worker codes and close failures in the planned negative tests.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -180,21 +168,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each upstream S002 acceptance criterion maps to a meaningful proposed test group.",
-          "evidence": "Compared DEF S002/ac1 and ac2 with the LLD mapping. CM-S2-A covers draft parity, safe results and zero writes; contract tests cover legacy/v2 routing and gates; CM-S2-B covers stale identities, deadlines, cancellation and reaping. CM-S2-D adds actual lazy-driver failures, logger bootstrap, readonly acquisition and transport lifetime. Existing owned-file-driver tests provide relevant memory-policy and cleanup regression fixtures. This verifies planned coverage, not execution or passing results. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/daemon/db/__tests__/owned-file-driver.test.ts, src/daemon/db/__tests__/connection-management-rpc.test.ts, src/daemon/__tests__/connection-request-context.test.ts]",
-          "action": "Add focused regression cases for repo-relative runtime paths, canceled-unary maintenance bookkeeping and DynamoDB credential-source parity to prove the corrections above.",
+          "premise": "Both upstream S002 acceptance criteria map to concrete planned tests.",
+          "evidence": "HLD S002/ac1 maps to draft parity, reachability, sanitization, duration and zero writes; LLD maps these to CM-S2-A and route/capability contract tests. HLD S002/ac2 maps to stale replies, repeated clicks, deadlines and forced cleanup; LLD CM-S2-B covers these with deterministic races and actual children. Existing owned-file and management-RPC suites provide relevant fixtures and compatibility baselines. This verifies planned coverage, not implementation or passing results. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/__tests__/owned-file-driver.test.ts, src/daemon/db/__tests__/connection-management-rpc.test.ts]",
+          "action": "Add the production-readiness ordering and post-timeout maintenance-exclusion regressions required by the findings above. Remove the superseded cancellation wording from CM-S2-D to keep test instructions unambiguous.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 3,
+        "high": 2,
         "med": 0,
         "low": 10,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-24T18:57:47.708Z",
+      "reviewedAt": "2026-10-24T19:11:36.354Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -481,7 +469,7 @@
       {
         "entity": "PendingProbe",
         "change": "new",
-        "details": "Daemon transport identity -> 0..1 pending operation; operation ->0..1 owned child, plus bounded reaping state. operation owns timer, IPC nonce, abort cleanup and ephemeral effective config. Child ->exactly1 disposable driver ->0..1 private file resource. No parent pool registration. Future S003 only supplies readonly snapshot callback. Proposed new supervisor src/daemon/db/draft-test.ts and isolated entry src/bin/insrc-connection-test.ts; private messages validate config and return fixed codes only. Fork inherits no credentials or INSRC logging configuration: minimal platform/runtime environment, ignored stdio and silent worker logger initialized before driver imports; no argv/env config, runfiles, shell, keychain/registry/graph imports or IPC daemon access. Worker uses imported factory and sc8 memory-only policy. Source/compiled entry resolution tested; startup crash and broken IPC safely fail. File factories disable persistent DuckDB install/cache/spill per sc8. Construction alone is insufficient. Await the explicit registered-kind probeReachability operation described below; never return schema completeness.",
+        "details": "Daemon transport identity -> 0..1 pending operation; operation ->0..1 owned child, plus bounded reaping state. operation owns timer, IPC nonce, abort cleanup and ephemeral effective config. Child ->exactly1 disposable driver ->0..1 private file resource. No parent pool registration. Future S003 only supplies readonly snapshot callback. Proposed new supervisor src/daemon/db/draft-test.ts and isolated entry src/bin/insrc-connection-test.ts; private messages validate config and return fixed codes only. Fork inherits no credentials or INSRC logging configuration: minimal platform/runtime environment, ignored stdio and silent worker logger initialized before driver imports; no argv/env config, runfiles, shell, keychain/registry/graph imports or IPC daemon access. Worker uses imported factory and sc8 memory-only policy. Source/compiled entry resolution tested; startup crash and broken IPC safely fail. File factories disable persistent DuckDB install/cache/spill per sc8. Construction alone is insufficient. Await the explicit registered-kind probeReachability operation described below; never return schema completeness. DynamoDB is an explicit exception to config-only IPC: parent-prepared runtimeAuth travels only in private worker start message as detailed below; worker still inherits no credential environment.",
         "callSites": [
           "src/daemon/db-rpc.ts",
           "src/daemon/db/file-execution.ts",
@@ -508,7 +496,7 @@
       {
         "entity": "Unary transport lifetime",
         "change": "field-add",
-        "details": "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates a per-unary-request AbortController, merges signal with existing trusted identity/epoch, returns abort callback and suppresses response delivery after abort. Socket close calls registered cancel as today. Other unary handlers may ignore optional signal unchanged. src/daemon/handler-runtime.ts must pass trusted context to legacy testConnectionRpc via additive optional second parameter; v2 adapter forwards signal to supervisor. src/daemon/threads/method-class.ts classifies test/cancel/legacy db.testConnection in main daemon, never serializes signal into worker threads. Supervisor shutdown hook in src/daemon/index.ts stops admission, aborts all owned operations, sends child cancel and escalates after250ms, awaiting owned close before daemon teardown; no unrelated PIDs signaled. Real IPC disconnect tests prove child exits and no late reply; legacy and v2 share owner/capacity.",
+        "details": "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates per-unary-request AbortController and passes the signal with trusted identity/epoch; returns abort callback. IMPORTANT: cancellation MUST NOT suppress internal completion delivery. After unary handler settles directDispatch emits exactly one internal reply (fixed failure projection when needed), even if signal aborted; IpcServer alone discards socket delivery on closed/canceled request using its existing settled/socket guard. This supersedes the earlier instruction to suppress directDispatch delivery. Thus wrappers can observe handler completion after disconnect. src/daemon/threads/maintenance-entry.ts holdingForward keeps the unary maintenance hold until internal reply (not cancel), uses idempotent release, drops only external delivery after cancellation, and handles cancel-before-admission without starting handler. src/daemon/threads/router.ts uses once-only ended callback for unary reply/error, not unary cancel; preserves internal completion delivery to maintenance wrapper while suppressing client writes at outer server. Keep existing stream cancellation behavior unchanged and once-only. Pending routed unary handlers not owned by this story retain current completion semantics; test/cancel/legacy methods are classified main-daemon in src/daemon/threads/method-class.ts. src/daemon/handler-runtime.ts forwards trusted context to optional second testConnectionRpc parameter and v2 supervisor, never serializes AbortSignal into worker threads. A handler ignoring optional signal still emits completion and cannot strand holds/activity. src/daemon/index.ts stops supervisor admission and drains owned child/preparation work during shutdown; child grace250ms then SIGKILL only owned PIDs. Tests use real IPC disconnect with maintenance locking and router onRequest activity enabled: cancel during preparation/init/close, completion after disconnect, error, unknown method, and pre-admission cancel must return counters/holds exactly once to baseline; no socket late reply and no early maintenance admission while actual handler work is running. Supervisor response terminal state and reaper capacity remain distinct; parent-owned cleanup continues tracked after timeout, without suppressing internal reply or leaking request bookkeeping. Completion/hold release here is subject to the separate RequestLifetime drain protocol below: an internal reply alone MUST NOT release maintenance or activity when registered work remains.",
         "callSites": [
           "src/daemon/handler-runtime.ts",
           "src/daemon/connection-management-rpc.ts",
@@ -518,10 +506,52 @@
       {
         "entity": "Saved owner readonly prepareDraft boundary",
         "change": "new",
-        "details": "Add SavedConnectionManagement.prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest, 'key' | 'expectedRevision' | 'publicPatch' | 'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> in src/daemon/db/management.ts. Under existing per-root serialized gate validate context/root, enabled/registration/recovery state through current(), snapshot config and revision, infer create/update, enforce existence/expectedRevision, then call shared materializeDraft with readonly owned reference reader. Never list(), apply(), pool.reload(), mutate(), stage/activate, tickets or receipts. Owner-aware reader only accepts refs enumerated from selected snapshot after revision checks; create cannot resolve arbitrary supplied refs. Hold gate through readonly credential materialization so concurrent mutation/cleanup cannot delete Keep generation while it is read; release immediately after immutable plaintext snapshot built, not for network test. Check signal after every await and before returns; hanging preparation retains bounded supervisor slot and queued aborted gate callback must not read secrets/spawn when eventually admitted. No late spawn after deadline. No raw snapshot returned to client or child beyond effective config. Tests snapshot exact registry/keychain and spy zero pool reload/staging/writers; concurrent saved update/delete cannot race Keep acquisition. Future temporary resolver uses equivalent readonly owner contract, no S003 store implementation.",
+        "details": "Add SavedConnectionManagement.prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest, 'key' | 'expectedRevision' | 'publicPatch' | 'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> in src/daemon/db/management.ts. Under existing per-root serialized gate validate context/root, metadata-only owner/registration/recovery state through probeMetadataReady() (NOT current() or enabled()), snapshot config and revision, infer create/update, enforce existence/expectedRevision, then call shared materializeDraft with readonly owned reference reader. Never list(), apply(), pool.reload(), mutate(), stage/activate, tickets or receipts. Owner-aware reader only accepts refs enumerated from selected snapshot after revision checks; create cannot resolve arbitrary supplied refs. Hold gate through readonly credential materialization so concurrent mutation/cleanup cannot delete Keep generation while it is read; release immediately after immutable plaintext snapshot built, not for network test. Check signal after every await and before returns; hanging preparation retains bounded supervisor slot and queued aborted gate callback must not read secrets/spawn when eventually admitted. No late spawn after deadline. No raw snapshot returned to client or child beyond effective config. Tests snapshot exact registry/keychain and spy zero pool reload/staging/writers; concurrent saved update/delete cannot race Keep acquisition. Future temporary resolver uses equivalent readonly owner contract, no S003 store implementation. After shared materializeDraft, call prepareRuntimeConfig before handing config to worker; S002 supervisor resolves Dynamo runtime identity separately via readonly daemon helper, never persisted in effective config.",
         "callSites": [
           "src/daemon/db/driver-profiles.ts",
           "src/daemon/connection-management-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Runtime path preparation shared with activation",
+        "change": "new",
+        "details": "Extract resolveConfigPath and resolveAndCheckRepoPath from src/daemon/db/pool.ts into proposed src/daemon/db/runtime-config.ts as side-effect-free exported prepareRuntimeConfig(config: ConnectionConfig, canonicalRoot: string, signal?: AbortSignal): Promise<ConnectionConfig>. Both pool activation and S002 prepareDraft/legacy preparation call it after materializeDraft and before factory/IPC. Select path policy by registered kind/familyOf(kind), never pinned family. Preserve existing lexical repo-root containment and readable-path checks and schemaSource.path resolution; never cwd-relative resolution. File paths become absolute. Normalize SQLite effective path using existing path-over-url precedence from sqlite.ts: accept path, plain URL path or decoded local file URL, reject remote file URL authorities and non-file schemes; resolve relative path against canonical root, check containment/readability, put result in config.path so factory opens that exact readonly path. Never create a missing SQLite file or write normalized runtime paths back to saved JSON. Existing file/schemaSource paths follow same shared helper for activation, legacy and v2; source URI and pinned-family regression fixtures prevent divergence. Before any filesystem await validate signal; after await check again and no late IPC on timeout. Shared helper extracts existing behavior, with explicit SQLite URL normalization correction applied equally to activation and tests rather than a probe-only interpretation. No cache/converter redesign. Test daemon cwd different from repository with a decoy same-name file, relative/absolute in-root file and SQLite paths and file URLs, outside-root ../ and absolute inputs, schemaSource.path, missing/unreadable files, percent encoding and pinned family conflicts. Assert selected absolute file and contents match actual activation, and saved bytes unchanged. No implicit permission widening or acceptance of out-of-root paths.",
+        "callSites": [
+          "src/daemon/db/pool.ts",
+          "src/daemon/db-rpc.ts",
+          "src/daemon/db/driver-profiles.ts",
+          "src/daemon/db/drivers/sqlite.ts"
+        ]
+      },
+      {
+        "entity": "DynamoDB authentication snapshot for private worker IPC",
+        "change": "new",
+        "details": "Activation and probes share a readonly resolveDynamoIdentity(config, signal) helper in proposed src/daemon/db/dynamo-identity.ts; src/daemon/db/drivers/dynamodb.ts uses the same provider selection. Explicit options.profile uses fromIni({profile}) exactly as activation today; otherwise use installed fromNodeProviderChain() with daemon process credential environment/default-chain context. Resolve once in parent during bounded preparation, preserving accessKeyId, secretAccessKey, optional sessionToken and expiration; never fall back to another identity after a selected provider fails, and never ask stripped worker environment/profile files to resolve credentials again. The same helper builds activation credentials provider so provider selection is single-sourced without storing credentials in ConnectionConfig or changing profile slots. Private WorkerStart carries optional runtimeAuth:{type:'aws-v1',accessKeyId:string,secretAccessKey:string,sessionToken?:string,expiration?:string} only for dynamodb; validate exact fields, nonempty strings/size/ISO expiration at both ends. Do not place this field on public DraftTestRequest, config/options, artifact, log, environment or command line; reject any client runtimeAuth field. In child construct DynamoDriver through explicit internal factory overload/options carrying supplied static credential identity to DynamoDBClient({credentials:...}); never registry mutation or global credentials override, no fromIni/default chain in worker. Clear parent snapshot refs after send/cancel and child refs on close. Bound provider waiting by same10s parent deadline; a late provider resolution is dropped and cannot fork/send; keep preparation slots bounded until provider drains. Existing provider process/file reads belong to parent identity resolution, not worker; no draft/config/keychain writes, SDK caches must not be introduced. Avoid new arbitrary subprocess invocation, selection exactly matches existing activated provider. Readonly current AWS profile/SSO chain resolution may fail safely (expired/interactive auth required) but never silently substitute another principal. Test environment-only keys plus session token, explicitly selected profile despite env credentials, default chain selected profile, absent/expired credentials, assumed-role/session expiration, provider rejection/deadline and malformed worker auth. Compare identity at fake signed request boundary with activation under same resolver; actual local DynamoDB HTTP fixture checks signing access key and session token without sending credentials externally. Snapshot worker environment/argv/log/files for canaries; explicit runtimeAuth missing in Dynamo worker fails rather than invoking a credential fallback.",
+        "callSites": [
+          "src/daemon/db/drivers/dynamodb.ts",
+          "src/daemon/db/driver-profiles.ts",
+          "src/daemon/db-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Metadata-only draft admission before credential readiness",
+        "change": "new",
+        "details": "This supersedes prepareDraft's earlier instruction to call current() first. Do NOT call current(), enabled(), service.list(), pool reload, tickets.assertAvailable or generations.assertReady before selected existence/revision admission: production enabled reads every connection credential. Refactor src/daemon/db/management-startup.ts to expose a NEW internal probeMetadataReady():Promise<RegistrySnapshot> callback in SavedManagementPorts, alongside unchanged enabled() for existing mutation/list behavior. probeMetadataReady checks owner lease, protected currentStore.inspect(), already-authenticated state's current() inode/digest, parent mode/inode, signed checkpoint committed anchor, running release fingerprint and canonical registration only; all are metadata reads and cached authenticated state, no signing-key or credential getKey, no recover/reconcile. At startup full enabled validation remains unchanged before service installation. prepareDraft under per-root gate validates trusted context, obtains probeMetadataReady snapshot, parses/enforces registry envelope metadata with the shared metadata validator extracted from current() without calling enabled, and selects requested ID/revision. If missing/stale/duplicate return existing sanitized code before ANY keychain call. After admission, recheck abort, validate signing authority availability if required, selected profile and generation ownership, then materialize only selected config with owned-reference reader. Never scan unrelated connection credentials in this probe-only path. Failure in metadata fence returns recovery-required/upgrade-required before secrets; missing signing key after valid admission still fails. Immutable selected snapshot held under same root gate through readonly selected credential read, runtime paths and completion; no mutation, no generation cleanup. This is an internal adapter implementing consumed sc1/sc2/sc3, not a change to public wire or weakened mutation readiness. Test through openManagedRoot's actual production callback with injected fake keystore, not always-true service fixture: reset keychain counters AFTER startup, then missing/stale/duplicate draft must issue zero getKey calls (including signing keys), zero stages/writes/spawn, while valid target reads only signing key plus selected owned credentials, never unrelated credential canary; missing key and registry/owner drift remain refused. Name management-startup.ts and management.ts explicitly as change sites.",
+        "callSites": [
+          "src/daemon/db/management-startup.ts",
+          "src/daemon/db/management.ts"
+        ]
+      },
+      {
+        "entity": "Separate unary response and operation-drain lifetimes",
+        "change": "new",
+        "details": "Introduce internal RequestLifetime in src/daemon/request-context.ts, created server-side in src/daemon/server.ts BEFORE forwarding unary request. API registerDrain(work:Promise<void>):void, seal():void, drained:Promise<void>; registerDrain accepts only before seal, uses all-settled work completion, never settles drained until sealed AND every registered work item settled. Expose only registerDrain on TrustedRpcContext, lifetime owned by internal RequestEnvelope; none is deserialized from client params or serialized to worker-thread wire. draft-test supervisor synchronously registers its whole operation-drain promise before first await; drain encompasses root-gate queue, pending root/keychain/AWS preparation, asynchronous spawn, child close/reap, and all cleanup/listener/timer releases, including work continuing after timeout result. Terminal response promise settles at deadline independently. directDispatch seals request lifetime in its unary handler finally and still delivers exactly one INTERNAL reply after result settles; IpcServer drops only external canceled socket delivery. holdingForward in src/daemon/threads/maintenance-entry.ts resolves its held callback only when (reply delivered internally OR pre-admission canceled) AND request.lifetime.drained settles; keep hold through timed-out hanging preparation and through reaping. No early release on cancel or reply for work registered in lifetime. Router in src/daemon/threads/router.ts similarly calls once-only ended() after internal unary reply AND drained; no late socket write. For unrelated unary handlers with zero registered work drained resolves immediately at seal, preserving previous behavior. All relevant test methods remain main-daemon classified; on remote unary routes lacking a local lifetime use existing reply completion, do not serialize promises/functions. Ensure wrappers propagate the SAME lifetime object, including holdingForward's queued entry; if cancellation before forward admission, seal empty lifetime and release once. If synchronous handler throws, seal and internal reply; if supervisor preparation never settles, terminal client timeout still returned but slot/maintenance hold/activity remain truthfully held until drain; never fabricate cleanup. This intentionally prevents compaction/restart from racing unresolved store access and caps leaks to four admitted operations. Shutdown cancels operations, reaps children and waits registered drains; a still-unresolved noncancelable preparation is reported pending rather than releasing live resource ownership. Real-lock integration test: install production server/router/holdingForward with maintenance lock enabled, hold fake credential preparation deferred, reach real or injected deadline and receive timeout, attempt exclusive maintenance and assert denied while pending; repeat after socket disconnect and while child ignores cancel; settle preparation/reap then assert exclusive maintenance admitted and activity/holds/listeners zero exactly once. Register-before-await, rejection, queued-cancel, reply/cancel race and ignored AbortSignal coverage mandatory.",
+        "callSites": [
+          "src/daemon/request-context.ts",
+          "src/daemon/server.ts",
+          "src/daemon/threads/maintenance-entry.ts",
+          "src/daemon/threads/router.ts",
+          "src/shared/locks/maintenance-lock.ts"
         ]
       }
     ],
@@ -685,6 +715,29 @@
           ],
           "fixturesNeeded": [
             "Actual lazy driver failure fixtures; compiled fresh worker; real IPC disconnect; fake keychain and pool/writer spies"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-E: resolve new-cycle runtime path, cancellation bookkeeping and Dynamo identity blockers.",
+          "subjects": [
+            "Extract resolveConfigPath and resolveAndCheckRepoPath from src/daemon/db/pool.ts into proposed src/daemon/db/runtime-config.ts as side-effect-free exported prepareRuntimeConfig(config: ConnectionConfig, canonicalRoot: string, signal?: AbortSignal): Promise<ConnectionConfig>. Both pool activation and S002 prepareDraft/legacy preparation call it after materializeDraft and before factory/IPC. Select path policy by registered kind/familyOf(kind), never pinned family. Preserve existing lexical repo-root containment and readable-path checks and schemaSource.path resolution; never cwd-relative resolution. File paths become absolute. Normalize SQLite effective path using existing path-over-url precedence from sqlite.ts: accept path, plain URL path or decoded local file URL, reject remote file URL authorities and non-file schemes; resolve relative path against canonical root, check containment/readability, put result in config.path so factory opens that exact readonly path. Never create a missing SQLite file or write normalized runtime paths back to saved JSON. Existing file/schemaSource paths follow same shared helper for activation, legacy and v2; source URI and pinned-family regression fixtures prevent divergence. Before any filesystem await validate signal; after await check again and no late IPC on timeout. Shared helper extracts existing behavior, with explicit SQLite URL normalization correction applied equally to activation and tests rather than a probe-only interpretation. No cache/converter redesign. Test daemon cwd different from repository with a decoy same-name file, relative/absolute in-root file and SQLite paths and file URLs, outside-root ../ and absolute inputs, schemaSource.path, missing/unreadable files, percent encoding and pinned family conflicts. Assert selected absolute file and contents match actual activation, and saved bytes unchanged. No implicit permission widening or acceptance of out-of-root paths.",
+            "Activation and probes share a readonly resolveDynamoIdentity(config, signal) helper in proposed src/daemon/db/dynamo-identity.ts; src/daemon/db/drivers/dynamodb.ts uses the same provider selection. Explicit options.profile uses fromIni({profile}) exactly as activation today; otherwise use installed fromNodeProviderChain() with daemon process credential environment/default-chain context. Resolve once in parent during bounded preparation, preserving accessKeyId, secretAccessKey, optional sessionToken and expiration; never fall back to another identity after a selected provider fails, and never ask stripped worker environment/profile files to resolve credentials again. The same helper builds activation credentials provider so provider selection is single-sourced without storing credentials in ConnectionConfig or changing profile slots. Private WorkerStart carries optional runtimeAuth:{type:'aws-v1',accessKeyId:string,secretAccessKey:string,sessionToken?:string,expiration?:string} only for dynamodb; validate exact fields, nonempty strings/size/ISO expiration at both ends. Do not place this field on public DraftTestRequest, config/options, artifact, log, environment or command line; reject any client runtimeAuth field. In child construct DynamoDriver through explicit internal factory overload/options carrying supplied static credential identity to DynamoDBClient({credentials:...}); never registry mutation or global credentials override, no fromIni/default chain in worker. Clear parent snapshot refs after send/cancel and child refs on close. Bound provider waiting by same10s parent deadline; a late provider resolution is dropped and cannot fork/send; keep preparation slots bounded until provider drains. Existing provider process/file reads belong to parent identity resolution, not worker; no draft/config/keychain writes, SDK caches must not be introduced. Avoid new arbitrary subprocess invocation, selection exactly matches existing activated provider. Readonly current AWS profile/SSO chain resolution may fail safely (expired/interactive auth required) but never silently substitute another principal. Test environment-only keys plus session token, explicitly selected profile despite env credentials, default chain selected profile, absent/expired credentials, assumed-role/session expiration, provider rejection/deadline and malformed worker auth. Compare identity at fake signed request boundary with activation under same resolver; actual local DynamoDB HTTP fixture checks signing access key and session token without sending credentials externally. Snapshot worker environment/argv/log/files for canaries; explicit runtimeAuth missing in Dynamo worker fails rather than invoking a credential fallback.",
+            "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates per-unary-request AbortController and passes the signal with trusted identity/epoch; returns abort callback. IMPORTANT: cancellation MUST NOT suppress internal completion delivery. After unary handler settles directDispatch emits exactly one internal reply (fixed failure projection when needed), even if signal aborted; IpcServer alone discards socket delivery on closed/canceled request using its existing settled/socket guard. This supersedes the earlier instruction to suppress directDispatch delivery. Thus wrappers can observe handler completion after disconnect. src/daemon/threads/maintenance-entry.ts holdingForward keeps the unary maintenance hold until internal reply (not cancel), uses idempotent release, drops only external delivery after cancellation, and handles cancel-before-admission without starting handler. src/daemon/threads/router.ts uses once-only ended callback for unary reply/error, not unary cancel; preserves internal completion delivery to maintenance wrapper while suppressing client writes at outer server. Keep existing stream cancellation behavior unchanged and once-only. Pending routed unary handlers not owned by this story retain current completion semantics; test/cancel/legacy methods are classified main-daemon in src/daemon/threads/method-class.ts. src/daemon/handler-runtime.ts forwards trusted context to optional second testConnectionRpc parameter and v2 supervisor, never serializes AbortSignal into worker threads. A handler ignoring optional signal still emits completion and cannot strand holds/activity. src/daemon/index.ts stops supervisor admission and drains owned child/preparation work during shutdown; child grace250ms then SIGKILL only owned PIDs. Tests use real IPC disconnect with maintenance locking and router onRequest activity enabled: cancel during preparation/init/close, completion after disconnect, error, unknown method, and pre-admission cancel must return counters/holds exactly once to baseline; no socket late reply and no early maintenance admission while actual handler work is running. Supervisor response terminal state and reaper capacity remain distinct; parent-owned cleanup continues tracked after timeout, without suppressing internal reply or leaking request bookkeeping."
+          ],
+          "fixturesNeeded": [
+            "Different cwd and decoy relative files; read-only SQLite fixtures; real server/router maintenance-lock harness; local Dynamo signing fixture and injected AWS providers; fake credential store only"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-F: production metadata-only admission and real maintenance exclusion after timeout.",
+          "subjects": [
+            "This supersedes prepareDraft's earlier instruction to call current() first. Do NOT call current(), enabled(), service.list(), pool reload, tickets.assertAvailable or generations.assertReady before selected existence/revision admission: production enabled reads every connection credential. Refactor src/daemon/db/management-startup.ts to expose a NEW internal probeMetadataReady():Promise<RegistrySnapshot> callback in SavedManagementPorts, alongside unchanged enabled() for existing mutation/list behavior. probeMetadataReady checks owner lease, protected currentStore.inspect(), already-authenticated state's current() inode/digest, parent mode/inode, signed checkpoint committed anchor, running release fingerprint and canonical registration only; all are metadata reads and cached authenticated state, no signing-key or credential getKey, no recover/reconcile. At startup full enabled validation remains unchanged before service installation. prepareDraft under per-root gate validates trusted context, obtains probeMetadataReady snapshot, parses/enforces registry envelope metadata with the shared metadata validator extracted from current() without calling enabled, and selects requested ID/revision. If missing/stale/duplicate return existing sanitized code before ANY keychain call. After admission, recheck abort, validate signing authority availability if required, selected profile and generation ownership, then materialize only selected config with owned-reference reader. Never scan unrelated connection credentials in this probe-only path. Failure in metadata fence returns recovery-required/upgrade-required before secrets; missing signing key after valid admission still fails. Immutable selected snapshot held under same root gate through readonly selected credential read, runtime paths and completion; no mutation, no generation cleanup. This is an internal adapter implementing consumed sc1/sc2/sc3, not a change to public wire or weakened mutation readiness. Test through openManagedRoot's actual production callback with injected fake keystore, not always-true service fixture: reset keychain counters AFTER startup, then missing/stale/duplicate draft must issue zero getKey calls (including signing keys), zero stages/writes/spawn, while valid target reads only signing key plus selected owned credentials, never unrelated credential canary; missing key and registry/owner drift remain refused. Name management-startup.ts and management.ts explicitly as change sites.",
+            "Introduce internal RequestLifetime in src/daemon/request-context.ts, created server-side in src/daemon/server.ts BEFORE forwarding unary request. API registerDrain(work:Promise<void>):void, seal():void, drained:Promise<void>; registerDrain accepts only before seal, uses all-settled work completion, never settles drained until sealed AND every registered work item settled. Expose only registerDrain on TrustedRpcContext, lifetime owned by internal RequestEnvelope; none is deserialized from client params or serialized to worker-thread wire. draft-test supervisor synchronously registers its whole operation-drain promise before first await; drain encompasses root-gate queue, pending root/keychain/AWS preparation, asynchronous spawn, child close/reap, and all cleanup/listener/timer releases, including work continuing after timeout result. Terminal response promise settles at deadline independently. directDispatch seals request lifetime in its unary handler finally and still delivers exactly one INTERNAL reply after result settles; IpcServer drops only external canceled socket delivery. holdingForward in src/daemon/threads/maintenance-entry.ts resolves its held callback only when (reply delivered internally OR pre-admission canceled) AND request.lifetime.drained settles; keep hold through timed-out hanging preparation and through reaping. No early release on cancel or reply for work registered in lifetime. Router in src/daemon/threads/router.ts similarly calls once-only ended() after internal unary reply AND drained; no late socket write. For unrelated unary handlers with zero registered work drained resolves immediately at seal, preserving previous behavior. All relevant test methods remain main-daemon classified; on remote unary routes lacking a local lifetime use existing reply completion, do not serialize promises/functions. Ensure wrappers propagate the SAME lifetime object, including holdingForward's queued entry; if cancellation before forward admission, seal empty lifetime and release once. If synchronous handler throws, seal and internal reply; if supervisor preparation never settles, terminal client timeout still returned but slot/maintenance hold/activity remain truthfully held until drain; never fabricate cleanup. This intentionally prevents compaction/restart from racing unresolved store access and caps leaks to four admitted operations. Shutdown cancels operations, reaps children and waits registered drains; a still-unresolved noncancelable preparation is reported pending rather than releasing live resource ownership. Real-lock integration test: install production server/router/holdingForward with maintenance lock enabled, hold fake credential preparation deferred, reach real or injected deadline and receive timeout, attempt exclusive maintenance and assert denied while pending; repeat after socket disconnect and while child ignores cancel; settle preparation/reap then assert exclusive maintenance admitted and activity/holds/listeners zero exactly once. Register-before-await, rejection, queued-cancel, reply/cancel race and ignored AbortSignal coverage mandatory."
+          ],
+          "fixturesNeeded": [
+            "openManagedRoot production readiness closure with instrumented fake keystore; real lock manager and server/router; deferred preparation, clock and owned stubborn child"
           ]
         }
       ],
@@ -861,6 +914,12 @@
       "kind": "code",
       "ref": "src/shared/logger.ts; src/daemon/request-context.ts; src/daemon/server.ts; src/daemon/db/management.ts; src/daemon/db/drivers/index.ts; src/daemon/db/drivers/redis.ts; src/daemon/db/drivers/mysql.ts",
       "quotedText": "Review-grounded correction: lazy construction is not reachability, logger import creates directory, unary cancel is no-op, saved owner ports are private."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/db/pool.ts:304; src/daemon/db/drivers/sqlite.ts; src/daemon/threads/maintenance-entry.ts:27; src/daemon/threads/router.ts:94; src/daemon/db/drivers/dynamodb.ts; node_modules/@aws-sdk/credential-providers/dist-types/index.d.ts",
+      "quotedText": "Review blockers: private resolveConfigPath boundary; unary wrappers require internal reply for completion; Dynamo default chain consumes environment identity."
     }
   ]
 }

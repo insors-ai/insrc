@@ -102,21 +102,31 @@ export class BoundedWorkbook {
 				}
 			} });
 		if (this.zip.entries.some(e => e.name === 'xl/sharedStrings.xml')) {
-			let text = '', inText = false, rich = false;
+			let text = '', textBytes = 0, inString = false, inText = false, rich = false;
 			await this.#xml('xl/sharedStrings.xml', {
 				open: tag => {
 					const name = local(tag.name);
 					if (name === 'si') {
+						if (inString)
+							throw new Error('unsupported-temporary');
+						inString = true;
+						textBytes = 0;
 						text = '';
 						rich = false;
 					}
 					if (name === 'r')
 						rich = true;
-					if (name === 't')
+					if (name === 't') {
+						if (!inString || inText)
+							throw new Error('unsupported-temporary');
 						inText = true;
+					}
 				},
 				text: value => {
 					if (inText) {
+						textBytes += Buffer.byteLength(value);
+						if (textBytes > 64 * 1024)
+							throw new Error('resource-limit');
 						this.#retain(value.length * 2);
 						text += value;
 					}
@@ -130,6 +140,8 @@ export class BoundedWorkbook {
 							throw new Error('resource-limit');
 						this.#retain(128);
 						this.strings.push(rich ? { richText: true } : decoded(text));
+						inString = false;
+						textBytes = 0;
 						text = '';
 					}
 				},

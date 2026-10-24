@@ -72,11 +72,17 @@ export function* parseBoundedXmlChunks(bytes: Buffer, budget: DecoderBudget, han
 			if (++depth > 64 || Object.keys(tag.attributes).length > 128)
 				throw new Error('resource-limit');
 			const name = tag.name.split(':').at(-1);
+			if ((name === 't' || name === 'v') && !cellDepth && !stringDepth)
+				throw new Error('unsupported-temporary');
 			if (name === 'c') {
+				if (cellDepth)
+					throw new Error('unsupported-temporary');
 				cellDepth = depth;
 				cellSize = 0;
 			}
 			if (name === 'si') {
+				if (stringDepth)
+					throw new Error('unsupported-temporary');
 				stringDepth = depth;
 				stringSize = 0;
 			}

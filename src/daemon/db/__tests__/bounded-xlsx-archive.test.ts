@@ -1,3 +1,4 @@
+import { xlsxConverter } from '../drivers/converters/xlsx.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -90,7 +91,7 @@ test('CM-S1-S: XLSX ZIP entry count declared totals ZIP64 and forged expansion r
 	});
 });
 test('CM-S1-S: XML text attributes comments CDATA cell accumulation encoding and entities have bounded admission', () => {
-	for (const xml of [`<root>${'x'.repeat(65537)}</root>`, `<root value="${'>'.repeat(65537)}"/>`, `<root><!--${'<'.repeat(65537)}--></root>`, `<root><![CDATA[${'x'.repeat(65537)}]]></root>`, `<root><c><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></c></root>`, `<!DOCTYPE root [<!ENTITY x "large">]><root>&x;</root>`, `<?xml version="1.0" encoding="UTF-16"?><root/>`]) {
+	for (const xml of [`<root>${'x'.repeat(65537)}</root>`, `<root value="${'>'.repeat(65537)}"/>`, `<root><!--${'<'.repeat(65537)}--></root>`, `<root><![CDATA[${'x'.repeat(65537)}]]></root>`, `<root><c><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></c></root>`, `<root><c><c/><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></c></root>`, `<sst><si><si/><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></si></sst>`, `<!DOCTYPE root [<!ENTITY x "large">]><root>&x;</root>`, `<?xml version="1.0" encoding="UTF-16"?><root/>`]) {
 		const budget = new DecoderBudget(16 * 1024 * 1024);
 		assert.throws(() => parseBoundedXml(Buffer.from(xml), budget, {}), /resource-limit|unsupported-temporary/);
 		assert.equal(budget.snapshot().retained, 0);
@@ -138,12 +139,28 @@ test('CM-S1-S: valid ExcelJS archives parse incrementally and parser callback fa
 	});
 });
 export { archive };
-
-test('CM-S1-S: archive close releases abandoned entry buffers idempotently',async()=>{
- await fixture(async dir=>{
-  const path=join(dir,'one.xlsx');await writeFile(path,archive([{name:'one.xml',data:Buffer.from('<root/>')}]));
-  const budget=new DecoderBudget(1024*1024),zip=await BoundedZip.open(path,budget),data=await zip.read('one.xml');
-  assert.ok(budget.snapshot().retained>0);await zip.close();assert.equal(budget.snapshot().retained,0);
-  data.release();await zip.close();assert.equal(budget.snapshot().retained,0);await assert.rejects(zip.read('one.xml'),/closed/);
- });
+test('CM-S1-S: archive close releases abandoned entry buffers idempotently', async () => {
+	await fixture(async (dir) => {
+		const path = join(dir, 'one.xlsx');
+		await writeFile(path, archive([{ name: 'one.xml', data: Buffer.from('<root/>') }]));
+		const budget = new DecoderBudget(1024 * 1024), zip = await BoundedZip.open(path, budget), data = await zip.read('one.xml');
+		assert.ok(budget.snapshot().retained > 0);
+		await zip.close();
+		assert.equal(budget.snapshot().retained, 0);
+		data.release();
+		await zip.close();
+		assert.equal(budget.snapshot().retained, 0);
+		await assert.rejects(zip.read('one.xml'), /closed/);
+	});
+});
+test('CM-S1-S: malformed nested shared strings and text outside string items cannot bypass aggregate unit admission', async () => {
+	await fixture(async (dir) => {
+		const path = join(dir, 'malformed.xlsx');
+		for (const shared of [`<sst><si><si/><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></si></sst>`, `<sst><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t><si><t>tail</t></si></sst>`, `<sst><si><t>${'x'.repeat(40000)}</t><t>${'y'.repeat(40000)}</t></si></sst>`]) {
+			await writeFile(path, archive([{ name: 'xl/_rels/workbook.xml.rels', data: Buffer.from('<Relationships><Relationship Id="r1" Type="http://example/worksheet" Target="worksheets/sheet1.xml"/></Relationships>') }, { name: 'xl/workbook.xml', data: Buffer.from('<workbook><sheets><sheet name="Data" r:id="r1"/></sheets></workbook>') }, { name: 'xl/worksheets/sheet1.xml', data: Buffer.from('<worksheet><sheetData/></worksheet>') }, { name: 'xl/sharedStrings.xml', data: Buffer.from(shared) }]));
+			const budget = new DecoderBudget(16 * 1024 * 1024);
+			await assert.rejects(xlsxConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget }), /resource-limit|unsupported-temporary/);
+			assert.equal(budget.snapshot().retained, 0);
+		}
+	});
 });

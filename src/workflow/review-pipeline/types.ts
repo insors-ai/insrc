@@ -213,8 +213,10 @@ export interface CallCarries {
 /** One call the job asks to be made, enveloped. Plain data. */
 export interface ReviewCall {
 	readonly callId:    string;
-	/** 1, or 2 for the pipeline's one re-issue. */
+	/** 1 for the first issue; each re-issue adds one (up to MAX_STALL_ATTEMPTS for stalls). */
 	readonly attempt:   number;
+	/** How many earlier attempts of this call were invalid answers; absent: none. */
+	readonly invalidAnswers?: number | undefined;
 	readonly stage:     string;
 	readonly role:      CallRole;
 	/** As sent: the adapter's messages with the envelope instruction last. */

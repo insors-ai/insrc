@@ -407,7 +407,7 @@ test("an HLD answer that breaks the checklist is re-issued once by the pipeline 
 
 		// Broken twice: the review fails with today's message, after exactly two sessions.
 		const twice = run([broken, broken, templateAnswer()]);
-		await assert.rejects(twice.done, new RegExp(`failed checklist ${SPEC_TEMPLATE.id} twice\\. No review was recorded`));
+		await assert.rejects(twice.done, new RegExp(`failed checklist ${SPEC_TEMPLATE.id} \\(2 of 2 attempts were invalid answers\\)\\. No review was recorded`));
 		assert.equal(twice.p.sessions.length, 2, 'the stage never asks a third time');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

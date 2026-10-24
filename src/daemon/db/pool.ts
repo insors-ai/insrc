@@ -1,7 +1,4 @@
 /** Per-directory driver owner. Management eligibility is separate from saved lookup scope. */
-import { access } from 'node:fs/promises';
-import { constants as fsConst } from 'node:fs';
-import { isAbsolute, relative, resolve } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { getLogger } from '../../shared/logger.js';
 import type { ConnectionConfig, Driver, DriverFactory } from '../../shared/db-driver.js';
@@ -13,6 +10,7 @@ import { safeConnection } from './driver-profiles.js';
 import { RevisionLeaseGate, ConnectionUseError } from './lease-gate.js';
 import { guardedDriver, driverFailure } from './driver-guard.js';
 import { fileExecutionPolicy } from './file-policy.js';
+import { prepareRuntimeConfig } from './runtime-config.js';
 const log = getLogger('db-pool');
 const IDLE_CLOSE_MS = 10 * 60 * 1000;
 interface PoolEntry {
@@ -216,7 +214,7 @@ export class DriverPool {
 		if (!factory)
 			throw new ConnectionUseError('not-found');
 		const withSecrets = await resolveConfigSecrets(entry.config);
-		const config = await resolveConfigPath(withSecrets, this.repoPath);
+		const config = await prepareRuntimeConfig(withSecrets, this.repoPath);
 		log.debug({ id: entry.config.id, kind: entry.config.kind }, 'building driver');
 		return factory(config, familyOf(config.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(config, {
 			lookupRoot: this.repoPath, ownerId: this.#ownerId, revision: entry.revision,
@@ -301,36 +299,6 @@ async function resolveConfigSecrets(config: ConnectionConfig): Promise<Connectio
  * for RDBMS describe()) into an absolute path against the repo
  * root. Same containment rule.
  */
-async function resolveConfigPath(config: ConnectionConfig, repoRoot: string): Promise<ConnectionConfig> {
-	const family = familyOf(config.kind);
-	let next: ConnectionConfig = config;
-	// File-family connections always carry a `path`. SQLite (rdbms
-	// family) is a single-file db, so it carries `path` too -- treat
-	// both the same for repo-root containment.
-	const needsPathResolution = family === 'file' || config.kind === 'sqlite';
-	if (needsPathResolution && config.path !== undefined) {
-		const abs = await resolveAndCheckRepoPath(config.id, config.path, repoRoot, 'path');
-		next = { ...next, path: abs };
-	}
-	else if (family === 'file' && config.path === undefined) {
-		throw new Error(`data-driver: file connection '${config.id}' missing path`);
-	}
-	if (config.schemaSource !== undefined) {
-		const abs = await resolveAndCheckRepoPath(config.id, config.schemaSource.path, repoRoot, 'schemaSource.path');
-		next = { ...next, schemaSource: { type: config.schemaSource.type, path: abs } };
-	}
-	return next;
-}
-async function resolveAndCheckRepoPath(connId: string, givenPath: string, repoRoot: string, field: string): Promise<string> {
-	const abs = isAbsolute(givenPath) ? givenPath : resolve(repoRoot, givenPath);
-	const rel = relative(repoRoot, abs);
-	if (rel.startsWith('..') || isAbsolute(rel)) {
-		throw new Error(`data-driver: connection '${connId}' ${field} '${givenPath}' ` +
-			`resolves outside the repo root`);
-	}
-	await access(abs, fsConst.R_OK);
-	return abs;
-}
 // ---------------------------------------------------------------------------
 // Shallow config equality (for reload-aware replacement)
 // ---------------------------------------------------------------------------

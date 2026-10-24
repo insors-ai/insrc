@@ -310,3 +310,67 @@ test('CM-S1-M: late iterator creation is closed before release and nested raw dr
 		await f.cleanup();
 	}
 });
+test('CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape', async () => {
+	const f = await fixture();
+	try {
+		for (const result of [{ get driver() {
+					return f.raw;
+				} }, Object.create({ driver: f.raw }), new Map([['driver', f.raw]]), new Set([f.raw])]) {
+			(f.raw as unknown as Record<string, unknown>)['sample'] = async () => result;
+			await assert.rejects(f.pool.withConnection('fixture', async (driver) => driver.sample!('x', { limit: 1 })), { code: 'conflict' });
+			assert.equal(f.pool.leaseState('fixture').active, 0);
+		}
+	}
+	finally {
+		await f.cleanup();
+	}
+});
+test('CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes', async () => {
+	const late = deferred();
+	let finalized = 0;
+	const controller = new AbortController();
+	const f = await fixture({ scan: async function* () {
+			try {
+				yield 1;
+				await late.promise;
+				yield 2;
+			}
+			finally {
+				finalized++;
+			}
+		} });
+	try {
+		await f.pool.withConnection('fixture', async (driver) => {
+			for await (const _row of (driver as unknown as {
+				scan(): AsyncIterable<number>;
+			}).scan())
+				break;
+		});
+		assert.equal(finalized, 1);
+		assert.equal(f.pool.leaseState('fixture').active, 0);
+		const started = deferred();
+		const work = f.pool.withConnection('fixture', async (driver) => {
+			const iterator = (driver as unknown as {
+				scan(): AsyncIterable<number>;
+			}).scan()[Symbol.asyncIterator]();
+			await iterator.next();
+			void iterator.next();
+			started.resolve();
+			await new Promise<void>((_resolve, reject) => controller.signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true }));
+		});
+		await started.promise;
+		controller.abort();
+		await delay(20);
+		assert.equal(f.pool.leaseState('fixture').active, 1);
+		assert.equal(finalized, 1);
+		assert.throws(() => f.pool.beginMutation('fixture', 'remove', f.pool.leaseState('fixture').revision), { code: 'busy' });
+		late.resolve();
+		await assert.rejects(work, /cancelled/);
+		assert.equal(finalized, 2);
+		assert.equal(f.pool.leaseState('fixture').active, 0);
+	}
+	finally {
+		late.resolve();
+		await f.cleanup();
+	}
+});

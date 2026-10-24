@@ -1,6 +1,7 @@
 import type { Driver } from '../../shared/db-driver.js';
 import { ConnectionUseError } from './lease-gate.js';
 const METHODS = new Set(['describe', 'sample', 'explain', 'aggregate', 'distinct', 'listTables', 'listIndexes', 'functionalDependency', 'antiJoin', 'histogram', 'correlationMatrix', 'outliers', 'temporalTrend', 'dickeyFuller', 'temporalGapStats', 'scan', 'get', 'sampleShape', 'listNamespaces', 'describeNamespace']);
+const RESULT_PROTOTYPES = new Set<object>([Object.prototype, Array.prototype, Date.prototype, Buffer.prototype, Uint8Array.prototype, ArrayBuffer.prototype, DataView.prototype, RegExp.prototype, Map.prototype, Set.prototype]);
 /** A callback sees only interface members; retained views cannot start work after callback exit. */
 export function guardedDriver(driver: Driver): {
 	readonly driver: Driver;
@@ -26,10 +27,22 @@ export function guardedDriver(driver: Driver): {
 		if (!value || typeof value !== 'object' || seen.has(value))
 			return;
 		seen.add(value);
-		for (const property of Object.values(Object.getOwnPropertyDescriptors(value))) {
-			if (Object.hasOwn(property, 'value'))
-				assertNoRawDriver(property.value, seen);
+		for (const key of Reflect.ownKeys(value)) {
+			const property = Object.getOwnPropertyDescriptor(value, key)!;
+			if (!Object.hasOwn(property, 'value'))
+				throw new ConnectionUseError('conflict');
+			assertNoRawDriver(property.value, seen);
 		}
+		const prototype = Object.getPrototypeOf(value) as object | null;
+		if (prototype && !RESULT_PROTOTYPES.has(prototype))
+			assertNoRawDriver(prototype, seen);
+		if (value instanceof Map)
+			Map.prototype.forEach.call(value, (v: unknown, k: unknown) => {
+				assertNoRawDriver(k, seen);
+				assertNoRawDriver(v, seen);
+			});
+		if (value instanceof Set)
+			Set.prototype.forEach.call(value, (v: unknown) => assertNoRawDriver(v, seen));
 	};
 	const wrap = (value: unknown): unknown => {
 		if (value === driver)

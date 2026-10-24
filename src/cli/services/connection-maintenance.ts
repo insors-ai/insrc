@@ -8,10 +8,12 @@ import { fileURLToPath } from 'node:url';
 import { rpc } from '../client.js';
 import { PATHS } from '../../shared/paths.js';
 import { stopDaemon } from './daemon.js';
+import { connectionManagementEnablement } from '../../daemon/db/management-enablement.js';
 import { processObservation } from '../../daemon/db/management-owner-lease.js';
 import { writeProtected } from '../../daemon/db/management-files.js';
 import type { StoppedDaemonEvidence } from '../../daemon/db/management-state.js';
 export interface MaintenanceControl {
+	readonly ready: () => Promise<boolean>;
 	readonly registered: (root: string) => Promise<boolean>;
 	readonly pid: () => Promise<number>;
 	readonly identity: (pid: number) => string | undefined;
@@ -21,6 +23,8 @@ export interface MaintenanceControl {
 	readonly run: (root: string, proof: StoppedDaemonEvidence) => Promise<void>;
 }
 export async function runConnectionMaintenance(root: string, control: MaintenanceControl): Promise<void> {
+	if (!await control.ready())
+		throw new Error('Connection maintenance requires verified build gates.');
 	const canonical = await realpath(root);
 	if (canonical !== root || !await control.registered(root))
 		throw new Error('Maintenance requires a registered canonical repository.');
@@ -34,6 +38,7 @@ export async function runConnectionMaintenance(root: string, control: Maintenanc
 }
 export async function adoptConnections(root: string): Promise<void> {
 	await runConnectionMaintenance(root, {
+		ready: async () => (await connectionManagementEnablement()).ready,
 		registered: async (candidate) => (await rpc<{
 			path: string;
 		}[]>('repo.list')).some(repo => repo.path === candidate),

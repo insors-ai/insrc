@@ -6,13 +6,16 @@ import type { MaintenanceControl } from '../../../cli/services/connection-mainte
 test('maintenance control verifies the old daemon before stopping and never runs maintenance while it survives', async () => {
 	const root = await realpath(process.cwd());
 	let live = true, command = '/node/out/daemon/index.js', stops = 0, runs = 0;
-	const control: MaintenanceControl = { registered: async () => true, pid: async () => 123, identity: () => 'a'.repeat(64), command: () => command, alive: () => live, stop: async () => {
+	const control: MaintenanceControl = { ready: async () => true, registered: async () => true, pid: async () => 123, identity: () => 'a'.repeat(64), command: () => command, alive: () => live, stop: async () => {
 			stops++;
 		}, run: async (_, proof) => {
 			runs++;
 			assert.equal(proof.pid, 123);
 			assert.equal(proof.source, 'safe-stop-control');
 		} };
+	await assert.rejects(runConnectionMaintenance(root, { ...control, ready: async () => false }));
+	assert.equal(stops, 0);
+	assert.equal(runs, 0);
 	command = '/unrelated/process';
 	await assert.rejects(runConnectionMaintenance(root, control));
 	assert.equal(stops, 0);

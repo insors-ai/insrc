@@ -119,8 +119,16 @@ test('CM-S1-E: Keep retains the live generation and Clear removes it only after 
 		assert.deepEqual([...referencedSecrets(next.config)], []);
 		assert.deepEqual(next.cleanupRefs, [f.oldRef]);
 		assert.equal(f.data.get(f.oldRef), 'original-secret-canary');
-		await f.generations.recover();
+		const operationId = next.preparation.operationId;
+		const newRevision = randomUUID();
+		const ticket = { operationId, lookupRoot: f.root, scope: 'saved' as const, connectionId: 'fixture', mode: 'update' as const, issuedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), signature: 'fixture' };
+		const outcome = { operationId, revision: newRevision, registration: 'persisted' as const, activation: 'pending' as const, credentialCleanup: 'pending' as const };
+		await f.store.commit(f.store.snapshot, { ...f.file, connections: [next.config], _management: { ...f.file._management!, generation: randomUUID(), revisions: { fixture: newRevision }, receipts: { [operationId]: { ticket, requestMac: 'fixture-keyed-mac', outcome, cleanupRefs: next.cleanupRefs } } } });
+		const committedBytes = await readFile(f.path, 'utf8');
 		assert.equal(f.data.get(f.oldRef), 'original-secret-canary');
+		await f.generations.recover();
+		assert.equal(f.data.has(f.oldRef), false);
+		assert.equal(await readFile(f.path, 'utf8'), committedBytes);
 	}
 	finally {
 		await f.cleanup();
@@ -214,6 +222,46 @@ test('CM-S1-E: committed cleanup failure stays pending and retry preserves exact
 		for (const ref of referencedSecrets(staged.config))
 			assert.equal(f.data.get(ref), 'replacement-secret-canary');
 		await owner.assertReady();
+	}
+	finally {
+		await f.cleanup();
+	}
+});
+test('CM-S1-E: first-use recovery directory parent sync precedes staging and completion sync failures retain a blocking retry record', async () => {
+	const f = await fixture();
+	try {
+		await rm(f.journal.directory, { recursive: true, force: true });
+		const trace: string[] = [];
+		await assert.rejects(PreparationJournal.open(f.path, f.journal.registryId, async (stage) => {
+			trace.push(stage);
+			if (stage === 'before-recovery-parent-sync')
+				throw new Error('injected');
+		}));
+		assert.deepEqual(trace, ['before-recovery-parent-sync']);
+		assert.equal(f.data.size, 2);
+		await rm(f.journal.directory, { recursive: true, force: true });
+		let fail = true;
+		const journal = await PreparationJournal.open(f.path, f.journal.registryId, async (stage) => {
+			trace.push(stage);
+			if (stage === 'before-completion-sync' && fail)
+				throw new Error('injected');
+		});
+		assert.ok(trace.includes('after-recovery-parent-sync'));
+		const owner = new CredentialGenerations(journal, 'a'.repeat(32), { keystore: f.keystore, current: () => readRegistrySnapshot(f.path) });
+		const previous = f.file.connections[0]!;
+		const revision = f.file._management!.revisions['fixture']!;
+		const draft = await materializeDraft({ key: { repoRoot: f.root, scope: 'saved', id: 'fixture' }, mode: 'update', current: { config: previous, revision }, expectedRevision: revision, publicPatch: { label: 'Label' }, readSecret: f.keystore.getKey });
+		const staged = await owner.stage({ operationId: randomUUID(), effective: draft.config, previous, actions: draft.credentialActions });
+		assert.ok(trace.indexOf('after-recovery-parent-sync') < trace.indexOf('before-preparation-sync'));
+		assert.deepEqual(await owner.recover(), [{ operationId: staged.preparation.operationId, committed: false, cleanup: 'pending' }]);
+		assert.deepEqual(await readdir(journal.directory), []);
+		assert.equal((await journal.pending()).length, 1);
+		await assert.rejects(owner.assertReady(), { code: 'recovery-required' });
+		await assert.rejects(journal.prepare({ ...staged.preparation, operationId: randomUUID() }), { code: 'recovery-required' });
+		fail = false;
+		assert.deepEqual(await owner.recover(), [{ operationId: staged.preparation.operationId, committed: false, cleanup: 'complete' }]);
+		await owner.assertReady();
+		assert.deepEqual(await journal.pending(), []);
 	}
 	finally {
 		await f.cleanup();

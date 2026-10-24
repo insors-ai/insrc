@@ -68,7 +68,7 @@ export async function readRegistrySnapshot(path: string, allowMissing = false): 
 }
 /** Physical proof on the target directory; no production registry is modified. */
 export async function proveWriterFence(directory: string): Promise<void> {
-	if (process.platform === 'win32' || process.getuid?.() === 0 || process.geteuid?.() === 0)
+	if (process.platform === 'win32' || process.getuid?.() === 0)
 		throw new ManagedStoreError('unsupported-filesystem');
 	const original = join(directory, `.connection-fence-${randomUUID()}`);
 	const replacement = `${original}.new`;
@@ -276,10 +276,14 @@ export class ManagedRegistry {
 	}
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-export type PreparationBoundary = 'before-preparation-sync' | 'after-preparation-sync' | 'after-preparation-directory-sync';
+export type PreparationBoundary = 'before-preparation-sync' | 'after-preparation-sync' | 'after-preparation-directory-sync' | 'before-recovery-parent-sync' | 'after-recovery-parent-sync' | 'before-completion-sync' | 'after-completion-sync';
+const journalCompletionLatches = new Map<string, Map<string, PreparationRecord>>();
 /** Durable, secret-free recovery records. The service's root lease serializes all calls. */
 export class PreparationJournal {
+	readonly #completionPending: Map<string, PreparationRecord>;
 	private constructor(readonly directory: string, readonly registryId: string, readonly registryPath: string, private readonly boundary?: ((stage: PreparationBoundary) => Promise<void>) | undefined) {
+		this.#completionPending = journalCompletionLatches.get(directory) ?? new Map();
+		journalCompletionLatches.set(directory, this.#completionPending);
 	}
 	static async open(registryPath: string, registryId: string, boundary?: ((stage: PreparationBoundary) => Promise<void>) | undefined): Promise<PreparationJournal> {
 		if (!UUID.test(registryId))
@@ -293,6 +297,15 @@ export class PreparationJournal {
 		if (!stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o777) !== 0o700 || stat.uid !== process.getuid?.())
 			throw new ManagedStoreError('recovery-required');
 		const journal = new PreparationJournal(directory, registryId, registryPath, boundary);
+		await boundary?.('before-recovery-parent-sync');
+		const parent = await open(dirname(directory), 'r');
+		try {
+			await parent.sync();
+		}
+		finally {
+			await parent.close();
+		}
+		await boundary?.('after-recovery-parent-sync');
 		await journal.sync();
 		return journal;
 	}
@@ -314,6 +327,8 @@ export class PreparationJournal {
 	}
 	async prepare(record: PreparationRecord): Promise<void> {
 		this.check(record);
+		if (this.#completionPending.size)
+			throw new ManagedStoreError('recovery-required');
 		const text = JSON.stringify(record) + '\n';
 		const handle = await open(join(this.directory, `${record.operationId}.json`), 'wx', 0o600);
 		try {
@@ -346,6 +361,13 @@ export class PreparationJournal {
 					throw new ManagedStoreError('recovery-required');
 				records.push(value);
 			}
+			for (const record of this.#completionPending.values()) {
+				const disk = records.find(r => r.operationId === record.operationId);
+				if (disk && JSON.stringify(disk) !== JSON.stringify(record))
+					throw new ManagedStoreError('recovery-required');
+				if (!disk)
+					records.push(structuredClone(record));
+			}
 			return records;
 		}
 		catch {
@@ -355,7 +377,15 @@ export class PreparationJournal {
 	async complete(record: PreparationRecord): Promise<void> {
 		this.check(record);
 		const path = join(this.directory, `${record.operationId}.json`);
-		const existing: unknown = JSON.parse(await readFile(path, 'utf8'));
+		let existing: unknown;
+		try {
+			existing = JSON.parse(await readFile(path, 'utf8'));
+		}
+		catch (err) {
+			if ((err as NodeJS.ErrnoException).code !== 'ENOENT' || !this.#completionPending.has(record.operationId))
+				throw new ManagedStoreError('recovery-required');
+			existing = this.#completionPending.get(record.operationId);
+		}
 		this.check(existing);
 		if (JSON.stringify(existing) !== JSON.stringify(record))
 			throw new ManagedStoreError('recovery-required');
@@ -377,7 +407,14 @@ export class PreparationJournal {
 			if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
 				throw new ManagedStoreError('recovery-required');
 		}
-		await unlink(path);
+		this.#completionPending.set(record.operationId, structuredClone(record));
+		await unlink(path).catch(err => {
+			if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
+				throw err;
+		});
+		await this.boundary?.('before-completion-sync');
 		await this.sync();
+		await this.boundary?.('after-completion-sync');
+		this.#completionPending.delete(record.operationId);
 	}
 }

@@ -486,6 +486,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **ignored**: left to implementer judgment — Review-history note, superseded: the cycle ran and the LLD was approved with an override _(2026-10-24T18:20:09.525Z)_
 - `qb493db12` — Authority for the split: Story s8 and HLD amendment AMD-b7a68147dcf72034-8 (storyBoundary.addStory) were approved by the user on 2026-10-24 (16:02:39 UTC) together with DEF revision 2; the s8 extension record S008/EXT.md still reads 'pending approval' and the rendered HLD.md has not been regenerated, but the effective HLD is the base HLD plus amendments AMD-3 to AMD-8, all approved, as the artifact records show. The record is in docs/plans/tool-registry.md.
   - **resolved**: Use approved artifact records — AMD-b7a68147dcf72034-8 and DEF revision 2 were approved on 2026-10-24; EXT.md and the rendered HLD.md are stale _(2026-10-24T18:20:52.700Z)_
+- `q6bdcab8e` — Review cycle 4, round 1 (1 HIGH, 2 MED, 1 unverified) revised this LLD: the isolated environment is the corpus reader's own, fail takes the ShellResult, precondition reads fail the call before any change, and the authority for s8 is cited.
+  - **resolved**: Proceed with revised LLD — Superseded by the approved revision 12 _(2026-10-24T18:21:27.644Z)_
 
 ## Citations
 

@@ -138,6 +138,13 @@
         "choice": "Use approved artifact records",
         "rationale": "AMD-b7a68147dcf72034-8 and DEF revision 2 were approved on 2026-10-24; EXT.md and the rendered HLD.md are stale",
         "resolvedAt": "2026-10-24T18:20:52.700Z"
+      },
+      "q6bdcab8e": {
+        "question": "Review cycle 4, round 1 (1 HIGH, 2 MED, 1 unverified) revised this LLD: the isolated environment is the corpus reader's own, fail takes the ShellResult, precondition reads fail the call before any change, and the authority for s8 is cited.",
+        "status": "resolved",
+        "choice": "Proceed with revised LLD",
+        "rationale": "Superseded by the approved revision 12",
+        "resolvedAt": "2026-10-24T18:21:27.644Z"
       }
     }
   },

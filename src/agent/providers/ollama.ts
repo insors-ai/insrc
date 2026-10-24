@@ -683,7 +683,7 @@ export class OllamaProvider implements LLMProvider {
         messages: [{ role: 'user', content: prompt }],
         tools:    getReadOnlyTools(),
         allow:    new Set(READ_ONLY_TOOL_IDS),
-        deps:     { sessionId: `review-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this },
+        deps:     { sessionId: `review-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this, caller: 'agent' },
         // The repository is the session's working directory, as it is for the CLI sessions.
         root:     opts.cwd,
         maxTurns: REVIEW_SESSION_MAX_TURNS,

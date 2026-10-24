@@ -6,34 +6,52 @@
 /**
  * Unified tool executor.
  *
- * Runs a tool by id with the supplied input + deps. Cleanup-scrubbed:
- * the approval-gate dispatcher (channel.registerExternalGate, GateAction,
- * the destructive double-confirm flow) is gone with the agent framework.
- * Tools that declare `requiresApproval: true` now auto-approve with a
- * log line; the next backend reintroduces a real gate dispatcher when
- * the chat-loop wiring lands.
+ * Runs a tool by id with the supplied input + deps, in this order: resolve the
+ * tool, check the input (a tool that declares an outputSchema), ask for approval,
+ * run, check the result. Approval (sc4): a destructive call always asks; a common
+ * call asks when the effective mode is manual or edit-auto; a call nobody approves
+ * is denied and the tool does not run. The asking is done by the daemon-owned
+ * approval broker, which no caller can replace.
  */
 
 import { getLogger } from '../../shared/logger.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
 import type { StructuredSchema } from '../../shared/types.js';
+import { readCommonApprovalMode } from '../../shared/common-approval.js';
+import { getApprovalGate } from '../approval.js';
+import { buildApprovalRequest, resolveApprovalClass, shouldAsk } from './approval-policy.js';
 import { getTool } from './registry.js';
-import type { ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
+import type { ApprovalDenial, ApprovalGate, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
 
 const log = getLogger('tools-executor');
 
 /** failure.original keeps at most this many characters of the tool's own output. */
 const ORIGINAL_MAX_CHARS = 4000;
 
-function failed(kind: ToolFailureKind, message: string, original?: string): ToolResult {
+function failed(kind: ToolFailureKind, message: string, original?: string, denial?: ApprovalDenial): ToolResult {
 	return {
 		output: message,
 		format: 'text',
 		success: false,
 		error: message,
-		failure: { kind, message, ...(original !== undefined ? { original: original.slice(0, ORIGINAL_MAX_CHARS) } : {}) },
+		failure: {
+			kind, message,
+			...(original !== undefined ? { original: original.slice(0, ORIGINAL_MAX_CHARS) } : {}),
+			...(denial !== undefined ? { denial } : {}),
+		},
 	};
 }
+
+const DENIAL_TEXT: Record<ApprovalDenial, (id: string) => string> = {
+	'declined':  id => `the user declined ${id}; nothing was changed`,
+	'timed-out': id => `nobody answered the approval request for ${id} in time; it was denied and nothing was changed`,
+	'no-client': id => `no client was attached to answer the approval request for ${id}; it was denied and nothing was changed`,
+	'cancelled': id => `the approval request for ${id} was cancelled; nothing was changed`,
+};
+
+/** Test seam: the gate the executor asks. Production uses the daemon's broker. */
+let gate: () => ApprovalGate = getApprovalGate;
+export function _setApprovalGateForTests(g: (() => ApprovalGate) | undefined): void { gate = g ?? getApprovalGate; }
 
 /** ajv reports a schema it cannot compile as an error list that starts with this text. */
 const isCompileError = (errors: readonly string[]): boolean => errors[0]?.startsWith('ajv.compile failed') === true;
@@ -57,12 +75,6 @@ export async function executeTool(
 
 	log.info({ id: tool.id }, 'executing tool');
 
-	const needsGate = tool.requiresApproval === true
-		|| (typeof tool.requiresApproval === 'function' && tool.requiresApproval(input));
-	if (needsGate) {
-		log.warn({ id: tool.id }, 'tool requires approval but the gate dispatcher is gone; auto-approving');
-	}
-
 	// A tool that declares an outputSchema is checked on the way in and on the way out;
 	// a tool without one is run and returned exactly as before.
 	const outputSchema = tool.outputSchema;
@@ -76,6 +88,25 @@ export async function executeTool(
 			const message = `input for tool ${tool.id} does not fit its input schema: ${inputCheck.errors.join('; ')}`;
 			log.warn({ id: tool.id }, 'tool input rejected');
 			return failed('rejected', message);
+		}
+	}
+
+	// Approval. Nothing but the class, the call's mode and the setting decides whether to ask; a
+	// destructive call asks whatever the caller, the mode, the setting or the arguments say.
+	const cls = resolveApprovalClass(tool, input);
+	if (cls !== 'none' && shouldAsk(cls, deps, cls === 'common' ? readCommonApprovalMode() : 'auto')) {
+		const request = await buildApprovalRequest({ tool, cls, input, deps });
+		log.info({ id: tool.id, approvalClass: cls, requestId: request.requestId, caller: deps.caller }, 'asking for approval');
+		let outcome: Awaited<ReturnType<ApprovalGate['ask']>>;
+		try {
+			outcome = await gate().ask(request, deps.signal);
+		} catch (err) {
+			log.error({ id: tool.id, err: err instanceof Error ? err.message : String(err) }, 'approval gate failed; denying');
+			outcome = 'no-client';
+		}
+		if (typeof outcome === 'string') {
+			log.warn({ id: tool.id, requestId: request.requestId, denial: outcome }, 'approval not given; tool not run');
+			return failed('denied', DENIAL_TEXT[outcome](tool.id), undefined, outcome);
 		}
 	}
 

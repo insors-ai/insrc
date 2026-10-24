@@ -1130,6 +1130,7 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 		send:           () => { /* shaper does not stream */ },
 		requestId:      0,
 		ollamaProvider: args.provider,
+		caller:         'agent',
 	};
 }
 

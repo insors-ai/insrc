@@ -14,7 +14,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, revParse } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
 
 export type GitAmendMode = 'message' | 'staged';
 
@@ -88,7 +88,7 @@ export const gitAmendTool: Tool = {
       else { argv.push('--no-edit'); }
     } else {
       // message-only: --only --no-edit tree-wise, but rewrite message.
-      if (!message) { return fail('git_amend', 'mode=message requires a message', '', 1); }
+      if (!message) { return rejectInput('git_amend', 'mode=message requires a message'); }
       argv.push('-m', message, '--only');
     }
     if (signoff) { argv.push('-s'); }
@@ -96,7 +96,7 @@ export const gitAmendTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 60_000 });
     if (result.spawnError) { return spawnFail('git_amend', result.stderr); }
-    if (result.code !== 0) { return fail('git_amend', result.stderr, result.stdout, result.code); }
+    if (result.code !== 0) { return fail('git_amend', result, { mutating: true }); }
 
     const short = await revParse(cwd, 'HEAD');
     const long = await runShell(['git', 'rev-parse', 'HEAD'], { cwd, timeoutMs: 5_000 });

@@ -9,6 +9,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import { fail, spawnFail } from './helpers.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,24 +64,13 @@ export const gitStatusTool: Tool = {
     );
 
     if (result.spawnError) {
-      return {
-        output: `[git:status] cannot spawn git -- ${result.stderr.trim() || 'unknown error'}`,
-        format: 'text',
-        success: false,
-        error: 'git not found',
-      };
+      return spawnFail('git:status', result.stderr);
     }
 
     // `git status` returns 0 even when there are changes. A non-zero code
     // means we're outside a repo or the command itself failed.
     if (result.code !== 0) {
-      const msg = result.stderr.trim() || result.stdout.trim() || `exit ${result.code}`;
-      return {
-        output: `[git:status] failed: ${msg}`,
-        format: 'text',
-        success: false,
-        error: msg,
-      };
+      return fail('git:status', result);
     }
 
     const parsed = parsePorcelainV2(result.stdout);

@@ -7,8 +7,9 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput, failureKind, withFailure } from './helpers.js';
 
 export type GitRevertOp = 'start' | 'continue' | 'abort' | 'skip';
 
@@ -70,14 +71,14 @@ export const gitRevertTool: Tool = {
       if (r.spawnError) { return spawnFail('git_revert', r.stderr); }
       if (r.code !== 0) {
         const conflicts = await listConflicts(cwd);
-        if (conflicts.length > 0) { return conflictResult(op, [], conflicts); }
-        return fail('git_revert', r.stderr, r.stdout, r.code);
+        if (conflicts.length > 0) { return conflictResult(op, [], conflicts, r); }
+        return fail('git_revert', r, { mutating: true });
       }
       return okResult(op, [], cwd);
     }
 
     const refs = Array.isArray(input['refs']) ? (input['refs'] as unknown[]).map(String).filter(Boolean) : [];
-    if (refs.length === 0) { return fail('git_revert', 'op=start requires refs', '', 1); }
+    if (refs.length === 0) { return rejectInput('git_revert', 'op=start requires refs'); }
     const argv = ['git', 'revert', '--no-edit'];
     if (input['noCommit'] === true) { argv.push('--no-commit'); }
     if (typeof input['mainline'] === 'number') { argv.push('--mainline', String(Math.floor(input['mainline']))); }
@@ -87,8 +88,8 @@ export const gitRevertTool: Tool = {
     if (r.spawnError) { return spawnFail('git_revert', r.stderr); }
     if (r.code !== 0) {
       const conflicts = await listConflicts(cwd);
-      if (conflicts.length > 0) { return conflictResult('start', refs, conflicts); }
-      return fail('git_revert', r.stderr, r.stdout, r.code);
+      if (conflicts.length > 0) { return conflictResult('start', refs, conflicts, r); }
+      return fail('git_revert', r, { mutating: true });
     }
     return okResult('start', refs, cwd);
   },
@@ -101,7 +102,7 @@ async function okResult(op: GitRevertOp, refs: string[], cwd: string): Promise<T
   return { output: `${verb} on **${branch}**.`, format: 'markdown', success: true, data };
 }
 
-async function conflictResult(op: GitRevertOp, refs: string[], conflicts: string[]): Promise<ToolResult> {
+async function conflictResult(op: GitRevertOp, refs: string[], conflicts: string[], r: ShellResult): Promise<ToolResult> {
   const data: GitRevertData = { op, refs, inConflict: true, conflicts };
   const body = [
     `**Revert paused with ${conflicts.length} conflict${conflicts.length === 1 ? '' : 's'}.**`,
@@ -111,7 +112,7 @@ async function conflictResult(op: GitRevertOp, refs: string[], conflicts: string
     '',
     'Resolve, `git add`, then `git_revert` with `op: continue`.',
   ].filter(Boolean).join('\n');
-  return { output: body, format: 'markdown', success: false, error: 'revert conflict', data };
+  return withFailure({ output: body, format: 'markdown', success: false, error: 'revert conflict', data }, failureKind(r), r.stderr.trim() || r.stdout.trim());
 }
 
 async function listConflicts(cwd: string): Promise<string[]> {

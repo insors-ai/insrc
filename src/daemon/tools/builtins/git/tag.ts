@@ -4,7 +4,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail } from './helpers.js';
+import { str, fail, spawnFail, rejectInput } from './helpers.js';
 
 export type GitTagOp = 'list' | 'create' | 'delete';
 
@@ -75,7 +75,7 @@ export const gitTagTool: Tool = {
       if (pattern) { argv.push(pattern); }
       const r = await runShell(argv, { cwd, timeoutMs: 10_000 });
       if (r.spawnError) { return spawnFail('git_tag', r.stderr); }
-      if (r.code !== 0) { return fail('git_tag', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_tag', r); }
       const tags: GitTagEntry[] = [];
       for (const line of r.stdout.split('\n')) {
         if (!line.trim()) { continue; }
@@ -91,7 +91,7 @@ export const gitTagTool: Tool = {
     }
 
     const name = str(input, 'name');
-    if (!name) { return fail('git_tag', `missing name for ${op}`, '', 1); }
+    if (!name) { return rejectInput('git_tag', `missing name for ${op}`); }
 
     if (op === 'create') {
       const ref = str(input, 'ref') ?? 'HEAD';
@@ -101,14 +101,14 @@ export const gitTagTool: Tool = {
       argv.push(name, ref);
       const r = await runShell(argv, { cwd, timeoutMs: 15_000 });
       if (r.spawnError) { return spawnFail('git_tag', r.stderr); }
-      if (r.code !== 0) { return fail('git_tag', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_tag', r, { mutating: true }); }
       return { output: `Created tag \`${name}\` at \`${ref}\`.`, format: 'markdown', success: true, data: { op, target: name } satisfies GitTagData };
     }
 
     // delete
     const r = await runShell(['git', 'tag', '-d', name], { cwd, timeoutMs: 10_000 });
     if (r.spawnError) { return spawnFail('git_tag', r.stderr); }
-    if (r.code !== 0) { return fail('git_tag', r.stderr, r.stdout, r.code); }
+    if (r.code !== 0) { return fail('git_tag', r, { mutating: true }); }
     return { output: `Deleted tag \`${name}\`.`, format: 'markdown', success: true, data: { op, target: name } satisfies GitTagData };
   },
 };

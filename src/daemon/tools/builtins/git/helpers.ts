@@ -3,23 +3,89 @@
  */
 
 import { runShell } from '../../shell-helper.js';
-import type { ToolInput, ToolResult } from '../../types.js';
+import type { ShellResult } from '../../shell-helper.js';
+import type { Tool, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from '../../types.js';
 
 export function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
-export function spawnFail(id: string, err: string): ToolResult {
+/** What a failed call's failure.message gains when a mutating command timed out. */
+export const UNKNOWN_OUTCOME = 'the command timed out and its outcome is unknown; check the repository before retrying';
+
+const SIGNIN_RE = /could not read (?:username|password)|authentication failed|permission denied \(publickey|terminal prompts disabled|invalid username or (?:password|token)|repository not found|support for password authentication was removed|HTTP 40[13]|returned error: 40[13]/i;
+const NETWORK_RE = /could not resolve host|unable to access|network is unreachable|connection (?:refused|timed out|reset)|operation timed out|temporary failure in name resolution|could not read from remote repository|early eof|the remote end hung up/i;
+
+/**
+ * The failure kind of a failed command, from the ShellResult alone: 'missing-tool' when git could not be
+ * spawned, 'timed-out' when we killed it, 'missing-signin' or 'unreachable' when a network call's message
+ * shows it, else 'rejected'.
+ */
+export function failureKind(r: ShellResult, opts: { network?: boolean } = {}): ToolFailureKind {
+  if (r.spawnError) { return 'missing-tool'; }
+  if (r.timedOut) { return 'timed-out'; }
+  if (opts.network === true) {
+    const text = `${r.stderr}\n${r.stdout}`;
+    if (SIGNIN_RE.test(text)) { return 'missing-signin'; }
+    if (NETWORK_RE.test(text)) { return 'unreachable'; }
+  }
+  return 'rejected';
+}
+
+/** Attach a failure to a legacy failed result; output, format, success, error and data are untouched. */
+export function withFailure(result: ToolResult, kind: ToolFailureKind, original?: string, message?: string): ToolResult {
   return {
-    output: `[${id}] cannot spawn git -- ${err.trim() || 'unknown error'}`,
-    format: 'text', success: false, error: 'git not found',
+    ...result,
+    failure: {
+      kind,
+      message: message ?? result.error ?? result.output,
+      ...(original !== undefined ? { original } : {}),
+    },
   };
 }
 
-export function fail(id: string, stderr: string, stdout: string, code: number | null): ToolResult {
-  const msg = stderr.trim() || stdout.trim() || `exit ${code}`;
-  return { output: `[${id}] failed: ${msg}`, format: 'text', success: false, error: msg };
+export function spawnFail(label: string, err: string): ToolResult {
+  return withFailure({
+    output: `[${label}] cannot spawn git -- ${err.trim() || 'unknown error'}`,
+    format: 'text', success: false, error: 'git not found',
+  }, 'missing-tool', err);
+}
+
+/**
+ * The default failed result of a command that ran and failed: '[label] failed: <message>'. `network` is true
+ * for push, pull, fetch, clone and ls-remote; `mutating` adds the unknown-outcome sentence to failure.message
+ * of a timed-out call (output and error keep today's text).
+ */
+export function fail(label: string, r: ShellResult, opts: { network?: boolean; mutating?: boolean } = {}): ToolResult {
+  const msg = r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`;
+  const kind = failureKind(r, opts.network === true ? { network: true } : {});
+  const message = kind === 'timed-out' && opts.mutating === true ? `${msg} (${UNKNOWN_OUTCOME})` : undefined;
+  return withFailure(
+    { output: `[${label}] failed: ${msg}`, format: 'text', success: false, error: msg },
+    kind, r.stderr.trim() || r.stdout.trim(), message,
+  );
+}
+
+/** A call refused before any command ran (missing or malformed input): the default shape with kind 'rejected'. */
+export function rejectInput(label: string, msg: string): ToolResult {
+  return withFailure({ output: `[${label}] failed: ${msg}`, format: 'text', success: false, error: msg }, 'rejected');
+}
+
+/**
+ * Registration net: any unsuccessful result without a failure gets kind 'rejected' (message from its error
+ * text); a failure the tool set itself is left as it is.
+ */
+export function withFailureNet(tool: Tool): Tool {
+  const execute = tool.execute.bind(tool);
+  return {
+    ...tool,
+    async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+      const r = await execute(input, deps);
+      if (r.success || r.failure !== undefined) { return r; }
+      return withFailure(r, 'rejected');
+    },
+  };
 }
 
 /**

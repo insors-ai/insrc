@@ -8,6 +8,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import { fail, spawnFail, withFailure } from './helpers.js';
 import type { GitDiffFileStat } from './diff.js';
 
 export interface GitShowData {
@@ -62,26 +63,20 @@ export const gitShowTool: Tool = {
     const header = await runShell(headerArgv, { cwd, timeoutMs: 15_000 });
 
     if (header.spawnError) {
-      return spawnFail(header.stderr);
+      return spawnFail('git:show', header.stderr);
     }
     if (header.code !== 0) {
-      const msg = header.stderr.trim() || header.stdout.trim() || `exit ${header.code}`;
-      return {
-        output: `[git:show] failed: ${msg}`,
-        format: 'text',
-        success: false,
-        error: msg,
-      };
+      return fail('git:show', header);
     }
 
     const meta = parseHeader(header.stdout);
     if (!meta) {
-      return {
+      return withFailure({
         output: `[git:show] could not parse commit metadata for \`${ref}\``,
         format: 'text',
         success: false,
         error: 'parse error',
-      };
+      }, 'rejected', header.stdout);
     }
 
     // Diff + numstat in parallel.
@@ -126,15 +121,6 @@ export const gitShowTool: Tool = {
 function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];
   return typeof v === 'string' && v.length > 0 ? v : undefined;
-}
-
-function spawnFail(err: string): ToolResult {
-  return {
-    output: `[git:show] cannot spawn git -- ${err.trim() || 'unknown error'}`,
-    format: 'text',
-    success: false,
-    error: 'git not found',
-  };
 }
 
 function parseHeader(raw: string): Omit<GitShowData, 'files' | 'totalInsertions' | 'totalDeletions' | 'truncated' | 'diffBytes'> | null {

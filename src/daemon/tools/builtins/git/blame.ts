@@ -9,6 +9,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import { fail, spawnFail, withFailure } from './helpers.js';
 
 export interface GitBlameLine {
   line: number;
@@ -51,7 +52,7 @@ export const gitBlameTool: Tool = {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const path = str(input, 'path');
     if (!path) {
-      return fail('missing path');
+      return badInput('missing path');
     }
     const ref = str(input, 'ref') ?? 'HEAD';
     const start = numInput(input, 'startLine');
@@ -66,15 +67,9 @@ export const gitBlameTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 30_000, maxBytes: 4 * 1024 * 1024 });
     if (result.spawnError) {
-      return {
-        output: `[git:blame] cannot spawn git -- ${result.stderr.trim() || 'unknown error'}`,
-        format: 'text', success: false, error: 'git not found',
-      };
+      return spawnFail('git:blame', result.stderr);
     }
-    if (result.code !== 0) {
-      const msg = result.stderr.trim() || result.stdout.trim() || `exit ${result.code}`;
-      return { output: `[git:blame] failed: ${msg}`, format: 'text', success: false, error: msg };
-    }
+    if (result.code !== 0) { return fail('git:blame', result); }
 
     const lines = parsePorcelain(result.stdout);
     const commits = summarizeCommits(lines);
@@ -228,6 +223,6 @@ function numInput(input: ToolInput, key: string): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : undefined;
 }
 
-function fail(msg: string): ToolResult {
-  return { output: `[git:blame] ${msg}`, format: 'text', success: false, error: msg };
+function badInput(msg: string): ToolResult {
+  return withFailure({ output: `[git:blame] ${msg}`, format: 'text', success: false, error: msg }, 'rejected');
 }

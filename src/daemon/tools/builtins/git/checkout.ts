@@ -12,7 +12,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput } from './helpers.js';
 
 export type GitCheckoutMode = 'ref' | 'path';
 
@@ -82,14 +82,14 @@ export const gitCheckoutTool: Tool = {
 
     if (mode === 'ref') {
       const ref = str(input, 'ref');
-      if (!ref) { return fail('git_checkout', 'mode=ref requires ref', '', 1); }
+      if (!ref) { return rejectInput('git_checkout', 'mode=ref requires ref'); }
       const previous = await currentBranch(cwd);
       const argv = ['git', 'switch'];
       if (input['discard'] === true) { argv.push('--force'); }
       argv.push(ref);
       const result = await runShell(argv, { cwd, timeoutMs: 15_000 });
       if (result.spawnError) { return spawnFail('git_checkout', result.stderr); }
-      if (result.code !== 0) { return fail('git_checkout', result.stderr, result.stdout, result.code); }
+      if (result.code !== 0) { return fail('git_checkout', result, { mutating: true }); }
       const data: GitCheckoutData = { mode, ref, ...(previous ? { previous } : {}) };
       return {
         output: previous
@@ -102,12 +102,12 @@ export const gitCheckoutTool: Tool = {
     // mode === 'path'
     const ref = str(input, 'ref') ?? 'HEAD';
     const paths = Array.isArray(input['paths']) ? (input['paths'] as unknown[]).map(String).filter(Boolean) : [];
-    if (paths.length === 0) { return fail('git_checkout', 'mode=path requires paths', '', 1); }
+    if (paths.length === 0) { return rejectInput('git_checkout', 'mode=path requires paths'); }
 
     const argv = ['git', 'restore', '--source', ref, '--worktree', '--', ...paths];
     const result = await runShell(argv, { cwd, timeoutMs: 15_000 });
     if (result.spawnError) { return spawnFail('git_checkout', result.stderr); }
-    if (result.code !== 0) { return fail('git_checkout', result.stderr, result.stdout, result.code); }
+    if (result.code !== 0) { return fail('git_checkout', result, { mutating: true }); }
 
     const data: GitCheckoutData = { mode, ref, paths };
     return {

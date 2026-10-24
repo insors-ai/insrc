@@ -13,8 +13,9 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput, failureKind, withFailure } from './helpers.js';
 
 export type GitRebaseOp = 'start' | 'continue' | 'abort' | 'skip';
 
@@ -89,15 +90,15 @@ export const gitRebaseTool: Tool = {
       if (r.code !== 0) {
         const conflicts = await listConflicts(cwd);
         if (conflicts.length > 0) {
-          return conflictResult(op, cwd, conflicts);
+          return conflictResult(op, cwd, conflicts, r);
         }
-        return fail('git_rebase', r.stderr, r.stdout, r.code);
+        return fail('git_rebase', r, { mutating: true });
       }
       return okResult(op, cwd);
     }
 
     const onto = str(input, 'onto');
-    if (!onto) { return fail('git_rebase', 'missing onto for op=start', '', 1); }
+    if (!onto) { return rejectInput('git_rebase', 'missing onto for op=start'); }
     const upstream = str(input, 'upstream');
     const autostash = input['autostash'] === true;
     const rerere = input['rerereAutoupdate'] === true;
@@ -113,9 +114,9 @@ export const gitRebaseTool: Tool = {
     if (r.code !== 0) {
       const conflicts = await listConflicts(cwd);
       if (conflicts.length > 0) {
-        return conflictResult('start', cwd, conflicts, onto);
+        return conflictResult('start', cwd, conflicts, r, onto);
       }
-      return fail('git_rebase', r.stderr, r.stdout, r.code);
+      return fail('git_rebase', r, { mutating: true });
     }
     return okResult('start', cwd, onto);
   },
@@ -130,7 +131,7 @@ async function okResult(op: GitRebaseOp, cwd: string, onto?: string): Promise<To
   return { output: `${verb}. HEAD -> \`${shortSha}\` on **${branch}**.`, format: 'markdown', success: true, data };
 }
 
-async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[], onto?: string): Promise<ToolResult> {
+async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[], r: ShellResult, onto?: string): Promise<ToolResult> {
   const branch = (await currentBranch(cwd)) ?? '(detached)';
   const data: GitRebaseData = { op, ...(onto ? { onto } : {}), branch, inConflict: true, conflicts };
   const body = [
@@ -141,7 +142,7 @@ async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[],
     '',
     'Resolve, `git add`, then re-run `git_rebase` with `op: continue`. Or `op: abort`.',
   ].filter(Boolean).join('\n');
-  return { output: body, format: 'markdown', success: false, error: 'rebase conflict', data };
+  return withFailure({ output: body, format: 'markdown', success: false, error: 'rebase conflict', data }, failureKind(r), r.stderr.trim() || r.stdout.trim());
 }
 
 async function listConflicts(cwd: string): Promise<string[]> {

@@ -12,7 +12,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, revParse } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
 
 export interface GitPushData {
   remote: string;
@@ -84,7 +84,7 @@ export const gitPushTool: Tool = {
     if (!ref) {
       const br = await currentBranch(cwd);
       if (!br) {
-        return fail('git_push', 'detached HEAD -- supply an explicit ref', '', 1);
+        return rejectInput('git_push', 'detached HEAD -- supply an explicit ref');
       }
       ref = br;
     }
@@ -98,10 +98,9 @@ export const gitPushTool: Tool = {
     const forceToMain = input['forceToMain'] === true;
 
     if ((force || forceRaw) && protectedRef && !forceToMain) {
-      return fail(
+      return rejectInput(
         'git_push',
         `refusing force push to protected ref \`${ref}\` -- rerun with forceToMain:true to override`,
-        '', 1,
       );
     }
 
@@ -115,7 +114,7 @@ export const gitPushTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 120_000 });
     if (result.spawnError) { return spawnFail('git_push', result.stderr); }
-    if (result.code !== 0) { return fail('git_push', result.stderr, result.stdout, result.code); }
+    if (result.code !== 0) { return fail('git_push', result, { network: true, mutating: true }); }
 
     const shortSha = await revParse(cwd, ref);
     const data: GitPushData = {

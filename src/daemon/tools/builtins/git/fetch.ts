@@ -52,7 +52,7 @@ export const gitFetchTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 120_000 });
     if (result.spawnError) { return spawnFail('git_fetch', result.stderr); }
-    if (result.code !== 0) { return fail('git_fetch', result.stderr, result.stdout, result.code); }
+    if (result.code !== 0) { return fail('git_fetch', result, { network: true, mutating: true }); }
 
     // git fetch writes its progress / update summary to stderr by
     // convention. Extract meaningful lines (ref updates start with

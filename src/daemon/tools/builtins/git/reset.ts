@@ -13,7 +13,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput } from './helpers.js';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
@@ -74,7 +74,7 @@ export const gitResetTool: Tool = {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const mode = (str(input, 'mode') ?? 'mixed') as GitResetMode;
     const ref = str(input, 'ref');
-    if (!ref) { return fail('git_reset', 'missing ref', '', 1); }
+    if (!ref) { return rejectInput('git_reset', 'missing ref'); }
 
     const branch = (await currentBranch(cwd)) ?? '(detached)';
     const priorShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
@@ -83,7 +83,7 @@ export const gitResetTool: Tool = {
 
     const r = await runShell(['git', 'reset', `--${mode}`, ref], { cwd, timeoutMs: 30_000 });
     if (r.spawnError) { return spawnFail('git_reset', r.stderr); }
-    if (r.code !== 0) { return fail('git_reset', r.stderr, r.stdout, r.code); }
+    if (r.code !== 0) { return fail('git_reset', r, { mutating: true }); }
 
     const afterShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
     const data: GitResetData = {

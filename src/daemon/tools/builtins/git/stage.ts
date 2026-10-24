@@ -8,6 +8,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { fail, spawnFail, withFailure } from './helpers.js';
 
 export type GitStageOp = 'stage' | 'unstage';
 
@@ -75,7 +76,7 @@ export const gitStageTool: Tool = {
     const op = (str(input, 'op') ?? 'stage') as GitStageOp;
     const paths = Array.isArray(input['paths']) ? (input['paths'] as unknown[]).map(String).filter(Boolean) : [];
     if (paths.length === 0) {
-      return { output: '[git:stage] paths is empty', format: 'text', success: false, error: 'no paths' };
+      return withFailure({ output: '[git:stage] paths is empty', format: 'text', success: false, error: 'no paths' }, 'rejected');
     }
     const update = input['update'] === true;
 
@@ -85,15 +86,9 @@ export const gitStageTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 20_000 });
     if (result.spawnError) {
-      return {
-        output: `[git:stage] cannot spawn git -- ${result.stderr.trim() || 'unknown error'}`,
-        format: 'text', success: false, error: 'git not found',
-      };
+      return spawnFail('git:stage', result.stderr);
     }
-    if (result.code !== 0) {
-      const msg = result.stderr.trim() || result.stdout.trim() || `exit ${result.code}`;
-      return { output: `[git:stage] failed: ${msg}`, format: 'text', success: false, error: msg };
-    }
+    if (result.code !== 0) { return fail('git:stage', result, { mutating: true }); }
 
     // Capture post-state for the response: which paths still show up
     // in `git diff --cached --name-only`. Lets the caller verify the

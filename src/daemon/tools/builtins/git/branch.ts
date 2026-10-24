@@ -12,6 +12,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { fail, spawnFail, rejectInput } from './helpers.js';
 
 export type GitBranchOp = 'list' | 'create' | 'switch' | 'delete';
 
@@ -118,7 +119,7 @@ async function listBranches(cwd: string, includeRemote: boolean): Promise<ToolRe
   if (includeRemote) { argv.push('-a'); }
   const result = await runShell(argv, { cwd, timeoutMs: 10_000 });
   if (result.spawnError) { return spawnFail('git_branch', result.stderr); }
-  if (result.code !== 0) { return fail('git_branch', result.stderr, result.stdout, result.code); }
+  if (result.code !== 0) { return fail('git_branch', result); }
 
   const branches: GitBranchEntry[] = [];
   for (const line of result.stdout.split('\n')) {
@@ -147,7 +148,7 @@ async function listBranches(cwd: string, includeRemote: boolean): Promise<ToolRe
 
 async function createBranch(cwd: string, input: ToolInput): Promise<ToolResult> {
   const name = str(input, 'name');
-  if (!name) { return fail('git_branch', 'missing name for create', '', 1); }
+  if (!name) { return rejectInput('git_branch', 'missing name for create'); }
   const startPoint = str(input, 'startPoint');
   const track = input['track'] === true;
 
@@ -158,7 +159,7 @@ async function createBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 
   const result = await runShell(argv, { cwd, timeoutMs: 10_000 });
   if (result.spawnError) { return spawnFail('git_branch', result.stderr); }
-  if (result.code !== 0) { return fail('git_branch', result.stderr, result.stdout, result.code); }
+  if (result.code !== 0) { return fail('git_branch', result, { mutating: true }); }
 
   const data: GitBranchData = { op: 'create', target: name };
   return {
@@ -175,7 +176,7 @@ async function createBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 
 async function switchBranch(cwd: string, input: ToolInput): Promise<ToolResult> {
   const name = str(input, 'name');
-  if (!name) { return fail('git_branch', 'missing name for switch', '', 1); }
+  if (!name) { return rejectInput('git_branch', 'missing name for switch'); }
 
   // Capture previous branch for audit trail.
   const head = await runShell(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], { cwd, timeoutMs: 5_000 });
@@ -183,7 +184,7 @@ async function switchBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 
   const result = await runShell(['git', 'switch', name], { cwd, timeoutMs: 10_000 });
   if (result.spawnError) { return spawnFail('git_branch', result.stderr); }
-  if (result.code !== 0) { return fail('git_branch', result.stderr, result.stdout, result.code); }
+  if (result.code !== 0) { return fail('git_branch', result, { mutating: true }); }
 
   const data: GitBranchData = { op: 'switch', target: name, ...(previous ? { previous } : {}) };
   return {
@@ -202,13 +203,13 @@ async function switchBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 
 async function deleteBranch(cwd: string, input: ToolInput): Promise<ToolResult> {
   const name = str(input, 'name');
-  if (!name) { return fail('git_branch', 'missing name for delete', '', 1); }
+  if (!name) { return rejectInput('git_branch', 'missing name for delete'); }
   const force = input['force'] === true;
 
   const argv = ['git', 'branch', force ? '-D' : '-d', name];
   const result = await runShell(argv, { cwd, timeoutMs: 10_000 });
   if (result.spawnError) { return spawnFail('git_branch', result.stderr); }
-  if (result.code !== 0) { return fail('git_branch', result.stderr, result.stdout, result.code); }
+  if (result.code !== 0) { return fail('git_branch', result, { mutating: true }); }
 
   const data: GitBranchData = { op: 'delete', target: name };
   return {
@@ -243,18 +244,6 @@ function renderList(data: GitBranchData, cwd: string): string {
 function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];
   return typeof v === 'string' && v.length > 0 ? v : undefined;
-}
-
-function spawnFail(id: string, err: string): ToolResult {
-  return {
-    output: `[${id}] cannot spawn git -- ${err.trim() || 'unknown error'}`,
-    format: 'text', success: false, error: 'git not found',
-  };
-}
-
-function fail(id: string, stderr: string, stdout: string, code: number | null): ToolResult {
-  const msg = stderr.trim() || stdout.trim() || `exit ${code}`;
-  return { output: `[${id}] failed: ${msg}`, format: 'text', success: false, error: msg };
 }
 
 function escape(s: string): string {

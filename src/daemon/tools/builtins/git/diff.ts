@@ -18,6 +18,7 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import { fail, failureKind, spawnFail, withFailure } from './helpers.js';
 
 /** The shell runner; a test replaces it to make one of the two git commands fail. */
 let shell: typeof runShell = runShell;
@@ -106,24 +107,24 @@ export const gitDiffTool: Tool = {
     // exclusion", which would silently put the excluded paths back in the diff.
     const rawExclude = input['exclude'];
     if (rawExclude !== undefined && !isExcludeList(rawExclude)) {
-      return {
+      return withFailure({
         output: '[git:diff] invalid-input: `exclude` must be an array of non-empty strings',
         format: 'text',
         success: false,
         error: 'invalid-input',
-      };
+      }, 'rejected');
     }
     const exclude: readonly string[] = rawExclude ?? [];
     // Same rule for `paths`: a malformed list must not degrade into "no
     // restriction", which would silently diff the whole repository.
     const rawPaths = input['paths'];
     if (rawPaths !== undefined && (!isExcludeList(rawPaths) || rawPaths.length === 0 || path !== undefined)) {
-      return {
+      return withFailure({
         output: '[git:diff] invalid-input: `paths` must be a non-empty array of non-empty strings, and cannot be combined with `path`',
         format: 'text',
         success: false,
         error: 'invalid-input',
-      };
+      }, 'rejected');
     }
     const context = typeof input['context'] === 'number' ? input['context'] : undefined;
     const ignoreWhitespace = boolInput(input, 'ignoreWhitespace');
@@ -154,33 +155,22 @@ export const gitDiffTool: Tool = {
     ]);
 
     if (diff.spawnError) {
-      return {
-        output: `[git:diff] cannot spawn git -- ${diff.stderr.trim() || 'unknown error'}`,
-        format: 'text',
-        success: false,
-        error: 'git not found',
-      };
+      return spawnFail('git:diff', diff.stderr);
     }
     if (diff.code !== 0) {
-      const msg = diff.stderr.trim() || diff.stdout.trim() || `exit ${diff.code}`;
-      return {
-        output: `[git:diff] failed: ${msg}`,
-        format: 'text',
-        success: false,
-        error: msg,
-      };
+      return fail('git:diff', diff);
     }
 
     // A failed stat read is a failure, not "no files changed": an empty list here
     // would pass for an empty change set (ISSUE-b97752e9).
     if (stat.spawnError || stat.code !== 0) {
       const msg = stat.stderr.trim() || stat.stdout.trim() || `exit ${stat.code}`;
-      return {
+      return withFailure({
         output: `[git:diff] numstat failed: ${msg}`,
         format: 'text',
         success: false,
         error: `numstat failed: ${msg}`,
-      };
+      }, failureKind(stat), msg);
     }
     const files = parseNumstat(stat.stdout);
     const totalInsertions = files.reduce((n, f) => n + f.insertions, 0);

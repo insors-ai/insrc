@@ -78,7 +78,7 @@ export const gitStashTool: Tool = {
     if (op === 'list') {
       const r = await runShell(['git', 'stash', 'list', '--pretty=%gd\t%gs'], { cwd, timeoutMs: 10_000 });
       if (r.spawnError) { return spawnFail('git_stash', r.stderr); }
-      if (r.code !== 0) { return fail('git_stash', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_stash', r); }
       const entries: GitStashEntry[] = [];
       for (const line of r.stdout.split('\n')) {
         if (!line.trim()) { continue; }
@@ -102,7 +102,7 @@ export const gitStashTool: Tool = {
       const ref = str(input, 'ref') ?? 'stash@{0}';
       const r = await runShell(['git', 'stash', 'show', '-p', '--no-color', ref], { cwd, timeoutMs: 15_000, maxBytes: 512 * 1024 });
       if (r.spawnError) { return spawnFail('git_stash', r.stderr); }
-      if (r.code !== 0) { return fail('git_stash', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_stash', r); }
       const data: GitStashData = { op, affectedRef: ref, output: r.stdout };
       return { output: `# \`${ref}\`\n\n\`\`\`diff\n${r.stdout.trim()}\n\`\`\``, format: 'markdown', success: true, data };
     }
@@ -120,7 +120,7 @@ export const gitStashTool: Tool = {
 
     const r = await runShell(argv, { cwd, timeoutMs: 30_000 });
     if (r.spawnError) { return spawnFail('git_stash', r.stderr); }
-    if (r.code !== 0) { return fail('git_stash', r.stderr, r.stdout, r.code); }
+    if (r.code !== 0) { return fail('git_stash', r, { mutating: true }); }
     const data: GitStashData = { op, output: r.stdout.trim() || r.stderr.trim() };
     const ref = str(input, 'ref');
     if (ref !== undefined) { data.affectedRef = ref; }

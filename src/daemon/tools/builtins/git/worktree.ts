@@ -4,7 +4,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail } from './helpers.js';
+import { str, fail, spawnFail, rejectInput } from './helpers.js';
 
 export type GitWorktreeOp = 'list' | 'add' | 'remove' | 'move' | 'prune';
 
@@ -79,7 +79,7 @@ export const gitWorktreeTool: Tool = {
     if (op === 'list') {
       const r = await runShell(['git', 'worktree', 'list', '--porcelain'], { cwd, timeoutMs: 10_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
-      if (r.code !== 0) { return fail('git_worktree', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_worktree', r); }
       const worktrees = parseList(r.stdout);
       const body = worktrees.length === 0
         ? '_No worktrees (this shouldn\'t happen -- at least the main worktree should be listed)._'
@@ -96,7 +96,7 @@ export const gitWorktreeTool: Tool = {
 
     const path = str(input, 'path');
     if (op === 'add') {
-      if (!path) { return fail('git_worktree', 'add requires path', '', 1); }
+      if (!path) { return rejectInput('git_worktree', 'add requires path'); }
       const branch = str(input, 'branch');
       const argv = ['git', 'worktree', 'add'];
       if (input['detach'] === true) { argv.push('--detach'); }
@@ -107,27 +107,27 @@ export const gitWorktreeTool: Tool = {
       }
       const r = await runShell(argv, { cwd, timeoutMs: 60_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
-      if (r.code !== 0) { return fail('git_worktree', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
       return { output: `Added worktree \`${path}\`.`, format: 'markdown', success: true, data: { op, path, ...(branch ? { branch } : {}) } satisfies GitWorktreeData };
     }
 
     if (op === 'remove') {
-      if (!path) { return fail('git_worktree', 'remove requires path', '', 1); }
+      if (!path) { return rejectInput('git_worktree', 'remove requires path'); }
       const argv = ['git', 'worktree', 'remove'];
       if (input['force'] === true) { argv.push('-f'); }
       argv.push(path);
       const r = await runShell(argv, { cwd, timeoutMs: 30_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
-      if (r.code !== 0) { return fail('git_worktree', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
       return { output: `Removed worktree \`${path}\`.`, format: 'markdown', success: true, data: { op, path } satisfies GitWorktreeData };
     }
 
     if (op === 'move') {
       const newPath = str(input, 'newPath');
-      if (!path || !newPath) { return fail('git_worktree', 'move requires path + newPath', '', 1); }
+      if (!path || !newPath) { return rejectInput('git_worktree', 'move requires path + newPath'); }
       const r = await runShell(['git', 'worktree', 'move', path, newPath], { cwd, timeoutMs: 30_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
-      if (r.code !== 0) { return fail('git_worktree', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
       return { output: `Moved worktree \`${path}\` -> \`${newPath}\`.`, format: 'markdown', success: true, data: { op, path, newPath } satisfies GitWorktreeData };
     }
 
@@ -136,7 +136,7 @@ export const gitWorktreeTool: Tool = {
     if (input['force'] === true) { argv.push('--expire=1.second.ago'); }
     const r = await runShell(argv, { cwd, timeoutMs: 15_000 });
     if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
-    if (r.code !== 0) { return fail('git_worktree', r.stderr, r.stdout, r.code); }
+    if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
     return {
       output: `Pruned stale worktree records.\n\n\`\`\`\n${r.stdout.trim() || '(nothing to prune)'}\n\`\`\``,
       format: 'markdown',

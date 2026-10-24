@@ -6,7 +6,8 @@
  * registerGitTools() once at startup.
  */
 
-import { registerTool } from '../../registry.js';
+import { registerTool as register } from '../../registry.js';
+import { withFailureNet } from './helpers.js';
 import { gitStatusTool } from './status.js';
 import { gitLogTool } from './log.js';
 import { gitDiffTool } from './diff.js';
@@ -31,26 +32,26 @@ import { gitRemoteTool } from './remote.js';
 import { gitWorktreeTool } from './worktree.js';
 
 export function registerGitTools(): void {
-  registerTool(gitStatusTool);
-  registerTool(gitLogTool);
-  registerTool(gitDiffTool);
-  registerTool(gitShowTool);
-  registerTool(gitBlameTool);
-  registerTool(gitBranchTool);
-  registerTool(gitStageTool);
-  registerTool(gitCommitTool);
-  registerTool(gitAmendTool);
-  registerTool(gitPushTool);
-  registerTool(gitPullTool);
-  registerTool(gitFetchTool);
-  registerTool(gitCheckoutTool);
-  registerTool(gitMergeTool);
-  registerTool(gitRebaseTool);
-  registerTool(gitStashTool);
-  registerTool(gitResetTool);
-  registerTool(gitRevertTool);
-  registerTool(gitCherryPickTool);
-  registerTool(gitTagTool);
-  registerTool(gitRemoteTool);
-  registerTool(gitWorktreeTool);
+  register(withFailureNet(gitStatusTool));
+  register(withFailureNet(gitLogTool));
+  register(withFailureNet(gitDiffTool));
+  register(withFailureNet(gitShowTool));
+  register(withFailureNet(gitBlameTool));
+  register(withFailureNet(gitBranchTool));
+  register(withFailureNet(gitStageTool));
+  register(withFailureNet(gitCommitTool));
+  register(withFailureNet(gitAmendTool));
+  register(withFailureNet(gitPushTool));
+  register(withFailureNet(gitPullTool));
+  register(withFailureNet(gitFetchTool));
+  register(withFailureNet(gitCheckoutTool));
+  register(withFailureNet(gitMergeTool));
+  register(withFailureNet(gitRebaseTool));
+  register(withFailureNet(gitStashTool));
+  register(withFailureNet(gitResetTool));
+  register(withFailureNet(gitRevertTool));
+  register(withFailureNet(gitCherryPickTool));
+  register(withFailureNet(gitTagTool));
+  register(withFailureNet(gitRemoteTool));
+  register(withFailureNet(gitWorktreeTool));
 }

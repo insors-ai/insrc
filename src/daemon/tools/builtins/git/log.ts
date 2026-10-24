@@ -8,6 +8,7 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import { fail, spawnFail } from './helpers.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 
 // ---------------------------------------------------------------------------
@@ -88,22 +89,11 @@ export const gitLogTool: Tool = {
     const result = await runShell(argv, { cwd, timeoutMs: 30_000 });
 
     if (result.spawnError) {
-      return {
-        output: `[git:log] cannot spawn git -- ${result.stderr.trim() || 'unknown error'}`,
-        format: 'text',
-        success: false,
-        error: 'git not found',
-      };
+      return spawnFail('git:log', result.stderr);
     }
 
     if (result.code !== 0) {
-      const msg = result.stderr.trim() || result.stdout.trim() || `exit ${result.code}`;
-      return {
-        output: `[git:log] failed: ${msg}`,
-        format: 'text',
-        success: false,
-        error: msg,
-      };
+      return fail('git:log', result);
     }
 
     const commits = parseLog(result.stdout);

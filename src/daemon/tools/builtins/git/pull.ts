@@ -73,7 +73,7 @@ export const gitPullTool: Tool = {
       if (branch) { argv.push(branch); }
       const result = await runShell(argv, { cwd, timeoutMs: 120_000 });
       if (result.spawnError) { return spawnFail('git_pull', result.stderr); }
-      if (result.code !== 0) { return fail('git_pull', result.stderr, result.stdout, result.code); }
+      if (result.code !== 0) { return fail('git_pull', result, { network: true, mutating: true }); }
       const data: GitPullData = { remote: remote ?? '(tracked)', branch, mode, output: mergeStreams(result) };
       return { output: `Dry-run pull (fetch only) OK.\n\n\`\`\`\n${data.output.trim() || '(no updates)'}\n\`\`\``, format: 'markdown', success: true, data };
     }
@@ -88,7 +88,7 @@ export const gitPullTool: Tool = {
 
     const result = await runShell(argv, { cwd, timeoutMs: 180_000 });
     if (result.spawnError) { return spawnFail('git_pull', result.stderr); }
-    if (result.code !== 0) { return fail('git_pull', result.stderr, result.stdout, result.code); }
+    if (result.code !== 0) { return fail('git_pull', result, { network: true, mutating: true }); }
 
     const data: GitPullData = { remote: remote ?? '(tracked)', branch, mode, output: mergeStreams(result) };
     return {

@@ -10,7 +10,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, fail, failureKind, spawnFail, withFailure, currentBranch, rejectInput } from './helpers.js';
 
 export interface GitMergeData {
   ref: string;
@@ -74,7 +74,7 @@ export const gitMergeTool: Tool = {
     if (input['abort'] === true) {
       const r = await runShell(['git', 'merge', '--abort'], { cwd, timeoutMs: 15_000 });
       if (r.spawnError) { return spawnFail('git_merge', r.stderr); }
-      if (r.code !== 0) { return fail('git_merge', r.stderr, r.stdout, r.code); }
+      if (r.code !== 0) { return fail('git_merge', r, { mutating: true }); }
       return {
         output: 'Merge aborted.',
         format: 'markdown',
@@ -84,7 +84,7 @@ export const gitMergeTool: Tool = {
     }
 
     const ref = str(input, 'ref');
-    if (!ref) { return fail('git_merge', 'missing ref', '', 1); }
+    if (!ref) { return rejectInput('git_merge', 'missing ref'); }
     const strategy = (str(input, 'strategy') ?? 'default') as GitMergeData['strategy'];
     const message = str(input, 'message');
     const branch = (await currentBranch(cwd)) ?? '(detached)';
@@ -105,7 +105,7 @@ export const gitMergeTool: Tool = {
       const conflicts = await listConflicts(cwd);
       if (conflicts.length > 0) {
         const data: GitMergeData = { ref, branch, strategy, merged: false, inConflict: true, conflicts };
-        return {
+        return withFailure({
           output: [
             `**Merge conflict.** \`${ref}\` into **${branch}** paused.`,
             '',
@@ -119,9 +119,9 @@ export const gitMergeTool: Tool = {
           success: false,
           error: 'merge conflict',
           data,
-        };
+        }, failureKind(result), result.stderr.trim() || result.stdout.trim());
       }
-      return fail('git_merge', result.stderr, result.stdout, result.code);
+      return fail('git_merge', result, { mutating: true });
     }
 
     const data: GitMergeData = { ref, branch, strategy, merged: true, inConflict: false, conflicts: [] };

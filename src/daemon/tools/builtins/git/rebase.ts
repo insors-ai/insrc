@@ -16,7 +16,7 @@ import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
+import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, readBranch, readFailure, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
 import { GitRebaseDataSchema } from './schemas.js';
 import type { GitRebaseData } from './schemas.js';
 
@@ -74,6 +74,12 @@ export const gitRebaseTool: Tool = {
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const op = (str(input, 'op') ?? 'start') as GitRebaseOp;
+
+    if (op === 'start' && !str(input, 'onto')) { return rejectInput('git_rebase', 'missing onto for op=start'); }
+
+    // The current branch is read before anything changes: a read that cannot run stops the call.
+    const before = await readBranch(cwd);
+    if (!before.ok) { return readFailure('git_rebase', before.failed); }
 
     if (op !== 'start') {
       const argv = ['git', 'rebase', `--${op}`];

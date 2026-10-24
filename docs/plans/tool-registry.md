@@ -211,3 +211,22 @@ During s4 t1 the validation gate failed the check "legacy output and error text 
 - t1 stands as built (commits f8a673679 to 15aecaefc). The six calls whose text changed on purpose (`git_commit` and `git_push` when a precondition read, the current branch or the staged count, cannot run) are listed in `git-failures.test.ts` and keep their new text, as LLD 3.5 requires.
 - The gate is expected to keep flagging t1 on that acceptance line and on the test-only time-limit scale in `src/daemon/tools/shell-helper.ts`; both are accepted. t5 and t9 need not preserve failure wording beyond what the LLD states.
 - No production code in the repository reads the text of these tools' failures; s7 moves the callers.
+
+## s4 t9: the fixes of the last review round, each with its implementation and its test (2026-10-25)
+
+Cycle 4, round 3 and the fixes of the earlier unreviewed rounds were checked one by one. Each has code and a test; one gap was found and filled.
+
+| Fix | Implemented in | Pinned by |
+| --- | --- | --- |
+| `noMerged` (and `merged`, `contains`, `pointsAt`) on `git_for_each_ref` | `for-each-ref.ts` (`--no-merged`) | `git-tools-integration.test.ts`: "git_for_each_ref contains, merged, pointsAt and noMerged select the right refs"; `git-failures.test.ts`: the t9 test ("... and git_for_each_ref noMerged") |
+| The amend helper read (`wasPushed`): no upstream and "not an ancestor" are answers, a read that did not run is not | `amend.ts`, `helpers.ts` (`ranToExit`) | `git-failures.test.ts`: "git_amend wasPushed, git_reset willNeedForcePush and git_merge listConflicts keep their expected non-zero answers ..." and the t9 test |
+| The reset helper read (`willNeedForcePush`): exit 0 true, exit 1 false, anything else stops the call | `reset.ts` | the same two tests |
+| The merge helper read (`listConflicts`): a read that did not run is named in the failure | `merge.ts` | the same two tests |
+| Independent `stdoutLimit` and `stderrLimit` on `runShellBytes`, `stderrOverflow` | `shell-helper.ts` | `shell-helper-bytes.test.ts`: "independently lowered stdout and stderr limits behave as the corpus reader's limits do ..."; `git-tools-integration.test.ts`: the `git_cat_file` diagnostics test |
+| `git_merge_base` returns `bases` (all, none for unrelated histories) | `merge-base.ts` | `git-tools-integration.test.ts`: "git_merge_base answers all, unrelated and isAncestor cases ..." |
+| `git_fetch` depth below 1 is refused | `fetch.ts` (schema `minimum: 1`) | `git-tools-integration.test.ts`: "git_fetch depth 0 and 0.5 are rejected ..." |
+| The commit numstat read is an inventoried secondary read | `commit.ts` (`collectCommitData`) | `git-failures.test.ts`: "a failing git_commit numstat read after a successful commit is a success with a warning" and the inventory test |
+| The coverage test has three owners | `coverage.ts` | `git-coverage.test.ts` |
+| The `git_reset` and `git_push` lookups are in the inventory, and a grep test enforces it | `reset.ts`, `push.ts`; `git-failures.test.ts` (`INVENTORY`, `KNOWN`, `HELPERS`, `scanSources`) | the inventory test, and the audit in "a failing precondition read fails the call before any change ...", whose planted sources show that an unlisted lookup, an unchecked result, a swallowing helper and a typed-helper call each fail the scan |
+
+Gap found and filled: the LLD uses the current-branch read as a precondition of `git_rebase`, `git_checkout` and `git:cherry-pick` as well as of `git_commit` and `git_push`, but only the last two stopped on a failed read. `git_rebase`, `git_checkout` and `git:cherry-pick` now read the branch before changing anything and stop when it cannot be read (their input checks still come first); the branch label of their result stays a warning. Pinned by "git_commit, git_push, git_rebase and git_checkout fail before changing anything ...".

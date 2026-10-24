@@ -32,6 +32,7 @@ import { gitCherryPickTool } from '../cherry-pick.js';
 import { gitCommitTool } from '../commit.js';
 import { gitDiffTool, setGitDiffShellForTests } from '../diff.js';
 import { gitFetchTool } from '../fetch.js';
+import { gitForEachRefTool } from '../for-each-ref.js';
 import { gitLogTool } from '../log.js';
 import { gitMergeTool } from '../merge.js';
 import { gitPullTool } from '../pull.js';
@@ -522,7 +523,7 @@ const INVENTORY: readonly Lookup[] = [
 	{ name: 'git_show numstat', tool: gitShowTool, input: repo => ({ cwd: repo }), fail: 'show --no-color --numstat', warning: /numstat/ },
 	{ name: 'git_branch previous branch', tool: gitBranchTool, input: repo => ({ cwd: repo, op: 'switch', name: 'b' }), fail: 'rev-parse --abbrev-ref HEAD', warning: /previous branch/ },
 	{ name: 'git_rebase head', tool: gitRebaseTool, input: repo => ({ cwd: repo, onto: 'main' }), prep: repo => git(repo, 'checkout', '-q', 'b'), fail: 'rev-parse --short HEAD', warning: /short sha/ },
-	{ name: 'git_rebase branch label', tool: gitRebaseTool, input: repo => ({ cwd: repo, onto: 'main' }), prep: repo => git(repo, 'checkout', '-q', 'b'), fail: 'symbolic-ref --short HEAD', warning: /branch is shown/ },
+	{ name: 'git_rebase branch label', tool: gitRebaseTool, input: repo => ({ cwd: repo, onto: 'main' }), prep: repo => git(repo, 'checkout', '-q', 'b'), fail: 'symbolic-ref --short HEAD', skip: 1, warning: /branch is shown/ },
 	{ name: 'git_commit sha', tool: gitCommitTool, input: repo => ({ cwd: repo, message: 'm' }), prep: repo => { writeFileSync(join(repo, 'h.txt'), 'h'); git(repo, 'add', '-A'); }, fail: 'rev-parse HEAD', warning: /the sha is empty/ },
 	{ name: 'git_commit short sha', tool: gitCommitTool, input: repo => ({ cwd: repo, message: 'm' }), prep: repo => { writeFileSync(join(repo, 'h.txt'), 'h'); git(repo, 'add', '-A'); }, fail: 'rev-parse --short HEAD', warning: /short sha is empty/ },
 	{ name: 'git_commit numstat', tool: gitCommitTool, input: repo => ({ cwd: repo, message: 'm' }), prep: repo => { writeFileSync(join(repo, 'h.txt'), 'h'); git(repo, 'add', '-A'); }, fail: 'show --numstat --format= HEAD', warning: /numstat/ },
@@ -535,8 +536,7 @@ const INVENTORY: readonly Lookup[] = [
 	{ name: 'git_push short sha', tool: gitPushTool, input: repo => ({ cwd: repo, remote: 'origin', ref: 'b' }), fail: 'rev-parse --short b', warning: /short sha is empty/ },
 	{ name: 'git_stage index after', tool: gitStageTool, input: repo => ({ cwd: repo, op: 'stage', paths: ['h.txt'] }), prep: repo => { writeFileSync(join(repo, 'h.txt'), 'h'); git(repo, 'add', '-A'); }, fail: 'diff --cached --name-only', warning: /index listing is empty/ },
 	{ name: 'git_revert branch label', tool: gitRevertTool, input: repo => ({ cwd: repo, refs: ['HEAD'] }), fail: 'symbolic-ref --short HEAD', warning: /branch is shown/ },
-	{ name: 'git:cherry-pick branch label', tool: gitCherryPickTool, input: repo => ({ cwd: repo, refs: ['b'] }), fail: 'symbolic-ref --short HEAD', warning: /branch is shown/ },
-	{ name: 'git_checkout previous branch', tool: gitCheckoutTool, input: repo => ({ cwd: repo, mode: 'ref', ref: 'b' }), fail: 'symbolic-ref --short HEAD', warning: /previous branch/ },
+	{ name: 'git:cherry-pick branch label', tool: gitCherryPickTool, input: repo => ({ cwd: repo, refs: ['b'] }), fail: 'symbolic-ref --short HEAD', skip: 1, warning: /branch is shown/ },
 ];
 
 test('a failing git_commit numstat read after a successful commit is a success with a warning', async () => {
@@ -577,7 +577,7 @@ test('every secondary lookup in the git tools is in the inventory and warns on f
 	}
 	// the inventory has no tool twice under one name, and covers every tool the LLD names
 	assert.equal(new Set(INVENTORY.map(l => l.name)).size, INVENTORY.length);
-	for (const tool of ['git_show', 'git_branch', 'git_rebase', 'git_commit', 'git_amend', 'git_reset', 'git_merge', 'git_push', 'git_stage', 'git_revert', 'git:cherry-pick', 'git_checkout']) {
+	for (const tool of ['git_show', 'git_branch', 'git_rebase', 'git_commit', 'git_amend', 'git_reset', 'git_merge', 'git_push', 'git_stage', 'git_revert', 'git:cherry-pick']) {
 		assert.ok(INVENTORY.some(l => l.tool.id === tool), `${tool} has a lookup in the inventory`);
 	}
 });
@@ -682,14 +682,14 @@ function audit(): void {
 	// its tool needs an INVENTORY entry. A new call fails here until it is listed.
 	const HELPERS: Record<string, 'secondary' | 'precondition'> = {
 		'amend.ts: branchForReport x1': 'secondary', 'amend.ts: readShortSha x1': 'secondary',
-		'checkout.ts: readBranch x1': 'secondary', 'cherry-pick.ts: branchForReport x1': 'secondary',
+		'checkout.ts: readBranch x1': 'precondition', 'cherry-pick.ts: branchForReport x1': 'secondary', 'cherry-pick.ts: readBranch x1': 'precondition', 'rebase.ts: readBranch x1': 'precondition',
 		'commit.ts: readBranch x1': 'precondition', 'commit.ts: readStagedCount x1': 'precondition',
 		'merge.ts: branchForReport x2': 'secondary', 'pull.ts: readBranch x1': 'precondition',
 		'push.ts: readBranch x2': 'precondition', 'push.ts: readShortSha x1': 'secondary',
 		'rebase.ts: branchForReport x2': 'secondary', 'reset.ts: branchForReport x1': 'secondary', 'revert.ts: branchForReport x1': 'secondary',
 	};
 	assert.deepEqual(readHelpers.sort(), Object.keys(HELPERS).sort(), 'a read through a typed helper that is not listed');
-	const HELPER_TOOL: Record<string, string> = { 'amend.ts': 'git_amend', 'checkout.ts': 'git_checkout', 'cherry-pick.ts': 'git:cherry-pick', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert' };
+	const HELPER_TOOL: Record<string, string> = { 'amend.ts': 'git_amend', 'cherry-pick.ts': 'git:cherry-pick', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert' };
 	for (const [key, kind] of Object.entries(HELPERS)) {
 		if (kind !== 'secondary') { continue; }
 		assert.ok(INVENTORY.some(l => l.tool.id === HELPER_TOOL[key.split(':')[0]!]), `${key} is secondary: ${HELPER_TOOL[key.split(':')[0]!]} needs an INVENTORY entry`);
@@ -749,5 +749,94 @@ test('git_amend wasPushed, git_reset willNeedForcePush and git_merge listConflic
 		assert.equal(unknown.success, false);
 		assert.match(unknown.failure?.message ?? '', /could not tell whether the merge left conflicts: timed-out/);
 		assert.equal(unknown.error?.includes('conflict'), true);
+	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); }
+});
+
+
+test('git_amend with no upstream, a non-ancestor and a timed-out upstream read; git_reset hard with an unknown force-push state; git_merge with a failing conflict enumeration; and git_for_each_ref noMerged', async () => {
+	const { repo, remote } = seedRepo();
+	try {
+		const head = (): string => git(repo, 'rev-parse', 'HEAD').trim();
+
+		// amend, no upstream configured (git's exit 128 on @{upstream}): the answer is "not pushed", and the amend runs
+		const noUpstream = await gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'no upstream' }, deps(repo));
+		assert.equal(noUpstream.success, true, noUpstream.output);
+		assert.equal((noUpstream.data as { requiresForcePush: boolean }).requiresForcePush, false);
+
+		// amend, HEAD not an ancestor of the upstream (exit 1): not pushed, the amend runs
+		git(repo, 'push', '-q', '-u', 'origin', 'main');
+		writeFileSync(join(repo, 'ahead.txt'), 'a'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'ahead of upstream');
+		const ahead = await gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'ahead, amended' }, deps(repo));
+		assert.equal(ahead.success, true, ahead.output);
+		assert.equal((ahead.data as { requiresForcePush: boolean }).requiresForcePush, false, 'a commit that is not in the upstream is not pushed');
+
+		// amend, the upstream read times out: no answer, so the call stops before the amend
+		const before = head();
+		const slowUpstream = await withFailingRead(repo, 'rev-parse @{upstream}', 0, () => gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'never' }, deps(repo)), 'sleep');
+		assert.equal(slowUpstream.success, false);
+		assert.equal(slowUpstream.failure?.kind, 'timed-out');
+		assert.equal(head(), before);
+
+		// reset --hard with an unknown force-push state: the call stops before the reset, and the worktree is untouched
+		writeFileSync(join(repo, 'f.txt'), 'uncommitted work\n');
+		const hard = await withFailingRead(repo, 'merge-base --is-ancestor', 0, () => gitResetTool.execute({ cwd: repo, mode: 'hard', ref: 'HEAD~1' }, deps(repo)), 'sleep');
+		assert.equal(hard.success, false);
+		assert.equal(hard.failure?.kind, 'timed-out');
+		assert.equal(readFileSync(join(repo, 'f.txt'), 'utf8'), 'uncommitted work\n', 'the uncommitted work is still there');
+		assert.equal(head(), before);
+		git(repo, 'checkout', '-q', '--', 'f.txt');
+
+		// merge, a conflict whose enumeration cannot run: the failure says so and keeps the merge's own kind
+		git(repo, 'checkout', '-q', '-b', 'x', 'main~2');
+		writeFileSync(join(repo, 'f.txt'), 'x side\n'); git(repo, 'commit', '-q', '-am', 'x');
+		git(repo, 'checkout', '-q', 'main');
+		const unknown = await withFailingRead(repo, 'diff --name-only --diff-filter=U', 0, () => gitMergeTool.execute({ cwd: repo, ref: 'x' }, deps(repo)), 'sleep');
+		assert.equal(unknown.success, false);
+		assert.equal(unknown.failure?.kind, 'rejected');
+		assert.match(unknown.failure?.message ?? '', /could not tell whether the merge left conflicts/);
+		git(repo, 'merge', '--abort');
+
+		// for-each-ref --no-merged selects what main does not contain
+		const noMerged = await gitForEachRefTool.execute({ cwd: repo, pattern: ['refs/heads'], fields: ['refname:short'], noMerged: 'main' }, deps(repo));
+		assert.deepEqual((noMerged.data as { refs: Record<string, string>[] }).refs.map(r => r['refname:short']).sort(), ['b', 'x']);
+	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); }
+});
+
+test('git_commit, git_push, git_rebase and git_checkout fail before changing anything when the current-branch or staged-count read cannot run or times out', async () => {
+	const { repo, remote } = seedRepo();
+	try {
+		git(repo, 'push', '-q', '-u', 'origin', 'main');
+		git(repo, 'checkout', '-q', '-b', 'topic'); git(repo, 'commit', '-q', '--allow-empty', '-m', 'topic');
+		git(repo, 'checkout', '-q', 'main');
+		writeFileSync(join(repo, 'h.txt'), 'h'); git(repo, 'add', '-A');
+		const state = (): string => [git(repo, 'rev-parse', 'HEAD'), git(repo, 'symbolic-ref', 'HEAD'), git(repo, 'status', '--porcelain'), git(repo, 'branch', '--list'),
+			execFileSync('git', ['rev-parse', 'refs/heads/main'], { cwd: remote, encoding: 'utf8' })].join('|');
+		const before = state();
+
+		const calls: [string, () => Promise<ToolResult>, string][] = [
+			['git_commit', () => gitCommitTool.execute({ cwd: repo, message: 'm' }, deps(repo)), 'symbolic-ref --short HEAD'],
+			['git_commit', () => gitCommitTool.execute({ cwd: repo, message: 'm' }, deps(repo)), 'diff --cached --name-only'],
+			['git_push', () => gitPushTool.execute({ cwd: repo, remote: 'origin' }, deps(repo)), 'symbolic-ref --short HEAD'],
+			['git_rebase', () => gitRebaseTool.execute({ cwd: repo, onto: 'topic' }, deps(repo)), 'symbolic-ref --short HEAD'],
+			['git_rebase', () => gitRebaseTool.execute({ cwd: repo, op: 'abort' }, deps(repo)), 'symbolic-ref --short HEAD'],
+			['git_checkout', () => gitCheckoutTool.execute({ cwd: repo, mode: 'ref', ref: 'topic' }, deps(repo)), 'symbolic-ref --short HEAD'],
+			['git:cherry-pick', () => gitCherryPickTool.execute({ cwd: repo, refs: ['topic'] }, deps(repo)), 'symbolic-ref --short HEAD'],
+		];
+		for (const [name, run, failing] of calls) {
+			// the read cannot run (exit 1 with a diagnostic) ...
+			const failed = await withFailingRead(repo, failing, 0, run);
+			assert.equal(failed.success, false, `${name} / ${failing}`);
+			assert.equal(failed.failure?.kind, 'rejected', `${name} / ${failing}`);
+			assert.match(failed.output, /fake failure of/, `${name} / ${failing}`);
+			assert.equal(state(), before, `${name} / ${failing}: nothing changed`);
+			// ... or times out: a timed-out failure, not "nothing staged" or "detached HEAD"
+			const slow = await withFailingRead(repo, failing, 0, run, 'sleep');
+			assert.equal(slow.success, false, `${name} / ${failing} (slow)`);
+			assert.equal(slow.failure?.kind, 'timed-out', `${name} / ${failing} (slow)`);
+			assert.equal(state(), before, `${name} / ${failing} (slow): nothing changed`);
+		}
+		// with the reads working the same calls run
+		assert.equal((await gitCheckoutTool.execute({ cwd: repo, mode: 'ref', ref: 'topic' }, deps(repo))).success, true);
+		assert.notEqual(state(), before);
 	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); }
 });

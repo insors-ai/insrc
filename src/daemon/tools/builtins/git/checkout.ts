@@ -13,7 +13,7 @@
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, assertSafeArg, fail, failureKind, readBranch, spawnFail, rejectInput } from './helpers.js';
+import { str, assertSafeArg, fail, readBranch, readFailure, spawnFail, rejectInput } from './helpers.js';
 import { GitCheckoutDataSchema } from './schemas.js';
 import type { GitCheckoutData } from './schemas.js';
 
@@ -78,19 +78,17 @@ export const gitCheckoutTool: Tool = {
       const ref = str(input, 'ref');
       if (!ref) { return rejectInput('git_checkout', 'mode=ref requires ref'); }
       assertSafeArg(ref, 'ref');
-      // The previous branch only adds detail to the answer: a read that fails is a warning.
+      // The branch being left is read before anything changes: a read that cannot run stops the call.
       const prevRead = await readBranch(cwd);
-      const previous = prevRead.ok ? prevRead.value : undefined;
+      if (!prevRead.ok) { return readFailure('git_checkout', prevRead.failed); }
+      const previous = prevRead.value;
       const argv = ['git', 'switch'];
       if (input['discard'] === true) { argv.push('--force'); }
       argv.push(ref);
       const result = await runShell(argv, { cwd, timeoutMs: 15_000 });
       if (result.spawnError) { return spawnFail('git_checkout', result.stderr); }
       if (result.code !== 0) { return fail('git_checkout', result, { mutating: true }); }
-      const data: GitCheckoutData = {
-        mode, ref, ...(previous ? { previous } : {}),
-        ...(prevRead.ok ? {} : { warnings: [`git symbolic-ref --short HEAD ${failureKind(prevRead.failed)}: the previous branch is unknown`] }),
-      };
+      const data: GitCheckoutData = { mode, ref, ...(previous ? { previous } : {}) };
       return {
         output: previous
           ? `Switched HEAD from **${previous}** to **${ref}**.`

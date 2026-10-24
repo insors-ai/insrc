@@ -6,7 +6,7 @@ import { runShell } from '../../shell-helper.js';
 import { Type } from '@sinclair/typebox';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, assertSafeArg, branchForReport, fail, ranToExit, spawnFail, rejectInput, conflictFailure } from './helpers.js';
+import { str, assertSafeArg, branchForReport, fail, ranToExit, readBranch, readFailure, spawnFail, rejectInput, conflictFailure } from './helpers.js';
 import { GitCherryPickDataSchema } from './schemas.js';
 import type { GitCherryPickData } from './schemas.js';
 
@@ -56,6 +56,12 @@ export const gitCherryPickTool: Tool = {
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const op = (str(input, 'op') ?? 'start') as GitCherryPickOp;
+
+    if (op === 'start' && !(Array.isArray(input['refs']) && (input['refs'] as unknown[]).some(Boolean))) { return rejectInput('git:cherry-pick', 'op=start requires refs'); }
+
+    // The current branch is read before anything changes: a read that cannot run stops the call.
+    const before = await readBranch(cwd);
+    if (!before.ok) { return readFailure('git:cherry-pick', before.failed); }
 
     if (op !== 'start') {
       const r = await runShell(['git', 'cherry-pick', `--${op}`], { cwd, timeoutMs: 60_000 });

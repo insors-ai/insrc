@@ -2285,7 +2285,7 @@
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
     "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
-    "src/daemon/db/drivers/converters/avro.ts": "e2a8dd50f1da32b3c65752350b922f7a03cd7bc7d42972c57f9ee52d8262adea",
+    "src/daemon/db/drivers/converters/avro.ts": "5f31e6491b0f42bf4440bbdfa8c9a4fe53341cb52e960e6bdcd1177bb7d54144",
     "src/daemon/db/drivers/converters/bson.ts": "1b827625a6e453f2b0bf6994f5077ee564ec6fb52cf1e336da04229a16c8a0da",
     "src/daemon/db/drivers/converters/fixed-width.ts": "e1e8d06eadd7a03fdec3dcf8958063f36c9d5725230d37814d1306531cfdd364",
     "src/daemon/db/drivers/converters/xlsx.ts": "4f3149cf9c08bfccadbeab044a3bd9e93fd2270f1341bb025873bb69a9c1d8c9",
@@ -2372,6 +2372,11 @@
       "task": "t14",
       "source": "src/daemon/db/drivers/converters/fixed-width.ts",
       "reason": "Replaces whole-file/unbounded-line conversion with bounded shared typed rows and saved sink; fixed-width uses the same classified column/encoding/trim/skipFirstLine fields; BSON uses no new connection fields and preserves precise Long values as text when needed."
+    },
+    {
+      "task": "t15",
+      "source": "src/daemon/db/drivers/converters/avro.ts",
+      "reason": "Uses explicit admitted container/schema/block framing and shared typed normalization for saved/memory outputs. No new ConnectionConfig option or public/credential field is read."
     }
   ]
 }

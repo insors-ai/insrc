@@ -104,15 +104,25 @@ test('repeated and recursive wire-schema builds with identical and different cat
 	validateAgainstSchema(a, samplePlan);
 	assert.ok(collided(validateAgainstSchema(b, samplePlan)), 'control: a second schema with the same $id collides');
 	// Wire schemas: every target's catalog (as a recursive child call would build it) and a supplied one, each twice.
-	const catalogs = [...TARGETS.map(t => getTemplatesForTarget(t)), [supplied('custom.a', { type: 'object', additionalProperties: false, properties: { x: { type: 'string' } } })]];
+	// Each validates a VALID plan for its catalog, so both validators must compile it and accept the plan.
+	const customA = supplied('custom.a', { type: 'object', additionalProperties: false, properties: { x: { type: 'string' } } });
+	const task = (template: string, params: unknown) => ({ taskId: 't01', template, kind: 'leaf', params, produces: ['report'], rationale: 'r'.repeat(40) });
+	const cases: [readonly AnalyzeTaskTemplate[], unknown][] = [
+		// Every built-in catalog has its aggregator, whose whole params is a slot: params '{}' is its wire form.
+		...TARGETS.map(t => [getTemplatesForTarget(t), { ...samplePlan, target: t === 'docs' ? 'generic' : t, tasks: [task(`${t}.aggregate.report`, '{}')] }] as [readonly AnalyzeTaskTemplate[], unknown]),
+		[[customA], { ...samplePlan, tasks: [task('custom.a', { x: 'v' })] }],
+	];
 	for (let round = 0; round < 2; round++) {
-		for (const catalog of catalogs) {
+		for (const [catalog, plan] of cases) {
 			const { schema } = plannerWireSchema(catalog);
 			assert.equal(schema['$id'], undefined, 'no $id');
-			assert.equal(collided(validateAgainstSchema(schema, samplePlan)), false, 'validateAgainstSchema: no collision');
-			assert.equal(collided(validateCodexReply(schema, samplePlan)), false, 'validateCodexReply: no collision');
+			const plain = validateAgainstSchema(schema, plan);
+			const codex = validateCodexReply(schema, plan);
+			assert.ok(plain.ok, `validateAgainstSchema compiles and accepts (round ${round}): ${JSON.stringify(plain)}`);
+			assert.ok(codex.ok, `validateCodexReply compiles and accepts (round ${round}): ${JSON.stringify(codex)}`);
 		}
 	}
+	const catalogs = cases.map(c => c[0]);
 	assert.equal(plannerWireSchema(catalogs[0]!).schema, plannerWireSchema(catalogs[0]!).schema, 'the same catalog reuses one schema object');
 });
 

@@ -74,6 +74,25 @@ test('stopped adoption migrates fixed credentials, preserves rollback preimage a
 		await pool.closeAll();
 	}
 	assert.equal(JSON.parse(await readFile(f.path, 'utf8'))._management.registryId, doc._management.registryId);
+	const registryBytes = await readFile(f.path, 'utf8');
+	let currentRelease = { ready: true, digest: 'c'.repeat(64) };
+	const nextPool = new DriverPool(f.root, { factory: () => async (config) => ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
+			} } as Driver) });
+	const nextOwner = await openManagedRoot(f.root, { ...f.ports, enablement: async () => currentRelease, pool: async () => {
+			await nextPool.reload();
+			return nextPool;
+		} });
+	try {
+		const context = { connectionIdentity: 'fixture', access: { lookupRoot: f.root, managementRepoRoot: f.root, daemonEpoch: 'fixture' } };
+		assert.equal((await savedManagementFor(f.root)!.list(context)).length, 1, 'a verified compatible build reopens the adopted root');
+		currentRelease = { ready: true, digest: 'd'.repeat(64) };
+		await assert.rejects(savedManagementFor(f.root)!.list(context), 'on-disk code changes cannot replace the running process identity');
+	}
+	finally {
+		await nextOwner.close();
+		await nextPool.closeAll();
+	}
+	assert.equal(await readFile(f.path, 'utf8'), registryBytes, 'reopening never rewrites registry identity or receipts');
 	const rollbackRef = [...f.values.keys()].find(ref => ref.startsWith('db:rollback:'))!;
 	const rollbackValue = f.values.get(rollbackRef)!;
 	f.values.delete(rollbackRef);

@@ -43,7 +43,7 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 		const keystore = ports.keystore ?? credentialKeystore;
 		const tickets = await SavedTicketAuthority.open({ root, registryId: envelope.registryId, adopted: true, keystore, isRegistered: ports.isRegistered });
 		const state = await ManagementStateFile.open(directory, root, tickets), initial = await state.current();
-		if (initial.phase !== 'managed' || initial.releaseDigest !== evidence.digest || initial.parent.inode !== parent.ino || initial.parent.device !== parent.dev)
+		if (initial.phase !== 'managed' || initial.parent.inode !== parent.ino || initial.parent.device !== parent.dev)
 			throw new ManagedStoreError('recovery-required');
 		await state.reconcile(snapshot);
 		const baseline = await readProtected(join(directory, initial.baseline.name));
@@ -67,8 +67,9 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 			if (checkpoint.phase !== 'managed' || !anchorsMatch(checkpoint.committed, registryAnchor(current)) || actualParent.ino !== parent.ino || actualParent.dev !== parent.dev || (actualParent.mode & 0o777) !== 0o700)
 				throw new ManagedStoreError('recovery-required');
 			// Registry and owner fences precede every keychain operation.
+			// Pin the running code, while retaining the adoption release as history.
 			const release = await (ports.enablement ?? connectionManagementEnablement)();
-			if (!release.ready || release.digest !== checkpoint.releaseDigest)
+			if (!release.ready || release.digest !== evidence.digest)
 				throw new ManagedStoreError('recovery-required');
 			await tickets.assertAvailable();
 			for (const config of current.file.connections) {

@@ -91,7 +91,9 @@ test('tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long
 
 test('tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw', async () => {
 	const throwing = { toString() { throw new Error('no'); } };
-	const values: unknown[] = [Object.create(null), throwing, new Error(''), '', '   ', undefined];
+	const oddError = Object.create(Error.prototype, { message: { get() { throw new Error('getter'); } } }) as unknown;
+	const nullMessage = Object.assign(new Error('x'), { message: null }) as unknown;
+	const values: unknown[] = [Object.create(null), throwing, new Error(''), '', '   ', undefined, oddError, nullMessage];
 	for (const [i, v] of values.entries()) {
 		registerToolHook(hook(`h${i}`, 'demo', async () => { throw v; }));
 	}
@@ -101,6 +103,8 @@ test('tool-hooks.test.ts: failure text for a null-prototype object, a value with
 	assert.equal(failures[1]!.message, 'the rule failed with a value that could not be described');
 	for (const f of failures.slice(2, 5)) assert.equal(f.message, 'the rule failed with no message');
 	assert.equal(failures[5]!.message, 'undefined', 'a thrown undefined is still readable');
+	assert.equal(failures[6]!.message, 'the rule failed with a value that could not be described', 'an Error whose message getter throws');
+	assert.equal(failures[7]!.message, 'null', 'an Error whose message is not a string is still described');
 	for (const f of failures) assert.ok(f.message.length > 0);
 });
 

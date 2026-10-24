@@ -42,15 +42,15 @@ export function registerToolHook(hook: ToolHook): void {
 /** Test seam: forget every registered hook. */
 export function _resetToolHooksForTests(): void { hooks.clear(); }
 
-/** Words for a thrown value. Never throws: a value that cannot be converted gets a fixed text. */
+/** Words for a thrown value. Never throws: whatever cannot be converted or measured gets a fixed text. */
 function describe(thrown: unknown): string {
-	let text: string;
 	try {
-		text = thrown instanceof Error ? thrown.message : String(thrown);
+		const raw: unknown = thrown instanceof Error ? thrown.message : String(thrown);
+		const text = typeof raw === 'string' ? raw : String(raw);
+		return text.trim() === '' ? NO_MESSAGE : text.slice(0, HOOK_MESSAGE_MAX);
 	} catch {
 		return UNDESCRIBABLE;
 	}
-	return text.trim() === '' ? NO_MESSAGE : text.slice(0, HOOK_MESSAGE_MAX);
 }
 
 /**

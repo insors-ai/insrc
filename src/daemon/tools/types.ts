@@ -39,6 +39,44 @@ export type ToolFailureKind =
 /** Why an approval was not given. Declared here so the executor does not depend on the approval broker. */
 export type ToolDenialReason = 'declined' | 'timed-out' | 'no-client' | 'cancelled';
 
+// ---------------------------------------------------------------------------
+// Approval (sc4)
+// ---------------------------------------------------------------------------
+
+/** How a tool, or one call of it, is approved: never, per the common setting, or every time. */
+export type ApprovalClass = 'none' | 'common' | 'destructive';
+
+/** The chat's edits modes; also the values of the tools.commonApproval setting. */
+export type CommonApprovalMode = 'manual' | 'edit-auto' | 'auto';
+
+/** Why an approval was not given; the same four values as ToolDenialReason. */
+export type ApprovalDenial = ToolDenialReason;
+
+/** What the user is asked to approve: the exact call, not a text summary. */
+export interface ApprovalRequest {
+	requestId: string;
+	toolId: string;
+	approvalClass: 'common' | 'destructive';
+	/** The repository the call acts on (input cwd, else the invocation's repoPath). */
+	repoPath: string;
+	/** The call's arguments, truncated for display when large. */
+	arguments: Record<string, unknown>;
+	preview?: { title: string; content: string } | undefined;
+	reason: string;
+	/** ISO time after which the request is denied as timed-out. */
+	expiresAt: string;
+}
+
+export interface ApprovalAnswer {
+	requestId: string;
+	decision: 'approve' | 'decline';
+}
+
+/** The daemon-side holder of pending requests; never rejects. */
+export interface ApprovalGate {
+	ask(req: ApprovalRequest, signal?: AbortSignal): Promise<ApprovalAnswer | ApprovalDenial>;
+}
+
 export interface ToolFailure {
 	kind: ToolFailureKind;
 	message: string;
@@ -109,6 +147,17 @@ export interface ToolDeps {
 	 * when it is missing.
 	 */
 	conversion?: ConversionProviders | undefined;
+	/**
+	 * Who started the call. Set by the entry point; logged, and read by hooks,
+	 * never by the approval step for a destructive call (no caller can skip it).
+	 */
+	caller?: 'agent' | 'daemon' | 'workflow' | undefined;
+	/**
+	 * The chat session's edits mode for this call, when the call came from a chat.
+	 * Overrides tools.commonApproval for the common class only; absent means the
+	 * setting applies. Never read for the destructive class.
+	 */
+	approvalMode?: CommonApprovalMode | undefined;
 }
 
 export interface ToolApprovalGate {
@@ -154,6 +203,13 @@ export interface Tool {
 	 * preserved as metadata for now.
 	 */
 	readonly requiresApproval?: boolean | ((input: ToolInput) => boolean);
+
+	/**
+	 * The approval class of this tool, or a function of the input that gives the
+	 * class of one call. Absent means none. Replaces requiresApproval and
+	 * destructive once every builtin is mapped.
+	 */
+	readonly approval?: ApprovalClass | ((input: ToolInput) => ApprovalClass);
 
 	/**
 	 * Optional alias IDs. Lets legacy tool names (Read, Bash, WebSearch, ...)

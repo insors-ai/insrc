@@ -151,7 +151,7 @@ class BsonConverter implements FileConverter {
 						}
 						return out;
 					},
-				}], { memoryBudgetBytes: controls.memoryBudgetBytes, close });
+				}], { memoryBudgetBytes: controls.memoryBudgetBytes, budget, close });
 		}
 		catch (error) {
 			for (const release of releases)

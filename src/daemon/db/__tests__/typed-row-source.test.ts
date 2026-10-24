@@ -23,7 +23,7 @@ test('CM-S1-W: schema-first typed batches preserve declared empty and all-null s
  await source.close(); await source.close(); await assert.rejects(source.targets(), /closed/);
 });
 test('CM-S1-W: batch limits cancellation required values and schema identity are enforced before row emission', async () => {
- const source = createTypedRowSource([reader('one', [{ value: 'a' }, { value: 'b' }])], { memoryBudgetBytes: 128, batchRows: 1 });
+ const source = createTypedRowSource([reader('one', [{ value: 'a' }, { value: 'b' }])], { memoryBudgetBytes: 512, batchRows: 1 });
  assert.equal((await Array.fromAsync(source.batches())).length, 2);
  const abort = new AbortController(); abort.abort();
  await assert.rejects(Array.fromAsync(source.batches(undefined, abort.signal)), { name: 'AbortError' });
@@ -31,7 +31,7 @@ test('CM-S1-W: batch limits cancellation required values and schema identity are
  await assert.rejects(Array.fromAsync(tooLarge.batches()), /budget/);
  const required = reader('required', [{ value: null }]);
  const nonnull = { ...required, target: { ...required.target, columns: required.target.columns.map(c => ({ ...c, nullable: false })) } };
- await assert.rejects(Array.fromAsync(createTypedRowSource([nonnull], { memoryBudgetBytes: 128 }).batches()), /required/);
+ await assert.rejects(Array.fromAsync(createTypedRowSource([nonnull], { memoryBudgetBytes: 512 }).batches()), /required/);
  assert.throws(() => createTypedRowSource([reader('duplicate', []), reader('duplicate', [])], { memoryBudgetBytes: 128 }), /Duplicate/);
 });
 

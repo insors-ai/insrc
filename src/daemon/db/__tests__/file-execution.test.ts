@@ -10,6 +10,7 @@ import { serialize as bson, Long } from 'bson';
 import ExcelJS from 'exceljs';
 import { MemoryFileExecution } from '../file-execution.js';
 import { bsonConverter } from '../drivers/converters/bson.js';
+import { fixedWidthConverter } from '../drivers/converters/fixed-width.js';
 import { xlsxConverter } from '../drivers/converters/xlsx.js';
 import { createTypedRowSource } from '../drivers/converters/typed-row-source.js';
 import { convertedColumn } from '../drivers/converters/normalization.js';
@@ -150,10 +151,13 @@ test('CM-S1-H: typed empty and all-null tables preserve declared types and nulla
 });
 test('CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets', async () => {
 	await fixture(async (dir) => {
-		for (const failure of ['schema', 'budget', 'bson'] as const) {
+		for (const failure of ['schema', 'budget', 'bson', 'fixed-width'] as const) {
 			const resource = await MemoryFileExecution.open(policy(dir));
 			let sourceClosed = 0;
-			if (failure === 'bson') {
+			if (failure === 'fixed-width') {
+				const path=join(dir,'giant.txt');await writeFile(path,'x'.repeat(128*1024));
+				await assert.rejects(resource.loadRows((budget,signal)=>fixedWidthConverter.openMemory!(path,{memoryBudgetBytes:budget.limit,budget,signal},{columns:[{name:'value',start:0,length:1,type:'string'}]})),/resource-limit/);
+			} else if (failure === 'bson') {
 				const path = join(dir, 'bad.bson'), header = Buffer.alloc(4);
 				header.writeInt32LE(0x7fffffff);
 				await writeFile(path, header);
@@ -173,6 +177,7 @@ test('CM-S1-S: schema mismatches and decoder admission failures close partial ta
 				await assert.rejects(resource.loadRows(async () => source), /schema version|resource-limit/);
 				assert.equal(sourceClosed, 1);
 			}
+			assert.deepEqual(resource.diagnostics, { closed: true, connections: 0, operations: 0, tables: 0, decodedBytes: 0 }, 'rejection itself disposes the private DB before caller cleanup');
 			await resource.close();
 			assert.deepEqual(resource.diagnostics, { closed: true, connections: 0, operations: 0, tables: 0, decodedBytes: 0 });
 		}

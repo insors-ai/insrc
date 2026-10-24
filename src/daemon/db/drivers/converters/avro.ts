@@ -262,7 +262,7 @@ class AvroConverter implements FileConverter {
 							out[column.name] = normalizeScalar(row[column.name], column);
 						return out;
 					},
-				}], { memoryBudgetBytes: controls.memoryBudgetBytes, close: async () => {
+				}], { memoryBudgetBytes: controls.memoryBudgetBytes, budget, close: async () => {
 					owned.release();
 				} });
 		}

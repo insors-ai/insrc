@@ -178,14 +178,16 @@ class FixedWidthConverter implements FileConverter {
 								continue;
 							}
 							first = false;
-							const row: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
-							for (const column of opts.columns)
-								row[column.name] = sliceField(line, column, opts.trim);
-							yield row;
+							const releaseRow = budget.reserve(opts.columns.reduce((sum,c)=>sum+c.name.length*2+64+c.length*4,32));
+							try {
+								const row: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+								for (const column of opts.columns) row[column.name] = sliceField(line, column, opts.trim);
+								yield row;
+							} finally { releaseRow(); }
 						}
 					},
 					normalize: row => row,
-				}], { memoryBudgetBytes: controls.memoryBudgetBytes, close: async () => {
+				}], { memoryBudgetBytes: controls.memoryBudgetBytes, budget, close: async () => {
 					releaseSchema();
 				} });
 		}

@@ -2355,10 +2355,10 @@
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
     "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
-    "src/daemon/db/drivers/converters/avro.ts": "5f31e6491b0f42bf4440bbdfa8c9a4fe53341cb52e960e6bdcd1177bb7d54144",
-    "src/daemon/db/drivers/converters/bson.ts": "1b827625a6e453f2b0bf6994f5077ee564ec6fb52cf1e336da04229a16c8a0da",
-    "src/daemon/db/drivers/converters/fixed-width.ts": "e1e8d06eadd7a03fdec3dcf8958063f36c9d5725230d37814d1306531cfdd364",
-    "src/daemon/db/drivers/converters/xlsx.ts": "d7edeb3262a53e60ac6c9f457d70c789a79748f7126922da202c8a93a8fddee1",
+    "src/daemon/db/drivers/converters/avro.ts": "0f310dfe9c8e212c07710a0bfb39229e8affb52be67b68b5394d705d5b51fa45",
+    "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
+    "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",
+    "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
     "src/daemon/db/drivers/duckdb-file.ts": "76e62c1b004df46566c6f77ab4c4fb80f05fa40ee56804d36095df6703b85f40",
     "src/daemon/db/drivers/dynamodb.ts": "a377a571eb482d672ed16857618c0483a9ef0d08b049bba04cdddb2ecb69aade",
     "src/daemon/db/drivers/etcd.ts": "5ecfe742cda8c82b945c3c9701548ca5ac709e48c3fa6bd433e63e45bc261772",
@@ -2500,6 +2500,26 @@
       "task": "t22",
       "source": "src/daemon/db-rpc.ts",
       "reason": "Partial-adoption marker blocks unmanaged fallback reads; adopted service still supplies safe projections. No driver configuration fields or credential slots changed."
+    },
+    {
+      "task": "t14",
+      "source": "src/daemon/db/drivers/converters/avro.ts",
+      "reason": "Shares DecoderBudget with typed source for pre-retention normalized row and batch admission, automatic rejection cleanup, and fixed-width row preallocation. Classified converter fields and secret slots unchanged."
+    },
+    {
+      "task": "t14",
+      "source": "src/daemon/db/drivers/converters/bson.ts",
+      "reason": "Shares DecoderBudget with typed source for pre-retention normalized row and batch admission, automatic rejection cleanup, and fixed-width row preallocation. Classified converter fields and secret slots unchanged."
+    },
+    {
+      "task": "t14",
+      "source": "src/daemon/db/drivers/converters/fixed-width.ts",
+      "reason": "Shares DecoderBudget with typed source for pre-retention normalized row and batch admission, automatic rejection cleanup, and fixed-width row preallocation. Classified converter fields and secret slots unchanged."
+    },
+    {
+      "task": "t14",
+      "source": "src/daemon/db/drivers/converters/xlsx.ts",
+      "reason": "Shares DecoderBudget with typed source for pre-retention normalized row and batch admission, automatic rejection cleanup, and fixed-width row preallocation. Classified converter fields and secret slots unchanged."
     }
   ]
 }

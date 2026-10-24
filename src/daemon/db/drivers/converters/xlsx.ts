@@ -71,7 +71,7 @@ class XlsxConverter implements FileConverter {
 					release();
 				await owned.close();
 			};
-			const base = createTypedRowSource(readers, { memoryBudgetBytes: controls.memoryBudgetBytes, close });
+			const base = createTypedRowSource(readers, { memoryBudgetBytes: controls.memoryBudgetBytes, budget, close });
 			return {
 				targets: () => base.targets(),
 				async describe(target) {

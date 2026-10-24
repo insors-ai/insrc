@@ -1,7 +1,7 @@
 /** Daemon-owned private file execution. Source paths never become table names or logs. */
 import { randomUUID } from 'node:crypto';
 import { realpath, stat } from 'node:fs/promises';
-import { serialize } from 'node:v8';
+import { decodedValueBytes } from './drivers/converters/row-admission.js';
 import { DuckDBTimestampValue, StatementType, listValue } from '@duckdb/node-api';
 import type { DuckDBConnection, DuckDBAppender, DuckDBValue } from '@duckdb/node-api';
 import type { FileExecutionPolicy, FileExecutionResource, ConvertedTarget, ConvertedColumn, MemoryRowSource } from '../../shared/connection-management.js';
@@ -198,7 +198,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 					this.#live();
 					if (!target.columns.length || new Set(target.columns.map(c => c.name)).size !== target.columns.length)
 						throw new Error('Invalid converted schema');
-					this.#retained.push(this.decoderBudget.reserve(serialize(target).byteLength + target.columns.length * 128));
+					this.#retained.push(this.decoderBudget.reserve(decodedValueBytes(target,this.policy.memoryBudgetBytes) + target.columns.length * 128));
 					const name = this.#name();
 					const columns = target.columns.map(column => {
 						const type = physicalTypes[column.physicalType];
@@ -217,7 +217,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 							for (const row of batch.rows) {
 								if (Object.keys(row).length !== target.columns.length || target.columns.some(column => !Object.hasOwn(row, column.name)))
 									throw new Error('Converted row schema mismatch');
-							this.#retained.push(this.decoderBudget.reserve(serialize(row).byteLength + 128 + target.columns.length * 16));
+							this.#retained.push(this.decoderBudget.reserve(decodedValueBytes(row,this.policy.memoryBudgetBytes) + 128 + target.columns.length * 16));
 								for (const column of target.columns)
 									append(appender, row[column.name], column);
 								appender.endRow();
@@ -390,7 +390,7 @@ function safeExecutionError(error: unknown): Error {
 	const message = error instanceof Error ? error.message : '';
 	if (['resource-limit', 'unsupported-temporary', 'Converted schema version mismatch', 'Converted row schema mismatch', 'Unknown converted target', 'Incompatible converted target schemas', 'File execution closed'].includes(message))
 		return new Error(message);
-	if (/out of memory|memory limit|failed to pin|failed to allocate/i.test(message))
+	if (/out of memory|memory limit|memory budget|failed to pin|failed to allocate/i.test(message))
 		return new Error('resource-limit');
 	return new Error('Temporary file execution failed');
 }

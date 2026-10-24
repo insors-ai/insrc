@@ -86,6 +86,7 @@ test('CM-S1-S: fixed-width giant records and cumulative schema limits reject wit
 		const source = await fixedWidthConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget }, { columns: [{ name: 'v', start: 0, length: 1, type: 'string' }] });
 		try {
 			await assert.rejects(rows(source), /resource-limit/);
+ assert.equal(budget.snapshot().retained,0,'rejection itself closes schema and decoder reservations before caller cleanup');
 		}
 		finally {
 			await source.close();

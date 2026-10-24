@@ -25,7 +25,8 @@
     "lldRunId": "wf-1792763798946-g7op3j",
     "lldEffectiveHash": "697b9f8ff46b9deb7c9f49de3715d7269704a2669d032ecdbaf1514d8ab17aff",
     "authoredBy": "controller",
-    "rangeBase": "b53943496e14ac18ef919298e60308455b4f48ea"
+    "rangeBase": "b53943496e14ac18ef919298e60308455b4f48ea",
+    "approvedAt": "2026-10-24T17:15:27.956Z"
   },
   "body": {
     "summary": {

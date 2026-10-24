@@ -318,6 +318,8 @@ The success variant gains hookFailures?: readonly HookFailure[] | undefined; cal
   - **resolved**: Accept the known limit — No timeout; the LLD states the hook stage has no cancellation bound _(2026-10-24T14:17:10.924Z)_
 - `q4e665925` — ep3 (partial): invariantsToPreserve rest on the s1 bundle for executor.ts and types.ts; the source field holds a citation id as the schema requires.
   - **ignored**: left to implementer judgment — Schema note; the invariants are explicit in the LLD _(2026-10-24T14:18:06.766Z)_
+- `q1703d659` — alt2 (partial): k1 to k6 were not scored per alternative; none of them is touched by a post-success rule stage.
+  - **ignored**: left to implementer judgment — k1-k6 are not touched by a post-success rule stage _(2026-10-24T14:18:48.777Z)_
 
 ## Citations
 

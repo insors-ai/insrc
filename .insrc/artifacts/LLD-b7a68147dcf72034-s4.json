@@ -152,6 +152,13 @@
         "choice": "Proceed with explicit s8 deferrals",
         "rationale": "Coverage is per operation; the audit test is the authority for completeness",
         "resolvedAt": "2026-10-24T18:21:54.077Z"
+      },
+      "q1498811c": {
+        "question": "Review cycle 4, round 3 (0 HIGH, 3 MED) was addressed without a further review; the user approved the LLD with an override on that basis. Fixed: noMerged on git_for_each_ref, the amend, reset and merge helper reads with their expected non-zero outcomes kept apart from process failures, and independent stdout and stderr limits on runShellBytes.",
+        "status": "resolved",
+        "choice": "Confirm fixes during planning",
+        "rationale": "A task verifies that each listed fix has an implementation and a test",
+        "resolvedAt": "2026-10-24T18:22:06.231Z"
       }
     }
   },

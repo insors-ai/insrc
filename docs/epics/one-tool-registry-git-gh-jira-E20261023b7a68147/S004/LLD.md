@@ -490,6 +490,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Proceed with revised LLD — Superseded by the approved revision 12 _(2026-10-24T18:21:27.644Z)_
 - `q1e05bf47` — Review cycle 4, round 2 (1 HIGH, 1 MED) revised this LLD: coverage is tracked per operation for multi-operation commands, with the operations the existing tools lack assigned to s8 by name, and the secondary-lookup list gained git_stage, git_revert, git_checkout and git_cherry-pick, with the audit test as the authority for completeness.
   - **resolved**: Proceed with explicit s8 deferrals — Coverage is per operation; the audit test is the authority for completeness _(2026-10-24T18:21:54.077Z)_
+- `q1498811c` — Review cycle 4, round 3 (0 HIGH, 3 MED) was addressed without a further review; the user approved the LLD with an override on that basis. Fixed: noMerged on git_for_each_ref, the amend, reset and merge helper reads with their expected non-zero outcomes kept apart from process failures, and independent stdout and stderr limits on runShellBytes.
+  - **resolved**: Confirm fixes during planning — A task verifies that each listed fix has an implementation and a test _(2026-10-24T18:22:06.231Z)_
 
 ## Citations
 

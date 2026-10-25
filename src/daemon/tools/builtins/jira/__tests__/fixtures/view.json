@@ -1,0 +1,34 @@
+{
+  "changelog": null,
+  "editmeta": null,
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "fields": {
+    "assignee": null,
+    "status": {
+      "description": "",
+      "iconUrl": "https://jira-prod-eu-77-2.prod.atl-paas.net/images/icons/statuses/generic.png",
+      "id": "10004",
+      "name": "To Do",
+      "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/status/10004",
+      "statusCategory": {
+        "colorName": "blue-gray",
+        "id": 2,
+        "key": "new",
+        "name": "To Do",
+        "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/statuscategory/2"
+      }
+    },
+    "summary": "insrc probe A (safe to delete)"
+  },
+  "fieldsToInclude": null,
+  "id": "10036",
+  "key": "IN-1",
+  "names": null,
+  "operations": null,
+  "properties": null,
+  "renderedFields": null,
+  "schema": null,
+  "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/issue/10036",
+  "transitions": null,
+  "versionedRepresentations": null
+}

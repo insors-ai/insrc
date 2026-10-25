@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T21:21:13.723Z",
+    "updatedAt": "2026-10-25T21:25:26.276Z",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
   },
@@ -1304,6 +1304,169 @@
               },
               {
                 "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "1abd94451",
+        "ranAt": "2026-10-25T21:25:26.276Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-shipped-registry.test.ts",
+                "title": "tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the TUI build (tsc) passes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-shipped-registry.test.ts",
+                "title": "tui-shipped-registry.test.ts: the TUI build (tsc) passes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/tui-shipped-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5731,
+            "titles": [
+              {
+                "title": "tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry",
+                "result": "pass"
+              },
+              {
+                "title": "tui-shipped-registry.test.ts: the TUI build (tsc) passes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2893,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max/ultra and writes models.tiers.<tier>.effort",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)",
                 "result": "pass"
               }
             ],

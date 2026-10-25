@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 52 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -317,3 +317,27 @@ Run at 2026-10-25T21:21:13.723Z on commit `80f0c1f18`. Tests check: **passed**. 
 | `src/daemon/__tests__/models-resolve-role.test.ts` | 0 | 1 | 0.5 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.9 s |  |
 | `src/daemon/threads/__tests__/method-class.test.ts` | 0 | 3 | 1.1 s |  |
+
+## t8
+
+Run at 2026-10-25T21:25:26.276Z on commit `1abd94451`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry | `src/cli/__tests__/tui-shipped-registry.test.ts` |
+| pass | TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry) | `src/cli/__tests__/tui.test.ts` |
+
+**integration: the TUI build (tsc) passes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tui-shipped-registry.test.ts: the TUI build (tsc) passes | `src/cli/__tests__/tui-shipped-registry.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/tui-shipped-registry.test.ts` | 0 | 2 | 5.7 s |  |
+| `src/cli/__tests__/tui.test.ts` | 0 | 24 | 2.9 s |  |

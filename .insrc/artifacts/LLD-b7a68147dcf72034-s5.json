@@ -78,6 +78,13 @@
         "choice": "Fail on failed log call",
         "rationale": "Same rule the user accepted for git_show's diff.",
         "resolvedAt": "2026-10-25T13:47:51.906Z"
+      },
+      "q3feb37ac": {
+        "question": "gpg-key list and ssh-key list return untyped rows because gh does not document their columns and the sign-in here lacks the scopes to list them; a later change can name the columns once they are verified.",
+        "status": "resolved",
+        "choice": "Keep rows untyped",
+        "rationale": "gh does not document the columns and the sign-in lacks the scopes to verify them.",
+        "resolvedAt": "2026-10-25T13:57:21.314Z"
       }
     }
   },

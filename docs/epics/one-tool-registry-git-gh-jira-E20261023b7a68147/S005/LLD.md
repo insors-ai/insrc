@@ -464,6 +464,8 @@ Type and classify only the 46 existing gh tools here and assign every other oper
   - **resolved**: Amend the HLD — Records the user's 2026-10-25 per-job limit decision; the amendment is filed as a task of the plan. _(2026-10-25T13:46:57.210Z)_
 - `qf61cc94b` — gh_run_view's failed log call becomes a real failure instead of a success carrying stderr (the rule used for git_show's diff); confirm.
   - **resolved**: Fail on failed log call — Same rule the user accepted for git_show's diff. _(2026-10-25T13:47:51.906Z)_
+- `q3feb37ac` — gpg-key list and ssh-key list return untyped rows because gh does not document their columns and the sign-in here lacks the scopes to list them; a later change can name the columns once they are verified.
+  - **resolved**: Keep rows untyped — gh does not document the columns and the sign-in lacks the scopes to verify them. _(2026-10-25T13:57:21.314Z)_
 
 ## Citations
 

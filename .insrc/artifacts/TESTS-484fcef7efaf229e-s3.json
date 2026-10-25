@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T16:58:45.664Z",
+    "updatedAt": "2026-10-25T17:14:45.564Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -191,6 +191,110 @@
               },
               {
                 "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "19f388876",
+        "ranAt": "2026-10-25T17:14:45.564Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-AUTH: role/root/audience token confusion,32-token quota and revocation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-AUTH: data sockets cannot call control RPCs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1726,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
                 "result": "pass"
               }
             ],

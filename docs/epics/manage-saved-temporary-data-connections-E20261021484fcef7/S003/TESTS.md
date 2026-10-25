@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -54,3 +54,28 @@ Run at 2026-10-25T16:58:45.664Z on commit `9a4b23b89`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 6 | 0.7 s |  |
+
+## t3
+
+Run at 2026-10-25T17:14:45.564Z on commit `19f388876`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S3-AUTH: role/root/audience token confusion,32-token quota and revocation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**integration: CM-S3-AUTH: data sockets cannot call control RPCs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 11 | 1.7 s |  |

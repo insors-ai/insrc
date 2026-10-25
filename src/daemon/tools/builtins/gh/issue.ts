@@ -11,7 +11,7 @@
 
 import { Type } from '@sinclair/typebox';
 import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, strArr, joinCsv, md, fail, ghExec, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
+import { str, num, strArr, joinCsv, md, fail, ghExec, ghApprovalClass, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
 import {
   GhIssueCommentDataSchema, GhIssueCreateDataSchema, GhIssueLinkDataSchema, GhIssueListDataSchema, GhIssueRowSchema,
   GhIssueStateDataSchema, GhNumberDataSchema,
@@ -111,7 +111,7 @@ export const ghIssueCreateTool = withGhFailureNet({
     project: Type.Optional(Type.String({ description: 'Project (v2) title to add the issue to.' })),
   }, { additionalProperties: false }),
   outputSchema: GhIssueCreateDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_issue_create', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const title = str(input, 'title') ?? '';
@@ -178,7 +178,7 @@ export const ghIssueCommentTool = withGhFailureNet({
     body: Type.String(),
   }, { additionalProperties: false }),
   outputSchema: GhIssueCommentDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_issue_comment', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const n = num(input, 'number');
@@ -237,7 +237,7 @@ export const ghIssueEditTool = withGhFailureNet({
     milestone: Type.Optional(Type.String({ description: 'Use empty string to clear.' })),
   }, { additionalProperties: false }),
   outputSchema: GhNumberDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_issue_edit', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -303,7 +303,7 @@ function stateChangeTool(id: 'gh_issue_close' | 'gh_issue_reopen', op: 'close' |
       comment: Type.Optional(Type.String({ description: 'Optional closing comment.' })),
     }, { additionalProperties: false }),
     outputSchema: GhIssueStateDataSchema,
-    approval: (op === 'close' ? 'destructive' : 'common') as 'destructive' | 'common',
+    approval: ghApprovalClass(id, {}),
 
     buildApprovalGate(input: ToolInput): ToolApprovalGate {
       const n = num(input, 'number');
@@ -355,7 +355,7 @@ export const ghIssueLinkTool = withGhFailureNet({
     relation: Type.Optional(Type.Unsafe<'closes' | 'fixes' | 'resolves' | 'relates-to' | 'blocks' | 'blocked-by'>({ type: 'string', enum: ['closes', 'fixes', 'resolves', 'relates-to', 'blocks', 'blocked-by'], description: 'Relation verb that goes into the auto-generated comment.' })),
   }, { additionalProperties: false }),
   outputSchema: GhIssueLinkDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_issue_link', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const rel = str(input, 'relation') ?? 'relates-to';

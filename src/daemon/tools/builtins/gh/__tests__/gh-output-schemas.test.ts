@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { Type } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 
 import type { Tool } from '../../../types.js';
 import * as issue from '../issue.js';
 import * as pr from '../pr.js';
+import { ghApprovalClass } from '../helpers.js';
 import { installFakeGh } from './_fakegh.js';
+
+/** A failed result carries no data, so it is checked against the failure shape every tool shares. */
+const FailedResult = Type.Object({
+	success: Type.Literal(false), output: Type.String(), error: Type.String(),
+	failure: Type.Object({ kind: Type.String(), message: Type.String() }),
+});
 
 const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
 
@@ -40,6 +48,10 @@ const CASES: Array<[Tool, Record<string, unknown>, string]> = [
 
 test('gh-output-schemas.test.ts: issue and pr tool results validate against their output schemas for success and failure', async () => {
 	assert.equal(CASES.length, 20);
+	for (const [tool] of CASES) {
+		// the class a tool declares is the one ghApprovalClass gives its id
+		assert.equal(tool.approval, tool.approval === undefined ? undefined : ghApprovalClass(tool.id, {}), tool.id);
+	}
 	for (const [tool, input, stdout] of CASES) {
 		const ok = installFakeGh('ok', stdout);
 		try {
@@ -57,6 +69,7 @@ test('gh-output-schemas.test.ts: issue and pr tool results validate against thei
 			assert.equal(r.error, 'HTTP 404: not found', tool.id);
 			assert.equal(r.output, `[${tool.id}] HTTP 404: not found`, tool.id);
 			assert.equal(r.data, undefined, tool.id);
+			assert.ok(Value.Check(FailedResult, r), `${tool.id} failed result ${JSON.stringify(r)} does not match the failure shape`);
 		} finally { bad.restore(); }
 	}
 });

@@ -12,7 +12,7 @@
 
 import { Type } from '@sinclair/typebox';
 import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, strArr, joinCsv, md, fail, ghExec, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
+import { str, num, strArr, joinCsv, md, fail, ghExec, ghApprovalClass, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
 import {
   GhIssueCommentDataSchema, GhNumberDataSchema, GhPrChecksDataSchema, GhPrDiffDataSchema, GhPrFilesDataSchema, GhPrListDataSchema,
   GhPrMergeDataSchema, GhPrReviewDataSchema, GhPrRowSchema, GhPrUrlDataSchema,
@@ -216,7 +216,7 @@ export const ghPrCreateTool = withGhFailureNet({
     fill: Type.Optional(Type.Boolean({ description: 'Fill title/body from commits (gh --fill).' })),
   }, { additionalProperties: false }),
   outputSchema: GhPrUrlDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_pr_create', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const title = str(input, 'title') ?? '';
@@ -287,7 +287,7 @@ export const ghPrEditTool = withGhFailureNet({
     removeAssignees: Type.Optional(Type.Array(Type.String())),
   }, { additionalProperties: false }),
   outputSchema: GhNumberDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_pr_edit', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -338,7 +338,7 @@ export const ghPrCommentTool = withGhFailureNet({
     body: Type.String(),
   }, { additionalProperties: false }),
   outputSchema: GhIssueCommentDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_pr_comment', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const body = str(input, 'body') ?? '';
@@ -380,7 +380,7 @@ export const ghPrReviewTool = withGhFailureNet({
     body: Type.Optional(Type.String({ description: 'Required for request-changes and comment.' })),
   }, { additionalProperties: false }),
   outputSchema: GhPrReviewDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_pr_review', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -428,7 +428,7 @@ export const ghPrMergeTool = withGhFailureNet({
     admin: Type.Optional(Type.Boolean({ description: 'Bypass branch protection rules.' })),
   }, { additionalProperties: false }),
   outputSchema: GhPrMergeDataSchema,
-  approval: 'destructive',
+  approval: ghApprovalClass('gh_pr_merge', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const method = str(input, 'method') ?? 'merge';
@@ -479,7 +479,7 @@ export const ghPrCloseTool = withGhFailureNet({
     deleteBranch: Type.Optional(Type.Boolean()),
   }, { additionalProperties: false }),
   outputSchema: GhNumberDataSchema,
-  approval: 'destructive',
+  approval: ghApprovalClass('gh_pr_close', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -518,7 +518,7 @@ export const ghPrReadyTool = withGhFailureNet({
     number: Type.Number({ minimum: 1 }),
   }, { additionalProperties: false }),
   outputSchema: GhNumberDataSchema,
-  approval: 'common',
+  approval: ghApprovalClass('gh_pr_ready', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {

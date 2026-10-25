@@ -304,3 +304,7 @@ Built in twelve tasks (t1 to t12); every task passed the build gate. 68 gh tools
 ### HLD amendment
 
 The per-job limit table departs from the HLD's single 120 s performance line. The `nonFunctional.retarget` amendment is filed as the pending artifact `AMD-b7a68147dcf72034-9` (`.insrc/artifacts/`) for the user to approve; approving it records the decision of 2026-10-25 in the HLD.
+
+## s5 full sweep (2026-10-25)
+
+Run once after t12, foreground, `npx tsx --test --test-force-exit`: `src/daemon/**/__tests__` 1693 tests, 1673 pass, 0 fail, 20 skipped (the s4 sweep had 1 failure in the daemon directory; none now). `src/mcp` and `src/analyze/context` (the tool-surface tests): 580 tests, 0 fail, 48 skipped. The other directories were not re-run: s5 changed only `src/daemon/tools` and docs.

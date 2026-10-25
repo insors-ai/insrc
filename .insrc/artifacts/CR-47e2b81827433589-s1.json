@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "5283a21289bea8016d5a599c933ca92ce4774906dc3401e63a0f8f6235d5eee9",
+        "at": "2026-10-25T13:26:35.912Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792934737575-xa98qc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T13:25:39.469Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 56441,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "epicSlug": "give-code-review-adherence-functional-coverage",
+    "standalone": true,
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/BUILD-47e2b81827433589-s1.log.jsonl",
+        ".insrc/artifacts/LLD-47e2b81827433589-s1.log.jsonl",
+        ".insrc/artifacts/PLAN-47e2b81827433589-s1.log.jsonl",
+        ".insrc/artifacts/TASKS-47e2b81827433589-s1.log.jsonl",
+        ".insrc/artifacts/TESTS-47e2b81827433589-s1.log.jsonl",
+        "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+        "src/workflow/code-review/__tests__/call-progress.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/adherence.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts",
+        "src/workflow/code-review/dimensions/adherence.ts",
+        "src/workflow/code-review/dimensions/functional-coverage.ts",
+        "src/workflow/code-review/source-inspection.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+        "src/workflow/review-pipeline/__tests__/enveloped.ts",
+        "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+        "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+        "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
+        "src/workflow/review-pipeline/adapters/code-review-gather.ts",
+        "src/workflow/review-pipeline/code-review.ts"
+      ],
+      "buildFingerprint": "c9bcb97298f55a046a0bc2f63e9d6a43ccf47e88a055ccb776917f1901b9b7bd",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/LLD-b7a68147dcf72034-s5.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts:1",
+            "message": "Present but failing/unverified: both recorded test files pass, but validation task t3 is marked fail. The record does not confirm that the affected suites and npm run build all pass.",
+            "expectationRef": "Affected review-pipeline and dimension suites plus npm run build pass.",
+            "confidence": "observation",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  },
+  "citations": []
+}

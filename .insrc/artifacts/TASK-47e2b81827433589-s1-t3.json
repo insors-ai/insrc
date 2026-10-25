@@ -11,7 +11,7 @@
     "epicHash": "47e2b81827433589",
     "storyId": "s1",
     "envelope": {
-      "description": "Validate regression on the affected Story and record build evidence",
+      "description": "Validate regression evidence and prepare the final review",
       "parent": {
         "entityId": "STORY-47e2b81827433589-s1",
         "type": "STORY",
@@ -22,7 +22,7 @@
           "entityId": "PLAN-47e2b81827433589-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-47e2b81827433589-s1-t1",
@@ -38,11 +38,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "18bd9165a62f5c24663f983973f0a4f8802a4c1df6b0ac7d8a8d1f20eefcb814",
-        "at": "2026-10-25T10:40:43.171Z",
+        "number": 2,
+        "contentHash": "8764dfced4947996e8947544a945b93ecc84d05e1d14c35fa59bc31c69ef7673",
+        "at": "2026-10-25T14:51:34.763Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -60,17 +60,17 @@
         "at": "2026-10-25T10:40:43.171Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
-    "title": "Validate regression on the affected Story and record build evidence",
-    "summary": "Run affected pipeline/dimension tests and build; use updated code for source-backed re-review of b7a68147dcf72034 s4, assert the four false HIGH findings do not recur. Preserve original historical review; record commands, results and source dispositions. Complete mandatory code review for this Story.",
+    "title": "Validate regression evidence and prepare the final review",
+    "summary": "Run affected suites and build; record the updated-code four-clause s4 re-review, source-backed dispositions and document presentation. Final current-BUILD independent code review and explicit human BUILD approval remain mandatory downstream framework gates; neither depends on t3 already having been approved.",
     "size": "M",
     "order": 3,
     "acceptanceChecks": [
       "Affected suites and npm run build pass; results recorded with commands and test counts.",
       "Updated-code s4 re-review provides source-backed dispositions for all four prior false HIGH findings and none recur; unavailable live verification leaves acceptance outstanding.",
-      "This Story has build validation and independent code review; present resulting records for approval without auto-approval."
+      "Build/regression evidence and successful BUILD/CR presentation are recorded. Final current-BUILD independent code review and explicit human BUILD approval remain mandatory downstream completion gates; their final verdict/approval is not required to validate this task."
     ],
     "tests": [
       {
@@ -82,8 +82,8 @@
         "name": "Updated-code b7a68147dcf72034 s4 re-review: all four prior false HIGH findings absent, with source-backed dispositions."
       },
       {
-        "level": "live",
-        "name": "Independent mandatory code review completes Story s1 BUILD."
+        "level": "smoke",
+        "name": "Build/regression evidence and successful BUILD/CR presentation are recorded; final review and approval remain mandatory downstream gates."
       }
     ],
     "planTaskId": "t3"

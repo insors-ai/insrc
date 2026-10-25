@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1792924251303-8zb69p",
+    "runId": "wf-1792935781339-m9oa0x",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-25T10:32:15.378Z",
+    "createdAt": "2026-10-25T13:44:40.957Z",
     "epicCreatedAt": "2026-10-25T10:08:06.461Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 83346,
+    "elapsedMs": 97937,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "47e2b81827433589",
@@ -25,17 +25,17 @@
     "lldRunId": "wf-1792923694985-ba40bw",
     "lldEffectiveHash": "3efd443b024fe1b11872d683c00b933be9e60ddb56a3bfdc3b6181118075e297",
     "authoredBy": "controller",
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
+    "revision": 2,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "9d42d186bb391883e041f704e50b65bb8f5b9578380cd629e69ddc789ddb605c",
+        "number": 2,
+        "contentHash": "bc49271e360e0eaa62a2ee094a0383365d96cd4e18c50c2736cc90d830cf21cc",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,20 +45,20 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-25T10:40:42.770Z"
+        "at": "2026-10-25T14:51:34.459Z"
       }
     },
-    "rangeBase": "a3d4990eab73254262d5bbf75e949d718c5bfef1"
+    "rangeBase": "b987f9b7a0a9e167892dd791e94af6a31b79834f"
   },
   "body": {
     "summary": {
-      "prose": "Reuse the existing read-only reviewer sessions so adherence and functional-coverage judgments can inspect implementation. Update shared divided-review prompts and conservative evidence outcomes, then prove that real omissions remain findings and the four prior false HIGH findings disappear on the affected Story.",
+      "prose": "Reuse the existing read-only reviewer sessions so adherence and functional-coverage judgments can inspect implementation. Update shared divided-review prompts and conservative evidence outcomes, then prove that real omissions remain findings and the four prior false HIGH findings disappear on the affected Story. Task validation covers implementation and regression evidence. The final current-BUILD independent review and human approval remain separate mandatory completion gates.",
       "audience": "technical"
     },
     "tasks": [
@@ -120,8 +120,8 @@
       },
       {
         "id": "t3",
-        "title": "Validate regression on the affected Story and record build evidence",
-        "summary": "Run affected pipeline/dimension tests and build; use updated code for source-backed re-review of b7a68147dcf72034 s4, assert the four false HIGH findings do not recur. Preserve original historical review; record commands, results and source dispositions. Complete mandatory code review for this Story.",
+        "title": "Validate regression evidence and prepare the final review",
+        "summary": "Run affected suites and build; record the updated-code four-clause s4 re-review, source-backed dispositions and document presentation. Final current-BUILD independent code review and explicit human BUILD approval remain mandatory downstream framework gates; neither depends on t3 already having been approved.",
         "size": "M",
         "order": 3,
         "dependsOn": [
@@ -131,7 +131,7 @@
         "acceptanceChecks": [
           "Affected suites and npm run build pass; results recorded with commands and test counts.",
           "Updated-code s4 re-review provides source-backed dispositions for all four prior false HIGH findings and none recur; unavailable live verification leaves acceptance outstanding.",
-          "This Story has build validation and independent code review; present resulting records for approval without auto-approval."
+          "Build/regression evidence and successful BUILD/CR presentation are recorded. Final current-BUILD independent code review and explicit human BUILD approval remain mandatory downstream completion gates; their final verdict/approval is not required to validate this task."
         ],
         "derivedFrom": [
           "c3",
@@ -147,8 +147,8 @@
             "name": "Updated-code b7a68147dcf72034 s4 re-review: all four prior false HIGH findings absent, with source-backed dispositions."
           },
           {
-            "level": "live",
-            "name": "Independent mandatory code review completes Story s1 BUILD."
+            "level": "smoke",
+            "name": "Build/regression evidence and successful BUILD/CR presentation are recorded; final review and approval remain mandatory downstream gates."
           }
         ]
       }

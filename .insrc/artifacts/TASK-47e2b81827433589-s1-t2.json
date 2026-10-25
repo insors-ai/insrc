@@ -22,7 +22,7 @@
           "entityId": "PLAN-47e2b81827433589-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-47e2b81827433589-s1-t1",

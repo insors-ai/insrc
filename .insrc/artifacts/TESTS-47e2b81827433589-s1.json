@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "7cd109b55c1f310ad56157a42c38a2a4d280afb875edafb285751433b8d5856c",
-        "at": "2026-10-25T10:51:47.817Z",
+        "number": 9,
+        "contentHash": "98f696387a20df6a6872ff1d9f07fd12c938ada59322beafdd4d95ad190b17e5",
+        "at": "2026-10-25T14:51:59.429Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "47e2b81827433589",
     "storyId": "s1",
     "createdAt": "2026-10-25T10:44:06.181Z",
-    "updatedAt": "2026-10-25T10:51:47.757Z",
+    "updatedAt": "2026-10-25T14:51:59.356Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-25T10:08:06.461Z",
     "epicSlug": "give-code-review-adherence-functional-coverage",
-    "revision": 3
+    "revision": 9
   },
   "body": {
     "tasks": [
@@ -201,6 +201,226 @@
             "exitCode": 0,
             "timedOut": false,
             "durationMs": 587,
+            "titles": [
+              {
+                "title": "adherence requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: unreadable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b987f9b7a",
+        "ranAt": "2026-10-25T14:51:59.356Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Affected review-pipeline and dimension suites plus npm run build pass.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source inspection routes every review role through bounded read-only sessions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspecting divided prompts preserve citations and uncertainty instead of closing evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspection driver propagates deadlines and retries sessions without structured fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspection missing session fails rather than fabricating a pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: unreadable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Updated-code b7a68147dcf72034 s4 re-review: all four prior false HIGH findings absent, with source-backed dispositions.",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/four-highs-result.json; docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/validation.md: targeted production-judge four-clause re-review returned zero findings; original full s4 CR preserved."
+            }
+          },
+          {
+            "name": "Build/regression evidence and successful BUILD/CR presentation are recorded; final review and approval remain mandatory downstream gates.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/validation.md records build/test evidence; four-highs-result.json records real source-inspecting regression; approval-presentation.md records successful insrc_present responses. Current CR is WARN 0 HIGH/1 MED solely for t3's prior status. No BUILD approval granted; final current-BUILD review and explicit user approval remain mandatory downstream framework gates."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 552,
+            "titles": [
+              {
+                "title": "source inspection routes every review role through bounded read-only sessions",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspecting divided prompts preserve citations and uncertainty instead of closing evidence",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspection driver propagates deadlines and retries sessions without structured fallback",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspection missing session fails rather than fabricating a pass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 547,
             "titles": [
               {
                 "title": "adherence requires source inspection and preserves proven breaches while lowering unverified observations",

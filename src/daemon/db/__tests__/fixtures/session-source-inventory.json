@@ -2393,7 +2393,7 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "siteCount": 3,
       "sitesDigest": "11d6b1cccb261b12dead5515ce9c4f6117f75e311fd7ffc1e5551c38b7da50eb",
-      "sourceDigest": "7278f10789fa23ca11c813606e24a1d94393e14cb965b39d1e4aa2de8345bf4a",
+      "sourceDigest": "66cbe422009f0c0179a527f08815b80308b7c7f1cfbea7c09396fe29d9fb0218",
       "boundaries": [
         "storage-call"
       ]

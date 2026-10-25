@@ -22,6 +22,7 @@ import { setActiveEmbedderBackend } from '../../indexer/embedder.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
 import { installLockManager } from '../../shared/locks/lock-manager.js';
 import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
+import { getModelRegistry } from '../model-registry.js';
 import { HubClient } from './channel.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
 import { wireWorkerStoreHealth } from './store-health-hub.js';
@@ -52,6 +53,9 @@ export const GRAPH_CLOSE_OP = 'graph.close';
 /** Prepare this worker thread; returns its hub client. */
 export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	if (isMainThread) throw new NotADaemonWorkerError();
+	// Load and validate this thread's model registry first (Epic ce99b720 s1): a bad
+	// definitions file throws ModelCatalogValidationError and fails this worker's start.
+	getModelRegistry();
 	declareLiveStoreOwner();
 	installStoreGuard(init.guardBlock);
 	installLockManager(init.lockBlock);

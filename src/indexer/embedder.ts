@@ -13,14 +13,27 @@ import {
 
 const log = getLogger('embedder');
 
-const _localDefaults = loadLocalProviderConfig();
+// The local settings are read on first use, not at module load (Epic
+// ce99b72065d03b1b s3): importing this module reads no settings, and a read
+// made after main() drops the settings cache (right after the boot reconcile)
+// sees the reconciled config.json.
 
-export const EMBEDDING_MODEL = _localDefaults.embeddingModel;
-export const EMBEDDING_DIM   = _localDefaults.embeddingDim;
+/** The configured embedding model id. */
+export function embeddingModel(): string {
+  return loadLocalProviderConfig().embeddingModel;
+}
+
+/** The configured embedding vector dimension. */
+export function embeddingDim(): number {
+  return loadLocalProviderConfig().embeddingDim;
+}
+
 // keep_alive for every embed call on the indexer's Ollama client — keeps the
 // hot-path embed model resident during index bursts instead of Ollama's ~5-min
 // default eviction (S001). loadLocalProviderConfig coalesces empty->'24h'.
-const EMBEDDING_KEEP_ALIVE = _localDefaults.embeddingKeepAlive;
+function embeddingKeepAlive(): string {
+  return loadLocalProviderConfig().embeddingKeepAlive;
+}
 
 const QUERY_PREFIX =
   'Instruct: Given a user question, retrieve relevant code snippets\nQuery: ';
@@ -48,7 +61,12 @@ const BATCH_SIZE = 16;
 const OLLAMA_EMBED_BATCH_TIMEOUT_MS = 60_000;
 const OLLAMA_EMBED_SINGLE_TIMEOUT_MS = 30_000;
 
-const ollama = new Ollama({ host: _localDefaults.host });
+let _ollama: Ollama | undefined;
+
+/** The indexer's own Ollama client, created on first use. */
+function ollama(): Ollama {
+  return _ollama ??= new Ollama({ host: loadLocalProviderConfig().host });
+}
 
 /** Race an Ollama call against a timeout. Rejection lets the outer
  *  try/catch continue past the stuck request. The orphaned fetch
@@ -153,7 +171,7 @@ export async function embedEntities(
 
       try {
         const result = await withTimeout(
-          ollama.embed({ model: EMBEDDING_MODEL, input: inputs, keep_alive: EMBEDDING_KEEP_ALIVE }),
+          ollama().embed({ model: embeddingModel(), input: inputs, keep_alive: embeddingKeepAlive() }),
           OLLAMA_EMBED_BATCH_TIMEOUT_MS,
           `ollama.embed (batch=${inputs.length})`,
         );
@@ -162,7 +180,7 @@ export async function embedEntities(
           const embedding = result.embeddings[j];
           if (entity && embedding) {
             entity.embedding      = embedding;
-            entity.embeddingModel = EMBEDDING_MODEL;
+            entity.embeddingModel = embeddingModel();
           }
         }
       } catch (err) {
@@ -212,10 +230,10 @@ export async function embedQuery(text: string): Promise<number[]> {
   }
   try {
     const result = await withTimeout(
-      ollama.embed({
-        model: EMBEDDING_MODEL,
+      ollama().embed({
+        model: embeddingModel(),
         input: formatQuery(text),
-        keep_alive: EMBEDDING_KEEP_ALIVE,
+        keep_alive: embeddingKeepAlive(),
       }),
       OLLAMA_EMBED_SINGLE_TIMEOUT_MS,
       'ollama.embed (query)',
@@ -244,10 +262,10 @@ export async function embedText(text: string): Promise<number[]> {
   const input = text.length > 8_000 ? text.slice(0, 8_000) : text;
   try {
     const result = await withTimeout(
-      ollama.embed({
-        model: EMBEDDING_MODEL,
+      ollama().embed({
+        model: embeddingModel(),
         input,
-        keep_alive: EMBEDDING_KEEP_ALIVE,
+        keep_alive: embeddingKeepAlive(),
       }),
       OLLAMA_EMBED_SINGLE_TIMEOUT_MS,
       'ollama.embed (text)',
@@ -265,7 +283,7 @@ export async function embedText(text: string): Promise<number[]> {
 
 export async function isOllamaAvailable(): Promise<boolean> {
   try {
-    await ollama.list();
+    await ollama().list();
     return true;
   } catch {
     return false;
@@ -275,10 +293,10 @@ export async function isOllamaAvailable(): Promise<boolean> {
 /** Is the configured embedding model actually installed in Ollama? */
 export async function isConfiguredEmbeddingModelInstalled(): Promise<boolean> {
   try {
-    const { models } = await ollama.list();
+    const { models } = await ollama().list();
     return models.some(
-      m => m.name === EMBEDDING_MODEL ||
-           m.name.startsWith(EMBEDDING_MODEL.split(':')[0] ?? ''),
+      m => m.name === embeddingModel() ||
+           m.name.startsWith(embeddingModel().split(':')[0] ?? ''),
     );
   } catch {
     return false;
@@ -293,14 +311,14 @@ export async function isConfiguredEmbeddingModelInstalled(): Promise<boolean> {
 export async function ensureEmbeddingModel(
   onProgress?: (pct: number) => void,
 ): Promise<void> {
-  const { models } = await ollama.list();
+  const { models } = await ollama().list();
   const installed  = models.some(
-    m => m.name === EMBEDDING_MODEL ||
-         m.name.startsWith(EMBEDDING_MODEL.split(':')[0] ?? ''),
+    m => m.name === embeddingModel() ||
+         m.name.startsWith(embeddingModel().split(':')[0] ?? ''),
   );
   if (installed) return;
 
-  const stream = await ollama.pull({ model: EMBEDDING_MODEL, stream: true });
+  const stream = await ollama().pull({ model: embeddingModel(), stream: true });
   for await (const event of stream) {
     if (event.total && event.completed) {
       onProgress?.(Math.round((event.completed / event.total) * 100));

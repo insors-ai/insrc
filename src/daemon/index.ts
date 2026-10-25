@@ -75,6 +75,10 @@ import { schedulePruneTimer } from './prune-timer.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import { ConfigStore } from '../config/store.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
+import { prunedRepoTiers } from '../config/reconcile.js';
+import { buildConfigCatalog } from '../config/config-catalog.js';
+import { resetLocalProviderConfigCache } from '../config/local.js';
+import { resetAnalyzeConfigCache } from '../config/analyze.js';
 import * as todosRpc from './todos-rpc.js';
 
 // ---------------------------------------------------------------------------
@@ -145,7 +149,7 @@ async function main(): Promise<void> {
 	//     so the daemon never reconciles settings, starts a worker or listens
 	//     with a bad file.
 	const { validateModelCatalog } = await import('./model-catalog.js');
-	await validateModelCatalog();
+	const modelDefinitions = validateModelCatalog();
 
 	// 2b. Reconcile config.json against the catalog — the AUTHORITATIVE
 	//     reconcile point. UNCONDITIONAL (no existsSync short-circuit): reads
@@ -161,7 +165,13 @@ async function main(): Promise<void> {
 	//     shipped catalog) is logged distinguishably from a user-config or I/O
 	//     failure.
 	try {
-		const outcome = reconcileConfigFile();
+		// The catalog's model defaults come from the validated definitions.
+		const outcome = reconcileConfigFile({ catalog: buildConfigCatalog(modelDefinitions) });
+		if (outcome.kind === 'written') {
+			for (const { repo, tier } of prunedRepoTiers(outcome.result.pruned)) {
+				log.warn({ repo, tier }, 'removed a per-repo model tier: tiers are set globally; a repo only picks a tier for a role (models.byRepo[repo].tasks / coreFloor)');
+			}
+		}
 		switch (outcome.kind) {
 			case 'first-boot':
 				log.info('created default config.json (catalog defaults)');
@@ -199,6 +209,10 @@ async function main(): Promise<void> {
 		log.warn({ err: err instanceof Error ? err.message : String(err) },
 			'config reconcile threw -- non-fatal, retry on next boot');
 	}
+	// Drop the settings read before the reconcile (e.g. at module load) so every
+	// later read — this thread's and every worker's — sees the reconciled file.
+	resetLocalProviderConfigCache();
+	resetAnalyzeConfigCache();
 
 	// 2c. One-shot Phase 0 agent-family rename migration (idempotent).
 	// Rewrites any persisted `agentId: 'pair' | 'delegate'` to the new

@@ -21,12 +21,12 @@ import { fileURLToPath } from 'node:url';
 const SRC = readFileSync(fileURLToPath(new URL('../embedder.ts', import.meta.url)), 'utf8');
 
 test('embedder.ts derives its keep_alive from the models.local.embeddingKeepAlive config', () => {
-	assert.match(SRC, /_localDefaults\.embeddingKeepAlive/, 'must source keep_alive from local config, not a hardcode');
+	assert.match(SRC, /loadLocalProviderConfig\(\)\.embeddingKeepAlive/, 'must source keep_alive from local config, not a hardcode');
 });
 
 test('every ollama.embed(...) call in the indexer embedder passes keep_alive', () => {
-	// Each `ollama.embed({ ... })` call object must contain a keep_alive key.
-	const callRe = /ollama\.embed\(\{([\s\S]*?)\}\)/g;
+	// Each `ollama().embed({ ... })` call object must contain a keep_alive key.
+	const callRe = /ollama\(\)\.embed\(\{([\s\S]*?)\}\)/g;
 	const calls = [...SRC.matchAll(callRe)];
 	assert.ok(calls.length >= 3, `expected >=3 ollama.embed calls (embedEntities/embedQuery/embedText), found ${calls.length}`);
 	for (const m of calls) {

@@ -19,8 +19,9 @@
  *   - Chars-per-token approximation (chunkers + budget calcs)
  *
  * Read from `~/.insrc/config.json` if present, else fall back to defaults.
- * Cached in-process for the daemon's lifetime; the cache is reset only
- * via `_resetLocalProviderConfigCacheForTests()`.
+ * Cached in-process for the daemon's lifetime; main() drops the cache once,
+ * right after the boot reconcile (`resetLocalProviderConfigCache()`), so a read
+ * made at module load cannot keep pre-reconcile values.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -103,6 +104,10 @@ function isObject(x: unknown): x is Record<string, unknown> {
 }
 
 
-export function _resetLocalProviderConfigCacheForTests(): void {
+/** Drop the cached config so the next read sees config.json as it is now.
+ *  main() calls it once, right after the boot reconcile. */
+export function resetLocalProviderConfigCache(): void {
 	cached = undefined;
 }
+
+export const _resetLocalProviderConfigCacheForTests = resetLocalProviderConfigCache;

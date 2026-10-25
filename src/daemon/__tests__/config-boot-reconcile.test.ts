@@ -115,7 +115,8 @@ test('boot wiring contract: unconditional, no silent parse catch, distinguishabl
 	const idx = readFileSync(INDEX_SRC, 'utf-8');
 	// Unconditional — the old existsSync(PATHS.config) short-circuit is gone.
 	assert.doesNotMatch(idx, /if \(!existsSync\(PATHS\.config\)\)/);
-	assert.match(idx, /reconcileConfigFile\(\)/);
+	// The catalog's model rows come from the validated definitions (Epic ce99b720 s3).
+	assert.match(idx, /reconcileConfigFile\(\{ catalog: buildConfigCatalog\(modelDefinitions\) \}\)/);
 	// The former silent `catch { /* ignore parse errors */ }` is gone.
 	assert.doesNotMatch(idx, /ignore parse errors/);
 	// ConfigCatalogError is logged distinguishably from a user/I-O failure.

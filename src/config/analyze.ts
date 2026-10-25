@@ -16,8 +16,8 @@
  *   - models.maxPlanDepth.{XS,S,M,L,XL}
  *
  * Read from `~/.insrc/config.json` if present, else fall back to defaults
- * declared below. Cached in-process for the daemon's lifetime; the cache
- * is reset only via `_resetAnalyzeConfigCacheForTests()`.
+ * declared below. Cached in-process for the daemon's lifetime; main() drops
+ * the cache once, right after the boot reconcile (`resetAnalyzeConfigCache()`).
  *
  * See: design/analyze-context-builder.md "Configuration"
  *      docs/plans/analyze-context-builder.md Phase 3
@@ -509,9 +509,13 @@ export function resolveRepoShaperModel(
 	return readRepoOverride(repoPath, configPath)?.shaperModel;
 }
 
-export function _resetAnalyzeConfigCacheForTests(): void {
+/** Drop the cached config so the next read sees config.json as it is now.
+ *  main() calls it once, right after the boot reconcile. */
+export function resetAnalyzeConfigCache(): void {
 	cached = undefined;
 }
+
+export const _resetAnalyzeConfigCacheForTests = resetAnalyzeConfigCache;
 
 /** The time one live data source is given to answer when a request is measured, when the setting gives none. */
 export const DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS = 120_000;

@@ -29,12 +29,7 @@
     "coreFloor": "mid",
     "byRepo": {
       "/Users/redacted/work/projects/example/repo": {
-        "coreFloor": "core",
-        "tiers": {
-          "core": {
-            "runner": "cli-claude"
-          }
-        }
+        "coreFloor": "core"
       }
     },
     "shaper": {

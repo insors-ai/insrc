@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T21:13:02.687Z",
+    "updatedAt": "2026-10-25T21:19:05.102Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1074,9 +1074,9 @@
       },
       {
         "taskId": "t15",
-        "commit": "0ff661796",
-        "ranAt": "2026-10-25T21:13:02.687Z",
-        "testsPassed": true,
+        "commit": "80f0c1f18",
+        "ranAt": "2026-10-25T21:19:05.102Z",
+        "testsPassed": false,
         "tests": [
           {
             "name": "CM-S3-CLIENT-EGRESS: real forwardStep all analysis phases/one-shot deny before state/provider/output; all channels captured",
@@ -1091,7 +1091,7 @@
               {
                 "file": "src/daemon/steps/__tests__/analysis-client-refusal.test.ts",
                 "title": "CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels",
-                "result": "pass"
+                "result": "fail"
               }
             ],
             "files": []
@@ -1100,9 +1100,9 @@
         "files": [
           {
             "file": "src/daemon/steps/__tests__/analysis-client-refusal.test.ts",
-            "exitCode": 0,
+            "exitCode": 1,
             "timedOut": false,
-            "durationMs": 1741,
+            "durationMs": 2340,
             "titles": [
               {
                 "title": "CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads",
@@ -1110,12 +1110,13 @@
               },
               {
                 "title": "CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels",
-                "result": "pass"
+                "result": "fail"
               }
             ],
             "otherFailures": []
           }
-        ]
+        ],
+        "note": "named test cases that did not pass: fail: 'CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels' in src/daemon/steps/__tests__/analysis-client-refusal.test.ts"
       }
     ]
   }

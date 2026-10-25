@@ -25,3 +25,11 @@ test('CM-S2-F2: direct unary dispatch preserves internal completion after discon
  assert.throws(()=>forward({kind:'request',requestId:'u',method:'unknown',params:{},stream:false,lifetime:unknown},()=>{throw new Error('closed');}),/closed/);
  await unknown.completed;await unknown.drained;
 });
+
+test('CM-S2-F2: a timeout reply completes while registered cleanup remains pending after abort',async()=>{
+ const {directDispatch}=await import('../server.js');const lifetime=new RequestLifetime();let release!:()=>void;
+ const cleanup=new Promise<void>(r=>{release=r;});let reply:unknown;
+ directDispatch({test:async(_p,context)=>{context!.registerDrain!(cleanup);return new Promise(r=>setTimeout(()=>r({status:'timeout'}),5));}})({kind:'request',requestId:'timeout',method:'test',params:{},stream:false,lifetime,trustedContext:{connectionIdentity:'socket',daemonEpoch:'epoch'}},envelope=>{reply=envelope;});
+ await lifetime.completed;assert.deepEqual(reply,{kind:'reply',requestId:'timeout',result:{status:'timeout'}});
+ lifetime.abort();let drained=false;void lifetime.drained.then(()=>{drained=true;});await Promise.resolve();assert.equal(drained,false);release();await lifetime.drained;
+});

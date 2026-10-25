@@ -248,7 +248,7 @@ Run at 2026-10-25T19:44:45.908Z on commit `966f6dd48`. Tests check: **passed**. 
 
 ## t11
 
-Run at 2026-10-25T20:05:03.858Z on commit `e0f6618ec`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-25T20:11:53.125Z on commit `eef7a2a3f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-DRIVER-LOGS: actual normal daemon PG/Redis/SDK idle/reconnect/error/disposal canaries and saved marker**
 
@@ -262,4 +262,4 @@ Run at 2026-10-25T20:05:03.858Z on commit `e0f6618ec`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 3 | 9.2 s |  |
+| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 3 | 8.6 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T20:05:03.858Z",
+    "updatedAt": "2026-10-25T20:11:53.125Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -894,8 +894,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "e0f6618ec",
-        "ranAt": "2026-10-25T20:05:03.858Z",
+        "commit": "eef7a2a3f",
+        "ranAt": "2026-10-25T20:11:53.125Z",
         "testsPassed": true,
         "tests": [
           {
@@ -927,7 +927,7 @@
             "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9155,
+            "durationMs": 8625,
             "titles": [
               {
                 "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",

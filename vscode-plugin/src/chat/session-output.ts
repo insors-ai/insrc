@@ -275,7 +275,8 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
 
     async *tail(cursor, opts) {
-      if (opts.signal?.aborted === true) return;
+      const aborted = (): boolean => opts.signal?.aborted === true;
+      if (aborted()) return;
       const file = await fileFor(cursor);
       let offset = cursor.offset;
       const limit = opts.beforeOffset;
@@ -296,7 +297,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       }
       let pending: Buffer = Buffer.alloc(0);
       for (;;) {
-        if (opts.signal?.aborted === true) return;
+        if (aborted()) return;
         const remaining = limit === undefined ? READ_CHUNK : limit - offset - pending.length;
         if (remaining <= 0) return; // a checkpoint in a partial line does not make that line complete
         // Read finished() BEFORE reading, so bytes written just before the writer finished are not missed.

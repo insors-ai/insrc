@@ -82,11 +82,15 @@ test('CM-S2-A8: actual private resource close is awaited and cleanup failures ca
 });
 
 test('CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output',async()=>{
- for(const auth of [undefined,{type:'aws-v1',accessKeyId:'KEY',secretAccessKey:''},{type:'aws-v1',accessKeyId:'KEY',secretAccessKey:'PRIVATE_AUTH_CANARY',expiration:new Date(0).toISOString()}]){
-  const requestId=randomUUID(),nonce=randomBytes(32).toString('hex'),messages:unknown[]=[];
+ const {createServer}=await import('node:http');let requests=0;
+ const server=createServer((req,res)=>{requests++;req.resume();res.end('{"TableNames":[]}');});
+ await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const address=server.address();assert.ok(address&&typeof address==='object');
+ try{for(const mode of ['missing','malformed','expired','valid']){
+  const auth=mode==='missing'?undefined:{type:'aws-v1',accessKeyId:'KEY',secretAccessKey:mode==='malformed'?'':'PRIVATE_AUTH_CANARY',...(mode==='expired'?{expiration:new Date(0).toISOString()}:{})};
+  const requestId=randomUUID(),nonce=randomBytes(32).toString('hex'),messages:unknown[]=[],before=requests;
   const child=fork(resolve('src/bin/insrc-connection-test.ts'),[],{execArgv:['--import','tsx','--no-warnings'],env:{INSRC_MODE:'probe-worker',TSX_DISABLE_CACHE:'1',AWS_ACCESS_KEY_ID:'UNRELATED_AMBIENT_KEY',AWS_SECRET_ACCESS_KEY:'PRIVATE_AMBIENT_CANARY'},stdio:['ignore','pipe','pipe','ipc']});
   let output='';child.stdout!.on('data',chunk=>{output+=chunk;});child.stderr!.on('data',chunk=>{output+=chunk;});child.on('message',message=>messages.push(message));const exited=new Promise<number|null>(r=>child.once('exit',r));const timer=setTimeout(()=>child.kill('SIGKILL'),5000);
-  child.send({type:'start',requestId,nonce,lookupRoot:'/tmp',config:{id:'fixture',kind:'dynamodb',options:{region:'us-east-1',endpoint:'http://127.0.0.1:1'}},...(auth?{runtimeAuth:auth}:{})});
-  try{assert.equal(await exited,auth&&auth.secretAccessKey?0:1);if(auth&&auth.secretAccessKey)assert.equal(parseProbeWorkerResult(messages[0],{requestId,nonce}).code,'failed');else assert.equal(messages.length,0);assert.equal(output,'');}finally{clearTimeout(timer);child.kill('SIGKILL');}
- }
+  child.send({type:'start',requestId,nonce,lookupRoot:'/tmp',config:{id:'fixture',kind:'dynamodb',options:{region:'us-east-1',endpoint:'http://127.0.0.1:'+address.port}},...(auth?{runtimeAuth:auth}:{})});
+  try{assert.equal(await exited,mode==='missing'||mode==='malformed'?1:0);if(mode==='expired'||mode==='valid')assert.equal(parseProbeWorkerResult(messages[0],{requestId,nonce}).code,mode==='valid'?'reachable':'failed');else assert.equal(messages.length,0);assert.equal(requests-before,mode==='valid'?1:0,'functional endpoint proves invalid auth never falls back or sends a request');assert.equal(output,'');}finally{clearTimeout(timer);child.kill('SIGKILL');}
+ }}finally{await new Promise<void>(r=>server.close(()=>r()));}
 });

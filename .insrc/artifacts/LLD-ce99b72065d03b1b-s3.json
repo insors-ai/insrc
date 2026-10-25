@@ -37,7 +37,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "The design addresses S003's five acceptance criteria and the applicable HLD approval override.",
-          "evidence": "DEF §6.3 requires definition-derived defaults, unsupported-effort filtering, literal removal, global-only tier models, and removal of repo tier overrides. The proposed resolution, provider, catalog, reconcile and installer changes address these mechanisms in the actual code. HLD metadata additionally requires first-use embedder settings reads and cold-import tests; §§2.10 and 6 include them. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, .insrc/artifacts/HLD-ce99b72065d03b1b.json, src/config/analyze.ts, src/analyze/context/shaper-provider.ts, src/config/reconcile.ts, src/indexer/embedder.ts]",
+          "evidence": "DEF \u00a76.3 requires definition-derived defaults, unsupported-effort filtering, literal removal, global-only tier models, and removal of repo tier overrides. The proposed resolution, provider, catalog, reconcile and installer changes address these mechanisms in the actual code. HLD metadata additionally requires first-use embedder settings reads and cold-import tests; \u00a7\u00a72.10 and 6 include them. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, .insrc/artifacts/HLD-ce99b72065d03b1b.json, src/config/analyze.ts, src/analyze/context/shaper-provider.ts, src/config/reconcile.ts, src/indexer/embedder.ts]",
           "action": "Retain this coverage while correcting the specific omissions below.",
           "fixability": "manual",
           "outcome": "holds"
@@ -97,7 +97,7 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "The build-validation provider migration specifies all model-dependent construction settings and its non-CLI fallback.",
-          "evidence": "resolveValidateProvider discards the router's constructed provider and creates another CliProvider using kind/model/effort; its non-CLI branch is 'return new CliProvider({ kind: \u00027claude\u00027 });'. §3.4 specifies registry-derived CLI kind and changing this fallback to the default family's CLI, but does not specify a registry-resolved fallback model/effort or forwarding inputBudgetChars in this separate construction path. After §2.9 removes the constructor's budget default, this caller will no longer inherit it. A kind-only fallback also leaves model choice to the CLI rather than the definitions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, src/daemon/steps/build-step/phases/validate.ts, src/agent/providers/cli-provider.ts, src/analyze/context/role-router.ts]",
+          "evidence": "resolveValidateProvider discards the router's constructed provider and creates another CliProvider using kind/model/effort; its non-CLI branch is 'return new CliProvider({ kind: \u00027claude\u00027 });'. \u00a73.4 specifies registry-derived CLI kind and changing this fallback to the default family's CLI, but does not specify a registry-resolved fallback model/effort or forwarding inputBudgetChars in this separate construction path. After \u00a72.9 removes the constructor's budget default, this caller will no longer inherit it. A kind-only fallback also leaves model choice to the CLI rather than the definitions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, src/daemon/steps/build-step/phases/validate.ts, src/agent/providers/cli-provider.ts, src/analyze/context/role-router.ts]",
           "action": "Specify reuse of the router's CLI provider or complete reconstruction with its registry-derived budget. Define the non-CLI fallback's canonical model and accepted effort from an explicit registry tier default, and add tests for both branches.",
           "fixability": "manual",
           "outcome": "does-not-hold"
@@ -133,8 +133,8 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "S003 consumes the definitions and registry contracts while leaving approval and client UI redesigns with their assigned Stories.",
-          "evidence": "HLD §6.3 assigns daemon consumers, settings, resolveRole and installers to S003; §§6.4–6.7 assign approval and client migrations elsewhere. The LLD preserves that split. Its Codex limits are data additions within the existing optional inputLimit shape, and exporting the existing builder does not change ModelRegistry's interface. model-definitions.ts already owns the S002 projection and bounded installed-state lookup. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-catalog.ts, src/daemon/model-registry.ts, src/daemon/model-definitions.ts]",
-          "action": "Keep compatibility repairs narrow and preserve sc1–sc4 wire/store shapes.",
+          "evidence": "HLD \u00a76.3 assigns daemon consumers, settings, resolveRole and installers to S003; \u00a7\u00a76.4\u20136.7 assign approval and client migrations elsewhere. The LLD preserves that split. Its Codex limits are data additions within the existing optional inputLimit shape, and exporting the existing builder does not change ModelRegistry's interface. model-definitions.ts already owns the S002 projection and bounded installed-state lookup. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-catalog.ts, src/daemon/model-registry.ts, src/daemon/model-definitions.ts]",
+          "action": "Keep compatibility repairs narrow and preserve sc1\u2013sc4 wire/store shapes.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,8 +145,8 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "The detailed candidate-write rejection rule distinguishes effective rejections from models subsequently shipped.",
-          "evidence": "§2.1 checks changed candidate runner/model pairs before persistence and requires rejected membership plus absence from registry.find. This matches registry resolution, which checks find before rejected ids, and projectDefinitions, which filters rejected ids using 'registry.find(f.id, id) === undefined'. setConfigAtPath supports parent-object replacement, so examining candidate tiers covers those writes. [files: src/daemon/handler-runtime.ts, src/config/write-path.ts, src/daemon/model-registry.ts, src/daemon/model-definitions.ts]",
-          "action": "Use §2.1's complete rule in the shorter §5 description too; retain the planned parent-write, runner-switch and shipped-id/alias tests.",
+          "evidence": "\u00a72.1 checks changed candidate runner/model pairs before persistence and requires rejected membership plus absence from registry.find. This matches registry resolution, which checks find before rejected ids, and projectDefinitions, which filters rejected ids using 'registry.find(f.id, id) === undefined'. setConfigAtPath supports parent-object replacement, so examining candidate tiers covers those writes. [files: src/daemon/handler-runtime.ts, src/config/write-path.ts, src/daemon/model-registry.ts, src/daemon/model-definitions.ts]",
+          "action": "Use \u00a72.1's complete rule in the shorter \u00a75 description too; retain the planned parent-write, runner-switch and shipped-id/alias tests.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -157,7 +157,7 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "Running the structural validator after tsc guarantees that invalid definitions have not been copied to out/assets.",
-          "evidence": "§§2.7 and 5 promise validation before copying and that 'nothing is copied to out/assets'. With resolveJsonModule, TypeScript itself emits imported JSON before copy-assets.mjs runs. A filesystem-free compiler-host check using the installed TypeScript and the proposed NodeNext JSON import captured emission to 'out/assets/models/cloud-model-catalog.json'; substituting structurally invalid '{}' still produced no TypeScript diagnostics and emitted '{}\\n'. Therefore 'tsc && check-model-definitions && copy-assets' fails too late to provide the stated output guarantee. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, tsconfig.json, package.json, copy-assets.mjs, src/daemon/model-catalog.ts]",
+          "evidence": "\u00a7\u00a72.7 and 5 promise validation before copying and that 'nothing is copied to out/assets'. With resolveJsonModule, TypeScript itself emits imported JSON before copy-assets.mjs runs. A filesystem-free compiler-host check using the installed TypeScript and the proposed NodeNext JSON import captured emission to 'out/assets/models/cloud-model-catalog.json'; substituting structurally invalid '{}' still produced no TypeScript diagnostics and emitted '{}\\n'. Therefore 'tsc && check-model-definitions && copy-assets' fails too late to provide the stated output guarantee. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, tsconfig.json, package.json, copy-assets.mjs, src/daemon/model-catalog.ts]",
           "action": "Validate before JSON emission or emit into staging and promote only after validation. Alternatively, explicitly narrow the guarantee to preventing successful packaging/publication and test that guarantee rather than claiming out/assets remains untouched.",
           "fixability": "manual",
           "outcome": "does-not-hold"
@@ -319,7 +319,7 @@
           "internal": "The JetBrains model-tiers section driven by models.definitions instead of ModelTiersModel.PROVIDERS; the unknown-model check and approval dialog; the per-repo settings without per-tier fields; showing restartRequired. Tests: the section offers exactly a fake answer's options and the plugin keeps no runner or model list (ac1); an unknown model is saved only after approval (ac2); the per-repo settings show only `tasks` and coreFloor (ac3)."
         }
       ],
-      "rolloutPhase": "Phase B — daemon serves and runs by the definitions",
+      "rolloutPhase": "Phase B \u2014 daemon serves and runs by the definitions",
       "nonFunctional": {
         "performance": "The file is parsed once per thread and every model question is an in-memory lookup; models.definitions touches no CLI and makes one bounded Ollama listing call, the same one providers.listModels makes today.",
         "security": "No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home written only by the daemon; clients reach it only through models.approve and models.reject (k2).",
@@ -343,12 +343,12 @@
           ],
           "returns": {
             "type": "ConfigWriteResult",
-            "meaning": "ok:true, with restartRequired:true when any restart-sensitive setting (models.tiers, models.tasks, models.coreFloor, models.byRepo, models.local.coreModel) differs between the config before and the candidate after the write — so parent-object writes such as path 'models' or 'models.local' are covered; ok:false with reason 'invalid-path' (as today) or 'rejected-model' with a detail naming the model and family."
+            "meaning": "ok:true, with restartRequired:true when any restart-sensitive setting (models.tiers, models.tasks, models.coreFloor, models.byRepo, models.local.coreModel) differs between the config before and the candidate after the write \u2014 so parent-object writes such as path 'models' or 'models.local' are covered; ok:false with reason 'invalid-path' (as today) or 'rejected-model' with a detail naming the model and family."
           },
           "errors": [
             {
               "type": "ConfigWriteResult { ok: false, reason: 'rejected-model' }",
-              "condition": "After applying the write to a candidate copy (before persisting), some tier whose runner or model the write changed — whether by a model leaf, a runner leaf, a whole-tier object or a parent object — names a model that is effectively rejected in that tier's family: in registry.rejected(family) and not resolved by registry.find(family, model) (a model the user rejected that a later shipped file lists is accepted, as resolution and models.definitions treat it). config.json is not written."
+              "condition": "After applying the write to a candidate copy (before persisting), some tier whose runner or model the write changed \u2014 whether by a model leaf, a runner leaf, a whole-tier object or a parent object \u2014 names a model that is effectively rejected in that tier's family: in registry.rejected(family) and not resolved by registry.find(family, model) (a model the user rejected that a later shipped file lists is accepted, as resolution and models.definitions treat it). config.json is not written."
             },
             {
               "type": "ConfigWriteResult { ok: false, reason: 'invalid-path' }",
@@ -440,7 +440,7 @@
           ],
           "returns": {
             "type": "RoleResolution (internal, src/analyze/context/role-router.ts)",
-            "meaning": "The internal record keeps its existing fields — role, tier, runner (now typed FamilyId), model (canonical id), effort, clampedByFloor — and gains fallback?: { reason, requested } from AnalyzeConfig.tierResolutions. Tier from byRepo tasks → global tasks → taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback. Its consumers that read runner/model (src/daemon/workflow-rpc.ts attribution and src/daemon/workflow-review-rpc.ts '${runner}:${model}' labels) are unchanged."
+            "meaning": "The internal record keeps its existing fields \u2014 role, tier, runner (now typed FamilyId), model (canonical id), effort, clampedByFloor \u2014 and gains fallback?: { reason, requested } from AnalyzeConfig.tierResolutions. Tier from byRepo tasks \u2192 global tasks \u2192 taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback. Its consumers that read runner/model (src/daemon/workflow-rpc.ts attribution and src/daemon/workflow-review-rpc.ts '${runner}:${model}' labels) are unchanged."
           },
           "errors": [],
           "preconditions": [
@@ -471,7 +471,7 @@
             "The registry comes from overrides.registry, else getModelRegistry() (daemon threads); the TUI review stopgap supplies shippedModelRegistry()."
           ],
           "postconditions": [
-            "SUMMARISER_CLI_FALLBACK and the cli-claude/cli-codex → claude/codex literal mapping are gone; resolveShaperKind's final floor is the default family's tier runner rather than a literal."
+            "SUMMARISER_CLI_FALLBACK and the cli-claude/cli-codex \u2192 claude/codex literal mapping are gone; resolveShaperKind's final floor is the default family's tier runner rather than a literal."
           ]
         },
         {
@@ -507,10 +507,10 @@
           },
           "errors": [],
           "preconditions": [
-            "SHIPPED_DEFINITIONS is the shipped file imported as a JSON module (resolveJsonModule + `with { type: 'json' }`): tsc rejects a syntactically broken file, and the build gains a structural gate — package.json build becomes `tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs`, where the check script runs the built validateModelCatalog() against src/assets/models and exits non-zero naming the entry — so a syntactically valid but structurally invalid file fails the build before it is copied or shipped."
+            "SHIPPED_DEFINITIONS is the shipped file imported as a JSON module (resolveJsonModule + `with { type: 'json' }`): tsc rejects a syntactically broken file. The build gains a structural gate \u2014 package.json build becomes `tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs`, where the check runs the built validateModelCatalog() against src/assets/models and exits non-zero naming the entry. tsc may already have emitted the JSON into out/assets/models, so the guarantee is that the build fails: the installer's step 3 runs under `set -euo pipefail` and stops before configuring or starting the daemon, and a failed build is not packaged."
           ],
           "postconditions": [
-            "Two sources with separate roles: the imported shipped copy supplies display and fill-in defaults only, through a derivation that never throws (a missing field yields '' or no default), so evaluating CONFIG_CATALOG at module load — on the daemon's import chains index.ts → reconcile-io.ts → reconcile.ts and handler-runtime.ts → admin-handlers.ts → settings-catalog.ts — cannot fail before main(); every run-time decision in the daemon uses the validated registry.",
+            "Two sources with separate roles: the imported shipped copy supplies display and fill-in defaults only, through a derivation that never throws (a missing field yields '' or no default), so evaluating CONFIG_CATALOG at module load \u2014 on the daemon's import chains index.ts \u2192 reconcile-io.ts \u2192 reconcile.ts and handler-runtime.ts \u2192 admin-handlers.ts \u2192 settings-catalog.ts \u2014 cannot fail before main(); every run-time decision in the daemon uses the validated registry.",
             "The daemon reconciles with buildConfigCatalog(validateModelCatalog()) (validated, test-seamed), after main() has validated; the TUI, the updater's loadBuiltCatalog and the VS Code bundle use CONFIG_CATALOG from the shipped JSON."
           ]
         },
@@ -624,10 +624,10 @@
         ]
       },
       {
-        "entity": "Runner → CLI-kind and client → runner mappings",
+        "entity": "Runner \u2192 CLI-kind and client \u2192 runner mappings",
         "change": "invariant-change",
-        "details": "Runner/CLI-kind mappings and literal defaults outside the family implementations are replaced, with client processes kept off the registry (k2): (a) the MCP server (src/mcp/server.ts, a standalone process) and src/shared/step-context.ts keep detecting the client's identity ('claude' | 'codex', the client's name, not a model definition) and forward only that over step.call, as today; the daemon maps a client identity to the family whose cliKind equals it via the registry through one daemon-owned helper, familyForClient(client, registry) — used by src/daemon/steps/host.ts, src/daemon/steps/analyze-oneshot.ts (its `deps.clientDefault ?? clientProviderKind(stepClient())` default, src/daemon/steps/analyze-oneshot.ts:102), src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; src/shared/step-context.ts keeps stepClient() and the StepClient identity type but drops clientProviderKind/stepClientOf; (b) provider construction takes registry.cliKind(family) (src/analyze/context/shaper-provider.ts, src/daemon/steps/build-step/phases/validate.ts, whose fallback becomes the default family's CLI); (c) attribution (src/workflow/attribution.ts) decodes a run label by family metadata from the shipped definitions before any model lookup: a label equal to a CLI family's cliKind or starting with it (claude, codex, codex:<model>) maps to that family, a label equal to a family id or prefixed '<familyId>:' (ollama, ollama:<model>) maps to that family even when the model is no longer listed, else a model id/alias lookup across families, else the default family ('client' included) — historical labels keep their family; (d) the claude.models static fallback list becomes the Claude-kind family's models (src/daemon/handler-runtime.ts:1244). Type unions take FamilyId from src/daemon/model-catalog.ts. (e) providers.listModels (src/daemon/list-models.ts): ModelProvider becomes FamilyId and extractProvider admits the registry's family ids instead of its own ALL_PROVIDERS set; the request, the invalid-params text listing the families and the result shape are unchanged.",
-        "schemaDiff": "~ runner/kind literals → registry lookups; unions → FamilyId",
+        "details": "Runner/CLI-kind mappings and literal defaults outside the family implementations are replaced, with client processes kept off the registry (k2): (a) the MCP server (src/mcp/server.ts, a standalone process) and src/shared/step-context.ts keep detecting the client's identity ('claude' | 'codex', the client's name, not a model definition) and forward only that over step.call, as today; the daemon maps a client identity to the family whose cliKind equals it via the registry through one daemon-owned helper, familyForClient(client, registry) \u2014 used by src/daemon/steps/host.ts, src/daemon/steps/analyze-oneshot.ts (its `deps.clientDefault ?? clientProviderKind(stepClient())` default, src/daemon/steps/analyze-oneshot.ts:102), src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; src/shared/step-context.ts keeps stepClient() and the StepClient identity type but drops clientProviderKind/stepClientOf; (b) provider construction takes registry.cliKind(family) (src/analyze/context/shaper-provider.ts); resolveValidateProvider (src/daemon/steps/build-step/phases/validate.ts:183) reuses the router's constructed provider when the 'build' role resolves to a CLI family (so model, accepted effort and inputBudgetChars come from the same factory), and when it resolves to ollama it resolves the 'build' role's tier for the default family through registry.resolveTier(tier, that family's tierDefault) and builds the CliProvider through the same factory (canonical model, accepted effort, chars budget), logging the substitution; (c) attribution (src/workflow/attribution.ts) decodes a run label by family metadata from the shipped definitions before any model lookup: a label equal to a CLI family's cliKind or starting with it (claude, codex, codex:<model>) maps to that family, a label equal to a family id or prefixed '<familyId>:' (ollama, ollama:<model>) maps to that family even when the model is no longer listed, else a model id/alias lookup across families, else the default family ('client' included) \u2014 historical labels keep their family; (d) the claude.models static fallback list becomes the Claude-kind family's models (src/daemon/handler-runtime.ts:1244). Type unions take FamilyId from src/daemon/model-catalog.ts. (e) providers.listModels (src/daemon/list-models.ts): ModelProvider becomes FamilyId and extractProvider admits the registry's family ids instead of its own ALL_PROVIDERS set; the request, the invalid-params text listing the families and the result shape are unchanged.",
+        "schemaDiff": "~ runner/kind literals \u2192 registry lookups; unions \u2192 FamilyId",
         "callSites": [
           "src/mcp/server.ts:1367",
           "src/shared/step-context.ts:154",
@@ -667,12 +667,25 @@
       {
         "entity": "Build pipeline (package.json build, new scripts/check-model-definitions.mjs)",
         "change": "field-modify",
-        "details": "The build validates the shipped definitions structurally with the daemon's own validator between tsc and copy-assets; the installer's build step (scripts/insrc-daemon-install.sh step 3) therefore refuses a broken file too.",
+        "details": "The build validates the shipped definitions structurally with the daemon's own validator after tsc and before copy-assets. tsc may already have emitted the JSON into out/assets/models; the guarantee is that the build exits non-zero, so the installer (step 3, set -euo pipefail) stops before step 4b and step 5, and nothing packages a failed build.",
         "schemaDiff": "- \"build\": \"tsc && node copy-assets.mjs\"\n+ \"build\": \"tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs\"",
         "callSites": [
           "package.json",
           "copy-assets.mjs",
           "scripts/insrc-daemon-install.sh:196"
+        ]
+      },
+      {
+        "entity": "VS Code settings manifest (vscode-plugin/package.json contributes.configuration)",
+        "change": "field-modify",
+        "details": "The manifest's insrc.models.tiers.<tier>.runner/model/effort defaults and enums and insrc.models.local.coreModel default are regenerated from CONFIG_CATALOG by a new vscode-plugin/scripts/sync-manifest-catalog.mjs (run before the extension build and committed), and insrc.models.shaper.ollamaNumCtx is removed with its row. No model fact is written by hand: the script copies the catalog's values, and the existing contract suites vscode-plugin/src/config/__tests__/manifest-catalog.test.ts (no missing/extra keys; schema.default and schema.enum equal CONFIG_CATALOG) and vscode-plugin/src/models/__tests__/tier-effort.test.ts (manifest effort enums equal the catalog's) keep enforcing it. The picker redesign stays with s6.",
+        "schemaDiff": "~ insrc.models.tiers.core.model default '' \u2192 catalog default (opus)\n~ insrc.models.tiers.*.effort enum + 'ultra'\n- insrc.models.shaper.ollamaNumCtx\n+ vscode-plugin/scripts/sync-manifest-catalog.mjs",
+        "callSites": [
+          "vscode-plugin/package.json:299",
+          "vscode-plugin/package.json:399",
+          "vscode-plugin/package.json:469",
+          "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+          "vscode-plugin/src/models/__tests__/tier-effort.test.ts"
         ]
       }
     ],
@@ -740,7 +753,7 @@
         {
           "scenario": "The shipped definitions file is syntactically valid JSON but breaks a structural rule.",
           "detection": "The build's check script runs validateModelCatalog() on src/assets/models after tsc.",
-          "response": "The build fails with ModelCatalogValidationError naming the entry; nothing is copied to out/assets.",
+          "response": "The build exits non-zero with ModelCatalogValidationError naming the entry before copy-assets; out/assets/models may hold tsc's emitted copy, but the installer stops at the failed build and no daemon is configured or started from it.",
           "userImpact": "A maintainer sees the broken entry at build time; no install ships it.",
           "recoverable": false
         }
@@ -821,7 +834,7 @@
           "source": "c3"
         },
         {
-          "text": "The role router keeps its precedence for the tier (byRepo tasks → global tasks → taxonomy) and the core-floor clamp (byRepo coreFloor ?? global), and keeps the global tier's effort for every routed role.",
+          "text": "The role router keeps its precedence for the tier (byRepo tasks \u2192 global tasks \u2192 taxonomy) and the core-floor clamp (byRepo coreFloor ?? global), and keeps the global tier's effort for every routed role.",
           "source": "c4"
         },
         {
@@ -845,7 +858,7 @@
           "level": "unit",
           "purpose": "Tier resolution, routing, provider construction, settings catalog and reconcile against fixture definitions.",
           "subjects": [
-            "tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile → parse → resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset",
+            "tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile \u2192 parse \u2192 resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset",
             "effort: a tier whose model does not accept its effort resolves without it and logs a warning naming tier, model and effort; the built CliProvider gets no effort",
             "decision A: an unlisted and a rejected model fall back to the tier default with a warning naming tier, requested model, reason and default",
             "role router (src/analyze/context/role-router.ts): a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps",
@@ -862,7 +875,8 @@
             "existing pins migrated: src/daemon/__tests__/model-catalog-asset.test.ts keeps its structural validation of the shipped file but replaces the installer-literal and SUMMARISER_CLI_FALLBACK assertions with: the installer reads tier defaults and the tool-loop model from the file, and the summariser comes from the file's summariserModel; src/agent/providers/__tests__/input-budget.test.ts asserts a CliProvider reports the inputBudgetChars it is given (absent when not given) and that a provider built for a Codex model through the registry reports the file's chars limit",
             "one-shot analyze (src/daemon/steps/analyze-oneshot.ts): a forwarded client 'codex' or 'claude' resolves through familyForClient to the family with that cliKind; an injected clientDefault still wins",
             "providers.listModels admits exactly the registry's family ids; an unknown provider still returns the unchanged invalid-params error",
-            "router record: resolveRole keeps role, tier, runner, model, effort and clampedByFloor (plus fallback); workflow-rpc attribution and workflow-review-rpc labels built from it are unchanged for a CLI and an Ollama tier; models.resolveRole projects family, cli/ollama and inputLimit"
+            "router record: resolveRole keeps role, tier, runner, model, effort and clampedByFloor (plus fallback); workflow-rpc attribution and workflow-review-rpc labels built from it are unchanged for a CLI and an Ollama tier; models.resolveRole projects family, cli/ollama and inputLimit",
+            "resolveValidateProvider: a CLI 'build' resolution returns the router's provider (model, effort, inputBudgetChars from the factory); an ollama 'build' resolution returns a CliProvider for the default family's tier default with its canonical model, accepted effort and chars budget, and logs the substitution"
           ],
           "fixturesNeeded": [
             "Fixture definitions with defaults differing from today's (via INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests), a model without some effort, a Codex chars limit and two Ollama models with different token limits",
@@ -881,14 +895,15 @@
             "JetBrains: ModelTiersModelTest shows an unset tier with the default family's values from a catalog fixture produced by buildConfigCatalog over definitions whose default family and tier defaults differ from today's; a TS test asserts the checked-in Kotlin fixture equals buildConfigCatalog(that fixture) so they cannot drift",
             "VS Code: the extension bundle (vscode-plugin/esbuild.mjs, CJS node20) builds with the JSON-backed catalog and, loaded in node with the backend's node_modules unavailable, key-map's catalog defaults equal buildConfigCatalog(shipped); the import closure of src/config/config-catalog.ts contains no logger, registry or file-I/O module",
             "src/mcp/** and src/cli/** do not import getModelRegistry (clients stay off the store, k2)",
-            "build gate: scripts/check-model-definitions.mjs exits non-zero, naming the entry, for a syntactically valid but structurally invalid definitions file (run against a temp copy), and zero for the shipped file"
+            "build gate: scripts/check-model-definitions.mjs exits non-zero, naming the entry, for a syntactically valid but structurally invalid definitions file (run against a temp copy), and zero for the shipped file; `npm run build` with the invalid copy exits non-zero before copy-assets",
+            "VS Code manifest: sync-manifest-catalog.mjs is idempotent on the committed package.json; manifest-catalog.test.ts and tier-effort.test.ts pass with the definition-derived catalog (no ollamaNumCtx key, effort enums include 'ultra')"
           ]
         },
         {
           "level": "integration",
           "purpose": "A real daemon resolves from the file and the cold-import order holds.",
           "subjects": [
-            "cold daemon import through both catalog chains (index.ts → reconcile-io.ts → reconcile.ts, handler-runtime.ts → admin-handlers.ts → settings-catalog.ts), instrumented, with INSRC_MODEL_CATALOG_DIR pointing at a valid, a missing, a malformed and a structurally invalid file: every module imports, the registry and validated file are first read in main(), and an invalid file stops the daemon with ModelCatalogValidationError naming the entry before reconcile",
+            "cold daemon import through both catalog chains (index.ts \u2192 reconcile-io.ts \u2192 reconcile.ts, handler-runtime.ts \u2192 admin-handlers.ts \u2192 settings-catalog.ts), instrumented, with INSRC_MODEL_CATALOG_DIR pointing at a valid, a missing, a malformed and a structurally invalid file: every module imports, the registry and validated file are first read in main(), and an invalid file stops the daemon with ModelCatalogValidationError naming the entry before reconcile",
             "a daemon in a temp home with byRepo tiers in config.json removes them at boot with the warnings, and models.resolveRole over the socket returns the global tier's model for a repo whose tasks pick that tier",
             "the TUI build (tsc) passes and its model-tiers pane shows the definitions' defaults"
           ],
@@ -904,7 +919,7 @@
             "unit: an unset tier resolves to the fixture definitions' default",
             "unit: reconcile fills a fresh config with a fixture's differing defaults",
             "unit: buildConfigCatalog(fixture) defaults come from the fixture",
-            "unit: a fixture's non-empty default efforts survive reconcile → parse → resolution"
+            "unit: a fixture's non-empty default efforts survive reconcile \u2192 parse \u2192 resolution"
           ]
         },
         {
@@ -947,7 +962,7 @@
         },
         {
           "order": 2,
-          "action": "Build the settings catalog's model rows from the definitions (buildConfigCatalog), retire models.shaper.ollamaNumCtx, make reconcile prune byRepo tiers with per-repo/tier warnings and reconcile from the validated file in the daemon.",
+          "action": "Build the settings catalog's model rows from the definitions (buildConfigCatalog), retire models.shaper.ollamaNumCtx, make reconcile prune byRepo tiers with per-repo/tier warnings and reconcile from the validated file in the daemon. Regenerate the VS Code manifest's catalog-backed settings with vscode-plugin/scripts/sync-manifest-catalog.mjs (removing insrc.models.shaper.ollamaNumCtx).",
           "rollbackable": false
         },
         {

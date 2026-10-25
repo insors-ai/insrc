@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-3726c658-043d-42a4-b87e-c53707cf1a84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T18:13:18.511Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d0f3a4baa6e2499328ddb15fdaf304a803fc3fe9819041c9c1bad23d868e4705",
+        "at": "2026-10-22T18:13:18.512Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-24",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc3",
+      "field": {
+        "name": "writeArtifact content write keeps the Signoff history",
+        "type": "On a content write whose prior head has at least one meta.lifecycle.signoffs entry and whose next head has no lifecycle or one with no signoffs: when the content CHANGED, the stored lifecycle is the default draft with the prior Signoff entries carried; when the content is UNCHANGED and the next head has NO lifecycle, the prior lifecycle is kept exactly as it is and no draft lifecycle is synthesized; approval and review are never carried through a change",
+        "optional": false,
+        "purpose": "A content write stores the next head's lifecycle, so re-authoring an artifact in signoff stores either no meta.lifecycle or a fresh draft lifecycle with signoffs [], and its Signoff history is lost. The history names the request a revision must be pushed to; without it a resubmission opens a second request. The content write already carries meta.tracker and meta.envelope forward; this keeps the Signoff history the same way, and for unchanged content keeps the whole prior lifecycle because no lifecycle step reaches draft from in-signoff or changes-requested, so a synthesized draft would throw."
+      },
+      "breaking": false
+    },
+    "rationale": "Confirmed by running writeArtifact over a head with one Signoff entry: a next head with no lifecycle left the file with none, and a fresh draft lifecycle reset signoffs to []; the daemon review showed that a synthesized draft for unchanged content would throw IllegalTransitionError (lifecycle.ts:170). The change is additive and acts only when the prior head has a Signoff entry, so a repo with no signoff behaves as today.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792692546107-um3spo",
+      "storyId": "s8",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-10-22T18:13:17.916Z"
+  },
+  "citations": []
+}

@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "850a299c95fdedaf493976fc46723951e5c6aee3b41a1175796c7de72cadf5ea",
+        "at": "2026-10-24T12:26:40.067Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.068Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-040446cf-84f2-4a1f-897d-d3bbd36b2864",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-09-29T07:46:38.613Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2d9e9e694a94116b",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "bug-insrc-vs-code-dev-chat"
+  },
+  "body": {
+    "focus": "Dev-chat Approve silently no-ops (claude): grant re-run sends a vague nudge, and working-dir denials aren't handled",
+    "commit": "791f692839be6cb8ee2098cc8953d797449ccfa3",
+    "summary": "Historical completion reconciliation for ISSUE-2d9e9e694a94116b, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented by 791f6928. Current CLI adapter carries blocked commands onto permission records; chat-panel.ts retries the exact command and separately refuses a grant that cannot authorize a working-directory denial, explaining what is needed. The preceding audit checked those runtime branches and implementation history.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

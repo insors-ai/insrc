@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0c040d66-4cce-4592-871d-b13a9f8710ab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:32:37.549Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Maintain membership on every entity mutation",
+      "parent": {
+        "entityId": "STORY-61045de91faef1a0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61045de91faef1a0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61045de91faef1a0-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7cb25c67081aa4e7891759ad645176574a77e2edce8edbe29f714674cb2254aa",
+        "at": "2026-10-24T15:32:37.549Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T15:32:37.550Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Maintain membership on every entity mutation",
+    "summary": "Inventory puts/removes and reconcile old/new memberships in authoritative transactions for upsert, file/repo moves, reindex, embedding rewrite and deletion. Preserve registry/name/edge/vector invariants.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Mutation oracle covers insert/update/move/reindex/embedding and ID/file/repo deletion.",
+      "Injected transaction failure rolls back row and memberships.",
+      "Unregistered writes refuse without registry allocation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Transactional entity membership mutation matrix"
+      },
+      {
+        "level": "integration",
+        "name": "Row and membership rollback on injected write failure"
+      },
+      {
+        "level": "integration",
+        "name": "Strict repository registration remains enforced"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

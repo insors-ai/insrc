@@ -1,0 +1,187 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 8,
+        "contentHash": "c3b21a084e1010667db021ddb2cd84d0a8bdf1cb8664e3dd0fcb4c11d7b5fd8d",
+        "at": "2026-10-24T16:00:45.875Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 8,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:00:46.244Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a68d451f-add5-4899-aeef-ec83071c5c2f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:40:09.558Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "revision": 8,
+    "updatedAt": "2026-10-24T16:00:44.921Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "graph-store-has-no-index-entities"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Complete entity-index consumers with limit:1 readiness and repository-scoped indexed file watermarks. Include final migration/storage/analyze/review regression evidence in the named-test mapping. Task-specific suites pass; full backend sweep failures remain explicitly recorded.",
+    "testRecord": {
+      "md": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summary-carry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/operational.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/keys.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/migrations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entity-memberships.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entity-scope-indexes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/invariants.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/invariants.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T16:00:44.921Z"
+      }
+    ],
+    "commit": "50563f003"
+  },
+  "citations": []
+}

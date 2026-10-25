@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9de49d2496536da700397054f30eacdb3f83b1e9d3f6d6b7eb6ebf21f72106e",
+        "at": "2026-10-24T12:26:40.052Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.053Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a207aa92-065b-489e-a208-f6e08eb6c883",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-10-03T16:23:58.780Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57446545909fe95c",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "permission-hook-integration-test-ts-hangs"
+  },
+  "body": {
+    "focus": "Stop the permission-hook test hanging the run, and with it the flag that cancels live tests",
+    "commit": "04cb456586c26b13fe01cfb0215f27d505c28b25",
+    "summary": "Historical completion reconciliation for ISSUE-57446545909fe95c, recorded 2026-10-24T12:26:39.940Z.\n\nResolved by commit 1e7b4cf0 (permission-hook suite hang fix). Commit 04cb4565 subsequently deleted the orphaned integration suite, so that obsolete test no longer runs. This is a reconciliation of an already resolved test defect, not a new implementation.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

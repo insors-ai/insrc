@@ -1,0 +1,207 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "2e8ab4973624513dea2961d749cd8895cf935826a3b3ba9692226e28f50c2f91",
+        "at": "2026-10-24T14:37:32.948Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:37:33.225Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-f6a6eb00-fa04-40eb-9443-0bc2819a96f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T13:25:59.688Z",
+    "epicCreatedAt": "2026-10-13T06:10:03.483Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fcfdd50de84fb31a",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Existing approved small bugfix routed directly from ISSUE to build.",
+    "epicSlug": "decode-socket-child-process-output-utf",
+    "updatedAt": "2026-10-24T14:37:30.630Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-fcfdd50de84fb31a: decode socket and child-process output as UTF-8 streams so multibyte characters split across reads survive intact. Preserve framing and byte-based limits. Reuse the established streaming decoder in src/mcp/forward-step.ts; cover each corrected reader with split-chunk regressions.",
+    "producesLld": false,
+    "commit": "3251877d3",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added a shared StringDecoder-based reader preserving raw byte counts and applied it to daemon/shared/MCP sockets, subprocess tool output, Graphviz and editor CLI stderr; workflow streaming preserves its named listener and uses StringDecoder directly, and CLI stdout uses Node UTF-8 stream decoding. Split-byte regressions cover all corrected reader families. Backend and editor TypeScript passed; expanded compatibility suite: 150 pass, 0 fail.",
+    "testRecord": {
+      "md": "docs/standalone/decode-socket-child-process-output-utf-E20261013fcfdd50d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-fcfdd50de84fb31a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-fcfdd50de84fb31a.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/server-utf8.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/cloud/aws/logs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/k8s/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/shell/exec-detached.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/ssh/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/test/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/shell-helper.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/daemon-stream-utf8.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/daemon-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/ipc-client-timeout.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/ipc-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/utf8-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/ipc-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/utf8-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:30.630Z"
+      }
+    ]
+  },
+  "citations": []
+}

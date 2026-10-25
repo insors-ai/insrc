@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-6a0ad182-32cb-4218-b539-09d7e237f988",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T17:40:56.038Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "64db0df13b670b5131f8ef86cffc1eb9ff7a8f291989d7c5832b7746095b5d48",
+        "at": "2026-10-22T17:40:56.038Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-22",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc3",
+      "field": {
+        "name": "writeArtifact content write carries meta.lifecycle.signoffs forward",
+        "type": "On a content write, when the prior head has at least one entry in meta.lifecycle.signoffs and the next head's lifecycle is missing or has none, the stored lifecycle keeps the prior entries (the default draft lifecycle is created when the next head has none); approval and review are not carried",
+        "optional": false,
+        "purpose": "A content write stores the next head's lifecycle, so re-authoring an artifact in signoff stores either no meta.lifecycle or a fresh draft lifecycle with signoffs [], and its Signoff history is lost. The history names the request a revision must be pushed to; without it a resubmission opens a second request. The content write already carries meta.tracker and meta.envelope forward; this carries the Signoff entries in the same way."
+      },
+      "breaking": false
+    },
+    "rationale": "Confirmed by running writeArtifact over a head with one Signoff entry: a next head with no lifecycle left the file with none, and a fresh draft lifecycle reset signoffs to []. The change is additive and acts only when the prior head has a Signoff entry, so a repo with no signoff behaves as today.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792690524358-i0z4og",
+      "storyId": "s8",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-10-22T17:40:56.037Z"
+  },
+  "citations": []
+}

@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "12598158867e2375cf87afeba78afaca403cfeaa814339c896cfe939b71537fd",
+        "at": "2026-10-24T14:33:38.116Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T05:54:10.620Z"
+      }
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792852396411-44wul5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:33:16.411Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 21704,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3bc755af91d494a8",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-06T06:28:55.595Z",
+    "epicSlug": "completing-story-accepts-any-existing-code",
+    "standalone": true,
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "3bc755af91d494a8",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/ISSUE-3bc755af91d494a8.log.jsonl",
+        "src/workflow/__tests__/approve-build-freshness.test.ts",
+        "src/workflow/__tests__/approve-build-record-completion.test.ts",
+        "src/workflow/__tests__/helpers/other-party-review.ts",
+        "src/workflow/code-review/__tests__/runner.test.ts",
+        "src/workflow/code-review/build-freshness.ts",
+        "src/workflow/code-review/gate.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/runners/build/completion-record.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/ISSUE-61045de91faef1a0.log.jsonl",
+        ".insrc/artifacts/ISSUE-fd8d70c3e8c397ea.log.jsonl",
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

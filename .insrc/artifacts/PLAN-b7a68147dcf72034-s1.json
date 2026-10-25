@@ -1,0 +1,385 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792851577317-seq9t4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:21:23.736Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 106198,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s1",
+    "lldRunId": "wf-1792849689113-zzgave",
+    "lldEffectiveHash": "8118b9bf1de52a19df7e782bca3743f7f2bdb7b05c42c9053a72ad87adfad33f",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "34652667ab2ebda999cc8f29cd8a5f8611b3471a9eb8c3befb0eef46b25d2ced",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:30.995Z"
+      }
+    },
+    "rangeBase": "e0c3e97d5e0abc0b3d2358d9a4ef780aa3e23a58"
+  },
+  "body": {
+    "summary": {
+      "prose": "The build adds a small hook registry to the daemon's tool executor and wires it in at the two places where a tool call succeeds. It is built bottom-up: the types first, then the registry and its run point with its unit tests, then the executor stage, then the callTool pass-through, and last the contract checks and docs. No rule is registered by this Story, so nothing a caller sees changes until s7 registers the first ones.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Hook types and the hookFailures field",
+        "summary": "Add ToolHook, ToolHookContext and HookFailure to src/daemon/tools/types.ts, the optional hookFailures on ToolResult and the optional hookFailures on the success variant of TypedToolResult. Types only; nothing reads them yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "tsc --noEmit is clean at the root",
+          "ToolHookContext.caller is 'agent' | 'daemon' | 'workflow' | undefined and the context has no signal field",
+          "ToolResult.hookFailures and TypedToolResult success hookFailures are optional with | undefined",
+          "call-tool.type-test.ts still compiles"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: HookFailure report shape"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The hook registry and its run point",
+        "summary": "Add src/daemon/tools/hooks.ts with registerToolHook (duplicate, empty id and alias refusal), runToolHooks (resolved tool.id lookup, a structuredClone of input and result per hook, serial run, guarded failure text cut to 500 characters, clone failure reported per hook, per-hook log line) and the test reset seam; export registerToolHook from src/daemon/tools/index.ts. Create src/daemon/tools/__tests__/tool-hooks.test.ts with the registry and run-point unit tests; t3, t4 and t5 extend the same file so every proving test the LLD names lives there.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "registerToolHook throws on a duplicate toolId+id, an empty id or toolId, and an alias of an already registered tool",
+          "runToolHooks runs hooks in registration order, one at a time, and a failing hook does not stop the next",
+          "a null-prototype throw, a throwing toString and an empty message give the fixed fallback text and nothing throws out of runToolHooks",
+          "a hook that mutates nested result.data, with or without then throwing, leaves the original untouched",
+          "an uncloneable result reports that hook as failed and the rest still run",
+          "a message over 500 characters is cut to 500"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks runs hooks one at a time"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Run the hooks from executeTool",
+        "summary": "Route executeTool's two success exits through one helper that calls runToolHooks with the resolved tool, and sets hookFailures and appends one `[hook failed] <hookId>: <message>` line per failure to output only when a rule failed; every failed exit stays hook-free and a call with no hook returns the very object the tool returned. Extend tool-hooks.test.ts with the executor tests.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a registered rule runs once after a successful call for caller agent, daemon, workflow and unset, with and without an outputSchema",
+          "a failed, denied, rejected or schema-mismatch call runs no rule and carries no hookFailures",
+          "a tool called through an alias runs the canonical id's hooks exactly once",
+          "a failing rule leaves success, data and format unchanged, sets hookFailures, and appends exactly one `[hook failed] <hookId>: <message>` line per failure to output",
+          "hookFailures is absent when no rule failed and the result object is the one the tool returned when no hook is registered",
+          "executor-approval.test.ts passes unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool with no outputSchema still runs its rules"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a call with no rule returns the object the tool returned"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "callTool carries the report",
+        "summary": "Copy hookFailures from the executor result onto the success variant of TypedToolResult in callTool, only when at least one rule failed. Extend tool-hooks.test.ts with the callTool tests.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "callTool returns hookFailures on a success whose rule failed and omits the key otherwise",
+          "call-tool.type-test.ts and the existing call-tool tests pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool carries hookFailures onto the typed success result"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool omits hookFailures when nothing failed"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Contract check and docs",
+        "summary": "Complete tool-hooks.test.ts so every test the LLD acceptance mapping names exists (ac1 to ac5); confirm the read-only tool loop output and the 228-tool snapshot are unchanged; add the hook stage section to docs/daemon.md after the approval section.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "tool-hooks.test.ts holds a test with each title the LLD acceptance mapping names for ac1 to ac5",
+          "approval-class-mapping.test.ts and the read-only tool loop tests pass unchanged",
+          "docs/daemon.md describes the stage, the report, the canonical id rule, the per-hook copy and the missing cancellation bound"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that mutates nested result data leaves the caller's result untouched"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool snapshot is unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/__tests__/read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runToolHooks runs hooks serially in registration order, catches a throw or rejection, cuts a long message to 500 characters, and gives each hook its own structuredClone of input and result",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "HookFailure report shape",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerToolHook refuses an alias in place of a canonical id",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool runs a registered rule once after a successful call for caller agent, daemon, workflow and unset",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failing rule leaves success true, data and format unchanged, sets hookFailures and appends the [hook failed] line",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failed tool, a denied call, an input rejection and a schema-mismatch run no rule",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "two rules on one tool run in order and the first failing does not stop the second",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a successful call with no rule returns the same object the tool returned",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a tool with no outputSchema still runs its rules",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "callTool copies hookFailures onto the typed success result and omits it when nothing failed",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a tool called through an alias runs the canonical id's hooks exactly once",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the read-only tool loop still returns the tool's output text unchanged when no rule is registered",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 228-tool snapshot in src/daemon/tools/__tests__/fixtures/approval-snapshot.json still matches, so no tool id or input schema moved",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract details (registerToolHook, runToolHooks, executeTool, callTool)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model changes (ToolHook, ToolHookContext, HookFailure, ToolResult, TypedToolResult)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths and edge cases"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 test strategy and acceptance mapping"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration steps"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 9,
+        "contentHash": "c4e32174b14f4037a7a29b635692d972d31a20b495c0038c3092fdfb6bb52e6f",
+        "at": "2026-10-24T14:44:33.116Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:44:34.501Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-4d997bbf-c03a-4f57-92f4-a922aba9c313",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:28:01.568Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-10-24T14:44:32.088Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Completed tool-hooks.test.ts, added the read-only tool loop test, confirmed the 228-tool snapshot test passes unchanged, and documented the hook stage in docs/daemon.md. The commit was amended to drop unrelated standalone-story documents that a broad git add had swept in.",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/tool-hooks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/call-tool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/hooks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/__tests__/read-only-tool-loop.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:44:32.088Z"
+      }
+    ],
+    "commit": "258f72fbb"
+  },
+  "citations": []
+}

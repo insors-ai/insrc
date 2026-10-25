@@ -21,7 +21,7 @@
     "epicHash": "b7a68147dcf72034",
     "epicSlug": "one-tool-registry-git-gh-jira",
     "authoredBy": "controller",
-    "revision": 1,
+    "revision": 2,
     "envelope": {
       "description": "",
       "references": [],
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "cf9549f92ed5df4a8ec46f9aa68c526fd5f164aeffbf2f5dfa703f26159cc65a",
-        "at": "",
+        "number": 2,
+        "contentHash": "826a92e486565d98aebedd3c2ff916b7c3e8e222322b1e65770c983f8c9ee153",
+        "at": "2026-10-24T15:33:06.097Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -41,7 +41,7 @@
       },
       "signoffs": [],
       "review": {
-        "revision": 1,
+        "revision": 2,
         "reviewer": {
           "id": "insrc:daemon",
           "kind": "agent",
@@ -51,27 +51,27 @@
         "verdict": "block",
         "counts": {
           "high": 0,
-          "med": 11,
-          "low": 7
+          "med": 36,
+          "low": 8
         },
-        "at": "2026-10-23T08:52:47.839Z",
+        "at": "2026-10-24T16:01:32.462Z",
         "report": {
           "entityId": "DEF-b7a68147dcf72034",
           "type": "change-log-entry",
           "relation": "reviews",
-          "fragment": "review-18dc035ab800b0003fbe3d31e42257f8"
+          "fragment": "review-5e5cbef66f9561a3f1b813b733d04b18"
         }
       },
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-23T08:59:01.234Z",
+        "at": "2026-10-24T16:02:39.291Z",
         "override": {
-          "reason": "Daemon review round 1 blocked with 0 HIGH and 11 MED, all grounding gaps rather than wrong claims. The factual premises were checked by hand against the code on 2026-10-23 (executeTool is the single run path; the approval gate auto-approves with no dispatcher; git_push/git_reset flag approval on every call; call-site counts) and recorded in docs/plans/tool-registry.md, to be carried into design.epic. User approved with override."
+          "reason": "Daemon review of DEF revision 2 blocked with 0 HIGH and 36 MED, all evidence gaps (\"unverifiable from the supplied evidence\": the reviewer's greps were truncated at 50 matches), none a wrong claim; 8 LOW findings are verified sound. The premises are unchanged from the first approval (override, 11 MED grounding gaps), which were checked by hand against the code on 2026-10-23 and recorded in docs/plans/tool-registry.md. The only content change in revision 2 is the new section 6.8 for Story s8 (the long tail of git operations, split out of s4 on the user's decision on 2026-10-24). Approved by the user."
         }
       }
     },
@@ -680,6 +680,48 @@
         "functionalRequirements": [
           {
             "statement": "The list of replaced call sites is recorded and each one is covered by a test that runs through the registry."
+          }
+        ]
+      },
+      {
+        "id": "s8",
+        "title": "Reach the rest of git through named, typed tools",
+        "userValue": "Every git command a person or a program can run unattended is reachable through the registry with a declared result shape and the right approval class, so nothing falls back to a raw shell.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a git command that can run without a person, a GUI, a mail server or a server role",
+            "when": "the registry's git tools are listed",
+            "then": "the command is reachable through a named tool with an operation-selecting input, and a case in the coverage table runs it through the executor against a temporary repository and checks its result and effect",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a git command that reads from standard input (apply, am, mktree, mktag, fast-import and similar)",
+            "when": "its tool is called with the content as an input",
+            "then": "the content reaches the command without a raw shell, and a failure to deliver it is reported as the tool's failure",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a tool of this family is called",
+            "when": "it returns",
+            "then": "its result follows the declared shape, and a result that does not fit, or whose output was cut, is a failure",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "an operation of this family can destroy work or overwrite a file (clean, restore of the worktree, rm with force, prune, deleting a ref, removing notes, overwriting an archive or patch)",
+            "when": "the registry is read",
+            "then": "that operation is marked destructive so the approval story applies",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "the git commands covered by Stories s4 and s4b together",
+            "when": "the coverage table is read",
+            "then": "every command of the recorded git command list is covered or excluded with a reason that a reviewer can check, and the only exclusions are those the user accepted",
+            "operationalizes": []
           }
         ]
       }

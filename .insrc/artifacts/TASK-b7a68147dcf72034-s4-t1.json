@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a02e2ad2-fcd6-43ea-8288-d06f6ce02abd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:44:09.078Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Typed failures for git tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5863f9be49064214904037883008cef6972f7d9e0c9fd89584236b2e6752bf65",
+        "at": "2026-10-24T18:44:09.078Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:44:09.079Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Typed failures for git tools",
+    "summary": "Add failureKind(r: ShellResult, opts) and withFailure(result, kind, original?, message?) to helpers.ts; change spawnFail and fail(label, r: ShellResult, opts) to use them (timeout warning only in failure.message); remove branch.ts's local copies; route status, diff, stage, merge, show, log, blame, rebase, cherry-pick, revert and the other failure sites through the helpers or withFailure while keeping legacy text and data; switch every runShell call site to pass the ShellResult; add the registration wrapper that gives kind rejected to any unsuccessful result lacking a failure. Expected non-zero outcomes (amend, reset, merge helper reads) stay apart from process failures.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "Every failure site in the LLD inventory returns a failure.kind: missing-tool for a spawn error, timed-out for a killed command, missing-signin or unreachable for push, pull, fetch, clone and ls-remote when git's message shows it, rejected otherwise",
+      "The registration wrapper adds kind rejected to an unsuccessful result without a failure and leaves one that has a failure untouched",
+      "Legacy output and error text of each failing call is unchanged",
+      "The existing git tool tests pass unchanged after this task, before t4 and t5 build on it",
+      "Expected non-zero outcomes of the amend, reset and merge helper reads are not reported as process failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: spawnFail and fail return the failure kind from the process outcome and git's message and keep output, format, success and error"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: failureKind maps a ShellResult to missing-tool, timed-out, missing-signin, unreachable or rejected, and withFailure leaves output, format, success, error and data untouched"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: the registration wrapper adds kind rejected to an unsuccessful result without a failure and leaves a set failure untouched"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: the legacy output and error text of every existing failure path is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a git tool in a directory that is not a repository, with git missing from PATH, and past its time limit returns a failure of the right kind"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_merge with a conflict keeps its data and its merge conflict error and carries failure kind rejected"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a timed-out mutating call carries kind timed-out and the unknown-outcome sentence in failure.message"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

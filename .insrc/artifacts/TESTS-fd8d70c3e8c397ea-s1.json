@@ -1,0 +1,1568 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 20,
+        "contentHash": "f2d2e0fe629e3e315d79b290565a3a67bec765238c2098e59ce1ccbc03feaf21",
+        "at": "2026-10-25T05:18:37.556Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T16:16:08.128Z",
+    "updatedAt": "2026-10-25T05:18:37.421Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "epicSlug": "daemon-stop-must-wait-process-end",
+    "revision": 20
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "62626954c",
+        "ranAt": "2026-10-24T18:09:07.255Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Managed run-file guard exclusion, observed replacement preservation and explicit orphan conflict",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "managed guard serializes cooperating ownership and preserves observed replacement run files",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "replaced or rewritten files and changed guard nonces are preserved",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "killed guard owner leaves an explicit orphan conflict and is never reclaimed automatically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Observation-only process identities cannot authorize numeric-PID target signalling",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process.test.ts",
+                "title": "observation-only identities report changes but expose no numeric-PID signalling authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Revised guard foundation regressions pass without claiming atomic conditional unlink",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process.test.ts",
+                "title": "process start parsers preserve OS markers and distinguish zombies and malformed observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process.test.ts",
+                "title": "real disposable child identity observations distinguish live and exited processes",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/daemon-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 379,
+            "titles": [
+              {
+                "title": "process start parsers preserve OS markers and distinguish zombies and malformed observations",
+                "result": "pass"
+              },
+              {
+                "title": "observation-only identities report changes but expose no numeric-PID signalling authority",
+                "result": "pass"
+              },
+              {
+                "title": "real disposable child identity observations distinguish live and exited processes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 484,
+            "titles": [
+              {
+                "title": "managed guard serializes cooperating ownership and preserves observed replacement run files",
+                "result": "pass"
+              },
+              {
+                "title": "replaced or rewritten files and changed guard nonces are preserved",
+                "result": "pass"
+              },
+              {
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "title": "killed guard owner leaves an explicit orphan conflict and is never reclaimed automatically",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "4f268b5f9",
+        "ranAt": "2026-10-24T18:27:57.603Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Native Linux retained-capability capture termination and post-exit non-retargeting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "Linux native handle retains the original target through termination and exit without retargeting",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "closing or abandoning a native handle does not terminate its target",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "native framing rejects malformed requests and non-daemon targets without signalling",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Darwin denied or unsupported capabilities fail closed and runtime evidence remains explicit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "Darwin-style denied and unsupported capability seams fail before readiness and never enable termination",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "missing identity metadata is unverifiable rather than positive process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Normal build compiles and ships the local broker without a runtime compiler or PID-kill fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "normal build ships the host broker with no numeric-PID kill symbol",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/process-broker-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8580,
+            "titles": [
+              {
+                "title": "normal build ships the host broker with no numeric-PID kill symbol",
+                "result": "pass"
+              },
+              {
+                "title": "Linux native handle retains the original target through termination and exit without retargeting",
+                "result": "pass"
+              },
+              {
+                "title": "closing or abandoning a native handle does not terminate its target",
+                "result": "pass"
+              },
+              {
+                "title": "native framing rejects malformed requests and non-daemon targets without signalling",
+                "result": "pass"
+              },
+              {
+                "title": "Darwin-style denied and unsupported capability seams fail before readiness and never enable termination",
+                "result": "pass"
+              },
+              {
+                "title": "missing identity metadata is unverifiable rather than positive process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "1c55d3f27",
+        "ranAt": "2026-10-24T18:43:21.898Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Node StopTarget retains one broker capability across identity and PID-file changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "native StopTarget remains bound after PID-file replacement and terminates only the original process",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "chunked readiness and out-of-order replies preserve one immutable identity and request correlation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Broker spawn readiness protocol permission and timeout failures are bounded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "readiness and operation timeouts close a stuck helper without a target-signal fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "unknown reply IDs, operation mismatches and request errors close the capability session",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "invalid target IDs and timer bounds are rejected before spawning",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "oversized readiness and partial request replies never become process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Closing or cancelling a broker client releases helpers without unintended target signalling",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "native close and cancellation release the broker without terminating an unrequested target",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "abort before capture and during readiness or a pending request leaves no helper",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/daemon-process-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2835,
+            "titles": [
+              {
+                "title": "native StopTarget remains bound after PID-file replacement and terminates only the original process",
+                "result": "pass"
+              },
+              {
+                "title": "native close and cancellation release the broker without terminating an unrequested target",
+                "result": "pass"
+              },
+              {
+                "title": "chunked readiness and out-of-order replies preserve one immutable identity and request correlation",
+                "result": "pass"
+              },
+              {
+                "title": "spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers",
+                "result": "pass"
+              },
+              {
+                "title": "readiness and operation timeouts close a stuck helper without a target-signal fallback",
+                "result": "pass"
+              },
+              {
+                "title": "abort before capture and during readiness or a pending request leaves no helper",
+                "result": "pass"
+              },
+              {
+                "title": "unknown reply IDs, operation mismatches and request errors close the capability session",
+                "result": "pass"
+              },
+              {
+                "title": "invalid target IDs and timer bounds are rejected before spawning",
+                "result": "pass"
+              },
+              {
+                "title": "oversized readiness and partial request replies never become process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "84f57b852",
+        "ranAt": "2026-10-24T19:03:08.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Startup publication and awaited close are serialized under the same guard",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Startup-error, fatal and stale-file cleanup honor ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Startup-error, fatal and stale-file cleanup honor ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1641,
+            "titles": [
+              {
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              },
+              {
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "title": "Startup-error, fatal and stale-file cleanup honor ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "687c9b4e0",
+        "ranAt": "2026-10-24T19:10:21.768Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Retained stop target survives run-file removal and RPC failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Retained stop target survives run-file removal and RPC failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Verified forced termination preserves StopOutcome and never targets reused PIDs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Verified forced termination preserves StopOutcome and never targets reused PIDs",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Injected same-PID reincarnation preserves forced outcome and never retargets the held native capability",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: clean and forced retain the original capability and preserve outcome shape",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Ownership or orphan-guard conflicts prevent maintenance restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Real orphaned guard owner death prevents maintenance restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Real ownership and guard conflicts prevent maintenance restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9040,
+            "titles": [
+              {
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              },
+              {
+                "title": "Retained stop target survives run-file removal and RPC failure",
+                "result": "pass"
+              },
+              {
+                "title": "Verified forced termination preserves StopOutcome and never targets reused PIDs",
+                "result": "pass"
+              },
+              {
+                "title": "Real ownership and guard conflicts prevent maintenance restart",
+                "result": "pass"
+              },
+              {
+                "title": "Injected same-PID reincarnation preserves forced outcome and never retargets the held native capability",
+                "result": "pass"
+              },
+              {
+                "title": "Real orphaned guard owner death prevents maintenance restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 444,
+            "titles": [
+              {
+                "title": "stop outcome: clean and forced retain the original capability and preserve outcome shape",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: missing target or capture refusal never sends RPC",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: capability errors or survival withhold cleanup and always release handle",
+                "result": "pass"
+              },
+              {
+                "title": "Ownership or orphan-guard conflicts prevent maintenance restart",
+                "result": "pass"
+              },
+              {
+                "title": "restart: clean and forced outcomes start only after confirmed stop",
+                "result": "pass"
+              },
+              {
+                "title": "describeStop: says when the daemon was killed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "15aecaefc",
+        "ranAt": "2026-10-24T19:15:08.173Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Ready handshake reports spawn failure, early exit and timeout",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Ready handshake reports spawn failure, early exit and timeout",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Watchdog never signals after reparenting and imports only Node built-ins",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Watchdog never signals after reparenting and imports only Node built-ins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13936,
+            "titles": [
+              {
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              },
+              {
+                "title": "Ready handshake reports spawn failure, early exit and timeout",
+                "result": "pass"
+              },
+              {
+                "title": "Watchdog never signals after reparenting and imports only Node built-ins",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "4e7f9e470",
+        "ranAt": "2026-10-24T19:18:53.238Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Watchdog arm failure self-kills before blocked native cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Repeated signals and guarded async close preserve ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Repeated signals and guarded async close preserve ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1880,
+            "titles": [
+              {
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              },
+              {
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "title": "Startup-error, fatal and stale-file cleanup honor ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11149,
+            "titles": [
+              {
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated signals and guarded async close preserve ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3335,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              },
+              {
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "625e5ba9b",
+        "ranAt": "2026-10-24T19:25:50.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Control script retains the original target across run-file removal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Control script retains the original target across run-file removal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Control script refuses reused identity, replacement files and orphan guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Control script refuses reused identity, replacement files and orphan guards",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Shell bridge with injected same-PID reincarnation refuses restart and missing identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Disposable clean and forced script restart paths preserve commands",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Disposable clean and forced script restart paths preserve commands",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Shell start and restart refuse spawn after lifecycle failures even in conditional contexts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Shell start and restart refuse spawn after lifecycle failures even in conditional contexts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 26581,
+            "titles": [
+              {
+                "title": "Control script retains the original target across run-file removal",
+                "result": "pass"
+              },
+              {
+                "title": "Control script refuses reused identity, replacement files and orphan guards",
+                "result": "pass"
+              },
+              {
+                "title": "Disposable clean and forced script restart paths preserve commands",
+                "result": "pass"
+              },
+              {
+                "title": "Shell start and restart refuse spawn after lifecycle failures even in conditional contexts",
+                "result": "pass"
+              },
+              {
+                "title": "Shell bridge with injected same-PID reincarnation refuses restart and missing identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "77f976967",
+        "ranAt": "2026-10-25T05:18:37.421Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Controlled shutdown investigation evidence document satisfies ac4 with historical-cause caveat",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-stop-must-wait-process-end-E20261013fd8d70c3/S001/shutdown-investigation.md; shutdown-evidence.json"
+            }
+          },
+          {
+            "name": "Guard-owner death prevents restart while the healthy control restarts normally",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+                "title": "Guard-owner death prevents restart while the healthy control restarts normally",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Compiled helper packaging and affected lifecycle regression suites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+                "title": "Compiled helper packaging and affected lifecycle regression suites",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process.test.ts",
+                "title": "real disposable child identity observations distinguish live and exited processes",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "killed guard owner leaves an explicit orphan conflict and is never reclaimed automatically",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/process-broker-native.test.ts",
+                "title": "normal build ships the host broker with no numeric-PID kill symbol",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-process-client.test.ts",
+                "title": "native StopTarget remains bound after PID-file replacement and terminates only the original process",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: clean and forced retain the original capability and preserve outcome shape",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Real orphaned guard owner death prevents maintenance restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Retained waitForStop verifies run-file ownership and guards before reporting success",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Retained waitForStop ignores path disappearance until original exit and preserves handle ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Control script refuses reused identity, replacement files and orphan guards",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Clean stop has one completion boundary and never cleans a later publication twice",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Fresh HOME capture and stop create the missing guard parent and report no original target",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "Fresh HOME shell stop and start work without a pre-existing insrc directory",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+                "title": "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Backward wall-clock adjustment cannot postpone CLI forced stop of an unresponsive original",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "Backward wall-clock adjustment cannot extend the bounded forced-termination observation phase",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "Backward wall-clock adjustment cannot extend CLI readiness timeout",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Platform evidence matrix distinguishes Linux runtime proof from unverified Darwin support and unperformed installed smoke",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-stop-must-wait-process-end-E20261013fd8d70c3/S001/shutdown-investigation.md#platform-and-packaging-evidence; src/native/process-broker/README.md"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 27677,
+            "titles": [
+              {
+                "title": "Control script retains the original target across run-file removal",
+                "result": "pass"
+              },
+              {
+                "title": "Control script refuses reused identity, replacement files and orphan guards",
+                "result": "pass"
+              },
+              {
+                "title": "Disposable clean and forced script restart paths preserve commands",
+                "result": "pass"
+              },
+              {
+                "title": "Shell start and restart refuse spawn after lifecycle failures even in conditional contexts",
+                "result": "pass"
+              },
+              {
+                "title": "Shell bridge with injected same-PID reincarnation refuses restart and missing identity",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh HOME shell stop and start work without a pre-existing insrc directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9957,
+            "titles": [
+              {
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              },
+              {
+                "title": "Retained stop target survives run-file removal and RPC failure",
+                "result": "pass"
+              },
+              {
+                "title": "Verified forced termination preserves StopOutcome and never targets reused PIDs",
+                "result": "pass"
+              },
+              {
+                "title": "Real ownership and guard conflicts prevent maintenance restart",
+                "result": "pass"
+              },
+              {
+                "title": "Injected same-PID reincarnation preserves forced outcome and never retargets the held native capability",
+                "result": "pass"
+              },
+              {
+                "title": "Real orphaned guard owner death prevents maintenance restart",
+                "result": "pass"
+              },
+              {
+                "title": "Retained waitForStop verifies run-file ownership and guards before reporting success",
+                "result": "pass"
+              },
+              {
+                "title": "Retained waitForStop ignores path disappearance until original exit and preserves handle ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Clean stop has one completion boundary and never cleans a later publication twice",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh HOME capture and stop create the missing guard parent and report no original target",
+                "result": "pass"
+              },
+              {
+                "title": "Backward wall-clock adjustment cannot postpone CLI forced stop of an unresponsive original",
+                "result": "pass"
+              },
+              {
+                "title": "Backward wall-clock adjustment cannot extend CLI readiness timeout",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7853,
+            "titles": [
+              {
+                "title": "stop outcome: clean and forced retain the original capability and preserve outcome shape",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: missing target or capture refusal never sends RPC",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: capability errors or survival withhold cleanup and always release handle",
+                "result": "pass"
+              },
+              {
+                "title": "Ownership or orphan-guard conflicts prevent maintenance restart",
+                "result": "pass"
+              },
+              {
+                "title": "restart: clean and forced outcomes start only after confirmed stop",
+                "result": "pass"
+              },
+              {
+                "title": "describeStop: says when the daemon was killed",
+                "result": "pass"
+              },
+              {
+                "title": "Backward wall-clock adjustment cannot extend the bounded forced-termination observation phase",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/run-file-ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9022,
+            "titles": [
+              {
+                "title": "Replacement run files survive original daemon cleanup and implicit socket unlink",
+                "result": "pass"
+              },
+              {
+                "title": "Startup publication and awaited close are serialized under the same guard",
+                "result": "pass"
+              },
+              {
+                "title": "Startup-error, fatal and stale-file cleanup honor ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Real startup-error, fatal and backstop paths preserve replacements and skip unsafe exit hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10421,
+            "titles": [
+              {
+                "title": "Watchdog arm failure self-kills before blocked native cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+                "result": "pass"
+              },
+              {
+                "title": "Repeated signals and guarded async close preserve ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17228,
+            "titles": [
+              {
+                "title": "Guard-owner death prevents restart while the healthy control restarts normally",
+                "result": "pass"
+              },
+              {
+                "title": "Compiled helper packaging and affected lifecycle regression suites",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9027,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              },
+              {
+                "title": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15882,
+            "titles": [
+              {
+                "title": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+                "result": "pass"
+              },
+              {
+                "title": "Ready handshake reports spawn failure, early exit and timeout",
+                "result": "pass"
+              },
+              {
+                "title": "Watchdog never signals after reparenting and imports only Node built-ins",
+                "result": "pass"
+              },
+              {
+                "title": "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+                "result": "pass"
+              },
+              {
+                "title": "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+                "result": "pass"
+              },
+              {
+                "title": "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 708,
+            "titles": [
+              {
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "title": "All five understanding roles require critical core descriptors",
+                "result": "pass"
+              },
+              {
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-process-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3537,
+            "titles": [
+              {
+                "title": "native StopTarget remains bound after PID-file replacement and terminates only the original process",
+                "result": "pass"
+              },
+              {
+                "title": "native close and cancellation release the broker without terminating an unrequested target",
+                "result": "pass"
+              },
+              {
+                "title": "chunked readiness and out-of-order replies preserve one immutable identity and request correlation",
+                "result": "pass"
+              },
+              {
+                "title": "spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers",
+                "result": "pass"
+              },
+              {
+                "title": "readiness and operation timeouts close a stuck helper without a target-signal fallback",
+                "result": "pass"
+              },
+              {
+                "title": "abort before capture and during readiness or a pending request leaves no helper",
+                "result": "pass"
+              },
+              {
+                "title": "unknown reply IDs, operation mismatches and request errors close the capability session",
+                "result": "pass"
+              },
+              {
+                "title": "invalid target IDs and timer bounds are rejected before spawning",
+                "result": "pass"
+              },
+              {
+                "title": "oversized readiness and partial request replies never become process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 393,
+            "titles": [
+              {
+                "title": "process start parsers preserve OS markers and distinguish zombies and malformed observations",
+                "result": "pass"
+              },
+              {
+                "title": "observation-only identities report changes but expose no numeric-PID signalling authority",
+                "result": "pass"
+              },
+              {
+                "title": "real disposable child identity observations distinguish live and exited processes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "managed guard serializes cooperating ownership and preserves observed replacement run files",
+                "result": "pass"
+              },
+              {
+                "title": "replaced or rewritten files and changed guard nonces are preserved",
+                "result": "pass"
+              },
+              {
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "title": "killed guard owner leaves an explicit orphan conflict and is never reclaimed automatically",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/process-broker-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8564,
+            "titles": [
+              {
+                "title": "normal build ships the host broker with no numeric-PID kill symbol",
+                "result": "pass"
+              },
+              {
+                "title": "Linux native handle retains the original target through termination and exit without retargeting",
+                "result": "pass"
+              },
+              {
+                "title": "closing or abandoning a native handle does not terminate its target",
+                "result": "pass"
+              },
+              {
+                "title": "native framing rejects malformed requests and non-daemon targets without signalling",
+                "result": "pass"
+              },
+              {
+                "title": "Darwin-style denied and unsupported capability seams fail before readiness and never enable termination",
+                "result": "pass"
+              },
+              {
+                "title": "missing identity metadata is unverifiable rather than positive process-exit evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1585,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

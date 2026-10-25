@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e68c405a-67c9-4db2-be16-5f6bb756ace1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:32:37.547Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add membership indexes and atomic schema6 backfill",
+      "parent": {
+        "entityId": "STORY-61045de91faef1a0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61045de91faef1a0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "68a1b995b0626d827a0c7d104eb84f1cb28a1989670d638acfa5f4a5e4248f3f",
+        "at": "2026-10-24T15:32:37.548Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T15:32:37.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add membership indexes and atomic schema6 backfill",
+    "summary": "Add file/repo dupsort handles and binary/digest keys; verify named DB capacity. Backfill authoritative v5 rows atomically with registry validation, rollback/retry and version stamping only on success. Update current-version assertions; retain historical fixtures. Use genuine raw v5 fixtures and fail after partial membership insertion.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Fresh/populated v5 migration yields exact memberships without reindex.",
+      "Partial migration failure rolls back data/version and retries on reopen.",
+      "Reopen is idempotent and unsupported-version refusal remains."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "File/repository index key encoding and long Unicode path support"
+      },
+      {
+        "level": "integration",
+        "name": "Schema-v5 backfill, rollback after partial writes, retry and reopen idempotence"
+      },
+      {
+        "level": "integration",
+        "name": "Current-version compatibility and historical migrations"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

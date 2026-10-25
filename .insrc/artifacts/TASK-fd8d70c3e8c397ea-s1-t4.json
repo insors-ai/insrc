@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6d0a7daa-67df-4977-afd8-00bb6e157b05",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.413Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the independent shutdown watchdog and ready handshake",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "347db563239d6653cd2bbf3c572ac5be0c5c3702bbcb988c81f770a27c1d236e",
+        "at": "2026-10-24T18:07:27.915Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.413Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement the independent shutdown watchdog and ready handshake",
+    "summary": "Add packaged Node-built-in-only watchdog child and parent arm/ready helper with test seams. Observe parenthood rather than numeric PID alone, retain synchronous deadline/stage diagnostics and exit after healthy parent termination. Expose explicit spawn/early-exit/ready-timeout failure to the caller; import no graph/vector code. Readiness must include the native broker's validated stable handle. The Node wrapper imports built-ins only and launches the packaged broker; parenthood checks supplement rather than replace kernel-capability safety.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Disposable blocked parent ends at the configured deadline; normally exiting parent leaves no watchdog.",
+      "Reparented/reused PID is never signalled and helper imports only Node built-ins.",
+      "Ready is acknowledged before arming succeeds; spawn, early exit and timeout failures are observable.",
+      "Compiled distribution includes both parent helper and child entrypoint."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit"
+      },
+      {
+        "level": "integration",
+        "name": "Ready handshake reports spawn failure, early exit and timeout"
+      },
+      {
+        "level": "integration",
+        "name": "Watchdog never signals after reparenting and imports only Node built-ins"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

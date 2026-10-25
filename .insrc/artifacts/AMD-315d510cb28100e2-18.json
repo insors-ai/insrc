@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-67eac61c-461e-4eb8-98e8-c9a2de777765",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T17:26:35.609Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c6efd2f1d6595388d136f1c512c6d9b9693dd2509f1979fac08238a67b01072a",
+        "at": "2026-10-22T17:26:35.609Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-18",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "TrackerPort.readSignoffRequest",
+        "type": "(ref: SignoffRequestRef) => PortResult<{ branch: string; open: boolean }>",
+        "optional": true,
+        "purpose": "A resubmission has to decide between pushing to an existing request and opening a new one. readSignoffState maps a closed request and one with changes requested to the same state, so the port needs to say which branch the request was opened from and whether it is still open. A tracker without it is treated as unable to revise: the submission opens a new request as in s7."
+      },
+      "breaking": false
+    },
+    "rationale": "Additive and optional on the port. Without it an open pull request that was asked for changes cannot be told from a closed one, so a revision would either fail on a second 'gh pr create' or strand the old thread.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792689729763-lgk1sn",
+      "storyId": "s8",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-22T17:26:35.605Z"
+  },
+  "citations": []
+}

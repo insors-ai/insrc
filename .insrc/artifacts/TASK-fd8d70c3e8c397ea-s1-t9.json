@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-14ad084b-000a-4851-b9a2-b2e530ca3d3c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:07:27.919Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose retained StopTarget capabilities through the Node client",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d7ec4b03d2567c1ff0fd1b4fa3a0a6a4fae265461945f722548fc6f31086da0a",
+        "at": "2026-10-24T18:07:27.919Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:07:27.919Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose retained StopTarget capabilities through the Node client",
+    "summary": "Wrap the packaged broker with a bounded ready/request/exit protocol and explicit hasExited/terminate/close operations. Bind each client to one validated target incarnation, retain it across caller RPC failures, and release handles/helpers on success, cancellation or failure. Reuse UTF-8-safe stream handling. Missing broker, malformed replies, denied capabilities and deadlines refuse safely; no Node process.kill fallback for daemon targets.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Node integration retains the same kernel target across process/PID-file changes and never substitutes another PID.",
+      "Spawn, ready, protocol, permission and timeout failures are bounded and actionable.",
+      "Client close/cancellation releases the broker without signalling an unrequested target or leaking a helper.",
+      "All forced target signalling uses the broker capability; observation-only identity probes cannot authorize it."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Node StopTarget retains one broker capability across identity and PID-file changes"
+      },
+      {
+        "level": "integration",
+        "name": "Broker spawn readiness protocol permission and timeout failures are bounded"
+      },
+      {
+        "level": "integration",
+        "name": "Closing or cancelling a broker client releases helpers without unintended target signalling"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-525c76b9-b564-455a-9f72-1213d9a97017",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:44:09.091Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Registration, coverage table, snapshot and docs",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f2b3c352b220dde031dec1ba8ab12a314c15383b1b13b6a077b8719af2a95a5a",
+        "at": "2026-10-24T18:44:09.091Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:44:09.092Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Registration, coverage table, snapshot and docs",
+    "summary": "Register all tools in index.ts; add coverage.ts (GIT_COVERAGE with three owners: covered, assigned to s8, excluded with reason, per subcommand, git_amend's commit case included) built from git 2.53.0's 169 commands and its test that runs each covered case through executeTool in a temporary repository; update the 228-tool snapshot and approval-class mapping test for the new tools and classes; add the coverage table to docs/daemon.md.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "The coverage test checks a fixed fixture of the 169 command names, not the installed git, and accounts for every one with exactly one owner",
+      "Every covered row runs through executeTool in a temporary repository",
+      "The tool id and input schema snapshot matches for the existing tools and lists the new ones",
+      "The approval-class mapping test covers the new tools and the destructive classes",
+      "docs/daemon.md shows the coverage table"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: every covered row's case runs through executeTool and matches its assertion"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_amend runs its own case and git_diff with path and paths keeps its legacy failure"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite and list the new git tools"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the approval-class mapping covers the new tools and classes"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

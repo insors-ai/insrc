@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d100a0df-9800-4897-9a9d-0b68e0b2a200",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:32:37.551Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replace scoped scans with indexed reads",
+      "parent": {
+        "entityId": "STORY-61045de91faef1a0-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61045de91faef1a0-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61045de91faef1a0-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "58b2852b2532d6d889936d5cb93d57528e68fb6ec5fc75be6661acd13187fef4",
+        "at": "2026-10-24T15:32:37.551Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T15:32:37.551Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace scoped scans with indexed reads",
+    "summary": "Use exact-key candidates for file/repo reads, grouped files, deletion collectors and reindex snapshots. Resolve authoritative rows in consistent snapshots; preserve exact path equality and u64 ordering and report dangling-index corruption. Explicitly verify snapshot consistency, forced digest collisions and row-access bounds.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Scoped operations work when entity.getRange throws and do not read unrelated rows.",
+      "Outputs/order match authoritative oracle.",
+      "Unicode/long paths and forced digest collision preserve exact matching; dangling references error."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Scoped queries, collectors and reindex snapshots avoid full scans and unrelated row reads"
+      },
+      {
+        "level": "integration",
+        "name": "Exact contents/u64 order, snapshot consistency and forced digest collision filtering"
+      },
+      {
+        "level": "integration",
+        "name": "Dangling membership references report corruption"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

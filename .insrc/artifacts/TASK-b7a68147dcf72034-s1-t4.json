@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd66deb8-9b05-479a-8318-c5fd2e2be33d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:27:31.499Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "envelope": {
+      "description": "callTool carries the report",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1fd21832b411e40ce032f75a5652183ef83b948b06bdf55ef9b192653a66d5fa",
+        "at": "2026-10-24T14:27:31.499Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:31.500Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "callTool carries the report",
+    "summary": "Copy hookFailures from the executor result onto the success variant of TypedToolResult in callTool, only when at least one rule failed. Extend tool-hooks.test.ts with the callTool tests.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "callTool returns hookFailures on a success whose rule failed and omits the key otherwise",
+      "call-tool.type-test.ts and the existing call-tool tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool carries hookFailures onto the typed success result"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool omits hookFailures when nothing failed"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

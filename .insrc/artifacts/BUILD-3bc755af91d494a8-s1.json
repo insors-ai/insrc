@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 9,
+        "contentHash": "dde6b92be1e1ba8393e2c0273c3c157790133e8433c0175e90a51d5555a9a4a8",
+        "at": "2026-10-24T14:37:27.890Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:37:28.117Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-daa91fc4-ae2a-4178-88e0-bb6eacfb405f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T13:16:45.643Z",
+    "epicCreatedAt": "2026-10-06T06:28:55.595Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3bc755af91d494a8",
+    "storyId": "s1",
+    "revision": 9,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Existing tracked small bugfix, approved by user; direct issue-to-build route.",
+    "epicSlug": "completing-story-accepts-any-existing-code",
+    "updatedAt": "2026-10-24T14:37:26.796Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-3bc755af91d494a8: completing a Story requires a code review of its latest build, not an older review. Reject outdated or non-covering reviews with an actionable reason; preserve explicit override approval. Add regression coverage reviewing a Story, updating its build, and withholding completion until a fresh review exists.",
+    "producesLld": false,
+    "commit": "620fe6278",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Require matching BUILD fingerprints and file coverage for completion; reject malformed or unbound reviews, retain explicit overrides and existing non-BUILD approval behavior.",
+    "testRecord": {
+      "md": "docs/standalone/completing-story-accepts-any-existing-code-E202610063bc755af/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-3bc755af91d494a8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-3bc755af91d494a8.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-build-freshness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-build-record-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/other-party-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/runner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/build-freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/runner.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T14:37:26.796Z"
+      }
+    ]
+  },
+  "citations": []
+}

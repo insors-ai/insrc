@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-14d2621d-692d-4d8f-84bd-c7dfeb33cb3a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:27:31.501Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Contract check and docs",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e54cff22a56bb5710d081c81b6483b1a0ed85de8d12d25903d9b902f586ee4f3",
+        "at": "2026-10-24T14:27:31.501Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:31.501Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Contract check and docs",
+    "summary": "Complete tool-hooks.test.ts so every test the LLD acceptance mapping names exists (ac1 to ac5); confirm the read-only tool loop output and the 228-tool snapshot are unchanged; add the hook stage section to docs/daemon.md after the approval section.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "tool-hooks.test.ts holds a test with each title the LLD acceptance mapping names for ac1 to ac5",
+      "approval-class-mapping.test.ts and the read-only tool loop tests pass unchanged",
+      "docs/daemon.md describes the stage, the report, the canonical id rule, the per-hook copy and the missing cancellation bound"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that mutates nested result data leaves the caller's result untouched"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool snapshot is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/agent/__tests__/read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

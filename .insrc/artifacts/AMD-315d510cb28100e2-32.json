@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-1961a8cc-cc3f-42d7-87ee-95b8c2c5c103",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T06:51:35.180Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "cd768bf83028323be60331ce1b806da8e4d7c52f0cf8909755b7f488a99eddc0",
+        "at": "2026-10-23T06:51:35.182Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-32",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "nonFunctional.retarget",
+      "property": "performance",
+      "oldTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+      "newTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 120-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call, except that a repo whose tracker setting is on creates its issues at first draft and refreshes their status after a daemon git pull or push.",
+      "rationale": "The user decided on 2026-10-23 that 10 seconds is too low for a tracker command and that every one gets 120 seconds. The refresh and the draft hook for a repo with no team policy also make tracker calls that the old sentence ruled out."
+    },
+    "rationale": "10 seconds is too low for gh against a loaded tracker; every tracker command (GH_TIMEOUT_MS) gets 120 seconds, and the sentence about a repo without a policy is corrected for issue creation and the status refresh.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792738062809-196rpd",
+      "storyId": "s9",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-10-23T06:51:35.178Z"
+  },
+  "citations": []
+}

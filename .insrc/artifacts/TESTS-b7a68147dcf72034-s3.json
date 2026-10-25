@@ -1,0 +1,861 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 11,
+        "contentHash": "6776a0662efd5a3251c7096008b595bd0a7686f5ae800f5f8b9378a23fd54e42",
+        "at": "2026-10-24T07:35:57.417Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "createdAt": "2026-10-24T07:05:36.878Z",
+    "updatedAt": "2026-10-24T07:35:56.834Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 11
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8c93a2f5",
+        "ranAt": "2026-10-24T07:05:36.878Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-types.test.ts: ApprovalDenial holds exactly the four values and ToolDeps accepts caller and approvalMode",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-types.test.ts",
+                "title": "approval-types.test.ts: ApprovalDenial holds exactly the four values and ToolDeps accepts caller and approvalMode",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 970,
+            "titles": [
+              {
+                "title": "approval-types.test.ts: ApprovalDenial holds exactly the four values and ToolDeps accepts caller and approvalMode",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ff07926c",
+        "ranAt": "2026-10-24T07:07:56.893Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/config/__tests__/tools-common-approval.test.ts: config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tools-common-approval.test.ts",
+                "title": "tools-common-approval.test.ts: config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/config/__tests__/tools-common-approval.test.ts: permissions.mode is stripped from an existing config and is gone from the catalog, the plugin manifest and the settings page",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tools-common-approval.test.ts",
+                "title": "tools-common-approval.test.ts: permissions.mode is stripped from an existing config and is gone from the catalog, the plugin manifest and the settings page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/tools-common-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 889,
+            "titles": [
+              {
+                "title": "tools-common-approval.test.ts: config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload",
+                "result": "pass"
+              },
+              {
+                "title": "tools-common-approval.test.ts: permissions.mode is stripped from an existing config and is gone from the catalog, the plugin manifest and the settings page",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "cda2446f",
+        "ranAt": "2026-10-24T07:09:39.560Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an answered request resolves approved and a declined one resolves declined",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: an answered request resolves approved and a declined one resolves declined",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: no open stream resolves no-client at once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: no open stream resolves no-client at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: with two subscribers the first answer wins and the second is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: with two subscribers the first answer wins and the second is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: closing the last stream resolves every pending request to no-client",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: closing the last stream resolves every pending request to no-client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an aborted caller signal resolves cancelled and sends the subscribers a cancel frame",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: an aborted caller signal resolves cancelled and sends the subscribers a cancel frame",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: a late subscriber receives the still-pending requests",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+                "title": "approval-broker.test.ts: a late subscriber receives the still-pending requests",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-broker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1410,
+            "titles": [
+              {
+                "title": "approval-broker.test.ts: an answered request resolves approved and a declined one resolves declined",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: no open stream resolves no-client at once",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: with two subscribers the first answer wins and the second is refused",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: closing the last stream resolves every pending request to no-client",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: an aborted caller signal resolves cancelled and sends the subscribers a cancel frame",
+                "result": "pass"
+              },
+              {
+                "title": "approval-broker.test.ts: a late subscriber receives the still-pending requests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "820c2eb6",
+        "ranAt": "2026-10-24T07:11:26.202Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a subscribed client receives the gate frame for a pending request and its answer resolves it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+                "title": "approval-ipc.test.ts: a subscribed client receives the gate frame for a pending request and its answer resolves it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+                "title": "approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: an answer for an unknown request id returns accepted false",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+                "title": "approval-ipc.test.ts: an answer for an unknown request id returns accepted false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: disconnecting the only subscriber resolves pending requests to no-client",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+                "title": "approval-ipc.test.ts: disconnecting the only subscriber resolves pending requests to no-client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a cancelled request sends a cancel frame over the socket",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+                "title": "approval-ipc.test.ts: a cancelled request sends a cancel frame over the socket",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-ipc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1289,
+            "titles": [
+              {
+                "title": "approval-ipc.test.ts: a subscribed client receives the gate frame for a pending request and its answer resolves it",
+                "result": "pass"
+              },
+              {
+                "title": "approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer",
+                "result": "pass"
+              },
+              {
+                "title": "approval-ipc.test.ts: an answer for an unknown request id returns accepted false",
+                "result": "pass"
+              },
+              {
+                "title": "approval-ipc.test.ts: disconnecting the only subscriber resolves pending requests to no-client",
+                "result": "pass"
+              },
+              {
+                "title": "approval-ipc.test.ts: a cancelled request sends a cancel frame over the socket",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "23abb17b",
+        "ranAt": "2026-10-24T07:13:29.579Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: class resolution gives none, common, destructive, a per-input class, and destructive for a throwing function",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-policy.test.ts",
+                "title": "approval-policy.test.ts: class resolution gives none, common, destructive, a per-input class, and destructive for a throwing function",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a destructive tool asks under every approvalMode, every flag value, any caller and any argument",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-policy.test.ts",
+                "title": "approval-policy.test.ts: a destructive tool asks under every approvalMode, every flag value, any caller and any argument",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a common tool asks in manual and edit-auto, not in auto, and the call mode wins over the flag",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-policy.test.ts",
+                "title": "approval-policy.test.ts: a common tool asks in manual and edit-auto, not in auto, and the call mode wins over the flag",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: the request takes the repository from input cwd then deps.repoPath, truncates large arguments and falls back to a generic preview",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-policy.test.ts",
+                "title": "approval-policy.test.ts: the request takes the repository from input cwd then deps.repoPath, truncates large arguments and falls back to a generic preview",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 607,
+            "titles": [
+              {
+                "title": "approval-policy.test.ts: class resolution gives none, common, destructive, a per-input class, and destructive for a throwing function",
+                "result": "pass"
+              },
+              {
+                "title": "approval-policy.test.ts: a destructive tool asks under every approvalMode, every flag value, any caller and any argument",
+                "result": "pass"
+              },
+              {
+                "title": "approval-policy.test.ts: a common tool asks in manual and edit-auto, not in auto, and the call mode wins over the flag",
+                "result": "pass"
+              },
+              {
+                "title": "approval-policy.test.ts: the request takes the repository from input cwd then deps.repoPath, truncates large arguments and falls back to a generic preview",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "6187ed67",
+        "ranAt": "2026-10-24T07:16:02.369Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: no client and a cancelled request return denied with their reasons",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: no client and a cancelled request return denied with their reasons",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: an approved call runs and returns the tool's result unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: an approved call runs and returns the tool's result unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a bad input is rejected before any prompt",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a bad input is rejected before any prompt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3359,
+            "titles": [
+              {
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: no client and a cancelled request return denied with their reasons",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: an approved call runs and returns the tool's result unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a bad input is rejected before any prompt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "0cdb6f0e",
+        "ranAt": "2026-10-24T07:20:35.735Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "title": "approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the eight destructive builtins are destructive",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "title": "approval-class-mapping.test.ts: the eight destructive builtins are destructive",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "title": "approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "title": "approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6586,
+            "titles": [
+              {
+                "title": "approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the eight destructive builtins are destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "dfd92a80",
+        "ranAt": "2026-10-24T07:23:45.186Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/shared/__tests__/ipc-client-stream.test.ts: a client opens a stream, receives the pushed frames and closes it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-client-stream.test.ts",
+                "title": "ipc-client-stream.test.ts: a client opens a stream, receives the pushed frames and closes it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/shared/__tests__/ipc-client-stream.test.ts: closing the handle aborts the server's stream handler",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-client-stream.test.ts",
+                "title": "ipc-client-stream.test.ts: closing the handle aborts the server's stream handler",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/ipc-client-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1273,
+            "titles": [
+              {
+                "title": "ipc-client-stream.test.ts: a client opens a stream, receives the pushed frames and closes it",
+                "result": "pass"
+              },
+              {
+                "title": "ipc-client-stream.test.ts: closing the handle aborts the server's stream handler",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "40d41a49",
+        "ranAt": "2026-10-24T07:29:25.127Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/approval-subscribe.test.ts",
+                "title": "approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/services/__tests__/approval-subscribe.test.ts: a cancel frame removes the prompt and the stream is reopened after a restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/approval-subscribe.test.ts",
+                "title": "approval-subscribe.test.ts: a cancel frame removes the prompt and the stream is reopened after a restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/approval-subscribe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4440,
+            "titles": [
+              {
+                "title": "approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer",
+                "result": "pass"
+              },
+              {
+                "title": "approval-subscribe.test.ts: a cancel frame removes the prompt and the stream is reopened after a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "fa57c897",
+        "ranAt": "2026-10-24T07:33:54.135Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts",
+                "title": "approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts",
+                "title": "approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2009,
+            "titles": [
+              {
+                "title": "approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer",
+                "result": "pass"
+              },
+              {
+                "title": "approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart",
+                "result": "pass"
+              },
+              {
+                "title": "approval-subscribe.test.ts: the extension attaches the prompter and shows Approve and Decline",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "0a38fb5d",
+        "ranAt": "2026-10-24T07:35:56.834Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-matrix.test.ts: every mode against none, common and destructive tools asks exactly as the ac6 reading says, through the real executor and broker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-matrix.test.ts",
+                "title": "approval-matrix.test.ts: every mode against none, common and destructive tools asks exactly as the ac6 reading says, through the real executor and broker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3535,
+            "titles": [
+              {
+                "title": "approval-matrix.test.ts: every mode against none, common and destructive tools asks exactly as the ac6 reading says, through the real executor and broker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

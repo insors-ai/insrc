@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12de115f259e35ca7fdbb1809e3995f535d247f5a7e65eb563e0e0192bb3d3f7",
+        "at": "2026-10-24T12:26:40.069Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.071Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-69050a6a-46c7-4ddc-9fb3-38a33e0bddf6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-09-29T06:43:38.282Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99bc81bbe965eec3",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "bug-insrc-build-step-returns-unresolved"
+  },
+  "body": {
+    "focus": "insrc_build_step can't resolve a structural task label (sN/tN) in a multi-epic repo",
+    "commit": "73946faca98a5ae4ffb26a375edd9ff0c01782d6",
+    "summary": "Historical completion reconciliation for ISSUE-99bc81bbe965eec3, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented by 73946fac. Optional epicHash scope is threaded from build-step through resolveTaskRef into resolveWorkflowRef; resolveByLabel uses that scope. Later resolver work also improved unscoped evidence-based disambiguation. The focused tracker regression suite passed during the preceding audit.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

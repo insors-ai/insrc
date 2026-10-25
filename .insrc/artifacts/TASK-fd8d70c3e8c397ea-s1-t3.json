@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d846376-8c54-43ab-a153-938c6f6fc3ee",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.412Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Retain the original target throughout CLI stop and restart",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "f361e649411c5fb66f2d3352a191138fb69b10369acdcebde5dd5f04c3fe0ab7",
+        "at": "2026-10-24T18:07:27.914Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.412Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Retain the original target throughout CLI stop and restart",
+    "summary": "Capture a broker-backed StopTarget before shutdown RPC, retain the kernel capability through run-file removal, and observe/terminate only via that handle. Preserve StopOutcome and bounded phases. Refuse success on capability, ownership or orphan-guard conflict so maintenance.restart cannot launch a replacement.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "PID/socket disappearance alone never reports success while the captured process lives.",
+      "RPC failure/timeouts still wait and terminate only through the retained OS capability, never by rereading a numeric PID.",
+      "PID reuse, identity read failure, foreign files or orphaned guard withhold restart; clean stop preserves existing outcome shape."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Retained stop target survives run-file removal and RPC failure"
+      },
+      {
+        "level": "integration",
+        "name": "Verified forced termination preserves StopOutcome and never targets reused PIDs"
+      },
+      {
+        "level": "integration",
+        "name": "Ownership or orphan-guard conflicts prevent maintenance restart"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

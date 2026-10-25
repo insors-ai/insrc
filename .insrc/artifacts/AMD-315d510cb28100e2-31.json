@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-0accc024-0138-4185-b45a-761b63bb0984",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T06:51:35.141Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad93627ad78de3939ab383b46e5ec2ef53b8367c7a52a7c78a476a8a356c1674",
+        "at": "2026-10-23T06:51:35.148Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-31",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "TrackerPort.readIssueStatus",
+        "signature": "readIssueStatus?(issue: IssueRef): PortResult<{ state: 'open' | 'closed'; labels: string[] }>",
+        "optional": true
+      },
+      "capability": "status-read"
+    },
+    "rationale": "The HLD defers the issue-status read to this extend. syncTracker calls the GitHub CLI through an unclassified, untimed call, so a non-GitHub tracker cannot be synced; one optional read and a status-read capability, listed in ALL_CAPABILITIES, let one refresh serve every adapter. A tracker that lacks the capability is rejected when a refresh needs it (k8), never silently skipped.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792738062809-196rpd",
+      "storyId": "s9",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-23T06:51:35.130Z"
+  },
+  "citations": []
+}

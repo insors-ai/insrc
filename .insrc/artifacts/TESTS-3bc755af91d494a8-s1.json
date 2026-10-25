@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "e23cfb9579562a03b97568142ab1e21f6f2e946ed30e805f26e69546b225c8eb",
+        "at": "2026-10-24T14:32:29.098Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3bc755af91d494a8",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T13:24:05.341Z",
+    "updatedAt": "2026-10-24T14:32:29.075Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-06T06:28:55.595Z",
+    "epicSlug": "completing-story-accepts-any-existing-code",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "620fe6278",
+        "ranAt": "2026-10-24T14:32:29.075Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/approve-build-freshness.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/approve-build-freshness.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/__tests__/approve-build-record-completion.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/approve-build-record-completion.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/runner.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/__tests__/runner.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/approve-build-freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 518,
+            "titles": [
+              {
+                "title": "legacy review is refused until a fresh bound review covers the latest build",
+                "result": "pass"
+              },
+              {
+                "title": "a stale review can be explicitly overridden in both completion gates",
+                "result": "pass"
+              },
+              {
+                "title": "review coverage must include every BUILD path, with absolute and relative paths equivalent",
+                "result": "pass"
+              },
+              {
+                "title": "a bound review detects changed commits and tasks even at the same timestamp, but survives approval bookkeeping",
+                "result": "pass"
+              },
+              {
+                "title": "legacy reviews without a BUILD binding are rejected regardless of their review timestamps",
+                "result": "pass"
+              },
+              {
+                "title": "an existing structurally invalid BUILD cannot satisfy completion with a passing review",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy review cannot establish freshness for an undated BUILD",
+                "result": "pass"
+              },
+              {
+                "title": "completion refuses a malformed review even when an empty BUILD has no file coverage to check",
+                "result": "pass"
+              },
+              {
+                "title": "a stale BUILD review does not prevent approval of a new PLAN",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/approve-build-record-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 393,
+            "titles": [
+              {
+                "title": "single BUILD target with no prior json creates the record, but completes only after its code review",
+                "result": "pass"
+              },
+              {
+                "title": "non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scoped)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 476,
+            "titles": [
+              {
+                "title": "the persisted review binds the BUILD snapshot that was reviewed",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: all four judges returning findings persist ONE record with dimensions:[four] + folded verdict + counts (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: verdict fold matches the ReviewVerdict vocabulary (any-HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: the record is written at CR-<epic>-<story> and carries kind:code-review (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: the four judges run SERIALLY in [adherence,conventions,coverage,quality] order, never concurrently (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a throwing 2nd judge aborts the run with {ok:false} and writes NOTHING; judges 3-4 do not run (ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: an in-memory validation failure returns {ok:false} before any write (ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a pre-aborted signal returns {ok:false} and writes nothing (ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a grounding failure returns {ok:false} and writes nothing (ac5)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a successful run writes BOTH the .json and the .md (two write-spy calls)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: all four dimensions empty => a written PASS record (an empty review is a persisted PASS, not an absence)",
+                "result": "pass"
+              },
+              {
+                "title": "T4 runCodeReview given reviewedBy controller writes it on the record",
+                "result": "pass"
+              },
+              {
+                "title": "T4 runCodeReview given reviewedBy daemon writes it on the record",
+                "result": "pass"
+              },
+              {
+                "title": "T4 runCodeReview given no reviewedBy writes none",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS: wires the base four judges + conditional functional-coverage + diagram + ux, in fixed order + writeAtomic",
+                "result": "pass"
+              },
+              {
+                "title": "s10: runCodeReview with opts.groundingMode:degraded stamps body.groundingMode === degraded",
+                "result": "pass"
+              },
+              {
+                "title": "s10: capVerdictAtWarn:true + all-empty findings (would fold pass) => verdict warn",
+                "result": "pass"
+              },
+              {
+                "title": "s10: capVerdictAtWarn:true + a HIGH finding => verdict stays block (the cap never lowers block/warn)",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the verdict fold is unchanged (default parity)",
+                "result": "pass"
+              },
+              {
+                "title": "the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

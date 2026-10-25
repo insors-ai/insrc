@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-db57fbb9-5717-4b01-8487-a6dffafa44f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.415Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply retained-target and guard rules to the control script",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "ebce957343851ec4854fede206614d5d21a0703149afab9d13c66ad01bd60236",
+        "at": "2026-10-24T18:07:27.916Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.416Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Apply retained-target and guard rules to the control script",
+    "summary": "Update existing shell stop/wait/force-stop/restart functions to use the same identity/ownership contract, reusing shared Node helpers through a minimal internal executable if needed rather than duplicating weaker PID logic. Retain original target, verify before kill, preserve replacement files and surface unrecovered guard errors. Keep existing script user-facing commands. Remove cmd_restart's cmd_stop || true suppression. Explicitly return nonzero from cmd_start and cmd_restart on stop, capability or ownership failure before spawn_daemon, including shell conditional contexts.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Script waits or forces the captured process after PID/socket deletion.",
+      "Reused PID, replacement files, missing helper/identity and orphan guard never trigger unsafe kill or successful restart.",
+      "Disposable shell integration proves clean and forced-stop outcomes without touching the installed daemon.",
+      "Both cmd_start and cmd_restart propagate every relevant failure before spawn_daemon; no reliance on errexit inside conditional/OR contexts."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Control script retains the original target across run-file removal"
+      },
+      {
+        "level": "integration",
+        "name": "Control script refuses reused identity, replacement files and orphan guards"
+      },
+      {
+        "level": "integration",
+        "name": "Disposable clean and forced script restart paths preserve commands"
+      },
+      {
+        "level": "integration",
+        "name": "Shell start and restart refuse spawn after lifecycle failures even in conditional contexts"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-f0d550e2-104d-473d-bea0-7ccc0ce297de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T18:28:44.557Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "043d2b4422fdf2b2d9d397d792422863587367b58b6d9a7f41cbe954d9d79ff3",
+        "at": "2026-10-22T18:28:44.558Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T20:01:39.968Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-27",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "TrackerPort.readSignoffRequest and TrackerPort.readSignoffState(since)",
+        "type": "readSignoffRequest?(ref: SignoffRequestRef): PortResult<{ branch: string; open: boolean }>; readSignoffState(ref: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'>",
+        "optional": true,
+        "purpose": "A resubmission has to decide between pushing to an existing request and opening a new one, so the port says which branch a request was opened from and whether it can still take pushes. readSignoffState also takes the time the latest submission was recorded: a changes-requested decision counts only when each reviewer's latest decisive review (APPROVED, CHANGES_REQUESTED or DISMISSED; COMMENTED ignored) asks for changes and was made after that time, because on GitHub the decision on an earlier push lingers until the reviewer re-reviews. Both are optional and additive; a caller that passes no `since` gets today's answer."
+      },
+      "breaking": false
+    },
+    "rationale": "Without the branch and openness read, a request asked for changes cannot be told from a closed one; without `since`, the first settle after a resubmission would record signoff-changes on the new revision at once and a later merge would never be recorded.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792693404411-z8469p",
+      "storyId": "s8",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-22T18:28:44.556Z"
+  },
+  "citations": []
+}

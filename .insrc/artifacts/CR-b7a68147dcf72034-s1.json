@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb5166bdc6e68cae7b9b1491478b0b1b8dde703f3f2b4fde9ed1dfd759b7a71e",
+        "at": "2026-10-24T14:43:41.096Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792852990427-6f3yjf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:43:10.428Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 30667,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/__tests__/tool-hooks.test.ts",
+        "src/daemon/tools/call-tool.ts",
+        "src/daemon/tools/types.ts",
+        "src/daemon/tools/hooks.ts",
+        "src/daemon/tools/index.ts",
+        "src/daemon/tools/executor.ts",
+        "docs/daemon.md",
+        "src/agent/__tests__/read-only-tool-loop.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/ISSUE-61045de91faef1a0.log.jsonl",
+        ".insrc/artifacts/ISSUE-fd8d70c3e8c397ea.log.jsonl",
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

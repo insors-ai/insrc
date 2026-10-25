@@ -1,0 +1,775 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792849676188-clfw2b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T13:55:29.428Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 451884,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "epicSlug": "graph-store-has-no-index-entities",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792849676188-clfw2b",
+    "hldEffectiveHash": "bbd8079bf4b9f7e0082c52b025b0375cc62643c1a5fb8949b9e5307fda8e74a7",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "3441f23073d11526037612e4c9f02335e3d6a180fbd51965ff1765902e9e62f0",
+        "at": "2026-10-24T13:57:58.029Z",
+        "by": {
+          "id": "codex:index-design",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-10-24T13:59:19.077Z",
+        "report": {
+          "entityId": "LLD-61045de91faef1a0-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-0ce0f98252ba5484e6e099a68f72fe42"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:52:07.396Z"
+      }
+    },
+    "rangeBase": "5df5f33698d14b663619f079d95bf5a984af693b"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "File and repository entity reads will use transactional secondary indexes instead of scanning every stored entity. A one-time atomic migration derives both indexes from the existing rows, with no reindex required. Existing read results and entity identities stay unchanged, while repository-readiness checks request only a first match."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Reading the entities of one file or one repository scans the whole entity table"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "findEntitiesByFile",
+          "signature": "findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Existing compatibility argument.",
+              "optional": false
+            },
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "Existing absolute path, compared exactly as before.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Entity[]>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "Read only the file-key candidate IDs, resolve authoritative rows, and verify the same absolute-path equality used today.",
+            "Return matching entities in ascending u64 order; digest collisions never admit another file."
+          ]
+        },
+        {
+          "name": "listEntitiesForRepo",
+          "signature": "listEntitiesForRepo(_db: DbClient, repo: string, opts?: { limit: 1 }): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Existing compatibility argument.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Registered repository path.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ limit: 1 }",
+              "purpose": "Only the repository-nonempty checks use this additive first-match mode; all existing two-argument calls return every matching entity unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<Entity[]>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "Use the exact repoId dupsort set; never traverse unrelated entity rows.",
+            "With limit 1, stop at the first valid indexed entity rather than materializing the repository; update scope.ts/invariants.ts dependency seams to request it."
+          ]
+        },
+        {
+          "name": "listEntityFilesForRepo",
+          "signature": "listEntityFilesForRepo(_db: DbClient, repo: string): Promise<Map<string, string[]>>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Existing compatibility argument.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Registered repository path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Map<string, string[]>>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "Enumerate only the repository index while preserving file keys, ID grouping and order."
+          ]
+        },
+        {
+          "name": "upsertEntities",
+          "signature": "upsertEntities(_db: DbClient, entities: Entity[]): Promise<void>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Existing compatibility argument.",
+              "optional": false
+            },
+            {
+              "name": "entities",
+              "type": "Entity[]",
+              "purpose": "Authoritative rows to upsert.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "Within the existing write transaction, remove old file/repo memberships when their keys change and insert the new memberships with the same entity u64.",
+            "Existing entity IDs, name indexes, vectors and registry refusal behavior remain unchanged."
+          ]
+        },
+        {
+          "name": "reindexFile",
+          "signature": "reindexFile(_db: DbClient, repoPath: string, filePath: string, parsed: Entity[]): Promise<void>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Existing compatibility argument.",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repository identity.",
+              "optional": false
+            },
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "File being replaced.",
+              "optional": false
+            },
+            {
+              "name": "parsed",
+              "type": "Entity[]",
+              "purpose": "Replacement parsed rows.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "Resolve old file rows through the file index, then reconcile inserts/updates/tombstones and both memberships atomically."
+          ]
+        },
+        {
+          "name": "runMigrations",
+          "signature": "runMigrations(store: GraphStore, stored: number, target: number, registry?: readonly Migration[]): Promise<number>",
+          "parameters": [
+            {
+              "name": "store",
+              "type": "GraphStore",
+              "purpose": "Existing daemon-owned LMDB store.",
+              "optional": false
+            },
+            {
+              "name": "stored",
+              "type": "number",
+              "purpose": "Stored schema version.",
+              "optional": false
+            },
+            {
+              "name": "target",
+              "type": "number",
+              "purpose": "Requested schema version, 6 after this change.",
+              "optional": false
+            },
+            {
+              "name": "registry",
+              "type": "readonly Migration[]",
+              "purpose": "Existing migration registry/test seam.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<number>",
+            "meaning": "Preserve existing behavior and ordering unless the explicitly documented first-match mode is requested."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Unreadable authoritative row/index or migration failure is surfaced; never silently claim an incomplete scoped result is complete."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns the store; schema-v6 index backfill has committed.",
+            "Unknown repository paths return the existing empty result and never allocate registry rows."
+          ],
+          "postconditions": [
+            "The v5-to-v6 migration clears/rebuilds both derived indexes from authoritative entity rows in one child transaction and stamps version 6 only after success.",
+            "No reindex, vectors rewrite, new registry allocation or live-schema downgrade."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "GraphStore",
+        "change": "field-add",
+        "details": "Add entityByFile and entityByRepo dupsort handles in src/db/graph/store.ts. entity_by_file key is SHA256 over the exact UTF-8 absolute path produced by the existing toAbsolutePath representation; entity_by_repo key is repoId u32 BE; both values are entity u64 BE. Verify candidate file/repo equality against authoritative rows, so a digest collision cannot change query correctness. Ensure maxDbs includes the new handles. Registered root paths are identity; a future root relocation must rebuild derived file keys.",
+        "callSites": [
+          "src/db/graph/store.ts",
+          "src/db/graph/keys.ts",
+          "src/db/entities.ts",
+          "src/db/repos.ts"
+        ]
+      },
+      {
+        "entity": "EntityRow secondary memberships",
+        "change": "invariant-change",
+        "details": "Each authoritative entity row has exactly its file-key/u64 and repoId/u64 memberships. Reconcile memberships in every upsert, identity/path move, reindex, embedding rewrite and delete transaction; remove them on file/repo cascade deletes. Inventory all production entity.put/remove sites, including historical migrations. Prior migrations run before v6 backfill; v6 is rebuilt from their final authoritative rows. Preserve strict registration and existing names/edges/vector behavior.",
+        "callSites": [
+          "src/db/entities.ts",
+          "src/db/graph/migrations.ts"
+        ]
+      },
+      {
+        "entity": "Scoped readiness and freshness reads",
+        "change": "field-modify",
+        "details": "Preserve the two-argument listEntitiesForRepo result; add only the literal first-match option limit:1 for nonempty checks in scope.ts and invariants.ts. Their injectable seams gain an optional argument, so existing injected one-argument functions remain compatible. The code-review per-file watermark uses indexed file entities instead of scanning store.entity directly.",
+        "callSites": [
+          "src/analyze/context/scope.ts",
+          "src/analyze/context/invariants.ts",
+          "src/workflow/code-review/freshness.ts"
+        ]
+      },
+      {
+        "entity": "schema_version",
+        "change": "field-modify",
+        "details": "Bump schema 5 to 6 and register an atomic backfill. Fresh stores open empty indexes at v6. A migration error leaves v5 authoritative data and version unchanged, refuses service startup, and can be retried; no silent scan fallback or destructive auto-rebuild. Update current-version assertions in the three cited tests to schema 6; retain explicitly historical v4/v5 migration fixtures and assertions at their named historical versions. Inventory all SCHEMA_VERSION and readSchemaVersion assertions before build.",
+        "callSites": [
+          "src/db/graph/store.ts",
+          "src/db/graph/migrations.ts",
+          "src/db/__tests__/doc-summary-carry.test.ts",
+          "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+          "src/db/graph/__tests__/operational.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Entity row or index membership cannot be written.",
+          "detection": "LMDB child transaction throws during row/index reconciliation.",
+          "response": "Abort the entire transaction; expose the existing write error. Do not leave a committed row without its new memberships.",
+          "userImpact": "A write fails visibly rather than creating silently incomplete search results.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Backfill fails or the process exits during migration.",
+          "detection": "Migration transaction throws or never commits schema version 6.",
+          "response": "Leave authoritative v5 data/version intact and refuse serving; retry migration on next open. Do not delete/reindex the store automatically.",
+          "userImpact": "Startup fails with actionable migration diagnostics; user data is preserved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An index entry refers to a missing authoritative row.",
+          "detection": "Exact-key candidate lookup cannot load its u64 row or mapping.",
+          "response": "Report index/store inconsistency instead of returning a seemingly complete empty result or falling back to a whole-table scan.",
+          "userImpact": "Corruption is visible and cannot masquerade as absence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Newer schema is opened by an older binary.",
+          "detection": "Existing schema-version preflight sees stored version greater than supported.",
+          "response": "Preserve the existing mismatch refusal. Rollback requires a backup or a binary supporting v6, not a silent schema downgrade.",
+          "userImpact": "Older code cannot mutate incompatible indexes.",
+          "recoverable": false
+        },
+        {
+          "scenario": "An entity references an unregistered repository.",
+          "detection": "Existing registry lookup cannot resolve repo membership during write or backfill.",
+          "response": "Preserve UnregisteredRepoError/write refusal; during migration report and fail rather than allocating a registry row.",
+          "userImpact": "The strict repo.add contract remains intact.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Empty registered repo or absent file.",
+          "expected": "Return existing empty results using exact-key reads; first-match mode returns an empty array without enumerating the table."
+        },
+        {
+          "input": "Unicode or long paths, nested repositories, and equivalent digest keys.",
+          "expected": "Use the exact prior absolute-path representation for the hash, verify authoritative path equality, preserve every matching row and u64 order, and never use containment as a substitute for equality."
+        },
+        {
+          "input": "Entity moves file or repository but keeps its u64 in a write.",
+          "expected": "Remove the old memberships and insert the new ones atomically; no duplicates or stale results."
+        },
+        {
+          "input": "Repeated identical upsert or embedding-only rewrite.",
+          "expected": "Membership updates are idempotent and cannot duplicate an entity or lose an existing membership."
+        },
+        {
+          "input": "A read overlaps committed writes.",
+          "expected": "Index enumeration and row resolution use a consistent LMDB read snapshot; results describe one state, never partially updated membership."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Two-argument scoped reads preserve current returned entities and u64 iteration order; s1 symbol and read-fallback bundles.",
+          "source": "c1"
+        },
+        {
+          "text": "Entity membership changes share the authoritative write transaction; use the existing name-index reconciliation pattern identified in s1.",
+          "source": "c2"
+        },
+        {
+          "text": "Daemon owns DB access, unknown repos are never auto-registered, and migration failure never silently rebuilds user data; s1 store/registry read-fallback.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx, matching the repository's documented backend/db test command; all storage tests use temporary registered repositories and isolated LMDB paths.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove key encoding, exact matching and compatibility.",
+          "subjects": [
+            "File-key hashing is deterministic for the existing absolute-path representation and supports long Unicode paths.",
+            "Repository keys and entity-u64 dupsort values preserve isolation and result order.",
+            "A forced file-key digest collision still returns only rows with the exact requested absolute path."
+          ],
+          "fixturesNeeded": [
+            "Two repos with same relative filenames, long/Unicode paths, deterministic u64 IDs",
+            "Internal digest seam for an artificial collision"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove every entity mutation maintains both indices transactionally.",
+          "subjects": [
+            "Insert, same-ID update, file/repo move, reindex replacement, embedding-only update, delete by ID/file/repo all match an authoritative fixture oracle.",
+            "An injected transaction failure rolls back both row and index membership changes.",
+            "Compare file/repo reads and grouped file lists to pre-change content/order.",
+            "Repository existence requests limit:1 and reads at most the first matching authoritative entity.",
+            "Code-review per-file watermark uses indexed file entities."
+          ],
+          "fixturesNeeded": [
+            "Isolated LMDB environment registered exclusively through existing repo-add test helpers",
+            "Mixed target/unrelated rows with stable expected result arrays"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the scoped operations cannot silently regress to whole-table scans.",
+          "subjects": [
+            "After setup/backfill, replace entity.getRange with a throwing spy; file/repo lookups, deletion collectors, file reindex snapshots and readiness checks still work.",
+            "Count entity.get calls to show unrelated rows are not read.",
+            "Unregistered repo writes remain refused and never create registry rows."
+          ],
+          "fixturesNeeded": [
+            "Read-operation spies installed only after fixture creation/migration"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove v5-to-v6 migration, crash safety and version compatibility.",
+          "subjects": [
+            "Open a populated v5 fixture, backfill on startup and verify exact file/repo results without invoking the indexer.",
+            "Inject failure after partial backfill; reopen at version 5 with no partial committed index and retry successfully.",
+            "Fresh v6 store starts with empty usable indices; a second reopen does not rebuild them.",
+            "Existing unsupported-version refusal remains in force.",
+            "Run doc-summary-carry, migration-v4-to-v5 and operational suites: latest-version expectations follow v6, while explicit historical migration fixtures still prove their original transitions."
+          ],
+          "fixturesNeeded": [
+            "Populated v5 file containing every row class used by entity queries",
+            "Migration failure hook and reopen fixture"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "File lookup and file collectors use exact-key candidates; whole-table read spy throws without affecting the operations."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Repository lookup/file grouping uses only its u64 set and keeps existing content/order."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Mutation matrix and rollback tests prove exact membership after every supported write/delete."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Populated v5 startup migrates once without reindex; failure rolls back and retry succeeds."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Readiness requests only one indexed match; no full repository materialization and no unrelated entity reads."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The s1 analyzer locates SCHEMA_VERSION=5 and whole-table entity.getRange loops in scoped reads and deletion collectors. The existing graph store already uses dupsort secondary indices and runMigrations; file/repo membership indexes are absent.",
+      "stateAfter": "Schema v6 has exact file/repo dupsort memberships derived from authoritative rows. Scoped reads and collectors use them, and readiness requests a first match. Existing rows, IDs, vectors and registry membership are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the two named DB handles and binary/digest key definitions; verify named-DB capacity before environment open.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Register v5-to-v6 backfill that clears/rebuilds derived memberships from authoritative rows and validates registry roots inside one child transaction, stamping v6 only on success.",
+          "rollbackable": false
+        },
+        {
+          "order": 3,
+          "action": "Wire every entity write/delete and scoped read to the membership contract, then update the two readiness seams and per-file review watermark.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Validate fresh/populated migration, rollback-on-failure, reopen idempotence, exact result compatibility and no-full-scan spies on temporary environments before any installed-store deployment.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "All existing two-argument scoped-read callers keep the same content and ordering. Only readiness callers opt into the additive limit:1 mode. Persisted v6 is forward-only: an older binary must retain its existing newer-schema refusal. Before deployment preserve a normal store backup; binary rollback after migration requires that backup or a v6-capable binary, not a silent downgrade. No repo re-registration or reindex.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two transactional dupsort secondary indexes",
+        "oneLineSummary": "Add exact file and repository entity-ID indexes beside authoritative rows.",
+        "approach": "Reuse existing LMDB dupsort patterns: file key is a fixed-size digest of the existing absolute-path representation and repository key is repoId; values are big-endian entity u64 IDs. Resolve candidates through authoritative rows and verify exact path/repo equality. Maintain entries atomically with every row write/delete; migrate existing rows once on open. Existing scoped-read APIs retain their results and ordering.",
+        "pros": [
+          "Direct exact-key lookups avoid unrelated entity rows.",
+          "Fixed-size file keys handle long Unicode paths; authoritative row filtering keeps digest collisions correct.",
+          "No cache invalidation or persistent data loss; dupsort values preserve u64 result order."
+        ],
+        "cons": [
+          "Two additional named DBs and migration/write-maintenance work.",
+          "Every entity mutation must reconcile old and new keys in its transaction."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Repository-only secondary index with file filtering",
+        "oneLineSummary": "Index repository entity IDs and filter those rows for file queries.",
+        "approach": "Add only repoId-to-entity-ID dupsort. Repository reads enumerate that set; file reads select containing registered repositories and filter their indexed entity rows, preserving final path comparison.",
+        "pros": [
+          "One fewer named DB and simpler mutation maintenance.",
+          "Repository queries avoid unrelated repositories."
+        ],
+        "cons": [
+          "File queries still scan unrelated files in a large repo, violating the approved defect contract.",
+          "Containment selection can miss nonstandard stored file paths unless every repository is inspected."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheaper but still reads other files in the target repository; that fails the core file-scope requirement."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "narrative": "The new memberships are derived LMDB key/value indexes, not new authoritative entities. Each membership resolves to an existing entity row; the registry remains the source of repository identity.",
+      "classes": {
+        "RepoRow": {
+          "description": "Existing authoritative registered repository row; membership is established only by repo.add.",
+          "attributes": {
+            "repoId": {
+              "description": "Existing u32 repository identity.",
+              "range": "integer",
+              "identifier": true
+            },
+            "path": {
+              "description": "Registered root used by the existing absolute-file representation.",
+              "range": "string"
+            }
+          }
+        },
+        "EntityRow": {
+          "description": "Existing authoritative entity row; neither its identity nor content is rewritten by the index backfill.",
+          "attributes": {
+            "u64": {
+              "description": "Existing entity u64 key.",
+              "range": "integer",
+              "identifier": true
+            },
+            "repoId": {
+              "description": "Existing registered repository reference.",
+              "range": "RepoRow",
+              "required": true
+            },
+            "filePath": {
+              "description": "Existing stored file-path representation.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "FileMembership": {
+          "description": "Derived dupsort pair: digest of exact absolute-file representation to entity u64.",
+          "attributes": {
+            "fileKey": {
+              "description": "Fixed-size SHA256 digest; candidate rows are checked for exact file equality.",
+              "range": "string",
+              "required": true
+            },
+            "entityId": {
+              "description": "Big-endian u64 resolving to the authoritative row.",
+              "range": "EntityRow",
+              "required": true
+            }
+          }
+        },
+        "RepoMembership": {
+          "description": "Derived dupsort pair: repository u32 to entity u64.",
+          "attributes": {
+            "repoId": {
+              "description": "Exact registered repository index key.",
+              "range": "RepoRow",
+              "required": true
+            },
+            "entityId": {
+              "description": "Big-endian u64 resolving to the authoritative row.",
+              "range": "EntityRow",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/entities.ts:813",
+      "quotedText": "Existing scoped reads iterate store.entity.getRange and preserve entity-u64 ordering."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/db/entities.ts:1016",
+      "quotedText": "Name-index reconciliation already removes prior membership and writes the new membership with entity writes."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:138",
+      "quotedText": "SCHEMA_VERSION is currently 5; named dupsort DBs and version preflight already exist."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/graph/migrations.ts:452"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-61045de91faef1a0"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/context/scope.ts:210"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/analyze/context/invariants.ts:295"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/freshness.ts:109"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/db/repos.ts:153"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "AGENTS.md#build-and-run"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/db/__tests__/doc-summary-carry.test.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/db/graph/__tests__/operational.test.ts"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-23612ee8-1499-43d3-8032-6957b69ebcdd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T17:40:56.034Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7934383a1a3252fcae0368fc882bdc4c8baa3fe10b2229fc881499d07ce1e40f",
+        "at": "2026-10-22T17:40:56.034Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-21",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "TrackerPort.readSignoffRequest and TrackerPort.readSignoffState(since)",
+        "type": "readSignoffRequest?(ref: SignoffRequestRef): PortResult<{ branch: string; open: boolean }>; readSignoffState(ref: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'>",
+        "optional": true,
+        "purpose": "A resubmission has to decide between pushing to an existing request and opening a new one, so the port says which branch a request was opened from and whether it can still take pushes. readSignoffState also takes the time the latest submission was recorded: a changes-requested decision counts only when each reviewer's latest decisive review (APPROVED, CHANGES_REQUESTED or DISMISSED; COMMENTED ignored) asks for changes and was made after that time, because on GitHub the decision on an earlier push lingers until the reviewer re-reviews. Both are optional and additive; a caller that passes no `since` gets today's answer."
+      },
+      "breaking": false
+    },
+    "rationale": "Without the branch and openness read, a request asked for changes cannot be told from a closed one; without `since`, the first settle after a resubmission would record signoff-changes on the new revision at once and a later merge would never be recorded.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792690524358-i0z4og",
+      "storyId": "s8",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-22T17:40:56.033Z"
+  },
+  "citations": []
+}

@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c80431dd-6f8f-41bd-b356-345cd5299c5b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:27:31.493Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Hook types and the hookFailures field",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ccdd5c2050fdcdcd4062e8d9a928dbc6a3151938e6aa9ecf07f61563f2dfb850",
+        "at": "2026-10-24T14:27:31.493Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:31.495Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Hook types and the hookFailures field",
+    "summary": "Add ToolHook, ToolHookContext and HookFailure to src/daemon/tools/types.ts, the optional hookFailures on ToolResult and the optional hookFailures on the success variant of TypedToolResult. Types only; nothing reads them yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "tsc --noEmit is clean at the root",
+      "ToolHookContext.caller is 'agent' | 'daemon' | 'workflow' | undefined and the context has no signal field",
+      "ToolResult.hookFailures and TypedToolResult success hookFailures are optional with | undefined",
+      "call-tool.type-test.ts still compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: HookFailure report shape"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

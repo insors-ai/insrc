@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c748d5d087e1ef85836ff26ab6ef2e7edef4c7585d0e87261cb62be471e07643",
+        "at": "2026-10-24T12:26:40.064Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.065Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6702517c-e8dd-4201-9e3e-449d1192cc43",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-09-29T19:17:07.884Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "51e36eed6c638c8a",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "bug-insrc-mcp-loses-opaque-server"
+  },
+  "body": {
+    "focus": "Workflow `state` token dropped on long turn-by-turn runs, forcing a stage restart",
+    "commit": "a4d79b61489c09f18f9df2091875f6d81626e038",
+    "summary": "Historical completion reconciliation for ISSUE-51e36eed6c638c8a, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented by a4d79b61. Workflow/analyze stores replace superseded tokens rather than leaking them; peer stores preserve their existing leak-free transition semantics. Focused replacement, >100-turn and peer-store regression cases passed during the preceding audit. This records the original token-leak fix, not the separate restart/idle persistence request on GitHub #88.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

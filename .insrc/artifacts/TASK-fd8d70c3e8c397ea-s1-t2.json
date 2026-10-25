@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ccd83fd2-cbbd-4aab-a38a-ee74cfcaa1c4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.410Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Protect daemon publication and asynchronous socket cleanup",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "140e115a2c712a47baf2b264d4d767157f292b21b35752ee848bc0c507eb9c62",
+        "at": "2026-10-24T18:07:27.913Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.411Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Protect daemon publication and asynchronous socket cleanup",
+    "summary": "Apply shared ownership guard to daemon startup isAlreadyRunning/stale cleanup/writePid/socket listen and every lifecycle cleanup path. Hold guard across awaited server close and owned unlink. On foreign files, skip clearPid and server.close (including implicit socket unlink), diagnose and choose no-exit-hook termination. Coordinate lifecycle.ts, server.ts and index.ts without changing IPC payloads. Audit and revise src/shared/daemon-run-files.ts callers and the real store-child fixture; preserve its temporary-store semantics.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Replacement PID/socket files appearing during drain survive original cleanup.",
+      "Managed startup cannot publish between ownership verification and asynchronous close/unlink.",
+      "Startup errors, fatal cleanup, stale-file removal and normal cleanup use the same ownership rules."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Replacement run files survive original daemon cleanup and implicit socket unlink"
+      },
+      {
+        "level": "integration",
+        "name": "Startup publication and awaited close are serialized under the same guard"
+      },
+      {
+        "level": "integration",
+        "name": "Startup-error, fatal and stale-file cleanup honor ownership"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

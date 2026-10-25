@@ -1,0 +1,358 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792855362070-h67bkc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:24:27.128Z",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 104822,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "epicSlug": "graph-store-has-no-index-entities",
+    "storyId": "s1",
+    "lldRunId": "wf-1792849676188-clfw2b",
+    "lldEffectiveHash": "bbd8079bf4b9f7e0082c52b025b0375cc62643c1a5fb8949b9e5307fda8e74a7",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ea6465351b28af473204692845a2c28cf95b02efece25f382e5dee3c7b3eaff",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T15:32:37.075Z"
+      }
+    },
+    "rangeBase": "5df5f33698d14b663619f079d95bf5a984af693b"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Four dependent tasks add transactional entity file/repository indexes and safe schema6 backfill, maintain every entity mutation, replace scoped scans and update readiness/freshness consumers. Existing identities, registry contracts, exact results and ordering remain intact."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add membership indexes and atomic schema6 backfill",
+        "summary": "Add file/repo dupsort handles and binary/digest keys; verify named DB capacity. Backfill authoritative v5 rows atomically with registry validation, rollback/retry and version stamping only on success. Update current-version assertions; retain historical fixtures. Use genuine raw v5 fixtures and fail after partial membership insertion.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Fresh/populated v5 migration yields exact memberships without reindex.",
+          "Partial migration failure rolls back data/version and retries on reopen.",
+          "Reopen is idempotent and unsupported-version refusal remains."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "File/repository index key encoding and long Unicode path support"
+          },
+          {
+            "level": "integration",
+            "name": "Schema-v5 backfill, rollback after partial writes, retry and reopen idempotence"
+          },
+          {
+            "level": "integration",
+            "name": "Current-version compatibility and historical migrations"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Maintain membership on every entity mutation",
+        "summary": "Inventory puts/removes and reconcile old/new memberships in authoritative transactions for upsert, file/repo moves, reindex, embedding rewrite and deletion. Preserve registry/name/edge/vector invariants.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Mutation oracle covers insert/update/move/reindex/embedding and ID/file/repo deletion.",
+          "Injected transaction failure rolls back row and memberships.",
+          "Unregistered writes refuse without registry allocation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Transactional entity membership mutation matrix"
+          },
+          {
+            "level": "integration",
+            "name": "Row and membership rollback on injected write failure"
+          },
+          {
+            "level": "integration",
+            "name": "Strict repository registration remains enforced"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Replace scoped scans with indexed reads",
+        "summary": "Use exact-key candidates for file/repo reads, grouped files, deletion collectors and reindex snapshots. Resolve authoritative rows in consistent snapshots; preserve exact path equality and u64 ordering and report dangling-index corruption. Explicitly verify snapshot consistency, forced digest collisions and row-access bounds.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Scoped operations work when entity.getRange throws and do not read unrelated rows.",
+          "Outputs/order match authoritative oracle.",
+          "Unicode/long paths and forced digest collision preserve exact matching; dangling references error."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Scoped queries, collectors and reindex snapshots avoid full scans and unrelated row reads"
+          },
+          {
+            "level": "integration",
+            "name": "Exact contents/u64 order, snapshot consistency and forced digest collision filtering"
+          },
+          {
+            "level": "integration",
+            "name": "Dangling membership references report corruption"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Use first-match readiness and indexed review watermarks",
+        "summary": "Add limit:1 repository existence mode and compatible scope/invariants seams; use indexed file entities for review freshness. Run affected storage, migration, analyze and review compatibility suites.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Readiness requests and reads at most the first valid indexed row.",
+          "Per-file freshness watermark preserves meaning without full scans.",
+          "Affected suites and strict typecheck pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "First-match readiness reads at most one authoritative entity"
+          },
+          {
+            "level": "integration",
+            "name": "Indexed per-file code-review watermark compatibility"
+          },
+          {
+            "level": "integration",
+            "name": "Affected analyze/review/storage regression suites"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "File-key hashing is deterministic for the existing absolute-path representation and supports long Unicode paths.",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Repository keys and entity-u64 dupsort values preserve isolation and result order.",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A forced file-key digest collision still returns only rows with the exact requested absolute path.",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Insert, same-ID update, file/repo move, reindex replacement, embedding-only update, delete by ID/file/repo all match an authoritative fixture oracle.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "An injected transaction failure rolls back both row and index membership changes.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Compare file/repo reads and grouped file lists to pre-change content/order.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Repository existence requests limit:1 and reads at most the first matching authoritative entity.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Code-review per-file watermark uses indexed file entities.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "After setup/backfill, replace entity.getRange with a throwing spy; file/repo lookups, deletion collectors, file reindex snapshots and readiness checks still work.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Count entity.get calls to show unrelated rows are not read.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unregistered repo writes remain refused and never create registry rows.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Open a populated v5 fixture, backfill on startup and verify exact file/repo results without invoking the indexer.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Inject failure after partial backfill; reopen at version 5 with no partial committed index and retry successfully.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh v6 store starts with empty usable indices; a second reopen does not rebuild them.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing unsupported-version refusal remains in force.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Run doc-summary-carry, migration-v4-to-v5 and operational suites: latest-version expectations follow v6, while explicit historical migration fixtures still prove their original transitions.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/LLD.md#7-migration"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/graph-store-has-no-index-entities-E2026101061045de9/S001/LLD.md#6-test-strategy"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:138"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/db/entities.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/freshness.ts"
+    }
+  ]
+}

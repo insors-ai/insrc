@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "899170f8e1af68a3ebcabd7be3a4a5ea4d90689828716220965f3e5b91416533",
+        "at": "2026-10-24T15:57:50.618Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T05:54:14.616Z"
+      }
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792857439392-6000zj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:57:19.393Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 31224,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "epicSlug": "graph-store-has-no-index-entities",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/db/__tests__/doc-summary-carry.test.ts",
+        "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+        "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+        "src/db/graph/__tests__/operational.test.ts",
+        "src/db/graph/keys.ts",
+        "src/db/graph/migrations.ts",
+        "src/db/graph/store.ts",
+        "src/understanding/__tests__/storage.test.ts",
+        "src/db/__tests__/entity-memberships.test.ts",
+        "src/db/entities.ts",
+        "src/db/__tests__/entity-scope-indexes.test.ts",
+        "src/analyze/context/__tests__/invariants.test.ts",
+        "src/analyze/context/__tests__/scope.test.ts",
+        "src/analyze/context/invariants.ts",
+        "src/analyze/context/scope.ts",
+        "src/workflow/code-review/freshness.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/DEF-b7a68147dcf72034.log.jsonl",
+        ".insrc/artifacts/ISSUE-61045de91faef1a0.log.jsonl",
+        ".insrc/artifacts/ISSUE-fd8d70c3e8c397ea.log.jsonl",
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.FileMembership",
+            "message": "class 'FileMembership' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.RepoMembership",
+            "message": "class 'RepoMembership' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  },
+  "citations": []
+}

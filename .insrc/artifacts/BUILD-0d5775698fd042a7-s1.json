@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1ac4035ccfd1b95b4351ac135358ac19bf869f7b65b585dfc218c22db6eda9d",
+        "at": "2026-10-24T12:26:40.049Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.051Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-5809bd79-2d39-4b99-8b1e-ab47f59da615",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-10-10T11:52:25.473Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d5775698fd042a7",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "defect-installed-daemon-runs-out-lmdb"
+  },
+  "body": {
+    "focus": "Keep the daemon within the LMDB semaphore limit, and let it stop when a store operation fails",
+    "commit": "0f2dd749f4ff5e0fde325f5a9dd113dd7e7f3d55",
+    "summary": "Historical completion reconciliation for ISSUE-0d5775698fd042a7, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented under the revised, reproduced lock-loss diagnosis in Epic c2ba6fa62a148ed1 Story s4, rather than by raising the OS semaphore limit. Added store-health detection, live-store ownership protections and an exit path that avoids the hanging native exit hook after lock loss. Approved BUILD-c2ba6fa62a148ed1-s4 and its S004/smoke.md record restart and store checks; Story s11 subsequently removed the temporary MCP reader exception. This does not close the separate native-startup-diagnostics issue f442f10b.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

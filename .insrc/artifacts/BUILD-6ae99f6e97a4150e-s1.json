@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5a5856303748ebfe9720abd23a6aa6c157829f21729d892b86eb31d617c7c927",
+        "at": "2026-10-24T12:26:40.058Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.060Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-bf5ea241-f4e3-4bfb-8917-8439a5ae6ef2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-09-30T08:39:58.001Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6ae99f6e97a4150e",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "correct-dev-chat-panel-header-footer"
+  },
+  "body": {
+    "focus": "Fix dev-chat panel header/footer layout: session dropdown alone in the header, provider + mode in the footer",
+    "commit": "5c427611941de5a1b685f3038617ebc0c7ef5ae5",
+    "summary": "Historical completion reconciliation for ISSUE-6ae99f6e97a4150e, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented by 5c427611. Current vscode-plugin/src/chat/chat-panel.ts keeps the session selector alone in the header and provider/mode controls in the footer. The earlier audit checked the current shell and implementation history.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

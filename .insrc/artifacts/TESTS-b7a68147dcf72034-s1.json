@@ -1,0 +1,717 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "1839e91f030da21c7100bafaba716dd875c4a9a7b8de14254d83c1226cc089fb",
+        "at": "2026-10-24T14:36:37.055Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T14:28:01.568Z",
+    "updatedAt": "2026-10-24T14:36:37.028Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "42a9aadc8",
+        "ranAt": "2026-10-24T14:28:01.568Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: HookFailure report shape",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 354,
+            "titles": [
+              {
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4c90e9c58",
+        "ranAt": "2026-10-24T14:30:25.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 547,
+            "titles": [
+              {
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "620fe6278",
+        "ranAt": "2026-10-24T14:32:56.760Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool with no outputSchema still runs its rules",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a tool with no outputSchema still runs its rules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a call with no rule returns the object the tool returned",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a call with no rule returns the object the tool returned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 538,
+            "titles": [
+              {
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: no client and a cancelled request return denied with their reasons",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: an approved call runs and returns the tool's result unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a bad input is rejected before any prompt",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: only a matching approval runs the tool; a decline object, another request id or a gate that cannot describe the call do not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 414,
+            "titles": [
+              {
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool with no outputSchema still runs its rules",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a call with no rule returns the object the tool returned",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "397c98cde",
+        "ranAt": "2026-10-24T14:34:20.880Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool carries hookFailures onto the typed success result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: callTool carries hookFailures onto the typed success result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: callTool omits hookFailures when nothing failed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: callTool omits hookFailures when nothing failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.test.ts",
+                "title": "call-tool.test.ts: the runtime values of the fake definitions are what the types say",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/call-tool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 557,
+            "titles": [
+              {
+                "title": "call-tool.test.ts: the runtime values of the fake definitions are what the types say",
+                "result": "pass"
+              },
+              {
+                "title": "call-tool.test.ts: TypedToolResult data is absent when success is false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 460,
+            "titles": [
+              {
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool with no outputSchema still runs its rules",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a call with no rule returns the object the tool returned",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: callTool carries hookFailures onto the typed success result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: callTool omits hookFailures when nothing failed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "258f72fbb",
+        "ranAt": "2026-10-24T14:36:37.028Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a rule that mutates nested result data leaves the caller's result untouched",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+                "title": "tool-hooks.test.ts: a rule that mutates nested result data leaves the caller's result untouched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool snapshot is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "title": "approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/__tests__/read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/__tests__/read-only-tool-loop.test.ts",
+                "title": "read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/__tests__/read-only-tool-loop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 495,
+            "titles": [
+              {
+                "title": "read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 569,
+            "titles": [
+              {
+                "title": "approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the eight destructive builtins are destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/tool-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 436,
+            "titles": [
+              {
+                "title": "tool-hooks.test.ts: HookFailure report shape",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks runs hooks one at a time",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool with no outputSchema still runs its rules",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a call with no rule returns the object the tool returned",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: callTool carries hookFailures onto the typed success result",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: callTool omits hookFailures when nothing failed",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text",
+                "result": "pass"
+              },
+              {
+                "title": "tool-hooks.test.ts: a rule that mutates nested result data leaves the caller's result untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

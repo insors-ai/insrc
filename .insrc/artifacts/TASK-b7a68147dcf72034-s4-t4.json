@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b5925ed-ab79-44b3-8e30-812e6079a274",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:44:09.085Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Typebox schemas and the five read tools (status, diff, log, show, blame)",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b2863b3e828889f3bcf92afa45c4b39c929697046eeac016aa540b48b9e3a83c",
+        "at": "2026-10-24T18:44:09.085Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:44:09.086Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Typebox schemas and the five read tools (status, diff, log, show, blame)",
+    "summary": "Add schemas.ts with typebox result schemas built from the existing Git*Data interfaces, re-exported as Static types under the same names. For git_status, git_diff, git_log, git_show and git_blame rewrite inputSchema as typebox with identical JSON, declare outputSchema, place option terminators, apply assertSafeArg, and handle the secondary reads: git_show's diff read is a real failure and its numstat read adds data.warnings. Apply the compatibility rejections (git_log limit 0 or 501, git_diff maxBytes 100 and context 51, malformed git_diff exclude or paths, git_diff path plus paths keeps its legacy failure, git_show maxBytes stays clamped).",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each of the five tools' typebox input schema serialises to the same JSON as the schema it replaced",
+      "Each of the five returns data that passes its outputSchema for a real temporary repository",
+      "git_show with a failing diff read fails the call; a failing numstat read succeeds with data.warnings",
+      "The documented compatibility inputs are rejected by the executor and the legacy ones still behave as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: every git read tool's result fits its declared outputSchema"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a failing git_show diff read is a failure and a failing numstat read is a warning"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_diff exclude and git_stage empty paths fail with the executor's message through executeTool and with the legacy text directly"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: every typebox input schema serialises to the same JSON as the schema it replaced"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,474 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 24,
+        "contentHash": "14f6733cc08b55d70e3fcf9154e4ab7f3b6e5c3e597e6c6587532e1021253ffc",
+        "at": "2026-10-24T20:34:46.901Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-9cfca995-624a-4dc7-879b-6abe0227b7b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:48:54.780Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "revision": 24,
+    "updatedAt": "2026-10-24T20:34:21.426Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": false
+      }
+    ],
+    "summary": "Ran the full sweep once, in foreground chunks over every directory of src and vscode-plugin/src, and compared it by test name with the sweep after s1. Every earlier failure is still there and none is in a file this Story touched; one failure is new (artifact-write-inventory.test.ts) and comes from the daemon-shutdown commits made on this branch while s4 was built (src/bin/insrc-shutdown-watchdog.ts, src/daemon/run-file-ownership.ts, src/shared/daemon-run-files.ts, src/daemon/lifecycle.ts), not from s4. Results and the per-directory table are in docs/plans/tool-registry.md (section 's4 full sweep').",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/amend.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/blame.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/branch.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/checkout.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/cherry-pick.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/commit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/diff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/fetch.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/helpers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/log.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/merge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/pull.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/push.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rebase.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/remote.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/reset.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/revert.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/show.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/stage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/stash.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/tag.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/worktree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/shell-helper.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/fixtures/failure-baseline.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/fixtures/failure-calls.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/tool-registry.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/shell-helper-bytes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/git-isolation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-parsers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/parsers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/_repo.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/cat-file.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/for-each-ref.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/ls-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/ls-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rev-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rev-parse.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-path-history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/fetch-refs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/hash-object.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/merge-base.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/path-history.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/show-ref.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/symbolic-ref.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/fixtures/approval-snapshot.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T20:34:21.426Z"
+      }
+    ],
+    "commit": "fd9380674"
+  },
+  "citations": []
+}

@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bf8e00467f39a1ae6c74b66a936e1f5e134b411489953cc4eb951a19ef1c24e",
+        "at": "2026-10-24T14:34:27.586Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T05:54:12.848Z"
+      }
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792852443125-fb4yjv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:34:03.125Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 24460,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fcfdd50de84fb31a",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T06:10:03.483Z",
+    "epicSlug": "decode-socket-child-process-output-utf",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "fcfdd50de84fb31a",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/ISSUE-fcfdd50de84fb31a.log.jsonl",
+        "src/daemon/__tests__/server-utf8.test.ts",
+        "src/daemon/server.ts",
+        "src/daemon/tools/builtins/cloud/aws/logs.ts",
+        "src/daemon/tools/builtins/k8s/index.ts",
+        "src/daemon/tools/builtins/shell/exec-detached.ts",
+        "src/daemon/tools/builtins/ssh/index.ts",
+        "src/daemon/tools/builtins/test/index.ts",
+        "src/daemon/tools/shell-helper.ts",
+        "src/docgen/render/fallback.ts",
+        "src/mcp/__tests__/daemon-stream-utf8.test.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/shared/__tests__/ipc-client-timeout.test.ts",
+        "src/shared/__tests__/ipc-client.test.ts",
+        "src/shared/__tests__/utf8-stream.test.ts",
+        "src/shared/ipc-client.ts",
+        "src/shared/utf8-stream.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/tools/builtins/ssh/index.ts"
+      ],
+      "excludedFromScope": [
+        ".insrc/artifacts/ISSUE-61045de91faef1a0.log.jsonl",
+        ".insrc/artifacts/ISSUE-fd8d70c3e8c397ea.log.jsonl",
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl",
+        "src/daemon/tools/__tests__/tool-hooks.test.ts",
+        "src/daemon/tools/call-tool.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/server.ts:1",
+            "message": "disconnectClients has a reaching test present but failing/unverified: vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts is absent from the test record, so its pass-state cannot be confirmed.",
+            "expectationRef": "disconnectClients",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "271270"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/server.ts:1",
+            "message": "listen has a reaching test present but failing/unverified: vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts is absent from the test record, so its pass-state cannot be confirmed.",
+            "expectationRef": "listen",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "271272"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/server.ts:1",
+            "message": "close has a reaching test present but failing/unverified: vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts is absent from the test record, so its pass-state cannot be confirmed.",
+            "expectationRef": "close",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "271273"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/shared/ipc-client.ts:1",
+            "message": "createIpcClient has a reaching test present but failing/unverified: vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts is absent from the test record, so its pass-state cannot be confirmed.",
+            "expectationRef": "createIpcClient",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "271480"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  },
+  "citations": []
+}

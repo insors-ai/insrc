@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-71a2d3ac-7517-4b80-b2c2-6359221b860f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:07:27.917Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build and package the OS-native stable process-capability broker",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "196b176536f19c2444ef9bca3e68d3043aa754a0cf8fcd1a5a67301897027630",
+        "at": "2026-10-24T18:07:27.917Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:07:27.918Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build and package the OS-native stable process-capability broker",
+    "summary": "Implement the internal local-source broker: Linux opens a pidfd before identity validation and observes/signals only that handle; Darwin acquires a stable Mach task right and validates unique process incarnation before readiness. Denied/unavailable APIs fail closed without privilege changes or PID-kill fallback. Add root build-process-broker.mjs to package.json between tsc and actual root copy-assets.mjs; ship the host executable in out/bin. Runtime requires no compiler or downloaded code. Keep a platform-evidence matrix: Linux runtime results, Darwin denial/unsupported seam results, and Darwin actual runtime status separately. Never describe the feasibility probe or mocks as Darwin validation.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Real Linux disposable-process tests prove handle capture, termination, exit observation and no retargeting after the original exits.",
+      "Darwin denied/unsupported capability paths fail closed; Darwin runtime evidence is required before claiming that backend works.",
+      "Normal build compiles and packages the local broker; missing toolchain/API produces actionable diagnostics.",
+      "No native target-termination path falls back to numeric-PID kill or opens databases/network connections."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Native Linux retained-capability capture termination and post-exit non-retargeting"
+      },
+      {
+        "level": "integration",
+        "name": "Darwin denied or unsupported capabilities fail closed and runtime evidence remains explicit"
+      },
+      {
+        "level": "integration",
+        "name": "Normal build compiles and ships the local broker without a runtime compiler or PID-kill fallback"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

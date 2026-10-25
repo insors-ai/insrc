@@ -1,0 +1,939 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "686cae8e8f397c6dc1e7bb19085a41a8c334f6012a237fe9930f04ffdc8c672d",
+        "at": "2026-10-24T15:56:12.592Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "61045de91faef1a0",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T15:40:09.558Z",
+    "updatedAt": "2026-10-24T15:56:12.555Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-10T13:38:16.033Z",
+    "epicSlug": "graph-store-has-no-index-entities",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "85887da0b",
+        "ranAt": "2026-10-24T15:42:53.248Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "File/repository index key encoding and long Unicode path support",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "file membership keys preserve exact path representation and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "populated v5 startup backfills exact file/repo memberships in u64 order without rewriting entities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Schema-v5 backfill, rollback after partial writes, retry and reopen idempotence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "populated v5 startup backfills exact file/repo memberships in u64 order without rewriting entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "partial membership backfill failure rolls back both indexes and version then retries on reopen",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "unregistered migration rows fail without allocating registry membership or changing schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Current-version compatibility and historical migrations",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "fresh schema6 has empty usable memberships and sufficient named database capacity",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/operational.test.ts",
+                "title": "re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "a v4 store opened by this code is at the current version with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and current schema version",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/storage.test.ts",
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-summary-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 638,
+            "titles": [
+              {
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              },
+              {
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              },
+              {
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and current schema version",
+                "result": "pass"
+              },
+              {
+                "title": "the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction rolls back the carry with the delete",
+                "result": "pass"
+              },
+              {
+                "title": "without carryDocSummaries the repository's carry rows are deleted",
+                "result": "pass"
+              },
+              {
+                "title": "repo removal of a repository with carry rows and no entities deletes the carry rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "a v4 store opened by this code is at the current version with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "title": "a v4 -> v5 step that throws leaves the stored version at 4 and writes no IndexStateRow",
+                "result": "pass"
+              },
+              {
+                "title": "the registry keeps V1->V2, V2->V3 and V3->V4 in order and appends V4->V5",
+                "result": "pass"
+              },
+              {
+                "title": "removing a repository after the migration leaves no index_state row for it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "file membership keys preserve exact path representation and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "title": "populated v5 startup backfills exact file/repo memberships in u64 order without rewriting entities",
+                "result": "pass"
+              },
+              {
+                "title": "partial membership backfill failure rolls back both indexes and version then retries on reopen",
+                "result": "pass"
+              },
+              {
+                "title": "unregistered migration rows fail without allocating registry membership or changing schema",
+                "result": "pass"
+              },
+              {
+                "title": "fresh schema6 has empty usable memberships and sufficient named database capacity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/operational.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 483,
+            "titles": [
+              {
+                "title": "first boot writes schema_version",
+                "result": "pass"
+              },
+              {
+                "title": "re-open with matching schema_version proceeds normally",
+                "result": "pass"
+              },
+              {
+                "title": "re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch",
+                "result": "pass"
+              },
+              {
+                "title": "INSRC_LMDB_MAPSIZE_GIB override is honored",
+                "result": "pass"
+              },
+              {
+                "title": "invalid INSRC_LMDB_MAPSIZE_GIB falls back to default",
+                "result": "pass"
+              },
+              {
+                "title": "LmdbStoreError classes are exported and constructible",
+                "result": "pass"
+              },
+              {
+                "title": "opening a non-LMDB file at the env path surfaces a typed error",
+                "result": "pass"
+              },
+              {
+                "title": "SCHEMA_VERSION constant is exported and stable",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck returns 0 on a fresh env (no stale slots)",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck is a no-op when env is closed",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck is safe to call repeatedly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/understanding/__tests__/storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 579,
+            "titles": [
+              {
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              },
+              {
+                "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "2cce1be89",
+        "ranAt": "2026-10-24T15:46:09.977Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Transactional entity membership mutation matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-memberships.test.ts",
+                "title": "all entity mutations preserve exact file and repo membership without duplicates",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entity-memberships.test.ts",
+                "title": "shared module ensure-exists writes retain their reserved-repository memberships",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Row and membership rollback on injected write failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-memberships.test.ts",
+                "title": "a failed membership write rolls back authoritative rows and both indexes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Strict repository registration remains enforced",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-memberships.test.ts",
+                "title": "unregistered writes leave registry rows and memberships unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entity-memberships.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 568,
+            "titles": [
+              {
+                "title": "all entity mutations preserve exact file and repo membership without duplicates",
+                "result": "pass"
+              },
+              {
+                "title": "a failed membership write rolls back authoritative rows and both indexes",
+                "result": "pass"
+              },
+              {
+                "title": "unregistered writes leave registry rows and memberships unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shared module ensure-exists writes retain their reserved-repository memberships",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "7103a92b9",
+        "ranAt": "2026-10-24T15:51:47.463Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Scoped queries, collectors and reindex snapshots avoid full scans and unrelated row reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "scoped reads, deletion collectors and reindex snapshots never scan the entity table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Exact contents/u64 order, snapshot consistency and forced digest collision filtering",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "indexed entity contents and ordering match an authoritative row-scan oracle",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "exact file checks filter forced digest collisions and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "index iteration and authoritative rows share a pinned snapshot across a committed write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Dangling membership references report corruption",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "dangling membership rows, missing string IDs and missing registry roots fail visibly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 496,
+            "titles": [
+              {
+                "title": "scoped reads, deletion collectors and reindex snapshots never scan the entity table",
+                "result": "pass"
+              },
+              {
+                "title": "exact file checks filter forced digest collisions and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "title": "index iteration and authoritative rows share a pinned snapshot across a committed write",
+                "result": "pass"
+              },
+              {
+                "title": "dangling membership rows, missing string IDs and missing registry roots fail visibly",
+                "result": "pass"
+              },
+              {
+                "title": "indexed entity contents and ordering match an authoritative row-scan oracle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "50563f003",
+        "ranAt": "2026-10-24T15:56:12.555Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "First-match readiness reads at most one authoritative entity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "first-match repository readiness reads only one authoritative entity and preserves default results",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/scope.test.ts",
+                "title": "symbol readiness fallback requests only the first repository entity",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/invariants.test.ts",
+                "title": "ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Indexed per-file code-review watermark compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "real review watermarks use indexed file entities and isolate repository timestamps",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Affected analyze/review/storage regression suites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+                "title": "indexed entity contents and ordering match an authoritative row-scan oracle",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/freshness.test.ts",
+                "title": "freshness: a changed file whose per-file indexedAt predates its mtime is stale",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+                "title": "populated v5 startup backfills exact file/repo memberships in u64 order without rewriting entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "a v4 store opened by this code is at the current version with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/operational.test.ts",
+                "title": "re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and current schema version",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entity-memberships.test.ts",
+                "title": "all entity mutations preserve exact file and repo membership without duplicates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/invariants.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 516,
+            "titles": [
+              {
+                "title": "ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: connection-kind scope is skipped silently",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: registered repo with entities -> returns repo path",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: scope nested under registered repo with entities -> match",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: longest-prefix repo wins when nested",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo",
+                "result": "pass"
+              },
+              {
+                "title": "ScopeNotIndexedError carries scopePath + registeredAs on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "ScopeNotIndexedError handles undefined registeredAs",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not \"no entity of that name\"",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+                "result": "pass"
+              },
+              {
+                "title": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+                "result": "pass"
+              },
+              {
+                "title": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 450,
+            "titles": [
+              {
+                "title": "symbol readiness fallback requests only the first repository entity",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope for each of the seven kinds, with nested repos",
+                "result": "pass"
+              },
+              {
+                "title": "a sibling directory that only shares a name prefix is not inside the repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null",
+                "result": "pass"
+              },
+              {
+                "title": "a registry that cannot be read leaves the repo unknown for the file-system kinds",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope symbol cases: split, no '#', none, two, '#' in the path",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol that resolves costs one read: the whole repo is read only when the file has no entities",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope connection cases: one, none, two, unparseable connections file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/doc-summary-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              },
+              {
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              },
+              {
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and current schema version",
+                "result": "pass"
+              },
+              {
+                "title": "the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction rolls back the carry with the delete",
+                "result": "pass"
+              },
+              {
+                "title": "without carryDocSummaries the repository's carry rows are deleted",
+                "result": "pass"
+              },
+              {
+                "title": "repo removal of a repository with carry rows and no entities deletes the carry rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/entity-memberships.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 463,
+            "titles": [
+              {
+                "title": "all entity mutations preserve exact file and repo membership without duplicates",
+                "result": "pass"
+              },
+              {
+                "title": "a failed membership write rolls back authoritative rows and both indexes",
+                "result": "pass"
+              },
+              {
+                "title": "unregistered writes leave registry rows and memberships unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shared module ensure-exists writes retain their reserved-repository memberships",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/entity-scope-indexes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 468,
+            "titles": [
+              {
+                "title": "scoped reads, deletion collectors and reindex snapshots never scan the entity table",
+                "result": "pass"
+              },
+              {
+                "title": "exact file checks filter forced digest collisions and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "title": "index iteration and authoritative rows share a pinned snapshot across a committed write",
+                "result": "pass"
+              },
+              {
+                "title": "dangling membership rows, missing string IDs and missing registry roots fail visibly",
+                "result": "pass"
+              },
+              {
+                "title": "indexed entity contents and ordering match an authoritative row-scan oracle",
+                "result": "pass"
+              },
+              {
+                "title": "first-match repository readiness reads only one authoritative entity and preserves default results",
+                "result": "pass"
+              },
+              {
+                "title": "real review watermarks use indexed file entities and isolate repository timestamps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 443,
+            "titles": [
+              {
+                "title": "a v4 store opened by this code is at the current version with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "title": "a v4 -> v5 step that throws leaves the stored version at 4 and writes no IndexStateRow",
+                "result": "pass"
+              },
+              {
+                "title": "the registry keeps V1->V2, V2->V3 and V3->V4 in order and appends V4->V5",
+                "result": "pass"
+              },
+              {
+                "title": "removing a repository after the migration leaves no index_state row for it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v5-to-v6.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 503,
+            "titles": [
+              {
+                "title": "file membership keys preserve exact path representation and support long Unicode paths",
+                "result": "pass"
+              },
+              {
+                "title": "populated v5 startup backfills exact file/repo memberships in u64 order without rewriting entities",
+                "result": "pass"
+              },
+              {
+                "title": "partial membership backfill failure rolls back both indexes and version then retries on reopen",
+                "result": "pass"
+              },
+              {
+                "title": "unregistered migration rows fail without allocating registry membership or changing schema",
+                "result": "pass"
+              },
+              {
+                "title": "fresh schema6 has empty usable memberships and sufficient named database capacity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/operational.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 509,
+            "titles": [
+              {
+                "title": "first boot writes schema_version",
+                "result": "pass"
+              },
+              {
+                "title": "re-open with matching schema_version proceeds normally",
+                "result": "pass"
+              },
+              {
+                "title": "re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch",
+                "result": "pass"
+              },
+              {
+                "title": "INSRC_LMDB_MAPSIZE_GIB override is honored",
+                "result": "pass"
+              },
+              {
+                "title": "invalid INSRC_LMDB_MAPSIZE_GIB falls back to default",
+                "result": "pass"
+              },
+              {
+                "title": "LmdbStoreError classes are exported and constructible",
+                "result": "pass"
+              },
+              {
+                "title": "opening a non-LMDB file at the env path surfaces a typed error",
+                "result": "pass"
+              },
+              {
+                "title": "SCHEMA_VERSION constant is exported and stable",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck returns 0 on a fresh env (no stale slots)",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck is a no-op when env is closed",
+                "result": "pass"
+              },
+              {
+                "title": "runReaderCheck is safe to call repeatedly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 280,
+            "titles": [
+              {
+                "title": "freshness: a changed file whose per-file indexedAt predates its mtime is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a changed file whose watermark is >= its mtime is NOT stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a changed path with NO indexable entity (repo indexed AFTER the change) is excluded — does not block forever",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a never-indexed changed source file (no entities, repo behind the change) is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a never-indexed repo (watermark 0) with a changed file is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: isProcessing mirrors the injected queue flag and the compute triggers no reindex",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a mixed changed set reports only the stale files",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: an empty changed set is fresh (no stale files)",
+                "result": "pass"
+              },
+              {
+                "title": "computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

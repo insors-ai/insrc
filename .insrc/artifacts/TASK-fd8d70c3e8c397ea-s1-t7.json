@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cec635fb-6366-48bf-84f6-2dd5735e90bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.416Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record controlled shutdown evidence and verify the complete lifecycle",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "03f97c524981e7d095dde311bafa14f6eeb4c1de4e499fd27349635f982952a9",
+        "at": "2026-10-24T18:07:27.917Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.417Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Record controlled shutdown evidence and verify the complete lifecycle",
+    "summary": "Run disposable blocked-exit, healthy-control, guard-owner-killed-during-close and restart-order scenarios. Write shutdown-investigation.md with exact commands/timestamps/PID-start markers/deadlines/results/source logs, and explicitly preserve the deferred historical-cause caveat. Verify packaging, targeted lifecycle suites and typecheck; report full-suite failures accurately. Installed-daemon restart smoke is excluded until separately authorized. The installed-daemon smoke remains a separately permission-gated deployment follow-up; this build documents that it was not run rather than substituting a fabricated result. Record Linux capability integration separately from the earlier feasibility probe; do not claim Darwin support without Darwin runtime evidence.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "Required ac4 evidence document contains reproducible commands, timing, original process identity, configured bound, observed termination and healthy control with source logs.",
+      "Killing a guard owner during async close returns ownership conflict and never starts a replacement.",
+      "Documentation does not claim to establish the original October13 native cause or claim an unperformed installed-daemon smoke.",
+      "Built helper is included in compiled output and backend validation results are recorded honestly.",
+      "Acceptance reporting separates tested Linux behavior, unverified Darwin operational support, and separately authorized installed-daemon smoke."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Controlled shutdown investigation evidence document satisfies ac4 with historical-cause caveat"
+      },
+      {
+        "level": "integration",
+        "name": "Guard-owner death prevents restart while the healthy control restarts normally"
+      },
+      {
+        "level": "integration",
+        "name": "Compiled helper packaging and affected lifecycle regression suites"
+      },
+      {
+        "level": "smoke",
+        "name": "Platform evidence matrix distinguishes Linux runtime proof from unverified Darwin support and unperformed installed smoke"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

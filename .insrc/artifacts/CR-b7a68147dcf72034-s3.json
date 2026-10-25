@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "db801d64e045a8e0080f7993700061ab84f964d2a26d05d2c29b107a034760ca",
+        "at": "2026-10-24T13:33:29.802Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792847119645-l1p0yb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T13:05:19.645Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 1690155,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 3
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/__tests__/approval-types.test.ts",
+        "src/daemon/tools/types.ts",
+        "site/settings.html",
+        "src/config/__tests__/config-catalog-contract.test.ts",
+        "src/config/__tests__/config-reconcile-smoke.test.ts",
+        "src/config/__tests__/fixtures/PROVENANCE.md",
+        "src/config/__tests__/tools-common-approval.test.ts",
+        "src/config/config-catalog.ts",
+        "src/daemon/__tests__/config-boot-reconcile.test.ts",
+        "src/daemon/tools/config.ts",
+        "src/shared/common-approval.ts",
+        "src/shared/types.ts",
+        "vscode-plugin/package.json",
+        "src/daemon/approval-broker.ts",
+        "src/daemon/tools/__tests__/approval-broker.test.ts",
+        "src/daemon/approval.ts",
+        "src/daemon/index.ts",
+        "src/daemon/tools/__tests__/approval-ipc.test.ts",
+        "src/daemon/tools/__tests__/approval-policy.test.ts",
+        "src/daemon/tools/approval-policy.ts",
+        "src/agent/providers/ollama.ts",
+        "src/analyze/context/driver.ts",
+        "src/daemon/tools/__tests__/executor-approval.test.ts",
+        "src/daemon/tools/executor.ts",
+        "src/analyze/context/tool-surface.ts",
+        "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+        "src/daemon/tools/__tests__/fixtures/approval-snapshot.json",
+        "src/daemon/tools/builtins/cloud/aws/cloudformation.ts",
+        "src/daemon/tools/builtins/cloud/aws/ec2.ts",
+        "src/daemon/tools/builtins/cloud/aws/ecr.ts",
+        "src/daemon/tools/builtins/cloud/aws/eks.ts",
+        "src/daemon/tools/builtins/cloud/aws/iam.ts",
+        "src/daemon/tools/builtins/cloud/aws/lambda.ts",
+        "src/daemon/tools/builtins/cloud/aws/logs.ts",
+        "src/daemon/tools/builtins/cloud/aws/rds.ts",
+        "src/daemon/tools/builtins/cloud/aws/s3.ts",
+        "src/daemon/tools/builtins/cloud/aws/secretsmanager.ts",
+        "src/daemon/tools/builtins/cloud/aws/ssm.ts",
+        "src/daemon/tools/builtins/cloud/aws/sts.ts",
+        "src/daemon/tools/builtins/cloud/az/account.ts",
+        "src/daemon/tools/builtins/cloud/az/aks.ts",
+        "src/daemon/tools/builtins/cloud/az/functionapp.ts",
+        "src/daemon/tools/builtins/cloud/az/keyvault.ts",
+        "src/daemon/tools/builtins/cloud/az/monitor.ts",
+        "src/daemon/tools/builtins/cloud/az/sql.ts",
+        "src/daemon/tools/builtins/cloud/az/storage.ts",
+        "src/daemon/tools/builtins/cloud/az/vm.ts",
+        "src/daemon/tools/builtins/cloud/gcp/compute.ts",
+        "src/daemon/tools/builtins/cloud/gcp/container.ts",
+        "src/daemon/tools/builtins/cloud/gcp/functions.ts",
+        "src/daemon/tools/builtins/cloud/gcp/iam.ts",
+        "src/daemon/tools/builtins/cloud/gcp/logging.ts",
+        "src/daemon/tools/builtins/cloud/gcp/run.ts",
+        "src/daemon/tools/builtins/cloud/gcp/secrets.ts",
+        "src/daemon/tools/builtins/cloud/gcp/sql.ts",
+        "src/daemon/tools/builtins/cloud/gcp/storage.ts",
+        "src/daemon/tools/builtins/code/class-fields.ts",
+        "src/daemon/tools/builtins/code/class-locate.ts",
+        "src/daemon/tools/builtins/code/class-references.ts",
+        "src/daemon/tools/builtins/code/migration-walk.ts",
+        "src/daemon/tools/builtins/code/orm-scan.ts",
+        "src/daemon/tools/builtins/data/lineage.ts",
+        "src/daemon/tools/builtins/data/schema-drift.ts",
+        "src/daemon/tools/builtins/docs/index.ts",
+        "src/daemon/tools/builtins/file/copy.ts",
+        "src/daemon/tools/builtins/file/delete.ts",
+        "src/daemon/tools/builtins/file/edit.ts",
+        "src/daemon/tools/builtins/file/mkdir.ts",
+        "src/daemon/tools/builtins/file/move.ts",
+        "src/daemon/tools/builtins/file/multi-edit.ts",
+        "src/daemon/tools/builtins/file/read.ts",
+        "src/daemon/tools/builtins/file/stat.ts",
+        "src/daemon/tools/builtins/file/write.ts",
+        "src/daemon/tools/builtins/gh/actions.ts",
+        "src/daemon/tools/builtins/gh/issue.ts",
+        "src/daemon/tools/builtins/gh/pr.ts",
+        "src/daemon/tools/builtins/gh/project.ts",
+        "src/daemon/tools/builtins/gh/release.ts",
+        "src/daemon/tools/builtins/gh/repo.ts",
+        "src/daemon/tools/builtins/git/amend.ts",
+        "src/daemon/tools/builtins/git/blame.ts",
+        "src/daemon/tools/builtins/git/branch.ts",
+        "src/daemon/tools/builtins/git/checkout.ts",
+        "src/daemon/tools/builtins/git/cherry-pick.ts",
+        "src/daemon/tools/builtins/git/commit.ts",
+        "src/daemon/tools/builtins/git/diff.ts",
+        "src/daemon/tools/builtins/git/fetch.ts",
+        "src/daemon/tools/builtins/git/log.ts",
+        "src/daemon/tools/builtins/git/merge.ts",
+        "src/daemon/tools/builtins/git/pull.ts",
+        "src/daemon/tools/builtins/git/push.ts",
+        "src/daemon/tools/builtins/git/rebase.ts",
+        "src/daemon/tools/builtins/git/remote.ts",
+        "src/daemon/tools/builtins/git/reset.ts",
+        "src/daemon/tools/builtins/git/revert.ts",
+        "src/daemon/tools/builtins/git/show.ts",
+        "src/daemon/tools/builtins/git/stage.ts",
+        "src/daemon/tools/builtins/git/stash.ts",
+        "src/daemon/tools/builtins/git/status.ts",
+        "src/daemon/tools/builtins/git/tag.ts",
+        "src/daemon/tools/builtins/git/worktree.ts",
+        "src/daemon/tools/builtins/graph/index.ts",
+        "src/daemon/tools/builtins/http/index.ts",
+        "src/daemon/tools/builtins/k8s/index.ts",
+        "src/daemon/tools/builtins/notify/index.ts",
+        "src/daemon/tools/builtins/pkg/index.ts",
+        "src/daemon/tools/builtins/search/glob.ts",
+        "src/daemon/tools/builtins/search/grep.ts",
+        "src/daemon/tools/builtins/search/list-dir.ts",
+        "src/daemon/tools/builtins/search/recent.ts",
+        "src/daemon/tools/builtins/shell/cwd.ts",
+        "src/daemon/tools/builtins/shell/exec-detached.ts",
+        "src/daemon/tools/builtins/shell/exec-pipeline.ts",
+        "src/daemon/tools/builtins/shell/exec.ts",
+        "src/daemon/tools/builtins/ssh/index.ts",
+        "src/daemon/tools/builtins/test/index.ts",
+        "src/daemon/tools/builtins/web/index.ts",
+        "src/docgen/tool.ts",
+        "src/shared/__tests__/ipc-client-stream.test.ts",
+        "src/shared/ipc-client.ts",
+        "src/cli/app.tsx",
+        "src/cli/hooks/useApprovals.ts",
+        "src/cli/services/__tests__/approval-subscribe.test.ts",
+        "src/cli/services/approval.ts",
+        "src/cli/services/index.ts",
+        "src/cli/ui/ApprovalPrompt.tsx",
+        "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts",
+        "vscode-plugin/src/chat/approval-subscribe.ts",
+        "vscode-plugin/src/extension.ts",
+        "docs/daemon.md",
+        "docs/plans/tool-registry.md",
+        "src/daemon/tools/__tests__/approval-matrix.test.ts",
+        "src/shared/approval-stream.ts",
+        "vscode-plugin/src/vscode.d.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/types.ts:1",
+            "message": "The supplied evidence shows no implementation of Tool.approval or the required migration from requiresApproval/destructive, including predicate mapping and the eight destructive builtins. This required contract is therefore unimplemented on the review evidence.",
+            "expectationRef": "LLD contract 3: Tool.approval"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/types.ts:50",
+            "message": "The evidence establishes approvalMode on ToolDeps but does not show the required optional caller field with values 'agent' | 'daemon' | 'workflow' implemented.",
+            "expectationRef": "LLD data-model change 2: ToolDeps"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1132",
+            "message": "The evidence identifies buildToolDeps but does not show entry-point propagation of caller and the chat's edits mode into approvalMode. This required dependency construction is therefore unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 2: ToolDeps"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The evidence establishes centralized settlement but does not show the required in-memory requestId-to-resolver/timer map, open-stream set, first-answer-wins enforcement, restart denial behavior, or broker-constant 300-second expiry measured from request creation. These required parts of the pending-table obligation remain unimplemented on the supplied evidence.",
+            "expectationRef": "LLD data-model change 4: Approval broker (pending table)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/config/config-catalog.ts:1",
+            "message": "The evidence shows only a config reader and test connections. It does not show the required persisted tools.commonApproval enum (manual | edit-auto | auto, default auto), retirement without migration of permissions.mode, or removal of approval.defaultAction and destructive.requireDoubleConfirm. These required configuration changes remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 5: Daemon config: tools.commonApproval"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/approval.ts:1",
+            "message": "The evidence establishes RPC and streaming infrastructure, but does not show registration of approval.subscribe to push gate frames or approval.answer to accept { requestId, decision }. These required IPC methods remain unimplemented on the supplied evidence.",
+            "expectationRef": "LLD data-model change 6: IPC methods approval.subscribe and approval.answer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/shared/ipc-client.ts:1",
+            "message": "The evidence does not show the required optional streaming member on IpcClient or terminal and editor/chat consumers that subscribe, render gates, and answer them. Generic openStream infrastructure alone does not implement these required client integrations.",
+            "expectationRef": "LLD data-model change 6: IPC methods approval.subscribe and approval.answer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The supplied evidence shows no implementation of the required no-client path: ask() must resolve 'no-client' immediately when no approval stream is open, and the executor must return a denied ToolFailure with reason 'no-client' without running the destructive tool. This required error case is unimplemented in the review evidence.",
+            "expectationRef": "LLD error case 1: No client has an open approval stream when a destructive call is made"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The evidence shows no implementation of the required unanswered-request timeout: a per-request timer must remove the pending request, resolve ask() as 'timed-out', cause a denied executor failure with reason 'timed-out', and ignore late approval.answer messages.",
+            "expectationRef": "LLD error case 2: A client is subscribed but does not answer before expiresAt"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/executor.ts:126",
+            "message": "The supplied evidence establishes only a decline-to-settlement path in the broker. No note shows the required executor behavior: returning a denied failure with reason 'declined' and preventing the tool from running. This part of the expectation is unimplemented in the provided evidence.",
+            "expectationRef": "LLD error case 3: The user declines"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:73",
+            "message": "The evidence establishes only the boolean response shape. It does not show the required pending-table lookup or miss handling that returns { accepted: false }, logs at warn level, and leaves pending requests unaffected for unknown, expired, or already answered request IDs.",
+            "expectationRef": "LLD error case 4: approval.answer names an unknown, expired or already answered requestId"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/approval-broker.ts:52",
+            "message": "The evidence shows only an optional signal and cancellation notification plumbing. It does not show the required abort listener, pending-request removal, gate cancel frame, cancelled resolution, or executor denial preventing tool execution. These required cancellation behaviors remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD error case 7: The caller's signal aborts while a request is pending"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/shared/common-approval.ts:1",
+            "message": "The review evidence shows no implementation of the required handling for an unknown setting or config-read failure: validate against manual/edit-auto/auto, fall back to auto with a warning for common calls, and bypass the setting for destructive calls. This error-case expectation remains unimplemented on the supplied evidence.",
+            "expectationRef": "LLD error case 8: The global setting holds an unknown value or the config cannot be read"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/executor.ts:1",
+            "message": "No evidence shows the required handling for a throwing per-input approval function. The executor must catch the exception, log the failure, and treat the class as destructive so the user is asked for approval.",
+            "expectationRef": "LLD error case 10: A tool's per-input approval function throws"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The supplied evidence shows no implementation ensuring simultaneous destructive calls receive distinct requestIds and separate prompts, with each answer resolving only its corresponding call. This required concurrency behavior remains unimplemented in the review evidence.",
+            "expectationRef": "LLD edge case 1: Two destructive calls are made at once from different callers"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The supplied evidence does not show implementation of first-answer-wins arbitration when two subscribed clients answer, including returning accepted: false to the second client. This required edge case remains unimplemented on the review evidence.",
+            "expectationRef": "LLD edge case 2: Two clients are subscribed and both answer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/executor.ts:1",
+            "message": "The supplied evidence shows no implementation of the required per-call override: a common-class tool with deps.approvalMode 'auto' must execute without asking even when the global flag is 'manual'. This expectation remains unimplemented in the review evidence.",
+            "expectationRef": "LLD edge case 3: A common-class tool called with deps.approvalMode 'auto' while the global flag is 'manual'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/approval-policy.ts:1",
+            "message": "The supplied evidence does not show implementation of the required approval prompt for a common-class tool with no approvalMode when the global flag is 'edit-auto'. This required edge case remains unimplemented in the review evidence.",
+            "expectationRef": "LLD edge case 4: A common-class tool called with no approvalMode and the global flag 'edit-auto'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/approval-policy.ts:1",
+            "message": "The evidence shows buildApprovalRequest accepts input and deps.repoPath, but does not show implementation of the required behavior: when a git tool omits cwd, the request must name deps.repoPath, or explicitly say the repository is unknown when that is also empty.",
+            "expectationRef": "LLD edge case 6: A git tool called with no cwd in its input"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/approval-broker.ts:1",
+            "message": "The supplied evidence shows no implementation that sends still-pending approval requests when a client subscribes. This required late-subscription behavior is therefore unimplemented in the review evidence, leaving late clients unable to receive and answer existing requests.",
+            "expectationRef": "LLD edge case 8: A client subscribes after the request was raised"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/approval-policy.ts:63",
+            "message": "The supplied evidence establishes a separate display transformation but does not show large-value truncation, annotation of the original full length, or preservation of untruncated execution input. These required behaviors remain unimplemented in the evidence for this obligation.",
+            "expectationRef": "LLD edge case 9: Arguments contain a very large value such as a file body"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/types.ts:1",
+            "message": "The supplied evidence does not show implementation of sc4's required approval contract: the class field, global flag, ApprovalRequest/Answer/Denial types, broker, timeout, and two IPC methods. It also does not establish the caller and optional approvalMode request fields or their propagation to daemon dependencies. Under the review's evidence-only rule, this remains an unimplemented expectation.",
+            "expectationRef": "LLD shared contract sc4 (implements)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/types.ts:1",
+            "message": "The supplied evidence does not show implementation of ApprovalClass, the optional Tool.approval field, or the optional ToolDeps.caller and ToolDeps.approvalMode fields alongside the old fields. This required migration step is therefore unimplemented on the review evidence.",
+            "expectationRef": "LLD migration step 1: Add the ApprovalClass type, the optional approval field on Tool, and the optional caller and approvalMode fields on ToolDeps beside the old fields; nothing reads them yet."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/config/config-catalog.ts:1",
+            "message": "Unimplemented expectation: none of the supplied evidence shows the required tools.commonApproval catalog entry, persistence, boot reconciliation, or per-call executor read, nor the removal of the superseded approval settings and permissions.mode or the required fixture, test, and documentation updates.",
+            "expectationRef": "LLD migration step 2: Add the tools.commonApproval entry (enum manual, edit-auto, auto; default auto) to src/config/config-catalog.ts so it is stored in ~/.insrc/config.json, filled by the boot reconcile and read by the executor per call; remove the unread approval.defaultAction and destructive.requireDoubleConfirm from src/daemon/tools/config.ts so no second approval setting remains. Retire permissions.mode (unread) through RETIRED_PATHS in src/config/config-catalog.ts, and remove its insrc.permissions.mode contribution from vscode-plugin/package.json. Update the tests that assert the current state: the RETIRED_PATHS count test in src/config/__tests__/config-catalog-contract.test.ts (6 becomes 7), and the assertion in src/daemon/__tests__/config-boot-reconcile.test.ts that permissions.mode is 'validate' (it becomes: tools.commonApproval is 'auto' and permissions.mode is pruned). Drop permissions.mode from site/settings.html. Also update src/config/__tests__/config-reconcile-smoke.test.ts (the permissions assertion becomes: permissions is absent), the fixture src/config/__tests__/fixtures/daemon-defaults-literal.json (drop permissions.mode), and the note in src/config/__tests__/fixtures/PROVENANCE.md that names permissions.mode as surviving."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:1",
+            "message": "The supplied evidence shows no implementation of the approval broker or registration of approval.subscribe and approval.answer in the daemon handler maps. This required migration step is therefore unimplemented on the review evidence.",
+            "expectationRef": "LLD migration step 3: Add the approval broker and the approval.subscribe stream and approval.answer RPC to the daemon handler maps; no tool uses them yet. Keep the gate.request-permission stub as it is."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/cli/hooks/useApprovals.ts:1",
+            "message": "The evidence establishes only terminal approval UI interfaces. It does not show approval.subscribe connections, exact-call presentation, or approval.answer RPCs for the terminal, editor, and chat. These required client integrations remain unimplemented on the supplied evidence.",
+            "expectationRef": "LLD migration step 4: Add the client side: the terminal client, the editor and the chat open approval.subscribe, show the exact call and answer through approval.answer. Clients that connect before the executor change simply receive no frames."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/docgen/tool.ts:1",
+            "message": "The required migration is unimplemented in the supplied evidence: no note shows builtin approval values or predicates mapped, the eight destructive builtins migrated, or legacy fields removed, including from src/docgen/tool.ts.",
+            "expectationRef": "LLD migration step 5: Map every builtin: map requiresApproval true to approval 'common', a predicate to a per-input function returning common or none, and false or absent to none (the 77 requiresApproval: false declarations across 55 read-only tools just drop the field and stay at none), and replace the eight destructive: true builtins with approval 'destructive'; remove the old fields from every file in the same change, including src/docgen/tool.ts, the one Tool outside the builtins that declares requiresApproval."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/executor.ts:1",
+            "message": "The supplied evidence shows no implementation of migration step 6: executor class resolution and broker authorization, removal of the auto-approving branch, caller assignment in the two executeTool dependency builders, or removal of requiresApproval and destructive from Tool. This required migration is therefore unimplemented in the review evidence.",
+            "expectationRef": "LLD migration step 6: Switch the executor to resolve the class and ask the broker; remove the 'auto-approving' branch; set caller at the two ToolDeps builders that reach executeTool (src/analyze/context/driver.ts and src/agent/providers/ollama.ts); the two direct-execute builders are left to s7. Remove requiresApproval and destructive from the Tool type."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/index.ts:1",
+            "message": "The evidence shows an IPC test harness and shared type declarations, but no production registration of approval.subscribe or approval.answer against the single broker created at daemon startup. The required production IPC exposure is therefore unimplemented in the supplied evidence.",
+            "expectationRef": "PLAN task t4: Expose the broker over IPC"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/tools/executor.ts:1",
+            "message": "The evidence establishes policy/helper integration and a gate accessor, but shows no implementation of input validation before prompting, awaiting approval, or returning denied with the denial reason without executing on decline, timeout, no client, or cancellation. It also does not establish removal of the auto-approving branch. These required execution safeguards remain unimplemented on the supplied evidence.",
+            "expectationRef": "PLAN task t6: Make executeTool ask before it runs"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1",
+            "message": "No note shows caller being set in either required ToolDeps builder (the analyzer's buildToolDeps or the Ollama provider). The required caller propagation remains unimplemented on the supplied evidence.",
+            "expectationRef": "PLAN task t6: Make executeTool ask before it runs"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/__tests__/approval-class-mapping.test.ts:1",
+            "message": "The evidence shows only mapping-test infrastructure. No note shows the required builtin approval migration, removal of legacy Tool fields, or a preserved snapshot asserting identical tool IDs/input schemas and correct approval classes. Task t7 therefore remains unimplemented on the supplied evidence.",
+            "expectationRef": "PLAN task t7: Map every builtin onto the approval field"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/cli/ui/ApprovalPrompt.tsx:23",
+            "message": "The evidence shows prompt props and an expiry helper, but no implementation rendering the tool, repository, exact arguments, preview and time left, or binding approve/decline keys. These required terminal interactions remain unimplemented in the supplied evidence.",
+            "expectationRef": "PLAN task t9: Terminal client approval prompt"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/cli/services/approval.ts:31",
+            "message": "The evidence supports subscription state and reconnect plumbing, but shows no cancel-frame handler removing the corresponding pending request. Task t9 explicitly requires cancellation to dismiss the prompt.",
+            "expectationRef": "PLAN task t9: Terminal client approval prompt"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 57,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/agent/providers/ollama.ts:266",
+            "message": "listLocalModels declares optional timeoutMs and listFn properties without explicit `| undefined`, contrary to the documented optional-property convention. Use `timeoutMs?: number | undefined` and `listFn?: (() => Promise<{ models?: unknown }>) | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/ssh/index.ts:40",
+            "message": "parseHost declares its optional return property as `port?: number`, omitting the explicit `| undefined` required by the documented convention. Use `port?: number | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/app.tsx:43",
+            "message": "App and AppBody (line 51) declare optional pollMs and initialPane props without explicit `| undefined`, contrary to the documented optional-property convention.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 44,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 0,
+          "relation": 1,
+          "merge": 0
+        }
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 7,
+      "med": 27,
+      "low": 3
+    }
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0a1cdf57-24fa-454e-a039-ae31ee3e8b90",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.414Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate bounded shutdown while preserving store-health behavior",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fd8d70c3e8c397ea-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "790478463d671adfb981c0a6cf90d8a0dcade7728749d3d3daaac74f4111330e",
+        "at": "2026-10-24T18:07:27.915Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.414Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Integrate bounded shutdown while preserving store-health behavior",
+    "summary": "Wire watchdog arm/ready before native cleanup into createShutdown and daemon entrypoint. Preserve reentrancy, normal exit and lock-loss no-close/self-kill policy. Log stages and health synchronously. On watchdog launch/ready failure diagnose and self-kill before potentially blocked cleanup. Disconnect clients before awaiting ownership-guarded server close in the new serialized sequence. Reconcile src/db/graph/__tests__/helpers/store-child.ts writePid/createShutdown/server-close wiring so lock-loss and fatal tests exercise the new contract rather than bypass it.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Blocked cleanup and post-bye exit are bounded independently of the event loop.",
+      "Watchdog failure self-kills before a blocked closeStores fake is invoked, without a CLI client.",
+      "Normal cleanup order and existing lock-loss/fatal termination tests pass.",
+      "Repeated signals arm one watchdog; orphaned/foreign run-file ownership remains a visible restart failure."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Watchdog arm failure self-kills before blocked native cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior"
+      },
+      {
+        "level": "integration",
+        "name": "Repeated signals and guarded async close preserve ownership"
+      },
+      {
+        "level": "integration",
+        "name": "Store-child fixture exercises owned publication watchdog readiness and guarded close"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

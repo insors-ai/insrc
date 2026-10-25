@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afb38811734e27c7a08331e5229dca12a90fff3fd8a1bd7d47cacf7aeeddf1c7",
+        "at": "2026-10-24T12:26:40.061Z",
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "codex:backlog-reconciliation",
+          "kind": "system",
+          "properties": {
+            "authorization": "User requested: update the built/resolved ones with a build record so they do not show up again."
+          }
+        },
+        "at": "2026-10-24T12:26:40.062Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ba675f7d-6faf-4610-a127-858df3007092",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T12:26:39.940Z",
+    "epicCreatedAt": "2026-09-29T20:29:58.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96399d148fcc0b6",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "updatedAt": "2026-10-24T12:26:39.940Z",
+    "epicSlug": "dev-chat-message-input-under-delivers"
+  },
+  "body": {
+    "focus": "Dev-chat input renders as a bordered textarea box instead of the approved flush terminal prompt",
+    "commit": "75ab9982fb8fe07770d4052ee3de58d14d81b55f",
+    "summary": "Historical completion reconciliation for ISSUE-c96399d148fcc0b6, recorded 2026-10-24T12:26:39.940Z.\n\nImplemented by 75ab9982. Current vscode-plugin/src/chat/chat-panel.ts renders the flush two-line terminal prompt with the leading send/stop control. Header/footer composition was intentionally refined later by ISSUE-6ae99f6e.\n\nThe user explicitly requested recording these verified built/resolved issues so they no longer appear pending. No new implementation or plan execution occurred for this record. No synthetic task results or code review are asserted. The preceding audit had 324 passing tests and one cancelled/stalled chat-suite case; separate store-ownership, shutdown and tracker checks passed. This record does not claim a completely passing full suite.",
+    "changeLog": []
+  },
+  "citations": []
+}

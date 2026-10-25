@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "49c2fb55dd1f5bf2e705154049c1b3c2d7bb3d4e83ce44b30ee9d2ca91ad871e",
+        "at": "2026-10-24T13:36:23.023Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "fcfdd50de84fb31a",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T13:36:22.973Z",
+    "updatedAt": "2026-10-24T13:36:22.973Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T06:10:03.483Z",
+    "epicSlug": "decode-socket-child-process-output-utf",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "3251877d3",
+        "ranAt": "2026-10-24T13:36:22.973Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/server-utf8.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/server-utf8.test.ts"
+            ]
+          },
+          {
+            "name": "src/mcp/__tests__/daemon-stream-utf8.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/mcp/__tests__/daemon-stream-utf8.test.ts"
+            ]
+          },
+          {
+            "name": "src/shared/__tests__/ipc-client-timeout.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/shared/__tests__/ipc-client-timeout.test.ts"
+            ]
+          },
+          {
+            "name": "src/shared/__tests__/ipc-client.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/shared/__tests__/ipc-client.test.ts"
+            ]
+          },
+          {
+            "name": "src/shared/__tests__/utf8-stream.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/shared/__tests__/utf8-stream.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/server-utf8.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 530,
+            "titles": [
+              {
+                "title": "daemon request reader preserves UTF-8 split inside a multibyte request parameter",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/daemon-stream-utf8.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "MCP unary replies preserve UTF-8 characters split at every byte",
+                "result": "pass"
+              },
+              {
+                "title": "MCP workflow streams preserve split UTF-8 in both progress and done frames",
+                "result": "pass"
+              },
+              {
+                "title": "MCP review streams preserve split UTF-8 in done frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/ipc-client-timeout.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 324,
+            "titles": [
+              {
+                "title": "rpc without opts is unchanged for a reply, an error and a split reply",
+                "result": "pass"
+              },
+              {
+                "title": "rpc with timeoutMs rejects on silence and on early close and cleans up",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/ipc-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 322,
+            "titles": [
+              {
+                "title": "rpc preserves a multi-byte response character split across socket reads",
+                "result": "pass"
+              },
+              {
+                "title": "openStream preserves multi-byte characters split across frame chunks",
+                "result": "pass"
+              },
+              {
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.status returns the wire DaemonStatus via daemon.status",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.reachability derives running / stopped / errored and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "sockFilePath resolves to the daemon socket",
+                "result": "pass"
+              },
+              {
+                "title": "src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "src/shared/ipc-client imports only node:net and shared IPC/text helpers (no daemon internals/indexer/storage)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/utf8-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 477,
+            "titles": [
+              {
+                "title": "UTF-8 text survives every byte boundary, stream state stays independent and byte counts stay raw",
+                "result": "pass"
+              },
+              {
+                "title": "an incomplete final UTF-8 sequence is flushed once at end, without adding raw bytes",
+                "result": "pass"
+              },
+              {
+                "title": "runShell decodes both streams across chunks and preserves byte-based output limits",
+                "result": "pass"
+              },
+              {
+                "title": "shell_exec-detached preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "test_watch preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "k8s_logs preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "k8s_exec preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "k8s:port-forward preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "ssh:exec-detached preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "ssh:port-forward preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "cloud_aws_logs_tail preserves split UTF-8 in its subprocess output",
+                "result": "pass"
+              },
+              {
+                "title": "Graphviz subprocess preserves split UTF-8 in SVG and failure diagnostics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 409,
+            "titles": [
+              {
+                "title": "CLI pipe fallback preserves UTF-8 across stdout lines and stderr chunks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

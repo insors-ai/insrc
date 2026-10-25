@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792855947376-6m181e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:33:06.105Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 38716,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s8",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `one-tool-registry-git-gh-jira` (b7a68147dcf72034): adds Story s4b for the long tail of git operations, building on DEF/HLD-b7a68147dcf72034 (s4's git family boundary) and the git tools in src/daemon/tools/builtins/git. Story s4 keeps the 22 existing tools and the read tools s7 needs.",
+    "addedStory": {
+      "id": "s8",
+      "title": "Reach the rest of git through named, typed tools",
+      "userValue": "Every git command a person or a program can run unattended is reachable through the registry with a declared result shape and the right approval class, so nothing falls back to a raw shell.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a git command that can run without a person, a GUI, a mail server or a server role",
+          "when": "the registry's git tools are listed",
+          "then": "the command is reachable through a named tool with an operation-selecting input, and a case in the coverage table runs it through the executor against a temporary repository and checks its result and effect",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a git command that reads from standard input (apply, am, mktree, mktag, fast-import and similar)",
+          "when": "its tool is called with the content as an input",
+          "then": "the content reaches the command without a raw shell, and a failure to deliver it is reported as the tool's failure",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "a tool of this family is called",
+          "when": "it returns",
+          "then": "its result follows the declared shape, and a result that does not fit, or whose output was cut, is a failure",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "an operation of this family can destroy work or overwrite a file (clean, restore of the worktree, rm with force, prune, deleting a ref, removing notes, overwriting an archive or patch)",
+          "when": "the registry is read",
+          "then": "that operation is marked destructive so the approval story applies",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "the git commands covered by Stories s4 and s4b together",
+          "when": "the coverage table is read",
+          "then": "every command of the recorded git command list is covered or excluded with a reason that a reviewer can check, and the only exclusions are those the user accepted",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-b7a68147dcf72034-8",
+    "evidence": [
+      {
+        "kind": "doc",
+        "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+        "quote": "Given an operation that git supports ... the operation is reachable through a named tool for its family, with no raw passthrough"
+      },
+      {
+        "kind": "doc",
+        "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S004/LLD.md"
+      },
+      {
+        "kind": "code",
+        "ref": "src/daemon/tools/builtins/git/index.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/daemon/tools/shell-helper.ts"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"b7a68147dcf72034\",\"storyId\":\"s8\"}",
+      "description": "Approve the HLD amendment (`AMD-b7a68147dcf72034-8`) and the updated Epic, then run `design.story` for the new Story `s8` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+      "quotedText": "Given an operation that git supports ... the operation is reachable through a named tool for its family, with no raw passthrough"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S004/LLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/index.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/shell-helper.ts"
+    }
+  ]
+}

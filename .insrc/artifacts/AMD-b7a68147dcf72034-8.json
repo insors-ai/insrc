@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-a00ba891-ad15-446a-ac2f-1ab5440ea4b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:33:06.104Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29e5675234c71037637c24d546660cfd68c14cf6bec95c8b53edad860ed8b9c1",
+        "at": "2026-10-24T15:33:06.104Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:02:39.950Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-8",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s8",
+      "internal": "Private implementation of s8: Reach the rest of git through named, typed tools"
+    },
+    "rationale": "Extends Epic `one-tool-registry-git-gh-jira` (b7a68147dcf72034): adds Story s4b for the long tail of git operations, building on DEF/HLD-b7a68147dcf72034 (s4's git family boundary) and the git tools in src/daemon/tools/builtins/git. Story s4 keeps the 22 existing tools and the read tools s7 needs.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1792855947376-6m181e",
+      "storyId": "s8",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-24T15:33:06.103Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+      "quotedText": "Given an operation that git supports ... the operation is reachable through a named tool for its family, with no raw passthrough"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S004/LLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/index.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/shell-helper.ts"
+    }
+  ]
+}

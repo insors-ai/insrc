@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 5,
+        "contentHash": "f8612f8e0850c3bade77843a2f1c03efcd97d9076bfddbcfdec50b8e90dfd3a9",
+        "at": "2026-10-25T05:28:53.820Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T05:54:16.167Z"
+      }
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792906051153-c6yjmz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T05:27:39.054Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 74764,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "epicSlug": "daemon-stop-must-wait-process-end",
+    "standalone": true,
+    "revision": 5
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "build-process-broker.mjs",
+        "build-shutdown-watchdog.mjs",
+        "copy-assets.mjs",
+        "package.json",
+        "scripts/daemon-ctl.sh",
+        "src/bin/insrc-daemon-control.ts",
+        "src/bin/insrc-shutdown-watchdog.ts",
+        "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+        "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+        "src/cli/services/__tests__/daemon-stop.test.ts",
+        "src/cli/services/__tests__/fixtures/reused-pid-backend.c",
+        "src/cli/services/daemon.ts",
+        "src/cli/services/lifecycle.ts",
+        "src/daemon/__tests__/fixtures/run-file-exit-child.ts",
+        "src/daemon/__tests__/fixtures/run-file-owner-child.ts",
+        "src/daemon/__tests__/run-file-ownership.test.ts",
+        "src/daemon/__tests__/shutdown-bounded.test.ts",
+        "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+        "src/daemon/__tests__/shutdown-store-failure.test.ts",
+        "src/daemon/__tests__/shutdown-watchdog.test.ts",
+        "src/daemon/__tests__/understanding-rpc.test.ts",
+        "src/daemon/index.ts",
+        "src/daemon/lifecycle.ts",
+        "src/daemon/run-file-ownership.ts",
+        "src/daemon/server.ts",
+        "src/daemon/shutdown-watchdog.ts",
+        "src/daemon/shutdown.ts",
+        "src/db/graph/__tests__/helpers/store-child-driver.ts",
+        "src/db/graph/__tests__/helpers/store-child.ts",
+        "src/native/process-broker/README.md",
+        "src/native/process-broker/broker.h",
+        "src/native/process-broker/darwin.c",
+        "src/native/process-broker/linux.c",
+        "src/native/process-broker/main.c",
+        "src/shared/__tests__/daemon-process-client.test.ts",
+        "src/shared/__tests__/daemon-process.test.ts",
+        "src/shared/__tests__/daemon-run-files.test.ts",
+        "src/shared/__tests__/fixtures/process-broker-fake-backend.c",
+        "src/shared/__tests__/process-broker-native.test.ts",
+        "src/shared/daemon-process-client.ts",
+        "src/shared/daemon-process.ts",
+        "src/shared/daemon-run-files.ts",
+        "src/shared/paths.ts",
+        "src/understanding/privacy.ts",
+        "src/workflow/artifact-write-inventory.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/DEF-b7a68147dcf72034.log.jsonl",
+        ".insrc/artifacts/ISSUE-61045de91faef1a0.log.jsonl",
+        ".insrc/artifacts/ISSUE-fd8d70c3e8c397ea.log.jsonl",
+        ".insrc/artifacts/TASKS-b7a68147dcf72034-s3.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

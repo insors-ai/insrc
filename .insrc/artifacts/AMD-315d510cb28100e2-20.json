@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-2031547c-1152-4c3e-a02f-5564a66b166f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T17:32:31.734Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c53a83ac0dec24479ee5ffe5b1dab25292e289e5ed14d8684046f0af216ec73b",
+        "at": "2026-10-22T17:32:31.735Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-315d510cb28100e2-20",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc4",
+      "field": {
+        "name": "GuardedAction 'revise' refuses an unassigned unit",
+        "type": "teamGate(repo, unit, 'revise') => allowed (holder) | held-by-other (another user) | refused('claim it first') (nobody holds the unit); 'revise' never takes the claim",
+        "optional": false,
+        "purpose": "teamGate lets every action that is not author or build through when nobody holds the unit (`holder === null && !CLAIMING.has(action)` returns allowed), so a 'revise' of an artifact in signoff by anyone on an unassigned unit would be allowed. A revise must be refused until the unit is claimed, as a submission is in s7."
+      },
+      "breaking": false
+    },
+    "rationale": "ac38 says someone who does not hold the claim is refused. Today that is true only when another user holds it. The rule is one branch in the gate and changes no outcome type; 'revise' has no caller yet, so no existing behaviour changes.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792690133176-9nl96s",
+      "storyId": "s8",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-10-22T17:32:31.734Z"
+  },
+  "citations": []
+}

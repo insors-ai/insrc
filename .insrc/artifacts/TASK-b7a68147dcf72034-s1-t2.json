@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea76c527-28d0-412d-8f5c-9d26cb551536",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:27:31.496Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The hook registry and its run point",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9fe7d9c94b3a59ec42f1bec0d4fa4a2e5f633c7173202e229275479f08196663",
+        "at": "2026-10-24T14:27:31.497Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:31.497Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The hook registry and its run point",
+    "summary": "Add src/daemon/tools/hooks.ts with registerToolHook (duplicate, empty id and alias refusal), runToolHooks (resolved tool.id lookup, a structuredClone of input and result per hook, serial run, guarded failure text cut to 500 characters, clone failure reported per hook, per-hook log line) and the test reset seam; export registerToolHook from src/daemon/tools/index.ts. Create src/daemon/tools/__tests__/tool-hooks.test.ts with the registry and run-point unit tests; t3, t4 and t5 extend the same file so every proving test the LLD names lives there.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "registerToolHook throws on a duplicate toolId+id, an empty id or toolId, and an alias of an already registered tool",
+      "runToolHooks runs hooks in registration order, one at a time, and a failing hook does not stop the next",
+      "a null-prototype throw, a throwing toString and an empty message give the fixed fallback text and nothing throws out of runToolHooks",
+      "a hook that mutates nested result.data, with or without then throwing, leaves the original untouched",
+      "an uncloneable result reports that hook as failed and the rest still run",
+      "a message over 500 characters is cut to 500"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook appends in order and refuses a duplicate toolId+id and an empty id or toolId"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: registerToolHook refuses an alias in place of a canonical id"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks runs hooks one at a time"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: runToolHooks catches a throw or rejection, cuts a long message to 500 characters and gives each hook its own structuredClone of input and result"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: failure text for a null-prototype object, a value with a throwing toString and an empty message falls back to a fixed non-empty text, and building it does not throw"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a hook that mutates nested result.data, with and without then throwing, leaves the caller's result untouched; a result that cannot be cloned reports that hook as failed and still runs the rest"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

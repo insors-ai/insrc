@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8f78854e-711a-4644-a5c5-385fd022a34a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T14:27:31.498Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the hooks from executeTool",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b317f48886cd6ca030326677cab491cd9a79d4634117f7c754a5b96dc70e2850",
+        "at": "2026-10-24T14:27:31.498Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T14:27:31.499Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the hooks from executeTool",
+    "summary": "Route executeTool's two success exits through one helper that calls runToolHooks with the resolved tool, and sets hookFailures and appends one `[hook failed] <hookId>: <message>` line per failure to output only when a rule failed; every failed exit stays hook-free and a call with no hook returns the very object the tool returned. Extend tool-hooks.test.ts with the executor tests.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a registered rule runs once after a successful call for caller agent, daemon, workflow and unset, with and without an outputSchema",
+      "a failed, denied, rejected or schema-mismatch call runs no rule and carries no hookFailures",
+      "a tool called through an alias runs the canonical id's hooks exactly once",
+      "a failing rule leaves success, data and format unchanged, sets hookFailures, and appends exactly one `[hook failed] <hookId>: <message>` line per failure to output",
+      "hookFailures is absent when no rule failed and the result object is the one the tool returned when no hook is registered",
+      "executor-approval.test.ts passes unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool with no outputSchema still runs its rules"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a tool called through an alias runs the canonical id's rule exactly once"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tool-hooks.test.ts: a call with no rule returns the object the tool returned"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9e1dc37a-b1e0-47e2-9873-28a96bcd1586",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:44:09.082Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "envelope": {
+      "description": "runShellBytes with stdin, isolation and independent limits",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fc737257bf032c96d17794983121f31b56f92b8b0e7ec4e3226586970cc349dd",
+        "at": "2026-10-24T18:44:09.082Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:44:09.083Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "runShellBytes with stdin, isolation and independent limits",
+    "summary": "Add runShellBytes to shell-helper.ts: stdin delivery, isolate (fresh env from PATH only, GIT_* isolation, git-reader's GIT_READ_ARGS), independent stdoutLimit and stderrLimit with stderrOverflow, binary-safe stdout. Existing runShell behaviour is unchanged.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "stdin bytes reach the child and a binary stdout round-trips unchanged",
+      "With isolate set the child sees an environment built from PATH only plus the git read arguments, not the caller's GIT_* variables",
+      "stdoutLimit and stderrLimit apply independently and an overflowing stderr sets stderrOverflow without cutting stdout",
+      "runShell callers and their tests are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/shell-helper-bytes.test.ts: runShellBytes returns stdout bytes unchanged, delivers stdin and applies the isolate environment"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/shell-helper-bytes.test.ts: runShellBytes reports a stdin write error and a cancellation and leaves runShell unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/shell-helper-bytes.test.ts: independently lowered stdout and stderr limits behave as the corpus reader's limits do and stderr overflow sets stderrOverflow"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

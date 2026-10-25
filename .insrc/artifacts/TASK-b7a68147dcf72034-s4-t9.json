@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1f6542ac-0cf4-4480-a22f-f13d06ce5843",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T18:44:09.093Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Confirm the unreviewed review-cycle fixes",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4933b4ee6a3f1f5c3d45c20a3e0944951090a6560ad2f4ca5007f2cb095ab6a4",
+        "at": "2026-10-24T18:44:09.093Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:44:09.093Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Confirm the unreviewed review-cycle fixes",
+    "summary": "Verify that each fix made after the last review round has an implementation and a test: noMerged on git_for_each_ref, expected non-zero helper outcomes for amend, reset and merge kept apart from process failures, independent stdout and stderr limits on runShellBytes, git_merge_base bases, git_fetch depth below 1 in the compatibility audit, the commit numstat read as an inventoried secondary read, the three-owner coverage test, and the git_reset and git_push lookups in the secondary-read inventory with the grep test t5 built. Fill any gap found.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "A written table maps each listed fix to the file that implements it and the test that pins it",
+      "Any fix without both is implemented or tested before the task ends",
+      "The secondary-read grep test is shown to fail when an unlisted ignored lookup is added"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_amend with no upstream, a non-ancestor and a timed-out upstream read; git_reset hard with an unknown force-push state; git_merge with a failing conflict enumeration; and git_for_each_ref noMerged"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_commit, git_push, git_rebase and git_checkout fail before changing anything when the current-branch or staged-count read cannot run or times out"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

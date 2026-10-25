@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b430a503-0139-4fce-8bf1-87115beba9b5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T16:10:13.409Z",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fd8d70c3e8c397ea",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Revise guard foundations and remove numeric-PID signalling authority",
+      "parent": {
+        "entityId": "STORY-fd8d70c3e8c397ea-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fd8d70c3e8c397ea-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "9286c1d5474022c9f27452c7d3ad418ea3a7c5fa1b878abb32e0fee0a38b657e",
+        "at": "2026-10-24T18:07:27.913Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T16:10:13.409Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Revise guard foundations and remove numeric-PID signalling authority",
+    "summary": "Reuse the existing atomic mkdir/nonce guard, file fingerprints and orphan diagnostics under the cooperating-managed-writer contract. Revise source/docs/tests that imply atomic conditional unlink. Keep OS identity observation diagnostic; remove or explicitly refuse the failed check-then-act signalling helper so no production target can be signalled through it. Reconcile the failed t1 work rather than claiming it completed. Revalidation is mandatory; previous t1 test results do not constitute a completed task.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Existing guard tests prove exclusive managed-writer acquisition and preservation of observed foreign files.",
+      "Orphan/unverifiable guards remain explicit conflicts without automatic reclamation.",
+      "No identity-check-then-numeric-kill API remains usable as production daemon signalling authority."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Managed run-file guard exclusion, observed replacement preservation and explicit orphan conflict"
+      },
+      {
+        "level": "integration",
+        "name": "Observation-only process identities cannot authorize numeric-PID target signalling"
+      },
+      {
+        "level": "integration",
+        "name": "Revised guard foundation regressions pass without claiming atomic conditional unlink"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { _resetRegistryForTests, registerTool } from '../../../registry.js';
-import { executeTool } from '../../../executor.js';
+import { _resetRegistryForTests, getTool, registerTool } from '../../../registry.js';
+import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
+import { registerBuiltinTools } from '../../index.js';
 import { installFakeAcli } from './_fakeacli.js';
+import { validateAgainstSchema } from '../../../../../agent/providers/structured-output.js';
+import type { StructuredSchema } from '../../../../../shared/types.js';
+import { ALL_OP_CASES, ALL_TOOLS } from './_all-ops.js';
 import { SAMPLE_OPS, deps, sampleFamily } from './_sample.js';
 
 test('jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs', async () => {
@@ -48,4 +52,29 @@ test('jira-family.test.ts: a sample family refuses unknown ops, missing, extra a
     assert.deepEqual((ok.data as { op: string }).op, 'view');
     assert.deepEqual(fake.calls(), ['jira workitem view --key IN-1 --json']);
   } finally { fake.restore(); _resetRegistryForTests(); }
+});
+
+test('jira-family.test.ts: the five tools and 32 ops are registered and each op returns its declared shape', async () => {
+  _resetRegistryForTests();
+  registerBuiltinTools();
+  try {
+    assert.deepEqual(ALL_TOOLS.map(t => t.id), ['jira_workitem', 'jira_comment', 'jira_link', 'jira_project', 'jira_auth']);
+    for (const t of ALL_TOOLS) { assert.equal(getTool(t.id), t, `${t.id} is registered`); }
+    assert.equal(ALL_TOOLS.reduce((n, t) => n + t.ops.length, 0), 32);
+    // one case per op, and none missing
+    assert.deepEqual(ALL_OP_CASES.map(c => `${c.tool.id}.${String(c.input['op'])}`).sort(), ALL_TOOLS.flatMap(t => t.ops.map(o => `${t.id}.${o.name}`)).sort());
+    for (const c of ALL_OP_CASES) {
+      const fake = installFakeAcli('ok', { stdout: c.stdout });
+      try {
+        // through the executor, so both the input check and the output check run; a destructive op is approved by a fake gate
+        _setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' as const }; } }));
+        const r = await executeTool(c.tool.id, c.input, deps());
+        const what = `${c.tool.id} ${String(c.input['op'])}`;
+        assert.equal(r.success, true, `${what}: ${r.failure?.message ?? ''}`);
+        assert.equal((r.data as { op: string }).op, c.input['op'], what);
+        assert.equal(validateAgainstSchema(c.tool.outputSchema as unknown as StructuredSchema, r.data).ok, true, `${what} fits its declared shape`);
+        assert.equal(fake.calls().length, 1, what);
+      } finally { fake.restore(); _setApprovalGateForTests(undefined); }
+    }
+  } finally { _resetRegistryForTests(); }
 });

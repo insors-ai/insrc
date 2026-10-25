@@ -1,3 +1,5 @@
+import { assertAnalysisAudience, analysisAdmissionEnvelope } from './analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -84,7 +86,9 @@ export function checkOneShotArgs(raw: unknown): AnalyzeOneShotArgs | string {
 export async function runAnalyzeOneShot(
 	rawArgs: unknown,
 	deps: AnalyzeOneShotDeps = {},
+	execution?: ConnectionExecutionContext,
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean | undefined }> {
+	try { assertAnalysisAudience(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	const args = checkOneShotArgs(rawArgs);
 	if (typeof args === 'string') return errorResult(args);
 	// Resolve the repo path: explicit param > CWD-contained registered repo >

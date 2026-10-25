@@ -29,6 +29,8 @@ export const CONNECTION_SESSION_GATE_FILES = [
 	'daemon/connection-management-rpc', 'daemon/request-context', 'daemon/server', 'daemon/index',
 	'daemon/threads/router', 'daemon/threads/channel', 'daemon/threads/method-class', 'daemon/threads/worker-requests',
 	'mcp/session-bootstrap', 'mcp/forward-step', 'bin/insrc-mcp', 'daemon/steps/host',
+	'daemon/steps/analysis-admission', 'daemon/steps/analyze-oneshot', 'daemon/steps/analyze-step/handler', 'daemon/steps/analyze-step/answer-turn',
+	'daemon/steps/analyze-step/phases/start', 'daemon/steps/analyze-step/phases/plan', 'daemon/steps/analyze-step/phases/narrow', 'daemon/steps/analyze-step/phases/bundle',
 	'shared/step-context', 'shared/connection-management', 'shared/connection-management-wire',
 ] as const;
 export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url), additionalScopes: readonly string[] = []): Promise<ManagementEnablement> {

@@ -165,12 +165,13 @@ export function forwardStep(
 					return;
 				}
 				if (stream === 'progress' || stream === 'delta') {
-					extra.onProgress?.(frame['data']);
+					if (!bootstrap) extra.onProgress?.(frame['data']);
 				} else if (stream === 'done') {
-					finish(frame['data'] as StepMcpEnvelope);
+					finish(bootstrap ? errorEnvelope('unsupported-temporary', 'UnverifiedAnalysisError', 'Temporary connections are unavailable for this operation.', false) : frame['data'] as StepMcpEnvelope);
 					return;
 				} else if (stream === 'error') {
 					const data = (frame['data'] ?? {}) as { code?: string; error?: string };
+                    if (bootstrap) { finish(data.code === 'unsupported-temporary' || data.code === 'upgrade-required' ? errorEnvelope('unsupported-temporary', 'UnverifiedAnalysisError', 'Temporary connections are unavailable for this operation.', false) : errorEnvelope('session-expired', 'SessionBootstrapError', 'Connection session is unavailable.', false)); return; }
 					if (data.code === 'step-unknown-tool') { failWith(tooOld(data.error ?? `no tool '${tool}'`)); return; }
 					failWith(new Error(data.error ?? `${tool}: the daemon reported an error`));
 					return;

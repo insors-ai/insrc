@@ -67,8 +67,8 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 	registerWorkflowRunners();
 	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
-		insrc_analyze:          (args) => runAnalyzeOneShot(args),
-		insrc_analyze_step:     (args) => handleAnalyzeStep(args),
+		insrc_analyze:          (args, _signal, _progress, execution) => runAnalyzeOneShot(args, {}, execution),
+		insrc_analyze_step:     (args, _signal, _progress, execution) => handleAnalyzeStep(args, execution),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
 		insrc_review_step:      (args, signal, progress) => handleReviewStep(args, { ...opts.reviewDeps, signal, ...(progress !== undefined ? { progress } : {}) }),
@@ -101,12 +101,12 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 	return async (params, send, signal, trusted) => {
         const execution = trusted?.connectionExecution;
         const bound = trusted?.connectionSession !== undefined || execution?.mode === 'session-memory';
-		const fail = (code: 'step-unknown-tool' | 'step-failed' | 'session-expired' | 'upgrade-required', error: string): void => {
+		const fail = (code: 'step-unknown-tool' | 'step-failed' | 'session-expired' | 'upgrade-required' | 'unsupported-temporary', error: string): void => {
 			send({ id: 0, stream: 'error', data: { code, error, recoverable: false } });
 		};
         if (bound) {
          try { requireConnectionExecution(execution); } catch { fail('session-expired', 'Connection session is unavailable.'); return; }
-         if (execution?.mode !== 'session-memory' || execution.audience !== 'workbench-ui') { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
+         if (execution?.mode !== 'session-memory' || execution.audience !== 'workbench-ui') { fail('unsupported-temporary', 'Temporary connections are unavailable for this operation.'); return; }
         }
 		const p = (typeof params === 'object' && params !== null ? params : {}) as { tool?: unknown; args?: unknown; context?: unknown };
 		if (typeof p.tool !== 'string' || !Object.hasOwn(table, p.tool)) {

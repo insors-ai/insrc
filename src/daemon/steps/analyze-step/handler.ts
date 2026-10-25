@@ -1,3 +1,5 @@
+import { assertAnalysisAudience, analysisAdmissionEnvelope } from '../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -54,9 +56,10 @@ const log = getLogger('mcp:analyze-step:handler');
  * Errors that phase handlers didn't catch bubble to
  * `errorResult('internal')`.
  */
-export async function handleAnalyzeStep(input: unknown): Promise<StepMcpEnvelope> {
-	const result = await dispatch(input);
-	if (TRACE_PATH !== undefined) {
+export async function handleAnalyzeStep(input: unknown, execution?: ConnectionExecutionContext): Promise<StepMcpEnvelope> {
+	try { assertAnalysisAudience(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
+	const result = await dispatch(input, execution);
+	if (TRACE_PATH !== undefined && execution?.mode !== 'session-memory') {
 		try {
 			appendFileSync(
 				TRACE_PATH,
@@ -82,7 +85,7 @@ function redactState(v: unknown): unknown {
 	return v;
 }
 
-async function dispatch(input: unknown): Promise<StepOutput> {
+async function dispatch(input: unknown, execution?: ConnectionExecutionContext): Promise<StepOutput> {
 	if (typeof input !== 'object' || input === null || !('phase' in input)) {
 		return errorResult(
 			'bad-input',
@@ -93,10 +96,10 @@ async function dispatch(input: unknown): Promise<StepOutput> {
 	const step = input as StepInput;
 	try {
 		switch (step.phase) {
-			case 'start':  return await handleStart(step);
-			case 'plan':   return await handlePlan(step);
-			case 'narrow': return await handleNarrow(step);
-			case 'bundle': return await handleBundle(step);
+			case 'start':  return await handleStart(step, execution);
+			case 'plan':   return await handlePlan(step, execution);
+			case 'narrow': return await handleNarrow(step, execution);
+			case 'bundle': return await handleBundle(step, execution);
 			default:
 				return errorResult(
 					'bad-phase',

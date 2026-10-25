@@ -37,7 +37,7 @@ const SESSION_METHODS: ReadonlySet<string> = new Set(CONNECTION_SESSION_METHODS)
 const SAFE_METADATA: ReadonlySet<string> = new Set(['db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.listDriverKinds']);
 const PROBE_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.test', 'db.connections.v2.cancelTest']);
 const PREFIX = 'db.connections.v2.session.';
-const fail = (code: 'session-expired' | 'upgrade-required') => new ManagementServiceError(code);
+const fail = (code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary') => new ManagementServiceError(code);
 
 export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 	readonly #ports: ConnectionSessionRpcPorts<Overlay>;
@@ -273,7 +273,8 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : request.method === 'db.connections.v2.test' ? this.#binding(request, parseDraftTestRequest(request.params).key.repoRoot) : this.#binding(request)).then(async binding => {
 				if (cancelled || request.lifetime?.signal.aborted) { request.lifetime?.complete(); return; }
 				binding.assertActive();
-				if ((step || TEMPORARY_MANAGEMENT_METHODS.has(request.method) || PROBE_METHODS.has(request.method)) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
+				if (step && binding.audience !== 'workbench-ui') throw fail('unsupported-temporary');
+				if ((TEMPORARY_MANAGEMENT_METHODS.has(request.method) || PROBE_METHODS.has(request.method)) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
 				let execution;
                 if (step) {
                  const lifetime = request.lifetime; if (!lifetime) throw fail('session-expired');

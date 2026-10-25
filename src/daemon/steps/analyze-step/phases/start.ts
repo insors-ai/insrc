@@ -1,3 +1,5 @@
+import { assertAnalysisAudience } from '../../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -39,7 +41,9 @@ const log = getLogger('mcp:analyze-step:start');
 
 export async function handleStart(
 	input: StepInputStart,
+	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitPlan | StepOutputDone> {
+	assertAnalysisAudience(execution);
 	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(

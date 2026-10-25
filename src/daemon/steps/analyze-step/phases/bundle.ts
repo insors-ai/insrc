@@ -1,3 +1,5 @@
+import { assertAnalysisAudience } from '../../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -59,7 +61,9 @@ const log = getLogger('mcp:analyze-step:bundle');
 
 export async function handleBundle(
 	input: StepInputBundle,
+	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputDone | StepOutputError> {
+	assertAnalysisAudience(execution);
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {

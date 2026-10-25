@@ -106,6 +106,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['db.connections.v2.mutate', 'session', false],
 	['db.connections.v2.read', 'session', false],
 	['db.connections.v2.status', 'session', false],
+	['db.connections.v2.test', 'session', false],
+	['db.connections.v2.cancelTest', 'session', false],
 	['db.connections.v2.ticket', 'session', false],
 	['db.deleteConnection', 'session', false],
 	['db.listConnections', 'session', false],
@@ -239,3 +241,6 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 	classOf: (method: string): MethodClass | undefined => BY_METHOD.get(method)?.cls,
 	entries: (): readonly MethodClassEntry[] => ENTRIES,
 });
+
+/** These operations own process-local admission and transport lifetimes. */
+export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set(['db.testConnection','db.connections.v2.test','db.connections.v2.cancelTest']);

@@ -1506,9 +1506,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const mod = await import('./db-rpc.js');
 			return mod.deleteConnectionRpc(params as { repoRoot?: unknown; id?: unknown }, context);
 		},
-		'db.testConnection': async (params) => {
+		'db.testConnection': async (params, context) => {
 			const mod = await import('./db-rpc.js');
-			return mod.testConnectionRpc(params as { repoRoot?: unknown; config?: unknown });
+			return mod.testConnectionRpc(params as { repoRoot?: unknown; config?: unknown }, context);
 		},
 
 		// ----- analyze.context.* IPCs (analyze framework Context Builder) -----

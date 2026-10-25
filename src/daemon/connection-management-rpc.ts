@@ -3,17 +3,21 @@ import { realpath } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 import type { RpcHandlers } from './server.js';
 import type { TrustedRpcContext } from './request-context.js';
-import type { ManagementRequestContext, ManagementCapabilities, MutationRequest } from '../shared/connection-management.js';
-import { parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../shared/connection-management-wire.js';
+import type { ManagementRequestContext, ManagementCapabilities, MutationRequest, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
+import { parseDraftTestRequest, parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../shared/connection-management-wire.js';
 import { canonicalRequestJson } from './db/management-tickets.js';
 import { ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
-import { driverDescriptors } from './db/driver-profiles.js';
+import { connectionTestSupervisor, DraftTestAdmissionError } from './db/draft-test.js';
+import { prepareRuntimeConfig } from './db/runtime-config.js';
+import { connectionManagementEnablement } from './db/management-enablement.js';
+import { lookupRepoId } from '../db/repos.js';
+import { driverDescriptors, materializeDraft } from './db/driver-profiles.js';
 import { savedConnectionResolver } from './db/pool-cache.js';
 import { loadConnections, connectionsPath } from './db/config.js';
 import { managementMarkerExists } from './db/managed-store.js';
 export const CONNECTION_V2_METHODS = [
 	'db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.connections.v2.list', 'db.connections.v2.read',
-	'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate',
+	'db.connections.v2.test', 'db.connections.v2.cancelTest', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate',
 ] as const;
 type Method = typeof CONNECTION_V2_METHODS[number];
 function object(value: unknown, required: readonly string[], optional: readonly string[] = []): Record<string, unknown> {
@@ -68,13 +72,37 @@ async function safeList(repoRoot: string, context: TrustedRpcContext) {
 		throw new ManagementServiceError('recovery-required');
 	return savedConnectionResolver.list({ lookupRoot: repoRoot, daemonEpoch: context.daemonEpoch });
 }
-export async function connectionManagementRpc(method: Method, value: unknown, transport?: TrustedRpcContext): Promise<unknown> {
+export interface ConnectionTestPorts {
+ readonly enabled?: (()=>Promise<boolean>) | undefined;
+ readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal)=>Promise<EffectiveDraft>) | undefined;
+ readonly isRegistered?: ((root:string)=>Promise<boolean>) | undefined;
+}
+export async function connectionManagementRpc(method: Method, value: unknown, transport?: TrustedRpcContext, testPorts:ConnectionTestPorts={}): Promise<unknown> {
 	try {
 		const context = trusted(transport);
 		if (!CONNECTION_V2_METHODS.includes(method)) throw new ManagementInputError();
+		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
+		if(method==='db.connections.v2.test'){
+			const request=parseDraftTestRequest(value);
+			return await connectionTestSupervisor.run(request,context,async signal=>{
+				if(!await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())throw new ManagementServiceError('upgrade-required');
+				signal.throwIfAborted();const repoRoot=await root(request.key.repoRoot,true);signal.throwIfAborted();
+				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal);
+				if(request.expectedRevision!==undefined){
+					if(!testPorts.prepareTemporary)throw new ManagementServiceError('upgrade-required');
+					const effective=await testPorts.prepareTemporary(request,context,signal);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
+				}
+				if(!await (testPorts.isRegistered??(async root=>await lookupRepoId(root)!==undefined))(repoRoot))throw new ManagementServiceError('invalid-input');
+				signal.throwIfAborted();
+				const effective=await materializeDraft({key:request.key,mode:'create',publicPatch:request.publicPatch,credentials:request.credentials,readSecret:async()=>{throw new ManagementServiceError('secret-unavailable');}});
+				signal.throwIfAborted();
+				return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
+			});
+		}
 		if (method === 'db.connections.v2.capabilities') {
 			const params = object(value, [], ['repoRoot']);
 			const features = ['safe-read', 'driver-descriptors'];
+			if(await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())features.push('draft-test','test-cancellation');
 			if (params.repoRoot !== undefined) {
 				const repoRoot = await root(params.repoRoot), service = savedManagementFor(repoRoot);
 				if (service) {
@@ -133,9 +161,9 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		return await (await owner(repoRoot)).retryActivation(managementContext(repoRoot, context), { key, committedRevision: params.committedRevision });
 	}
 	catch (error) {
-		return managementRejection(error instanceof SyntaxError ? new ManagementInputError() : error);
+		return managementRejection(error instanceof DraftTestAdmissionError ? new ManagementServiceError(error.code) : error instanceof SyntaxError ? new ManagementInputError() : error);
 	}
 }
-export function connectionManagementHandlers(): RpcHandlers {
-	return Object.fromEntries(CONNECTION_V2_METHODS.map(method => [method, (params: unknown, context?: TrustedRpcContext) => connectionManagementRpc(method, params, context)]));
+export function connectionManagementHandlers(testPorts:ConnectionTestPorts={}): RpcHandlers {
+	return Object.fromEntries(CONNECTION_V2_METHODS.map(method => [method, (params: unknown, context?: TrustedRpcContext) => connectionManagementRpc(method, params, context,testPorts)]));
 }

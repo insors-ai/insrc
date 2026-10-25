@@ -100,3 +100,5 @@ export class DraftTestSupervisor {
  }
  async shutdown():Promise<void>{this.#stopping=true;for(const active of this.#active.values())active.stop();await Promise.all([...this.#active.values()].map(active=>active.drained));}
 }
+/** Shared by v2 and legacy main-daemon adapters. */
+export const connectionTestSupervisor=new DraftTestSupervisor();

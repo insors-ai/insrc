@@ -22,16 +22,17 @@ import { randomUUID, createHash } from 'node:crypto';
 import type { TrustedRpcContext } from './request-context.js';
 import { managementContext } from './connection-management-rpc.js';
 import { getLogger } from '../shared/logger.js';
-import { familyOf, getFactory, kindExists, listRegisteredKinds, } from './db/registry.js';
+import { familyOf, kindExists, listRegisteredKinds, } from './db/registry.js';
 import { connectionsPath, loadConnections, repoIdOf, saveConnections, } from './db/config.js';
 import { deleteSecret, extractUrlPassword, makeSecretRef, referencedSecrets, credentialKeystore, } from './db/secrets.js';
 import { reloadAll } from './db/pool-cache.js';
 import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store.js';
 import { savedManagementFor, withSavedRootGate } from './db/management.js';
 import { materializeDraft, safeConnection } from './db/driver-profiles.js';
-import { fileExecutionPolicy } from './db/file-policy.js';
+import { connectionTestSupervisor } from './db/draft-test.js';
+import { assertDraftTestJson, assertNoRuntimeAuth } from '../shared/connection-management-wire.js';
 import { prepareRuntimeConfig } from './db/runtime-config.js';
-import type { ConnectionConfig, Driver, DriverFamily, } from '../shared/db-driver.js';
+import type { ConnectionConfig, DriverFamily, } from '../shared/db-driver.js';
 const log = getLogger('db-rpc');
 // ---------------------------------------------------------------------------
 // Common shapes
@@ -251,72 +252,29 @@ export interface TestConnectionResult {
 	readonly error?: string;
 	readonly tookMs: number;
 }
-export async function testConnectionRpc(params: {
-	readonly repoRoot?: unknown;
-	readonly config?: unknown;
-}): Promise<TestConnectionResult | {
-	error: string;
-}> {
-	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
-	if (repoRoot === '') {
-		return { error: 'repoRoot is required' };
-	}
-	const parsed = parseSaveInput(params.config);
-	if (typeof parsed === 'string') {
-		return { error: parsed };
-	}
-	// Two flows merge here: the pane has the full plaintext config
-	// (test-before-save), or the palette only has { id, kind, family }
-	// (test-persisted). For the latter we hydrate from
-	// db-connections.json before validating.
-	let cfg: SaveConnectionInput = parsed;
-	const hasUrl = cfg.url !== undefined && cfg.url !== '';
-	const hasPath = cfg.path !== undefined && cfg.path !== '';
-	if (!hasUrl && !hasPath) {
-		const existing = await loadConnections(repoRoot)
-			.then(r => r.resolved)
-			.catch(() => [] as readonly ConnectionConfig[]);
-		const lookupId = cfg.id;
-		const match = existing.find(c => c.id === lookupId);
-		if (match === undefined) {
-			return { error: `No persisted connection '${cfg.id}' for repoRoot ${repoRoot}` };
-		}
-		cfg = mergePersisted(cfg, match);
-	}
-	const validation = validateForFamily(cfg);
-	if (validation !== null) {
-		return { error: validation };
-	}
-	const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
-	const factory = getFactory(cfg.kind);
-	if (factory === undefined) {
-		return { error: `Unknown driver kind '${cfg.kind}'` };
-	}
-	const start = Date.now();
-	let driver: Driver | null = null;
-	try {
-		const transient = await materializeTransientConfig(cfg, family, repoRoot);
-		driver = await factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {
-				lookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',
-			}) } : undefined);
-		return { ok: true, kind: cfg.kind, family, tookMs: Date.now() - start };
-	}
-	catch (err) {
-		return {
-			ok: false,
-			kind: cfg.kind,
-			family,
-			error: familyOf(cfg.kind) === 'file' ? ((err instanceof Error && ['resource-limit', 'unsupported-temporary'].includes(err.message)) ? err.message : 'Temporary file initialization failed') : (err as Error).message,
-			tookMs: Date.now() - start,
-		};
-	}
-	finally {
-		if (driver !== null) {
-			await driver.close().catch(() => {
-			});
-		}
-	}
+export async function testConnectionRpc(params: {readonly repoRoot?: unknown; readonly config?: unknown}, context?: TrustedRpcContext): Promise<TestConnectionResult | {error:string}> {
+ const repoRoot=typeof params.repoRoot==='string'?params.repoRoot:'';
+ if(!context?.registerDrain)return {error:'Connection test transport is unavailable.'};
+ try{assertDraftTestJson(params);assertNoRuntimeAuth(params);}catch{return {error:'Invalid connection request.'};}
+ if(!repoRoot)return {error:'repoRoot is required'};
+ const parsed=parseSaveInput(params.config);if(typeof parsed==='string')return {error:'Invalid connection request.'};
+ let family:DriverFamily=parsed.family??familyOf(parsed.kind)??'rdbms';
+ try {
+  const result=await connectionTestSupervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot,scope:'saved',id:parsed.id},publicPatch:{},credentials:{}},context,async signal=>{
+   signal.throwIfAborted();let cfg:SaveConnectionInput=parsed;
+   if(!cfg.url&&!cfg.path){
+    const existing=await loadConnections(repoRoot);signal.throwIfAborted();
+    const match=existing.resolved.find(c=>c.id===cfg.id);if(!match)throw new Error();cfg=mergePersisted(cfg,match);
+   }
+   if(validateForFamily(cfg)!==null||!kindExists(cfg.kind))throw new Error();
+   family=cfg.family??familyOf(cfg.kind)??'rdbms';
+   const config=await materializeTransientConfig(cfg,family,repoRoot,signal);signal.throwIfAborted();
+   return {config,credentialActions:{}};
+  });
+  return {ok:result.status==='reachable',kind:parsed.kind,family,tookMs:result.tookMs,...(result.safeMessage?{error:result.safeMessage}:{})};
+ }catch{return {ok:false,kind:parsed.kind,family,tookMs:0,error:'Connection test failed.'};}
 }
+
 function mergePersisted(input: SaveConnectionInput, persisted: ConnectionConfig): SaveConnectionInput {
 	// Preserve the user-supplied input fields (in case the test has
 	// edits over what's persisted), only fill in the holes from disk.
@@ -463,7 +421,7 @@ function buildPersistedConfig(input: SaveConnectionInput, family: DriverFamily, 
  * `testConnectionRpc`; the production hot path goes through the
  * pool which does the same transforms.
  */
-async function materializeTransientConfig(input: SaveConnectionInput, family: DriverFamily, repoRoot: string): Promise<ConnectionConfig> {
+async function materializeTransientConfig(input: SaveConnectionInput, family: DriverFamily, repoRoot: string, signal?: AbortSignal): Promise<ConnectionConfig> {
 	const base: {
 		-readonly [K in keyof ConnectionConfig]: ConnectionConfig[K];
 	} = {
@@ -491,7 +449,9 @@ async function materializeTransientConfig(input: SaveConnectionInput, family: Dr
 	const suppliedRefs = referencedSecrets(base);
 	let allowedRefs: ReadonlySet<string> = new Set();
 	if (suppliedRefs.size > 0) {
+		signal?.throwIfAborted();
 		const snapshot = await loadConnections(repoRoot);
+		signal?.throwIfAborted();
 		const stored = snapshot.file.connections.find(config => config.id === input.id && config.kind === input.kind);
 		allowedRefs = referencedSecrets(stored);
 		if ([...suppliedRefs].some(ref => !allowedRefs.has(ref)))
@@ -499,7 +459,7 @@ async function materializeTransientConfig(input: SaveConnectionInput, family: Dr
 	}
 	const effective = await materializeDraft({ key: { scope: 'saved', repoRoot: resolve(repoRoot), id: input.id },
 		mode: 'update', current: { config: base, revision: 'private-probe' }, expectedRevision: 'private-probe', publicPatch: {},
-		readSecret: async (ref) => allowedRefs.has(ref) ? credentialKeystore.getKey(ref) : null,
+		readSecret: async (ref) => { signal?.throwIfAborted(); const value=allowedRefs.has(ref)?await credentialKeystore.getKey(ref):null;signal?.throwIfAborted();return value; },
 	});
-	return prepareRuntimeConfig(effective.config, repoRoot);
+	return prepareRuntimeConfig(effective.config, repoRoot, signal);
 }

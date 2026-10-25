@@ -22,6 +22,7 @@ import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope } from './channel.js';
+import { MAIN_DAEMON_CONNECTION_METHODS } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
@@ -113,7 +114,7 @@ export class Router {
 	};
 
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
-		if (cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
+		if (MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver);

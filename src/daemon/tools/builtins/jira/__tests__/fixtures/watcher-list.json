@@ -1,0 +1,22 @@
+{
+  "isWatching": true,
+  "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/issue/IN-1/watchers",
+  "watchCount": 1,
+  "watchers": [
+    {
+      "accountId": "712020:00000000-0000-0000-0000-000000000000",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+        "16x16": "https://secure.gravatar.com/avatar/5fc9b99972e1a4019cf72d925c767323?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSG-2.png",
+        "24x24": "https://secure.gravatar.com/avatar/5fc9b99972e1a4019cf72d925c767323?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSG-2.png",
+        "32x32": "https://secure.gravatar.com/avatar/5fc9b99972e1a4019cf72d925c767323?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSG-2.png",
+        "48x48": "https://secure.gravatar.com/avatar/5fc9b99972e1a4019cf72d925c767323?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSG-2.png"
+      },
+      "displayName": "Test User",
+      "emailAddress": "user@example.com",
+      "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/user?accountId=712020%3A00000000-0000-0000-0000-000000000000",
+      "timeZone": "Asia/Calcutta"
+    }
+  ]
+}

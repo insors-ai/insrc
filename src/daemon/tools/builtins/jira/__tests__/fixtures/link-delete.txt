@@ -1,0 +1,2 @@
+✓ Link has been successfully deleted (10001)
+1 work item links out of 1 were deleted

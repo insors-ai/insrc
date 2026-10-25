@@ -44,8 +44,8 @@ test('CM-S2-G2: real maintenance ownership and activity retain admitted drain an
  const cancelled=new RequestLifetime();const cancel=router.forward(request(cancelled),()=>{throw new Error('closed socket reply');});cancel();await cancelled.completed;await cancelled.drained;
  await new Promise(r=>setImmediate(r));assert.equal(calls,1);assert.equal(active,0);
  const {mock}=await import('node:test');const spy=mock.method(manager,'request',async()=>{throw new Error('lock failed');});
- try {const failed=new RequestLifetime();router.forward(request(failed),()=>{});await failed.completed;await failed.drained;}finally{spy.mock.restore();}
- const unknown=new RequestLifetime();router.forward({...request(unknown),method:'unknown'},()=>{});await unknown.completed;await unknown.drained;
+ let failedReplies=0;try {const failed=new RequestLifetime();router.forward(request(failed),()=>{failedReplies++;});await failed.completed;await failed.drained;assert.equal(failedReplies,1);}finally{spy.mock.restore();}
+ const unknown=new RequestLifetime();let unknownReplies=0;router.forward({...request(unknown),method:'unknown'},()=>{unknownReplies++;});await unknown.completed;await unknown.drained;assert.equal(unknownReplies,1);
  await new Promise(r=>setImmediate(r));assert.equal(active,0);assert.equal(manager.query().held.length,0);
 });
 
@@ -63,4 +63,25 @@ test('CM-S2-G1: routed streams retain frame cancellation behavior and crashed un
   for(const orphan of router.detach(1))orphan.deliver({kind:'reply',requestId:orphan.requestId,error:'worker crashed'});
   await lifetime.completed;await lifetime.drained;await Promise.resolve();assert.equal(active,0);
  }finally{router.detach(1);port1.close();port2.close();}
+});
+
+test('CM-S2-G2: real socket disconnect after admission retains timeout cleanup maintenance and activity',async()=>{
+ const {createLockBlock,installLockManager,LockManager}=await import('../../../shared/locks/lock-manager.js');
+ const {enableMaintenanceLock,MAINTENANCE_LOCK}=await import('../../../shared/locks/maintenance-lock.js');
+ const {IpcServer}=await import('../../server.js');const {mkdtemp,rm}=await import('node:fs/promises');const {tmpdir}=await import('node:os');const {join}=await import('node:path');const {connect}=await import('node:net');
+ const root=await mkdtemp(join(tmpdir(),'cm-lifetime-socket-')),path=join(root,'test.sock'),block=createLockBlock(),locks=installLockManager(block),other=new LockManager(block,{threadId:9103});enableMaintenanceLock();
+ let active=0,release!:()=>void,entered!:()=>void,finish!:()=>void;
+ const pending=new Promise<void>(r=>{release=r;}),started=new Promise<void>(r=>{entered=r;}),respond=new Promise<void>(r=>{finish=r;});let lifetime:RequestLifetime|undefined;
+ const router=new Router({classOf:()=>undefined,registry:new TargetRegistry(),routed:new Set(),onRequest:()=>{active++;return()=>{active--;};},local:directDispatch({test:async(_p,context)=>{context!.registerDrain!(pending);entered();await respond;return {status:'timeout'};}})});
+ const server=new IpcServer((request,deliver)=>{lifetime=request.lifetime;return router.forward(request,deliver);},Date.now,path);await server.listen();const socket=connect(path);await once(socket,'connect');let replies=0;socket.on('data',()=>{replies++;});
+ try{
+  socket.write(JSON.stringify({id:1,method:'test',params:{}})+'\n');await started;socket.destroy();
+  while(!lifetime!.signal.aborted)await new Promise(r=>setImmediate(r));finish();await lifetime!.completed;
+  assert.equal(active,1);assert.equal(replies,0);
+  assert.equal(await other.request(MAINTENANCE_LOCK,{mode:'exclusive',ifAvailable:true},lock=>lock!==null),false);
+  release();await lifetime!.drained;await new Promise(r=>setImmediate(r));assert.equal(active,0);assert.equal(locks.query().held.length,0);assert.equal(replies,0);
+  assert.equal(await other.request(MAINTENANCE_LOCK,{mode:'exclusive',ifAvailable:true},lock=>lock!==null),true);
+  const queuedRouter=new Router({classOf:()=> 'admin',registry:new TargetRegistry(),routed:new Set(['admin']),local:()=>{throw new Error('not admitted');},onRequest:()=>{active++;return()=>{active--;};}});
+  const queued=new RequestLifetime();let queuedReplies=0;queuedRouter.forward(request(queued),()=>{queuedReplies++;})();await queued.completed;await queued.drained;await Promise.resolve();assert.equal(queuedReplies,0);assert.equal(active,0);assert.equal(locks.query().held.length,0);
+ }finally{finish();release();socket.destroy();await server.close();await rm(root,{recursive:true,force:true});}
 });

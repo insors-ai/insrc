@@ -732,3 +732,23 @@ Keep the same sc5 session/capability protocol and sc1/sc2/sc3/sc8 contracts, but
 - **[[c25]]** `code` `src/analyze/measure.ts:606`
 - **[[c26]]** `code` `src/daemon/db/config.ts:47` — "repoIdOf hashes the exact supplied repoPath and connectionsPath uses that hash."
 - **[[c27]]** `prior-artifact` `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md:112` — "duplicates across visible scopes fail"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 12 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T11:06:14.571Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| change-sites | The linked ER and sequence companions render correctly and remain visually consistent with their source. | Inspected both HTML files, their embedded Mermaid definitions and generated description tables. Attempting to open the ER companion returned 'Browser is not available: iab'; browser inventory was empty. Diagram layout, clipping and successful runtime rendering could not be verified. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html] | Render both companions in an available browser and inspect them; request author regeneration if rendering or layout is defective. |

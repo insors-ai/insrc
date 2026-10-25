@@ -86,9 +86,12 @@ export async function listModels(
   const registry = deps.registry();
   const provider = extractProvider(params, registry);
   if (provider === undefined) {
-    // The local family first, then the CLI families in file order (the text callers know).
+    // The local family first, then the CLI families by id: the text callers
+    // know, whatever order the definitions file lists the families in.
     const families = registry.families();
-    const ids = [...families.filter(f => f.cliKind === undefined), ...families.filter(f => f.cliKind !== undefined)].map(f => `'${f.id}'`);
+    const local = families.filter(f => f.cliKind === undefined).map(f => f.id);
+    const cli = families.filter(f => f.cliKind !== undefined).map(f => f.id).sort();
+    const ids = [...local, ...cli].map(id => `'${id}'`);
     return {
       error: `invalid-params: provider must be one of ${ids.join(' | ')}`,
       recoverable: false,

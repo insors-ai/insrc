@@ -215,4 +215,15 @@ test("list-models.test.ts: providers.listModels admits exactly the registry's fa
   for (const bad of ['cli-gemini', 'Ollama', 'claude', 'codex', '']) {
     assert.deepEqual(await listModels({ provider: bad }, deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, bad);
   }
+
+  // The same text when the definitions file lists the families in another order.
+  _resetModelRegistryForTests();
+  const reordered = fixture();
+  reordered['defaultFamily'] = 'cli-codex';
+  reordered['families'] = [...(reordered['families'] as unknown[])].reverse();
+  const assets = tmp();
+  writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(reordered));
+  _setModelCatalogDirForTests(assets);
+  assert.deepEqual(getModelRegistry().families().map(f => f.id), ['ollama', 'cli-codex', 'cli-claude']);
+  assert.deepEqual(await listModels({ provider: 'cli-gemini' }, fakeDeps().deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false });
 });

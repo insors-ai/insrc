@@ -466,6 +466,8 @@ Type and classify only the 46 existing gh tools here and assign every other oper
   - **resolved**: Fail on failed log call — Same rule the user accepted for git_show's diff. _(2026-10-25T13:47:51.906Z)_
 - `q3feb37ac` — gpg-key list and ssh-key list return untyped rows because gh does not document their columns and the sign-in here lacks the scopes to list them; a later change can name the columns once they are verified.
   - **resolved**: Keep rows untyped — gh does not document the columns and the sign-in lacks the scopes to verify them. _(2026-10-25T13:57:21.314Z)_
+- `q042cd74a` — codespace create always accepts the permissions the devcontainer requests (--default-permissions), and the notice is in the approval preview content; confirm this is acceptable, since the alternative would be to refuse codespaces that request extra permissions.
+  - **resolved**: Accept with preview notice — As in the approved LLD; the user can reverse it at plan approval. _(2026-10-25T13:57:52.406Z)_
 
 ## Citations
 

@@ -85,6 +85,13 @@
         "choice": "Keep rows untyped",
         "rationale": "gh does not document the columns and the sign-in lacks the scopes to verify them.",
         "resolvedAt": "2026-10-25T13:57:21.314Z"
+      },
+      "q042cd74a": {
+        "question": "codespace create always accepts the permissions the devcontainer requests (--default-permissions), and the notice is in the approval preview content; confirm this is acceptable, since the alternative would be to refuse codespaces that request extra permissions.",
+        "status": "resolved",
+        "choice": "Accept with preview notice",
+        "rationale": "As in the approved LLD; the user can reverse it at plan approval.",
+        "resolvedAt": "2026-10-25T13:57:52.406Z"
       }
     }
   },

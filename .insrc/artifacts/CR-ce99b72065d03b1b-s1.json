@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792941590018-nzfeb3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T15:19:50.019Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 58048,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/assets/models/cloud-model-catalog.json",
+        "src/daemon/__tests__/model-catalog-asset.test.ts",
+        "src/daemon/__tests__/model-catalog.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/model-catalog.ts",
+        "src/daemon/__tests__/model-registry.test.ts",
+        "src/daemon/model-registry.ts",
+        "src/shared/paths.ts",
+        "src/daemon/threads/__tests__/helpers/registry-worker.ts",
+        "src/daemon/threads/__tests__/worker-model-registry.test.ts",
+        "src/daemon/threads/worker-entry.ts",
+        "src/daemon/__tests__/boot-model-catalog.test.ts",
+        "src/daemon/index.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/model-registry.ts:1",
+            "message": "getModelRegistry coverage is present but failing/unverified: its only testsReaching file, threads/__tests__/helpers/registry-worker.ts, is absent from the test record, so that edge is unverified. The promised registry and worker tests are present and passing; this is a coverage-evidence observation.",
+            "expectationRef": "getModelRegistry",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "638903"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

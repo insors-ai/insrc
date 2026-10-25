@@ -13,7 +13,7 @@
       "sourceInspected": true,
       "renderingVerified": false,
       "limitation": "Browser rendering unavailable; do not claim visual verification",
-      "sha256": "45c17aabb8fd8543e818ec08c181b107cc20ee185d1f4d35b39c651ed3d96eca"
+      "sha256": "4ae9f154ce248a564e0f480cb8bfc85ac17d7c715896ffaed862be71a8844e56"
     },
     {
       "file": "sequence-diagram.html",
@@ -21,7 +21,7 @@
       "sourceInspected": true,
       "renderingVerified": false,
       "limitation": "Browser rendering unavailable; do not claim visual verification",
-      "sha256": "f269d63ed601e6be3df87ca507fa782711d2b2e4957271e6e14244505aa3fdf7"
+      "sha256": "5aefb714f23c416ff5856336fd3719690ca380c1d6ed50a3aaad5a7036327a83"
     }
   ],
   "latestReview": {
@@ -82,5 +82,15 @@
       "canonical root/alias lock identity and production race matrix across adopted/unadopted roots"
     ],
     "round3RecoveredResult": "Legacy saved-writer collision closed. New blockers: unverified client reasoning prompt egress and asynchronous runtime driver logs bypass admission/sanitization."
+  },
+  "reviewCycle3": {
+    "authorizedBy": "user",
+    "status": "round1 corrections ready for independent review",
+    "changes": [
+      "enforced workbench-ui vs mcp-unverified delegation audience",
+      "all client-authored multi-turn and one-shot MCP temporary output refused before state/prompt/error evidence",
+      "all runtime driver factories carry immutable resource quiet policy through async SDK events and disposal",
+      "admitted provider and structured-output inner retry diagnostics quiet per run, saved logging unaffected"
+    ]
   }
 }

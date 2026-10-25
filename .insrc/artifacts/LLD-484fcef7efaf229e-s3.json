@@ -198,12 +198,12 @@
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     },
-    "updatedAt": "2026-10-25T09:51:15.140Z"
+    "updatedAt": "2026-10-25T10:27:39.732Z"
   },
   "body": {
     "summary": {
       "audience": "product",
-      "prose": "Temporary connections belong to a workbench session and a selected repository, so one-off files and other sources can be analyzed without saving connection configuration or credentials. Closing the panel or switching repositories preserves them; ending the workbench, losing its 90-second lease or restarting the daemon expires them. This story supplies the daemon session protocol and execution isolation; S005 supplies the lifetime explanation and manager UI. Temporary data uses a verified local nonpersistent provider mode for LLM analysis; unavailable modes and query-embedding retrieval/lineage paths fail explicitly without changing the selected model tier."
+      "prose": "Temporary connections belong to a workbench session and a selected repository, with configuration and credentials kept in memory. Panel closure or repository switching preserves them; workbench end,90-second lease loss or daemon restart expires them. S003 supplies the daemon protocol and isolated runtime, while S005 supplies the manager and lifetime explanation. LLM analysis uses an admitted local daemon route; unverified MCP reasoning and query-embedding retrieval/lineage modes fail explicitly."
     },
     "hldContextSlice": {
       "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
@@ -357,7 +357,7 @@
       "api": [
         {
           "name": "TemporaryConnectionStore",
-          "signature": "interface TemporaryConnectionStore { open(context: TrustedRpcContext, request: { repoRoot: string }): Promise<OpenConnectionSessionResult>; resume(context: TrustedRpcContext, request: SessionResume): Promise<OpenConnectionSessionResult>; heartbeat(context: TrustedRpcContext): Promise<{ status: 'active'; leaseMs: 90000 }>; register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; delegate(context: TrustedRpcContext, request: { repoRoot: string }): Promise<SessionResume>; end(sessionHandle: string): Promise<void>; }",
+          "signature": "interface TemporaryConnectionStore { open(context: TrustedRpcContext, request: { repoRoot: string }): Promise<OpenConnectionSessionResult>; resume(context: TrustedRpcContext, request: SessionResume): Promise<OpenConnectionSessionResult>; heartbeat(context: TrustedRpcContext): Promise<{ status: 'active'; leaseMs: 90000 }>; register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; delegate(context: TrustedRpcContext, request: { repoRoot: string; audience: 'workbench-ui' | 'mcp-unverified' }): Promise<SessionResume>; end(sessionHandle: string): Promise<void>; }",
           "parameters": [
             {
               "name": "context",
@@ -401,7 +401,8 @@
             "Open creates a random256-bit handle, separate random256-bit bearer capability and random session-memory HMAC key; only capability digest is retained for constant-time verification. Dedicated control transport attachment survives transient reconnect through resume; data/MCP transports use attach and cannot renew the lease.",
             "Canonical registered-root eligibility is required for each temporary management operation and overlay. One session may own overlays for multiple eligible roots; panel/repo switch never ends it. No authorization from PID/client label/chat ID.",
             "Session methods and all session-bound data work route to main daemon, not worker-thread stores. A daemon-owned immutable access context is bound to request lifetime and validated again after awaits.",
-            "Control and data authority use DISTINCT role-bound capability digests. Open/resume returns only control capability; new strict db.connections.v2.session.delegate on the current control transport validates canonical registered repoRoot and mints a data-only SessionResume token bound to session/root/control-generation. Private MCP bootstrap passes only that data token. session.attach accepts SessionResume plus exact repoRoot and never accepts a control token. Resume accepts only the control capability; data tokens cannot resume, delegate, heartbeat or end, even on a fresh socket. No role comes from a client-supplied label. Bound32 active delegation tokens per session; expired/revoked tokens are removed and quota refusal is busy."
+            "Control and data authority use DISTINCT role-bound capability digests. Open/resume returns only control capability; new strict db.connections.v2.session.delegate on the current control transport validates canonical registered repoRoot and mints a data-only SessionResume token bound to session/root/control-generation. Private MCP bootstrap passes only that data token. session.attach accepts SessionResume plus exact repoRoot and never accepts a control token. Resume accepts only the control capability; data tokens cannot resume, delegate, heartbeat or end, even on a fresh socket. No role comes from a client-supplied label. Bound32 active delegation tokens per session; expired/revoked tokens are removed and quota refusal is busy.",
+            "Data delegation audience is selected only by current authenticated control and stored server-side. Workbench MCP launcher always receives mcp-unverified, never workbench-ui or control capability. Unverified MCP reasoning/data egress has no supported temporary mode in S003; deny before runner, continuation load, trace, prompt, result or error-evidence construction."
           ],
           "postconditions": [
             "Open/resume returns heartbeatMs30000/leaseMs90000. Heartbeat is accepted only on current control generation; resume atomically increments generation and detaches the old control transport. An exactly-at-deadline request expires before authorization; only a valid pre-deadline heartbeat extends the monotonic deadline.",
@@ -410,7 +411,8 @@
             "Create/update commits memory entry + revision + receipt atomically under the same root gate as saved ID reservation. Activation is afterward; failure does not erase committed truth. Existing active leases refuse update; no user remove workflow in S003.",
             "End/lease expiry first closes admission and detaches every transport; cancels owned runs/probes/conversion and synchronously prevents further resolution; drops capabilities/receipts/config secret references, then awaits active operations and owned close. Failures leave a closed cleanup record with only owned runtime handles and safe counters; no success reported while a child/resource remains. Daemon shutdown awaits drains; process restart has no recoverable temporary state.",
             "Limit64 live sessions,64 connections/session,8MiB cumulative serialized config/session and16384 receipts/session; return existing busy on quota before committing, never evict live receipts silently. Per temporary file resource uses existing sc8 memoryBudgetBytes256MiB/allowSpillfalse; file source/data/config/capability material never goes to temp/cache/logs. Budgets are fixed internal limits, not a UI option. JS garbage collection limits mean logical erasure rather than guaranteed physical zeroization.",
-            "Control resume revokes old-generation data attachments/delegations after canceling their in-flight work, preserving overlay state. Current control can re-delegate over the existing private child control pipe; each forwardStep attaches its fresh socket with the current root-bound data token. Lost/revoked bootstrap fails session-expired until refreshed, never saved-only fallback. Parent/workbench lifetime integration remains S005; sc5 owns only this protocol and backend authority."
+            "Control resume revokes old-generation data attachments/delegations after canceling their in-flight work, preserving overlay state. Current control can re-delegate over the existing private child control pipe; each forwardStep attaches its fresh socket with the current root-bound data token. Lost/revoked bootstrap fails session-expired until refreshed, never saved-only fallback. Parent/workbench lifetime integration remains S005; sc5 owns only this protocol and backend authority.",
+            "A workbench-ui audience can invoke admitted daemon-owned one-shot and deterministic data operations; mcp-unverified receives only safe metadata/fixed refusal, never session data/config/derived reports. All step phases and final/partial/progress/error channels enforce this distinction."
           ]
         },
         {
@@ -447,7 +449,8 @@
             "Session overlay returns safe projection only; credentials and HMAC/capability never leave owner. Every list/lease/withConnection revalidates state; no global current session or ambient AsyncLocalStorage persisted state.",
             "All current data consumers receive explicit immutable access context via ToolDeps and analyzer runtime/exploration/measure context. Request/run registry holds owner/run IDs and cancellation only in daemon memory. Wire thread projection has no capability; session work stays main-daemon and no handle/capability enters checkpoint/telemetry/prompt/artifact serialization.",
             "MCP child initial capability arrives on a private inherited control pipe, never argv/settings/config/log; child attaches its RPC data transport then discards raw bootstrap buffer and clears environment fallback. Unattached MCP remains saved-only. Reconnect requires explicit resume; an old run with lost temporary context rejects session-expired instead of saved fallback.",
-            "Session lifetime cancellation is registered through S002 RequestLifetime drains and propagated through full analyzer/tool driver callback lifetime. Existing callback leases prevent premature release; do not reconstruct lease counters in consumers."
+            "Session lifetime cancellation is registered through S002 RequestLifetime drains and propagated through full analyzer/tool driver callback lifetime. Existing callback leases prevent premature release; do not reconstruct lease counters in consumers.",
+            "Resolver access is not an egress grant. Output audience is enforced by owner/host before resolution; no session-derived result can escape through an unverified MCP one-shot, multi-turn prompt or error envelope."
           ]
         },
         {
@@ -661,6 +664,27 @@
           "src/daemon/threads/router.ts",
           "src/daemon/handler-runtime.ts"
         ]
+      },
+      {
+        "entity": "ClientEgressAndResourceLogAuthority",
+        "change": "invariant-change",
+        "details": "### Enforced client-reasoning egress boundary\n\nThe outer client's LLM is an independent provider and is NOT made private by the daemon LLMProvider guard. No outer MCP client is currently verified as a nonpersistent reasoning provider. Therefore S003 rejects session-memory insrc_analyze_step at EVERY phase, and rejects session-memory insrc_analyze too, before invoking handlers, loading continuation results, constructing prompts or running lookups. It does not return emit_plan, emit_narrow, emit_bundle, prompt, userTurn, result-bearing state, partial results, final bundles/reports or raw error evidence for these requests. This explicit unsupported mode replaces earlier references to session-bound MCP reasoning continuation support. Unattached saved-only MCP behavior is unchanged. [[c19]]\n\nControl delegation gains the required request field audience: 'workbench-ui' | 'mcp-unverified'. Only an authenticated current control transport can choose one of those two fixed audiences at delegation; the owner stores it with root/generation/digest. There is no client-verified or provider-trusted enum value. SessionResume stays an opaque token; attach derives audience from its server-memory record, never from a client label, PID, p.context, MCP tool args or a returned model name. The workbench MCP launcher always requests mcp-unverified and passes that restricted data token over its private pipe, never a UI/control token. A child cannot promote or relabel it. Workbench UI uses its separate root-bound UI data token. Parent/client integration is S005; sc5 supplies and enforces this backend protocol. The design does not try to prevent a user deliberately copying visible data; it prevents automatic unverified reasoning egress through our transports.\n\nThe mcp-unverified audience has no temporary data/config/output-producing methods: root-bound attach, fixed capability/descriptors and safe fixed refusal only. For step.call, both one-shot and multi-turn analyze are rejected before runner dispatch; other persistence-capable step tools were already refused. There is no automatic one-shot fallback, detach-and-retry, saved-only substitution, or final-report exception. Returning only a final tool report would still expose temporary data to the same unverified outer LLM and is forbidden. Denial is fixed nonretryable unsupported-temporary with no echoed focus, root, ID, canary, executed output or dynamic session details. Trace/progress/JSON error payloads must not include the rejected request. Existing session continuations, if any from an older implementation, are owner-bound and cannot be read/replayed by an unattached or reasoning-audience socket.\n\nTrusted workbench UI data operations and direct daemon one-shot analysis remain the supported route. The daemon owns all model turns using the admitted provider facade, keeps reasoning state/results in owner memory, and sends UI-bound result/status only after audience/owner/revision validation. UI integration may render those results in memory, but cannot automatically export them to an outer LLM, chat transcript, webview persistent state or artifact/checkpoint store. Multi-turn client-authored preparation APIs such as prepareSynthesize/prepareAnswerTurn/narrow handoff are denied for session memory even when reached in-process without the MCP host. The supported daemon pipeline uses the admitted decompose/narrow/synthesize execution functions, not their prepare-to-client counterparts. Failure paths (including a missing synthesizer prompt) cannot send StepErrorData.results/report. Temporary source config/credentials/capabilities never enter prompts on either route.\n\nRequired real regression CM-S3-CLIENT-EGRESS starts the actual forwardStep→socket attach→step.call chain with an mcp-unverified token. Invoke start/plan/narrow/bundle, forged continuation/phase inputs, one-shot and forced error/partial-result paths; assert zero session lookup/state-output access/daemon provider calls and capture every response/progress/error/log/trace frame to prove no data canary or reasoning prompt leaves the daemon. Include a preexisting owner-memory continuation and wrong/unattached replay. Client labels codex/claude and spoofed provider proof cannot bypass refusal. Positive controls: saved-only MCP multi-turn remains usable, and a separate authenticated UI token can run an admitted daemon pipeline with results delivered only to that owner channel. S005 handoff must prove it never supplies a UI token to the MCP child or auto-persists/forwards the UI report.\n\n### Immutable per-resource runtime logging\n\nOuter RPC error translation is insufficient: SDK event listeners and debug output can fire outside any callback. Main-daemon temporary construction therefore receives an immutable daemon-only runtimeLogPolicy:'temporary-quiet' through the existing optional DriverFactoryContext. This is a proposed additive internal field, not renderer config/options or a new BaseDriver method. The context is passed for ALL families, not only file kinds, and every kind/alias wrapper must forward it to constructor before an SDK/client/error listener is created. Renderer options cannot select saved logging or override this policy. A resource always keeps the quiet sink until definitive disposal, including late callbacks, expiry, failed activation and close failure; absence of a live session never causes fallback to a saved/module logger. [[c20]]\n\nProposed src/daemon/db/driver-log-policy.ts defines a private resource sink with fixed safe event codes and optional numeric counters, not a pino.Logger type in shared application contracts. In temporary-quiet mode it has no durable/stdout/stderr transport and does not accept or format raw Error/config/query/data values. Existing saved diagnostics may be built lazily only in the saved-default branch; temporary code must branch before evaluating err.message or a source-bearing payload formatter. Concrete drivers use the resource sink for all logs instead of closed-over module log variables. SDK logging callbacks/configuration are per client: ClickHouse OFF, Memcached no-op, and explicit installed-SDK diagnostic suppression where available. Global console functions, setLogMode, process.env and shared cached pino loggers are never replaced or disabled. Concurrent saved logging remains live. If ambient process/SDK diagnostics cannot be contained per resource, refuse unsupported-temporary before supplying config to that factory rather than modifying the process-wide logger.\n\nPrivacy closure includes construction, query/metadata/schema debug, retry/reconnect, event listeners and close/drain. PG/Redis error listeners consume the event with an immutable quiet closure, not a runtime lookup of current context; quiet errors are translated into fixed owner-state failure codes without emitting the raw object/message. Keep the safe error-consumption listener while the SDK can still emit during shutdown; remove other owned listeners/timers at definitive close. No global registry retains closed drivers or raw credential/config in a log closure. The listener may remain as an inert no-op on an otherwise unreachable SDK object to avoid an unhandled late 'error'; it must not retain session/config/request objects. Other logs/SDK sinks are audited for every concrete module and all29 registered aliases; no-app-log modules are explicitly classified, not assumed silent. S001 sc8 conversion/lifecycle remains consumed unchanged; this is the S003 runtime binding and per-resource diagnostic integration.\n\nQuiet-capable factory and SDK closure proof must be current BEFORE constructor receives plaintext effective config. The release evidence binds source/compiled factory/constructor/helper/SDK versions and all kind aliases; a new/unknown factory or a wrapper that drops context fails unsupported-temporary before construction. Do not rely on a driver returning a 'quiet' flag after it has already logged initialization. Saved default constructions and S002 isolated probe bootstrap retain existing behavior. A private helper never instantiates or reconfigures the shared normal logger on a quiet resource path; the daemon may still publish coarse safe process counters without source/credential/data content as allowed by HLD observability.\n\nRequired CM-S3-DRIVER-LOGS uses real registered PG and Redis/Valkey/KeyDB instances and actual SDK EventEmitters/local services under normal daemon pino-roll with trace logging enabled. Emit errors containing distinct endpoint/password/SQL/source-data canaries after callbacks, while idle, during delayed close, after lease release and during expiry/failed-close cleanup. Trigger real query/debug/SDK failure paths for all other concrete modules/aliases. Capture actual daemon log files and stdout/stderr through flush/settle, not only a mocked logger; inject a saved-resource positive-control marker concurrently and assert it is present while every temporary canary is absent. Verify no global mode/console/env/logger-cache mutation and correct per-instance context forwarding. Unknown quiet factory or uncontainable diagnostics refuses with zero constructor/config handoff. These are planned build tests, not current passing implementation evidence.\n\n| Production site | Current owner/behavior | Proposed owner/change | Required regression |\n| --- | --- | --- | --- |\n| src/daemon/connection-management-rpc.ts; src/daemon/request-context.ts; src/daemon/server.ts | Session data delegation currently identifies root/generation but not an enforced output audience. | Authenticated control delegates one server-stored audience: workbench-ui or mcp-unverified. Attach validates token claims; callers cannot promote audience through p.context, client label, PID or tool arguments. Copy audience into immutable local request authority. Unverified MCP audience denies every temporary data/config/output-producing call before dispatch and trace/log serialization. | CM-S3-CLIENT-EGRESS |\n| src/mcp/forward-step.ts; src/daemon/steps/host.ts; src/shared/step-context.ts | Fresh MCP socket sends step.call; host can route every analyze phase. | Bootstrap contains only mcp-unverified data token. Each socket attaches first; host refuses session-bound insrc_analyze_step AND insrc_analyze with a fixed nonretryable unsupported-temporary envelope BEFORE invoking a runner. No one-shot report fallback, automatic detach/saved retry or client label as provider proof. Saved-only unattached MCP behavior is unchanged. | CM-S3-CLIENT-EGRESS |\n| src/daemon/steps/analyze-step/handler.ts; src/daemon/steps/analyze-step/state.ts; src/daemon/steps/analyze-step/state-store.ts; src/daemon/steps/analyze-step/phases/start.ts; src/daemon/steps/analyze-step/phases/plan.ts; src/daemon/steps/analyze-step/phases/narrow.ts; src/daemon/steps/analyze-step/phases/bundle.ts | Multi-turn phases return emit_plan/emit_narrow/emit_bundle, executed result state and client-authored bundle. | Defense in depth rejects any session-memory client-authored multi-turn dispatch before trace, state read/update or lookups, even when invoked in-process without host wrapper. Owner-bound legacy/stale tokens cannot be replayed on an unattached/different audience transport. Raw old temporary state is invalidated, never serialized in the rejection. | CM-S3-CLIENT-EGRESS |\n| src/daemon/steps/analyze-step/answer-turn.ts; src/analyze/context/synthesizer.ts; src/analyze/context/decomposer.ts; src/analyze/explore/executor.ts | prepareAnswerTurn/prepareSynthesize and narrow preparation can embed results in userTurn or error data without a daemon provider call. | prepare* client-handoff entry points reject session-memory execution before constructing userTurn/prompt/schema/result/error-evidence envelopes; stepPlan may not yield a temporary narrow reasoning turn to an outer client. Trusted workbench daemon one-shot instead uses existing admitted decompose/narrow/synthesize calls entirely within owner execution. Keep existing client-authored saved-only workflow unchanged. | CM-S3-CLIENT-EGRESS |\n| src/daemon/steps/analyze-oneshot.ts; src/daemon/analyze-rpc.ts; src/analyze/orchestrator/driver.ts | One-shot can return final bundles/reports through MCP or direct UI RPC. | mcp-unverified is denied before work, not merely before emit_bundle. Only workbench-ui audience may invoke the admitted daemon pipeline and receive final report/status/result over its bound channel. UI must render only in memory and never auto-forward reports to client LLM/chat history/workbench persistent state. Terminal/progress/error send validates audience and owner again; no data-bearing partial error after cancellation. | CM-S3-CLIENT-EGRESS; CM-S3-CACHE |\n| src/shared/db-driver.ts; src/daemon/db/registry.ts; src/daemon/db/drivers/index.ts | DriverFactoryContext carries fileExecutionPolicy only; registered factories may ignore optional context. | Add readonly runtimeLogPolicy?: 'temporary-quiet' / undefined, supplied exclusively by daemon owner construction context. Preserve DriverFactory/config/BaseDriver wire shapes. Quiet-capable factory closure evidence must be current BEFORE handing plaintext config to constructor; unknown/dropped-context kind refuses unsupported-temporary. Registry startup kind/family metadata may keep safe normal logging, never config; no per-resource raw payloads. | CM-S3-DRIVER-LOGS |\n| src/daemon/db/drivers/pg.ts; src/daemon/db/drivers/redis.ts | PG pool error and Redis client error listeners capture module log.warn(err.message), independent of callbacks; SQL debug can include query text. | Factories and all alias wrappers forward runtimeLogPolicy; constructor captures a resource-local immutable quiet sink BEFORE installing SDK listeners. PG/Redis async errors are consumed without reading/formatting/passing raw Error to any durable sink in quiet mode; SQL/command logs also suppressed. Saved instances retain normal logger behavior concurrently; no context lookup/fallback after lease release or session expiry. | CM-S3-DRIVER-LOGS |\n| src/daemon/db/drivers/mysql.ts; src/daemon/db/drivers/sqlite.ts; src/daemon/db/drivers/mssql.ts; src/daemon/db/drivers/oracle.ts; src/daemon/db/drivers/clickhouse.ts | RDBMS modules have SQL/sample/aggregate/explain logs; ClickHouse also has a direct SDK logger currently disabled only by probe-worker process mode. | Use instance quiet sink for every source/query/error logger, including initialization/failure and disposal. ClickHouse SDK gets per-client OFF log level for quiet resources in the main daemon, not only global probe mode; saved client SDK settings unchanged. Audit installed SDK direct stdout/stderr/file/debug paths and refuse quiet construction if an uncontrollable sink can emit source data. | CM-S3-DRIVER-LOGS |\n| src/daemon/db/drivers/dynamodb.ts; src/daemon/db/drivers/memcached.ts; src/daemon/db/drivers/mongodb.ts; src/daemon/db/drivers/cassandra.ts; src/daemon/db/drivers/nats.ts; src/daemon/db/drivers/etcd.ts | Dynamo metadata debug and Memcached SDK logger route to module pino; other SDK paths may have per-client diagnostics even without current app log calls. | Factories capture quiet policy for all these clients; Dynamo table/metadata logs suppressed, Memcached logger is per-client no-op. Explicitly disable or replace installed SDK diagnostics per resource where present, including async connection/retry/close callbacks. Audit no-log modules as classified closures; do not assume absence of app getLogger proves SDK silence. | CM-S3-DRIVER-LOGS |\n| src/daemon/db/drivers/duckdb-file.ts; src/daemon/db/file-execution.ts; src/daemon/db/converter-cache.ts; src/daemon/db/drivers/converters | DuckDB driver has SQL debug; sc8 memory-only execution already bypasses persistent conversion cache. | Pass both existing sc8 policy and immutable quiet log policy to the private runtime; suppress query/target/data/error diagnostics per resource. Keep the converter-cache saved-only lane unreachable, not globally muted. Converter/file resource warnings/errors must remain safe even during cancellation/close; no branch-local converter redesign. | CM-S3-DRIVER-LOGS; CM-S3-FILES |\n| src/daemon/db/pool.ts; src/daemon/db/pool-cache.ts; src/daemon/db/management-enablement.ts; src/shared/logger.ts | Shared saved pool/module loggers are cached and pino-roll is process-scoped; only probe-worker mode is globally silent. | Temporary overlay constructs its own drivers with quiet context, never registers them in saved pool; saved default factory context stays unchanged. Existing shared getLogger/setLogMode/root cache are NOT mutated for temporary requests. Proposed internal helper src/daemon/db/driver-log-policy.ts supplies quiet resource sink without creating/reconfiguring a pino transport. Fail closed if current factory/SDK logging closure evidence is missing/stale; gate all alias factories and source/compiled implementations. | CM-S3-DRIVER-LOGS; CM-S3-GATE |\n| src/bin/insrc-connection-test.ts; src/daemon/db/draft-test.ts | S002 probes run in their own quiet process. | Preserve private IPC/bootstrap/timeout/reap behavior. S003 main-daemon quiet policy is additive and does not rely on changing a running daemon to probe-worker. Legacy/saved controls remain unaffected; unrelated PIDs or logger globals never changed. | CM-S3-DRIVER-LOGS; CM-S3-COMPAT |\n\n### Admitted-provider retry diagnostics use the same privacy boundary\n\nThe verified local completion path also needs per-run quiet diagnostics before admission: OllamaProvider has module log.warn with raw transient error text and structured-output retry has error/validation logging. Add the internal per-run diagnostics policy to the admitted Ollama instance and structured-output retry options, alongside the per-attempt request guard. Quiet mode must branch before formatting raw error/validation/model output; saved/default instances retain current diagnostics. No shared module logger, process mode or global console mutation. This does not extend DriverFactoryContext to LLMs or change LLMProvider wire/API: the owner creates an admitted per-run provider facade/instance and supplies its private request/diagnostics policy through internal construction/retry ports. A factory that cannot prove contained inner retries is denied BEFORE a prompt is sent. [[c21]]\n\n| Production site | Current owner/behavior | Proposed owner/change | Required regression |\n| --- | --- | --- | --- |\n| src/agent/providers/ollama.ts; src/agent/providers/structured-output.ts | Module-level pino warnings can include raw transport/validation error text inside retries. | Per-run admitted local instance and retry diagnostics port capture immutable quiet sink before requests; no raw transient/error/validation/model output logging and no fallback after expiry. Preserve ordinary saved instance log controls. | CM-S3-PROVIDER; CM-S3-DRIVER-LOGS |\n\nProvider tests must inject transient response errors and malformed model output containing data canaries through the actual local SDK and structured retry helper, capture the normal daemon sink through drain/flush and verify no payload canary. Concurrent saved logging is a positive control. This evidence is mandatory in the same admission closure, not a conclusion inferred from suppressing only runtime-driver logs.\n",
+        "callSites": [
+          "src/daemon/steps/host.ts",
+          "src/mcp/forward-step.ts",
+          "src/daemon/steps/analyze-step/handler.ts",
+          "src/daemon/steps/analyze-step/answer-turn.ts",
+          "src/daemon/steps/analyze-step/phases/plan.ts",
+          "src/daemon/steps/analyze-step/phases/narrow.ts",
+          "src/daemon/steps/analyze-step/phases/bundle.ts",
+          "src/analyze/context/synthesizer.ts",
+          "src/shared/db-driver.ts",
+          "src/daemon/db/registry.ts",
+          "src/daemon/db/drivers/pg.ts",
+          "src/daemon/db/drivers/redis.ts",
+          "src/daemon/db/drivers/clickhouse.ts",
+          "src/shared/logger.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -775,6 +799,20 @@
           "response": "Existing safe duplicate-id error, or busy for unavailable reservation owner, with zero credential/persistence side effects. Never auto-adopt or shadow a session entry.",
           "userImpact": "User chooses another ID or waits for all temporary owners to finish; ordinary noncolliding legacy saves keep their result shape.",
           "recoverable": true
+        },
+        {
+          "scenario": "Client-authored reasoning or final result bypasses daemon provider admission",
+          "detection": "Server-stored delegation audience is checked before host dispatch and every session-memory multi-turn entry; output guards prohibit prompt/results/progress/error evidence for unverified MCP.",
+          "response": "Fixed nonretryable unsupported-temporary, no executed output or echoed request, and no one-shot/detach/saved fallback. Denial occurs before state load or source lookup.",
+          "userImpact": "Use the admitted workbench daemon route for temporary analysis; ordinary saved-only MCP remains compatible.",
+          "recoverable": true
+        },
+        {
+          "scenario": "SDK error/event or query debug fires after callback or during temporary resource disposal",
+          "detection": "Constructor captures immutable per-resource quiet sink from daemon factory context; alias and SDK diagnostic closure proof checked before config handoff. Late events never query a now-missing current session for log mode.",
+          "response": "Consume events without raw payload emission; preserve safe failure/cleanup state only. Saved logging is unchanged and no process-global logger switch occurs.",
+          "userImpact": "Temporary runtime failures remain private through drain; unsupported quiet factories refuse before construction.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -851,7 +889,7 @@
           "level": "integration",
           "purpose": "Exercise actual socket handlers, root coordinator, memory owner, production resolver/leases, SDK-backed local protocol fixtures and process cancellation; assertions use exact canary snapshots and positive controls.",
           "subjects": [
-            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/source/cache snapshots unchanged; safe projections and captured durable/stdout/stderr logs omit private config credential and data canaries.",
             "CM-S3-ISOLATION: real SQL KV and native/converted file callbacks resolve only their session and exact root; identical IDs never share credentials resources or rows.",
             "CM-S3-COLLISION: real managed v2 and adopted/unadopted legacy saves from unattached sockets race temporary registration under canonical root gate; one wins and rejected calls perform zero credential or registry writes.",
             "CM-S3-LEASE: revision pin spans the full multi-call callback and failed construction; concurrent update returns busy and resources close only after use drains.",
@@ -862,12 +900,14 @@
             "CM-S3-COMPAT: unattached and nested/unregistered saved scope lookup pinned families strict legacy results and S002 draft probe cancellation remain unchanged.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-MCP: every fresh forwardStep socket attaches its restricted reasoning audience before fixed session-memory refusal; saved-only MCP stays compatible and no temporary continuation/output is exported.",
             "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
             "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
             "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade.",
             "CM-S3-ADHERENCE-CACHE: actual data/mixed adherence topic path denies before filesystem constraint-record read/write or nested document enumeration; explicit memory constraints avoid the cache and preserve owner/provider policy.",
-            "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback."
+            "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
+            "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
           ],
           "fixturesNeeded": [
             "Two workbench control sockets plus data sockets, two roots and a nested unregistered saved directory; exact fake keychain and saved metadata bytes.",
@@ -884,7 +924,9 @@
             "Control/data role tests use real sockets: data bootstrap cannot call resume/delegate/heartbeat/end; wrong-root attach refuses; old-generation data is revoked and refreshed bootstrap permits only intended root.",
             "Warm constraints record containing canary topic/output, actual runAdherenceCheck/constraintsFromDocuments and docs retrieval; spy real filesystem read/write boundaries and nested enumeration. Session denial must preserve its typed code.",
             "Actual session-bound docs/vector/lineage/graph routes under Ollama, ONNX, disabled and injected backend controls; assert zero SDK/backend calls, zero requests, no query logging and no false lexical/empty-vector success. Ordinary saved hybrid retrieval is a positive compatibility control.",
-            "Actual saveConnectionRpc socket requests with adopted/unadopted registered-root fixtures and session-worker routing enabled; canonical+symlink identity; installed shared reservation owner, deterministic race barriers and exact fake keychain/registry/reload spies. No real adoption/migration."
+            "Actual saveConnectionRpc socket requests with adopted/unadopted registered-root fixtures and session-worker routing enabled; canonical+symlink identity; installed shared reservation owner, deterministic race barriers and exact fake keychain/registry/reload spies. No real adoption/migration.",
+            "Actual forwardStep fresh-socket bootstrap/attach/step.call for restricted mcp-unverified audience: all start/plan/narrow/bundle/one-shot and partial/error paths; spy before continuation/output load and capture response/progress/error/trace with data canaries. Separate UI and saved-only MCP positive controls.",
+            "Actual normal pino-roll daemon child with trace logging and concurrent saved logging marker; real factory PG/Redis async error injection outside callback, idle/reconnect/delayed-close/expiry and late error. Capture files/stdout/stderr through flush and settle; no global quiet mode or console mock. Audit SDK sinks and every built-in kind alias."
           ]
         },
         {
@@ -927,7 +969,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "CM-S3-AUTH: real IPC sessions reject forged tokens epochs roots and stale control generations; data attachments cannot heartbeat or end another session.",
-            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/source/cache snapshots unchanged; safe projections and captured durable/stdout/stderr logs omit private config credential and data canaries.",
             "CM-S3-ISOLATION: real SQL KV and native/converted file callbacks resolve only their session and exact root; identical IDs never share credentials resources or rows.",
             "CM-S3-COLLISION: real managed v2 and adopted/unadopted legacy saves from unattached sockets race temporary registration under canonical root gate; one wins and rejected calls perform zero credential or registry writes.",
             "CM-S3-LEASE: revision pin spans the full multi-call callback and failed construction; concurrent update returns busy and resources close only after use drains.",
@@ -939,12 +981,14 @@
             "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-MCP: every fresh forwardStep socket attaches its restricted reasoning audience before fixed session-memory refusal; saved-only MCP stays compatible and no temporary continuation/output is exported.",
             "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
             "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
             "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade.",
             "CM-S3-ADHERENCE-CACHE: actual data/mixed adherence topic path denies before filesystem constraint-record read/write or nested document enumeration; explicit memory constraints avoid the cache and preserve owner/provider policy.",
-            "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback."
+            "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
+            "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
           ]
         },
         {
@@ -953,18 +997,20 @@
             "CM-S3-EXPIRY: end heartbeat loss exact deadline and restart forbid new resolution, abort real operations and probes, await late construction/close and leave zero session entries children leases and resource counters.",
             "CM-S3-RECONNECT: control reconnect within90seconds preserves overlays while panel close and root switches do not end session; old control generation cannot renew or end resumed session.",
             "CM-S3-CONTEXT: production analyzer runtime exploration measurement db tools schema-drift and MCP consume only validated out-of-band access; missing or lost binding never falls back from temporary to saved.",
-            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/source/cache snapshots unchanged; safe projections and captured durable/stdout/stderr logs omit private config credential and data canaries.",
             "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites.",
             "CM-S3-SWEEP: after all implementation tasks run final build and one full regression sweep; record actual failures skips and timeouts and keep release disabled for unresolved prerequisites.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-MCP: every fresh forwardStep socket attaches its restricted reasoning audience before fixed session-memory refusal; saved-only MCP stays compatible and no temporary continuation/output is exported.",
             "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
             "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
             "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade.",
             "CM-S3-ADHERENCE-CACHE: actual data/mixed adherence topic path denies before filesystem constraint-record read/write or nested document enumeration; explicit memory constraints avoid the cache and preserve owner/provider policy.",
             "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
-            "CM-S5-LIFETIME-COPY: both clients show accurate temporary lifetime explanation before add submission, including retain-on-panel/root-switch and expiry-on-workbench-end lease-loss or daemon-restart; external S005 release evidence pending."
+            "CM-S5-LIFETIME-COPY: both clients show accurate temporary lifetime explanation before add submission, including retain-on-panel/root-switch and expiry-on-workbench-end lease-loss or daemon-restart; external S005 release evidence pending.",
+            "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
           ]
         }
       ],
@@ -1129,6 +1175,11 @@
               "range": "DataTransportAttachment",
               "multivalued": true,
               "minimum_cardinality": 0
+            },
+            "audience": {
+              "description": "Server-stored workbench-ui or mcp-unverified output audience, chosen by authenticated control; cannot be promoted by attached child.",
+              "range": "string",
+              "required": true
             }
           }
         },
@@ -1137,7 +1188,7 @@
           "attributes": {}
         },
         "DataTransportAttachment": {
-          "description": "One authenticated data socket owned by exactly one delegation; cannot control workbench lifetime.",
+          "description": "One authenticated data socket owned by exactly one root/audience-bound delegation; unverified reasoning audience cannot export session outputs.",
           "attributes": {
             "lookupRoot": {
               "description": "Must equal its owning delegation canonical root.",
@@ -1150,7 +1201,7 @@
     },
     "sequenceDefinition": {
       "id": "s003-session-lifecycle",
-      "narrative": "Proposed ordering across trusted control/data transports, session ownership, root mutation arbitration and leased resources. The admission barrier precedes cancellation and drain so expiry cannot publish late resources or silently resolve saved sources.",
+      "narrative": "Shows proposed owner enforcement before data execution: unverified outer MCP reasoning receives a fixed refusal with no temporary output; supported UI requests use the admitted daemon pipeline. Root/revision checks, memory-only execution and resource-local quiet logging apply through expiry/drain.",
       "participants": [
         {
           "id": "control",
@@ -1169,8 +1220,8 @@
         },
         {
           "id": "data",
-          "label": "Attached analyzer/tool/MCP request",
-          "description": "Carries daemon-validated access out of band; never stores capability in request artifacts."
+          "label": "Attached workbench UI/daemon request",
+          "description": "UI audience only for supported temporary data execution; all daemon model turns admitted and state memory-only."
         },
         {
           "id": "resolver",
@@ -1186,6 +1237,11 @@
           "id": "provider",
           "label": "Provider admission boundary",
           "description": "Existing selected role/model is admitted only with verified nonpersistent mode; otherwise refuse before prompt submission."
+        },
+        {
+          "id": "mcp",
+          "label": "Unverified outer MCP reasoning client",
+          "description": "Restricted data delegation has no temporary prompt/result egress grant."
         }
       ],
       "messages": [
@@ -1213,7 +1269,20 @@
           "to": "data",
           "label": "Private bootstrap delivers data-only delegation",
           "kind": "return",
-          "description": "MCP child cannot heartbeat/end/resume the workbench and never receives the control capability."
+          "description": "Data client cannot heartbeat/end/resume the workbench; UI and MCP receive distinct audience-bound tokens, never control capability."
+        },
+        {
+          "from": "mcp",
+          "to": "owner",
+          "label": "Attach restricted MCP audience and request analyze phase",
+          "description": "Every fresh socket presents its mcp-unverified root-bound delegation; client labels cannot promote authority."
+        },
+        {
+          "from": "owner",
+          "to": "mcp",
+          "label": "unsupported-temporary before state/prompt/result access",
+          "kind": "return",
+          "description": "All multi-turn phases and one-shot refused; no terminal/progress/error-evidence data. Supported UI flow continues separately below."
         },
         {
           "from": "data",
@@ -1427,6 +1496,26 @@
       "id": "c18",
       "kind": "analyze-bundle",
       "ref": "S003 cycle2 round3: saveConnectionRpc/saveConnections/legacyUpsert/withSavedRootGate symbol and caller probes plus manual src/daemon/db-rpc.ts:120, src/daemon/db/management.ts:398, src/daemon/db/config.ts:150 and src/daemon/threads/method-class.ts:246"
+    },
+    {
+      "id": "c19",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle3 client egress discovery: src/daemon/steps/analyze-step/answer-turn.ts; src/daemon/steps/analyze-step/phases/plan.ts; src/daemon/steps/analyze-step/phases/narrow.ts; src/daemon/steps/analyze-step/phases/bundle.ts; src/analyze/context/synthesizer.ts; src/mcp/forward-step.ts"
+    },
+    {
+      "id": "c20",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle3 resource log discovery: src/shared/db-driver.ts:769; src/daemon/db/drivers/pg.ts:115; src/daemon/db/drivers/redis.ts:60; all concrete runtime-driver log/SDK source enumeration; src/shared/logger.ts"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/agent/providers/ollama.ts:365"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:228"
     }
   ]
 }

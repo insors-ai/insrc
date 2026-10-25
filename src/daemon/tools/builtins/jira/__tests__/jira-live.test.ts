@@ -133,10 +133,12 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim().replace(/https:\/\/[^/\s]+/g, 'https://example.atlassian.net')}\n`);
   const key = probe.key as string;
   let made = false;
+  let created = false;
   let archived = false;
   try {
     const create = await textOf({ op: 'create', fromProject: probe.source, key, name: `insrc probe ${key}`, leadEmail: probe.lead });
-    made = create.r.success; // the cleanup below must run even if recording fails
+    made = true; // whatever create answered, the cleanup below tries to remove the project (a create that worked but was not read must not leave one)
+    created = create.r.success;
     // a refusal is recorded beside the fixtures, never over the success text the reader tests read
     record(create.r.success ? 'create' : 'create-refused', create.text);
     // a refusal (a site or plan that does not allow it) is recorded and the later steps are not run
@@ -152,8 +154,11 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
       // an archived project cannot be deleted ('You cannot edit the configuration of this project'): restore it first
       if (archived) { await call(jiraProjectTool, { op: 'restore', key }); }
       const del = await textOf({ op: 'delete', key });
-      record('delete', del.text);
-      assert.equal(del.r.success, true, `delete of the scratch project ${key}: ${del.text}`);
+      // a delete of a project that was never made fails and says nothing about the readers: only a made project is recorded and asserted
+      if (created) {
+        record('delete', del.text);
+        assert.equal(del.r.success, true, `delete of the scratch project ${key}: ${del.text}`);
+      }
     }
   }
 });

@@ -1,4 +1,4 @@
-Confirmation: the assistant proposed 'source IN, scratch key ZZPROBE, lead email <the user's email>' and asked for yes, other values, or skip; the user's chat reply was: "confirmed". The run below used the same source and email with fresh scratch keys (ZZPROBE2 to ZZPROBE4) because a deleted project keeps its key in Jira's trash.
+Confirmation: the assistant proposed 'source IN, scratch key ZZPROBE, lead email <the user's email>' and asked for yes, other values, or skip; the user's chat reply was: "confirmed". The run below used the same source and email with fresh scratch keys (ZZPROBE2 to ZZPROBE4) because a deleted project keeps its key in Jira's trash. (The user's "confirmed" covered the source project, the email and a throwaway key of the form ZZPROBE; the digit is only to avoid a trashed key.)
 Live run of src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts, 2026-10-26, acli 1.3.39 against the user's personal site (SCRUM is the scratch project; the probe source is IN, read only; the user confirmed the probe values in chat: source IN, a scratch key, lead email). The probe writes src/daemon/tools/builtins/jira/__tests__/fixtures/project-*.txt, which the reader tests in jira-project-auth.test.ts read.
 Command: INSRC_LIVE_TESTS=1 INSRC_JIRA_SCRATCH_PROJECT=SCRUM INSRC_JIRA_PROBE_SOURCE=IN INSRC_JIRA_PROBE_KEY=ZZPROBE4 INSRC_JIRA_PROBE_LEAD=<the user's email> npx tsx --test src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts
 
@@ -13,3 +13,8 @@ Command: INSRC_LIVE_TESTS=1 INSRC_JIRA_SCRATCH_PROJECT=SCRUM INSRC_JIRA_PROBE_SO
 ℹ skipped 0
 ℹ todo 0
 ℹ duration_ms 60085.669211
+
+Rerun of the probe test alone after the cleanup change (the probe now always tries to remove the project it may have made), key ZZPROBE5, same source and lead:
+✔ jira-live.test.ts: the disposable-project probe records the real success text of each project mutation (10051 ms)
+ℹ pass 1
+ℹ fail 0

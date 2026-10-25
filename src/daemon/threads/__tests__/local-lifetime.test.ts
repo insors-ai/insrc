@@ -48,3 +48,19 @@ test('CM-S2-G2: real maintenance ownership and activity retain admitted drain an
  const unknown=new RequestLifetime();router.forward({...request(unknown),method:'unknown'},()=>{});await unknown.completed;await unknown.drained;
  await new Promise(r=>setImmediate(r));assert.equal(active,0);assert.equal(manager.query().held.length,0);
 });
+
+test('CM-S2-G1: routed streams retain frame cancellation behavior and crashed unary lifetimes complete',async()=>{
+ const registry=new TargetRegistry();registry.register({threadId:1,cls:'admin'});let active=0;
+ const router=new Router({classOf:()=> 'admin',registry,routed:new Set(['admin']),local:directDispatch({}),onRequest:()=>{active++;return()=>{active--;};}});
+ const {port1,port2}=new MessageChannel();router.attach(1,port1);
+ try {
+  const received=once(port2,'message'),frames:unknown[]=[];let delivered!:()=>void;const frameReady=new Promise<void>(r=>{delivered=r;});
+  const cancel=router.forward({...request(new RequestLifetime()),lifetime:undefined,stream:true},frame=>{frames.push(frame);delivered();});await received;
+  port2.postMessage({kind:'frame',requestId:'r',frame:{id:0,stream:'progress',data:'row'}});
+  await frameReady;assert.equal(active,1);
+  const cancellation=once(port2,'message');cancel();assert.deepEqual((await cancellation)[0],{kind:'cancel',requestId:'r'});assert.equal(active,0);assert.equal(frames.length,1);
+  const lifetime=new RequestLifetime(),started=once(port2,'message');router.forward(request(lifetime),()=>{});await started;
+  for(const orphan of router.detach(1))orphan.deliver({kind:'reply',requestId:orphan.requestId,error:'worker crashed'});
+  await lifetime.completed;await lifetime.drained;await Promise.resolve();assert.equal(active,0);
+ }finally{router.detach(1);port1.close();port2.close();}
+});

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 52 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -341,3 +341,54 @@ Run at 2026-10-25T21:25:26.276Z on commit `1abd94451`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/__tests__/tui-shipped-registry.test.ts` | 0 | 2 | 5.7 s |  |
 | `src/cli/__tests__/tui.test.ts` | 0 | 24 | 2.9 s |  |
+
+## t9
+
+Run at 2026-10-25T21:32:23.092Z on commit `d3dc23a03`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults | `src/config/__tests__/installer-defs.test.ts` |
+
+**unit: model-catalog-asset.test.ts: structural validation kept; installer reads defaults from the file; summariser comes from summariserModel**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel | `src/daemon/__tests__/model-catalog-asset.test.ts` |
+
+**unit: vscode manifest-catalog.test.ts and tier-effort.test.ts pass; sync-manifest-catalog.mjs is idempotent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra) | `vscode-plugin/src/config/__tests__/manifest-catalog.test.ts` |
+| pass | each declared key's type/enum/default matches its ConfigOption, and scope is 'machine' | `vscode-plugin/src/config/__tests__/manifest-catalog.test.ts` |
+| pass | VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's) | `vscode-plugin/src/models/__tests__/tier-effort.test.ts` |
+| pass | sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy | `vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts` |
+
+**unit: vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped) | `vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts` |
+
+**unit: ModelTiersModelTest: an unset tier shows the fixture default family's values; jetbrains-catalog-fixture.test.ts asserts the fixture equals buildConfigCatalog**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ModelTiersModelTest: an unset tier shows the fixture default family's values | `jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts` |
+| pass | jetbrains-catalog-fixture.test.ts: the JetBrains catalog fixture equals buildConfigCatalog over its definitions | `src/config/__tests__/jetbrains-catalog-fixture.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts` | 0 | 1 | 14.6 s |  |
+| `src/config/__tests__/installer-defs.test.ts` | 0 | 1 | 1.2 s |  |
+| `src/config/__tests__/jetbrains-catalog-fixture.test.ts` | 0 | 1 | 0.5 s |  |
+| `src/daemon/__tests__/model-catalog-asset.test.ts` | 0 | 2 | 0.7 s |  |
+| `vscode-plugin/src/config/__tests__/manifest-catalog.test.ts` | 0 | 2 | 0.4 s |  |
+| `vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts` | 0 | 1 | 0.9 s |  |
+| `vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts` | 0 | 1 | 2.2 s |  |
+| `vscode-plugin/src/models/__tests__/tier-effort.test.ts` | 0 | 1 | 0.5 s |  |

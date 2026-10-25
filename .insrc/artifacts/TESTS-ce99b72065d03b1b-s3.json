@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T21:25:26.276Z",
+    "updatedAt": "2026-10-25T21:32:23.092Z",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
   },
@@ -1467,6 +1467,213 @@
               },
               {
                 "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "d3dc23a03",
+        "ranAt": "2026-10-25T21:32:23.092Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/installer-defs.test.ts",
+                "title": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog-asset.test.ts: structural validation kept; installer reads defaults from the file; summariser comes from summariserModel",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode manifest-catalog.test.ts and tier-effort.test.ts pass; sync-manifest-catalog.mjs is idempotent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+                "title": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ModelTiersModelTest: an unset tier shows the fixture default family's values; jetbrains-catalog-fixture.test.ts asserts the fixture equals buildConfigCatalog",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts",
+                "title": "ModelTiersModelTest: an unset tier shows the fixture default family's values",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts",
+                "title": "jetbrains-catalog-fixture.test.ts: the JetBrains catalog fixture equals buildConfigCatalog over its definitions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14604,
+            "titles": [
+              {
+                "title": "ModelTiersModelTest: an unset tier shows the fixture default family's values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/installer-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1216,
+            "titles": [
+              {
+                "title": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 476,
+            "titles": [
+              {
+                "title": "jetbrains-catalog-fixture.test.ts: the JetBrains catalog fixture equals buildConfigCatalog over its definitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 692,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 433,
+            "titles": [
+              {
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 857,
+            "titles": [
+              {
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2178,
+            "titles": [
+              {
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 542,
+            "titles": [
+              {
+                "title": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
                 "result": "pass"
               }
             ],

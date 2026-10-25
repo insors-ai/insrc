@@ -1886,7 +1886,7 @@
       ],
       "siteCount": 19,
       "sitesDigest": "067f46db26177a429f24e8e80730e8cf70671606551044f1af4c6494cebdbc3e",
-      "sourceDigest": "018e5f420524bf8ff764407a2f65791d3fe761a7a2ec61f0a18e7230e6d0e9b1",
+      "sourceDigest": "bce2f8b3760aa7a14c8648a302e71c110c67d56aa5a8ec3d64debe10ddc5f25f",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -7272,6 +7272,26 @@
         "unresolved-call"
       ]
     },
+    "src/daemon/config-write.ts": {
+      "classification": "configuration-boundary",
+      "rationale": "Existing static configuration/model selection may be read without temporary data. Session-derived config/feedback/cache writes are not admitted, and selected model/coreFloor cannot be weakened for privacy fallback.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "d07f6b4a93bfb32ab9b3a5fd6c02dfd6ab1203aaa4d342d59f8b52fbd01fab7c",
+      "sourceDigest": "064cca69cdbf6ec9b468c886c2ed1493e1e19565233035c937fb3deb050257bb",
+      "boundaries": [
+        "serialization"
+      ]
+    },
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics.",
@@ -12413,7 +12433,7 @@
       ],
       "siteCount": 184,
       "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "1541ac1db2e81d7827783d0fa6f353527d845b165a47cd09b2f62233e3dc6ccb",
+      "sourceDigest": "7f0603e3fa2b93c4828e213f063d973e622b7c8a0cfd8a098474ca3e657a6665",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -12919,7 +12939,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "326304d8c5625ccfca11092963eed7382d88406254ad07d562e3c187d7c65c1a",
-      "sourceDigest": "f4fc1eaba71fdf2b63d875a299aee9f38174d25b5e6055fa7eeed92193dfecc7",
+      "sourceDigest": "632011ced72d4f508c20e585cb3adb2ad6592b80936684d6d4848c617164f9a6",
       "boundaries": [
         "provider-adapter",
         "provider-factory",

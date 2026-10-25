@@ -38,7 +38,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
-import { claudeModels, modelDefinitions } from './model-definitions.js';
+import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definitions.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -72,7 +72,8 @@ import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
 import { basename } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
-import { setConfigAtPath } from '../config/write-path.js';
+import { applyConfigWrite } from './config-write.js';
+import { getModelRegistry } from './model-registry.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 
@@ -1263,19 +1264,18 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				config = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
 			} catch { /* start fresh */ }
 
-			try {
-				setConfigAtPath(config, path, value);
-			} catch (err) {
-				// Invalid path (empty / empty segment) — refuse loudly rather than
-				// mis-write; the caller sees ok:false and surfaces a save failure.
-				log.warn({ path, err: (err as Error).message }, 'config.write: invalid path — refused');
-				return { ok: false };
+			// Applied to a candidate first: an invalid path, or a tier set to a model
+			// the user rejected, is refused and config.json is left as it is.
+			const { result, candidate } = applyConfigWrite(config, path, value, getModelRegistry());
+			if (!result.ok || candidate === undefined) {
+				log.warn({ path, reason: result.ok ? undefined : result.reason, detail: result.ok ? undefined : result.detail }, 'config.write: refused');
+				return result;
 			}
 
-			writeFileSync(PATHS.config, JSON.stringify(config, null, 2), 'utf-8');
+			writeFileSync(PATHS.config, JSON.stringify(candidate, null, 2), 'utf-8');
 			await reloadChatConfig();
-			log.info({ path, value }, 'config.write');
-			return { ok: true };
+			log.info({ path, value, restartRequired: result.restartRequired === true }, 'config.write');
+			return result;
 		},
 
 		'config.reload': async () => {
@@ -1404,6 +1404,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// IDE gets a slimmer surface in Phase 6 (Ollama + claude/codex
 		// CLI auth status). Until then these return offline so the pane
 		// shows a clean error and the user can switch panes.
+		'models.resolveRole':   async (params) => resolveRoleWire(params),   // sc5 (Epic ce99b72065d03b1b, s3): a role's tier, model and provider settings
 		'models.definitions':   () => modelDefinitions(),          // sc3 (Epic ce99b72065d03b1b, s2): read-only model definitions
 		'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002): revived read-only model-list dispatch
 		'providers.testKey':    offlineRpc('providers.testKey'),

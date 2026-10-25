@@ -199,7 +199,7 @@ function isFamily(registry: ModelRegistry, v: unknown): v is AnalyzeShaperProvid
 
 /** An Ollama model's context window: its token inputLimit, else the tool-loop
  *  model's (a model the definitions do not list). */
-function ollamaNumCtx(registry: ModelRegistry, model: ResolvedModel | undefined): number {
+export function ollamaNumCtx(registry: ModelRegistry, model: ResolvedModel | undefined): number {
 	const limit = model?.inputLimit ?? registry.toolLoopModel().inputLimit;
 	return limit?.max ?? 0;
 }

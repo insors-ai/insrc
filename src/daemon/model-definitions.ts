@@ -19,8 +19,11 @@
  * succeeds. No cloud call; mutates nothing.
  */
 
-import type { TierName } from '../config/analyze.js';
+import { loadAnalyzeConfig, type AnalyzeConfig, type TierName } from '../config/analyze.js';
+import { loadLocalProviderConfig } from '../config/local.js';
 import { OllamaProvider } from '../agent/providers/ollama.js';
+import { resolveRole } from '../analyze/context/role-router.js';
+import { ollamaNumCtx } from '../analyze/context/shaper-provider.js';
 import {
 	validateModelCatalog,
 	type CliFamilyId,
@@ -29,7 +32,7 @@ import {
 	type InputLimit,
 	type TierDefault,
 } from './model-catalog.js';
-import { getModelRegistry, type ModelRegistry } from './model-registry.js';
+import { getModelRegistry, type FallbackReason, type ModelRegistry } from './model-registry.js';
 
 /** One model in the answer. */
 export interface ModelDefinitionEntry {
@@ -155,4 +158,54 @@ export function claudeModels(registry: ModelRegistry = getModelRegistry()): Clau
 	const family = registry.families().find(f => f.cliKind === 'claude');
 	if (family === undefined) return [];
 	return registry.models(family.id).map(m => ({ id: m.id, displayName: m.displayName ?? m.id, createdAt: '' }));
+}
+
+/** The `models.resolveRole` answer (HLD sc5): the tier, model, effort and
+ *  provider settings the daemon uses for a role in a repo. */
+export interface ResolvedRole {
+	readonly tier:        TierName;
+	readonly family:      FamilyId;
+	readonly model:       string;
+	readonly effort?:     EffortLevel | undefined;
+	readonly inputLimit?: InputLimit | undefined;
+	readonly fallback?:   { readonly reason: FallbackReason; readonly requested: string } | undefined;
+	readonly cli?:        { readonly kind: 'claude' | 'codex' } | undefined;
+	readonly ollama?:     { readonly host: string; readonly numCtx: number; readonly numPredict: number } | undefined;
+}
+
+export interface ResolveRoleDeps {
+	readonly config:   () => AnalyzeConfig;
+	readonly registry: () => ModelRegistry;
+}
+
+const DEFAULT_RESOLVE_ROLE_DEPS: ResolveRoleDeps = { config: () => loadAnalyzeConfig(), registry: getModelRegistry };
+
+/**
+ * Resolve a role for a repo as the daemon's router does and project it to the
+ * sc5 wire shape, with the provider settings the provider factory would use.
+ * Read-only: builds no provider and runs no model.
+ */
+export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT_RESOLVE_ROLE_DEPS): ResolvedRole | { error: string; recoverable: false } {
+	const p = (typeof params === 'object' && params !== null ? params : {}) as Record<string, unknown>;
+	const role = p['role'];
+	const repoPath = p['repoPath'];
+	if (typeof role !== 'string' || role === '' || typeof repoPath !== 'string' || repoPath === '') {
+		return { error: 'invalid-params: role and repoPath (non-empty strings) are required', recoverable: false };
+	}
+	const cfg = deps.config();
+	const registry = deps.registry();
+	const r = resolveRole(role, cfg, repoPath, { registry });
+	const model = registry.find(r.runner, r.model);
+	const kind = registry.cliKind(r.runner);
+	return {
+		tier:   r.tier,
+		family: r.runner,
+		model:  r.model,
+		...(r.effort !== undefined ? { effort: r.effort } : {}),
+		...(model?.inputLimit !== undefined ? { inputLimit: model.inputLimit } : {}),
+		...(r.fallback !== undefined ? { fallback: r.fallback } : {}),
+		...(kind !== undefined
+			? { cli: { kind } }
+			: { ollama: { host: loadLocalProviderConfig().host, numCtx: ollamaNumCtx(registry, model), numPredict: cfg.shaper.ollamaNumPredict } }),
+	};
 }

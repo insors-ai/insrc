@@ -4,24 +4,27 @@
  */
 
 import { Type } from '@sinclair/typebox';
-import type { Static } from '@sinclair/typebox';
+import type { Static, TSchema } from '@sinclair/typebox';
 
-const Login = Type.Object({ login: Type.Optional(Type.String()) });
+/** A field gh may leave out or send as null (a deleted account has no author): both are accepted. */
+const Maybe = <T extends TSchema>(t: T) => Type.Optional(Type.Union([t, Type.Null()]));
+
+const Login = Type.Object({ login: Maybe(Type.String()) });
 const Named = Type.Object({ name: Type.String() });
 
 export const GhIssueRowSchema = Type.Object({
   number: Type.Number(),
   title: Type.String(),
   state: Type.String(),
-  author: Type.Optional(Login),
-  assignees: Type.Optional(Type.Array(Login)),
-  labels: Type.Optional(Type.Array(Named)),
-  body: Type.Optional(Type.String()),
-  url: Type.Optional(Type.String()),
-  createdAt: Type.Optional(Type.String()),
-  updatedAt: Type.Optional(Type.String()),
-  comments: Type.Optional(Type.Array(Type.Object({
-    author: Type.Optional(Login), body: Type.String(), createdAt: Type.Optional(Type.String()),
+  author: Maybe(Login),
+  assignees: Maybe(Type.Array(Login)),
+  labels: Maybe(Type.Array(Named)),
+  body: Maybe(Type.String()),
+  url: Maybe(Type.String()),
+  createdAt: Maybe(Type.String()),
+  updatedAt: Maybe(Type.String()),
+  comments: Maybe(Type.Array(Type.Object({
+    author: Maybe(Login), body: Type.String(), createdAt: Maybe(Type.String()),
   }))),
 });
 export type GhIssueRow = Static<typeof GhIssueRowSchema>;
@@ -37,30 +40,30 @@ export const GhPrRowSchema = Type.Object({
   number: Type.Number(),
   title: Type.String(),
   state: Type.String(),
-  isDraft: Type.Optional(Type.Boolean()),
-  author: Type.Optional(Login),
-  assignees: Type.Optional(Type.Array(Login)),
-  reviewRequests: Type.Optional(Type.Array(Type.Object({ login: Type.Optional(Type.String()), name: Type.Optional(Type.String()) }))),
-  labels: Type.Optional(Type.Array(Named)),
-  baseRefName: Type.Optional(Type.String()),
-  headRefName: Type.Optional(Type.String()),
-  mergeable: Type.Optional(Type.String()),
-  mergeStateStatus: Type.Optional(Type.String()),
-  body: Type.Optional(Type.String()),
-  url: Type.Optional(Type.String()),
-  createdAt: Type.Optional(Type.String()),
-  updatedAt: Type.Optional(Type.String()),
-  additions: Type.Optional(Type.Number()),
-  deletions: Type.Optional(Type.Number()),
-  changedFiles: Type.Optional(Type.Number()),
+  isDraft: Maybe(Type.Boolean()),
+  author: Maybe(Login),
+  assignees: Maybe(Type.Array(Login)),
+  reviewRequests: Maybe(Type.Array(Type.Object({ login: Maybe(Type.String()), name: Maybe(Type.String()) }))),
+  labels: Maybe(Type.Array(Named)),
+  baseRefName: Maybe(Type.String()),
+  headRefName: Maybe(Type.String()),
+  mergeable: Maybe(Type.String()),
+  mergeStateStatus: Maybe(Type.String()),
+  body: Maybe(Type.String()),
+  url: Maybe(Type.String()),
+  createdAt: Maybe(Type.String()),
+  updatedAt: Maybe(Type.String()),
+  additions: Maybe(Type.Number()),
+  deletions: Maybe(Type.Number()),
+  changedFiles: Maybe(Type.Number()),
 });
 export type GhPrRow = Static<typeof GhPrRowSchema>;
 
 export const GhPrListDataSchema = Type.Object({ count: Type.Number(), prs: Type.Array(GhPrRowSchema) });
 export const GhPrDiffDataSchema = Type.Object({ number: Type.Number(), diffBytes: Type.Number(), truncated: Type.Boolean() });
 export const GhPrCheckSchema = Type.Object({
-  name: Type.Optional(Type.String()), state: Type.Optional(Type.String()),
-  status: Type.Optional(Type.String()), conclusion: Type.Optional(Type.String()),
+  name: Maybe(Type.String()), state: Maybe(Type.String()),
+  status: Maybe(Type.String()), conclusion: Maybe(Type.String()),
 });
 export const GhPrChecksDataSchema = Type.Object({ number: Type.Number(), checks: Type.Array(GhPrCheckSchema) });
 export const GhPrFilesDataSchema = Type.Object({

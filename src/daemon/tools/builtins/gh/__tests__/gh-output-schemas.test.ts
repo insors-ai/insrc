@@ -15,12 +15,17 @@ const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
 
 const ISSUE = { number: 7, title: 'a | b', state: 'OPEN', author: { login: 'x' }, assignees: [{ login: 'y' }], labels: [{ name: 'bug' }], body: 'text', url: 'https://github.com/o/r/issues/7', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z', comments: [{ author: { login: 'z' }, body: 'c', createdAt: '2026-01-01T00:00:00Z' }] };
 const PR = { number: 3, title: 't', state: 'OPEN', isDraft: false, author: { login: 'x' }, reviewRequests: [{ login: 'r' }], labels: [{ name: 'l' }], baseRefName: 'main', headRefName: 'f', mergeable: 'MERGEABLE', mergeStateStatus: 'CLEAN', body: 'b', url: 'u', additions: 1, deletions: 2, changedFiles: 1 };
+/** gh sends a null author for a deleted account */
+const GHOST_ISSUE = { ...ISSUE, author: null, comments: [{ author: null, body: 'c' }], body: null };
+const GHOST_PR = { ...PR, author: null, body: null, mergeable: null };
 const URL_OUT = 'https://github.com/o/r/pull/3\n';
 
 /** tool, an input that satisfies it, and what the fake gh prints */
 const CASES: Array<[Tool, Record<string, unknown>, string]> = [
 	[issue.ghIssueListTool, {}, JSON.stringify([ISSUE])],
 	[issue.ghIssueViewTool, { number: 7 }, JSON.stringify(ISSUE)],
+	[issue.ghIssueListTool, {}, JSON.stringify([GHOST_ISSUE])],
+	[issue.ghIssueViewTool, { number: 7 }, JSON.stringify(GHOST_ISSUE)],
 	[issue.ghIssueCreateTool, { title: 't' }, URL_OUT],
 	[issue.ghIssueCommentTool, { number: 7, body: 'b' }, URL_OUT],
 	[issue.ghIssueEditTool, { number: 7, title: 't' }, ''],
@@ -32,6 +37,8 @@ const CASES: Array<[Tool, Record<string, unknown>, string]> = [
 	[pr.ghPrDiffTool, { number: 3 }, 'diff --git a/x b/x\n+y\n'],
 	[pr.ghPrChecksTool, { number: 3 }, JSON.stringify({ number: 3, statusCheckRollup: [{ name: 'ci', status: 'COMPLETED', conclusion: 'SUCCESS' }, { state: 'SUCCESS' }] })],
 	[pr.ghPrFilesTool, { number: 3 }, JSON.stringify({ files: [{ path: 'a.ts', additions: 1, deletions: 0 }] })],
+	[pr.ghPrListTool, {}, JSON.stringify([GHOST_PR])],
+	[pr.ghPrViewTool, { number: 3 }, JSON.stringify(GHOST_PR)],
 	[pr.ghPrCreateTool, { title: 't' }, URL_OUT],
 	[pr.ghPrEditTool, { number: 3, title: 't' }, ''],
 	[pr.ghPrCommentTool, { number: 3, body: 'b' }, URL_OUT],
@@ -42,7 +49,7 @@ const CASES: Array<[Tool, Record<string, unknown>, string]> = [
 ];
 
 test('gh-output-schemas.test.ts: issue and pr tool results validate against their output schemas for success and failure', async () => {
-	assert.equal(CASES.length, 20);
+	assert.equal(CASES.length, 24);
 	for (const [tool] of CASES) {
 		// the class a tool declares is the one ghApprovalClass gives its id
 		assert.equal(tool.approval, tool.approval === undefined ? undefined : ghApprovalClass(tool.id, {}), tool.id);

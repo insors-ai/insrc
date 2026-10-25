@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T18:10:21.974Z",
+    "updatedAt": "2026-10-25T18:23:06.887Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -546,6 +546,86 @@
               },
               {
                 "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "d0fd984ae",
+        "ranAt": "2026-10-25T18:23:06.887Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-REPLAY: same/changed payload, HMAC, ticket/receipt quotas and expiry truth",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S3-REPLAY: ticket and receipt quotas never evict live operation history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-REPLAY: concurrent real mutation and lost socket reply reconciliation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2970,
+            "titles": [
+              {
+                "title": "CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: ticket and receipt quotas never evict live operation history",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
                 "result": "pass"
               }
             ],

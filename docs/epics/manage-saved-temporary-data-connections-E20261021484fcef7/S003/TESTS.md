@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -147,3 +147,28 @@ Run at 2026-10-25T18:10:21.974Z on commit `ea3dba90b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 5 | 2.3 s |  |
+
+## t7
+
+Run at 2026-10-25T18:23:06.887Z on commit `d0fd984ae`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S3-REPLAY: same/changed payload, HMAC, ticket/receipt quotas and expiry truth**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S3-REPLAY: ticket and receipt quotas never evict live operation history | `src/daemon/db/__tests__/session-ledger.test.ts` |
+
+**integration: CM-S3-REPLAY: concurrent real mutation and lost socket reply reconciliation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume | `src/daemon/db/__tests__/session-ledger.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-ledger.test.ts` | 0 | 5 | 3 s |  |

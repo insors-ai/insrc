@@ -172,7 +172,8 @@ export interface SpawnedProcess {
    * the review-mode permission-decision relay (host answers the CLI's prompt).
    * Optional so existing spawner impls/tests that never answer prompts keep
    * compiling and behaving as today (k2); the decision relay guards on its
-   * presence before calling. Only review mode uses it; auto mode never does.
+   * presence before calling. Claude also requires it for initial structured user input.
+   * A returned promise acknowledges writing; rejections are surfaced by the adapter.
    */
   write?(data: string): void | Promise<void>;
   /** With a session output: the position just after the last line lines() yielded. */
@@ -239,6 +240,8 @@ const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
 interface TurnState {
   /** Expected native request identity, reconstructed from the durable host turn id. */
   requestUuid?: string;
+  /** Most recent native result; legacy readers defer it until the segment ends. */
+  result?: Extract<TurnEvent, { kind: 'done' }>;
   sessionId?: string;
   /**
    * S001 (dev-chat ux polish): tool_use `id` -> the command it ran, remembered so a later
@@ -674,7 +677,8 @@ const claudeMapper: ProviderMapper = {
       // Story S004: an is_error result carries the provider's text; keep it on the done event.
       const failed = obj['is_error'] === true;
       const text = failed && typeof obj['result'] === 'string' && (obj['result'] as string).trim() !== '' ? (obj['result'] as string).trim() : undefined;
-      return [{ kind: 'done', turnId, ok: !failed, ...(text !== undefined ? { message: text } : {}) }];
+      state.result = { kind: 'done', turnId, ok: !failed, ...(text !== undefined ? { message: text } : {}) };
+      return state.requestUuid === undefined ? [] : [state.result];
     }
     // S004: a host-answered permission prompt (--permission-prompts host). claude raises
     // it as a control_request / permission_request envelope (or a nested can_use_tool
@@ -1157,6 +1161,23 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       ...(!ok && message !== undefined ? { message } : {}),
     });
     try {
+      if (mapper.id === 'claude') {
+        // A saved cursor contains identity, but not result/session state. Reconstruct
+        // it without replaying visible events, including after a second reload.
+        for await (const { line } of sessionOutput.tail(req.cursor, {
+          finished: () => true, fromTurnStart: true, beforeOffset: req.cursor.offset, signal: opts?.signal,
+        })) {
+          try { mapper.mapLine(line, turnId, state); }
+          catch { log.warn(`[chat:${mapper.id}] skipped unparseable prefix line`); }
+          if (requestUuid !== undefined && state.result !== undefined) break;
+        }
+        if (opts?.signal?.aborted === true) return;
+        // The terminal line may have been checkpointed immediately before a reload.
+        if (requestUuid !== undefined && state.result !== undefined) {
+          yield doneEvent(state.result.ok, state.result.message);
+          return;
+        }
+      }
       for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
@@ -1182,7 +1203,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       return;
     }
     if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
-    yield { kind: 'error', turnId, message: 'the turn ended without a result' };
+    if (mapper.id === 'claude' && requestUuid === undefined && state.result !== undefined) {
+      yield doneEvent(state.result.ok, state.result.message);
+    } else {
+      yield { kind: 'error', turnId, message: 'the turn ended without a result for this request' };
+    }
   }
 
   return { run, resume, cancel, decide, capabilities: { resume: mapper.resume } };

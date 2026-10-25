@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createSessionOutput } from '../session-output.js';
 import { createProviderRegistry, nodeSpawner } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
-import { makeFakeSpawner } from './fixtures.js';
+import { makeFakeSpawner, waitFor } from './fixtures.js';
 
 const text = (value: string): string => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: value }] } });
 async function collect(stream: AsyncIterable<TurnEvent>): Promise<TurnEvent[]> {
@@ -122,11 +122,9 @@ test('live pipe and retained output preserve tools and final reply after a queue
       {type:'assistant',message:{content:[{type:'text',text:'Final reply'}]}},
       {type:'result',user_message_uuid:req.uuid,result:'Final reply'}
     ];for(const frame of frames)process.stdout.write(JSON.stringify(frame)+'\\n');setTimeout(()=>process.exit(0),10000);});`;
-    // String.raw is unnecessary here: the child needs a literal JS newline escape.
-    const childScript = script.replaceAll('\\\\n', '\\n');
     let proc: import('../cli-adapter.js').TurnProcess | undefined;
     const adapter = createProviderRegistry({
-      spawn: (_command, _args, opts) => nodeSpawner(process.execPath, ['-e', childScript], opts),
+      spawn: (_command, _args, opts) => nodeSpawner(process.execPath, ['-e', script], opts),
       isInstalled: () => true, sessionOutput,
     }).get('claude');
     try {
@@ -144,4 +142,79 @@ test('live pipe and retained output preserve tools and final reply after a queue
       assert.equal(exited, false, 'own completion precedes background process exit');
     } finally { await proc?.stop(); }
   }
+});
+
+test('legacy failed result survives two reloads without duplicate visible output', async () => {
+  const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'issue83-legacy-')), 'output'), pollMs: 5 });
+  const previous = await sessionOutput.beginTurn('session', 'previous');
+  appendFileSync(previous.outPath, JSON.stringify({ type: 'result', is_error: true, result: 'wrong previous turn' }) + '\n');
+  const segment = await sessionOutput.beginTurn('session', 'legacy-turn');
+  const prefix = [text('already displayed'), JSON.stringify({ type: 'result', is_error: false }), text('actual reply'), JSON.stringify({ type: 'result', is_error: true, result: 'native failure retained' })].join('\n') + '\n';
+  appendFileSync(segment.outPath, prefix);
+  let alive = true;
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, isAlive: () => alive, processStartTime: () => 1, livenessPollMs: 5 }).get('claude');
+  let cursor = segment.cursor;
+  for (let reload = 0; reload < 2; reload++) {
+    const controller = new AbortController();
+    const events: TurnEvent[] = [];
+    const following = (async () => {
+      for await (const event of adapter.resume({ cursor, pid: 123, startedAt: 1 }, { signal: controller.signal, onProgress: c => { cursor = c; } })) events.push(event);
+    })();
+    if (reload === 0) await waitFor(() => cursor.offset === segment.cursor.offset + Buffer.byteLength(prefix));
+    else await new Promise(r => setTimeout(r, 20));
+    controller.abort();
+    await following;
+    assert.deepEqual(events.map(e => e.kind), reload === 0 ? ['assistant-delta', 'assistant-delta'] : []);
+    assert.equal(cursor.offset, segment.cursor.offset + Buffer.byteLength(prefix));
+  }
+  alive = false;
+  const events = await collect(adapter.resume({ cursor, pid: 123, startedAt: 1 }));
+  assert.deepEqual(events.map(e => e.kind), ['done']);
+  assert.equal((events[0] as {ok:boolean}).ok, false);
+  assert.equal((events[0] as {message:string}).message, 'native failure retained');
+});
+
+test('checkpointed own terminal is recovered on reattach without duplicated content', async () => {
+  const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'issue83-terminal-')), 'output'), pollMs: 5 });
+  const uuid = '12345678-1234-4234-8234-123456789abc';
+  const segment = await sessionOutput.beginTurn('session', `claude-request-${uuid}`);
+  const prefix = [text('displayed'), JSON.stringify({type:'result',user_message_uuid:uuid,is_error:true,result:'own failure'})].join('\n')+'\n';
+  appendFileSync(segment.outPath,prefix);
+  const cursor = {...segment.cursor,offset:segment.cursor.offset+Buffer.byteLength(prefix)};
+  const adapter = createProviderRegistry({spawn:makeFakeSpawner({lines:[]}).spawn,isInstalled:()=>true,sessionOutput,isAlive:()=>false}).get('claude');
+  const events = await collect(adapter.resume({cursor,pid:123,startedAt:1}));
+  assert.deepEqual(events.map(e=>e.kind),['done']);
+  assert.equal((events[0] as {message:string}).message,'own failure');
+});
+
+test('Codex item completion retains content and native turn completion does not wait for exit', async () => {
+  const spawner=makeFakeSpawner({hangUntilKilled:true,lines:[
+    JSON.stringify({type:'item.completed',item:{type:'agent_message',text:'Codex reply'}}),
+    JSON.stringify({type:'turn.completed'}),
+    JSON.stringify({type:'item.completed',item:{type:'agent_message',text:'late'}}),
+  ]});
+  const adapter=createProviderRegistry({spawn:spawner.spawn,isInstalled:()=>true}).get('codex');
+  try {
+    const events=await collect(adapter.run({provider:'codex',cwd:'/tmp',prompt:'hi'}));
+    assert.deepEqual(events.map(e=>e.kind),['assistant-delta','done']);
+    assert.equal((events[0] as {text:string}).text,'Codex reply');
+    assert.equal(spawner.procs[0]!.exited(),false);
+    assert.deepEqual(spawner.procs[0]!.signals(),[]);
+  } finally {spawner.procs[0]?.exitNow();}
+});
+
+test('legacy replay waits through multiple results and reports missing retained prefixes explicitly', async () => {
+  const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'issue83-old-')), 'output'), pollMs: 5 });
+  const segment = await sessionOutput.beginTurn('session', 'old-turn');
+  appendFileSync(segment.outPath, [JSON.stringify({type:'result',is_error:true,result:'prior failure'}),text('actual reply'),JSON.stringify({type:'result',is_error:false})].join('\n')+'\n');
+  await sessionOutput.endTurn('session','old-turn',{code:0,signal:null});
+  const warnings:string[]=[];
+  const adapter=createProviderRegistry({spawn:makeFakeSpawner({lines:[]}).spawn,isInstalled:()=>true,sessionOutput,isAlive:()=>false,logger:{warn:m=>warnings.push(m),error:()=>{}}}).get('claude');
+  const events=await collect(adapter.resume({cursor:segment.cursor,pid:123,startedAt:1}));
+  assert.deepEqual(events.map(e=>e.kind),['assistant-delta','done']);
+  assert.equal((events[0] as {text:string}).text,'actual reply');
+  assert.equal((events[1] as {ok:boolean}).ok,true);
+  const missing=await collect(adapter.resume({cursor:{...segment.cursor,turnId:'missing'},pid:123,startedAt:1}));
+  assert.deepEqual(missing,[],'retention failure must not invent successful completion');
+  assert.equal(warnings.length,1);
 });

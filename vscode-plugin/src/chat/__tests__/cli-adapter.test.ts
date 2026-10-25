@@ -1339,11 +1339,12 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   })();
   await tick(20);
   appendFileSync(seg.outPath, `${CLAUDE_TEXT_TURN[2]}\n${CLAUDE_TEXT_TURN[3]}\n{"type":"after"}\n`);
+  await sessionOutput.endTurn('s1', 'turn-1', { code: 0, signal: null });
   await following;
   assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'done'], 'only the events after the saved cursor, ending at the terminal one');
   assert.equal((events[0] as { text: string }).text, 'world');
   assert.equal(events.every((e) => e.turnId === 'turn-1'), true);
-  assert.equal(progress.length, 2, 'positions include the terminal line');
+  assert.equal(progress.length, 3, 'legacy replay checkpoints every line through segment end');
 
   // A turn whose process is gone without a terminal event.
   const seg2 = await sessionOutput.beginTurn('s1', 'turn-2');
@@ -1689,6 +1690,7 @@ test('a claude result with is_error carries its text on done ok:false, a codex e
   const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, livenessPollMs: 5 }).get('claude');
   const seg = await sessionOutput.beginTurn('s9', 'turn-9');
   appendFileSync(seg.outPath, `${claudeFail[0]}\n${claudeFail[1]}\n`);
+  await sessionOutput.endTurn('s9', 'turn-9', { code: 0, signal: null });
   const resumed: TurnEvent[] = [];
   for await (const ev of adapter.resume({ cursor: seg.cursor, pid: process.pid, startedAt: defaultProcessStartTime(process.pid) ?? null })) resumed.push(ev);
   const rd = resumed.at(-1) as { kind: string; ok: boolean; message?: string };

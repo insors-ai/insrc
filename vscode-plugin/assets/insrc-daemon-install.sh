@@ -288,7 +288,8 @@ model_defs() {
 const [file, kind, what] = process.argv.slice(1);
 const defs = JSON.parse(require("fs").readFileSync(file, "utf8"));
 if (what === "toolloop") { process.stdout.write(defs.families.find(f => f.cliKind === undefined).toolLoopModel); process.exit(0); }
-const fam = defs.families.find(f => f.cliKind === kind);
+const def = defs.families.find(f => f.id === defs.defaultFamily);
+const fam = def !== undefined && def.cliKind === kind ? def : defs.families.find(f => f.cliKind === kind);
 const t = fam.tierDefaults;
 if (what === "summary") { process.stdout.write(["core", "mid", "cheap"].map(n => n + "=" + t[n].model).join(", ")); process.exit(0); }
 const tier = n => JSON.stringify({ runner: fam.id, model: t[n].model, ...(t[n].effort !== undefined ? { effort: t[n].effort } : {}) });

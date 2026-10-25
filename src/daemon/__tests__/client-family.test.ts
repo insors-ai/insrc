@@ -83,10 +83,10 @@ test("client-family.test.ts: step host and one-shot analyze map client 'claude'/
 		assert.equal(frames.at(-1)?.stream, 'done', JSON.stringify(frames));
 	}
 	assert.deepEqual(seen, ['claude→cli-codex', 'codex→cli-claude']);
-	// A client no family runs is refused, naming the definitions' CLI kinds.
+	// An unknown client identity is refused.
 	const refused = await collect({ tool: 'insrc_triage', args: {}, context: { cwd: '/caller', client: 'gemini' } }, table);
 	assert.equal(refused.at(-1)?.stream, 'error');
-	assert.match(JSON.stringify(refused.at(-1)?.data), /`context.client` must be 'codex' or 'claude'/);
+	assert.match(JSON.stringify(refused.at(-1)?.data), /`context.client` must be 'claude' or 'codex'/);
 
 	// One-shot analyze: the run is inside the client provider context of the implied family.
 	const runIn = async (ctx: StepCallContext, clientDefault?: 'cli-claude' | 'cli-codex' | 'ollama'): Promise<string | undefined> => {

@@ -48,12 +48,12 @@ function step4b(): string {
 	return script.slice(start, end);
 }
 
-function dryRun(cli: 'claude' | 'codex', embedder: 'ollama' | 'onnx'): Record<string, any> {
+function dryRun(cli: 'claude' | 'codex', embedder: 'ollama' | 'onnx', defs: unknown = FIXTURE): Record<string, any> {
 	const dir = mkdtempSync(join(tmpdir(), 'installer-defs-'));
 	try {
 		const checkout = join(dir, 'daemon');
 		mkdirSync(join(checkout, 'src', 'assets', 'models'), { recursive: true });
-		writeFileSync(join(checkout, 'src', 'assets', 'models', 'cloud-model-catalog.json'), JSON.stringify(FIXTURE));
+		writeFileSync(join(checkout, 'src', 'assets', 'models', 'cloud-model-catalog.json'), JSON.stringify(defs));
 		const home = join(dir, 'home');
 		mkdirSync(home);
 		const prelude = 'set -euo pipefail\nlog(){ :; }\nok(){ echo "OK: $*"; }\nwarn(){ :; }\ndie(){ echo "FATAL: $*" >&2; exit "${2:-1}"; }\nC_BOLD=""; C_RESET=""\n';
@@ -108,4 +108,10 @@ test("installer-defs.test.ts: both installer copies are identical with no tier-m
 	});
 	assert.equal(codex['models'].local.coreModel, 'llama:q');
 	assert.equal(codex['models'].local.embeddingModel, 'nomic-ai/nomic-embed-text-v1.5');
+
+	// Two families run the codex CLI: the default family wins, as familyForClient picks it.
+	const twoCodex = structuredClone(FIXTURE) as typeof FIXTURE & { defaultFamily: string };
+	twoCodex.families[0]!.cliKind = 'codex';
+	twoCodex.defaultFamily = 'cli-codex';
+	assert.equal(dryRun('codex', 'ollama', twoCodex)['models'].tiers.core.runner, 'cli-codex');
 });

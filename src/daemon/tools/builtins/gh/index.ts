@@ -1,7 +1,7 @@
 /**
  * GitHub tools -- registration entry point.
  *
- * Domains (46 tools):
+ * Domains (46 tools, plus the op-based families in manage.ts):
  *   issue   list / view / create / comment / edit / close / reopen / link      (8)
  *   pr      list / view / diff / checks / files / create / edit / comment /
  *           review / merge / close / ready                                     (12)
@@ -40,6 +40,10 @@ import {
   ghRepoViewTool, ghRepoListTool, ghRepoCreateTool,
   ghRepoForkTool, ghRepoDeleteTool, ghRepoCloneTool,
 } from './repo.js';
+
+import {
+  ghIssueManageTool, ghPrManageTool, ghProjectManageTool, ghReleaseAssetTool, ghRepoManageTool, ghRunManageTool, ghWorkflowManageTool,
+} from './manage.js';
 
 export function registerGhTools(): void {
   // Issues
@@ -99,4 +103,13 @@ export function registerGhTools(): void {
   registerTool(ghRepoForkTool);
   registerTool(ghRepoDeleteTool);
   registerTool(ghRepoCloneTool);
+
+  // Families (op-based)
+  registerTool(ghIssueManageTool);
+  registerTool(ghPrManageTool);
+  registerTool(ghReleaseAssetTool);
+  registerTool(ghRepoManageTool);
+  registerTool(ghRunManageTool);
+  registerTool(ghWorkflowManageTool);
+  registerTool(ghProjectManageTool);
 }

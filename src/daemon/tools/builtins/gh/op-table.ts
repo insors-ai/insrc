@@ -67,11 +67,16 @@ export function fieldSchema(spec: FieldSpec): TSchema {
 
 export type Arg =
   | { readonly pos: string }
-  | { readonly flag: string; readonly field: string; readonly as?: 'value' | 'bool' | 'repeat' | 'csv' }
+  | { readonly spread: string }
+  | { readonly flag: string; readonly field: string; readonly as?: 'value' | 'bool' | 'bool3' | 'repeat' | 'csv' }
   | { readonly lit: readonly string[]; readonly when?: (input: ToolInput) => boolean };
 
 /** A positional taken from a field when it is given. */
 export const pos = (name: string): Arg => ({ pos: name });
+/** Every member of a list field as its own positional. */
+export const spread = (name: string): Arg => ({ spread: name });
+/** A value-less flag that can also be switched off: true passes --flag, false passes --flag=false. */
+export const onOff = (flag: string, name: string): Arg => ({ flag, field: name, as: 'bool3' });
 /** A flag with a value. */
 export const val = (flag: string, name: string): Arg => ({ flag, field: name, as: 'value' });
 /** A value-less flag, passed when the boolean field is true. */
@@ -136,6 +141,12 @@ export interface OpDef {
 // Input rules
 // ---------------------------------------------------------------------------
 
+/** A field has a value, even a false boolean. */
+export function isSet(input: ToolInput, name: string): boolean {
+  const v = input[name];
+  return v !== undefined && v !== null;
+}
+
 /** A field is given unless it is absent, null or a false boolean. */
 export function given(input: ToolInput, name: string): boolean {
   const v = input[name];
@@ -157,7 +168,7 @@ export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
     if (n !== 1) { return `op ${def.name} needs exactly one of ${group.join(', ')}`; }
   }
   for (const group of def.atLeastOne ?? []) {
-    if (!group.some(k => given(input, k))) { return `op ${def.name} needs at least one of ${group.join(', ')}`; }
+    if (!group.some(k => isSet(input, k))) { return `op ${def.name} needs at least one of ${group.join(', ')}`; }
   }
   for (const group of def.exclusive ?? []) {
     if (group.filter(k => given(input, k)).length > 1) { return `op ${def.name} takes at most one of ${group.join(', ')}`; }
@@ -181,8 +192,12 @@ export function buildArgv(def: OpDef, input: ToolInput): string[] {
     if ('pos' in a) {
       const v = input[a.pos];
       if (v !== undefined && v !== null) { argv.push(String(v)); }
+    } else if ('spread' in a) {
+      const v = input[a.spread];
+      if (Array.isArray(v)) { argv.push(...v.map(String)); }
     } else if ('flag' in a) {
       const v = input[a.field];
+      if (a.as === 'bool3') { if (v === true) { argv.push(a.flag); } else if (v === false) { argv.push(`${a.flag}=false`); } continue; }
       if (v === undefined || v === null || v === false) { continue; }
       if (a.as === 'bool') { argv.push(a.flag); }
       else if (a.as === 'repeat' && Array.isArray(v)) { for (const x of v) { argv.push(a.flag, String(x)); } }
@@ -210,7 +225,9 @@ export function buildInputSchema(ops: readonly OpDef[]): TSchema {
     for (const [k, spec] of Object.entries(def.fields ?? {})) {
       const schema = fieldSchema(spec);
       const prior = schemas.get(k);
-      if (prior !== undefined && JSON.stringify(prior) !== JSON.stringify(schema)) { throw new Error(`field ${k} is declared differently by two ops (op ${def.name})`); }
+      // two ops may describe a shared field in their own words; its type, bounds and values must agree
+      const bare = (t: TSchema): string => JSON.stringify({ ...t, description: undefined });
+      if (prior !== undefined && bare(prior) !== bare(schema)) { throw new Error(`field ${k} is declared differently by two ops (op ${def.name})`); }
       schemas.set(k, schema);
     }
   }
@@ -255,7 +272,7 @@ export function rejectInput(id: string, msg: string): ToolResult {
   return { output: `[${id}] ${msg}`, format: 'text', success: false, error: msg, failure: { kind: 'rejected', message: msg } };
 }
 
-const URL_RE = /https?:\/\/\S+/;
+const URL_RE = /https?:\/\/[^\s"',)}\]]+/;
 
 function previewValue(v: unknown): string {
   const s = typeof v === 'string' ? v : JSON.stringify(v);

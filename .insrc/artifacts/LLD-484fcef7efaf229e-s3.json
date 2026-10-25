@@ -186,12 +186,12 @@
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     },
-    "updatedAt": "2026-10-25T09:10:21.230Z"
+    "updatedAt": "2026-10-25T09:28:27.096Z"
   },
   "body": {
     "summary": {
       "audience": "product",
-      "prose": "Temporary connections belong to a workbench session and a selected repository, so one-off files and other sources can be analyzed without saving connection configuration or credentials. Closing the panel or switching repositories preserves them; ending the workbench, losing its 90-second lease or restarting the daemon expires them. This story supplies the daemon session protocol and execution isolation; S005 supplies the lifetime explanation and manager UI."
+      "prose": "Temporary connections belong to a workbench session and a selected repository, so one-off files and other sources can be analyzed without saving connection configuration or credentials. Closing the panel or switching repositories preserves them; ending the workbench, losing its 90-second lease or restarting the daemon expires them. This story supplies the daemon session protocol and execution isolation; S005 supplies the lifetime explanation and manager UI. Temporary data uses a verified local nonpersistent provider mode for LLM analysis; unavailable modes fail explicitly without changing the selected model tier."
     },
     "hldContextSlice": {
       "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
@@ -345,7 +345,7 @@
       "api": [
         {
           "name": "TemporaryConnectionStore",
-          "signature": "interface TemporaryConnectionStore { open(context: TrustedRpcContext, request: { repoRoot: string }): Promise<OpenConnectionSessionResult>; resume(context: TrustedRpcContext, request: SessionResume): Promise<OpenConnectionSessionResult>; heartbeat(context: TrustedRpcContext): Promise<{ status: 'active'; leaseMs: 90000 }>; register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; end(sessionHandle: string): Promise<void>; }",
+          "signature": "interface TemporaryConnectionStore { open(context: TrustedRpcContext, request: { repoRoot: string }): Promise<OpenConnectionSessionResult>; resume(context: TrustedRpcContext, request: SessionResume): Promise<OpenConnectionSessionResult>; heartbeat(context: TrustedRpcContext): Promise<{ status: 'active'; leaseMs: 90000 }>; register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; delegate(context: TrustedRpcContext, request: { repoRoot: string }): Promise<SessionResume>; end(sessionHandle: string): Promise<void>; }",
           "parameters": [
             {
               "name": "context",
@@ -388,7 +388,8 @@
             "sc5 methods are proposed additions, not existing support. Use a fixed private RPC family db.connections.v2.session.open/resume/attach/heartbeat/end. End by handle is an internal function; public end accepts no arbitrary handle and derives it from the authenticated transport.",
             "Open creates a random256-bit handle, separate random256-bit bearer capability and random session-memory HMAC key; only capability digest is retained for constant-time verification. Dedicated control transport attachment survives transient reconnect through resume; data/MCP transports use attach and cannot renew the lease.",
             "Canonical registered-root eligibility is required for each temporary management operation and overlay. One session may own overlays for multiple eligible roots; panel/repo switch never ends it. No authorization from PID/client label/chat ID.",
-            "Session methods and all session-bound data work route to main daemon, not worker-thread stores. A daemon-owned immutable access context is bound to request lifetime and validated again after awaits."
+            "Session methods and all session-bound data work route to main daemon, not worker-thread stores. A daemon-owned immutable access context is bound to request lifetime and validated again after awaits.",
+            "Control and data authority use DISTINCT role-bound capability digests. Open/resume returns only control capability; new strict db.connections.v2.session.delegate on the current control transport validates canonical registered repoRoot and mints a data-only SessionResume token bound to session/root/control-generation. Private MCP bootstrap passes only that data token. session.attach accepts SessionResume plus exact repoRoot and never accepts a control token. Resume accepts only the control capability; data tokens cannot resume, delegate, heartbeat or end, even on a fresh socket. No role comes from a client-supplied label. Bound32 active delegation tokens per session; expired/revoked tokens are removed and quota refusal is busy."
           ],
           "postconditions": [
             "Open/resume returns heartbeatMs30000/leaseMs90000. Heartbeat is accepted only on current control generation; resume atomically increments generation and detaches the old control transport. An exactly-at-deadline request expires before authorization; only a valid pre-deadline heartbeat extends the monotonic deadline.",
@@ -396,7 +397,8 @@
             "register resolves Keep only from selected immutable in-memory generation; Replace/Clear update private data only. Never call resolveConfigSecrets/keychain/list/load/adoption or any registry writer for temporary state. Paths use existing prepareRuntimeConfig. New ID/kind/family immutable per existing profile rules.",
             "Create/update commits memory entry + revision + receipt atomically under the same root gate as saved ID reservation. Activation is afterward; failure does not erase committed truth. Existing active leases refuse update; no user remove workflow in S003.",
             "End/lease expiry first closes admission and detaches every transport; cancels owned runs/probes/conversion and synchronously prevents further resolution; drops capabilities/receipts/config secret references, then awaits active operations and owned close. Failures leave a closed cleanup record with only owned runtime handles and safe counters; no success reported while a child/resource remains. Daemon shutdown awaits drains; process restart has no recoverable temporary state.",
-            "Limit64 live sessions,64 connections/session,8MiB cumulative serialized config/session and16384 receipts/session; return existing busy on quota before committing, never evict live receipts silently. Per temporary file resource uses existing sc8 memoryBudgetBytes256MiB/allowSpillfalse; file source/data/config/capability material never goes to temp/cache/logs. Budgets are fixed internal limits, not a UI option. JS garbage collection limits mean logical erasure rather than guaranteed physical zeroization."
+            "Limit64 live sessions,64 connections/session,8MiB cumulative serialized config/session and16384 receipts/session; return existing busy on quota before committing, never evict live receipts silently. Per temporary file resource uses existing sc8 memoryBudgetBytes256MiB/allowSpillfalse; file source/data/config/capability material never goes to temp/cache/logs. Budgets are fixed internal limits, not a UI option. JS garbage collection limits mean logical erasure rather than guaranteed physical zeroization.",
+            "Control resume revokes old-generation data attachments/delegations after canceling their in-flight work, preserving overlay state. Current control can re-delegate over the existing private child control pipe; each forwardStep attaches its fresh socket with the current root-bound data token. Lost/revoked bootstrap fails session-expired until refreshed, never saved-only fallback. Parent/workbench lifetime integration remains S005; sc5 owns only this protocol and backend authority."
           ]
         },
         {
@@ -582,6 +584,40 @@
           "src/daemon/server.ts",
           "src/shared/step-context.ts"
         ]
+      },
+      {
+        "entity": "S003ReviewCycleTwoCorrections",
+        "change": "invariant-change",
+        "details": "### Root-bound connection-scope resolution\n\nThe session data attachment is bound to exactly one canonical selected lookupRoot, chosen at authenticated attach and revalidated for registered-root eligibility. Panels/root switches create or reattach a data channel to the selected root while the same workbench session owns its other overlays. Scope IDs emitted by a model do not select a different root. connectionIsRegistered must check the visible saved+temporary entries at this root through the live resolver, and resolveConnection must return that root plus the selected ID/revision. It never enumerates other repositories in session mode. If a temporary-only ID is absent/expired, report not-found/session-expired; a same-name saved ID elsewhere must remain invisible. Existing unattached saved ambiguity and own-directory semantics stay unchanged. [[c15]]\n\nProposed additive signatures: resolveScope(ref, deps?, execution?); resolveScopeForTarget(ref, target, deps?, table?, execution?); connectionIsRegistered(id, deps?, execution?); resolveTaskScope(ref, family, templateLabel, deps?, table?, execution?); prepareScope(mode, inputs, deps?, execution?); stepScope(intent, deps?, execution?). ClassifyDriverArgs gains readonly connectionAccess/executionPolicy; connectionCheckFor uses an owner-derived checker for session work, including target-hint bypass and injected checker tests. Existing arguments and defaults remain for unattached calls; the session-memory binding itself makes omitted carrier an error. Data-target child scopes outside the attachment root are refused before measurement, lookup or provider calls. Code/docs/infra keep their graph semantics and the same nonpersistent execution policy.\n\n### Streaming maintenance and recursive execution\n\nholdingForward must distinguish response delivery from actual handler settlement. For any request with a lifetime, neither a done/error frame nor socket cancellation releases the real maintenance shared hold. directDispatch settles the handler, seals/completes RequestLifetime in finally, and the entry wrapper awaits completed AND drained. A refusal before dispatch completes an empty lifetime without constructing a driver. Legacy no-lifetime callers and genuine subscription exceptions retain their behavior; session data work is not a subscription exception. Tests acquire the enabled exclusive maintenance lock while a real stream has sent its terminal frame, disconnected, or thrown on delivery, and prove exclusion until delayed owned cleanup settles. [[c15]]\n\nRunAnalyzeOpts, PlanBuilderOpts, RecursivePlannerArgs.opts and all downstream options carry the SAME immutable connectionAccess/executionPolicy; user input does not carry them. The owner supplies a memory-only run-record port. runAnalyze validates before runStages reads any resume record, and scopes live accounting/status/cancel to (owner,root,runId). runStages forwards policy into classification, target-hint checks, measureRequestScope, prepareScope/buildRunBundle, recursive planner and executor. completeRun, outer error handling and interrupted-run repair use the owner port rather than readRunRecord/writeRunRecord. Recursive walk explicitly includes policy in fresh planArgs, childMeasure options, child scope checks and recursive invocation; childInput has no secret authority. Before every child and final publication revalidate session and used revisions. A returned report/status may be read only by the authenticated owner; no terminal/error branch writes to durable run/task/plan/history storage. [[c15]]\n\n### Provider admission contract\n\nThis is an S003 integration guard around the existing LLMProvider abstraction, not a new cloud provider or a change to model tiering. Proposed internal helper in src/analyze/connection-provider.ts: admitConnectionProvider(candidate: LLMProvider, execution: ConnectionExecutionContext, evidence: ConnectionProviderEvidence): LLMProvider. This helper/file is proposed. It returns a per-run facade implementing the existing interface; caller-supplied kind strings, function flags or JSON cannot authorize a provider. The owner maintains a WeakMap identity registration and bounded immutable evidence records tied to exact adapter source/compiled digests, provider kind/version, role/model, loopback endpoint and tested request/trace/retry configuration. All required assertions must be true: no prompt/output/history/cache/failure-file writes, no raw error/payload logs, cancellation and drain propagate, and every retry revalidates authority. Missing/stale proof rejects unsupported-temporary before prompt construction/submission. [[c16]]\n\nSupported S003 mode is narrowly 'ollama-local-memory': only a locally selected Ollama provider, loopback host, no persistent request history/trace, with both adapter tests and an isolated actual-service smoke proving the configured server's no-history/no-prompt-log behavior. A mocked SDK is insufficient release evidence. Production admission starts empty until that evidence passes. Current Claude/Codex CLI modes are explicitly unsupported for session-derived prompts; reject BEFORE temporary schema/failure files or subprocess spawn. No currently supported CLI no-history mode is claimed. A future nonpersistent CLI mode requires its own reviewed proof rather than a guessed flag. Preserve role resolution/model/coreFloor; if the selected candidate is disallowed, report the limitation instead of silently choosing a cheaper/weaker/local alternative. Deterministic session data operations may still run without an LLM. Saved-only work retains existing provider behavior.\n\nGuard every direct/injected/factory path listed below. buildShaperProvider/resolveRoleProvider gain an optional final execution argument; RunAggregatorArgs, DecomposeArgs, synthesis/narrow/classifier/planner/tool-loop arguments forward it explicitly. Guard before building data-bearing messages, and at complete/completeStructured/embed entry plus EVERY internal SDK/structured-output retry and stream attempt. A run-bound Ollama instance or adapter owns the request guard; never attach mutable owner state to the shared role-router cache. An injected provider without owner-issued identity proof is rejected before its method executes. A pre-admitted factory failure, admission failure or expired binding is nonretryable across provider kinds; only a transient failure of the same admitted mode may retry under live authorization. No direct cloud REST/SDK is introduced. Cancellation is propagated to the actual request; registerDrain retains maintenance exclusion until request/stream closes. Only safe fixed error codes reach runtime mapping or logs.\n\nRequired integration proves guard is reached for classification, target-hint path, planning/recurse, decomposition, narrow probes, synthesis, adherence, aggregation and legacy read-only tool loop; denial counters are zero for send, spawn, schema/failure-file creation and raw injected-provider method calls. Cover expiry between attempts, structured retries, streaming cancellation, late response, role-router cache reuse across two owners, configured CLI selection and injected providers that lie about kind. Background summarization/indexing and persistence-capable tools are refused before enqueue/provider use when carrying session-derived data. Existing background providers are unchanged.\n\n### Completed correction inventory\n\nThe original inventory remains; these additional rows close the four findings and enumerate their callers. Static source discovery is bounded to the current checkout and supplemented by the required type-resolved consumer/provider/persistence inventory gate; every newly introduced unknown site blocks enablement. [[c15]] [[c16]]\n\n| Production site | Current owner/behavior | Proposed owner/change | Required regression |\n| --- | --- | --- | --- |\n| src/analyze/context/scope.ts | connectionIsRegistered and private resolveConnection enumerate all saved repository declarations; resolveScope/resolveScopeForTarget call them. | Add a final optional internal execution carrier to resolveScopeForTarget/resolveScope and bound checker. For attached data/connection scopes validate live owner and exact request lookupRoot FIRST, query only that root's context-bound resolver, and set ResolvedScope.lookupPath/repoPath from the validated root. No search of other roots or saved fallback for temporary-only IDs. Unattached calls preserve existing saved enumeration/ambiguity/unreadable-registry behavior. | CM-S3-SCOPE |\n| src/analyze/classifier/driver.ts; src/analyze/classifier/types.ts; src/analyze/classifier/validate.ts | connectionCheckFor defaults to global saved connectionIsRegistered; semantic validation invokes the supplied checker. | Add readonly internal connectionAccess/executionPolicy to ClassifyDriverArgs/opts carrier. connectionCheckFor creates owner/root-bound checker whenever policy is session-memory; optional injected connectionExists cannot replace owner authorization. Run the same checker in validateIntentSemantics for classifier output and target-hint bypass. | CM-S3-SCOPE |\n| src/analyze/runtimes/shared/task-scope.ts; src/analyze/runtimes/data/_shared.ts | resolveDataScope calls resolveTaskScope before reaching a resolver. | Append carrier to resolveTaskScope and forward to resolveScopeForTarget before ensureScopeQueryable/dataScopeOf. Data scopes require exact attached root; non-data scopes retain existing graph/scope semantics while preserving sticky memory-only policy. No temporary-only ID rejected solely because absent from saved registry. | CM-S3-SCOPE |\n| src/analyze/context/driver.ts; src/analyze/measure.ts; src/daemon/steps/analyze-step/scope.ts; src/daemon/steps/analyze-step/phases/start.ts; src/daemon/steps/analyze-step/phases/plan.ts; src/daemon/steps/analyze-step/phases/narrow.ts; src/daemon/analyze-rpc.ts; src/analyze/orchestrator/driver.ts | prepareScope, measureRequestScope, stepScope and run/step preflight call the scope helpers; targetHint may skip classification. | Forward the SAME carrier at every preflight and scope resolution call, including generic connection measurement, target-hint semantic checks, each multi-turn step and resumed run. A targetHint is not permission to run the saved checker. Missing/expired authority is an error, never false-exists followed by global lookup. | CM-S3-SCOPE |\n| src/analyze/runtimes/shared/adherence.ts; src/analyze/runtimes/code/discovery-entrypoints.ts; src/analyze/runtimes/code/discovery-modules.ts; src/analyze/runtimes/code/structure-module-tree.ts; src/analyze/runtimes/code/surface-functional.ts; src/analyze/runtimes/docs/discovery-inventory.ts; src/analyze/runtimes/docs/decision-trace.ts; src/analyze/runtimes/docs/family-summarise.ts; src/analyze/runtimes/docs/constraint-enumerate.ts; src/analyze/runtimes/infra/discovery-families.ts; src/analyze/runtimes/infra/inventory-ci.ts; src/analyze/runtimes/infra/inventory-helm.ts; src/analyze/runtimes/infra/inventory-kubernetes.ts; src/analyze/runtimes/infra/inventory-docker.ts; src/analyze/runtimes/infra/inventory-terraform.ts | Additional resolveTaskScope callers found by full source grep, including mixed child plans. | Propagate carrier from TemplateExecuteArgs through every listed scope caller; code/docs/infra keep target-kind checks and existing graph dependency closure. Mixed tasks cannot drop session-memory policy or switch a data source to another root. These are classification/propagation integrations, not new runtime algorithms. | CM-S3-SCOPE; CM-S3-CONTEXT |\n| src/daemon/threads/maintenance-entry.ts | holdingForward independently resolves streams on done/error and invokes release on stream cancellation. | For requests with RequestLifetime, terminal frame is delivery only; never complete/release on frame or disconnect. Handler final settlement completes lifetime in directDispatch; hold awaits BOTH completed and drained. Cancellation aborts owned work and keeps hold; never-admitted refusal completes empty lifetime. Preserve legacy no-lifetime and UNHELD_METHODS semantics; session data work may not use subscription exceptions. | CM-S3-STREAM |\n| src/analyze/orchestrator/types.ts; src/analyze/orchestrator/driver.ts; src/analyze/orchestrator/live-runs.ts | RunAnalyzeArgs/Opts lack the carrier; runStages reads disk before stages and rebuilds arguments; outer catch/completeRun write run records; live accounting is keyed by runId. | Extend RunAnalyzeOpts with internal carrier and owner-memory record port. runAnalyze admits owner before raiseRunLive/readRunRecord; namespace live/run/status/cancel by owner/root/runId. runStages, emitDoneAndReturn, completeRun and outer catch use the same record port and never disk for session runs. Forward carrier to classify, target-hint validation, scope, root/child measurement, buildRunBundle, planner and executor on success/error/cache-hit/resume branches. Initial/failed/terminal records are all owner memory. | CM-S3-RECURSION; CM-S3-CACHE |\n| src/analyze/planner/recursive.ts; src/analyze/planner/types.ts; src/analyze/planner/driver.ts | RecursivePlannerArgs holds input/opts/provider; walk rebuilds planArgs/childInput and passes only signal to child measure; PlanBuilderOpts lacks policy. | Add carrier to PlanBuilderOpts, inherited through RecursivePlannerArgs.opts; every walk invocation forwards it to runPlanner, child measurement, child scope validation and recursive call. RunPlannerArgs inherits through opts; injected provider is admitted with the same carrier. Parent/child outputs, failed child feedback and retry plans stay owner-memory; revision/owner checks before each recurse and publication. | CM-S3-RECURSION |\n| src/analyze/context/shaper-provider.ts; src/analyze/context/role-router.ts | resolveRoleProvider/buildShaperProvider choose and memoize CLI/Ollama providers from role/repo/global/client configuration. | Keep model/role precedence and coreFloor unchanged. Add final optional carrier to resolution functions; session candidate descriptor enters admission before any prompt-producing call. Cached factory providers cannot carry mutable per-run owner state; return a fresh run-bound guard or reject. Do not substitute Ollama for a selected CLI or lower model just to pass admission. | CM-S3-PROVIDER |\n| src/analyze/classifier/driver.ts; src/analyze/planner/driver.ts; src/analyze/context/decomposer.ts; src/analyze/context/synthesizer.ts; src/analyze/runtimes/shared/aggregator.ts; src/analyze/runtimes/shared/adherence.ts; src/analyze/explore/capability-reuse-check.ts; src/analyze/explore/doc-constraint-enumerate.ts; src/analyze/explore/doc-decision-trace.ts | Direct completeStructured calls, several args.provider/narrowProvider overrides and aggregation of upstream outputs. | Add carrier to each argument/options object. Admit factory AND injected provider before constructing data-bearing messages; invoke only admitted facade. Apply to every structured retry/aggregation and narrow turn, and inherit sticky policy for all upstream-dependent outputs. Raw injected fake/custom providers cannot bypass guard merely by reporting kind=ollama. | CM-S3-PROVIDER |\n| src/analyze/context/driver.ts; src/agent/read-only-tool-loop.ts; src/daemon/tools/types.ts; src/daemon/tools/executor.ts | Legacy freeform builds Ollama directly, passes provider to tool loop and structured answer; tools can use injected embedding provider. | Admit direct buildProvider and injected provider before loop, emitStructuredAnswer and each subsequent turn. ReadOnlyToolLoopArgs/structured answer options carry the internal carrier; ToolDeps receives only admitted provider facade. complete/completeStructured/embed share per-attempt authorization; session tool surface excludes persistence-capable graph/index/artifact tools and background scheduling. | CM-S3-PROVIDER |\n| src/analyze/summariser/driver.ts; src/analyze/context/shaper-provider.ts | Background doc summarizer uses buildSummariserProvider and persists indexed summaries. | Explicit exclusion: indexing/background summarization never accepts session-memory inputs. If a session-derived task reaches summarizer, refuse before any provider call, queue or store write. Normal saved/indexer work unchanged; no session fallback into background lane. | CM-S3-PROVIDER |\n| src/agent/providers/cli-provider.ts; src/agent/providers/ollama.ts; src/agent/providers/structured-output.ts | CLI structured calls may create schema/failure-output files; internal CLI and Ollama retries can issue later attempts without outer re-entry. | Session CLI mode is refused BEFORE schema/temp-file creation or subprocess spawn: no CLI mode is currently verified. Selected local Ollama requires owner-issued evidence described below and a per-run request guard before every client chat/embed attempt, structured retry and stream start; combined abort closes owned request. No shared mutable provider ownership, raw prompt/error logging or persistence fallback. | CM-S3-PROVIDER |\n| src/daemon/steps/analyze-oneshot.ts; src/daemon/steps/analyze-step/handler.ts; src/daemon/analyze-rpc.ts; src/analyze/context/driver.ts; src/analyze/planner/driver.ts; src/analyze/runtimes/shared/aggregator.ts | Provider failures currently pass through several classifier/shaper/planner/runtime error adapters. | Preserve typed unsupported-temporary/session-expired through safe fixed runtime error envelopes; no raw provider exception/output persisted in trace, cache or run record. Denial is nonretryable and cannot trigger alternate provider, saved-only rerun or success with empty output. | CM-S3-PROVIDER |",
+        "callSites": [
+          "src/analyze/context/scope.ts",
+          "src/analyze/classifier/driver.ts",
+          "src/analyze/classifier/validate.ts",
+          "src/analyze/runtimes/shared/task-scope.ts",
+          "src/daemon/threads/maintenance-entry.ts",
+          "src/analyze/orchestrator/driver.ts",
+          "src/analyze/orchestrator/types.ts",
+          "src/analyze/orchestrator/live-runs.ts",
+          "src/analyze/planner/recursive.ts",
+          "src/analyze/planner/types.ts",
+          "src/analyze/context/shaper-provider.ts",
+          "src/analyze/context/role-router.ts",
+          "src/analyze/runtimes/shared/aggregator.ts",
+          "src/agent/read-only-tool-loop.ts",
+          "src/agent/providers/ollama.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      },
+      {
+        "entity": "SessionRoleCapabilities",
+        "change": "invariant-change",
+        "details": "Proposed sc5 memory owner retains separate control/data token digests with audience, exact root for data, control generation and expiry. Session owns0..32 data delegations; each data transport attaches through exactly1 delegation and inherits its root. Control capability is never supplied to an MCP child; it authorizes control resume only. Wire SessionResume shape is unchanged; audience/generation are server-memory properties, not self-asserted fields. A data token replay against resume/heartbeat/end/delegate is rejected before state changes. The delegation addition makes the existing requirement that data attachments cannot control session lifetime enforceable. No tokens appear in persisted artifacts, prompts or logs. [[c6]]",
+        "callSites": [
+          "src/daemon/server.ts",
+          "src/daemon/request-context.ts",
+          "src/mcp/forward-step.ts",
+          "src/daemon/connection-management-rpc.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -668,6 +704,20 @@
           "response": "No persistent read/write; recompute under current owner. Revision change yields conflict; owner loss yields session-expired. Never trust a cached same-ID saved result. Reject unsupported persistence-capable methods/providers before executing.",
           "userImpact": "Temporary results stay isolated; caller restarts stale work instead of seeing another session data.",
           "recoverable": true
+        },
+        {
+          "scenario": "Temporary-only scope or recursive caller loses authority before data resolution",
+          "detection": "Bound connection checker and every scope/measure/recursive call require the live carrier; selected root and used revisions are checked before saved enumeration, record reads, provider send or nested publication.",
+          "response": "Fixed session-expired or not-found/conflict; no cross-root saved fallback. Error/cancel/resume writes only owner-memory records.",
+          "userImpact": "User restarts stale work or selects the correct source; another repository source is never substituted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Selected provider has no verified nonpersistent mode",
+          "detection": "Owner admission registry lacks current candidate identity/digest/model/endpoint privacy evidence, or per-attempt authorization fails before SDK/subprocess call.",
+          "response": "Nonretryable internal unsupported-temporary with fixed safe analysis failure or activation-failed result; no new sc1 ManagementErrorCode is required. Never downgrade model, switch provider, create schema/failure files or emit raw payload errors.",
+          "userImpact": "Deterministic temporary tools remain available; LLM analysis requires a proven supported mode. CLI/cloud modes are not advertised as supported.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -702,6 +752,10 @@
         {
           "input": "Capability-gated release still disabled or mixed-version client",
           "expected": "No temporary features advertised and no session mutation admitted. Existing saved reads remain available; return upgrade-required for unsupported session methods."
+        },
+        {
+          "input": "MCP child presents its valid data capability to control resume on a fresh socket",
+          "expected": "Reject by server-side token audience before transferring control generation or renewing lease; labels and PIDs cannot promote it."
         }
       ],
       "invariantsToPreserve": [
@@ -751,7 +805,10 @@
             "CM-S3-COMPAT: unattached and nested/unregistered saved scope lookup pinned families strict legacy results and S002 draft probe cancellation remain unchanged.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
+            "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
+            "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade."
           ],
           "fixturesNeeded": [
             "Two workbench control sockets plus data sockets, two roots and a nested unregistered saved directory; exact fake keychain and saved metadata bytes.",
@@ -760,7 +817,12 @@
             "Delayed real driver use/build/close, captured child/stdout/stderr and normal daemon logs; recursive isolated HOME/TMP/cache watches and positive auth/row controls.",
             "Private inherited MCP bootstrap pipe and actual MCP↔daemon request lifecycle, nested analysis sessions and overlapping jobs; no real cloud/LLM providers needed.",
             "Prewarm real saved exploration LMDB/bundle/planner/task caches with source canaries; run session A then B with identical IDs/params, update revisions and expire bindings. Assert actual cache getters/setters not called for session work and recursive file/LMDB/Lance/history/trace snapshots unchanged. Use positive controls proving saved cache hits still work.",
-            "Actual fresh-socket MCP forwarder attaches on every invocation; real StreamHandler fourth trusted context and request drain under Router/maintenance owner; replay continuation token across sessions before any output load."
+            "Actual fresh-socket MCP forwarder attaches on every invocation; real StreamHandler fourth trusted context and request drain under Router/maintenance owner; replay continuation token across sessions before any output load.",
+            "Temporary-only connection at root A; saved same-ID declaration at root B; classification and targetHint both exercised through actual prepareScope, generic measure, stepScope, task-scope and resolver. Unattached ambiguous saved case is a positive compatibility control.",
+            "Real enabled maintenance lock and stream handler that emits done/error then delays actual drain; disconnect and throwing delivery must not admit exclusive maintenance until actual completion plus drain.",
+            "Actual root and nested runAnalyze paths with admitted deterministic test provider: success, injected classifier/measure/planner/task/aggregate failure, cache-resume, completeRun and outer repair. Spy every disk read/write and namespace two owners with same runId.",
+            "Provider candidate deny controls: CLI selection, spoofed kind injected provider, stale evidence, role cache reused across owners, expired request between structured retries and late stream response. Prove zero provider method/send/spawn/temp-schema/error-file operations on denied paths. Local actual-service privacy smoke is required before production Ollama admission; absent service is pending evidence, never green mock coverage.",
+            "Control/data role tests use real sockets: data bootstrap cannot call resume/delegate/heartbeat/end; wrong-root attach refuses; old-generation data is revoked and refreshed bootstrap permits only intended root."
           ]
         },
         {
@@ -805,7 +867,10 @@
             "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
+            "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
+            "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade."
           ]
         },
         {
@@ -819,7 +884,10 @@
             "CM-S3-SWEEP: after all implementation tasks run final build and one full regression sweep; record actual failures skips and timeouts and keep release disabled for unresolved prerequisites.",
             "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
             "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
-            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed.",
+            "CM-S3-SCOPE: real classifier target-hint prepareScope measure stepScope and task scopes accept a temporary-only ID only at its attached root; same-name saved ID in another root never wins; unattached saved ambiguity and nested roots remain unchanged.",
+            "CM-S3-RECURSION: actual runAnalyze runStages completeRun outer error repair and recursive walk retain owner policy through child measurement planning execution aggregation and resume; no durable record read or write occurs on any session branch.",
+            "CM-S3-PROVIDER: production factory direct injected role-cache tool-loop and aggregation provider paths admit only verified local memory mode; denial precedes send spawn schema/error-file writes and every retry revalidates owner without model downgrade."
           ]
         }
       ],
@@ -927,6 +995,13 @@
               "range": "TransportAttachment",
               "multivalued": true,
               "minimum_cardinality": 0
+            },
+            "delegations": {
+              "description": "Zero to32 root/generation-bound data-only authority tokens owned by session; control capability is separate.",
+              "range": "DataDelegation",
+              "multivalued": true,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 32
             }
           }
         },
@@ -963,11 +1038,27 @@
         },
         "TransportAttachment": {
           "description": "Validated current control generation or data attachment; no authority from client labels.",
-          "attributes": {}
+          "attributes": {
+            "delegation": {
+              "description": "Data transport uses exactly one live delegation; control attachment uses none.",
+              "range": "DataDelegation",
+              "maximum_cardinality": 1
+            }
+          }
         },
         "RuntimeResource": {
           "description": "Private driver/lease boundary; never shared with saved pool or another session.",
           "attributes": {}
+        },
+        "DataDelegation": {
+          "description": "One server-memory data audience/root/control-generation binding; cannot resume, heartbeat, end or delegate.",
+          "attributes": {
+            "lookupRoot": {
+              "description": "Exactly one canonical registered repository permitted for this delegation.",
+              "range": "string",
+              "required": true
+            }
+          }
         }
       }
     },
@@ -1004,6 +1095,11 @@
           "id": "resource",
           "label": "Owned driver/sc8 resource",
           "description": "Callback leases cover full use; file resource is private and memory-only."
+        },
+        {
+          "id": "provider",
+          "label": "Provider admission boundary",
+          "description": "Existing selected role/model is admitted only with verified nonpersistent mode; otherwise refuse before prompt submission."
         }
       ],
       "messages": [
@@ -1021,10 +1117,23 @@
           "description": "Only private control channel receives credentials; no persistence/logging."
         },
         {
+          "from": "control",
+          "to": "owner",
+          "label": "Delegate data-only capability for selected root",
+          "description": "Only current control attachment can delegate; token is distinct from control capability and bound to root/generation."
+        },
+        {
+          "from": "owner",
+          "to": "data",
+          "label": "Private bootstrap delivers data-only delegation",
+          "kind": "return",
+          "description": "MCP child cannot heartbeat/end/resume the workbench and never receives the control capability."
+        },
+        {
           "from": "data",
           "to": "owner",
-          "label": "Attach with private bootstrap capability",
-          "description": "Authenticate data transport to session without granting control heartbeat/end rights."
+          "label": "Attach with root-bound data-only delegation",
+          "description": "Authenticate each fresh data socket; wrong root/audience/generation refuses before step.call."
         },
         {
           "from": "owner",
@@ -1037,6 +1146,18 @@
           "to": "owner",
           "label": "Create/update temporary draft with signed ticket",
           "description": "Strict sc1/sc2 request materializes owned memory credentials."
+        },
+        {
+          "from": "data",
+          "to": "resolver",
+          "label": "Validate connection scope at attached root",
+          "description": "Classifier/targetHint, prepareScope, stepScope, child measurement and task-scope use the same owner-bound checker; no cross-root saved enumeration."
+        },
+        {
+          "from": "data",
+          "to": "provider",
+          "label": "Admit selected provider before prompt construction/send",
+          "description": "Guard direct/injected/factory and retries; CLI modes refused until proven, no weaker-model fallback."
         },
         {
           "from": "owner",
@@ -1200,6 +1321,16 @@
       "id": "c14",
       "kind": "code",
       "ref": "src/daemon/db/__tests__/connection-source-inventory.ts:16"
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle2 supplemental symbol.locate/usage.example plus manual reads: src/analyze/context/scope.ts; src/analyze/classifier/driver.ts; src/analyze/runtimes/shared/task-scope.ts; src/daemon/threads/maintenance-entry.ts; src/analyze/orchestrator/driver.ts; src/analyze/orchestrator/types.ts; src/analyze/planner/recursive.ts; src/analyze/planner/types.ts"
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle2 provider discovery: src/analyze/context/shaper-provider.ts; src/analyze/context/role-router.ts; src/analyze/runtimes/shared/aggregator.ts; src/agent/read-only-tool-loop.ts; src/agent/providers/cli-provider.ts; src/agent/providers/ollama.ts; direct and injected completion source grep"
     }
   ]
 }

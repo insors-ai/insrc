@@ -2,17 +2,19 @@
 /** Bundled at build time with the shared Node-only capability client; no storage imports. */
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { captureStopTarget } from '../shared/daemon-process-client.js';
 import type { StopTarget } from '../shared/daemon-process-client.js';
 
-const parent = Number(process.argv[2]), deadline = Number(process.argv[3]);
+const parent = Number(process.argv[2]), timeoutMs = Number(process.argv[3]);
+const started = performance.now(), deadline = started + timeoutMs;
 const logPath = process.argv[4], executable = process.argv[5];
-if (!Number.isSafeInteger(parent) || parent <= 0 || process.ppid !== parent || !Number.isSafeInteger(deadline) || !logPath || !executable) process.exit(2);
+if (!Number.isSafeInteger(parent) || parent <= 0 || process.ppid !== parent || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 0x7fff_ffff || !logPath || !executable) process.exit(2);
 let stage = 'watchdog capture', finished = false, checking = false;
 let target: StopTarget | undefined;
 const cancellation = new AbortController();
 function diagnostic(reason: string): void {
- try { mkdirSync(dirname(logPath!), { recursive: true }); appendFileSync(logPath!, JSON.stringify({ time: new Date().toISOString(), module: 'shutdown-watchdog', pid: parent, deadline, stage, reason }) + '\n'); } catch { /* fs unavailable */ }
+ try { mkdirSync(dirname(logPath!), { recursive: true }); appendFileSync(logPath!, JSON.stringify({ time: new Date().toISOString(), module: 'shutdown-watchdog', pid: parent, timeoutMs, elapsedMs: performance.now() - started, stage, reason }) + '\n'); } catch { /* fs unavailable */ }
 }
 function finish(code = 0): void {
  if (finished) return;
@@ -46,7 +48,7 @@ void (async () => {
   const timer = setInterval(() => {
    if (finished || checking) return;
    if (process.ppid !== parent) { clearInterval(timer); finish(); return; }
-   if (Date.now() < deadline) return;
+   if (performance.now() < deadline) return;
    checking = true;
    void (async () => {
     if (await target!.handle.hasExited() || process.ppid !== parent) { finish(); return; }

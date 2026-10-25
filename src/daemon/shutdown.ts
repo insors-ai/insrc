@@ -167,7 +167,7 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 		};
 		stage('watchdog arm');
 		const begin = async (): Promise<void> => {
-			watchdog = await (parts.armWatchdog ?? armShutdownWatchdog)({ deadline: Date.now() + hardExitMs, logPath: end.lastLinePath, onFailure: failClosed });
+			watchdog = await (parts.armWatchdog ?? armShutdownWatchdog)({ timeoutMs: hardExitMs, logPath: end.lastLinePath, onFailure: failClosed });
 			stage('stop background work');
 			parts.stopBackgroundWork();
 			const health = end.storeHealth();

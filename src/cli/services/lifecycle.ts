@@ -82,7 +82,7 @@ export function cleanupStoppedDaemon(captured: CapturedDaemon): void {
  } finally { guard.release(); }
 }
 /** Poll the retained capability. Missing paths never stand in for process exit. */
-export async function waitForStop(timeoutMs = 30_000, target?: StopTarget): Promise<boolean> {
+export async function waitForStop(timeoutMs = 30_000, target?: StopTarget | undefined): Promise<boolean> {
  const captured = target ? capturedTargets.get(target) : await captureDaemon();
  const ownsHandle = target === undefined;
  const observed = target ?? captured?.target;

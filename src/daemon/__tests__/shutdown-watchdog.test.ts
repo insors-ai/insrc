@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
+import { performance } from 'node:perf_hooks';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,20 +18,22 @@ after(() => { for (const child of children) if (child.exitCode === null && child
 async function run(mode: string) {
  const testDir = mkdtempSync(join(dir, 'parent-')); const entryDir = join(testDir, 'daemon'); mkdirSync(entryDir);
  const entry = join(entryDir, 'index.js'), log = join(testDir, 'watchdog.log'), hook = join(testDir, 'hook');
- const early = join(testDir, 'early.js'), silent = join(testDir, 'silent.js');
+ const early = join(testDir, 'early.js'), silent = join(testDir, 'silent.js'), backwardClock = join(testDir, 'clock.mjs');
+ writeFileSync(backwardClock, `setTimeout(() => { const original = Date.now; Date.now = () => original() - 60000; }, 50); await import(${JSON.stringify(new URL('../../../out/bin/insrc-shutdown-watchdog.js', import.meta.url).href)});`);
  writeFileSync(early, 'process.exit(9)'); writeFileSync(silent, 'setInterval(() => {}, 1000)');
  writeFileSync(entry, `(async () => {
  const { armShutdownWatchdog } = await import(${JSON.stringify(new URL('../../../out/daemon/shutdown-watchdog.js', import.meta.url).href)});
  const fs = require('node:fs'); const mode = ${JSON.stringify(mode)};
- const options = { deadline: Date.now() + 800, logPath: ${JSON.stringify(log)}, readyTimeoutMs: 300 };
+ const options = { timeoutMs: 800, logPath: ${JSON.stringify(log)}, readyTimeoutMs: 300 };
  if (mode === 'spawn') options.nodePath = '/missing-node';
  if (mode === 'early') options.helperPath = ${JSON.stringify(early)};
  if (mode === 'timeout') options.helperPath = ${JSON.stringify(silent)};
+ if (mode === 'clock-backward') options.helperPath = ${JSON.stringify(backwardClock)};
  if (mode === 'broker') options.brokerPath = '/missing-broker';
  try {
  if (mode.startsWith('ipc-disconnect')) {
   const { fork } = require('node:child_process');
-  const child = fork(${JSON.stringify(new URL('../../../out/bin/insrc-shutdown-watchdog.js', import.meta.url).pathname)}, [String(process.pid), String(Date.now() + 500), ${JSON.stringify(log)}, ${JSON.stringify(join(root, 'out/bin/insrc-process-broker'))}], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const child = fork(${JSON.stringify(new URL('../../../out/bin/insrc-shutdown-watchdog.js', import.meta.url).pathname)}, [String(process.pid), '500', ${JSON.stringify(log)}, ${JSON.stringify(join(root, 'out/bin/insrc-process-broker'))}], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   child.on('message', () => {
    child.disconnect(); process.stdout.write(JSON.stringify({ ready: true, watchdog: child.pid }) + '\\n');
    if (mode === 'ipc-disconnect-blocked') Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0);
@@ -42,7 +45,7 @@ async function run(mode: string) {
  const watchdog = await armShutdownWatchdog(options);
  watchdog.stage('close native store');
  process.stdout.write(JSON.stringify({ ready: true, watchdog: watchdog.pid }) + '\\n');
- if (mode === 'blocked' || mode === 'exit-hook') {
+ if (mode === 'blocked' || mode === 'exit-hook' || mode === 'clock-backward') {
   if (mode === 'exit-hook') { process.on('exit', () => { fs.writeFileSync(${JSON.stringify(hook)}, 'entered'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0); }); process.exit(0); }
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0);
  }
@@ -63,7 +66,7 @@ test('Independent watchdog bounds a disposable blocked parent and disarms after 
  for (const mode of ['blocked', 'exit-hook', 'healthy', 'disarm']) {
   const started = Date.now(), p = await run(mode); assert.equal(p.value.ready, true);
   const [code, signal] = await p.ended;
-  if (mode === 'blocked' || mode === 'exit-hook') { assert.equal(signal, 'SIGKILL'); assert.match(readFileSync(p.log, 'utf8'), /close native store/); assert.ok(Date.now() - started < 3000); }
+  if (mode === 'blocked' || mode === 'exit-hook' || mode === 'clock-backward') { assert.equal(signal, 'SIGKILL'); assert.match(readFileSync(p.log, 'utf8'), /close native store/); assert.ok(Date.now() - started < 3000); }
   else { assert.equal(code, 0); assert.equal(existsSync(p.log), false); }
   if (mode === 'exit-hook') assert.equal(readFileSync(p.hook, 'utf8'), 'entered');
   await gone(p.value.watchdog);
@@ -100,4 +103,13 @@ test('IPC transport loss never disarms the deadline for a blocked parent or bloc
   assert.equal((await p.ended)[1], 'SIGKILL'); assert.ok(Date.now() - started < 3000);
   assert.match(readFileSync(p.log, 'utf8'), /shutdown deadline exceeded/); await gone(p.value.watchdog);
  }
+});
+
+
+test('Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration', { timeout: 5000 }, async () => {
+ const started = performance.now(), p = await run('clock-backward'); assert.equal(p.value.ready, true);
+ assert.equal((await p.ended)[1], 'SIGKILL'); assert.ok(performance.now() - started < 3000);
+ const record = JSON.parse(readFileSync(p.log, 'utf8').trim().split('\n').at(-1)!);
+ assert.equal(record.timeoutMs, 800); assert.ok(record.elapsedMs >= 800 && record.elapsedMs < 2000);
+ await gone(p.value.watchdog);
 });

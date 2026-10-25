@@ -9,7 +9,7 @@ export interface ShutdownWatchdog {
  disarm(): void;
 }
 export interface WatchdogOptions {
- readonly deadline: number;
+ readonly timeoutMs: number;
  readonly logPath?: string | undefined;
  readonly readyTimeoutMs?: number | undefined;
  readonly helperPath?: string | undefined;
@@ -22,9 +22,9 @@ export function armShutdownWatchdog(options: WatchdogOptions): Promise<ShutdownW
  const helper = options.helperPath ?? fileURLToPath(new URL(`../bin/insrc-shutdown-watchdog.${import.meta.url.endsWith('.ts') ? 'ts' : 'js'}`, import.meta.url));
  const broker = options.brokerPath ?? fileURLToPath(new URL('../../out/bin/insrc-process-broker', import.meta.url));
  const bound = options.readyTimeoutMs ?? 2000;
- if (!Number.isSafeInteger(options.deadline) || !Number.isInteger(bound) || bound <= 0 || bound > 0x7fff_ffff) return Promise.reject(new Error('invalid watchdog deadline/readiness bound'));
+ if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs <= 0 || options.timeoutMs > 0x7fff_ffff || !Number.isInteger(bound) || bound <= 0 || bound > 0x7fff_ffff) return Promise.reject(new Error('invalid watchdog duration/readiness bound'));
  return new Promise((resolve, reject) => {
-  const child = fork(helper, [String(process.pid), String(options.deadline), options.logPath ?? PATHS.daemonLog, broker], { execPath: options.nodePath ?? process.execPath, execArgv: helper.endsWith('.ts') ? ['--import', 'tsx/esm'] : [], stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const child = fork(helper, [String(process.pid), String(options.timeoutMs), options.logPath ?? PATHS.daemonLog, broker], { execPath: options.nodePath ?? process.execPath, execArgv: helper.endsWith('.ts') ? ['--import', 'tsx/esm'] : [], stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   let settled = false, disposed = false;
   const fail = (reason: string): void => {
    if (disposed) return; disposed = true; clearTimeout(timer); child.kill('SIGKILL');

@@ -333,7 +333,7 @@ Run at 2026-10-25T21:22:28.740Z on commit `029156e6b`. Tests check: **passed**. 
 
 ## t16
 
-Run at 2026-10-25T21:44:06.048Z on commit `bab3b621f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-25T21:50:21.240Z on commit `6b098a090`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-CONTEXT: actual db/data tools, schema-drift, runtime and exploration resolver callbacks with saved positive controls**
 
@@ -348,5 +348,5 @@ Run at 2026-10-25T21:44:06.048Z on commit `bab3b621f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` | 0 | 19 | 0.8 s |  |
-| `src/daemon/steps/__tests__/tool-owner-context.test.ts` | 0 | 1 | 6.6 s |  |
-| `src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts` | 0 | 6 | 1.8 s |  |
+| `src/daemon/steps/__tests__/tool-owner-context.test.ts` | 0 | 1 | 21 s |  |
+| `src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts` | 0 | 6 | 3.2 s |  |

@@ -192,7 +192,7 @@ Guard src/daemon/steps/analyze-step/handler.ts and answer-turn/phases plan/narro
 
 ### 1.16 E20261025484fcef7:S003:T016 — Carry owner resolver context through tools and data runtimes
 
-Update src/analyze/connection-access.ts, runtimes/data/_shared.ts and inventory-listed data/exploration sites plus src/daemon/tools/builtins/db/index.ts and data/schema-drift.ts. ToolDeps and runtime/exploration carriers pass immutable tuple directly; no serialized current-session flag.
+Update src/analyze/connection-access.ts, runtimes/data/_shared.ts and inventory-listed data/exploration sites plus src/daemon/tools/builtins/db/index.ts and data/schema-drift.ts. ToolDeps and runtime/exploration carriers pass immutable tuple directly; no serialized current-session flag. Required integration surface also includes src/analyze/explore/executor.ts and src/analyze/executor/walker.ts tuple forwarding; src/daemon/db/pool-cache.ts and src/daemon/connection-session-rpc.ts owner checks and actual-work drains for saved substeps; src/daemon/db/session-entries.ts and the additive ConnectionLease.retainWork hook in src/shared/connection-management.ts for metadata filesystem callback retention through abort/end; and src/daemon/tools/executor.ts early/later trusted ToolDeps checks. These are narrow sc5 integrations over existing sc3 lease/guard primitives, preserving saved-only semantics and sc8 resource behavior, not a redesign of adjacent owned contracts.
 
 **Acceptance checks:**
 - Each tool/runtime resolves only validated exact-root session overlay and retains callback lease.

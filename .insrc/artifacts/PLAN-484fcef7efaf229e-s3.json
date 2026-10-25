@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1792931373397-mt64js",
+    "runId": "wf-1792965238010-irx71m",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-25T12:35:43.925Z",
+    "createdAt": "2026-10-25T21:55:20.381Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "attribution": {
       "outputs": [
@@ -15,7 +15,7 @@
         }
       ]
     },
-    "elapsedMs": 370509,
+    "elapsedMs": 82324,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "484fcef7efaf229e",
@@ -23,9 +23,7 @@
     "storyId": "s3",
     "lldRunId": "wf-1792918270874-eo27nk",
     "lldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
-    "authoredBy": "controller",
-    "approvedAt": "2026-10-25T13:39:29.650Z",
-    "rangeBase": "b1bae456dc7bc28144f7b345f51a8824906ced83"
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
@@ -463,7 +461,7 @@
       {
         "id": "t16",
         "title": "Carry owner resolver context through tools and data runtimes",
-        "summary": "Update src/analyze/connection-access.ts, runtimes/data/_shared.ts and inventory-listed data/exploration sites plus src/daemon/tools/builtins/db/index.ts and data/schema-drift.ts. ToolDeps and runtime/exploration carriers pass immutable tuple directly; no serialized current-session flag.",
+        "summary": "Update src/analyze/connection-access.ts, runtimes/data/_shared.ts and inventory-listed data/exploration sites plus src/daemon/tools/builtins/db/index.ts and data/schema-drift.ts. ToolDeps and runtime/exploration carriers pass immutable tuple directly; no serialized current-session flag. Required integration surface also includes src/analyze/explore/executor.ts and src/analyze/executor/walker.ts tuple forwarding; src/daemon/db/pool-cache.ts and src/daemon/connection-session-rpc.ts owner checks and actual-work drains for saved substeps; src/daemon/db/session-entries.ts and the additive ConnectionLease.retainWork hook in src/shared/connection-management.ts for metadata filesystem callback retention through abort/end; and src/daemon/tools/executor.ts early/later trusted ToolDeps checks. These are narrow sc5 integrations over existing sc3 lease/guard primitives, preserving saved-only semantics and sc8 resource behavior, not a redesign of adjacent owned contracts.",
         "size": "M",
         "order": 16,
         "dependsOn": [

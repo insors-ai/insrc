@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792922858955-jsxjot",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:08:06.461Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 27505,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "47e2b81827433589",
+    "epicSlug": "give-code-review-adherence-functional-coverage",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f4854527acc6cb975d243519a07f51b23508e11046219ab05ce1cf7f69b3a3ce",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:16:05.465Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "47e2b81827433589",
+      "slug": "EPIC-47e2b81827433589"
+    }
+  },
+  "body": {
+    "title": "Give the code-review adherence and functional-coverage judges the source, not only symbol summaries",
+    "reproduction": "Run the daemon code review (insrc_code_review_step, phase start) on a built Story whose LLD makes many behavioral claims, for example Story s4 of epic b7a68147dcf72034 (git tool registry). Observed: the adherence dimension returns HIGH 'unimplemented expectation' findings located at 'file:1' whose message says 'the supplied evidence shows no implementation of' a behavior that is in the code and covered by passing tests (round 1: git_push refspec safeguards and git_amend upstream-read timeout; round 2: three git_push refspec findings and a whole-Story 'state after the change' finding). Expected: a finding is raised only for a clause the changed code does not implement, and is located at code. Fixing the one real gap between rounds did not change the verdict, because the other findings repeat for the same reason.",
+    "rootCause": "The adherence judge's prompt contains the approved LLD and PLAN bodies and the Story's changed symbols as structured summaries, and nothing else (src/workflow/code-review/dimensions/adherence.ts:98-113). It has no changed source and no instruction or means to read files. Its judging rule then says 'A clause or task that requires code and that no note shows implemented is an unimplemented-expectation finding' (src/workflow/code-review/dimensions/adherence.ts:153), and the functional-coverage dimension has the same rule for a requirement that 'no note shows' (src/workflow/code-review/dimensions/functional-coverage.ts:148). A clause that the summaries do not visibly prove therefore becomes an unimplemented-expectation finding; with no code to point at, the judge locates it at the file's first line. Both dimensions send their material through the same model adapter (src/workflow/review-pipeline/code-review.ts). The build gate had the same fault, a codex judge told it could read files while its session reads only by commands in a read-only sandbox, and was fixed in ISSUE-ae2d83c6 for the build gate only.",
+    "fixIntent": "A code-review judge no longer reports an implemented, tested behavior as unimplemented because the evidence it was given was thin. The adherence and functional-coverage judges get a way to check a clause against the changed code itself (the changed source for the clause's file, or permission to read with read-only commands as the build gate now allows), and a clause that still cannot be proven from what the judge saw is reported as could not be verified at low severity, not as a HIGH unimplemented expectation. A clause that the changed code really leaves out is still a finding at its code. Tests cover both cases for both dimensions, and a re-review of Story s4 of epic b7a68147dcf72034 no longer raises its four round 2 HIGH findings."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts:98-113",
+      "quotedText": "The Story's changed symbols (structured summaries — the code under review)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts:153",
+      "quotedText": "A clause or task that requires code and that no note shows implemented is an unimplemented-expectation finding."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/functional-coverage.ts:148"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/code-review.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-ae2d83c6ab06c595",
+      "quotedText": "a codex judge that follows the prompt reads nothing"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S004/CR.md"
+    }
+  ]
+}

@@ -6,6 +6,14 @@ export interface ManagementEnablement {
 	readonly ready: boolean;
 	readonly digest: string;
 }
+export const CONNECTION_FOUNDATION_GATE_FILES = [
+	'daemon/db/management-enablement', 'daemon/db/management-files', 'daemon/db/management-owner-lease',
+	'daemon/db/management-state', 'daemon/db/management-adoption', 'daemon/db/management-startup',
+	'daemon/db/managed-store', 'daemon/db/management-tickets', 'daemon/db/management', 'daemon/db/driver-profiles',
+	'daemon/db/secrets', 'daemon/db/pool', 'daemon/db/pool-cache', 'daemon/db/driver-work',
+	'daemon/db/file-policy', 'daemon/db/file-execution', 'daemon/db/converter-cache', 'daemon/db/drivers/duckdb-file',
+	'shared/connection-management', 'shared/connection-management-wire',
+] as const;
 export const CONNECTION_TEST_GATE_FILES = [
 	'bin/insrc-connection-test', 'daemon/db/draft-test', 'daemon/db/draft-probe', 'daemon/db/probe-kinds',
 	'daemon/request-context', 'daemon/server', 'daemon/threads/channel', 'daemon/threads/router',
@@ -29,7 +37,7 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 		if (!files || Object.keys(files).length < 10)
 			throw new Error();
 		const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js';
-		if (CONNECTION_TEST_GATE_FILES.some(path => !Object.hasOwn(files, path + extension))) throw new Error();
+		if ([...CONNECTION_FOUNDATION_GATE_FILES, ...CONNECTION_TEST_GATE_FILES].some(path => !Object.hasOwn(files, path + extension))) throw new Error();
 		for (const [path, expected] of Object.entries(files)) {
 			if (path.startsWith('/') || path.split('/').includes('..') || !/^[a-f0-9]{64}$/.test(expected))
 				throw new Error();

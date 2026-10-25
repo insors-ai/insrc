@@ -61,6 +61,11 @@ export class RedisDriver implements KvDriver {
 		});
 	}
 
+	async probeReachability(): Promise<void> {
+		if (this.client.status === 'wait') await this.client.connect();
+		await this.client.ping();
+	}
+
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
 		const limit = clampScanLimit(opts.limit);
@@ -128,7 +133,9 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		await this.client.quit();
+		if (this.client.status === 'wait' || this.client.status === 'end') { this.client.disconnect(); return; }
+		try { await this.client.quit(); }
+		finally { this.client.disconnect(); }
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {

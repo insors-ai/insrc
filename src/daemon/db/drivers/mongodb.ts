@@ -63,6 +63,11 @@ export class MongoDriver implements KvDriver {
 		});
 	}
 
+	async probeReachability(): Promise<void> {
+		await this.client.connect();
+		await this.client.db('admin').command({ ping: 1 });
+	}
+
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
 		const limit = clampScanLimit(opts.limit);

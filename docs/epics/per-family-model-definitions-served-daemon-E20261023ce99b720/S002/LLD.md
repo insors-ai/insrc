@@ -51,7 +51,7 @@ This Story adds the read-only models.definitions request: it projects the daemon
 **Parameters:**
 - `params: unknown` _(optional)_ — Ignored; the request takes no parameters (sc3 params: {}).
 
-**Returns:** `ModelDefinitionsResult` — The sc3 answer: version and defaultFamily from the validated file; one entry per family in file order with id, cliKind (CLI families), displayName, tierDefaults and summariserModel (CLI families), toolLoopModel (ollama), rejectedModels (CLI families, possibly empty) and models in registry order, each with id, aliases (always a list, [] when none), displayName when set, efforts, inputLimit when set, source, and installed (ollama models only, and only when the Ollama listing answered).
+**Returns:** `ModelDefinitionsResult` — The sc3 answer: version and defaultFamily from the validated file; one entry per family in file order with id, cliKind (CLI families), displayName, tierDefaults and summariserModel (CLI families), toolLoopModel (ollama), rejectedModels (CLI families: the registry's effective rejected ids that the family does not serve, possibly empty) and models in registry order, each with id, aliases (always a list, [] when none), displayName when set, efforts, inputLimit when set, source, and installed (ollama models only, and only when the Ollama listing answered).
 
 **Preconditions:**
 - validateModelCatalog has succeeded in this thread (boot validates before listen), so getModelRegistry() returns without throwing.
@@ -61,6 +61,7 @@ This Story adds the read-only models.definitions request: it projects the daemon
 - installed is true for an Ollama model whose id equals an installed name exactly and false otherwise; when the listing rejects (unreachable, timeout, malformed) installed is absent on every Ollama model and the request still succeeds.
 - An installed Ollama model that is not listed does not appear.
 - Mutates nothing; registered in buildHandlerRuntime's RPC map and as a session method in src/daemon/threads/method-class.ts.
+- A rejected id that the family also serves (a model the user rejected that a later shipped file lists) is served as shipped and left out of rejectedModels, matching the registry, where find() returns the shipped model and resolveTier uses it; the shipped definition wins (HLD durability).
 
 ### 2.2 `listModels`
 
@@ -89,7 +90,7 @@ listModels(params: unknown, deps?: ListModelsDeps): Promise<ModelListResult | Li
 
 ### 3.1 `ModelDefinitionsResult (sc3, new src/daemon/model-definitions.ts)` — new
 
-The IPC answer type exactly as the HLD sc3 sketch, exported for the handler and tests. Projection rules: families and models keep registry order; aliases is always a list; optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes); rejectedModels = registry.rejected(family) on CLI families only.
+The IPC answer type exactly as the HLD sc3 sketch, exported for the handler and tests. Projection rules: families and models keep registry order; aliases is always a list; optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes); rejectedModels = the ids in registry.rejected(family) that registry.find(family, id) does not resolve, on CLI families only (a shipped model wins over a rejected profile; the registry contract is unchanged).
 
 ```
 + interface ModelDefinitionsResult { version; defaultFamily; families: { id; cliKind?; displayName; tierDefaults?; summariserModel?; toolLoopModel?; rejectedModels?; models: { id; aliases; displayName?; efforts; inputLimit?; source; installed? }[] }[] }
@@ -130,7 +131,7 @@ getCuratedCatalog, CuratedCatalog and CatalogModel are removed (the s1 stopgap);
 
 ### 3.4 `Method-class table (src/daemon/threads/method-class.ts)` — field-add
 
-Adds ['models.definitions', 'session', false]; the admin and indexing counts the coverage test pins are unchanged.
+Adds ['models.definitions', 'session', false]; the admin and indexing counts the coverage test pins are unchanged. The handler-map test's sorted RECORDED_RPC list gains 'models.definitions' in the same change.
 
 ```
 + ['models.definitions', 'session', false]
@@ -140,6 +141,7 @@ Adds ['models.definitions', 'session', false]; the admin and indexing counts the
 - `src/daemon/threads/method-class.ts:150`
 - `src/daemon/threads/__tests__/method-class.test.ts:53`
 - `src/daemon/threads/__tests__/method-class.test.ts:66`
+- `src/daemon/__tests__/handler-runtime.test.ts:80`
 
 ## 4. Interaction with shared contracts
 
@@ -179,7 +181,8 @@ Adds ['models.definitions', 'session', false]; the admin and indexing counts the
 | Ollama answers with zero installed models. | models.definitions marks every Ollama model installed: false; providers.listModels('ollama') returns available: true and []. |
 | A model with no aliases in the file. | aliases is [] in the answer, never absent. |
 | A user-approved Codex model in the store (after s4). | Listed after the shipped Codex models with source 'user-approved' in models.definitions, and included in providers.listModels('cli-codex'). |
-| A rejected Codex model in the store. | Appears only in the cli-codex family's rejectedModels; absent from models and from providers.listModels. |
+| A rejected Codex model that the file does not list. | Appears only in the cli-codex family's rejectedModels; absent from models and from providers.listModels. |
+| A model the user rejected that a later shipped file lists under the same id (catalog-update collision). | Served as shipped: it appears in models with source 'shipped' and in providers.listModels, and is left out of rejectedModels, as the registry already resolves it. |
 | models.definitions called with params null, {} or extra keys. | Params are ignored; the same answer is returned. |
 | providers.listModels for a CLI family while Ollama is down. | Unaffected: available: true with the family's models; the Ollama listing is not called. |
 
@@ -196,10 +199,10 @@ Adds ['models.definitions', 'session', false]; the admin and indexing counts the
 **Test levels**
 
 - **unit** — The projection, the installed state, and providers.listModels derived from it, over injected deps (fake registry via a temp definitions dir and store, fake Ollama lister).
-  - Subjects: `models.definitions projection in src/daemon/model-definitions.ts (new src/daemon/__tests__/model-definitions.test.ts): every sc3 field of a fixture file, aliases always a list, optional fields omitted, rejectedModels on CLI families only, user-approved models after shipped ones`, `installed state: exact-match true/false, absent on every Ollama model when the lister rejects, unlisted installed models absent`, `listModels in src/daemon/list-models.ts (src/daemon/__tests__/list-models.test.ts, rewritten deps): CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged`, `agreement: for every family, listModels(family).models equals the definitions answer's models for that family (ollama: installed === true) mapped to { id, displayName? }`
-  - Fixtures: `A temp definitions dir (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) with aliases, a model with no aliases, efforts, input limits, tier defaults with an effort, two Ollama models`, `An approved-model store with one approved and one rejected Codex model`, `Fake Ollama listers: answering with one listed model, one unlisted model and one listed model under another tag; answering with []; rejecting`
+  - Subjects: `models.definitions projection in src/daemon/model-definitions.ts (new src/daemon/__tests__/model-definitions.test.ts): every sc3 field of a fixture file, aliases always a list, optional fields omitted, rejectedModels on CLI families only, user-approved models after shipped ones; a rejected id the file also lists is served as shipped and left out of rejectedModels`, `installed state: exact-match true/false, absent on every Ollama model when the lister rejects, unlisted installed models absent`, `listModels in src/daemon/list-models.ts (src/daemon/__tests__/list-models.test.ts, rewritten deps): CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged`, `agreement: for every family, listModels(family).models equals the definitions answer's models for that family (ollama: installed === true) mapped to { id, displayName? }`
+  - Fixtures: `A temp definitions dir (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) with aliases, a model with no aliases, efforts, input limits, tier defaults with an effort, two Ollama models`, `An approved-model store with one approved and one rejected unlisted Codex model, and one rejected profile whose id the file lists (catalog-update collision)`, `Fake Ollama listers: answering with one listed model, one unlisted model and one listed model under another tag; answering with []; rejecting`
 - **contract** — The handler map and the method-class table stay in step and the curated accessor is gone.
-  - Subjects: `handler map: 'models.definitions' is a real read-only handler in buildHandlerRuntime and 'providers.listModels' still delegates to listModels`, `method-class: src/daemon/threads/__tests__/method-class.test.ts passes with ['models.definitions', 'session', false] (coverage equals handler keys; admin/indexing counts unchanged)`, `source scan: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel`
+  - Subjects: `handler map: 'models.definitions' is a real read-only handler in buildHandlerRuntime, 'providers.listModels' still delegates to listModels, and src/daemon/__tests__/handler-runtime.test.ts's RECORDED_RPC includes 'models.definitions'`, `method-class: src/daemon/threads/__tests__/method-class.test.ts passes with ['models.definitions', 'session', false] (coverage equals handler keys; admin/indexing counts unchanged)`, `source scan: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel`
 - **integration** — The real daemon answers models.definitions over its socket from the shipped asset.
   - Subjects: `a daemon started in a temp home answers models.definitions with the three shipped families and providers.listModels('cli-claude') agreeing with it`
   - Fixtures: `A temp INSRC home (the startDaemon helper in src/mcp/__tests__/helpers/mcp-e2e.ts)`
@@ -208,7 +211,7 @@ Adds ['models.definitions', 'session', false]; the admin and indexing counts the
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `unit: models.definitions returns every sc3 field of a fixture file, including aliases, efforts, input limits, tier defaults with effort, summariser, tool-loop model, default family and version`, `unit: a user-approved model appears with source 'user-approved' and a rejected one only in rejectedModels`, `integration: a real daemon answers models.definitions with the shipped families` |
+| `ac1` | `unit: models.definitions returns every sc3 field of a fixture file, including aliases, efforts, input limits, tier defaults with effort, summariser, tool-loop model, default family and version`, `unit: a user-approved model appears with source 'user-approved', an unlisted rejected one only in rejectedModels, and a rejected id the file lists as a shipped model outside rejectedModels`, `integration: a real daemon answers models.definitions with the shipped families` |
 | `ac2` | `unit: for every family providers.listModels agrees with the definitions answer, and an installed but unlisted Ollama model appears in neither`, `unit: with the Ollama lister rejecting, installed is absent and models.definitions still succeeds while providers.listModels('ollama') returns available:false + []`, `integration: providers.listModels('cli-claude') over the socket agrees with models.definitions` |
 
 ## 7. Migration
@@ -222,7 +225,7 @@ Adds ['models.definitions', 'session', false]; the admin and indexing counts the
 **Steps**
 
 1. Add src/daemon/model-definitions.ts with the ModelDefinitionsResult type and the projection over the registry, the file version and an optional installed list. — ↩ rollbackable
-2. Register 'models.definitions' in buildHandlerRuntime's RPC map and add ['models.definitions', 'session', false] to the method-class table in the same change. — ↩ rollbackable
+2. Register 'models.definitions' in buildHandlerRuntime's RPC map, add ['models.definitions', 'session', false] to the method-class table, and add it to RECORDED_RPC in src/daemon/__tests__/handler-runtime.test.ts, in the same change. — ↩ rollbackable
 3. Switch listModels' deps from catalog() to registry() and catalogVersion() and compute its answer from the projection (CLI families without calling the Ollama listing). — ↩ rollbackable
 4. Remove getCuratedCatalog, CuratedCatalog and CatalogModel (and CloudProvider if unused) from src/daemon/model-catalog.ts, and update the model-catalog and model-registry tests that used them. — ↩ rollbackable
 5. Rewrite list-models.test.ts for the new deps and add model-definitions tests, the agreement test and the real-daemon integration test. — ↩ rollbackable
@@ -254,3 +257,26 @@ Add a models.definitions handler that projects the registry into the sc3 answer.
 - **[[c5]]** `code` `src/daemon/threads/method-class.ts:150` — "['providers.listModels', 'session', false],"
 - **[[c6]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1130` — "// providers.listModels returns an OBJECT {provider,available,models} in the"
 - **[[c7]]** `code` `src/agent/providers/ollama.ts:39` — "const OLLAMA_LIST_TIMEOUT_MS = 4_000;"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T16:02:00.301Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| data-compatibility | HIGH | Any rejected Codex profile appears only in rejectedModels and is absent from models and providers.listModels. | buildRegistry first populates served models from every shipped definition. Its rejection branch then executes 'if (p.status === "rejected") { rejectedIds.get(p.family)!.push(p.modelId); continue; }' without removing a shipped model. readStore accepts such a profile. Consequently, an unknown model rejected earlier and shipped by a later catalog can appear in both models() and rejected(). resolveTier also returns a found shipped model before checking rejection. The required direct projection cannot simultaneously satisfy the design's unconditional exclusion rule. [files: src/daemon/model-registry.ts, src/daemon/__tests__/model-registry.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md] | Document the existing behavior when a previously rejected id becomes shipped, qualify the exclusion guarantee for unlisted rejected ids, and add a catalog-update collision fixture. Any different precedence requires an explicit change to the s1-owned registry contract. |
+| change-sites | MED | The handler-registration change inventory includes every test that pins the RPC method set. | The inventory omits src/daemon/__tests__/handler-runtime.test.ts. Its RECORDED_RPC array excludes models.definitions, and line 80 asserts 'assert.deepEqual(Object.keys(runtime.rpcHandlers).sort(), RECORDED_RPC)'. Adding the handler without updating this inventory introduces an additional test failure even if method-class coverage is updated. [files: src/daemon/__tests__/handler-runtime.test.ts, src/daemon/handler-runtime.ts, src/daemon/threads/__tests__/method-class.test.ts] | Add handler-runtime.test.ts to the change sites and update its sorted RECORDED_RPC inventory alongside handler registration. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The linked HLD ER companion renders consistently with its documented relationships. | Inspected the HLD erDefinition and generated er-model.html narrative, Mermaid source and entity tables. The generated content describes family ownership, model/default references and profile-to-family relationships. Browser inventory contained no browser surfaces, and native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Actual diagram rendering, clipping and zoom controls could not be checked. [files: .insrc/artifacts/HLD-ce99b72065d03b1b.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render the existing companion in an available browser and verify diagram visibility and consistency; no reviewer-authored replacement is needed. |

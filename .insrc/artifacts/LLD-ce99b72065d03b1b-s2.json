@@ -24,7 +24,156 @@
     "hldBaseRunId": "wf-1792924917927-2y1e5h",
     "hldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed work covers S002/ac1 and ac2 within the HLD's s2 scope.",
+          "evidence": "DEF \u00a76.2 requires complete definitions and agreement with the existing model-list request. HLD \u00a76.2 assigns the projection, installed state, handler classification and accessor removal to s2. The design addresses each, including the HLD's explicit restriction to listed Ollama models. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/list-models.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today providers.listModels uses the stopgap catalog for CLI families and returns all installed Ollama models.",
+          "evidence": "Read the complete listModels implementation and catalog accessor. The CLI branch uses 'deps.catalog().modelsFor(provider).map(toModelInfo)'; the Ollama branch maps the live listing without catalog filtering. handler-runtime delegates to listModels, and method-class classifies it as session. Neither table currently contains models.definitions. The analyzer did not return before cancellation; these conclusions were verified through direct reads and searches. [files: src/daemon/list-models.ts, src/daemon/model-catalog.ts, src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The registry, cached version loader and bounded Ollama listing provide the stated reusable capabilities.",
+          "evidence": "ModelRegistry exposes families(), defaultFamily(), models() and rejected() with the proposed shapes. buildRegistry preserves file order and appends effective approvals in decision order. validateModelCatalog returns the cached ModelDefinitionsFile, including version. OllamaProvider.listLocalModels defaults to 4,000 ms and rejects unreachable, timed-out and malformed responses. No existing models.definitions implementation was found. [files: src/daemon/model-registry.ts, src/daemon/model-catalog.ts, src/agent/providers/ollama.ts, src/agent/providers/__tests__/ollama-list-models.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The handler-registration change inventory includes every test that pins the RPC method set.",
+          "evidence": "The inventory omits src/daemon/__tests__/handler-runtime.test.ts. Its RECORDED_RPC array excludes models.definitions, and line 80 asserts 'assert.deepEqual(Object.keys(runtime.rpcHandlers).sort(), RECORDED_RPC)'. Adding the handler without updating this inventory introduces an additional test failure even if method-class coverage is updated. [files: src/daemon/__tests__/handler-runtime.test.ts, src/daemon/handler-runtime.ts, src/daemon/threads/__tests__/method-class.test.ts]",
+          "action": "Add handler-runtime.test.ts to the change sites and update its sorted RECORDED_RPC inventory alongside handler registration.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed accessor-removal sites cover its production and test consumers.",
+          "evidence": "Repository-wide searches found getCuratedCatalog and its exact types consumed by list-models.ts, list-models.test.ts, model-catalog.test.ts and model-registry.test.ts. All are included in the design. The method-class test compares constructed handler keys and separately pins the ten admin and ten indexing methods, so adding a session method preserves those counts. [files: src/daemon/list-models.ts, src/daemon/__tests__/list-models.test.ts, src/daemon/__tests__/model-catalog.test.ts, src/daemon/__tests__/model-registry.test.ts, src/daemon/threads/__tests__/method-class.test.ts]",
+          "action": "None beyond the separate handler-runtime inventory correction.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The preserved providers.listModels envelope remains compatible with the existing IDE consumers without a stored-data migration.",
+          "evidence": "The VS Code picker consumes provider, available and models containing id/displayName, and handles unavailable or empty results without saving. DaemonGateway.listModels parses available and the same model fields from the response object. The proposal preserves these shapes and deliberately changes list membership as authorized by HLD \u00a76.2. It introduces no persistent write. [files: src/daemon/list-models.ts, vscode-plugin/src/models/model-tier-picker.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Any rejected Codex profile appears only in rejectedModels and is absent from models and providers.listModels.",
+          "evidence": "buildRegistry first populates served models from every shipped definition. Its rejection branch then executes 'if (p.status === \"rejected\") { rejectedIds.get(p.family)!.push(p.modelId); continue; }' without removing a shipped model. readStore accepts such a profile. Consequently, an unknown model rejected earlier and shipped by a later catalog can appear in both models() and rejected(). resolveTier also returns a found shipped model before checking rejection. The required direct projection cannot simultaneously satisfy the design's unconditional exclusion rule. [files: src/daemon/model-registry.ts, src/daemon/__tests__/model-registry.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
+          "action": "Document the existing behavior when a previously rejected id becomes shipped, qualify the exclusion guarantee for unlisted rejected ids, and add a catalog-update collision fixture. Any different precedence requires an explicit change to the s1-owned registry contract.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked HLD ER companion renders consistently with its documented relationships.",
+          "evidence": "Inspected the HLD erDefinition and generated er-model.html narrative, Mermaid source and entity tables. The generated content describes family ownership, model/default references and profile-to-family relationships. Browser inventory contained no browser surfaces, and native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Actual diagram rendering, clipping and zoom controls could not be checked. [files: .insrc/artifacts/HLD-ce99b72065d03b1b.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
+          "action": "Render the existing companion in an available browser and verify diagram visibility and consistency; no reviewer-authored replacement is needed.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design consumes sc1/sc2 and implements sc3 without taking over adjacent stories.",
+          "evidence": "Compared HLD \u00a7\u00a75\u20136 with the actual catalog and registry interfaces. The proposed changes are confined to projection, IPC registration, list derivation and stopgap removal. Registry/store semantics, runtime resolution, approval writes and client migrations retain their assigned owners. Nested response types and projection rules adequately describe this Story's family-to-model containment, field ownership and compatibility; an additional Story-specific ERD or UX mock is unnecessary. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-catalog.ts, src/daemon/model-registry.ts, src/daemon/handler-runtime.ts]",
+          "action": "Resolve the rejected/shipped collision finding without silently redesigning sc2.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The stated listing, invalid-parameter and registry-validation failures have usable detection and handling paths.",
+          "evidence": "listLocalModels rejects malformed arrays/entries, listing failures and its bounded timeout; listModels currently catches listing rejection and returns available:false with []. extractProvider rejects invalid providers before dependency access. index.ts validates before reconcile, while startDaemonWorker calls getModelRegistry before serving. directDispatch handles both synchronous throws and rejected handler promises through failureMessage. These support the proposed handling and installed-field omission. [files: src/agent/providers/ollama.ts, src/daemon/list-models.ts, src/daemon/index.ts, src/daemon/threads/worker-entry.ts, src/daemon/server.ts]",
+          "action": "Preserve the distinction between a successful empty listing and a rejected listing in the shared projection.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both S002 acceptance criteria map to feasible unit and socket integration tests.",
+          "evidence": "DEF S002 has exactly ac1 for complete definitions and ac2 for agreement. The proposed field-by-field fixture tests address ac1; per-family agreement, installed filtering and outage tests address ac2. Existing tests establish injected listers and catalog/store fixtures. The inspected mcp-e2e helper provides startDaemon(home), rpc(sock, method, params) and stop(), and boot-model-catalog.test.ts already uses that helper against the shipped asset. This verifies test feasibility and mapping, not execution of the proposed tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, src/daemon/__tests__/list-models.test.ts, src/daemon/__tests__/model-registry.test.ts, src/daemon/__tests__/boot-model-catalog.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts]",
+          "action": "Include the omitted handler-runtime inventory update and the rejected/shipped collision regression identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 1,
+        "low": 9,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-25T16:02:00.301Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {
@@ -159,7 +308,7 @@
           "internal": "The JetBrains model-tiers section driven by models.definitions instead of ModelTiersModel.PROVIDERS; the unknown-model check and approval dialog; the per-repo settings without per-tier fields; showing restartRequired. Tests: the section offers exactly a fake answer's options and the plugin keeps no runner or model list (ac1); an unknown model is saved only after approval (ac2); the per-repo settings show only `tasks` and coreFloor (ac3)."
         }
       ],
-      "rolloutPhase": "Phase B — daemon serves and runs by the definitions",
+      "rolloutPhase": "Phase B \u2014 daemon serves and runs by the definitions",
       "nonFunctional": {
         "performance": "The file is parsed once per thread and every model question is an in-memory lookup; models.definitions touches no CLI and makes one bounded Ollama listing call, the same one providers.listModels makes today.",
         "security": "No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home written only by the daemon; clients reach it only through models.approve and models.reject (k2).",
@@ -183,7 +332,7 @@
           ],
           "returns": {
             "type": "ModelDefinitionsResult",
-            "meaning": "The sc3 answer: version and defaultFamily from the validated file; one entry per family in file order with id, cliKind (CLI families), displayName, tierDefaults and summariserModel (CLI families), toolLoopModel (ollama), rejectedModels (CLI families, possibly empty) and models in registry order, each with id, aliases (always a list, [] when none), displayName when set, efforts, inputLimit when set, source, and installed (ollama models only, and only when the Ollama listing answered)."
+            "meaning": "The sc3 answer: version and defaultFamily from the validated file; one entry per family in file order with id, cliKind (CLI families), displayName, tierDefaults and summariserModel (CLI families), toolLoopModel (ollama), rejectedModels (CLI families: the registry's effective rejected ids that the family does not serve, possibly empty) and models in registry order, each with id, aliases (always a list, [] when none), displayName when set, efforts, inputLimit when set, source, and installed (ollama models only, and only when the Ollama listing answered)."
           },
           "errors": [],
           "preconditions": [
@@ -193,7 +342,8 @@
             "Reads only getModelRegistry() and the validated file's version, and calls the bounded Ollama listing (OllamaProvider.listLocalModels, 4 s) exactly once.",
             "installed is true for an Ollama model whose id equals an installed name exactly and false otherwise; when the listing rejects (unreachable, timeout, malformed) installed is absent on every Ollama model and the request still succeeds.",
             "An installed Ollama model that is not listed does not appear.",
-            "Mutates nothing; registered in buildHandlerRuntime's RPC map and as a session method in src/daemon/threads/method-class.ts."
+            "Mutates nothing; registered in buildHandlerRuntime's RPC map and as a session method in src/daemon/threads/method-class.ts.",
+            "A rejected id that the family also serves (a model the user rejected that a later shipped file lists) is served as shipped and left out of rejectedModels, matching the registry, where find() returns the shipped model and resolveTier uses it; the shipped definition wins (HLD durability)."
           ]
         },
         {
@@ -238,7 +388,7 @@
       {
         "entity": "ModelDefinitionsResult (sc3, new src/daemon/model-definitions.ts)",
         "change": "new",
-        "details": "The IPC answer type exactly as the HLD sc3 sketch, exported for the handler and tests. Projection rules: families and models keep registry order; aliases is always a list; optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes); rejectedModels = registry.rejected(family) on CLI families only.",
+        "details": "The IPC answer type exactly as the HLD sc3 sketch, exported for the handler and tests. Projection rules: families and models keep registry order; aliases is always a list; optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes); rejectedModels = the ids in registry.rejected(family) that registry.find(family, id) does not resolve, on CLI families only (a shipped model wins over a rejected profile; the registry contract is unchanged).",
         "schemaDiff": "+ interface ModelDefinitionsResult { version; defaultFamily; families: { id; cliKind?; displayName; tierDefaults?; summariserModel?; toolLoopModel?; rejectedModels?; models: { id; aliases; displayName?; efforts; inputLimit?; source; installed? }[] }[] }",
         "callSites": [
           "src/daemon/handler-runtime.ts:1430",
@@ -269,12 +419,13 @@
       {
         "entity": "Method-class table (src/daemon/threads/method-class.ts)",
         "change": "field-add",
-        "details": "Adds ['models.definitions', 'session', false]; the admin and indexing counts the coverage test pins are unchanged.",
+        "details": "Adds ['models.definitions', 'session', false]; the admin and indexing counts the coverage test pins are unchanged. The handler-map test's sorted RECORDED_RPC list gains 'models.definitions' in the same change.",
         "schemaDiff": "+ ['models.definitions', 'session', false]",
         "callSites": [
           "src/daemon/threads/method-class.ts:150",
           "src/daemon/threads/__tests__/method-class.test.ts:53",
-          "src/daemon/threads/__tests__/method-class.test.ts:66"
+          "src/daemon/threads/__tests__/method-class.test.ts:66",
+          "src/daemon/__tests__/handler-runtime.test.ts:80"
         ]
       }
     ],
@@ -348,8 +499,12 @@
           "expected": "Listed after the shipped Codex models with source 'user-approved' in models.definitions, and included in providers.listModels('cli-codex')."
         },
         {
-          "input": "A rejected Codex model in the store.",
+          "input": "A rejected Codex model that the file does not list.",
           "expected": "Appears only in the cli-codex family's rejectedModels; absent from models and from providers.listModels."
+        },
+        {
+          "input": "A model the user rejected that a later shipped file lists under the same id (catalog-update collision).",
+          "expected": "Served as shipped: it appears in models with source 'shipped' and in providers.listModels, and is left out of rejectedModels, as the registry already resolves it."
         },
         {
           "input": "models.definitions called with params null, {} or extra keys.",
@@ -382,14 +537,14 @@
           "level": "unit",
           "purpose": "The projection, the installed state, and providers.listModels derived from it, over injected deps (fake registry via a temp definitions dir and store, fake Ollama lister).",
           "subjects": [
-            "models.definitions projection in src/daemon/model-definitions.ts (new src/daemon/__tests__/model-definitions.test.ts): every sc3 field of a fixture file, aliases always a list, optional fields omitted, rejectedModels on CLI families only, user-approved models after shipped ones",
+            "models.definitions projection in src/daemon/model-definitions.ts (new src/daemon/__tests__/model-definitions.test.ts): every sc3 field of a fixture file, aliases always a list, optional fields omitted, rejectedModels on CLI families only, user-approved models after shipped ones; a rejected id the file also lists is served as shipped and left out of rejectedModels",
             "installed state: exact-match true/false, absent on every Ollama model when the lister rejects, unlisted installed models absent",
             "listModels in src/daemon/list-models.ts (src/daemon/__tests__/list-models.test.ts, rewritten deps): CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged",
             "agreement: for every family, listModels(family).models equals the definitions answer's models for that family (ollama: installed === true) mapped to { id, displayName? }"
           ],
           "fixturesNeeded": [
             "A temp definitions dir (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) with aliases, a model with no aliases, efforts, input limits, tier defaults with an effort, two Ollama models",
-            "An approved-model store with one approved and one rejected Codex model",
+            "An approved-model store with one approved and one rejected unlisted Codex model, and one rejected profile whose id the file lists (catalog-update collision)",
             "Fake Ollama listers: answering with one listed model, one unlisted model and one listed model under another tag; answering with []; rejecting"
           ]
         },
@@ -397,7 +552,7 @@
           "level": "contract",
           "purpose": "The handler map and the method-class table stay in step and the curated accessor is gone.",
           "subjects": [
-            "handler map: 'models.definitions' is a real read-only handler in buildHandlerRuntime and 'providers.listModels' still delegates to listModels",
+            "handler map: 'models.definitions' is a real read-only handler in buildHandlerRuntime, 'providers.listModels' still delegates to listModels, and src/daemon/__tests__/handler-runtime.test.ts's RECORDED_RPC includes 'models.definitions'",
             "method-class: src/daemon/threads/__tests__/method-class.test.ts passes with ['models.definitions', 'session', false] (coverage equals handler keys; admin/indexing counts unchanged)",
             "source scan: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel"
           ]
@@ -418,7 +573,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "unit: models.definitions returns every sc3 field of a fixture file, including aliases, efforts, input limits, tier defaults with effort, summariser, tool-loop model, default family and version",
-            "unit: a user-approved model appears with source 'user-approved' and a rejected one only in rejectedModels",
+            "unit: a user-approved model appears with source 'user-approved', an unlisted rejected one only in rejectedModels, and a rejected id the file lists as a shipped model outside rejectedModels",
             "integration: a real daemon answers models.definitions with the shipped families"
           ]
         },
@@ -443,7 +598,7 @@
         },
         {
           "order": 2,
-          "action": "Register 'models.definitions' in buildHandlerRuntime's RPC map and add ['models.definitions', 'session', false] to the method-class table in the same change.",
+          "action": "Register 'models.definitions' in buildHandlerRuntime's RPC map, add ['models.definitions', 'session', false] to the method-class table, and add it to RECORDED_RPC in src/daemon/__tests__/handler-runtime.test.ts, in the same change.",
           "rollbackable": true
         },
         {

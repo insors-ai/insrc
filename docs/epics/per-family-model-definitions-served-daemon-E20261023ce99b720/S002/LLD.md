@@ -262,21 +262,18 @@ Add a models.definitions handler that projects the registry into the sc3 answer.
 
 ## Review
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+### ⚠️ Review `WARN` — design.story (design.story)
 
-**2 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T16:02:00.301Z
+**0 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T16:06:41.073Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 
 #### Does not hold (blocks approval)
 
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| data-compatibility | HIGH | Any rejected Codex profile appears only in rejectedModels and is absent from models and providers.listModels. | buildRegistry first populates served models from every shipped definition. Its rejection branch then executes 'if (p.status === "rejected") { rejectedIds.get(p.family)!.push(p.modelId); continue; }' without removing a shipped model. readStore accepts such a profile. Consequently, an unknown model rejected earlier and shipped by a later catalog can appear in both models() and rejected(). resolveTier also returns a found shipped model before checking rejection. The required direct projection cannot simultaneously satisfy the design's unconditional exclusion rule. [files: src/daemon/model-registry.ts, src/daemon/__tests__/model-registry.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md] | Document the existing behavior when a previously rejected id becomes shipped, qualify the exclusion guarantee for unlisted rejected ids, and add a catalog-update collision fixture. Any different precedence requires an explicit change to the s1-owned registry contract. |
-| change-sites | MED | The handler-registration change inventory includes every test that pins the RPC method set. | The inventory omits src/daemon/__tests__/handler-runtime.test.ts. Its RECORDED_RPC array excludes models.definitions, and line 80 asserts 'assert.deepEqual(Object.keys(runtime.rpcHandlers).sort(), RECORDED_RPC)'. Adding the handler without updating this inventory introduces an additional test failure even if method-class coverage is updated. [files: src/daemon/__tests__/handler-runtime.test.ts, src/daemon/handler-runtime.ts, src/daemon/threads/__tests__/method-class.test.ts] | Add handler-runtime.test.ts to the change sites and update its sorted RECORDED_RPC inventory alongside handler registration. |
+_None._
 
 #### Could not verify (does not block)
 
 | Check item | Premise | What was tried and what was missing | Action |
 | --- | --- | --- | --- |
-| data-compatibility | The linked HLD ER companion renders consistently with its documented relationships. | Inspected the HLD erDefinition and generated er-model.html narrative, Mermaid source and entity tables. The generated content describes family ownership, model/default references and profile-to-family relationships. Browser inventory contained no browser surfaces, and native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Actual diagram rendering, clipping and zoom controls could not be checked. [files: .insrc/artifacts/HLD-ce99b72065d03b1b.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render the existing companion in an available browser and verify diagram visibility and consistency; no reviewer-authored replacement is needed. |
+| boundaries | The upstream ER companion renders consistently with its relationship documentation. | Read the generated HTML's Mermaid source, relationship narrative and entity tables. They describe file-to-families, family-to-models/defaults and profile associations. Attempting to open it failed with 'Browser is not available: iab'; browser inventory returned []. Rendered diagram layout, labels and runtime rendering could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Have the author verify the existing companion in a browser and correct or regenerate it if rendering fails. |

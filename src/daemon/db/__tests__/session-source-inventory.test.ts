@@ -46,6 +46,9 @@ test('CM-S3-INVENTORY: production boundaries have explicit reviewed classificati
 	for (const file of ['src/db/graph/codec.ts', 'src/db/doc-summaries.ts', 'src/db/exploration-cache.ts']) {
 		assert.ok(actual.some(s => s.file === file && s.expression === 'packr.pack' && s.boundary === 'serialization'), `${file}: MessagePack submission`);
 	}
+	for (const expression of ['parts.log.info', 'parts.log.warn']) {
+		assert.ok(actual.some(s => s.file === 'src/daemon/shutdown.ts' && s.expression === expression && s.boundary === 'diagnostic'), expression);
+	}
 });
 
 test('CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered', () => {
@@ -61,11 +64,12 @@ export interface LLMProvider { complete(input: string): Promise<string> }
 export interface Driver { query(input: string): Promise<string> }
 export interface ConnectionResolver { withConnection(id: string): Promise<Driver> }
 export interface BinaryCodec { pack(input: unknown): Uint8Array }
+export interface InjectedLog { info(input: unknown): void; warn: (input: unknown) => void }
 export class OllamaProvider implements LLMProvider { async complete(input: string): Promise<string> { return input; } }
 `);
 		writeFileSync(join(fixture, 'src', 'indexer', 'embedder.ts'), `export async function embedQuery(input: string): Promise<number[]> { return [input.length]; }`);
 		writeFileSync(join(fixture, 'src', 'caller.ts'), `
-import type { LLMProvider as Renamed, ConnectionResolver as Port, Driver, BinaryCodec } from './shared/types.js';
+import type { LLMProvider as Renamed, ConnectionResolver as Port, Driver, BinaryCodec, InjectedLog } from './shared/types.js';
 import { writeFile as renamedWrite } from 'node:fs/promises';
 import type { embedQuery as queryFunction } from './indexer/embedder.js';
 import { OllamaProvider as ProviderBase } from './shared/types.js';
@@ -77,6 +81,10 @@ declare const vectorPort: { renamedQuery: typeof queryFunction };
 const { renamedQuery: detachedQuery } = vectorPort;
 declare const codec: BinaryCodec;
 const { pack: detachedPack } = codec;
+declare const parts: { log: InjectedLog };
+const { info: renamedInfo, warn: renamedWarn } = parts.log;
+declare const dynamicLog: any;
+declare const dynamicEmbed: any;
 const { complete: detachedComplete } = provider;
 class Derived extends ProviderBase {}
 declare const derived: Derived;
@@ -89,6 +97,8 @@ async function run() {
  await injected(); await providerFactory();
  await vectorPort.renamedQuery('private'); await detachedQuery('private');
  detachedPack({ private: true });
+ parts.log.info('private'); parts.log.warn('private'); renamedInfo('private'); renamedWarn('private'); renamedWarn.call(parts.log, 'private');
+ dynamicLog['warn']('private'); dynamicEmbed.embedQuery('private');
  await renamedWrite('/not-executed', pack({ marker: 'canary' }));
 }
 `);
@@ -101,5 +111,11 @@ async function run() {
 		for (const [expression, boundary] of [['detachedComplete.call', 'provider-use'], ['derived.complete', 'provider-use'], ['derivedFactory', 'provider-factory']]) {
 			assert.ok(actual.some(s => s.expression === expression && s.boundary === boundary), `${expression}: inherited/call alias`);
 		}
+		for (const expression of ['parts.log.info', 'parts.log.warn', 'renamedInfo', 'renamedWarn', 'renamedWarn.call']) {
+			assert.ok(actual.some(s => s.expression === expression && s.boundary === 'diagnostic'), `${expression}: injected logger`);
+		}
+		assert.ok(actual.some(s => s.expression === "dynamicLog['warn']" && s.boundary === 'diagnostic'));
+		assert.ok(actual.some(s => s.expression === 'dynamicEmbed.embedQuery' && s.boundary === 'provider-use'));
+		assert.ok(actual.some(s => s.expression === 'dynamicEmbed.embedQuery' && s.boundary === 'unresolved-call'));
 	} finally { rmSync(fixture, { recursive: true, force: true }); }
 });

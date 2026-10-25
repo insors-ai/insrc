@@ -106,10 +106,13 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 				const declarationFile = signature?.declaration?.getSourceFile().fileName.replaceAll('\\', '/') ?? '';
 				let symbol = checker.getSymbolAtLocation(ts.isPropertyAccessExpression(callee) ? callee.name : callee);
 				if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
-				const name = symbol?.name ?? expression;
+				const propertyName = ts.isPropertyAccessExpression(callee) ? callee.name.text
+					: ts.isElementAccessExpression(callee) && callee.argumentExpression && ts.isStringLiteral(callee.argumentExpression) ? callee.argumentExpression.text : expression;
+				const name = symbol?.name ?? propertyName;
 				const declaration = signature?.declaration;
 				const declaredName = declaration?.name && ts.isIdentifier(declaration.name) ? declaration.name.text : name;
 				const parent = declaration?.parent;
+				const memberName = parent && (ts.isPropertySignature(parent) || ts.isParameter(parent)) && ts.isIdentifier(parent.name) ? parent.name.text : declaredName;
 				const ownerName = parent && (ts.isInterfaceDeclaration(parent) || ts.isClassDeclaration(parent)) ? parent.name?.text ?? '' : '';
 				const boundaries = new Set<string>();
 				if (providerNames.has(ownerName)) boundaries.add('provider-use');
@@ -123,10 +126,15 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 						const origin = port.declaration?.getSourceFile().fileName.replaceAll('\\', '/') ?? '';
 						const owner = port.declaration?.parent;
 						const ownerId = owner && (ts.isClassDeclaration(owner) || ts.isInterfaceDeclaration(owner)) ? owner.name?.text ?? '' : '';
+						const op = port.declaration?.name;
+						const portName = op && ts.isIdentifier(op) ? op.text
+							: owner && (ts.isPropertySignature(owner) || ts.isParameter(owner)) && ts.isIdentifier(owner.name) ? owner.name.text : '';
 						if (providerNames.has(ownerId) || /\/src\/(?:agent\/providers\/|indexer\/embedder\.ts$)/.test(origin)) boundaries.add('provider-use');
 						if (connectionNames.has(ownerId)) boundaries.add('connection-use');
 						if (/\/node_modules\/(?:msgpackr|@msgpack|bson)\//.test(origin)) boundaries.add('serialization');
-						if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(origin)) boundaries.add('diagnostic');
+						if (/^(?:pack|unpack|stringify|parse|encode|decode|serialize|deserialize|toJSON)$/.test(portName)) boundaries.add('serialization');
+						if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(origin)
+							|| /^(?:trace|debug|info|warn|warning|error|fatal|log|logFn|logger|onLog|onTrace)$/.test(portName)) boundaries.add('diagnostic');
 					}
 				}
 				if (signature) {
@@ -147,15 +155,26 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 				if (file === 'src/agent/providers/onnx-embedder.ts' && declaration && ts.isFunctionTypeNode(declaration)) boundaries.add('provider-use');
 				if (/\/node_modules\/(?:ollama\/|@huggingface\/transformers\/|onnxruntime)/.test(declarationFile)) boundaries.add('provider-backend');
 				if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(declarationFile)
-					|| /^(?:console\.|process\.(?:stdout|stderr)\.)/.test(expression)) boundaries.add('diagnostic');
+					|| /^(?:console\.|process\.(?:stdout|stderr)\.)/.test(expression)
+					|| /^(?:trace|debug|info|warn|warning|error|fatal|log|logFn|logger|onLog|onTrace)$/.test(memberName)
+					|| ownerName === 'ConnectionExecutionDiagnostics') boundaries.add('diagnostic');
 				if (ownerName === 'JSON' && /^(?:stringify|parse)$/.test(declaredName)
-					|| /(?:serialize|checkpoint|persist|trace|^pack$|^unpack$|^encode|^decode|toJSON|postMessage)/i.test(declaredName)
+					|| /(?:serialize|checkpoint|persist|trace|^pack$|^unpack$|^encode|^decode|^write|toJSON|toString|postMessage)/i.test(declaredName)
 					|| /\/node_modules\/(?:msgpackr|@msgpack|bson)\//.test(declarationFile)) boundaries.add('serialization');
-				if (/^(?:send|write)$/.test(declaredName) && /\/node_modules\/@types\/node\//.test(declarationFile)) boundaries.add('serialization');
-				if (!declaration) boundaries.add('unresolved-call');
+				if (/^(?:send|emit|publish)$/.test(declaredName)) boundaries.add('serialization');
+				if (ownerName === 'BufferConstructor' && /^(?:from|concat|alloc)/.test(declaredName)) boundaries.add('serialization');
+				if (!declaration) {
+					boundaries.add('unresolved-call');
+					if (/^(?:embed(?:Query|Documents?)?|complete|completeStructured|streamComplete|pipeline|generate)$/.test(propertyName)) boundaries.add('provider-use');
+				}
 				if (/^(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rename|renameSync|mkdir|mkdirSync|rm|rmSync|unlink|unlinkSync)$/.test(declaredName)
 					&& /(?:\/node_modules\/@types\/node\/fs|\/src\/)/.test(declarationFile)) boundaries.add('filesystem-write');
+				if (/^(?:readFile|readFileSync|createReadStream|readdir|readdirSync)$/.test(declaredName)
+					&& /\/node_modules\/@types\/node\/fs/.test(declarationFile)) boundaries.add('filesystem-read');
+				if (/^(?:open|openSync|mkdtemp|mkdtempSync)$/.test(declaredName)
+					&& /\/node_modules\/@types\/node\/fs/.test(declarationFile)) boundaries.add('filesystem-open');
 				if (/\/src\/(?:db\/|analyze\/(?:.*\/)?(?:cache|persistence)\.ts)/.test(declarationFile)) boundaries.add('storage-call');
+				if (/\/node_modules\/(?:lmdb\/|@lancedb\/|@duckdb\/|better-sqlite3\/|duckdb\/|redis\/|mongodb\/|pg\/)/.test(declarationFile)) boundaries.add('storage-call');
 				for (const boundary of boundaries) sites.push({ file, expression, boundary });
 			}
 			ts.forEachChild(node, visit);

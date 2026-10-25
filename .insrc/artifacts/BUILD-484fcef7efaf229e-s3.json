@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T16:16:44.451Z",
+    "updatedAt": "2026-10-25T16:27:46.177Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -16,7 +16,7 @@
         "passed": false
       }
     ],
-    "summary": "Task1 adds explicit frozen, nonserializable execution contracts and production staged fail-closed entry guards, including ShapeOpts and RunAnalyzeOpts paths before state/cache access. Typed inventory now records5077 sites across460 files, covering typed/aliased/inherited/call-bound providers, ONNX and injected embedding ports, JSON/MessagePack/binary codecs, transport serialization and unresolved dynamic calls with explicit file classifications. Focused tests and typecheck pass; actual session ownership and all later tasks remain pending and release disabled.",
+    "summary": "Task1 inventory accepted; closing the missing-carrier finding. analysisConnectionContext requires an explicit normalized tuple; saved consumers explicitly construct saved authority only at unbound legacy entries. Existing per-call context is used for denial only: bound calls and nested calls cannot drop or replace their explicit tuple, never reconstruct authority. Legacy tool loop now requires and validates its tuple before prompt/provider construction; freeform adapter forwards it. Focused guards/inventory/context and18 native measurement/freeform regressions pass; remaining S003 tasks and release gates pending.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/TESTS.md"
     },
@@ -26,177 +26,184 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/context/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-source-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-source-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/daemon/request-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-execution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/connection-access.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/walker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-connections-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-table-describe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-tables-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-connections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-objects.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/schema-table.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:16:44.451Z"
+        "timestamp": "2026-10-25T16:27:46.177Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/freeform-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T16:27:46.177Z"
       }
     ],
-    "commit": "209339de4"
+    "commit": "e1b7b0e4d"
   }
 }

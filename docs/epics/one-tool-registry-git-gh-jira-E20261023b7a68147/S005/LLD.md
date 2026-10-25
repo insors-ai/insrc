@@ -457,3 +457,17 @@ Type and classify only the 46 existing gh tools here and assign every other oper
 - gpg-key list and ssh-key list return untyped rows because gh does not document their columns and the sign-in here lacks the scopes to list them; a later change can name the columns once they are verified.
 - codespace create always accepts the permissions the devcontainer requests (--default-permissions), and the notice is in the approval preview content; confirm this is acceptable, since the alternative would be to refuse codespaces that request extra permissions.
 - No insrc_analyze_step bundle was run for this LLD; the bundles come from direct reads of the gh tool files, the installed gh 2.46.0 help and --json listings, and the tools folder.
+
+## Resolved questions
+
+- `qb765d77f` — The per-job limit table departs from the HLD's single 120 s performance line; the user decided it in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'). The nonFunctional.retarget proposal made in the contract step still has to be filed as an amendment artifact.
+  - **resolved**: Amend the HLD — Records the user's 2026-10-25 per-job limit decision; the amendment is filed as a task of the plan. _(2026-10-25T13:46:57.210Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/daemon/tools/builtins/gh/helpers.ts`
+- **[[c2]]** `code` `src/daemon/tools/builtins/gh/index.ts`
+- **[[c3]]** `code` `src/daemon/tools/call-tool.ts`
+- **[[c4]]** `code` `src/daemon/tools/approval-policy.ts:35`
+- **[[c5]]** `code` `src/daemon/tools/builtins/git/coverage.ts`
+- **[[c6]]** `doc` `docs/plans/tool-registry.md`

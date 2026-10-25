@@ -63,6 +63,15 @@
           "reason": "User-directed override (2026-10-25). LLD-s5 went through ten revisions and nine daemon review rounds; every finding through round 9 was fixed or decided by the user (extraArgs kept, gist content replacement and codespace cp --expand accepted as exclusions). Revision 10 fixes the last three round-9 findings (release download selector, codespace notice in the gate preview, one failure precedence) but was not re-reviewed. The user explicitly asked to fix the issues and approve with override; the input-inventory, real-CLI parser and prompt-sweep tests and the post-build code review remain as checks."
         }
       }
+    },
+    "questionResolutions": {
+      "qb765d77f": {
+        "question": "The per-job limit table departs from the HLD's single 120 s performance line; the user decided it in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'). The nonFunctional.retarget proposal made in the contract step still has to be filed as an amendment artifact.",
+        "status": "resolved",
+        "choice": "Amend the HLD",
+        "rationale": "Records the user's 2026-10-25 per-job limit decision; the amendment is filed as a task of the plan.",
+        "resolvedAt": "2026-10-25T13:46:57.210Z"
+      }
     }
   },
   "body": {

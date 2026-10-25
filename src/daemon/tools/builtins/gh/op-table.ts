@@ -16,7 +16,7 @@ import { parseTabRows } from './parsers.js';
 // Fields
 // ---------------------------------------------------------------------------
 
-export type FieldKind = 'string' | 'integer' | 'boolean' | 'strings' | 'enum' | 'expr';
+export type FieldKind = 'string' | 'integer' | 'boolean' | 'strings' | 'enum' | 'enums' | 'expr';
 
 export interface FieldSpec {
   readonly kind: FieldKind;
@@ -34,7 +34,7 @@ export function isExpression(v: string): boolean {
   if (v.length === 0 || /\s/.test(v)) { return false; }
   if (v.includes('..')) {
     const parts = v.split('..');
-    return parts.length === 2 && parts.every(p => EXPR_PART.test(p));
+    return parts.length === 2 && parts.some(p => p.length > 0) && parts.every(p => EXPR_PART.test(p));
   }
   return /^(?:>=|<=|>|<)?[\w.:+*-]+$/.test(v);
 }
@@ -45,6 +45,8 @@ export const field = {
   bool: (description?: string): FieldSpec => ({ kind: 'boolean', ...(description ? { description } : {}) }),
   strs: (description?: string): FieldSpec => ({ kind: 'strings', ...(description ? { description } : {}) }),
   oneOf: (values: readonly string[], description?: string): FieldSpec => ({ kind: 'enum', values, ...(description ? { description } : {}) }),
+  /** A list whose members are each one of the values. */
+  manyOf: (values: readonly string[], description?: string): FieldSpec => ({ kind: 'enums', values, ...(description ? { description } : {}) }),
   /** A string holding a comparison or range such as >100, 10..50 or >=2024-01-01. */
   expr: (description?: string): FieldSpec => ({ kind: 'expr', description: description ?? 'A number, size or date; comparisons and ranges are allowed (>100, 10..50, >=2024-01-01).' }),
 };
@@ -58,6 +60,7 @@ export function fieldSchema(spec: FieldSpec): TSchema {
     case 'boolean': return Type.Boolean(d);
     case 'strings': return Type.Array(Type.String({ minLength: 1 }), { minItems: 1, ...d });
     case 'enum': return Type.Unsafe<string>({ type: 'string', enum: [...(spec.values ?? [])], ...d });
+    case 'enums': return Type.Unsafe<string[]>({ type: 'array', items: { type: 'string', enum: [...(spec.values ?? [])] }, minItems: 1, ...d });
   }
 }
 
@@ -68,11 +71,14 @@ export function fieldSchema(spec: FieldSpec): TSchema {
 export type Arg =
   | { readonly pos: string }
   | { readonly spread: string }
+  | { readonly last: string }
   | { readonly flag: string; readonly field: string; readonly as?: 'value' | 'bool' | 'bool3' | 'repeat' | 'csv' }
   | { readonly lit: readonly string[]; readonly when?: (input: ToolInput) => boolean };
 
 /** A positional taken from a field when it is given. */
 export const pos = (name: string): Arg => ({ pos: name });
+/** A positional after `--`, at the very end, so it may start with '-' (a search query such as -label:bug). */
+export const last = (name: string): Arg => ({ last: name });
 /** Every member of a list field as its own positional. */
 export const spread = (name: string): Arg => ({ spread: name });
 /** A value-less flag that can also be switched off: true passes --flag, false passes --flag=false. */
@@ -106,7 +112,21 @@ export type OutSpec =
   /** {op, count, items}: gh's --json array, items with exactly the named fields (the tool adds --json itself) */
   | { readonly kind: 'items'; readonly jsonFields: readonly string[] }
   /** {op, ...shape}: gh's --json object, or a parser of the plain output, picked by the shape's keys */
+  /** {op, count, items} with one item per non-blank line, the line in the named property */
+  | { readonly kind: 'lines'; readonly property: string }
+  /** {op, text, truncated}: a read whose text is cut at the op's maxBytes and says so */
+  | { readonly kind: 'textCapped' }
+  /** {op, ...shape} built by the op itself (a text conversion, a deterministic parse); it returns the data or a failed result */
+  | { readonly kind: 'custom'; readonly shape: Readonly<Record<string, TSchema>>; readonly build: (ctx: BuildContext) => Promise<Record<string, unknown> | ToolResult> }
   | { readonly kind: 'object'; readonly shape: Readonly<Record<string, TSchema>>; readonly jsonFields?: readonly string[]; readonly parse?: (stdout: string) => Record<string, unknown> | undefined };
+
+export interface BuildContext {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly input: ToolInput;
+  readonly deps: ToolDeps;
+  readonly truncated: boolean;
+}
 
 export interface OpDef {
   readonly name: string;
@@ -137,6 +157,8 @@ export interface OpDef {
   readonly out: OutSpec;
   /** The input identifier a mutation reports as its target when gh printed no URL. */
   readonly target?: (input: ToolInput) => string | undefined;
+  /** A sentence the approval preview carries for this op (a consequence the person should see). */
+  readonly notice?: string;
   /** The capture cap in bytes for a read whose answer can be long. */
   readonly maxBytes?: number;
 }
@@ -167,6 +189,15 @@ export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
     const v = input[k];
     if (v === undefined || v === null) { return `op ${def.name} needs the field ${k}`; }
   }
+  // a positional that starts with '-' would be read by gh as a flag
+  for (const a of def.args) {
+    const name = 'pos' in a ? a.pos : 'spread' in a ? a.spread : undefined;
+    if (name === undefined) { continue; }
+    const v = input[name];
+    for (const x of Array.isArray(v) ? v : [v]) {
+      if (typeof x === 'string' && x.startsWith('-')) { return `op ${def.name}: ${name} must not start with '-' (gh would read it as a flag)`; }
+    }
+  }
   for (const group of def.oneOf ?? []) {
     const n = group.filter(k => given(input, k)).length;
     if (n !== 1) { return `op ${def.name} needs exactly one of ${group.join(', ')}`; }
@@ -182,6 +213,10 @@ export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
   }
   for (const [k, spec] of Object.entries(def.fields ?? {})) {
     const v = input[k];
+    if ((spec.kind === 'enum' || spec.kind === 'enums') && v !== undefined && v !== null) {
+      const bad = (Array.isArray(v) ? v : [v]).find(x => !(spec.values ?? []).includes(String(x)));
+      if (bad !== undefined) { return `op ${def.name}: ${k} must be one of ${(spec.values ?? []).join(', ')}`; }
+    }
     if (spec.kind === 'expr' && typeof v === 'string' && !isExpression(v)) {
       return `op ${def.name}: ${k} must be a number, size or date, a comparison (>100, >=2024-01-01) or a range (10..50)`;
     }
@@ -192,6 +227,7 @@ export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
 /** The argv of an op after `gh`: the command, the arguments in order, the JSON field list and -R. */
 export function buildArgv(def: OpDef, input: ToolInput): string[] {
   const argv: string[] = ['gh', ...def.command];
+  const tail: string[] = [];
   for (const a of def.args) {
     if ('pos' in a) {
       const v = input[a.pos];
@@ -199,6 +235,9 @@ export function buildArgv(def: OpDef, input: ToolInput): string[] {
     } else if ('spread' in a) {
       const v = input[a.spread];
       if (Array.isArray(v)) { argv.push(...v.map(String)); }
+    } else if ('last' in a) {
+      const v = input[a.last];
+      if (v !== undefined && v !== null) { tail.push('--', String(v)); }
     } else if ('flag' in a) {
       const v = input[a.field];
       if (a.as === 'bool3') { if (v === true) { argv.push(a.flag); } else if (v === false) { argv.push(`${a.flag}=false`); } continue; }
@@ -215,7 +254,7 @@ export function buildArgv(def: OpDef, input: ToolInput): string[] {
     argv.push('--json', (def.out.kind === 'items' ? def.out.jsonFields : def.out.jsonFields!).join(','));
   }
   if (def.repo === true && typeof input['repo'] === 'string' && input['repo'].length > 0) { argv.push('-R', input['repo']); }
-  return argv;
+  return [...argv, ...tail];
 }
 
 // ---------------------------------------------------------------------------
@@ -224,15 +263,18 @@ export function buildArgv(def: OpDef, input: ToolInput): string[] {
 
 /** The flat input schema: op, cwd, repo where an op takes it, and every field of every op. A field two ops share must be the same. */
 export function buildInputSchema(ops: readonly OpDef[]): TSchema {
-  const schemas = new Map<string, TSchema>();
+  const specs = new Map<string, FieldSpec>();
   for (const def of ops) {
     for (const [k, spec] of Object.entries(def.fields ?? {})) {
-      const schema = fieldSchema(spec);
-      const prior = schemas.get(k);
-      // two ops may describe a shared field in their own words; its type, bounds and values must agree
-      const bare = (t: TSchema): string => JSON.stringify({ ...t, description: undefined });
-      if (prior !== undefined && bare(prior) !== bare(schema)) { throw new Error(`field ${k} is declared differently by two ops (op ${def.name})`); }
-      schemas.set(k, schema);
+      const prior = specs.get(k);
+      if (prior === undefined) { specs.set(k, spec); continue; }
+      // two ops may describe a shared field in their own words, and may allow different values of an enum (each op
+      // checks its own); anything else about the field must agree
+      const bare = (t: FieldSpec): string => JSON.stringify({ ...t, description: undefined, values: undefined });
+      if (bare(prior) !== bare(spec)) { throw new Error(`field ${k} is declared differently by two ops (op ${def.name})`); }
+      if (prior.values !== undefined || spec.values !== undefined) {
+        specs.set(k, { ...prior, values: [...new Set([...(prior.values ?? []), ...(spec.values ?? [])])] });
+      }
     }
   }
   const out: Record<string, TSchema> = {
@@ -240,7 +282,8 @@ export function buildInputSchema(ops: readonly OpDef[]): TSchema {
     cwd: Type.Optional(Type.String({ description: 'Directory to run gh in.' })),
   };
   if (ops.some(o => o.repo === true)) { out['repo'] = Type.Optional(Type.String({ description: 'OWNER/NAME; default: the repository of the working directory.' })); }
-  for (const [k, schema] of schemas) {
+  for (const [k, spec] of specs) {
+    const schema = fieldSchema(spec);
     // required in the schema only when every op requires it; the per-op rules are checked when the op runs
     out[k] = ops.every(o => (o.required ?? []).includes(k)) ? schema : Type.Optional(schema);
   }
@@ -253,6 +296,9 @@ function outputMember(def: OpDef): TSchema {
     case 'mutation': return Type.Object({ op, ok: Type.Boolean(), target: Type.String(), message: Type.String() });
     case 'text': return Type.Object({ op, text: Type.String() });
     case 'rows': return Type.Object({ op, count: Type.Number(), rows: Type.Array(Type.Array(Type.String())) });
+    case 'lines': return Type.Object({ op, count: Type.Number(), items: Type.Array(Type.Object({ [def.out.property]: Type.String() })) });
+    case 'textCapped': return Type.Object({ op, text: Type.String(), truncated: Type.Boolean() });
+    case 'custom': return Type.Object({ op, ...def.out.shape });
     case 'columns': {
       const item = Type.Object(Object.fromEntries(def.out.columns.map(k => [k, Type.String()])));
       return Type.Object({ op, count: Type.Number(), items: Type.Array(item) });
@@ -297,12 +343,12 @@ function gateOf(id: string, def: OpDef | undefined, input: ToolInput): ToolAppro
     if (k === 'op' || k === 'repo' || k === 'cwd' || v === undefined || v === null) { continue; }
     lines.push(`${k}: ${HIDDEN.has(k) ? '(hidden)' : previewValue(v)}`);
   }
-  void def;
+  if (def?.notice !== undefined) { lines.push('', def.notice); }
   return { title: `${id} ${String(input['op'])}`, content: lines.join('\n'), actions: [{ name: 'approve', label: 'Approve' }, { name: 'skip', label: 'Skip' }] };
 }
 
 /** The result of one op from gh's outcome; a parse that cannot be done is a rejected failure. */
-function shape(id: string, def: OpDef, input: ToolInput, stdout: string, stderr: string): ToolResult {
+async function shape(id: string, def: OpDef, input: ToolInput, stdout: string, stderr: string, deps: ToolDeps, truncated: boolean): Promise<ToolResult> {
   const op = def.name;
   const bad = (msg: string): ToolResult => ({ output: `[${id}] ${msg}`, format: 'text', success: false, error: msg, failure: { kind: 'rejected', message: msg } });
   switch (def.out.kind) {
@@ -317,6 +363,19 @@ function shape(id: string, def: OpDef, input: ToolInput, stdout: string, stderr:
     case 'rows': {
       const rows = parseTabRows(stdout);
       return { output: stdout, format: 'text', success: true, data: { op, count: rows.length, rows } };
+    }
+    case 'lines': {
+      const property = def.out.property;
+      const items = stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).map(l => ({ [property]: l }));
+      return { output: stdout, format: 'text', success: true, data: { op, count: items.length, items } };
+    }
+    case 'textCapped': {
+      return { output: stdout, format: 'text', success: true, data: { op, text: stdout, truncated } };
+    }
+    case 'custom': {
+      const built = await def.out.build({ stdout, stderr, input, deps, truncated });
+      if ('success' in built && 'output' in built && typeof built['success'] === 'boolean') { return built as ToolResult; }
+      return { output: JSON.stringify({ op, ...built }, null, 2), format: 'json', success: true, data: { op, ...built } };
     }
     case 'columns': {
       const cols = def.out.columns;
@@ -380,7 +439,7 @@ export function defineGhFamily(spec: { id: string; description: string; ops: rea
         const clean = { ...failure, message: hide(failure.message), ...(failure.original !== undefined ? { original: hide(failure.original) } : {}) };
         return { output: `[${id} ${def.name}] ${clean.message}`, format: 'text', success: false, error: clean.message, failure: clean };
       }
-      return shape(id, def, input, o.stdout, o.stderr);
+      return shape(id, def, input, o.stdout, o.stderr, deps, o.stdoutTruncated);
     },
   };
   return withGhFailureNet(tool as unknown as GhFamilyTool);

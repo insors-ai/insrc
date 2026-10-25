@@ -7,6 +7,8 @@ import { validateAgainstSchema } from '../../../../../agent/providers/structured
 import type { StructuredSchema } from '../../../../../shared/types.js';
 import type { ApprovalClass } from '../../../types.js';
 import { ghApprovalClass, ghTimeoutMs } from '../helpers.js';
+import { ghAuthTool, ghCodespaceTool, ghConfigTool, ghExtensionTool, ghOrgTool, ghRulesetTool, ghSearchTool, ghStatusTool } from '../account.js';
+import { providers } from './_providers.js';
 import { ghCacheTool, ghGistTool, ghGpgKeyTool, ghLabelTool, ghSecretTool, ghSshKeyTool, ghVariableTool } from '../resources.js';
 import { ghIssueManageTool, ghPrManageTool, ghProjectManageTool, ghReleaseAssetTool, ghRepoManageTool, ghRunManageTool, ghWorkflowManageTool } from '../manage.js';
 import type { GhFamilyTool } from '../op-table.js';
@@ -237,4 +239,124 @@ test('gh-family-tools.test.ts: secret and variable set deliver the value on stan
 			assert.match(r.error ?? '', /\[redacted\]/);
 		} finally { gh.restore(); }
 	}
+});
+
+const AUTH_TEXT = 'github.com\n  \u2713 Logged in to github.com account octocat (keyring)\n  - Active account: true\n';
+const RULESETS = 'ID  NAME\n123 main protection\n456 release rules\n';
+const CODESPACE_VIEW_FIELDS = 'billableOwner,createdAt,devcontainerPath,displayName,environmentId,gitStatus,idleTimeoutMinutes,lastUsedAt,location,machineDisplayName,machineName,name,owner,prebuild,recentFolders,repository,retentionExpiresAt,retentionPeriodDays,state,vscsTarget';
+const CODESPACE_VIEW_JSON = JSON.stringify(Object.fromEntries(CODESPACE_VIEW_FIELDS.split(',').map(k => [k, null])));
+
+/** tool, input, argv, gh's output, class, limit, and for a text conversion the model's answer */
+type Row3 = [GhFamilyTool, Record<string, unknown>, string, string, ApprovalClass, number, unknown?];
+
+const ROWS3: Row3[] = [
+	[ghSearchTool, { op: 'code', query: 'TODO', extension: 'ts', match: ['file'], owner: ['o'], repo: ['o/r'], limit: 5 }, 'search code --extension ts -L 5 --match file --owner o -R o/r --json path,repository,sha,textMatches,url -- TODO', '[]', 'none', 60],
+	[ghSearchTool, { op: 'commits', query: 'fix', author: 'a', merge: true, sort: 'author-date', order: 'asc', visibility: ['public', 'internal'] }, 'search commits --author a --merge --order asc --sort author-date --visibility public --visibility internal --json author,commit,committer,id,parents,repository,sha,url -- fix', '[]', 'none', 60],
+	[ghSearchTool, { op: 'issues', query: 'x', state: 'open', includePrs: true, sort: 'reactions-+1' }, 'search issues --state open --include-prs --sort reactions-+1 --json assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url -- x', '[]', 'none', 60],
+	[ghSearchTool, { op: 'prs', query: 'x', base: 'main', head: 'f', checks: 'success', review: 'approved', draft: false, merged: true, reviewedBy: 'u' }, 'search prs -B main --checks success --draft=false -H f --merged --review approved --reviewed-by u --json assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url,isDraft -- x', '[]', 'none', 60],
+	[ghSearchTool, { op: 'repos', query: 'cli', language: 'go', includeForks: 'only', topic: ['a'], license: ['mit'], sort: 'stars' }, 'search repos --include-forks only --language go --license mit --sort stars --topic a', '[]', 'none', 60],
+	[ghRulesetTool, { op: 'view', rulesetId: '123', org: 'acme' }, 'ruleset view 123 -o acme', 'rules\n', 'none', 30],
+	[ghRulesetTool, { op: 'check', branch: 'main', repo: 'o/r' }, 'ruleset check main -R o/r', 'ok\n', 'none', 30],
+	[ghOrgTool, { op: 'list', limit: 3 }, 'org list -L 3', 'acme\nwidgets\n', 'none', 30],
+	[ghAuthTool, { op: 'switch', hostname: 'github.com', user: 'octocat' }, 'auth switch -h github.com -u octocat', '', 'common', 30],
+	[ghAuthTool, { op: 'logout', hostname: 'github.com', user: 'octocat' }, 'auth logout -h github.com -u octocat', '', 'destructive', 30],
+	[ghStatusTool, { op: 'status', exclude: ['o/a', 'o/b'], org: 'acme' }, 'status -e o/a,o/b -o acme', 'Assigned Issues\n', 'none', 60],
+	[ghCodespaceTool, { op: 'list', limit: 2, repo: 'o/r' }, 'codespace list -L 2 -R o/r --json createdAt,displayName,gitStatus,lastUsedAt,machineName,name,owner,repository,state,vscsTarget', '[]', 'none', 30],
+	[ghCodespaceTool, { op: 'view', codespace: 'cs1' }, `codespace view -c cs1 --json ${CODESPACE_VIEW_FIELDS}`, CODESPACE_VIEW_JSON, 'none', 30],
+	[ghCodespaceTool, { op: 'logs', codespace: 'cs1' }, 'codespace logs -c cs1', 'log text\n', 'none', 60],
+	[ghCodespaceTool, { op: 'ports', codespace: 'cs1' }, 'codespace ports -c cs1 --json browseUrl,label,sourcePort,visibility', '[]', 'none', 30],
+	[ghCodespaceTool, { op: 'create', repo: 'o/r', branch: 'main', machine: 'basicLinux32gb', displayName: 'dev', idleTimeout: '30m', retentionPeriod: '72h', location: 'EastUs', devcontainerPath: '.devcontainer/a.json', status: true }, 'codespace create --default-permissions -R o/r -b main -m basicLinux32gb -d dev --idle-timeout 30m --retention-period 72h -l EastUs --devcontainer-path .devcontainer/a.json -s', 'cs-new\n', 'common', 600],
+	[ghCodespaceTool, { op: 'edit', codespace: 'cs1', displayName: 'n', machine: 'm' }, 'codespace edit -c cs1 -d n -m m', '', 'common', 30],
+	[ghCodespaceTool, { op: 'stop', codespace: 'cs1', org: 'acme', user: 'u' }, 'codespace stop -c cs1 -o acme -u u', '', 'common', 60],
+	[ghCodespaceTool, { op: 'rebuild', codespace: 'cs1', full: true }, 'codespace rebuild -c cs1 --full', '', 'common', 600],
+	[ghCodespaceTool, { op: 'delete', codespace: 'cs1', force: true }, 'codespace delete -c cs1 -f', '', 'destructive', 60],
+	[ghCodespaceTool, { op: 'delete', all: true, days: 30 }, 'codespace delete --all --days 30', '', 'destructive', 60],
+	[ghCodespaceTool, { op: 'cp', codespace: 'cs1', sources: ['a.txt', 'dir'], dest: 'remote:/tmp/', recursive: true, profile: 'p' }, 'codespace cp -c cs1 -r -p p a.txt dir remote:/tmp/', '', 'common', 300],
+	[ghCodespaceTool, { op: 'ports-visibility', codespace: 'cs1', ports: ['8080:public', '3000:org'] }, 'codespace ports visibility 8080:public 3000:org -c cs1', '', 'destructive', 30],
+	[ghConfigTool, { op: 'get', key: 'git_protocol', host: 'github.com' }, 'config get git_protocol -h github.com', 'ssh\n', 'none', 30],
+	[ghConfigTool, { op: 'list' }, 'config list', 'git_protocol=ssh\neditor=\n', 'none', 30],
+	[ghExtensionTool, { op: 'list' }, 'extension list', 'gh copilot\tgithub/gh-copilot\tv1\n', 'none', 30],
+	[ghExtensionTool, { op: 'search', query: 'copilot', owner: ['github'], license: ['mit'], sort: 'stars', order: 'desc', limit: 3 }, 'extension search --license mit -L 3 --order desc --owner github --sort stars --json createdAt', '[]', 'none', 60],
+	[ghAuthTool, { op: 'status', hostname: 'github.com' }, 'auth status -h github.com', AUTH_TEXT, 'none', 30, { hosts: [{ host: 'github.com', login: 'octocat', active: true, state: 'logged-in' }] }],
+	[ghRulesetTool, { op: 'list', org: 'acme', parents: false, limit: 5 }, 'ruleset list -o acme --parents=false -L 5 -R', RULESETS, 'none', 30, { items: [{ id: '123', name: 'main protection' }, { id: '456', name: 'release rules' }] }],
+];
+
+test('gh-family-tools.test.ts: search, ruleset, org, auth, status, codespace, config and extension ops build the argv the table gives and return the literal op', async () => {
+	const seen = new Set<string>();
+	const mismatches: string[] = [];
+	for (const [tool, input, argvPrefix, stdout, cls, limit, answer] of ROWS3) {
+		const label = `${tool.id}.${String(input['op'])} ${argvPrefix}`;
+		seen.add(`${tool.id}.${String(input['op'])}`);
+		assert.ok(validateAgainstSchema(tool.inputSchema as unknown as StructuredSchema, input).ok, `${label}: the input schema accepts it`);
+		assert.equal(ghApprovalClass(tool.id, input), cls, `${label}: class`);
+		assert.equal(ghTimeoutMs({ toolId: tool.id, op: String(input['op']) }), limit * 1000, `${label}: limit`);
+		const gh = installFakeGh('ok', stdout);
+		try {
+			const p = answer !== undefined ? providers(answer) : undefined;
+			const r = await tool.execute(input, { ...deps, ...(p ? { conversion: p.conversion } : {}) });
+			assert.equal(r.success, true, `${label}: ${r.output}`);
+			const call = gh.calls()[0]!;
+			// a long --json field list is checked in the table above; here the front of the argv is
+			if (!(call === argvPrefix || call.startsWith(argvPrefix.replace(/ -R$/, '')))) { mismatches.push(`${label}\n   got ${call}`); }
+			const data = r.data as Record<string, unknown>;
+			assert.equal(data['op'], input['op'], `${label}: the literal op`);
+			assert.ok(Value.Check(tool.outputSchema, data), `${label}: ${JSON.stringify(data)} fits the output union`);
+		} finally { gh.restore(); }
+	}
+	assert.deepEqual(mismatches, []);
+	for (const tool of [ghSearchTool, ghRulesetTool, ghOrgTool, ghAuthTool, ghStatusTool, ghCodespaceTool, ghConfigTool, ghExtensionTool]) {
+		for (const op of tool.ops) {
+			if (tool === ghStatusTool || (tool === ghRulesetTool && op.name === 'list')) { continue; }
+			assert.ok(seen.has(`${tool.id}.${op.name}`), `${tool.id}.${op.name} is covered`);
+		}
+	}
+});
+
+test('gh-family-tools.test.ts: the data of config, org, codespace logs and the text conversions', async () => {
+	const out = async (tool: GhFamilyTool, input: Record<string, unknown>, stdout: string, answer?: unknown) => {
+		const gh = installFakeGh('ok', stdout);
+		try { const p = answer !== undefined ? providers(answer) : undefined; return (await tool.execute(input, { ...deps, ...(p ? { conversion: p.conversion } : {}) })).data; } finally { gh.restore(); }
+	};
+	assert.deepEqual(await out(ghConfigTool, { op: 'get', key: 'editor' }, 'vim\n'), { op: 'get', key: 'editor', value: 'vim' });
+	assert.deepEqual(await out(ghConfigTool, { op: 'list' }, 'git_protocol=ssh\neditor=\nbrowser=a=b\n'), { op: 'list', entries: [{ key: 'git_protocol', value: 'ssh' }, { key: 'editor', value: '' }, { key: 'browser', value: 'a=b' }] });
+	assert.deepEqual(await out(ghOrgTool, { op: 'list' }, 'acme\n\nwidgets\n'), { op: 'list', count: 2, items: [{ name: 'acme' }, { name: 'widgets' }] });
+	assert.deepEqual(await out(ghCodespaceTool, { op: 'logs', codespace: 'c' }, 'a log\n'), { op: 'logs', text: 'a log\n', truncated: false });
+	// a log longer than the 128 KiB display cap is a success with truncated true
+	const big = await out(ghCodespaceTool, { op: 'logs', codespace: 'c' }, 'x'.repeat(200 * 1024)) as { text: string; truncated: boolean };
+	assert.equal(big.truncated, true);
+	assert.equal(big.text.length, 128 * 1024);
+	// ruleset list with no rulesets is an empty list and needs no conversion; status answers with gh's text
+	assert.deepEqual(await out(ghRulesetTool, { op: 'list' }, ''), { op: 'list', count: 0, items: [] });
+	assert.deepEqual(await out(ghStatusTool, { op: 'status' }, 'Assigned Issues\no/r#1\n', { repositories: ['o/r'] }), { op: 'status', text: 'Assigned Issues\no/r#1\n' });
+	assert.deepEqual(await out(ghStatusTool, { op: 'status' }, 'Assigned Issues\n'), { op: 'status', text: 'Assigned Issues\n' });
+});
+
+test('gh-family-tools.test.ts: codespace create always passes --default-permissions and has no defaultPermissions field', async () => {
+	const create = ghCodespaceTool.ops.find(o => o.name === 'create')!;
+	assert.equal('defaultPermissions' in (create.fields ?? {}), false);
+	const props = (ghCodespaceTool.inputSchema as unknown as { properties: Record<string, unknown> }).properties;
+	assert.equal('defaultPermissions' in props, false);
+	assert.equal(validateAgainstSchema(ghCodespaceTool.inputSchema as unknown as StructuredSchema, { op: 'create', repo: 'o/r', defaultPermissions: false }).ok, false, 'the schema has no such field');
+	const gh = installFakeGh('ok', 'cs-new\n');
+	try {
+		for (const input of [{ op: 'create', repo: 'o/r' }, { op: 'create', repo: 'o/r', branch: 'b', status: true }]) {
+			const r = await ghCodespaceTool.execute(input, deps);
+			assert.equal(r.success, true, r.output);
+			assert.ok(gh.calls().at(-1)!.startsWith('codespace create --default-permissions '), gh.calls().at(-1));
+		}
+		// a field the op does not accept, including that one, is refused before gh runs
+		const before = gh.calls().length;
+		const refused = await ghCodespaceTool.execute({ op: 'create', repo: 'o/r', defaultPermissions: false }, deps);
+		assert.equal(refused.success, false);
+		assert.match(refused.error ?? '', /does not accept the field defaultPermissions/);
+		assert.equal(gh.calls().length, before);
+		// durations are checked
+		assert.match((await ghCodespaceTool.execute({ op: 'create', repo: 'o/r', idleTimeout: 'soon' }, deps)).error ?? '', /durations such as 10m/);
+	} finally { gh.restore(); }
+	// the preview content states that the permissions the codespace requests are accepted; the request reason is not this tool's to set
+	const gate = await ghCodespaceTool.buildApprovalGate!({ op: 'create', repo: 'o/r' });
+	assert.match(gate.content, /permissions the codespace requests in its devcontainer are accepted without a further question/);
+	assert.equal(gate.title, 'gh_codespace create');
+	const other = await ghCodespaceTool.buildApprovalGate!({ op: 'edit', codespace: 'cs1', displayName: 'n' });
+	assert.doesNotMatch(other.content, /accepted without a further question/);
 });

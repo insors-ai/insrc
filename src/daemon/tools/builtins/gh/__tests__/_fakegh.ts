@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 const SCRIPT = `#!/bin/sh
 echo "$@" >> "$FAKE_LOG"
-if [ "$1" = auth ]; then echo "github.com: logged in as fake" ; exit 0; fi
+if [ "$1" = auth ] && [ "$FAKE_MODE" != ok ]; then echo "github.com: logged in as fake" ; exit 0; fi
 case "$*" in
   *--json*)
     if [ -n "$FAKE_JSON_FILE" ]; then cat "$FAKE_JSON_FILE"; exit 0; fi ;;

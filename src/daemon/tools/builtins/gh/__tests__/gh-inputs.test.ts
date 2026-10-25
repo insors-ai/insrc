@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { validateAgainstSchema } from '../../../../../agent/providers/structured-output.js';
 import type { StructuredSchema } from '../../../../../shared/types.js';
 import { ghReleaseAssetTool, ghRepoManageTool } from '../manage.js';
+import { ghAuthTool, ghCodespaceTool } from '../account.js';
 import { ghCacheTool, ghGistTool, ghGpgKeyTool, ghSecretTool, ghSshKeyTool, ghVariableTool } from '../resources.js';
 import { installFakeGh } from './_fakegh.js';
 
@@ -102,5 +103,42 @@ test("gh-inputs.test.ts: gist rename's three positionals, gist edit without cont
 		await refused(ghSshKeyTool, { op: 'add', keyFile: 'f', key: 'k' }, /exactly one of keyFile, key/);
 		await refused(ghGpgKeyTool as never, { op: 'add' }, /exactly one of keyFile, key/);
 		await refused(ghGpgKeyTool as never, { op: 'add', keyFile: 'f', key: 'k' }, /exactly one of keyFile, key/);
+	} finally { gh.restore(); }
+});
+
+test('gh-inputs.test.ts: auth logout and switch need hostname and user; codespace ops need codespace except list and create; delete needs exactly one of codespace and all', async () => {
+	const gh = installFakeGh('ok', '');
+	try {
+		const refused = async (tool: typeof ghAuthTool | typeof ghCodespaceTool, input: Record<string, unknown>, pattern: RegExp) => {
+			const before = gh.calls().length;
+			const r = await tool.execute(input, deps);
+			assert.equal(r.success, false, JSON.stringify(input));
+			assert.match(r.error ?? '', pattern, JSON.stringify(input));
+			assert.equal(gh.calls().length, before, 'gh did not run for a refused input');
+		};
+		for (const op of ['logout', 'switch']) {
+			await refused(ghAuthTool, { op }, /needs the field hostname/);
+			await refused(ghAuthTool, { op, hostname: 'github.com' }, /needs the field user/);
+			await refused(ghAuthTool, { op, user: 'octocat' }, /needs the field hostname/);
+			assert.equal((await ghAuthTool.execute({ op, hostname: 'github.com', user: 'octocat' }, deps)).success, true, op);
+		}
+		// every codespace op but list and create names the codespace, because gh would otherwise ask
+		for (const op of ['view', 'logs', 'ports', 'edit', 'stop', 'rebuild']) { await refused(ghCodespaceTool, { op }, /needs the field codespace/); }
+		await refused(ghCodespaceTool, { op: 'cp', sources: ['a'], dest: 'b' }, /needs the field codespace/);
+		await refused(ghCodespaceTool, { op: 'ports-visibility', ports: ['80:public'] }, /needs the field codespace/);
+		for (const op of ['list', 'create']) { assert.equal(ghCodespaceTool.ops.find(o => o.name === op)!.required?.includes('codespace') ?? false, false, op); }
+		await refused(ghCodespaceTool, { op: 'create' }, /needs the field repo/);
+		// delete: exactly one of codespace and all; days only with all
+		await refused(ghCodespaceTool, { op: 'delete' }, /exactly one of codespace, all/);
+		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', all: true }, /exactly one of codespace, all/);
+		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', days: 3 }, /days only together with all/);
+		assert.equal((await ghCodespaceTool.execute({ op: 'delete', all: true, days: 3 }, deps)).success, true);
+		assert.equal((await ghCodespaceTool.execute({ op: 'delete', codespace: 'c' }, deps)).success, true);
+		// cp needs at least one source; port pairs are port:visibility
+		assert.equal(validateAgainstSchema(ghCodespaceTool.inputSchema as unknown as StructuredSchema, { op: 'cp', codespace: 'c', sources: [], dest: 'd' }).ok, false);
+		await refused(ghCodespaceTool, { op: 'ports-visibility', codespace: 'c', ports: ['80'] }, /PORT:public, PORT:private or PORT:org/);
+		await refused(ghCodespaceTool, { op: 'ports-visibility', codespace: 'c', ports: ['80:everyone'] }, /PORT:public, PORT:private or PORT:org/);
+		// a positional may not look like a flag
+		await refused(ghCodespaceTool, { op: 'cp', codespace: 'c', sources: ['--help'], dest: 'd' }, /must not start with '-'/);
 	} finally { gh.restore(); }
 });

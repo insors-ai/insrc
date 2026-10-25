@@ -2353,7 +2353,7 @@
   ],
   "sourceDigests": {
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
-    "src/daemon/db/drivers/cassandra.ts": "0bae564856ed9afd4d59cfbce121e20170aa8662837d3fa181b42e167f657af5",
+    "src/daemon/db/drivers/cassandra.ts": "76b4bd3afc790d95caa14f87e9d8579c97b017d70ae0c5c2c3db5d80efbca5b4",
     "src/daemon/db/drivers/clickhouse.ts": "bc729321fab053f10271251d863ae9c42e73a0ebc319b644e87ca486dc487cc4",
     "src/daemon/db/drivers/converters/avro.ts": "258bc855222f8a938b4688d5edf4f09ca1e765a9173d0580c148ca914930911e",
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
@@ -2361,13 +2361,13 @@
     "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
     "src/daemon/db/drivers/duckdb-file.ts": "9c546ae5aae5562ca5cab4beab12ef664c23eef949fd6097aaa15932b9446f1e",
     "src/daemon/db/drivers/dynamodb.ts": "f83c66e87f0e097a926802820c0bc0776d70ba88ed5f3b8b6c2a8116824c7831",
-    "src/daemon/db/drivers/etcd.ts": "e545010d963b8741245785764033dd48541de6665b61c7f2f6fb84e5dd20e1c6",
+    "src/daemon/db/drivers/etcd.ts": "ea7d35cbcc1af5bb63f342d3c98de0812a38b3dfe34926dea0f4a92ac0fc2f69",
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
-    "src/daemon/db/drivers/memcached.ts": "30ff04b980057aac3248306af9d8428e1de351178b71c9c7b84719840354a82a",
-    "src/daemon/db/drivers/mongodb.ts": "f36d11e354a27826011fe738f72c4c09c8ae5a4fc5016cd7fa726fe84efdb566",
+    "src/daemon/db/drivers/memcached.ts": "1c95376b71d3ff0d6bd1a2e59bc9c3433df045f43d9e658ff2935185aef05c15",
+    "src/daemon/db/drivers/mongodb.ts": "96662a6ac18bbe5e85be1dbb4c0d5f913aa185ec37c551fd94aa39b50a5a95f9",
     "src/daemon/db/drivers/mssql.ts": "1b5299a6db0a0f318c4eb237df12be2311f3975fe3c0761edee541ababe705a6",
     "src/daemon/db/drivers/mysql.ts": "b2838dad87c722889dc63a48cc3aa779d6d9bd86fcc7d35e8d48c14fadf305e4",
-    "src/daemon/db/drivers/nats.ts": "a0f1194038586237c55f79c49a1b4276cca41f2756c05cf48630f05bbc8d9df2",
+    "src/daemon/db/drivers/nats.ts": "01a2846b403bbe5338b863b52dd331a6c680bfc47d73f44ad6e739be45ddbcdb",
     "src/daemon/db/drivers/oracle.ts": "1e0cf8f36fdf5bcd9b62fb027162fb30c2badb30c174b368b9874b28d9dbd20f",
     "src/daemon/db/drivers/pg.ts": "5c7ea5758562d98ca8df728afceaae8c2dfe8b92fe86022f72262f7c9e55f15b",
     "src/daemon/db/drivers/redis.ts": "5e24c0a73db3c9a1ba86c61f659f961a9103535d6641f38d0ea125867f1247af",
@@ -2377,7 +2377,7 @@
     "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
     "src/shared/db-driver.ts": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
-    "src/daemon/db-rpc.ts": "d12ac7f8947e14870e1a0399bf7777a75b1b3f6591ef25e9d3018490a4007f7c",
+    "src/daemon/db-rpc.ts": "1c713bb489b1d0f6906266a610a0568172b706a616b32bbdbed9e51094036930",
     "src/daemon/db/management.ts": "0f0827dfada4af87bcc1b4e087e1c5c9ce5a75d47215976b2fff472043e9a478"
   },
   "classificationUpdates": [
@@ -2542,5 +2542,5 @@
       "reason": "Uses shared bounded inflater that pre-admits native output chunks, cap overshoot, concatenation and workspace, then retains the actual Buffer backing size; field and credential classifications unchanged."
     }
   ],
-  "reviewNotes": "S002 field-read review: minimal readonly probe operations add no public config fields; NATS URL username/password and explicit PostgreSQL/Memcached credential handling remain in existing credential slots. File probes select the first actual owned reader target without introducing worksheet options. Runtime path preparation, readonly metadata admission and legacy supervisor routing retain all existing field classifications. Release remains disabled pending combined S001/S002 evidence."
+  "reviewNotes": "S002 field-read review: minimal readonly probe operations add no public config fields; NATS URL username/password and explicit PostgreSQL/Memcached credential handling remain in existing credential slots. File probes select the first actual owned reader target without introducing worksheet options. Runtime path preparation, readonly metadata admission and legacy supervisor routing retain all existing field classifications. Release remains disabled pending combined S001/S002 evidence. S002 disposal correction: Cassandra, MongoDB, NATS, etcd and Memcached propagate actual cleanup failures; no config-field classifications changed. Legacy failure duration uses the same monotonic clock; no field classification change."
 }

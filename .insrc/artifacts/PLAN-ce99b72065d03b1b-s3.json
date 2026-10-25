@@ -1,0 +1,789 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792957117729-uoidof",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T19:43:39.033Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 301208,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "storyId": "s3",
+    "lldRunId": "wf-1792950349251-9n39sv",
+    "lldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s3 moves every model decision in the daemon onto the definitions in ten steps: first the settings catalog and defaults derived from the shipped file plus a build-time check, then the boot reconcile, tier resolution, the role router and provider construction through the registry, then the remaining runner literals, config.write and models.resolveRole, the TUI stopgap, and the installers and IDE settings that read the catalog. A source scan and real-daemon tests close it out."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Definition defaults, catalog rows and the build gate",
+        "summary": "Enable resolveJsonModule in tsconfig.json and vscode-plugin/tsconfig.json; add src/config/model-defaults.ts (JSON import + type-only imports, a never-throwing derivation of tier defaults, efforts, default family and tool-loop model); build CONFIG_CATALOG via buildConfigCatalog(defs) with runner/model/effort defaults and enums from the definitions and coreModel default from the tool-loop model; retire models.shaper.ollamaNumCtx (row out, RETIRED_PATHS in); local.ts takes its coreModel default from the shipped defaults; DEFAULT_TIERS/TIER_EFFORTS become JSON-derived exports; add the Codex chars inputLimit to the definitions file; add scripts/check-model-definitions.mjs and the package.json build gate.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "buildConfigCatalog(fixture) gives runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row",
+          "model-defaults.ts and config-catalog.ts import no logger, registry or file-I/O module and never throw on a missing field",
+          "The build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file",
+          "The shipped file's Codex models carry inputLimit { unit: 'chars', max: 1048576 }",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c11",
+          "c13",
+          "c18"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog"
+          },
+          {
+            "level": "unit",
+            "name": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields"
+          },
+          {
+            "level": "unit",
+            "name": "check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file"
+          },
+          {
+            "level": "unit",
+            "name": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t1"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Boot reconcile, per-repo tier removal, cache resets and the lazy embedder",
+        "summary": "The daemon reconciles with buildConfigCatalog(validateModelCatalog()); reconcileConfig removes models.byRepo[repo].tiers and reports each repo and tier in pruned with a boot warning, keeping tasks and coreFloor; main() drops the local and analyze settings caches right after the boot reconcile (production resets resetLocalProviderConfigCache / resetAnalyzeConfigCache); the embedder's model, dim and keepAlive become first-use getters, migrating src/daemon/lifecycle.ts and IndexerService.reembed.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Reconcile with a fixture whose defaults differ fills the fixture's values, including non-empty default efforts",
+          "byRepo tiers are removed and reported per repo and tier; tasks and coreFloor kept; models.shaper.ollamaNumCtx pruned",
+          "A local config cached before the boot reconcile is re-read after it",
+          "Importing src/indexer/embedder.ts calls no settings loader; lifecycle.ts and reembed use the getters",
+          "A cold daemon import with a valid, missing, malformed or structurally invalid INSRC_MODEL_CATALOG_DIR imports every module and refuses invalid files in main() with the named error",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c10",
+          "c12",
+          "c19"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reconcile-defs.test.ts: a fresh config is filled with a fixture's differing defaults including non-empty default efforts; byRepo tiers removed and reported per repo and tier, tasks and coreFloor kept; ollamaNumCtx pruned"
+          },
+          {
+            "level": "unit",
+            "name": "settings-cache-reset.test.ts: a local and an analyze config cached before reconcile return the reconciled values after the production resets"
+          },
+          {
+            "level": "unit",
+            "name": "embedder-lazy.test.ts: importing embedder.ts calls no settings loader; the first getter does; lifecycle.ts and reembed use the getters"
+          },
+          {
+            "level": "integration",
+            "name": "boot-cold-import.test.ts: both catalog chains import with a valid, missing, malformed and structurally invalid INSRC_MODEL_CATALOG_DIR; registry first read in main(); invalid files refused with the named error before reconcile"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t2"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Tier resolution through the registry",
+        "summary": "loadAnalyzeConfig/resolveTier in src/config/analyze.ts take an injectable registry (default getModelRegistry()) and resolve each global tier through registry.resolveTier, logging dropped efforts and fallbacks and keeping AnalyzeConfig.tierResolutions; TierEffort becomes EffortLevel and runner types FamilyId; byRepo parsing keeps only tasks and coreFloor.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An unset or '' tier resolves to the fixture's default with its effort; an alias resolves to the canonical id",
+          "An unaccepted effort is dropped with a warning naming tier, model and effort",
+          "Unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, and the resolution is kept in tierResolutions",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c12",
+          "c19"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids"
+          },
+          {
+            "level": "unit",
+            "name": "tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort"
+          },
+          {
+            "level": "unit",
+            "name": "tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t3"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Role router on global tiers; per-repo shaper overrides removed",
+        "summary": "The role router takes the tier from byRepo/global tasks with the core-floor clamp and the model only from the global tiers (no byRepo.tiers layer, no DEFAULT_TIERS fallback), carries fallback in its internal RoleResolution (role, tier, runner, model, effort, clampedByFloor kept) and passes an injectable registry to provider construction; readRepoOverride and resolveRepoShaperProvider/Model are removed with their callers in src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps",
+          "The internal RoleResolution keeps its fields and adds fallback; workflow-rpc attribution and workflow-review-rpc labels are unchanged",
+          "No source references readRepoOverride, resolveRepoShaperProvider or resolveRepoShaperModel",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "role-router-global-tiers.test.ts: a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps"
+          },
+          {
+            "level": "unit",
+            "name": "role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; workflow-rpc and workflow-review-rpc labels unchanged for a CLI and an Ollama tier"
+          },
+          {
+            "level": "unit",
+            "name": "role-router-global-tiers.test.ts: no source references readRepoOverride or resolveRepoShaper*"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t4"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Provider construction from the registry",
+        "summary": "buildShaperProvider/buildSummariserProvider take the CLI kind from registry.cliKind, forward only accepted efforts, set inputBudgetChars from a model's chars limit and Ollama num_ctx from its token limit, and use registry.summariserModel instead of SUMMARISER_CLI_FALLBACK; resolveShaperKind's floor comes from the default family; CliProvider takes inputBudgetChars from options (CODEX_INPUT_BUDGET_CHARS removed); localToolLoopModel keeps today's precedence (ollama cheap tier, listed coreModel, registry.toolLoopModel()); resolveValidateProvider reuses the router's CLI provider or builds the default family's tier default through the same factory; input-budget.test.ts migrated.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "CLI kind, effort acceptance, Codex chars budget (haiku none) and Ollama num_ctx come from the registry",
+          "The summariser uses the family's summariserModel when the cheap model is not of its family",
+          "The tool loop follows ollama cheap tier → listed coreModel → toolLoopModel with a warning",
+          "resolveValidateProvider: CLI resolution reuses the router's provider; ollama resolution builds the default family's tier default with canonical model, accepted effort and budget",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c9",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel"
+          },
+          {
+            "level": "unit",
+            "name": "provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit"
+          },
+          {
+            "level": "unit",
+            "name": "provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution"
+          },
+          {
+            "level": "unit",
+            "name": "input-budget.test.ts: a CliProvider reports the budget it is given and a registry-built Codex provider reports the file's chars limit"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t5"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Remaining runner literals: client identity, attribution, listing, claude.models",
+        "summary": "Add the daemon-owned familyForClient(client, registry) and use it in src/daemon/steps/host.ts, src/daemon/steps/analyze-oneshot.ts, src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; src/shared/step-context.ts keeps stepClient()/StepClient and drops the runner mappings; the MCP server detects and forwards only the client identity; attribution decodes labels by shipped family metadata before model lookup; list-models admits FamilyId from the registry; claude.models answers from the Claude-kind family (no SDK REST call); unions take FamilyId.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Forwarded client 'claude'/'codex' maps to the family with that cliKind in the step host and one-shot analyze; an injected clientDefault still wins",
+          "Historical labels claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> keep their families",
+          "providers.listModels admits exactly the registry's family ids with the unchanged error text",
+          "claude.models returns the Claude-kind family's models in its shape with no network call; handler-runtime.ts no longer imports @anthropic-ai/sdk",
+          "src/mcp/** and src/cli/** do not import getModelRegistry",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c14",
+          "c19"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "client-family.test.ts: step host and one-shot analyze map client 'claude'/'codex' to the family with that cliKind; an injected clientDefault wins; MCP client detection imports no registry or model-defaults"
+          },
+          {
+            "level": "unit",
+            "name": "attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families"
+          },
+          {
+            "level": "unit",
+            "name": "list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error"
+          },
+          {
+            "level": "unit",
+            "name": "claude-models.test.ts: claude.models lists the Claude-kind family in its shape with no network call even with ANTHROPIC_API_KEY set; no @anthropic-ai/sdk import in handler-runtime.ts"
+          },
+          {
+            "level": "unit",
+            "name": "client-family.test.ts: src/mcp/** and src/cli/** do not import getModelRegistry"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t6"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "config.write refusal and restartRequired; models.resolveRole",
+        "summary": "config.write applies the write to a candidate, refuses when any changed tier names an effectively rejected model (rejected and not served), and returns restartRequired when a restart-sensitive setting differs before/after; add models.resolveRole projecting the router's resolution to the sc5 shape, with its method-class entry and RECORDED_RPC.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; acceptance of a formerly rejected model the file now lists (id and alias)",
+          "restartRequired for tier/tasks/coreFloor/coreModel changes including 'models' and 'models.local' parent writes; none for unrelated writes",
+          "models.resolveRole equals the router and provider settings for a CLI and an Ollama tier, reports fallback for unlisted and rejected models, and refuses bad params",
+          "method-class and handler-runtime pins include models.resolveRole",
+          "session-source-inventory.test.ts passes, refreshing only this task's own entries"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c16"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias"
+          },
+          {
+            "level": "unit",
+            "name": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes"
+          },
+          {
+            "level": "unit",
+            "name": "models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected"
+          },
+          {
+            "level": "unit",
+            "name": "method-class and handler-runtime suites pass with models.resolveRole registered"
+          },
+          {
+            "level": "unit",
+            "name": "session-source-inventory suite passes after t7"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "TUI resolution stopgap",
+        "summary": "Add src/cli/shipped-model-registry.ts (shippedModelRegistry() = buildModelRegistry(shipped JSON, []), with model-registry.ts exporting its pure builder); src/cli/panes/model-tiers.ts computeEffectiveTiers and src/cli/services/workflow.ts reviewArtifact pass it to loadAnalyzeConfig and createRoleRouter.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "computeEffectiveTiers and reviewArtifact succeed end-to-end with getModelRegistry stubbed to throw and the store unreadable",
+          "The model-tiers pane shows the definitions' defaults"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry"
+          },
+          {
+            "level": "integration",
+            "name": "the TUI build (tsc) passes"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Installers, VS Code manifest and JetBrains fixture",
+        "summary": "Both installer copies read tier defaults and the tool-loop model from the cloned definitions file with node in step 4b (identical copies); add vscode-plugin/scripts/sync-manifest-catalog.mjs and regenerate the manifest's catalog-backed settings (ollamaNumCtx removed); add a JetBrains unset-tier test fed by a checked-in catalog fixture with a TS drift test; migrate model-catalog-asset.test.ts's installer and summariser assertions.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Installers contain no tier-model or tool-loop literal and a dry run writes the file's defaults",
+          "The manifest equals the catalog (manifest-catalog.test.ts, tier-effort.test.ts pass); the sync script is idempotent",
+          "The VS Code extension type-checks and bundles, and loads the catalog without backend node_modules",
+          "JetBrains shows an unset tier with the fixture default family's values; the fixture matches buildConfigCatalog"
+        ],
+        "derivedFrom": [
+          "c15",
+          "c17",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults"
+          },
+          {
+            "level": "unit",
+            "name": "model-catalog-asset.test.ts: structural validation kept; installer reads defaults from the file; summariser comes from summariserModel"
+          },
+          {
+            "level": "unit",
+            "name": "vscode manifest-catalog.test.ts and tier-effort.test.ts pass; sync-manifest-catalog.mjs is idempotent"
+          },
+          {
+            "level": "unit",
+            "name": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; loaded without backend node_modules its catalog defaults equal buildConfigCatalog(shipped)"
+          },
+          {
+            "level": "unit",
+            "name": "ModelTiersModelTest: an unset tier shows the fixture default family's values; jetbrains-catalog-fixture.test.ts asserts the fixture equals buildConfigCatalog"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Source-literal scan and real-daemon integration",
+        "summary": "Add the daemon-code source scan (model-name, cli-claude/cli-codex, runner 'ollama', ollamaNumCtx reads, DEFAULT_TIERS/TIER_EFFORTS imports outside src/cli, with named exclusions and owners) and the real-daemon tests: byRepo tiers removed at boot with warnings, models.resolveRole over the socket for a repo-chosen tier, and a cold start with an alternate catalog that changes toolLoopModel.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The scan passes on the migrated tree and fails on an injected literal",
+          "A real daemon removes byRepo tiers at boot with the warnings and models.resolveRole returns the global tier's model",
+          "A cold start with the alternate catalog uses the reconciled coreModel"
+        ],
+        "derivedFrom": [
+          "c20",
+          "c21"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story"
+          },
+          {
+            "level": "integration",
+            "name": "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier"
+          },
+          {
+            "level": "integration",
+            "name": "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile → parse → resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "effort: a tier whose model does not accept its effort resolves without it and logs a warning naming tier, model and effort; the built CliProvider gets no effort",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "decision A: an unlisted and a rejected model fall back to the tier default with a warning naming tier, requested model, reason and default",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "role router (src/analyze/context/role-router.ts): a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "provider construction: CLI kind from registry.cliKind; Codex inputBudgetChars from the model's chars limit; haiku gets none; an Ollama tier's num_ctx is the fixture model's token limit; the summariser uses the family's summariserModel when the cheap model is not of its family",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "tool loop: an ollama cheap tier's model wins (today's precedence); else a listed coreModel; else registry.toolLoopModel() with a warning naming the requested coreModel; num_ctx is the chosen model's token limit",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "settings catalog: buildConfigCatalog(fixture) gives tier runner/model defaults, effort enum values and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcile: with a fixture whose defaults differ from today's, a fresh config is filled with the fixture's values; byRepo tiers are removed and reported per repo and tier, tasks and coreFloor kept; models.shaper.ollamaNumCtx pruned",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "config.write: refusal for a rejected model via a model leaf, a runner switch, a whole-tier object and a parent object ('models'), with config.json unchanged; acceptance of a formerly rejected model the file now lists (by id and alias); restartRequired:true when a restart-sensitive setting changes, including parent-object writes to 'models' and 'models.local'; none for an unrelated write",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "models.resolveRole: for a CLI tier and an Ollama tier the answer equals the router's resolution and the provider settings the daemon builds; for an unlisted and a rejected tier model it reports fallback with reason and requested model; bad params give the invalid-params error",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "embedder: importing src/indexer/embedder.ts does not call loadLocalProviderConfig; the first getter call does; src/daemon/lifecycle.ts and IndexerService.reembed use the getters",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "TUI stopgap: computeEffectiveTiers and reviewArtifact end-to-end (loadAnalyzeConfig, createRoleRouter and provider construction) with getModelRegistry stubbed to throw and the store path pointing at a file that fails if read: both succeed through shippedModelRegistry() and the pane shows the definitions' defaults",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "attribution: 'claude', 'client', 'codex', 'codex:<model>', 'ollama', 'ollama:<listed>' and 'ollama:<unlisted>' labels map to their historical families (src/workflow/__tests__/attribution.test.ts extended)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "client identity: the daemon maps step.call client 'claude' / 'codex' to the family with that cliKind; the MCP server's client detection does not import the registry or model-defaults",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing pins migrated: src/daemon/__tests__/model-catalog-asset.test.ts keeps its structural validation of the shipped file but replaces the installer-literal and SUMMARISER_CLI_FALLBACK assertions with: the installer reads tier defaults and the tool-loop model from the file, and the summariser comes from the file's summariserModel; src/agent/providers/__tests__/input-budget.test.ts asserts a CliProvider reports the inputBudgetChars it is given (absent when not given) and that a provider built for a Codex model through the registry reports the file's chars limit",
+        "coveredByTaskIds": [
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "one-shot analyze (src/daemon/steps/analyze-oneshot.ts): a forwarded client 'codex' or 'claude' resolves through familyForClient to the family with that cliKind; an injected clientDefault still wins",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "providers.listModels admits exactly the registry's family ids; an unknown provider still returns the unchanged invalid-params error",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "router record: resolveRole keeps role, tier, runner, model, effort and clampedByFloor (plus fallback); workflow-rpc attribution and workflow-review-rpc labels built from it are unchanged for a CLI and an Ollama tier; models.resolveRole projects family, cli/ollama and inputLimit",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveValidateProvider: a CLI 'build' resolution returns the router's provider (model, effort, inputBudgetChars from the factory); an ollama 'build' resolution returns a CliProvider for the default family's tier default with its canonical model, accepted effort and chars budget, and logs the substitution",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "cache reset: a local config cached before reconcile returns the reconciled coreModel after resetLocalProviderConfigCache(); the analyze config likewise after resetAnalyzeConfigCache()",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "claude.models: returns the Claude-kind family's served models in the existing shape, makes no network call even with ANTHROPIC_API_KEY set, and handler-runtime.ts no longer imports @anthropic-ai/sdk",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "source scan over daemon code (src/** non-test, excluding src/cli/** which s5 migrates, src/shared/model-recommender.ts DEFAULT_LOCAL_MODEL which s5 replaces, and embedding-model literals per override item 3): fails on a model-name literal outside the definitions file, on 'cli-claude'/'cli-codex' literals outside src/daemon/model-catalog.ts, src/daemon/model-registry.ts and the family implementations, on runner 'ollama' literals outside an allow-list of non-runner uses, on any read of ollamaNumCtx, and on any import of DEFAULT_TIERS or TIER_EFFORTS outside src/cli; each exclusion names its owning Story",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "method-class and handler-runtime pins include models.resolveRole",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "installers: both copies are identical and contain no tier-model or tool-loop model literal (embedding-model choices are excluded, override item 3); step 4b reads tier defaults and the tool-loop model from the definitions file (dry run against a temp checkout)",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/** does not import getModelRegistry",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains: ModelTiersModelTest shows an unset tier with the default family's values from a catalog fixture produced by buildConfigCatalog over definitions whose default family and tier defaults differ from today's; a TS test asserts the checked-in Kotlin fixture equals buildConfigCatalog(that fixture) so they cannot drift",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code: the extension bundle (vscode-plugin/esbuild.mjs, CJS node20) builds with the JSON-backed catalog and, loaded in node with the backend's node_modules unavailable, key-map's catalog defaults equal buildConfigCatalog(shipped); the import closure of src/config/config-catalog.ts contains no logger, registry or file-I/O module; the extension's `tsc -p tsconfig.json` type-check passes with the JSON-backed catalog",
+        "coveredByTaskIds": [
+          "t1",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/** and src/cli/** do not import getModelRegistry (clients stay off the store, k2)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "build gate: scripts/check-model-definitions.mjs exits non-zero, naming the entry, for a syntactically valid but structurally invalid definitions file (run against a temp copy), and zero for the shipped file; `npm run build` with the invalid copy exits non-zero before copy-assets",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code manifest: sync-manifest-catalog.mjs is idempotent on the committed package.json; manifest-catalog.test.ts and tier-effort.test.ts pass with the definition-derived catalog (no ollamaNumCtx key, effort enums include 'ultra')",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "cold daemon import through both catalog chains (index.ts → reconcile-io.ts → reconcile.ts, handler-runtime.ts → admin-handlers.ts → settings-catalog.ts), instrumented, with INSRC_MODEL_CATALOG_DIR pointing at a valid, a missing, a malformed and a structurally invalid file: every module imports, the registry and validated file are first read in main(), and an invalid file stops the daemon with ModelCatalogValidationError naming the entry before reconcile",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a daemon in a temp home with byRepo tiers in config.json removes them at boot with the warnings, and models.resolveRole over the socket returns the global tier's model for a repo whose tasks pick that tier",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the TUI build (tsc) passes and its model-tiers pane shows the definitions' defaults",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "cold start with a fresh home and an alternate catalog (INSRC_MODEL_CATALOG_DIR) that keeps the shipped local model but changes toolLoopModel: after boot, models.resolveRole / the tool-loop choice uses the reconciled coreModel, not the module-load cached one",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api config.write",
+      "quotedText": "ConfigWriteResult = { ok: true; restartRequired?: boolean } | { ok: false; reason?: 'invalid-path' | 'rejected-model'; detail?: string }"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api models.resolveRole",
+      "quotedText": "The sc5 wire shape, projected from the internal RoleResolution"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api resolveTier",
+      "quotedText": "resolveTier(tiering: TieringOverride, tier: TierName, registry?: ModelRegistry): TierModel"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api resolveRole",
+      "quotedText": "The internal record keeps its existing fields"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api buildShaperProvider",
+      "quotedText": "For a CLI family: CliProvider with kind = registry.cliKind(family)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api localToolLoopModel",
+      "quotedText": "Keeps today's precedence"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api CONFIG_CATALOG",
+      "quotedText": "export const CONFIG_CATALOG: readonly ConfigOption[]  // = buildConfigCatalog(SHIPPED_DEFINITIONS)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api reconcileConfig",
+      "quotedText": "every models.byRepo[repo].tiers subtree is removed and reported in `pruned`"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api CliProvider",
+      "quotedText": "inputBudgetChars comes from opts instead of CODEX_INPUT_BUDGET_CHARS (removed)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api EMBEDDING_MODEL",
+      "quotedText": "the module-load EMBEDDING_MODEL / EMBEDDING_DIM constants become first-use getters"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges settings catalog model rows",
+      "quotedText": "Tier runner/model defaults, effort enumValues and the local coreModel default come from the definitions"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges tiering config",
+      "quotedText": "TierEffort becomes EffortLevel"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges shipped definitions data",
+      "quotedText": "Each Codex model gains inputLimit { unit: 'chars', max: 1048576 }"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges runner and client mappings",
+      "quotedText": "Runner/CLI-kind mappings and literal defaults outside the family implementations are replaced, with client processes kept off the registry (k2)"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges installer tier and coreModel block",
+      "quotedText": "Step 4b reads the chosen family's tierDefaults and the ollama toolLoopModel"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges method-class table",
+      "quotedText": "Adds ['models.resolveRole', 'session', false]"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges VS Code settings manifest",
+      "quotedText": "regenerated from CONFIG_CATALOG by a new vscode-plugin/scripts/sync-manifest-catalog.mjs"
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges build pipeline",
+      "quotedText": "The build validates the shipped definitions structurally with the daemon's own validator"
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths",
+      "quotedText": "Logs a warning naming tier, requested model, reason and the default used, and runs the tier default (decision A)."
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy",
+      "quotedText": "A real daemon resolves from the file and the cold-import order holds."
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration",
+      "quotedText": "Tests: resolution, routing, providers, catalog, reconcile, config.write, resolveRole, cold import, and the source-literal scan."
+    }
+  ]
+}

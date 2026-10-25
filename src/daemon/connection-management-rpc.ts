@@ -1,4 +1,5 @@
 /** Strict v2 adapters. Authority comes from transport and the installed maintenance owner. */
+import { TEMPORARY_MANAGEMENT_METHODS } from './db/session-management.js';
 import { connectionLookupRoot as root } from './db/management-root.js';
 import type { RpcHandlers } from './server.js';
 import type { TrustedRpcContext } from './request-context.js';
@@ -74,6 +75,11 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if (!CONNECTION_V2_METHODS.includes(method)) throw new ManagementInputError();
 		if ((CONNECTION_SESSION_METHODS as readonly string[]).includes(method)) {
 			return (testPorts.sessionRuntime ?? connectionSessionRuntime).call(method as ConnectionSessionMethod, value, context);
+		}
+		if (context.connectionSession && TEMPORARY_MANAGEMENT_METHODS.has(method)) {
+			const runtime = testPorts.sessionRuntime ?? connectionSessionRuntime;
+			if (!runtime.manage) throw new ManagementServiceError('upgrade-required');
+			return await runtime.manage(method, value, context);
 		}
 		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
 		if(method==='db.connections.v2.test'){

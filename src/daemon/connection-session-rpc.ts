@@ -2,8 +2,9 @@
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
-import { createTemporaryOverlay } from './db/session-entries.js';
-import type { TemporaryConnectionOverlay } from './db/session-entries.js';
+import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
+import { withSavedRootGate } from './db/management.js';
+import { createTemporaryOverlay, TemporaryConnectionOverlay } from './db/session-entries.js';
 import { ConnectionSessionOwner } from './db/session-owner.js';
 import type { SessionOwnerPorts } from './db/session-owner.js';
 import { ManagementServiceError, managementRejection } from './db/management.js';
@@ -18,6 +19,7 @@ interface Claim { readonly kind: 'control' | 'data'; readonly root: string; read
 export interface SessionRpcRuntime {
 	call(method: ConnectionSessionMethod, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 	ready(): Promise<boolean>;
+	manage?(method: string, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 }
 export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPorts<Overlay>, 'daemonEpoch'> {
 	readonly enabled: () => Promise<boolean>;
@@ -52,7 +54,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		if (!this.#owner) {
 			this.#epoch = context.daemonEpoch;
 			this.#owner = new ConnectionSessionOwner({ daemonEpoch: context.daemonEpoch, isRegistered: this.#ports.isRegistered,
-				createOverlay: this.#ports.createOverlay, ...(this.#ports.dropOverlay ? { dropOverlay: this.#ports.dropOverlay } : {}), ...(this.#ports.monotonicNow ? { monotonicNow: this.#ports.monotonicNow } : {}) });
+				createOverlay: this.#ports.createOverlay, ...(this.#ports.dropOverlay ? { dropOverlay: this.#ports.dropOverlay } : {}), ...(this.#ports.monotonicNow ? { monotonicNow: this.#ports.monotonicNow } : {}), ...(this.#ports.wallNow ? { wallNow: this.#ports.wallNow } : {}) });
 		}
 		return this.#owner;
 	}
@@ -104,17 +106,17 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			return { status: 'ended' };
 		} catch (error) { return managementRejection(error); }
 	}
-	async #binding(request: LocalRequestEnvelope): Promise<TrustedConnectionSession> {
+	async #binding(request: LocalRequestEnvelope, selectedRoot?: string): Promise<TrustedConnectionSession> {
 		const context = request.trustedContext;
 		if (!context) throw fail('session-expired');
 		this.#context(context);
 		const claim = this.#claims.get(context.connectionIdentity);
 		if (!claim || !this.#owner) throw fail('session-expired');
-		let root = claim.root;
-		if (request.method === 'db.connections.v2.capabilities') {
-			if (request.params !== undefined && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
+		let root = selectedRoot ?? claim.root;
+		if (selectedRoot === undefined) {
+			if (request.method === 'db.connections.v2.capabilities' && request.params !== undefined && request.params !== null && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
 			else parseSessionEmpty(request.params);
-		} else parseSessionEmpty(request.params);
+		}
 		if (claim.kind === 'data') {
 			if (root !== claim.root) throw fail('session-expired');
 			const binding = this.#owner.dataBinding(context, root);
@@ -125,9 +127,29 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		if (binding.access.sessionHandle !== claim.handle) throw fail('session-expired');
 		return binding;
 	}
+	async manage(method: string, value: unknown, context: TrustedRpcContext): Promise<unknown> {
+		try {
+			const command = parseTemporaryManagement(method, value);
+			if (!await this.ready()) throw fail('upgrade-required');
+			const binding = await this.#binding({ kind: 'request', requestId: 'local-management', method, params: value, stream: false, trustedContext: context }, command.root);
+			if (binding.audience !== 'workbench-ui' || !this.#owner) throw fail('upgrade-required');
+			const { overlay, ledger, binding: current } = await this.#owner.management(context, command.root);
+			if (!(overlay instanceof TemporaryConnectionOverlay)) throw fail('upgrade-required');
+			const assertRequest = () => { binding.assertActive(); current.assertActive(); };
+			assertRequest();
+			if (command.method === 'db.connections.v2.ticket') return ledger.issue(command.key, command.mode);
+			if (command.method === 'db.connections.v2.status') return ledger.status(command.ticket);
+			if (command.method === 'db.connections.v2.read') return overlay.read(command.key.id);
+			return await ledger.mutate(command.request, (request, commit) => withSavedRootGate(command.root, async () => {
+				assertRequest();
+				const prepared = await overlay.prepare({ key: request.key, mode: request.mode as 'create' | 'update', publicPatch: request.publicPatch ?? {}, credentials: request.credentials ?? {}, ...(request.expectedRevision !== undefined ? { expectedRevision: request.expectedRevision } : {}) }, context.signal);
+				assertRequest(); return commit(() => overlay.commit(prepared));
+			}), assertRequest);
+		} catch (error) { return managementRejection(error); }
+	}
 	/** Failed/pending attachment stays sticky: never retry that connection as saved-only.
-	 * Data-bearing methods are admitted by their later concrete integration tasks;
-	 * until installed they refuse here before handler/state/provider access.
+	 * Only audited metadata and temporary management methods are currently admitted.
+	 * Analysis and other data consumers refuse until their concrete integrations exist.
 	 */
 	forward(next: ForwardRequest): ForwardRequest {
 		return (request, deliver) => {
@@ -151,11 +173,12 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 					return next(request, deliver);
 				} catch (error) { reject(error); return () => {}; }
 			}
-			if (!SAFE_METADATA.has(request.method) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
+			if ((!SAFE_METADATA.has(request.method) && !TEMPORARY_MANAGEMENT_METHODS.has(request.method)) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
 			let cancelled = false, cancel: (() => void) | undefined;
-			void this.#binding(request).then(binding => {
+			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : this.#binding(request)).then(binding => {
 				if (cancelled || request.lifetime?.signal.aborted) { request.lifetime?.complete(); return; }
 				binding.assertActive();
+				if (TEMPORARY_MANAGEMENT_METHODS.has(request.method) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
 				const authenticated: LocalRequestEnvelope = { ...request, trustedContext: Object.freeze({ ...context!, connectionSession: binding }) };
 				const checked: DeliverEnvelope = envelope => { try { binding.assertActive(); deliver(envelope); } catch (error) { reject(error); } };
 				cancel = next(authenticated, checked);

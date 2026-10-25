@@ -1,6 +1,7 @@
 /** Daemon-memory workbench owner. Authority and overlays never persist. */
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
+import { SessionOperationLedger } from './session-ledger.js';
 import type { TrustedRpcContext, TrustedConnectionSession } from '../request-context.js';
 import type { OpenConnectionSessionResult, SessionResume, SessionDataAttach, ConnectionSessionAudience } from '../../shared/connection-management.js';
 import { ManagementServiceError } from './management.js';
@@ -26,6 +27,7 @@ interface Session<Overlay> {
 	readonly handle: string;
 	readonly capabilityDigest: Buffer;
 	readonly signingKey: Buffer;
+	readonly ledger: SessionOperationLedger;
 	readonly overlays: Map<string, Overlay>;
 	readonly delegations: Map<string, DataDelegation>;
 	deadline: number;
@@ -44,6 +46,7 @@ export interface SessionOwnerPorts<Overlay> {
 	readonly createOverlay: (root: string, sessionHandle: string, context: SessionOverlayContext<Overlay>) => Overlay;
 	readonly dropOverlay?: ((overlay: Overlay) => void) | undefined;
 	readonly monotonicNow?: (() => number) | undefined;
+	readonly wallNow?: (() => number) | undefined;
 }
 const token = (): string => randomBytes(32).toString('base64url');
 const digest = (capability: string): Buffer => createHash('sha256').update('connection-session:control\0').update(capability).digest();
@@ -103,7 +106,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (session.controlIdentity) this.#controls.delete(session.controlIdentity);
 		session.controlIdentity = undefined;
 		session.capabilityDigest.fill(0);
-		session.signingKey.fill(0);
+		session.signingKey.fill(0); session.ledger.close();
 		this.#revokeData(session);
 		session.controlController.abort();
 		for (const overlay of session.overlays.values()) this.#ports.dropOverlay?.(overlay);
@@ -140,8 +143,10 @@ export class ConnectionSessionOwner<Overlay> {
 		if (this.#dataTransports.has(context.connectionIdentity)) throw expired();
 		this.sweepExpired();
 		if (this.#controls.has(context.connectionIdentity) || this.#sessions.size >= MAX_CONNECTION_SESSIONS) throw new ManagementServiceError('busy');
-		const handle = token(), capability = token();
-		const session: Session<Overlay> = { phase: 'active', handle, capabilityDigest: digest(capability), signingKey: randomBytes(32),
+		const handle = token(), capability = token(), signingKey = randomBytes(32);
+		let session!: Session<Overlay>;
+		const ledger = new SessionOperationLedger({ key: signingKey, daemonEpoch: this.#ports.daemonEpoch, sessionHandle: handle, now: () => this.#now(), deadline: () => session.deadline, assertActive: () => { if (this.#session(handle) !== session) throw expired(); }, ...(this.#ports.wallNow ? { wallNow: this.#ports.wallNow } : {}) });
+		session = { phase: 'active', handle, capabilityDigest: digest(capability), signingKey, ledger,
 			deadline: this.#now() + CONNECTION_SESSION_LEASE_MS, generation: 1, controlIdentity: context.connectionIdentity,
 			controlController: new AbortController(), overlays: new Map(), delegations: new Map() };
 		try {
@@ -149,7 +154,7 @@ export class ConnectionSessionOwner<Overlay> {
 			this.#context(context);
 			session.deadline = this.#now() + CONNECTION_SESSION_LEASE_MS;
 		} catch {
-			session.capabilityDigest.fill(0); session.signingKey.fill(0); session.overlays.clear();
+			session.capabilityDigest.fill(0); session.ledger.close(); session.overlays.clear();
 			throw expired();
 		}
 		this.#sessions.set(handle, session);
@@ -257,6 +262,14 @@ export class ConnectionSessionOwner<Overlay> {
 			session.overlays.set(root, overlay);
 		}
 		return session.overlays.get(root)!;
+	}
+	async management(context: TrustedRpcContext, repoRoot: string): Promise<{ readonly binding: TrustedConnectionSession; readonly overlay: Overlay; readonly ledger: SessionOperationLedger }> {
+		const data = this.#data.has(context.connectionIdentity);
+		const binding = data ? this.dataBinding(context, repoRoot) : await this.controlBinding(context, repoRoot);
+		if (binding.audience !== 'workbench-ui') throw new ManagementServiceError('upgrade-required');
+		const overlay = data ? await this.dataOverlay(context, repoRoot) : await this.overlay(context, repoRoot);
+		binding.assertActive();
+		return Object.freeze({ binding, overlay, ledger: this.#session(binding.access.sessionHandle!).ledger });
 	}
 	heartbeat(context: TrustedRpcContext): { readonly status: 'active'; readonly leaseMs: 90000 } {
 		const session = this.#control(context);

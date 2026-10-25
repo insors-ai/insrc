@@ -25,7 +25,7 @@ export const CONNECTION_TEST_GATE_FILES = [
 	'daemon/db/drivers/memcached', 'daemon/db/drivers/duckdb-file',
 ] as const;
 export const CONNECTION_SESSION_GATE_FILES = [
-	'daemon/db/session-owner', 'daemon/db/session-entries', 'daemon/db/management-root', 'daemon/connection-session-rpc',
+	'daemon/db/session-owner', 'daemon/db/session-entries', 'daemon/db/session-ledger', 'daemon/db/session-management', 'daemon/db/management-root', 'daemon/connection-session-rpc',
 	'daemon/connection-management-rpc', 'daemon/request-context', 'daemon/server', 'daemon/index',
 	'daemon/threads/router', 'daemon/threads/channel', 'daemon/threads/method-class', 'daemon/threads/worker-requests',
 	'shared/step-context', 'shared/connection-management', 'shared/connection-management-wire',

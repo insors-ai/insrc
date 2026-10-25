@@ -7319,7 +7319,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "6028ebaf2f71c2fd306acfeb0171f2407dda832103b2e7f2a9bc74cdd67ad503",
+      "sourceDigest": "337a3dfe99c6b0bc7fc4d87010c5ad8018fb0b1a6beba1d340f7695ae1e06f30",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
@@ -7397,13 +7397,17 @@
           "this.#owner.dataBinding"
         ],
         [
+          "connection-use",
+          "this.#owner.management"
+        ],
+        [
           "connection-factory",
           "this.#ownerFor"
         ]
       ],
-      "siteCount": 17,
-      "sitesDigest": "37452ec14c94fc017ec99f45fd3f4113904cde250762e4a43028bde090601951",
-      "sourceDigest": "ef4c86782a57e35810ec298fa40985740408403cfc62567a90408db5f4751015",
+      "siteCount": 18,
+      "sitesDigest": "dd0616fa93bea7af3bd0e3c4a8eb10d1c1397800705fff650f48f2753b53a9fe",
+      "sourceDigest": "42321a5f93ec5f285a0d87f56393e7cfdd78e81d5d97136c110312f5b95b2ff4",
       "boundaries": [
         "connection-factory",
         "connection-use",
@@ -9755,7 +9759,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "6451be630ead7517be0b8f4e51def7f06d0f1af7648a50c9c7ba58b28154332c",
+      "sourceDigest": "ec4d5d2c42ac07c675bec075a833c6e390bf65446b818ab3e280a7468bec077b",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -11143,6 +11147,62 @@
         "serialization"
       ]
     },
+    "src/daemon/db/session-ledger.ts": {
+      "classification": "session-private-receipts",
+      "rationale": "S003 session/epoch-domain HMAC authority owns only bounded issued-ticket metadata, in-flight identities and safe MAC/outcome receipts. Logical monotonic wire time bounds signed expiry to the current lease; only expired uncommitted ticket slots are reclaimed. Entry and receipt publish in one guarded synchronous turn; no keychain/durable receipt ports.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "Buffer.from(signature, 'base64url').toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "5ca3861f6d88337eb2f00fabc94c4200548bbca4a02e57e6b7b373e21ddee30b",
+      "sourceDigest": "3cdfb4ac255993f67351bfdd46837c6f54c4c16de26183ab7e9ff6e03e1960e7",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/daemon/db/session-management.ts": {
+      "classification": "session-management-decoding",
+      "rationale": "Strict bounded canonical wire decoding for temporary management. The decoder selects a root but never grants authority; the transport/owner validates live socket role, audience, generation and root before ledger or entry access.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "8af27afaadebe6f3add0a11d36eaa05634d25d6f29baf287615176c7fe1ed2df",
+      "sourceDigest": "f012c20ff75f52e58b0875f364d5cd73fb965b11c0affaa8b9dc5913479f5362",
+      "boundaries": [
+        "serialization"
+      ]
+    },
     "src/daemon/db/session-owner.ts": {
       "classification": "session-owner",
       "rationale": "S003 private memory authority: control digest and epoch/generation checks, monotonic lease/quota and root-owned overlays. Bootstrap tokens only reach authenticated control; no persistent ports or saved credential fallback.",
@@ -11285,6 +11345,10 @@
         ],
         [
           "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
           "this.#ports.createOverlay"
         ],
         [
@@ -11361,11 +11425,19 @@
         ],
         [
           "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
           "this.close"
         ],
         [
           "connection-use",
-          "this.dataBinding"
+          "this.controlBinding"
         ],
         [
           "connection-use",
@@ -11378,6 +11450,22 @@
         [
           "connection-use",
           "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataOverlay"
+        ],
+        [
+          "connection-use",
+          "this.overlay"
         ],
         [
           "connection-use",
@@ -11392,9 +11480,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 61,
-      "sitesDigest": "98c017ae0e0facbfcffd8a2bc7a9f22d1693ff706123c20ce2336d236cf70504",
-      "sourceDigest": "8391ad3028b39de7bda4167e62e29099a6f7c6e858f72e996503dbd96af6e4a1",
+      "siteCount": 68,
+      "sitesDigest": "5f6d720c5d25a48eebdba7ef28e5d87932a8801f97217c6907f9a6b641725bbe",
+      "sourceDigest": "129e20ad828d855b49d46519e86271fc3082ddee5534e2bb537d071afac30cef",
       "boundaries": [
         "connection-use",
         "serialization"

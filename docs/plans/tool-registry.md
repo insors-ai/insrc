@@ -323,6 +323,13 @@ Recorded before the s6 LLD (DEF S006:FR001); each Jira family of the LLD cites i
 - **Failures (exit 1 except a missing install):** not installed: the shell's 127 and `acli: not found`; signed out: `acli jira auth status` prints `✗ Error: unauthorized: use 'acli jira auth login' to authenticate` while other commands say only `✗ Error: failed to list projects` / `failed to fetch work item details`; a bad key or no permission: `✗ Error: Issue does not exist or you do not have permission to see it.` with an empty stdout. Errors are plain text on stderr, not JSON, also with `--json`.
 - **Not offered by acli (named unsupported in the LLD):** a transition by id and a standalone list of the transitions a work item can take (the view's `transitions` field carries them). **Offered by acli but outside the Story's scope:** boards, sprints, dashboards, fields, filters, attachments, watchers, bulk create, clone, archive and unarchive of work items.
 
+### acli project mutation flags (read from `--help` on 2026-10-26; no project was changed)
+
+- **`project create`:** creates a project from an existing one: `--from-project SRC --key NEW --name "Name"` with optional `--description`, `--url`, `--lead-email` (the lead defaults to the source project's lead). Only company-managed projects can be the source. The alternatives are `--from-json FILE` (reads a local file) and `--generate-json` (writes a local file); neither is offered by the tools.
+- **`project update`:** `--project-key CURRENT` plus any of `--key` (new key), `--name`, `--description`, `--lead-email`, `--url`; `--from-json` and `--generate-json` as for create.
+- **`project archive`, `restore`, `delete`:** `--key KEY` only; none has `--yes`.
+- The success text of these five commands is not recorded yet; the gated disposable-project probe of the s6 LLD records it (it needs a source project key, a scratch key and a lead email).
+
 ### acli mutation output (probed 2026-10-25 on keys that do not exist, so nothing was changed)
 
 - **Exit 0 is not success.** `workitem transition|assign|edit|archive|clone` and `comment create`, run with `--json` on a key that does not exist, exit 0 and print `{"results":[{"status":"FAILURE","message":"Issue does not exist or you do not have permission to see it.","id":"ZZNOPE-1"}],"totalCount":1,"successCount":0}`. Without `--json` they print `✗ Failure: ZZNOPE-1 can't be transitioned: ...` and also exit 0. A tool therefore reads `results[].status` and `successCount` against `totalCount`; a partial success (some keys changed, some not) is possible when several keys are given.
@@ -339,3 +346,16 @@ One throwaway sequence in project SCRUM of insors.atlassian.net: three work item
 - **Text results with exit 0** (no `--json` on these commands, or none offered): `comment update` → `✓ Comment 10000 has been successfully updated on work item K`; `comment delete` → `✓ Successfully deleted the comment with id 10000`; `link create` → `✓ Link between issues has been successfully created (K1 Relates K2)`; `link delete` → `✓ Link has been successfully deleted (10000)` and `1 work item links out of 1 were deleted`.
 - **Reads:** `comment list --json` → `{comments:[{author,body,id,visibility}],isLast,maxResults,startAt,total}` (`isLast` false with one comment and `--limit` default: the page flag is unreliable); `link list --json` → `{issueLinks:[{id,outwardIssueKey,typeName}]}` (`outwardIssueKey` was null); `attachment list --json` → `{attachments:[]}`; `list-watchers --json` → `{isWatching,self,watchCount,watchers:[{accountId,displayName,emailAddress,...}]}`; `comment visibility --role --project K` → text `✓ Available Roles:` then `- Name` lines; `comment visibility --group` → `✓ Available Groups (N total):` then an ANSI box table of group name and id; neither flag given → `✗ Error: at least one of the flags in the group [role group] is required` (exit 1).
 - **Flags of the lookups:** `attachment list --key K --json`, `attachment delete --id ID`, `watcher remove --key K --user ACCOUNTID`, `list-watchers --key K --json`.
+
+## s6 scope amendment to ac1 (proposed 2026-10-26, approved together with the s6 LLD)
+
+DEF S006 ac1 reads "an operation that acli supports on Jira issues, projects, transitions, comments and assignment is reachable through a named tool". The s6 LLD reads it as the operations on work items, comments, links, attachments, watchers and projects, and leaves out, with these reasons:
+
+| Left out | Reason |
+|---|---|
+| `workitem create-bulk` | reads a local file and creates an unbounded number of work items |
+| `project create --from-json`, `project update --from-json`, `--generate-json` | read or write a local file; project create from an existing project (`--from-project`) is offered |
+| `auth login`, `auth logout`, `auth switch` | handle credentials or change the session; the daemon never touches a credential (k1). `auth status` is offered |
+| `board`, `sprint`, `dashboard`, `field`, `filter` (all commands) | outside the domains named in ac1 |
+
+Named unsupported (acli does not offer them): a transition by id, and a standalone list of the transitions a work item can take. The user's approval of the LLD is the approval of this amendment; the coverage test checks the list above (EXCLUDED_BY_AMENDMENT) against the installed acli.

@@ -1,0 +1,1477 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792955732921-sp3luw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:20:46.372Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 310606,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "hldEffectiveHash": "e550742c2f67133a9a5ac7bf4254013a40b0e3245595502144da99dacb6f669c",
+    "hldAmendmentsApplied": [
+      "AMD-b7a68147dcf72034-3",
+      "AMD-b7a68147dcf72034-4",
+      "AMD-b7a68147dcf72034-5",
+      "AMD-b7a68147dcf72034-6",
+      "AMD-b7a68147dcf72034-7",
+      "AMD-b7a68147dcf72034-8"
+    ],
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 5,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 5,
+        "contentHash": "38945794564d6f6eb40691a6ee0804d675ab974664d7ac6725f1bdc70f6a40af",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 5,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-10-25T19:26:09.027Z",
+        "report": {
+          "entityId": "LLD-b7a68147dcf72034-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-b08ec27002a4ee55966933c698dcd4af"
+        }
+      },
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:26:09.035Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Story s6 adds five Jira tools over Atlassian's acli, each one tool with an op: jira_workitem (view, search, count, create, edit, transition, assign, clone, archive, unarchive, delete, attachment-list, attachment-delete, watcher-list, watcher-remove), jira_comment (list, create, update, delete, visibility), jira_link (list, types, create, delete), jira_project (list, view, create, update, archive, restore, delete) and jira_auth (status), 32 ops in all. Their op tables, input schemas and field rules come from the exported functions of the s5 op builder in src/daemon/tools/builtins/gh/op-table.ts, which is not edited; because that builder has no maximum, no maxItems, no deduplication and checks a leading dash only on positionals, Jira adds its own bounds, key normaliser and identifier checks, and its own argv head, executor, failure mapping and answer readers, since acli's --json is a boolean, a changing command can exit 0 with a FAILURE result, and several answers are text. A change to work items is addressed by key only (at most 50 supplied), the three commands that take a limit get a finite one, transitions are driven by status name, a project is created from an existing project as acli requires, and each op is classed none, common or destructive. The tools are returned as GhFamilyTool like the gh families, so their shapes are checked at run time (an answer the reader cannot read is a rejected failure; data outside the output union is the executor's schema-mismatch) and callers get no concrete compile-time types; the LLD proposes an amendment to sc2 that records this. The acli commands and forms left out of the five tools, and the operations acli does not offer, are listed in the scope amendment to ac1 in docs/plans/tool-registry.md, which the user approves with this LLD."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: the executor in src/daemon/tools/executor.ts becomes the one pipeline for all external operations, and git, gh and Jira (acli) are registry tool families with an optional declared output schema and an approval class (none, common or destructive). Workflow and daemon code call tools through a typed helper that takes the tool definition; about 32 production files that spawn git or gh, or call a wrapper that does, move onto it in one change.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "Tool output schema and typed call",
+          "purpose": "Lets a tool declare its result shape, has the executor check it when declared, and gives callers a result typed from the tool definition they pass.",
+          "interfaceSketch": "interface OutputSchemaField<O> { outputSchema?: JsonSchema; readonly outputType?: O }\ntype ToolOutput<T> = T extends OutputSchemaField<infer O> ? O : unknown\ninterface TypedToolResult<O> { success: boolean; data?: O; error?: ToolFailure }\ncallTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps: ToolDeps): Promise<TypedToolResult<ToolOutput<T>>>\n  // + outputSchema is a typebox TSchema; TypedTool; callTool signature: outputSchema?: TSchema (typebox); TypedTool = Tool & { inputSchema: TSchema; outputSchema: TSchema }; callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>;  // Refines the sc2 sketch as approved in the s2 LLD (requirement R2): typebox instead of JsonSchema plus a phantom type, and a typed input. (amend:AMD-b7a68147dcf72034-6)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c2",
+            "c3"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Text conversion with cross-check",
+          "purpose": "Turns text-only CLI output into the declared shape using the cheap model, cross-checks the key values against the raw text, and escalates once to a higher-tier model; conversions run serially.",
+          "interfaceSketch": "interface ConversionRequest<O> { toolId: string; rawText: string; schema: JsonSchema; keyValues: (value: O) => string[] }\ninterface ConversionResult<O> { ok: boolean; value?: O; tier: 'cheap' | 'escalated'; failure?: ConversionFailure }\ninterface ConversionFailure { kind: 'shape-mismatch' | 'value-not-in-text' | 'retries-exhausted'; detail: string }\nconvertText<O>(req: ConversionRequest<O>): Promise<ConversionResult<O>>\n  // + convertText takes ToolDeps; keyValues required: convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>; ConversionRequest.keyValues is required;  // Refines the sc3 sketch as approved in the s2 LLD (requirement R2): deps supplies repoPath, signal and the optional conversion setting. (amend:AMD-b7a68147dcf72034-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Approval class and approval exchange",
+          "purpose": "Defines the one field that gives a tool or call its approval class, the global setting that governs the common class, the request the executor sends to the attached client, the answer, the timeout and the denial reasons, so that every client implements the same exchange.",
+          "interfaceSketch": "type ApprovalClass = 'none' | 'common' | 'destructive'\ninterface ApprovalField<I> { approval?: ApprovalClass | ((input: I) => ApprovalClass) }\ntype CommonApprovalMode = 'auto' | 'ask'\ninterface ApprovalRequest { requestId: string; toolId: string; approvalClass: 'common' | 'destructive'; inputSummary: string; reason: string; expiresAt: string }\ninterface ApprovalAnswer { requestId: string; decision: 'approve' | 'decline' }\ntype ApprovalDenial = 'declined' | 'timed-out' | 'no-client'\ninterface ApprovalGate { ask(req: ApprovalRequest): Promise<ApprovalAnswer | ApprovalDenial> }\n// IPC methods: approval.request (daemon to client), approval.answer (client to daemon)\n  // + ApprovalRequest repoPath, arguments, preview; CommonApprovalMode; approval.subscribe: ApprovalRequest gains repoPath: string, arguments: Record<string, unknown> and preview?: { title: string; content: string }; CommonApprovalMode = 'manual' | 'edit-auto' | 'auto'; ApprovalDenial gains 'cancelled'; IPC method approval.request (daemon to client) is realised as approval.subscribe (a client-opened stream carrying 'gate' frames) plus approval.answer;  // The request must name the repository and the exact arguments (DEF S003 FR001), the chat has three modes, and the daemon can push only over a stream the client opened. Additive refinements of a contract only s3 owns. (amend:AMD-b7a68147dcf72034-4)",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "CLI failure kinds",
+          "purpose": "One set of failure kinds returned by every git, gh and acli tool so callers tell a missing CLI, a missing sign-in, a time-out and a rejection apart.",
+          "interfaceSketch": "type ToolFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'timed-out' | 'rejected' | 'conversion-failed' | 'schema-mismatch' | 'denied'\ninterface ToolFailure { kind: ToolFailureKind; message: string; denial?: ApprovalDenial }\n  // + ToolResult.failure, ToolFailure.original and ToolDenialReason?: ToolResult.failure?: ToolFailure; ToolFailure.original?: string (the tool's raw output, truncated, kept for diagnosis); type ToolDenialReason = 'declined' | 'timed-out' | 'no-client', which ToolFailure.denial uses in place of the ApprovalDenial type from sc4;  // The Story's second functional requirement says a conversion that fails the check is reported as the tool's failure with the original output available for diagnosis, and the executor has to carry a typed failure on the ToolResult that agents and code both receive. sc5's sketch types denial with ApprovalDenial, owned by s3 (sc4), but s2 has no dependency on s3 in the Epic graph and so cannot compile against it; declaring the three-value union in sc5 removes the dependency, and s3 reuses it. All three additions are optional or additive; a caller that ignores them sees today's success, output and error fields. (amend:AMD-b7a68147dcf72034-3)\n  // + ToolDenialReason 'cancelled': type ToolDenialReason = 'declined' | 'timed-out' | 'no-client' | 'cancelled' (an approval aborted by the caller's signal);  // An aborted approval needs a reason distinct from a decline or a timeout; s2 owns the type and s3 raises the value. (amend:AMD-b7a68147dcf72034-5)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The optional output-schema field and the check at step 4 of the pipeline, the typed call helper that takes a tool definition, the serial conversion queue, the key-value cross-check and the one-time escalation, and the shared failure kinds. It includes the choice of schema language and the way an input-to-tool mismatch is reported. It does not declare or read the approval class."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of gh operation families, their schemas (read from gh --json where it exists, converted from text otherwise, for example gh pr diff and gh run view --log), which of the 27 gh operations that need approval are in the destructive class, and the 120 second time limit and its message. Existing gh ids keep their meaning."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s8: Reach the rest of git through named, typed tools"
+        }
+      ],
+      "rolloutPhase": "Phase B — tool families",
+      "nonFunctional": {
+        "performance": "gh commands time out after 120 seconds (decided with the user; the daemon is expected to become multi-threaded so a slow gh will not block it). The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+        "security": "No argument, setting, environment variable or caller identity can skip the approval for a destructive call; with no client attached the call is denied. Common calls follow one global setting. Approval requests travel only over the daemon's Unix socket. No credentials are read or stored: gh, git and acli use the user's own CLI sessions. A tool that declares an output schema and returns a result that does not match it fails and its result is not passed on. Today the executor runs every tool flagged requiresApproval as approved (11 git tools, 5 more by predicate, 27 gh operations and other families), so nothing asks; this Epic makes destructive calls ask every time and puts the rest under the global setting.",
+        "observability": "The executor logs each stage per call with the tool id, the caller, the approval class and decision and its reason, the schema check result, and each hook outcome. Hook failures, denials and conversion escalations are returned to the caller as part of the result, not only logged.",
+        "durability": "Pending approval requests are held in memory by the daemon and are lost on restart; a request left open at restart is treated as denied. Hooks are registered in code at start-up, not stored. The global approval setting is stored in the daemon's config. The cutover leaves artifacts, commits and tracker records unchanged."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "registerJiraTools",
+          "signature": "registerJiraTools(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers jira_workitem, jira_comment, jira_link, jira_project and jira_auth with the tool registry; called by registerBuiltinTools in src/daemon/tools/builtins/index.ts after registerGhTools."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called once at daemon start-up with the other register functions"
+          ],
+          "postconditions": [
+            "Five new tool ids exist; no existing tool id changes"
+          ]
+        },
+        {
+          "name": "defineJiraFamily",
+          "signature": "defineJiraFamily(spec: { id: string; description: string; ops: readonly OpDef[] }): GhFamilyTool",
+          "parameters": [
+            {
+              "name": "spec.id",
+              "type": "string",
+              "purpose": "The tool id: jira_workitem, jira_comment, jira_link, jira_project or jira_auth",
+              "optional": false
+            },
+            {
+              "name": "spec.ops",
+              "type": "readonly OpDef[]",
+              "purpose": "The ops of the family; every op's out kind is 'custom' so the output union member and the argv come from the op's own shape and args; OpDef, GhFamilyTool and the schema builders are those exported by src/daemon/tools/builtins/gh/op-table.ts",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "GhFamilyTool",
+            "meaning": "A TypedTool & { ops } exactly as defineGhFamily returns for the 22 approved gh families: inputSchema is jiraInputSchema over buildInputSchema and outputSchema is the union of the ops' shapes (members carry the literal op), both plain TSchema, wrapped by withGhFailureNet from src/daemon/tools/builtins/gh/helpers.ts, with approval a function of the op (an op the table does not know is destructive). Because the schemas are plain TSchema, callTool's Static input and output types are not concrete per family; the shapes are enforced at run time, which the proposed sc2 amendment records"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure rejected",
+              "condition": "refuseInput (called with dashSafe true) or checkJiraValues refuses the input (unknown op, missing or extra field, an exclusive group, an identifier that does not match its pattern); acli is not run"
+            },
+            {
+              "type": "ToolFailure missing-tool",
+              "condition": "acli is not on PATH"
+            },
+            {
+              "type": "ToolFailure missing-signin",
+              "condition": "acli failed and the one auth status probe positively says unauthorized"
+            },
+            {
+              "type": "ToolFailure timed-out",
+              "condition": "the op's limit passed; for a changing op the message adds that the outcome is unknown"
+            },
+            {
+              "type": "ToolFailure rejected",
+              "condition": "acli exited non-zero with a text that is neither a sign-in nor a network failure, or exited 0 with a FAILURE result or an answer that the reader cannot read (a reader failure, raised inside execute)"
+            },
+            {
+              "type": "ToolFailure schema-mismatch",
+              "condition": "raised by executeTool after execute, not by the family: an answer builder returned no data or data outside the op's output union (executor.ts:149 and :158); withGhFailureNet wraps execute only and does not turn this into rejected"
+            }
+          ],
+          "preconditions": [
+            "acli installed and signed in with the user's own session; the daemon never reads, asks for or stores a credential"
+          ],
+          "postconditions": [
+            "Only 'acli' is spawned",
+            "Every op that has a --yes flag (edit, transition, assign, clone, archive, unarchive, delete, link create, link delete) passes it",
+            "The commands that take a limit (workitem search, project list, comment list) pass a finite --limit within their maximum and never --paginate; the other reads (attachment list, list-watchers, link list, link type, view, visibility, auth status) take no limit, are bounded by the server and by the 4 MiB capture cap, and an output cut at the cap is a failure",
+            "A changing op addresses work items by key list only (at most 50 supplied): --jql, --filter and --from-file are not inputs of any changing op",
+            "No edit is made to any file under src/daemon/tools/builtins/gh",
+            "Reader failures are rejected and executor output-validation failures are schema-mismatch; each is tested"
+          ]
+        },
+        {
+          "name": "jiraInputSchema",
+          "signature": "jiraInputSchema(base: TSchema, ops: readonly OpDef[]): TSchema",
+          "parameters": [
+            {
+              "name": "base",
+              "type": "TSchema",
+              "purpose": "The input schema produced by buildInputSchema from op-table.ts",
+              "optional": false
+            },
+            {
+              "name": "ops",
+              "type": "readonly OpDef[]",
+              "purpose": "The ops, whose JIRA_LIMITS entries say which fields get a maximum or maxItems",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TSchema",
+            "meaning": "The base schema with maximum set on the limit fields (workitem search 500, project list 200, comment list 200), maxItems 50 on every key array and a pattern on every identifier field; the base builder emits only a minimum and minItems 1, so these bounds are Jira's own"
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure; does not edit gh/op-table.ts"
+          ],
+          "postconditions": [
+            "A limit above its maximum, more than 50 supplied keys or an identifier outside its pattern is refused by the executor's input check before acli runs"
+          ]
+        },
+        {
+          "name": "normalizeKeys",
+          "signature": "normalizeKeys(keys: readonly string[]): string[]",
+          "parameters": [
+            {
+              "name": "keys",
+              "type": "readonly string[]",
+              "purpose": "The supplied work item keys, already within the 50 cap and the key pattern",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "The keys in their first-seen order with repeats dropped; the 50 cap applies to the keys supplied, so 51 keys that contain repeats are refused before normalisation"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Applied by the argv step so acli never receives a repeated key"
+          ]
+        },
+        {
+          "name": "checkJiraValues",
+          "signature": "checkJiraValues(def: OpDef, input: ToolInput): ToolFailure | undefined",
+          "parameters": [
+            {
+              "name": "def",
+              "type": "OpDef",
+              "purpose": "The op",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "ToolInput",
+              "purpose": "The input after the schema check",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ToolFailure | undefined",
+            "meaning": "undefined when every identifier matches its pattern (JIRA_PATTERNS: work item key, project key, numeric id, link type name, status name, assignee address or account id or '@me' or 'default'); a rejected failure naming the field otherwise"
+          },
+          "errors": [],
+          "preconditions": [
+            "Total and synchronous"
+          ],
+          "postconditions": [
+            "The builder's refuseInput only scans 'pos' and 'spread' arguments and only when dashSafe is true, and does not scan flag values; Jira therefore calls it with dashSafe true and covers every flag-valued identifier here",
+            "Identifier patterns do not allow a leading '-', so a flag-valued key, project key (including fromProject and projectKey), id or type name is refused before it can reach acli"
+          ]
+        },
+        {
+          "name": "jiraArgv",
+          "signature": "jiraArgv(def: OpDef, input: ToolInput): string[]",
+          "parameters": [
+            {
+              "name": "def",
+              "type": "OpDef",
+              "purpose": "The op",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "ToolInput",
+              "purpose": "The checked and normalised input",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "The argv of the op starting with 'acli': the words of buildArgv (op-table.ts) with its first token, the literal 'gh', replaced; the op's args carry a literal boolean --json where the command takes one and no op uses an items or jsonFields out kind, so no gh-style --json field list is appended; every free-text value (summary, description, body, jql, labels, status, assignee) is joined to its flag as one token '--flag=value' so a leading dash in the value cannot be read as a flag"
+          },
+          "errors": [],
+          "preconditions": [
+            "def.out.kind is 'custom' and def.repo is not true"
+          ],
+          "postconditions": [
+            "The first element is 'acli' and the second 'jira'",
+            "No element after the command words is a bare value that starts with '-' unless it is a flag the table itself wrote",
+            "project create is built as 'acli jira project create --from-project SRC --key NEW --name N' plus the optional --description, --url and --lead-email; --from-json and --generate-json are never written"
+          ]
+        },
+        {
+          "name": "acliExec",
+          "signature": "acliExec(argv: string[], opts: { cwd?: string; limitMs: number; signal?: AbortSignal; maxBytes?: number }): Promise<AcliOutcome>",
+          "parameters": [
+            {
+              "name": "argv",
+              "type": "string[]",
+              "purpose": "The full command from jiraArgv",
+              "optional": false
+            },
+            {
+              "name": "opts.limitMs",
+              "type": "number",
+              "purpose": "The op's time limit in milliseconds",
+              "optional": false
+            },
+            {
+              "name": "opts.maxBytes",
+              "type": "number",
+              "purpose": "The capture cap (4 MiB by default); output cut at the cap is not the answer",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "AcliOutcome",
+            "meaning": "The fields of runShellBytes (stdout and stderr as text, code, spawnError, timedOut, signal, aborted, stdoutTruncated, stderrOverflow) plus command, limitMs and probe: the result of one 'acli jira auth status' run, present only when the command failed with a text that is not a known rejection"
+          },
+          "errors": [],
+          "preconditions": [
+            "Never throws: a spawn failure, a time-out and a non-zero exit are fields of the outcome"
+          ],
+          "postconditions": [
+            "The command runs with standard input closed, so a prompt that appears (a missing --yes) is cancelled and exits 1 instead of waiting",
+            "No credential is placed in argv or the environment",
+            "The probe runs at most once per call, after the failure, with the same cwd and a 10 s limit"
+          ]
+        },
+        {
+          "name": "jiraFailureOf",
+          "signature": "jiraFailureOf(o: AcliOutcome, opts: { mutating: boolean }): ToolFailure | undefined",
+          "parameters": [
+            {
+              "name": "o",
+              "type": "AcliOutcome",
+              "purpose": "What acliExec returned",
+              "optional": false
+            },
+            {
+              "name": "opts.mutating",
+              "type": "boolean",
+              "purpose": "True for an op that changes Jira; every failure after the process started then adds that the outcome is unknown",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ToolFailure | undefined",
+            "meaning": "undefined when the command ran clean; otherwise a failure of a sc5 kind with acli's own text in message or original"
+          },
+          "errors": [],
+          "preconditions": [
+            "Total and synchronous"
+          ],
+          "postconditions": [
+            "Precedence: spawn failure or exit 127 (missing-tool, 'acli is not installed (not found on PATH)'); time-out; abort; signal; stderr overflow; a cut stdout; then a non-zero exit",
+            "A non-zero exit is missing-signin ('acli is not signed in; sign in with acli jira auth login outside the daemon') only when the probe ran, completed (no spawn failure, time-out or signal) and its text positively says unauthorized or not signed in; a probe that failed to complete, or whose text matches a network pattern, never makes it missing-signin, and the original failure is classified by its own text (network text is unreachable, otherwise rejected)",
+            "A text that names a known rejection (Issue does not exist, failed to parse JQL query, No project could be found, Permission denied, cancelled) is rejected without a probe",
+            "No message asks for or contains a credential"
+          ]
+        },
+        {
+          "name": "readBatch",
+          "signature": "readBatch(stdout: string): { ok: boolean; succeeded: { id: string; message: string }[]; failed: { id: string; message: string }[] } | undefined",
+          "parameters": [
+            {
+              "name": "stdout",
+              "type": "string",
+              "purpose": "The --json output of transition, assign, edit, clone, archive, unarchive, delete and comment create",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "object | undefined",
+            "meaning": "Parses {results:[{status,message,id}],totalCount,successCount}; ok only when results is non-empty, every status is SUCCESS, totalCount equals results.length and successCount equals totalCount; undefined when the text is not that shape"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A FAILURE result at exit 0 is never ok",
+            "The answer builder of a batch op turns not-ok into a rejected failure that lists each failed id with acli's message and, when some succeeded, each succeeded id and the words 'the batch was partly applied'",
+            "Clone's new key is read from the success message ('... cloned as https://<site>/browse/KEY') because the result id is the source key"
+          ]
+        },
+        {
+          "name": "readCount",
+          "signature": "readCount(stdout: string): number | undefined",
+          "parameters": [
+            {
+              "name": "stdout",
+              "type": "string",
+              "purpose": "The output of 'workitem search --count'",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number | undefined",
+            "meaning": "The integer N of the line 'Number of work items in the search: N' (a leading check mark and surrounding text allowed); undefined when no such line exists"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "undefined makes the count op a rejected failure with the text in original; no count is ever guessed"
+          ]
+        },
+        {
+          "name": "readVisibility",
+          "signature": "readVisibility(stdout: string, kind: 'group' | 'role'): { groups: { name: string; id: string }[] } | { roles: string[] } | undefined",
+          "parameters": [
+            {
+              "name": "stdout",
+              "type": "string",
+              "purpose": "The output of 'comment visibility --group' or '--role --project K', with ANSI escapes removed before reading",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "'group' | 'role'",
+              "purpose": "Which lookup",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "object | undefined",
+            "meaning": "group: the rows of the box table (name and id columns) under 'Available Groups', accepted only when the '(N total)' count equals the number of parsed rows, and an empty list only when that count is 0; role: the '- Name' lines under 'Available Roles', accepted only when at least one such line exists and every non-blank body line is one; undefined when the heading is missing, the count does not match the rows, a body line is not recognised, or a role body has no '- Name' line"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A heading-only or changed-format body is a rejected failure, never an empty list; an empty role list stays unreadable until real empty text is recorded by the live probe"
+          ]
+        },
+        {
+          "name": "parseAuthStatus",
+          "signature": "parseAuthStatus(text: string): { signedIn: boolean; site?: string; email?: string; authType?: string }",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "The output of 'acli jira auth status'",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ signedIn: boolean; site?: string; email?: string; authType?: string }",
+            "meaning": "Read from the 'Authenticated' line and the 'Site:', 'Email:' and 'Authentication Type:' lines; no model call"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A text with an 'unauthorized' line is signedIn false"
+          ]
+        },
+        {
+          "name": "JIRA_LIMITS",
+          "signature": "const JIRA_LIMITS: { keysMax: 50; searchDefault: 50; searchMax: 500; projectDefault: 30; projectMax: 200; commentDefault: 50; commentMax: 200 }; const JIRA_PATTERNS: Record<'workItemKey' | 'projectKey' | 'numericId' | 'linkTypeName' | 'statusName' | 'assignee', RegExp>",
+          "parameters": [],
+          "returns": {
+            "type": "constants",
+            "meaning": "The finite bounds of the three commands that take a limit and of every key list, and the identifier patterns used by jiraInputSchema and checkJiraValues; none allows a leading '-'"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No op passes --paginate; --recent is offered only by project list, as the alternative of limit, and acli caps it at 20"
+          ]
+        },
+        {
+          "name": "jira_workitem",
+          "signature": "TypedTool: input { op: 'view'|'search'|'count'|'create'|'edit'|'transition'|'assign'|'clone'|'archive'|'unarchive'|'delete'|'attachment-list'|'attachment-delete'|'watcher-list'|'watcher-remove'; cwd?; ...fields of the op }; output union by literal op",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "purpose": "view, attachment-list, watcher-list and watcher-remove: one work item key",
+              "optional": true
+            },
+            {
+              "name": "keys",
+              "type": "string[]",
+              "purpose": "edit, transition, assign, clone, archive, unarchive, delete: one to 50 keys as supplied; repeats are then dropped",
+              "optional": true
+            },
+            {
+              "name": "jql / filter",
+              "type": "string",
+              "purpose": "search and count: exactly one of the two",
+              "optional": true
+            },
+            {
+              "name": "fields / limit",
+              "type": "string[] / integer",
+              "purpose": "view and search: the fields to return; search: limit 1 to 500, default 50",
+              "optional": true
+            },
+            {
+              "name": "project / type / summary / description / assignee / labels / parent",
+              "type": "string / string[]",
+              "purpose": "create needs project, type and summary; edit needs at least one of summary, description, type, assignee, removeAssignee, labels and removeLabels; assignee is an email, an account id, '@me' or 'default'",
+              "optional": true
+            },
+            {
+              "name": "removeAssignee / removeLabels",
+              "type": "boolean / string[]",
+              "purpose": "edit and assign: remove the assignee; edit: remove labels",
+              "optional": true
+            },
+            {
+              "name": "status",
+              "type": "string",
+              "purpose": "transition: the target status by name (acli has no transition id)",
+              "optional": true
+            },
+            {
+              "name": "toProject",
+              "type": "string",
+              "purpose": "clone: the target project key",
+              "optional": true
+            },
+            {
+              "name": "id / user",
+              "type": "string",
+              "purpose": "attachment-delete: the attachment id; watcher-remove: the account id of the watcher",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "union by op",
+            "meaning": "view {op, item}; search {op, count, items}; count {op, count}; attachment-list {op, count, attachments}; watcher-list {op, count, watchers}; every other op {op, ok, target, message} with target the key(s) changed or, for create and clone, the new key(s)"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure",
+              "condition": "as defineJiraFamily"
+            }
+          ],
+          "preconditions": [
+            "acli signed in"
+          ],
+          "postconditions": [
+            "Classes: view, search, count, attachment-list, watcher-list none; create, edit, transition, assign, clone, archive, unarchive, watcher-remove common; delete and attachment-delete destructive",
+            "Limits: view, attachment-list, watcher-list 30 s; search and count 60 s; every changing op 60 s",
+            "Items type only key and id (watchers accountId); the rest of the REST object is unknown, so an extra or null property never fails a call"
+          ]
+        },
+        {
+          "name": "jira_comment",
+          "signature": "TypedTool: input { op: 'list'|'create'|'update'|'delete'|'visibility'; cwd?; ...fields of the op }; output union by literal op",
+          "parameters": [
+            {
+              "name": "key / keys",
+              "type": "string / string[]",
+              "purpose": "list, update, delete: one key; create: one to 50 keys",
+              "optional": true
+            },
+            {
+              "name": "body / id",
+              "type": "string",
+              "purpose": "create needs body; update needs id and body; delete needs id",
+              "optional": true
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "purpose": "list: 1 to 200, default 50",
+              "optional": true
+            },
+            {
+              "name": "group / role / project",
+              "type": "boolean / boolean / string",
+              "purpose": "visibility: exactly one of group and role; role needs project",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "union by op",
+            "meaning": "list {op, total, isLast, comments}; visibility {op, groups} or {op, roles}; create, update, delete {op, ok, target, message}"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure",
+              "condition": "as defineJiraFamily"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Classes: list, visibility none; create, update common; delete destructive",
+            "A comment body comes from the body field only; --body-file, --body-adf and --editor are not inputs",
+            "isLast is passed on as acli reports it; the tool does not rely on it to decide completeness (the probe showed it false for a single comment)"
+          ]
+        },
+        {
+          "name": "jira_link",
+          "signature": "TypedTool: input { op: 'list'|'types'|'create'|'delete'; cwd?; ...fields of the op }; output union by literal op",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "purpose": "list: the work item key",
+              "optional": true
+            },
+            {
+              "name": "out / in / type",
+              "type": "string",
+              "purpose": "create: the outward and inward work item keys and the link type name as listed by types",
+              "optional": true
+            },
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "delete: the link id",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "union by op",
+            "meaning": "list {op, links}; types {op, types}; create, delete {op, ok, target, message}"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure",
+              "condition": "as defineJiraFamily"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Classes: list, types none; create common; delete destructive",
+            "A link is created or deleted only when acli's text starts with the success mark; any other exit-0 text is a rejected failure"
+          ]
+        },
+        {
+          "name": "jira_project",
+          "signature": "TypedTool: input { op: 'list'|'view'|'create'|'update'|'archive'|'restore'|'delete'; cwd?; ...fields of the op }; output union by literal op",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "purpose": "view, create, archive, restore, delete: the project key (for create, the key of the new project)",
+              "optional": true
+            },
+            {
+              "name": "fromProject",
+              "type": "string",
+              "purpose": "create: the key of the existing project to create the new one from (acli --from-project); required for create; only a company-managed project can be the source",
+              "optional": true
+            },
+            {
+              "name": "name / description / leadEmail / url",
+              "type": "string",
+              "purpose": "create needs fromProject, key and name, with description, url and leadEmail optional (the lead defaults to the source project's lead); update needs projectKey and at least one of key, name, description, leadEmail, url",
+              "optional": true
+            },
+            {
+              "name": "projectKey",
+              "type": "string",
+              "purpose": "update: the key of the project to update",
+              "optional": true
+            },
+            {
+              "name": "limit / recent",
+              "type": "integer / boolean",
+              "purpose": "list: exactly one of limit (1 to 200, default 30 when neither is given) and recent",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "union by op",
+            "meaning": "list {op, count, projects}; view {op, project}; every other op {op, ok, target, message}"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure",
+              "condition": "as defineJiraFamily"
+            }
+          ],
+          "preconditions": [
+            "For create, the source project is company-managed; acli refuses any other and its text is passed on as a rejected failure"
+          ],
+          "postconditions": [
+            "Classes: list, view none; create, update, restore common; archive and delete destructive",
+            "Projects type only key, id and name",
+            "A project is created only from an existing project; the --from-json and --generate-json forms read or write a local file and are not inputs",
+            "The success text of create, update, restore, archive and delete was not probed on a live site; the readers accept the success mark only, and a gated live probe (see the test strategy) records the real text of each before the readers are accepted"
+          ]
+        },
+        {
+          "name": "jira_auth",
+          "signature": "TypedTool: input { op: 'status'; cwd? }; output { op: 'status', signedIn: boolean, site?: string, email?: string, authType?: string }",
+          "parameters": [
+            {
+              "name": "op",
+              "type": "'status'",
+              "purpose": "The only op; login, logout and switch handle credentials or change the session and are not offered",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ op: 'status'; signedIn: boolean; site?: string; email?: string; authType?: string }",
+            "meaning": "The sign-in state read from acli's text"
+          },
+          "errors": [
+            {
+              "type": "ToolFailure missing-signin",
+              "condition": "acli says unauthorized"
+            },
+            {
+              "type": "ToolFailure missing-tool",
+              "condition": "acli is not installed"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Class none, limit 30 s"
+          ]
+        },
+        {
+          "name": "JIRA_COVERAGE",
+          "signature": "const JIRA_COVERAGE: readonly { command: string; owner: 'covered' | 'excluded'; toolIds?: string[]; op?: string; reason?: string }[]; const JIRA_UNSUPPORTED: readonly { operation: string; reason: string }[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly rows",
+            "meaning": "One row per leaf command of 'acli jira', each served by a tool and op or excluded for a stated reason, and the named unsupported operations (a transition by id and a list of the transitions a work item can take); the acli inventory of docs/plans/tool-registry.md is the source each row cites"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The excluded rows are exactly the commands and forms listed in the section 's6 scope amendment to ac1' of docs/plans/tool-registry.md, which the user approves with this LLD: create-bulk, the --from-json and --generate-json forms of project create and update, auth login, logout and switch, and every command of board, dashboard, field, filter and sprint",
+            "The coverage test also checks a required-operation inventory written independently of this table: every acli command on work items, comments, links, attachments, watchers and projects, minus the amended exclusions, must be covered"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Jira family op tables (jira_workitem, jira_comment, jira_link, jira_project, jira_auth)",
+        "change": "new",
+        "details": "Five lists of OpDef, 32 ops in all: jira_workitem 15, jira_comment 5, jira_link 4, jira_project 7, jira_auth 1. Each op names its acli command words, its fields, its rules, its class, its limit and its answer builder (out kind custom). Classes: 12 ops none (view, search, count, attachment-list, watcher-list, comment list, comment visibility, link list, link types, project list, project view, auth status), 14 common (create, edit, transition, assign, clone, archive, unarchive, watcher-remove, comment create, comment update, link create, project create, project update, project restore) and 6 destructive (work item delete, attachment-delete, comment delete, link delete, project archive, project delete). The acli command words come from the acli inventory and the project mutation flags section of docs/plans/tool-registry.md.",
+        "callSites": [
+          "src/daemon/tools/builtins/jira/workitem.ts",
+          "src/daemon/tools/builtins/jira/comment.ts",
+          "src/daemon/tools/builtins/jira/link.ts",
+          "src/daemon/tools/builtins/jira/project.ts",
+          "src/daemon/tools/builtins/jira/auth.ts"
+        ]
+      },
+      {
+        "entity": "Jira answer shapes",
+        "change": "new",
+        "details": "view {item: {key, id, fields?, transitions?}}; search {count, items: [{key, id, fields?}]}; count {count}; attachment-list {count, attachments: unknown[]}; watcher-list {count, watchers: [{accountId?, displayName?}]}; comment list {total, isLast, comments: unknown[]}; comment visibility {groups: [{name, id}]} or {roles: string[]}; link list {links: unknown[]}; link types {types: string[]}; project list {count, projects: [{key, id, name}]}; project view {project: {key, id, name}}; auth status {signedIn, site?, email?, authType?}; every changing op {ok, target, message}. Only the properties callers need are typed; extra REST properties pass through as unknown, so acli adding a property never fails a call.",
+        "callSites": [
+          "src/daemon/tools/builtins/jira/schemas.ts"
+        ]
+      },
+      {
+        "entity": "Jira answer readers, limits and input checks",
+        "change": "new",
+        "details": "readBatch, readCount, readVisibility, parseAuthStatus, JIRA_LIMITS, JIRA_PATTERNS, jiraInputSchema, normalizeKeys and checkJiraValues: pure functions and constants over acli's text and JSON and over the input, each tested against output recorded from the real acli (the inventory and the approved write probe).",
+        "callSites": [
+          "src/daemon/tools/builtins/jira/readers.ts",
+          "src/daemon/tools/builtins/jira/input.ts"
+        ]
+      },
+      {
+        "entity": "Dependency of builtins/jira on builtins/gh",
+        "change": "new",
+        "details": "builtins/jira imports OpDef, OutSpec, field and the argument constructors, refuseInput, buildArgv, buildInputSchema, buildOutputSchema, rejectInput and the GhFamilyTool type from builtins/gh/op-table.ts and withGhFailureNet from builtins/gh/helpers.ts; it imports nothing else from gh and edits nothing there. The dependency points one way (jira to gh). A move of the builder to a neutral folder, which would also give the gh families the bounds and checks Jira needs and could add concrete per-family types, is left to a later Story when a third CLI family needs it (alternative a2).",
+        "callSites": [
+          "src/daemon/tools/builtins/gh/op-table.ts",
+          "src/daemon/tools/builtins/gh/helpers.ts"
+        ]
+      },
+      {
+        "entity": "JIRA_COVERAGE and JIRA_UNSUPPORTED",
+        "change": "new",
+        "details": "A table of the leaf commands of the installed acli jira with the tool and op that serves each or the reason, from the scope amendment to ac1 in docs/plans/tool-registry.md, that it is left out, and the list of named unsupported operations. Read by the coverage test; the required-operation inventory the test checks it against is separate.",
+        "callSites": [
+          "src/daemon/tools/builtins/jira/coverage.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Each family declares a typebox inputSchema and an output union; the executor checks the input before and the result data after (failed('schema-mismatch') on data outside the union); callTool takes the definition. The declared types are plain TSchema as for the approved gh families, so callTool's static types are not concrete per family; the LLD proposes an additive sc2 amendment (fieldAdd, breaking false) that records this level and relies on its approval."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "No Jira op needs convertText: every read has --json or a small fixed text form that a deterministic reader parses. The contract is consumed only in that no op may reach for a model call."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Tool.approval is a function of the op: reads none, changes common, deletes and project archive destructive; an op the table does not know is destructive. A destructive op asks every time whatever the setting; with no client attached it is denied (s3)."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "jiraFailureOf and the answer builders return missing-tool, missing-signin, unreachable, timed-out and rejected, with acli's own text kept in the message or original; schema-mismatch is raised by the executor, not by the family."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "acli is not installed",
+          "detection": "runShellBytes reports a spawn failure or the shell exits 127 with 'acli: not found'; jiraFailureOf checks this first",
+          "response": "ToolFailure missing-tool 'acli is not installed (not found on PATH)'; nothing else is run",
+          "userImpact": "The caller learns to install acli; no Jira call is made",
+          "recoverable": true
+        },
+        {
+          "scenario": "acli is installed but not signed in",
+          "detection": "A command exits non-zero with a text that is not a known rejection, and the one 'acli jira auth status' probe completes and says unauthorized",
+          "response": "ToolFailure missing-signin telling the user to sign in outside the daemon; the daemon never asks for, reads or stores a credential",
+          "userImpact": "The user signs in with their own acli session and retries",
+          "recoverable": true
+        },
+        {
+          "scenario": "The sign-in probe itself fails on network, time-out or spawn",
+          "detection": "The probe outcome has a spawn error, timedOut, a signal, or text matching a network pattern",
+          "response": "The original failure is classified by its own text (network text is unreachable, otherwise rejected); it is never reported as missing-signin without positive evidence",
+          "userImpact": "A flaky network is not mistaken for a lost sign-in",
+          "recoverable": true
+        },
+        {
+          "scenario": "A changing command exits 0 but every result is FAILURE",
+          "detection": "readBatch parses {results,totalCount,successCount} and finds a status other than SUCCESS, or the counts disagree; this is a reader failure raised inside execute",
+          "response": "ToolFailure rejected listing each failed key with acli's message",
+          "userImpact": "A failed transition or edit is never reported as done",
+          "recoverable": true
+        },
+        {
+          "scenario": "A batch is partly applied",
+          "detection": "readBatch finds both SUCCESS and FAILURE results",
+          "response": "ToolFailure rejected naming the failed keys and the succeeded keys, with the words 'the batch was partly applied'",
+          "userImpact": "The caller knows which work items changed and which did not, and does not repeat the ones that changed",
+          "recoverable": true
+        },
+        {
+          "scenario": "A text-result command (comment update or delete, link create or delete, project mutation) exits 0 without the success mark",
+          "detection": "The answer builder requires stdout to contain the check mark; its absence is detected before ok is set (a reader failure raised inside execute)",
+          "response": "ToolFailure rejected with acli's text in original",
+          "userImpact": "No change is claimed that acli did not confirm",
+          "recoverable": true
+        },
+        {
+          "scenario": "A text command exits 1 with the failure mark",
+          "detection": "Non-zero exit; the text names the cause (Issue does not exist, Permission denied, cancelled)",
+          "response": "ToolFailure rejected with acli's text, no probe for a known rejection",
+          "userImpact": "The cause reaches the caller verbatim",
+          "recoverable": true
+        },
+        {
+          "scenario": "project create is given a source project that is not company-managed, or one that does not exist",
+          "detection": "acli exits non-zero with its own message; jiraFailureOf finds no sign-in or network text",
+          "response": "ToolFailure rejected with acli's text in message, so the company-managed restriction reaches the caller",
+          "userImpact": "The caller picks a company-managed source project",
+          "recoverable": true
+        },
+        {
+          "scenario": "A time-out",
+          "detection": "runShellBytes timedOut at the op's limit (30 s reads, 60 s search, count and changing ops)",
+          "response": "ToolFailure timed-out; for a changing op the message adds that the outcome is unknown",
+          "userImpact": "The caller checks the work item before retrying a change",
+          "recoverable": true
+        },
+        {
+          "scenario": "Output is cut at the capture cap",
+          "detection": "stdoutTruncated or stderrOverflow on the outcome",
+          "response": "ToolFailure rejected; a cut output is never parsed as the answer",
+          "userImpact": "A smaller limit or a narrower query is asked for; the reads that take no limit (attachment list, list-watchers, link list, link type) fail rather than return a partial list",
+          "recoverable": true
+        },
+        {
+          "scenario": "A read answer cannot be parsed (count line, visibility heading, visibility rows that do not match the stated count, an unrecognised body line, JSON)",
+          "detection": "readCount or readVisibility returns undefined, or the JSON does not parse; a reader failure raised inside execute",
+          "response": "ToolFailure rejected with the raw text in original; no count or list is guessed and a heading-only body is not an empty list",
+          "userImpact": "A change in acli's text is visible as a failure, not as a wrong number or a silently shortened list",
+          "recoverable": false
+        },
+        {
+          "scenario": "An answer builder returns no data, or data that does not fit the op's output union (a defect in the builder, not an acli failure)",
+          "detection": "executeTool checks the declared output after execute (executor.ts:149 and :158); withGhFailureNet wraps execute only and cannot intercept this step",
+          "response": "The executor returns ToolFailure schema-mismatch with the raw output kept in original; the family does not relabel it as rejected",
+          "userImpact": "A defect in an answer builder is told apart from an acli failure, and its result is not passed on",
+          "recoverable": false
+        },
+        {
+          "scenario": "A prompt appears because --yes was missing",
+          "detection": "Standard input is closed, so acli exits 1 with 'cancelled'; the argv tests also assert --yes on each op that has it",
+          "response": "Rejected failure; the test suite fails if an op loses its --yes",
+          "userImpact": "The daemon never hangs on a prompt",
+          "recoverable": true
+        },
+        {
+          "scenario": "A destructive op is called with no client attached or denied",
+          "detection": "Tool.approval returns destructive for the op; the approval exchange of sc4 denies it",
+          "response": "ToolFailure denied; acli is not run",
+          "userImpact": "Deleting a work item, comment, link, attachment or project never happens unattended",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unknown op, an unregistered field or a missing required field (for example project create without fromProject) reaches the tool",
+          "detection": "refuseInput and the run-time input check find no OpDef, a field outside the op, or a required field absent; the compiler does not catch this because the schemas are plain TSchema",
+          "response": "ToolFailure rejected before acli is run; an unknown op is classed destructive by the approval function",
+          "userImpact": "A mistyped call fails closed at run time",
+          "recoverable": true
+        },
+        {
+          "scenario": "An identifier starts with a dash or does not match its pattern (a work item key, project key, fromProject, id, link type name, status or assignee)",
+          "detection": "The input schema pattern from jiraInputSchema refuses it at the executor's input check, and checkJiraValues refuses it again before the spawn; refuseInput runs with dashSafe true for the positionals",
+          "response": "ToolFailure rejected naming the field; acli is not run",
+          "userImpact": "A value cannot be read by acli as a flag, whether it is a positional or a flag value",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "keys contains the same key twice",
+          "expected": "Accepted within the 50 supplied; normalizeKeys drops the repeat so acli receives each key once"
+        },
+        {
+          "input": "51 keys supplied, even if some repeat",
+          "expected": "Refused by maxItems 50 in jiraInputSchema before acli runs; the cap applies to the keys supplied"
+        },
+        {
+          "input": "A free-text value (summary, description, body, jql, label) that starts with '-'",
+          "expected": "Accepted and passed as one token '--flag=value', so it cannot be read as a flag"
+        },
+        {
+          "input": "search or count with both jql and filter, or neither",
+          "expected": "Refused by the exclusive group; exactly one is required"
+        },
+        {
+          "input": "A changing op given jql, filter or from-file",
+          "expected": "Refused as an unknown field; changing ops address work items by keys only"
+        },
+        {
+          "input": "search with limit 0 or above 500, project list above 200, comment list above 200",
+          "expected": "Refused by minimum and the Jira maximum; the defaults are 50, 30 and 50 and --paginate is never passed"
+        },
+        {
+          "input": "project list with both limit and recent, or neither",
+          "expected": "Both is refused; neither uses limit 30"
+        },
+        {
+          "input": "project create with fromProject, key and name only",
+          "expected": "Runs 'acli jira project create --from-project SRC --key NEW --name N'; the lead defaults to the source project's lead"
+        },
+        {
+          "input": "project create with a from-json or generate-json input",
+          "expected": "Refused as an unknown field; those forms read or write a local file and are excluded by the amendment to ac1"
+        },
+        {
+          "input": "attachment list, list-watchers, link list or link type on a very large item",
+          "expected": "No limit is passed; the server bounds the answer and an output cut at the 4 MiB cap is a failure, not a partial list"
+        },
+        {
+          "input": "clone",
+          "expected": "The new key is read from the success message because the result id is the source key"
+        },
+        {
+          "input": "comment list on a single comment where acli reports isLast false",
+          "expected": "isLast is passed on as reported; completeness is not decided from it"
+        },
+        {
+          "input": "comment visibility with neither or both of group and role, or role without project",
+          "expected": "Refused by the input rules; acli itself exits 1 with neither"
+        },
+        {
+          "input": "Group visibility with '(0 total)' and no rows",
+          "expected": "An empty groups list, because the count says zero and matches the zero rows"
+        },
+        {
+          "input": "Group visibility whose '(N total)' differs from the parsed rows, or a role body with no '- Name' line",
+          "expected": "Rejected as unreadable (a reader failure), never an empty or short list"
+        },
+        {
+          "input": "Coloured output of the visibility table",
+          "expected": "ANSI escapes are removed before the rows are read"
+        },
+        {
+          "input": "A transition by id, or a request for the available transitions",
+          "expected": "Not offered; named unsupported in JIRA_UNSUPPORTED because acli takes a status name and returns transitions null"
+        },
+        {
+          "input": "An extra or null property in the REST object",
+          "expected": "Passes through as unknown; only key, id and name are typed so the call never fails on it"
+        },
+        {
+          "input": "Project create, update, restore, archive or delete success text before the live probe has recorded it",
+          "expected": "Read by the success mark only; any other exit-0 text is a rejected failure, and the gated live probe records the real text as fixtures"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Only 'acli' is spawned: no jira-cli or go-jira, and no direct REST call to Atlassian",
+          "source": "c2"
+        },
+        {
+          "text": "A tool's approval class is a function of the op and an unknown op is destructive; a destructive op asks every time and is denied with no client",
+          "source": "c4"
+        },
+        {
+          "text": "No source file under src/daemon/tools/builtins/gh is edited by this Story",
+          "source": "c2"
+        },
+        {
+          "text": "No op uses a model call to read acli output; every answer is read deterministically",
+          "source": "c3"
+        },
+        {
+          "text": "Reader failures are rejected and executor output-validation failures are schema-mismatch; the family never relabels one as the other, and missing-signin needs positive evidence",
+          "source": "c2"
+        },
+        {
+          "text": "A list is never returned from a malformed, cut or unrecognised answer",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run with npx tsx --test; files named *.test.ts under src/daemon/tools/builtins/jira/__tests__/, with a fake acli on PATH in _fakeacli.ts (same pattern as gh/__tests__/_fakegh.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pure functions: the answer readers, the input bounds and checks, the argv builder, the failure mapper and the approval function",
+          "subjects": [
+            "readBatch: all SUCCESS, all FAILURE at exit 0, partial, count mismatch, clone key from the message",
+            "readCount, parseAuthStatus on recorded acli text",
+            "readVisibility: group with a matching '(N total)', group with '(0 total)', count that differs from the rows, heading only, unrecognised line, role with and without '- Name' lines, ANSI escapes",
+            "jiraInputSchema: maximum 500, 200 and 200 on the limit fields, maxItems 50 on key arrays, patterns on identifiers; 51 keys with repeats refused; normalizeKeys keeps first-seen order",
+            "checkJiraValues and the schema patterns: a leading-dash value in every flag-valued identifier (key, keys, project, toProject, projectKey, fromProject, id, user, type name, status, assignee) and in a positional is refused, and refuseInput runs with dashSafe true",
+            "jiraArgv: head acli, --yes where acli has it, literal --json, finite --limit only on search, project list and comment list, never --paginate, free text joined as one '--flag=value' token including a value that starts with '-'",
+            "jiraArgv for project create is exactly 'acli jira project create --from-project SRC --key NEW --name N' plus optional --description, --url and --lead-email, and never --from-json or --generate-json; project update uses --project-key; archive, restore and delete use --key and no --yes",
+            "jiraFailureOf precedence and the probe rules (missing-signin only on positive evidence)",
+            "approval function per op and an unknown op"
+          ],
+          "fixturesNeeded": [
+            "Output recorded from the real acli in docs/plans/tool-registry.md, stored as fixture files"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Each tool run end to end against a fake acli on PATH that replays recorded output and exit codes, through executeTool",
+          "subjects": [
+            "jira_workitem, jira_comment, jira_link, jira_project and jira_auth: every op returns the declared shape",
+            "reader failures are rejected: a FAILURE result at exit 0, a text command without the success mark, an unreadable count or visibility body each come back from executeTool as kind rejected",
+            "executor output validation is schema-mismatch: with an answer builder that returns data outside its op's output union (and one that returns no data), executeTool returns kind schema-mismatch and the family does not relabel it as rejected",
+            "not installed (exit 127), not signed in (unauthorized probe), network failure probe, time-out, truncated output on a read that takes no limit",
+            "project create from a non-company-managed source: acli's refusal text reaches the caller as a rejected failure",
+            "a spawn-only check: with fake jira, jira-cli and go-jira on PATH only acli is ever run",
+            "input rules at run time: exclusive groups, 50 key cap, repeated keys sent once, changing ops refuse jql, filter and from-file, a missing required field (project create without fromProject) and an unknown op are refused by the run-time input check",
+            "each defineJiraFamily result is a GhFamilyTool carrying its ops (the same shape the gh families return); no concrete compile-time input or output type is asserted"
+          ],
+          "fixturesNeeded": [
+            "_fakeacli.ts",
+            "fake jira, jira-cli and go-jira executables that record any call"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The registry listing and the coverage tables",
+          "subjects": [
+            "jira-coverage: every command of the installed acli jira is covered or in the approved exclusion list, checked against an independently written REQUIRED_OPS inventory; the exclusion list equals the table of the section 's6 scope amendment to ac1' in docs/plans/tool-registry.md",
+            "JIRA_UNSUPPORTED names a transition by id and the list of transitions, and neither is a registered op",
+            "output schemas accept the recorded answer of each op and reject a wrong literal op",
+            "classes: the 6 destructive ops are destructive, 12 are none, 14 are common, 32 in all",
+            "jira-parser against the real acli --help (canary, skipped when acli is absent), including the flags of project create, update, archive, restore and delete"
+          ],
+          "fixturesNeeded": [
+            "approved EXCLUDED_BY_AMENDMENT list"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Real acli on the user's site, gated by INSRC_LIVE_TESTS=1 and skipped cleanly otherwise",
+          "subjects": [
+            "read ops: view, search, count, list, types, status, visibility",
+            "one create then delete of a work item in a scratch project with cleanup of any clone",
+            "a disposable-project probe, additionally gated by three environment variables (a company-managed source project key, a scratch project key for the new project, and a lead email): create it from the source, update, archive, restore and delete it, recording the real success text of each as a fixture file before the project mutation readers are accepted; the probe deletes the project even when a step fails, and skips with a reason when the variables are not set"
+          ],
+          "fixturesNeeded": [
+            "A signed-in acli, a scratch work item project key, and for the disposable-project probe a company-managed source project key, a scratch project key and a lead email in environment variables"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The tools are registered and documented",
+          "subjects": [
+            "registerJiraTools adds exactly five tool ids and changes no existing one",
+            "docs/plans/tool-registry.md lists the five tools, their classes and the excluded and unsupported lists"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "jira-coverage.test.ts: every required operation of the independent REQUIRED_OPS inventory is reachable through a named tool and op",
+            "jira-coverage.test.ts: the exclusion list equals the amended list in docs/plans/tool-registry.md",
+            "jira-family.test.ts: the five tools and 32 ops are registered and each op returns its declared shape",
+            "jira-parser.test.ts: the commands and flags of the real acli match the coverage table, including project create's --from-project"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "jira-failures.test.ts: acli missing gives missing-tool and acli unsigned gives missing-signin with a message that says which",
+            "jira-failures.test.ts: a failing probe on network or time-out is never missing-signin",
+            "jira-spawn-only.test.ts: no credential is placed in argv or environment and none is asked for"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "jira-output-schemas.test.ts: each op's recorded answer fits its declared union member and a wrong literal op does not",
+            "jira-parsers.test.ts: readBatch, readCount, readVisibility and parseAuthStatus on recorded text, including a FAILURE result at exit 0, a count that differs from the rows and a heading-only body",
+            "jira-failures.test.ts: reader failures are rejected through executeTool",
+            "jira-output-validation.test.ts: a builder that returns data outside its union, or no data, is schema-mismatch through executeTool",
+            "jira-inputs.test.ts: maximum, maxItems, repeated keys, leading-dash identifiers and a missing required field are refused or normalised before acli runs",
+            "jira-live.test.ts: the disposable-project probe records the real success text of each project mutation"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "jira-approval.test.ts: work item delete, attachment-delete, comment delete, link delete, project archive and project delete are destructive",
+            "jira-approval.test.ts: an unknown op is destructive and a destructive op is denied with no client"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "jira-spawn-only.test.ts: with fake jira, jira-cli and go-jira on PATH only acli is run, across every op"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "jira-coverage.test.ts: JIRA_UNSUPPORTED names a transition by id and the list of available transitions, and neither is a registered op",
+            "jira-coverage.test.ts: the excluded commands and forms equal the approved EXCLUDED_BY_AMENDMENT list"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "No acli or Jira code exists under src (the s1 code bundle found only the word in src/shared/understanding.ts and src/understanding/identity.ts). The registry's builtins register one registerXTools() per domain in src/daemon/tools/builtins/index.ts, and the s5 op builder in builtins/gh/op-table.ts and builtins/gh/helpers.ts is used by the gh families only; the builder has no maximum, maxItems or deduplication, scans for a leading dash only on positionals with dashSafe, and its GhFamilyTool carries plain TSchema schemas; executeTool checks a declared output after execute. approval-class-mapping.test.ts compares the snapshot of the 228 builtins and does not fail for new tools.",
+      "stateAfter": "Five new tools (jira_workitem, jira_comment, jira_link, jira_project, jira_auth; 32 ops) are registered by registerJiraTools from a new folder src/daemon/tools/builtins/jira/, which imports the exported functions of the gh op builder and withGhFailureNet, adds its own input bounds and identifier checks, and edits no gh file. Each op has its approval class. docs/plans/tool-registry.md lists the tools, the scope amendment to ac1 (excluded commands and forms, unsupported operations) and the recorded success text of the project mutations. The sc2 amendment proposed by the LLD records the run-time-checked typing of family tools. No existing tool, its id, schema or class changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the jira folder with the schemas, input bounds and checks, readers, argv, executor and failure mapper, with unit tests beside them, using output recorded from the real acli",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the five op tables and the family definer, with the coverage table and its independent required-operation inventory",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add registerJiraTools and call it from registerBuiltinTools after registerGhTools",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "steps 1 and 2 merged"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Run the gated live probes once under INSRC_LIVE_TESTS=1, including the disposable-project probe, and store the recorded success text of each project mutation as fixtures that the readers are tested against",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 3 merged",
+            "a signed-in acli",
+            "a company-managed source project key, a scratch project key and a lead email"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Document the five tools, their classes and the recorded project mutation text in docs/plans/tool-registry.md",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive. No existing tool id, schema, approval class or file changes, and nothing under builtins/gh is edited, so every gh and git caller is unaffected. A caller that does not use the new ids sees only five more tools in the listing.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Reuse the exported schema and rule functions of the s5 op builder, with Jira's own argv, input checks, executor and answer builders",
+        "oneLineSummary": "Five Jira family tools whose op tables and field rules come from the exported functions of src/daemon/tools/builtins/gh/op-table.ts, with Jira-owned input bounds, identifier checks, executor and answer readers; no gh file is edited.",
+        "approach": "A new src/daemon/tools/builtins/jira/ folder defines each op as an OpDef whose out kind is always 'custom'; Jira adds jiraInputSchema, normalizeKeys and checkJiraValues because the builder lacks maximum, maxItems, deduplication and a flag-value dash check, and passes free text as '--flag=value'. defineJiraFamily replaces the 'gh' head with 'acli', runs acliExec, maps failures with jiraFailureOf (reader failures are rejected), wraps the tool with withGhFailureNet and returns a GhFamilyTool exactly as the 22 approved gh families do, so callTool's static types are plain TSchema and the shapes are enforced at run time: the input check before, and the executor's output check after, where data outside the union is the executor's schema-mismatch. The LLD proposes an sc2 amendment recording that family tools are run-time-checked and typed as TSchema for callTool. 32 ops in five tools; jira_project create takes a required fromProject; the exclusions are an explicit amendment to ac1 recorded in docs/plans/tool-registry.md and approved with the LLD.",
+        "pros": [
+          "Smallest change that fully meets the Story: nothing in the gh folder is edited, so the 22 gh families and the 46 gh tools cannot regress",
+          "The op tables, the literal-op output union and the tests of the gh families are reused as they are",
+          "The Jira-specific code is only what acli needs and what the builder lacks"
+        ],
+        "cons": [
+          "builtins/jira imports from builtins/gh, a direction a reader may not expect",
+          "defineJiraFamily repeats about forty lines of the flow of defineGhFamily",
+          "Jira carries its own bounds and identifier checks that gh families do not have, until the builder is generalised",
+          "callers get no concrete compile-time input or output types, as with the gh families; this needs the sc2 amendment"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Move the op builder to a CLI-neutral folder and make the executor an adapter",
+        "oneLineSummary": "Extract op-table.ts to a shared builtins/cli-family module whose defineFamily takes a CLI adapter, and make gh and Jira two adapters.",
+        "approach": "Move the neutral parts of op-table.ts into a new module, add maximum, maxItems, deduplication and value checks to the builder, give defineFamily an adapter, rewrite defineGhFamily on top of it, and re-point the 22 gh family tools and the tests. A neutral builder could also carry concrete per-family types, which would meet sc2 without an amendment.",
+        "pros": [
+          "One builder for every CLI family and no cross-folder reach",
+          "The bounds and value checks would be fixed for gh as well, and concrete per-family types could be added once for all",
+          "The next CLI family (the git long tail of s8) can use the adapter too"
+        ],
+        "cons": [
+          "Edits the s5 code that was just approved, with 22 tools and about 15 test files to re-point, for a Story that needs only a part of it",
+          "s8 is not designed yet, so the adapter shape would be guessed",
+          "A larger blast radius for a gh regression than the Story justifies"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Gives the cleanest end state and could meet sc2 at compile time for every family, but it rewrites approved s5 code and its tests for a Story that needs only part of the builder, and designs an adapter before s8 exists; sc5 is partial because the gh failure mapping would move behind the adapter."
+      },
+      {
+        "id": "a3",
+        "name": "One hand-written typed tool per Jira operation",
+        "oneLineSummary": "About thirty tools (jira_workitem_view, jira_workitem_transition, jira_project_list, ...), each with its own input and output schema.",
+        "approach": "Each operation is a Tool with its own typebox input (with its own maximum and maxItems), output schema, approval class and execute that builds the acli argv and calls a shared acliExec; ids are jira_<family>_<operation>. Each tool would have concrete Static input and output types.",
+        "pros": [
+          "Each tool is simple to read and to type for callers, with concrete compile-time types and no sc2 amendment",
+          "No dependence on the s5 builder"
+        ],
+        "cons": [
+          "About thirty tools with repeated rules (key lists, --yes, finite limits, identifier checks, exactly-one-of), which is what the op table removed",
+          "A larger tool surface in the model's tool list than five families",
+          "The per-op rules must be hand-written and tested thirty times"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Satisfies every criterion including concrete compile-time types and needs no sc2 amendment, but repeats the key list, --yes, limit, identifier and exactly-one-of rules in about thirty tools and grows the model's tool list; the op table was built to avoid exactly that."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The sc2 amendment proposed in s4 (fieldAdd, breaking false: family tools are checked at run time and typed for callTool as TSchema) must be filed and approved with this LLD; adding concrete per-family types for gh and Jira together is left to a later Story (alternative a2 or a hand-written Static type per family).",
+      "ep3: the invariants cite the schema's c<number> ids; the supporting s1 analyze bundles (approval, op builder and helpers) are not named in the field itself.",
+      "The exact success text of project create, update, restore, archive and delete is unknown until the gated disposable-project probe records it; the readers accept the success mark only until then. The probe needs a company-managed source project key, a scratch project key and a lead email from the user."
+    ],
+    "componentDependencyDefinition": {
+      "id": "jira-deps",
+      "narrative": "The new jira folder depends one way on the gh op builder and failure net and on the shell helper; nothing in gh depends on jira.",
+      "components": [
+        {
+          "id": "jira",
+          "label": "builtins/jira",
+          "description": "The five Jira family tools, their input bounds, readers, executor and failure mapper",
+          "path": "src/daemon/tools/builtins/jira"
+        },
+        {
+          "id": "optable",
+          "label": "gh/op-table",
+          "description": "Exported OpDef, schema builders and input rules reused as they are",
+          "path": "src/daemon/tools/builtins/gh/op-table.ts"
+        },
+        {
+          "id": "ghhelpers",
+          "label": "gh/helpers",
+          "description": "withGhFailureNet, the failure net that wraps any typed tool",
+          "path": "src/daemon/tools/builtins/gh/helpers.ts"
+        },
+        {
+          "id": "shell",
+          "label": "shell-helper",
+          "description": "runShellBytes, the spawn with closed standard input, byte cap and time limit",
+          "path": "src/daemon/tools/shell-helper.ts"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "jira",
+          "to": "optable",
+          "label": "imports schema builders and input rules"
+        },
+        {
+          "from": "jira",
+          "to": "ghhelpers",
+          "label": "wraps each tool in withGhFailureNet"
+        },
+        {
+          "from": "jira",
+          "to": "shell",
+          "label": "runs acli"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S006/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md",
+      "quotedText": "acli inventory for s6"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/op-table.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/helpers.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/approval-policy.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/tools/shell-helper.ts"
+    }
+  ]
+}

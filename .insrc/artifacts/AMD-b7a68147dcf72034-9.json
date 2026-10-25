@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-c6be82e2-7aa6-4624-92af-7251b68f5b54",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:38:29.830Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "f62657857dae07fe448d2d42a692cc6e0dab3dd5e5668ee4cdb720f01db2106e",
+        "at": "2026-10-25T17:57:14.345Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:26:10.074Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-9",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "nonFunctional.retarget",
+      "property": "performance",
+      "oldTarget": "gh commands time out after 120 seconds (decided with the user; the daemon is expected to become multi-threaded so a slow gh will not block it). The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+      "newTarget": "Each gh job has its own time limit from a table keyed by tool id and op, never shorter than the tool has today: reads 30 s (gh_pr_diff and gh_run_view 60 s, searches 60 s), changes 30 s by default, gh_issue_create 60 s, gh_pr_create 90 s, gh_pr_merge and gh_release_create 180 s, gh_repo_create and gh_repo_fork 120 s, downloads and uploads 300 s, gh_repo_clone 600 s, codespace create and rebuild 600 s (decided with the user on 2026-10-25; the daemon is expected to become multi-threaded so a slow gh will not block it). A timed-out call names the command and the limit, and a changing call adds that its outcome is unknown. The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+      "rationale": "Decided with the user in chat on 2026-10-25 (docs/plans/tool-registry.md, s5 decisions): one 120 s line shortens a clone or a codespace create and over-allows a plain read, so the limit follows the job."
+    },
+    "rationale": "Records the user decision of 2026-10-25 that the gh time limit follows the job; Story s5 built it (ghTimeoutMs in src/daemon/tools/builtins/gh/helpers.ts and the limits of each op).",
+    "proposedBy": {
+      "workflow": "build",
+      "runId": "s5-t12",
+      "storyId": "s5",
+      "stepId": "t12"
+    },
+    "proposedAt": "2026-10-25T17:38:29.828Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md"
+    }
+  ]
+}

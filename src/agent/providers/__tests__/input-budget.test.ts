@@ -34,7 +34,7 @@ test('a CliProvider reports the budget it is given (absent when not given); Olla
 	assert.equal(budget(new OllamaProvider()), undefined);
 });
 
-test("a provider built through the registry for a Codex model reports the definitions file's chars limit; a claude model none", () => {
+test("a provider built through the registry for a Codex model reports the definitions file's chars limit; haiku (a token limit) none", () => {
 	const store = mkdtempSync(join(tmpdir(), 'input-budget-'));
 	try {
 		_setApprovedModelsPathForTests(join(store, 'approved-models.json'));
@@ -44,7 +44,9 @@ test("a provider built through the registry for a Codex model reports the defini
 		assert.equal(codex.inputLimit?.unit, 'chars');
 		const built = familyProvider(registry, 'cli-codex', registry.find('cli-codex', codex.id));
 		assert.equal(budget(built), codex.inputLimit!.max);
-		assert.equal(budget(familyProvider(registry, 'cli-claude', registry.find('cli-claude', 'opus'))), undefined);
+		const haiku = registry.find('cli-claude', 'haiku');
+		assert.equal(haiku?.inputLimit?.unit, 'tokens', 'the shipped haiku states a token limit');
+		assert.equal(budget(familyProvider(registry, 'cli-claude', haiku)), undefined);
 	} finally {
 		_setApprovedModelsPathForTests(undefined);
 		_resetModelRegistryForTests();

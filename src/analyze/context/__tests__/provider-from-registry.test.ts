@@ -46,7 +46,12 @@ const FIXTURE = {
 	families: [
 		{
 			id: 'cli-claude', cliKind: 'codex', displayName: 'Claude (codex binary)',
-			models: [{ id: 'claude-z', aliases: ['z'], efforts: ['low'] }, { id: 'claude-y', efforts: [] }],
+			models: [
+				{ id: 'claude-z', aliases: ['z'], efforts: ['low'] },
+				{ id: 'claude-y', efforts: [] },
+				// Like the shipped haiku: a token limit, which is not a chars input budget.
+				{ id: 'claude-h', aliases: ['haiku'], efforts: ['low'], inputLimit: { unit: 'tokens', max: 1000000 } },
+			],
 			tierDefaults: { core: { model: 'z' }, mid: { model: 'z' }, cheap: { model: 'claude-y' } },
 			summariserModel: 'claude-y',
 		},
@@ -115,6 +120,10 @@ test("provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider g
 	assert.equal(noEffort.effort, undefined);
 	const routed = buildShaperProvider(config({ core: { runner: 'cli-claude', model: 'claude-y' } }), { registry, roleRunner: 'cli-claude', roleModel: 'claude-y', roleEffort: 'turbo' }) as Cli;
 	assert.equal(routed.effort, undefined);
+
+	// A model whose limit is in tokens (haiku) gets no chars budget.
+	const haiku = buildShaperProvider(config({ core: { runner: 'cli-claude', model: 'haiku' } }), { registry }) as Cli;
+	assert.deepEqual([haiku.defaultModel, haiku.inputBudgetChars], ['claude-h', undefined]);
 
 	// A Codex model's chars limit is its input budget.
 	const codex = buildShaperProvider(config({ core: { runner: 'cli-codex', model: 'gpt-x', effort: 'turbo' } }), { registry }) as Cli;

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -51,3 +51,53 @@ Run at 2026-10-25T20:01:03.859Z on commit `59060e68a`. Tests check: **passed**. 
 | `src/config/__tests__/config-catalog-defs.test.ts` | 0 | 2 | 1.1 s |  |
 | `src/daemon/__tests__/model-catalog-asset.test.ts` | 0 | 2 | 0.6 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 13.2 s |  |
+
+## t2
+
+Run at 2026-10-25T20:07:53.406Z on commit `2968540e2`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: reconcile-defs.test.ts: a fresh config is filled with a fixture's differing defaults including non-empty default efforts; byRepo tiers removed and reported per repo and tier, tasks and coreFloor kept; ollamaNumCtx pruned**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reconcile-defs.test.ts: a fresh config is filled with a fixture's differing defaults including non-empty default efforts; byRepo tiers removed and reported per repo and tier, tasks and coreFloor kept; ollamaNumCtx pruned | `src/config/__tests__/reconcile-defs.test.ts` |
+| pass | captured legacy config → migrated to the flat models.* surface, residue pruned, orphan survives | `src/config/__tests__/config-reconcile.test.ts` |
+
+**unit: settings-cache-reset.test.ts: a local and an analyze config cached before reconcile return the reconciled values after the production resets**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | settings-cache-reset.test.ts: a local and an analyze config cached before reconcile return the reconciled values after the production resets | `src/config/__tests__/settings-cache-reset.test.ts` |
+
+**unit: embedder-lazy.test.ts: importing embedder.ts calls no settings loader; the first getter does; lifecycle.ts and reembed use the getters**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | embedder-lazy.test.ts: importing embedder.ts calls no settings loader; the first getter does; lifecycle.ts and reembed use the getters | `src/indexer/__tests__/embedder-lazy.test.ts` |
+| pass | every ollama.embed(...) call in the indexer embedder passes keep_alive | `src/indexer/__tests__/embedder-keepalive.test.ts` |
+
+**integration: boot-cold-import.test.ts: both catalog chains import with a valid, missing, malformed and structurally invalid INSRC_MODEL_CATALOG_DIR; registry first read in main(); invalid files refused with the named error before reconcile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | boot-cold-import.test.ts: both catalog chains import with a valid, missing, malformed and structurally invalid INSRC_MODEL_CATALOG_DIR | `src/daemon/__tests__/boot-cold-import.test.ts` |
+| pass | boot-cold-import.test.ts: registry first read in main(); invalid files refused with the named error before reconcile; a valid alternate file is what the reconcile fills | `src/daemon/__tests__/boot-cold-import.test.ts` |
+
+**unit: session-source-inventory suite passes after t2**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/config-reconcile.test.ts` | 0 | 28 | 3.1 s |  |
+| `src/config/__tests__/reconcile-defs.test.ts` | 0 | 1 | 1.6 s |  |
+| `src/config/__tests__/settings-cache-reset.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/daemon/__tests__/boot-cold-import.test.ts` | 0 | 2 | 7.3 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 15.1 s |  |
+| `src/indexer/__tests__/embedder-keepalive.test.ts` | 0 | 2 | 0.8 s |  |
+| `src/indexer/__tests__/embedder-lazy.test.ts` | 0 | 1 | 0.7 s |  |

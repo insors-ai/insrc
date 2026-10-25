@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ACLI_UNKNOWN_OUTCOME, acliExec, jiraFailureOf } from '../exec.js';
 import type { AcliOutcome } from '../exec.js';
+import { _resetRegistryForTests, registerTool } from '../../../registry.js';
+import { executeTool } from '../../../executor.js';
 import { installFakeAcli } from './_fakeacli.js';
+import { deps, sampleFamily } from './_sample.js';
 
 const base: AcliOutcome = { stdout: '', stderr: '', code: 1, spawnError: false, timedOut: false, stdoutTruncated: false, stderrOverflow: false, aborted: false, limitMs: 30_000, command: 'acli jira workitem view IN-1' };
 const out = (over: Partial<AcliOutcome>): AcliOutcome => ({ ...base, ...over });
@@ -129,4 +132,36 @@ test('jira-failures.test.ts: not installed, not signed in, network probe, time-o
     assert.equal(o.stdout.trim(), '{"ok":true}');
     assert.equal(o.probe, undefined);
   } finally { fake.restore(); }
+});
+
+test('jira-failures.test.ts: reader failures are rejected through executeTool', async () => {
+  const batchFailure = JSON.stringify({ results: [{ status: 'FAILURE', message: 'Issue does not exist or you do not have permission to see it.', id: 'IN-999' }], totalCount: 1, successCount: 0 });
+  const cases: [string, Record<string, unknown>, string, RegExp][] = [
+    ['a FAILURE result at exit 0', { op: 'edit', keys: ['IN-999'], summary: 's' }, batchFailure, /IN-999: Issue does not exist/],
+    ['an unreadable batch', { op: 'edit', keys: ['IN-1'], summary: 's' }, '✓ done', /did not print a batch result/],
+    ['an unreadable count', { op: 'count', jql: 'x' }, 'no number here', /did not print the number of work items/],
+    ['an unreadable work item', { op: 'view', key: 'IN-1' }, 'not json', /did not print a work item/],
+  ];
+  _resetRegistryForTests();
+  registerTool(sampleFamily());
+  try {
+    for (const [what, input, stdout, re] of cases) {
+      const fake = installFakeAcli('ok', { stdout });
+      try {
+        const r = await executeTool('jira_sample', input, deps());
+        assert.equal(r.success, false, what);
+        assert.equal(r.failure?.kind, 'rejected', what);
+        assert.match(r.failure?.message ?? '', re, what);
+        assert.equal(r.failure?.original, stdout.length > 2000 ? undefined : stdout, `${what}: acli's text is kept`);
+        assert.equal(fake.calls().length, 1, what);
+      } finally { fake.restore(); }
+    }
+    // acli's own failure text on a change keeps the unknown-outcome sentence through the executor
+    const fake = installFakeAcli('fail-reject');
+    try {
+      const r = await executeTool('jira_sample', { op: 'edit', keys: ['IN-1'], summary: 's' }, deps());
+      assert.equal(r.failure?.kind, 'rejected');
+      assert.match(r.failure?.message ?? '', new RegExp(ACLI_UNKNOWN_OUTCOME));
+    } finally { fake.restore(); }
+  } finally { _resetRegistryForTests(); }
 });

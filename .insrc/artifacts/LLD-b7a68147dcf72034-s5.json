@@ -92,6 +92,13 @@
         "choice": "Accept with preview notice",
         "rationale": "As in the approved LLD; the user can reverse it at plan approval.",
         "resolvedAt": "2026-10-25T13:57:52.406Z"
+      },
+      "q77aea454": {
+        "question": "No insrc_analyze_step bundle was run for this LLD; the bundles come from direct reads of the gh tool files, the installed gh 2.46.0 help and --json listings, and the tools folder.",
+        "status": "resolved",
+        "choice": "Proceed with documented evidence gap",
+        "rationale": "The exact gh capabilities come from the installed gh help and direct reads, which an analyzer pass would not improve; the build runs a code review.",
+        "resolvedAt": "2026-10-25T14:06:54.946Z"
       }
     }
   },

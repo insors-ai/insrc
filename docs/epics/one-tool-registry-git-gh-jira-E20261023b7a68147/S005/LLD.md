@@ -468,6 +468,8 @@ Type and classify only the 46 existing gh tools here and assign every other oper
   - **resolved**: Keep rows untyped — gh does not document the columns and the sign-in lacks the scopes to verify them. _(2026-10-25T13:57:21.314Z)_
 - `q042cd74a` — codespace create always accepts the permissions the devcontainer requests (--default-permissions), and the notice is in the approval preview content; confirm this is acceptable, since the alternative would be to refuse codespaces that request extra permissions.
   - **resolved**: Accept with preview notice — As in the approved LLD; the user can reverse it at plan approval. _(2026-10-25T13:57:52.406Z)_
+- `q77aea454` — No insrc_analyze_step bundle was run for this LLD; the bundles come from direct reads of the gh tool files, the installed gh 2.46.0 help and --json listings, and the tools folder.
+  - **resolved**: Proceed with documented evidence gap — The exact gh capabilities come from the installed gh help and direct reads, which an analyzer pass would not improve; the build runs a code review. _(2026-10-25T14:06:54.946Z)_
 
 ## Citations
 

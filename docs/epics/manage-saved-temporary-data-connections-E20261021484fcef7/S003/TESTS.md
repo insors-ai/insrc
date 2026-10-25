@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 62 pass, 5 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -266,22 +266,16 @@ Run at 2026-10-25T20:11:53.125Z on commit `eef7a2a3f`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-10-25T20:26:16.511Z on commit `ca3e12d03`. Tests check: **failed**. 0 pass, 5 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
-
-named test cases that did not pass: fail: 'CM-S3-FILES: native and converted readers use distinct owner root revision resources at the production 256MiB budget without writes or INSTALL' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: unavailable Arrow Feather and overbudget BSON refuse explicitly without source deletion or cache writes' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: owner end interrupts actual private file work and retains late allocations for cleanup' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: session end interrupts a running native query and drains all private execution counters' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: expiry during engine opening retains and closes the allocation before constructor refusal settles' in src/daemon/db/__tests__/session-file-resources.test.ts
+Run at 2026-10-25T20:30:25.887Z on commit `47507bad6`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-FILES: native/converted resource identity,256MiB budget, zero spill/cache/INSTALL and cancellation**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| fail | CM-S3-FILES: native and converted readers use distinct owner root revision resources at the production 256MiB budget without writes or INSTALL | `src/daemon/db/__tests__/session-file-resources.test.ts` |
-| fail | CM-S3-FILES: unavailable Arrow Feather and overbudget BSON refuse explicitly without source deletion or cache writes | `src/daemon/db/__tests__/session-file-resources.test.ts` |
-| fail | CM-S3-FILES: owner end interrupts actual private file work and retains late allocations for cleanup | `src/daemon/db/__tests__/session-file-resources.test.ts` |
-| fail | CM-S3-FILES: session end interrupts a running native query and drains all private execution counters | `src/daemon/db/__tests__/session-file-resources.test.ts` |
-| fail | CM-S3-FILES: expiry during engine opening retains and closes the allocation before constructor refusal settles | `src/daemon/db/__tests__/session-file-resources.test.ts` |
+| pass | CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases | `src/daemon/db/__tests__/session-file-resources.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-file-resources.test.ts` | 1 | 5 | 1.7 s |  |
+| `src/daemon/db/__tests__/session-file-resources.test.ts` | 0 | 1 | 2.1 s |  |

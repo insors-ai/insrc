@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T20:26:16.511Z",
+    "updatedAt": "2026-10-25T20:30:25.887Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -948,9 +948,9 @@
       },
       {
         "taskId": "t12",
-        "commit": "ca3e12d03",
-        "ranAt": "2026-10-25T20:26:16.511Z",
-        "testsPassed": false,
+        "commit": "47507bad6",
+        "ranAt": "2026-10-25T20:30:25.887Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "CM-S3-FILES: native/converted resource identity,256MiB budget, zero spill/cache/INSTALL and cancellation",
@@ -959,28 +959,8 @@
             "cases": [
               {
                 "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-                "title": "CM-S3-FILES: native and converted readers use distinct owner root revision resources at the production 256MiB budget without writes or INSTALL",
-                "result": "fail"
-              },
-              {
-                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-                "title": "CM-S3-FILES: unavailable Arrow Feather and overbudget BSON refuse explicitly without source deletion or cache writes",
-                "result": "fail"
-              },
-              {
-                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-                "title": "CM-S3-FILES: owner end interrupts actual private file work and retains late allocations for cleanup",
-                "result": "fail"
-              },
-              {
-                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-                "title": "CM-S3-FILES: session end interrupts a running native query and drains all private execution counters",
-                "result": "fail"
-              },
-              {
-                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-                "title": "CM-S3-FILES: expiry during engine opening retains and closes the allocation before constructor refusal settles",
-                "result": "fail"
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
               }
             ],
             "files": []
@@ -989,35 +969,18 @@
         "files": [
           {
             "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1690,
+            "durationMs": 2111,
             "titles": [
               {
-                "title": "CM-S3-FILES: native and converted readers use distinct owner root revision resources at the production 256MiB budget without writes or INSTALL",
-                "result": "fail"
-              },
-              {
-                "title": "CM-S3-FILES: unavailable Arrow Feather and overbudget BSON refuse explicitly without source deletion or cache writes",
-                "result": "fail"
-              },
-              {
-                "title": "CM-S3-FILES: owner end interrupts actual private file work and retains late allocations for cleanup",
-                "result": "fail"
-              },
-              {
-                "title": "CM-S3-FILES: session end interrupts a running native query and drains all private execution counters",
-                "result": "fail"
-              },
-              {
-                "title": "CM-S3-FILES: expiry during engine opening retains and closes the allocation before constructor refusal settles",
-                "result": "fail"
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
               }
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: fail: 'CM-S3-FILES: native and converted readers use distinct owner root revision resources at the production 256MiB budget without writes or INSTALL' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: unavailable Arrow Feather and overbudget BSON refuse explicitly without source deletion or cache writes' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: owner end interrupts actual private file work and retains late allocations for cleanup' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: session end interrupts a running native query and drains all private execution counters' in src/daemon/db/__tests__/session-file-resources.test.ts; fail: 'CM-S3-FILES: expiry during engine opening retains and closes the allocation before constructor refusal settles' in src/daemon/db/__tests__/session-file-resources.test.ts"
+        ]
       }
     ]
   }

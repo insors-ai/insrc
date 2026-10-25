@@ -270,7 +270,6 @@ const ROWS3: Row3[] = [
 	[ghCodespaceTool, { op: 'stop', codespace: 'cs1', org: 'acme', user: 'u' }, 'codespace stop -c cs1 -o acme -u u', '', 'common', 60],
 	[ghCodespaceTool, { op: 'rebuild', codespace: 'cs1', full: true }, 'codespace rebuild -c cs1 --full', '', 'common', 600],
 	[ghCodespaceTool, { op: 'delete', codespace: 'cs1', force: true }, 'codespace delete -c cs1 -f', '', 'destructive', 60],
-	[ghCodespaceTool, { op: 'delete', all: true, days: 30 }, 'codespace delete --all --days 30', '', 'destructive', 60],
 	[ghCodespaceTool, { op: 'cp', codespace: 'cs1', sources: ['a.txt', 'dir'], dest: 'remote:/tmp/', recursive: true, profile: 'p' }, 'codespace cp -c cs1 -r -p p a.txt dir remote:/tmp/', '', 'common', 300],
 	[ghCodespaceTool, { op: 'ports-visibility', codespace: 'cs1', ports: ['8080:public', '3000:org'] }, 'codespace ports visibility 8080:public 3000:org -c cs1', '', 'destructive', 30],
 	[ghConfigTool, { op: 'get', key: 'git_protocol', host: 'github.com' }, 'config get git_protocol -h github.com', 'ssh\n', 'none', 30],

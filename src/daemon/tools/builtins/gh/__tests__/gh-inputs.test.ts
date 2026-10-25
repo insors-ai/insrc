@@ -106,7 +106,7 @@ test("gh-inputs.test.ts: gist rename's three positionals, gist edit without cont
 	} finally { gh.restore(); }
 });
 
-test('gh-inputs.test.ts: auth logout and switch need hostname and user; codespace ops need codespace except list and create; delete needs exactly one of codespace and all', async () => {
+test('gh-inputs.test.ts: auth logout and switch need hostname and user; codespace ops need codespace except list and create; delete needs codespace and offers no all', async () => {
 	const gh = installFakeGh('ok', '');
 	try {
 		const refused = async (tool: typeof ghAuthTool | typeof ghCodespaceTool, input: Record<string, unknown>, pattern: RegExp) => {
@@ -128,12 +128,10 @@ test('gh-inputs.test.ts: auth logout and switch need hostname and user; codespac
 		await refused(ghCodespaceTool, { op: 'ports-visibility', ports: ['80:public'] }, /needs the field codespace/);
 		for (const op of ['list', 'create']) { assert.equal(ghCodespaceTool.ops.find(o => o.name === op)!.required?.includes('codespace') ?? false, false, op); }
 		await refused(ghCodespaceTool, { op: 'create' }, /needs the field repo/);
-		// delete is the one op that may go without a codespace name: the LLD gives it as `codespace | all`, exactly one, and the
-		// plan's test text says 'delete needs exactly one of codespace and all'; days only with all
-		await refused(ghCodespaceTool, { op: 'delete' }, /exactly one of codespace, all/);
-		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', all: true }, /exactly one of codespace, all/);
-		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', days: 3 }, /days only together with all/);
-		assert.equal((await ghCodespaceTool.execute({ op: 'delete', all: true, days: 3 }, deps)).success, true);
+		// delete names the codespace like every other op; delete-all is not offered
+		await refused(ghCodespaceTool, { op: 'delete' }, /needs the field codespace/);
+		await refused(ghCodespaceTool, { op: 'delete', all: true }, /does not accept the field all/);
+		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', days: 3 }, /does not accept the field days/);
 		assert.equal((await ghCodespaceTool.execute({ op: 'delete', codespace: 'c' }, deps)).success, true);
 		// cp needs at least one source; port pairs are port:visibility
 		assert.equal(validateAgainstSchema(ghCodespaceTool.inputSchema as unknown as StructuredSchema, { op: 'cp', codespace: 'c', sources: [], dest: 'd' }).ok, false);

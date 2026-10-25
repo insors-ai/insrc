@@ -85,7 +85,7 @@ function withClock<T>(times: readonly number[], fn: () => T): T {
 	try { return fn(); } finally { Date.now = real; }
 }
 
-test('parkPlan refuses when the actor holds the unit, for a Task, with no issue or holder, with nothing to park, and for a supplied token of another unit, actor or no owner, and assembles a run or draft-only checkpoint otherwise', () => {
+test('parkPlan refuses when the actor holds the unit, for a Task, with no issue or holder, with nothing to park, and for a supplied token of another unit, actor or no owner, and assembles a run or draft-only checkpoint otherwise', async () => {
 	const env = mkRepo();
 	try {
 		const { repo, unit } = env;
@@ -121,10 +121,10 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		assert.match(reasonOf(plan()), /no draft or run to hand over/);
 
 		// a supplied token must be the actor's own run for this unit
-		const mine = saveState(payload(repo, 'wf-mine'), owned('alice'));
-		const other = saveState(payload(repo, 'wf-other-story', 'awaiting_plan', 's2'), owned('alice'));
-		const stranger = saveState(payload(repo, 'wf-carols'), owned('carol'));
-		const ownerless = saveState(payload(repo, 'wf-ownerless'), undefined);
+		const mine = await saveState(payload(repo, 'wf-mine'), owned('alice'));
+		const other = await saveState(payload(repo, 'wf-other-story', 'awaiting_plan', 's2'), owned('alice'));
+		const stranger = await saveState(payload(repo, 'wf-carols'), owned('carol'));
+		const ownerless = await saveState(payload(repo, 'wf-ownerless'), undefined);
 		assert.match(reasonOf(plan(unit, { runToken: 'no-such-token' })), /not a live run/);
 		assert.match(reasonOf(plan(unit, { runToken: other })), /belongs to another unit/);
 		assert.match(reasonOf(plan(unit, { runToken: stranger })), /belongs to carol/);
@@ -141,7 +141,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		const bare = mkdtempSync(join(tmpdir(), 'insrc-park-plan-nogit-'));
 		try {
 			inject('bob');
-			saveState(payload(bare, 'wf-nogit'), owned('alice'));
+			await saveState(payload(bare, 'wf-nogit'), owned('alice'));
 			const nogit: UnitRef = { ...unit, repoPath: bare };
 			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
 			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps())), /cannot read the repository's history/);
@@ -150,7 +150,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 
 		// an owned live run becomes a run checkpoint carrying the owner, the upstream snapshot and the repository identity
 		_clearWorkflowStateStoreForTests();
-		saveState(payload(repo, 'wf-1'), owned('alice'));
+		await saveState(payload(repo, 'wf-1'), owned('alice'));
 		const run = plan();
 		assert.equal(run.ok, true);
 		if (!run.ok) return;
@@ -179,10 +179,10 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		// two owned runs: the most recently touched one is chosen and named
 		_clearWorkflowStateStoreForTests();
 		const base = Date.now();
-		const first = withClock([base + 1000], () => saveState(payload(repo, 'wf-older'), owned('alice')));
-		withClock([base + 2000], () => saveState(payload(repo, 'wf-newer'), owned('alice')));
+		const first = await withClock([base + 1000], () => saveState(payload(repo, 'wf-older'), owned('alice')));
+		await withClock([base + 2000], () => saveState(payload(repo, 'wf-newer'), owned('alice')));
 		assert.equal((plan() as { runId?: string }).runId, 'wf-newer');
-		withClock([base + 3000], () => loadState(first));   // touching the older one makes it the newest
+		await withClock([base + 3000], () => loadState(first));   // touching the older one makes it the newest
 		assert.equal((plan() as { runId?: string }).runId, 'wf-older');
 		assert.equal(plan(unit, { runToken: first }).ok && (plan(unit, { runToken: first }) as { runId?: string }).runId, 'wf-older', 'a supplied token wins');
 
@@ -203,7 +203,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		assert.equal(validateCheckpoint(JSON.parse(JSON.stringify(draft.checkpoint)), { epicHash: HASH, storyId: 's1' }).ok, true);
 
 		// a run and a draft together: the run checkpoint lists the draft as parked with it
-		saveState(payload(repo, 'wf-with-draft', 'awaiting_synthesize'), owned('alice'));
+		await saveState(payload(repo, 'wf-with-draft', 'awaiting_synthesize'), owned('alice'));
 		const both = plan();
 		assert.equal(both.ok && both.variant, 'run');
 		assert.deepEqual(both.ok && both.checkpoint.artifactPaths, [`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`]);

@@ -15,7 +15,8 @@
  *                + DEPTH POLICY BAND + TASK CATALOG +
  *                final emit instruction
  *   3. Call OllamaProvider.completeStructured against
- *      PLAN_TASK_SCHEMA with retry budget for wire-layer faults.
+ *      the call's wire schema (PLAN_TASK_SCHEMA with codex-expressible
+ *      params, ISSUE-8d39ef09) with retry budget for wire-layer faults.
  *   4. Stamp `parentTaskPath` from the call site (NOT from the LLM).
  *      INV-15 enforces presence-iff-not-root.
  *   5. Run validatePlan(plan, catalog, { focused, isChildPlan }).
@@ -50,11 +51,11 @@ import {
 import { invariantFixHint, renderFixHint } from './invariant-fix-hints.js';
 import { renderCatalog, renderDepthPolicy } from './render-catalog.js';
 import {
-	PLAN_TASK_SCHEMA,
 	PLAN_SCHEMA_VERSION,
 	validatePlanShapeWithErrors,
 } from './schema.js';
 import { getTemplatesForTarget } from './templates/registry.js';
+import { decodePlanParams, encodePlanParams, plannerWireSchema, type PlannerWireSchema } from './wire-schema.js';
 import type {
 	PlanBuilderInput,
 	PlanBuilderOpts,
@@ -162,6 +163,10 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		? catalogArg
 		: getTemplatesForTarget(intent.target);
 
+	// The schema sent to the model: PLAN_TASK_SCHEMA with each task's params
+	// in a form codex's strict grammar can express (ISSUE-8d39ef09).
+	const wire = plannerWireSchema(catalog);
+
 	// (2) Prompt load.
 	const promptContent = loadPromptFile();
 
@@ -175,6 +180,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		bundleMd,
 		intent,
 		catalog,
+		wire,
 		parentTaskPath,
 	});
 
@@ -211,7 +217,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		try {
 			raw = await provider.completeStructured<PlanTask>(
 				messages,
-				PLAN_TASK_SCHEMA as Record<string, unknown>,
+				wire.schema as Record<string, unknown>,
 				{
 					maxAttempts:     cfg.shaper.structuredOutputRetries,
 					disableThinking: true,
@@ -225,6 +231,11 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		} catch (err) {
 			throw classifyError(err);
 		}
+
+		// Back to the templates' own params: wire nulls removed, JSON-string slots parsed.
+		const decoded = decodePlanParams(raw, wire, catalog);
+		if (!decoded.ok) throw new PlanBuilderSchemaUnrecoverable(decoded.errors);
+		raw = decoded.plan;
 
 		// Stamp parentTaskPath from the call site (INV-15). The LLM
 		// may or may not have emitted it; either way the call site is
@@ -301,7 +312,8 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 			'Plan Builder validation failure -- corrective retry',
 		);
 
-		messages = appendCorrectionTurn(messages, stamped, failure, priorFailures);
+		// Echoed in wire form, so the retry's example matches what the model must emit.
+		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures);
 	}
 
 	throw new PlanBuilderExhausted(attempts, failures);
@@ -316,11 +328,13 @@ interface BuildMessagesArgs {
 	readonly bundleMd:         string;
 	readonly intent:           PlanBuilderInput['intent'];
 	readonly catalog:          PlanBuilderInput['catalog'];
+	/** The schema this call sends: printed as the output shape, its slots listed in the catalog. */
+	readonly wire:             PlannerWireSchema;
 	readonly parentTaskPath?:  string | undefined;
 }
 
 function buildInitialMessages(args: BuildMessagesArgs): LLMMessage[] {
-	const { promptContent, bundleMd, intent, catalog, parentTaskPath } = args;
+	const { promptContent, bundleMd, intent, catalog, wire, parentTaskPath } = args;
 
 	const systemContent = `${promptContent.trimEnd()}\n\n${CONTRACT_FOOTER_MD}`;
 
@@ -345,11 +359,11 @@ function buildInitialMessages(args: BuildMessagesArgs): LLMMessage[] {
 		renderDepthPolicy(intent.scope, intent.focused) +
 		`\n` +
 		`## TASK CATALOG (emit task ids from here only)\n` +
-		renderCatalog(catalog) +
+		renderCatalog(catalog, wire.slots) +
 		`\n` +
 		`## OUTPUT SHAPE\n` +
 		'```json\n' +
-		JSON.stringify(PLAN_TASK_SCHEMA, null, 2) +
+		JSON.stringify(wire.schema, null, 2) +
 		'\n```\n' +
 		`\n` +
 		`## TASK\n` +

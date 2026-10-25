@@ -27,7 +27,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { familyOf } from '../../../daemon/db/index.js';
+import { analysisConnectionContext } from '../../connection-access.js';
 
 import type {
 	TemplateExecuteArgs,
@@ -35,7 +35,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
-	acquireDataPool,
+	dataConnectionResolver,
 	optionalStringParam,
 	resolveDataScope,
 } from './_shared.js';
@@ -66,22 +66,15 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 		const scope    = await resolveDataScope(args, TEMPLATE_ID);
 		const repoPath = explicit ?? scope.poolPath;
 
-		const pool = await acquireDataPool(repoPath);
-		// reload() is idempotent + cheap; ensures we see edits made to
-		// db-connections.json after the pool was first acquired.
-		await pool.reload();
-		// Under a connection scope, that connection only.
-		const configs = pool.list().filter(c => scope.connectionId === undefined || c.id === scope.connectionId);
+		const configs = (await dataConnectionResolver.list(analysisConnectionContext(repoPath))).filter(c => scope.connectionId === undefined || c.key.id === scope.connectionId);
 
 		const connections: ConnectionRecord[] = configs.map(c => ({
-			id:       c.id,
+			id:       c.key.id,
 			kind:     c.kind,
-			...(c.family !== undefined || familyOf(c.kind) !== undefined
-				? { family: (c.family ?? familyOf(c.kind))! }
-				: {}),
+			family: c.family,
 			...(c.label !== undefined ? { label: c.label } : {}),
-			hasUrl:   c.url  !== undefined,
-			hasPath:  c.path !== undefined,
+			hasUrl:   c.hasUrl === true,
+			hasPath:  c.hasPath === true,
 			...(c.ephemeral === true ? { ephemeral: true as const } : {}),
 		}));
 

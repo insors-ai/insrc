@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "2f4cb54c0df2e9e0",
+    "storyId": "S001",
+    "createdAt": "2026-10-21T10:30:47.316Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix/small (ISSUE-2f4cb54c): material() rebuilds the whole review material on every call; a CPU profile of the frozen daemon put 57 of 60 s there.",
+    "epicCreatedAt": "2026-10-21T10:19:26.552Z",
+    "epicSlug": "build-each-review-adapter-s-material",
+    "updatedAt": "2026-10-21T10:42:01.378Z",
+    "approvedAt": "2026-10-21T10:42:01.601Z"
+  },
+  "body": {
+    "focus": "Each review adapter builds its material once and every caller reads that same material (src/workflow/review-pipeline/code-review.ts modelDimensionAdapter's material()), so a divided review's cost no longer multiplies by its number of calls. Output identical; no caller, signature or contract changes. Test: the material is built once per adapter however many calls read it, and is the same material as before.",
+    "producesLld": false,
+    "commit": "98d296dd",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "modelDimensionAdapter's material() is built on the first read and returned to every later one, instead of rebuilding the whole material per chunk, relation, validation and duplicate-stage call. A test reads it 51 times through a counting spec (coverage and quality): built once, the same object every time, and equal to a fresh adapter's material.",
+    "testRecord": {
+      "md": "docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T10:42:01.378Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T10:42:01.378Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-2f4cb54c0df2e9e0-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T10:42:01.378Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T10:42:01.378Z"
+      }
+    ]
+  }
+}

@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../daemon/server.js';
 import { createStepCallHandler } from '../../daemon/steps/host.js';
 import { STEP_TOOL_NAMES } from '../../shared/step-context.js';
@@ -33,7 +33,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The real IpcServer request handling, served on a temporary socket. */
 async function standInDaemon(stream: StreamHandlers, rpc: RpcHandlers = {}) {
-	const ipc = new IpcServer(rpc, stream);
+	const ipc = new IpcServer(directDispatch(rpc, stream));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-forward-'));
 	const path = join(dir, 'd.sock');
 	const server = createServer((socket: Socket) => {
@@ -166,6 +166,31 @@ test('forwarder progress: frames relayed only with a progress token; the done en
 			assert.equal(last.context.cwd, process.cwd());
 			assert.equal(last.context.client, 'claude');
 			assert.equal(last.context.envRepo, process.env['INSRC_REPO'] !== undefined && process.env['INSRC_REPO'] !== '' ? process.env['INSRC_REPO'] : undefined);
+		} finally { await close(); }
+	} finally {
+		_setForwardConnectForTests(undefined);
+		await daemon.close();
+	}
+});
+
+test('MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame', async () => {
+	const ENVELOPE = { content: [{ type: 'text' as const, text: '{"next":"done"}' }] };
+	// The real step host: the code-review step reports two calls through its progress callback.
+	const host = createStepCallHandler({
+		insrc_code_review_step: async (_args, _signal, progress) => {
+			for (const n of [1, 2]) progress?.({ kind: 'stage', operation: 'codeReview.run', stageId: 'call', stageLabel: `call · adherence · judge reviewer #${n}`, index: n, total: null });
+			return ENVELOPE;
+		},
+	});
+	const daemon = await standInDaemon({ 'step.call': host });
+	_setForwardConnectForTests(daemon.connect);
+	try {
+		const { client, close } = await mcpClient('claude-code');
+		try {
+			const got: (string | undefined)[] = [];
+			const out = await client.callTool({ name: 'insrc_code_review_step', arguments: { phase: 'start', epicHash: 'abcd', storyId: 's1' } }, undefined, { onprogress: (p) => { got.push(p.message); } });
+			assert.deepEqual(out.content, ENVELOPE.content);
+			assert.deepEqual(got, ['▸ call · adherence · judge reviewer #1', '▸ call · adherence · judge reviewer #2']);
 		} finally { await close(); }
 	} finally {
 		_setForwardConnectForTests(undefined);

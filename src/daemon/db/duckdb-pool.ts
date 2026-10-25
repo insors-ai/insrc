@@ -38,6 +38,7 @@
 
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { getLogger } from '../../shared/logger.js';
+import { getStoreGuard } from '../../db/store-guard.js';
 
 const log = getLogger('duckdb-pool');
 
@@ -168,14 +169,22 @@ export async function closeDuckDB(): Promise<void> {
 export async function withConnection<T>(
   fn: (conn: DuckDBConnection) => Promise<T>,
 ): Promise<T> {
-  const instance = await getDuckDB();
-  const conn = await instance.connect();
-  try {
-    return await fn(conn);
-  } finally {
-    conn.disconnectSync();
-  }
+  // Each daemon thread has its own in-memory instance with its own memory
+  // limit; the store guard's one DuckDB permit keeps the process to one
+  // budget (Epic 86197ac6, s1). Queries from other threads wait their turn.
+  return getStoreGuard().withStore('duckdb', async () => {
+    const instance = await getDuckDB();
+    const conn = await instance.connect();
+    try {
+      return await fn(conn);
+    } finally {
+      conn.disconnectSync();
+    }
+  }, { acquireTimeoutMs: DUCKDB_PERMIT_WAIT_MS });
 }
+
+/** How long a query waits for the DuckDB permit before failing (another thread's long query holds it). */
+export const DUCKDB_PERMIT_WAIT_MS = 10 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Internals
@@ -198,4 +207,45 @@ function readMemoryBudget(): number {
 
 function errMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
+}
+
+/** Isolated execution owner; never touches the saved singleton or installs extensions. */
+export interface PrivateDuckDB {
+ readonly instance: DuckDBInstance;
+ close(): void;
+}
+export async function createPrivateDuckDB(options: {
+ readonly memoryBudgetBytes: number;
+ readonly allowedPaths?: readonly string[] | undefined;
+ readonly localReaders?: readonly 'arrow'[] | undefined;
+}): Promise<PrivateDuckDB> {
+ if (!Number.isSafeInteger(options.memoryBudgetBytes) || options.memoryBudgetBytes <= 0) throw new Error('resource-limit');
+ let instance: DuckDBInstance | undefined;
+ let connection: DuckDBConnection | undefined;
+ try {
+  instance = await DuckDBInstance.create(':memory:', {
+   memory_limit: `${options.memoryBudgetBytes}B`,
+   temp_directory: '', max_temp_directory_size: '0B',
+   autoinstall_known_extensions: 'false', autoload_known_extensions: 'false',
+   threads: '1',
+  });
+  connection = await instance.connect();
+  await connection.run('PRAGMA disable_profiling');
+  await connection.run('SET enable_logging = false');
+  for (const reader of options.localReaders ?? []) {
+   if (reader !== 'arrow') throw new Error('unsupported-temporary');
+   // LOAD can use an existing local binary; autoinstall is already disabled.
+   await connection.run('LOAD arrow');
+  }
+  const literal = (path: string) => `'${path.replaceAll("'", "''")}'`;
+  await connection.run(`SET allowed_paths = [${(options.allowedPaths ?? []).map(literal).join(',')}]`);
+  await connection.run('SET enable_external_access = false');
+  connection.closeSync(); connection = undefined;
+  let closed = false;
+  const owned = instance;
+  return { instance: owned, close() { if (closed) return; closed = true; owned.closeSync(); } };
+ } catch {
+  connection?.closeSync(); instance?.closeSync();
+  throw new Error('unsupported-temporary');
+ }
 }

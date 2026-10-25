@@ -79,8 +79,8 @@ function judgements(dims: readonly ReviewDimension[], perDim: Partial<Record<Rev
 const UX_DIMS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality', 'ux'];
 const BASE_DIMS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
 
-test('start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux', () => {
-	_clearCodeReviewStateStoreForTests();
+test('start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux', async () => {
+	await _clearCodeReviewStateStoreForTests();
 	const { deps } = makeDeps(subject({ uxDefinition: validUx }));
 	return handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps).then(env => {
 		const start = parse(env);
@@ -93,7 +93,7 @@ test('start: a uxDefinition subject → emit_judgements with FIVE prompts + a sc
 });
 
 test('judgements: a UX HIGH finding withholds completion (verdict block)', async () => {
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	const { deps, writes } = makeDeps(subject({ adherence: { dimensions: ['ux'] } }));
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');
@@ -105,7 +105,7 @@ test('judgements: a UX HIGH finding withholds completion (verdict block)', async
 });
 
 test('judgements: an adhering (empty) UX judgement folds to pass', async () => {
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	const { deps } = makeDeps(subject({ uxDefinition: validUx }));
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');
@@ -115,7 +115,7 @@ test('judgements: an adhering (empty) UX judgement folds to pass', async () => {
 });
 
 test('start: a subject with neither uxDefinition nor adherence → the base four (byte-shape compatible)', async () => {
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	const { deps } = makeDeps(subject({}));
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');

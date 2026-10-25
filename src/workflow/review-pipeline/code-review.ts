@@ -33,6 +33,7 @@ import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
+import { structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
 
 const log = getLogger('review-pipeline:code-review');
@@ -152,14 +153,19 @@ function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: Re
  */
 export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
-	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
+	const execution = { mode: 'structured' as const, cwd: subject.repoPath, ...structuredLimits('code-review') };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
-	// obligations and their context. From the snapshot and the saved subject only.
+	// obligations and their context. From the snapshot and the saved subject only, so it
+	// is built once and every caller reads the same material: the pipeline asks for it
+	// on every chunk, relation and validation call, and rebuilding it each time froze
+	// the daemon on a large review (ISSUE-2f4cb54c).
+	let built: ReviewMaterial | undefined;
 	const material = (): ReviewMaterial => {
+		if (built !== undefined) return built;
 		const base = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
 		const own = spec.obligations?.(base);
-		if (own === undefined) return base;
-		return { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		built = own === undefined ? base : { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		return built;
 	};
 	const singleSchema = JSON.stringify(spec.schema);
 	// A divided review's merged findings through today's result filters, applied once over the whole.
@@ -226,7 +232,7 @@ export function deterministicDimensionAdapter(spec: DeterministicDimensionSpec, 
 			? [{ id: 'run', kind: 'deterministic', after: [], onCallFailure: spec.onFailure ?? 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async (_prior, snap) => spec.run(snap, grounding) }]
 			: [{
 				id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review', chunkCalls: () => [],
-				singleCalls: () => [{ messages: spec.controllerPrompt(grounding), schema: CONTROLLER_FINDINGS_SCHEMA, execution: { mode: 'structured', cwd: subject.repoPath } }],
+				singleCalls: () => [{ messages: spec.controllerPrompt(grounding), schema: CONTROLLER_FINDINGS_SCHEMA, execution: { mode: 'structured', cwd: subject.repoPath, ...structuredLimits('code-review') } }],
 			}],
 		finish: (outputs, ctx) => {
 			if (outputs['run'] !== undefined) return outputs['run'] as DimensionResult;
@@ -254,7 +260,7 @@ export async function runDimensionJob(
 	// prepared, so a job that fails still leaves its plan, and once as finished, after any
 	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
 	logPlan('prepared', job, subject);
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
 }
 
 function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {

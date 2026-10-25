@@ -36,7 +36,7 @@ function payload(env: Envelope): Record<string, unknown> {
 }
 
 test('stub workflow: start → plan → synthesize → done writes artifact', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-e2e-'));
 	try {
@@ -106,7 +106,7 @@ test('stub workflow: start → plan → synthesize → done writes artifact', as
 });
 
 test('stub workflow: synthesizer rejects ungrounded citation', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-e2e-'));
 	try {
@@ -153,7 +153,7 @@ test('stub workflow: synthesizer rejects ungrounded citation', async () => {
 });
 
 test('stub workflow: bad state token errors cleanly', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	const errOut = payload(await handleWorkflowStep({
 		phase: 'plan',
 		plan:  { workflow: 'stub', steps: [] },

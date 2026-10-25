@@ -1,3 +1,4 @@
+import { allDriverWork } from '../driver-work.js';
 /**
  * Postgres driver (kind: `postgres`).
  *
@@ -190,7 +191,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, POSTGRES_DIALECT);
 		log.debug({ id: this.id, distinctCountSql: compiled.distinctCountSql, topValuesSql: compiled.topValuesSql }, 'distinct query');
-		const [countRes, valuesRes] = await Promise.all([
+		const [countRes, valuesRes] = await allDriverWork([
 			withTimeout(this.pool.query(compiled.distinctCountSql), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.pool.query(compiled.topValuesSql), SAMPLE_TIMEOUT_MS),
 		]);

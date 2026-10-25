@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { IpcServer } from '../../server.js';
+import { IpcServer, directDispatch } from '../../server.js';
 import { daemonRunFiles, cleanupFailedPublication, endForRunFileConflict } from '../../run-file-ownership.js';
 import { createShutdown, realEndDeps, exitRespectingStoreHealth, endAfterStoreFailure } from '../../shutdown.js';
 import { reportFatal } from '../../fatal.js';
@@ -7,7 +7,7 @@ import { appendFileSync } from 'node:fs';
 import { PATHS } from '../../../shared/paths.js';
 const mode = process.argv[2]!;
 const publication = daemonRunFiles.lease(); daemonRunFiles.writePid();
-const server = new IpcServer({}); await server.listen();
+const server = new IpcServer(directDispatch({})); await server.listen();
 if (mode !== 'startup') publication.release();
 process.on('exit', () => appendFileSync(`${PATHS.insrc}/exit-hook`, 'ran'));
 process.send?.('ready');

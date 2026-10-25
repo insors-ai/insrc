@@ -1,0 +1,33 @@
+{
+  "purpose": "HLD external integration inspection provenance; hashes record inspected versions, not implementation or compatibility approval.",
+  "files": [
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts",
+      "sha256": "ceb8d04fc00254ea76685b706389c21b6c306b916484413f597c0b3913d28ca4"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts",
+      "sha256": "c3a8c752cb66f238f27988aa950e1a52c6101c12183630cb2bbad2d888803a77"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts",
+      "sha256": "366a718898df2b6ebed387eecb7d7b88199bd0004748674ba4077ea711c284f8"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbConnectionCommands.ts",
+      "sha256": "412bb8a799ddfa0f241960798d2a8cd4e0cc2c23ef7deff8700b7cdafc88b037"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversCommands.ts",
+      "sha256": "29d9254ffc3fe2edc25a40b49dfe20b72c1f2f8c7483942e59232d86f77b7695"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/insrc.contribution.ts",
+      "sha256": "9d6d96215193627e844b18ea5609c7596ddcc9f5e3c78de85344844e2b818d33"
+    },
+    {
+      "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts",
+      "sha256": "6801afac86195b6d8afed46317f0f82a70f17338a79743731f8b382df7787eac"
+    }
+  ]
+}

@@ -53,13 +53,15 @@
  * `db/graph/{entities,edges,traversal,bulk}.ts` (Phase 2.x).
  */
 
-import { existsSync, lstatSync, mkdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync } from 'node:fs';
+import { closeSync, existsSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
 import { open, type Database, type RootDatabase } from 'lmdb';
 
 import { getLogger } from '../../shared/logger.js';
+import { getStoreGuard, HEALTH_LOCKS_LOST } from '../store-guard.js';
 import { PATHS } from '../../shared/paths.js';
+import { assertNotCompactingElsewhere } from '../../shared/locks/maintenance-lock.js';
 
 const log = getLogger('graph-store');
 
@@ -441,8 +443,38 @@ export type StoreHealth =
 
 let _health: StoreHealth = { state: 'ok' };
 
+/**
+ * Store health is shared by every daemon thread (Epic 86197ac6, s1): the
+ * process-wide health word in the store guard's block says whether ANY thread
+ * found the locks lost. The thread that found it broadcasts its full record;
+ * until that record arrives, another thread reports the detecting thread.
+ */
+let _mirroredAt: string | undefined;
+let _healthBroadcast: ((health: StoreHealth) => void) | undefined;
+
+function currentHealth(): StoreHealth {
+	if (_health.state !== 'ok') return _health;
+	const guard = getStoreGuard();
+	if (guard.health('graph') !== HEALTH_LOCKS_LOST) return _health;
+	_mirroredAt ??= new Date().toISOString();
+	return {
+		state: 'locks-lost', at: _mirroredAt, detectedBy: 'read', libraryMessage: '',
+		operation: `an operation on daemon thread ${guard.healthSetBy('graph')}`,
+	};
+}
+
 export function getStoreHealth(): StoreHealth {
-	return _health;
+	return currentHealth();
+}
+
+/** Called by the thread that found the locks lost, with its full record, so the daemon can pass it to every thread. */
+export function setStoreHealthBroadcaster(fn: ((health: StoreHealth) => void) | undefined): void {
+	_healthBroadcast = fn;
+}
+
+/** Take the full locks-lost record another thread found; never logs (the finder already did). */
+export function receiveStoreHealth(health: StoreHealth): void {
+	if (health.state === 'locks-lost' && _health.state === 'ok') _health = health;
 }
 
 const MDB_LOCK_FAILURE = -30775;
@@ -460,8 +492,11 @@ function isLockLossReadError(e: unknown): boolean {
 }
 
 function recordLocksLost(operation: string, detectedBy: Exclude<StoreHealth, { state: 'ok' }>['detectedBy'], cause: unknown): void {
-	if (_health.state !== 'ok') return;
+	if (currentHealth().state !== 'ok') return;
 	_health = { state: 'locks-lost', at: new Date().toISOString(), operation, detectedBy, libraryMessage: errMessage(cause) };
+	// Only the first detection in the process logs and broadcasts.
+	if (!getStoreGuard().markLocksLost('graph')) return;
+	_healthBroadcast?.(_health);
 	log.error(
 		{ operation, detectedBy, libraryMessage: _health.libraryMessage },
 		'lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted',
@@ -519,6 +554,8 @@ export function setStoreProbeObserverForTests(fn: ((result: 'ok' | 'locks-lost')
 /** ONLY for tests: a process's health is never cleared in production. */
 export function resetStoreHealthForTests(): void {
 	_health = { state: 'ok' };
+	_mirroredAt = undefined;
+	getStoreGuard().resetHealthForTests('graph');
 }
 
 /**
@@ -529,7 +566,10 @@ export function resetStoreHealthForTests(): void {
  * place the failure is raised: no later call reaches the library.
  */
 export async function getGraphStore(): Promise<GraphStore> {
-	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${_health.operation})`);
+	const health = currentHealth();
+	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${health.operation})`);
+	// While daemon maintenance compacts on another thread, this thread neither uses nor reopens the store.
+	assertNotCompactingElsewhere();
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 	// Before anything touches the path: no directory, no lock file, no open.
@@ -538,6 +578,9 @@ export async function getGraphStore(): Promise<GraphStore> {
 	_initPromise = (async (): Promise<GraphStore> => {
 		const t0 = Date.now();
 		const mapsizeBytes = readMapsizeBytes();
+		// What an interrupted compaction left (a crash, kill -9): finished or
+		// rolled back here; a swapped-in copy is checked against its manifest below.
+		const unverified = recoverCompactionLeftovers(_path);
 
 		// lmdb-js creates a single file at `_path`; ensure the parent
 		// directory exists. Do NOT mkdir _path itself -- it's a file, not
@@ -641,6 +684,24 @@ export async function getGraphStore(): Promise<GraphStore> {
 			explorationCache:   open_('exploration_cache'),
 		};
 
+		// A compacted copy swapped in but not yet checked: before any write of
+		// this open, every named database must hold the entries it held when
+		// the copy was taken. If not, the original comes back and is opened.
+		if (unverified !== undefined) {
+			const found = entryCounts(store);
+			const differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);
+			if (differs.length > 0) {
+				log.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');
+				await root.close();
+				restoreFromBak(_path);
+				_lastCompactionCheck = 'restored';
+				_initPromise = null;
+				return getGraphStore();
+			}
+			finishVerifiedCompaction(_path);
+			_lastCompactionCheck = 'verified';
+		}
+
 		// Schema-version pre-flight check. Wrapped in a write txn so the
 		// first-boot write commits before any caller can read.
 		const stored = readSchemaVersion(store);
@@ -732,7 +793,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 export function runReaderCheck(reason: string): number {
 	const inst = _instance;
 	if (inst === null) return 0;
-	if (_health.state === 'locks-lost') return 0;
+	if (currentHealth().state === 'locks-lost') return 0;
 	// A read that failed outside a request or a job (a timer, the boot
 	// sequence, a handler that swallows its own failures) is recorded by
 	// nobody. This check runs anyway, so it also asks whether the store can
@@ -782,30 +843,36 @@ export interface CompactResult {
  * reclaims that space:
  *
  *   1. `root.backup(<env>.compact, compact: true)` writes a
- *      defragged copy (mdb_env_copy2(MDB_CP_COMPACT)). Concurrent
- *      reads + writes are safe; the snapshot reflects state at
- *      backup-start.
- *   2. Close the env (drains in-flight readers; serialises against
- *      any writer that landed between steps 1 and 2 -- those writes
- *      are lost; caller is expected to quiesce the system before
- *      compact, see the daemon-side check).
- *   3. Atomic rename: original → `.bak`, `.compact` → original.
- *   4. Re-open the env at the original path.
- *   5. Best-effort delete `.bak` on success. Left in place on rename
- *      failure so the user can manually recover.
+ *      defragged copy (mdb_env_copy2(MDB_CP_COMPACT)), fenced: if any
+ *      write commits while it is taken, nothing is swapped (the caller is
+ *      expected to quiesce the system; daemon maintenance holds its lock).
+ *   2. Close the env.
+ *   3. The swap: the copy is fsynced, a manifest records the entries of
+ *      every named database, the original gets a second name (`.bak`),
+ *      and the copy replaces the store name in one atomic rename.
+ *   4. Re-open: the open checks the copy against the manifest, then
+ *      removes `.bak` -- or, on any difference, restores the original.
+ *
+ * A crash (kill -9, power loss) at any point leaves the original or a
+ * checked copy: the next open finishes or rolls back what was left
+ * (recoverCompactionLeftovers). Data is never lost to a compaction.
  *
  * Returns size delta in bytes. Throws `LmdbStoreError` on any step.
+ *
+ * `beforeRename` runs after the close and before the rename (Epic 86197ac6
+ * s2): daemon maintenance passes a check that every other handle on the
+ * native environment is closed. When it resolves false nothing is renamed:
+ * the compacted copy is removed, the original store is reopened, and the call
+ * rejects. Without it, behaviour is unchanged.
  */
-export async function compactGraphStore(): Promise<CompactResult> {
+export async function compactGraphStore(opts: { readonly beforeRename?: () => Promise<boolean> } = {}): Promise<CompactResult> {
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot compact: graph store is not open');
 	}
 	const t0 = Date.now();
 	const originalPath = _path;
-	const compactPath  = `${originalPath}.compact`;
-	const bakPath      = `${originalPath}.bak`;
-	const lockPath     = `${originalPath}-lock`;
+	const { compactPath, bakPath, manifestPath, lockPath } = compactionPaths(originalPath);
 
 	if (!existsSync(originalPath)) {
 		throw new LmdbStoreError(`compact: source env '${originalPath}' missing`);
@@ -815,12 +882,20 @@ export async function compactGraphStore(): Promise<CompactResult> {
 	// Pre-clear any leftover .compact / .bak from a prior aborted run.
 	if (existsSync(compactPath)) rmSync(compactPath, { force: true });
 	if (existsSync(bakPath))     rmSync(bakPath,     { force: true });
+	if (existsSync(manifestPath)) rmSync(manifestPath, { force: true });
 
-	// Step 1: write the compacted copy. Don't go through `backupGraphStore`
-	// because it asserts _instance != null -- which we'll need to clear
-	// in step 2 before the rename. Inline the call so the same `inst`
-	// is reused.
+	// Step 1: write the compacted copy, fenced: what every named database
+	// holds, and the last committed transaction, before and after the copy.
+	// Don't go through `backupGraphStore` because it asserts _instance !=
+	// null -- which we'll need to clear in step 2 before the rename.
+	const txnBefore = lastTxnId(inst);
+	const counts = entryCounts(inst);
 	await inst.root.backup(compactPath, true);
+	// A write committed while the copy was taken is not in it: nothing is swapped.
+	if (lastTxnId(inst) !== txnBefore) {
+		rmSync(compactPath, { force: true });
+		throw new LmdbStoreError('compact: a write was committed while the copy was taken; nothing renamed');
+	}
 
 	// Step 2: close the env so the file isn't held open during rename.
 	_instance = null;
@@ -833,45 +908,244 @@ export async function compactGraphStore(): Promise<CompactResult> {
 		throw new LmdbStoreError(`compact: close failed: ${errMessage(e)}`, e);
 	}
 
-	// Step 3: atomic rename. If anything fails here, the .bak + .compact
-	// files stay on disk for manual recovery.
+	// Step 2b: the caller's last check before the files change.
+	if (opts.beforeRename !== undefined && !(await opts.beforeRename())) {
+		rmSync(compactPath, { force: true });
+		await getGraphStore();
+		throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
+	}
+
+	// Step 3: the swap, safe against a crash at any point. The copy is on disk
+	// before it is named; the manifest records what it must hold; the original
+	// stays reachable as .bak (a second name for the same file); the copy then
+	// replaces the store name in one atomic rename, so a store file exists at
+	// every moment. On the next open (below, or after a crash at boot) the copy
+	// is checked against the manifest and the original restored if it differs.
 	try {
-		renameSync(originalPath, bakPath);
+		crashPoint('before-swap');
+		fsyncFile(compactPath);
+		writeFileSync(manifestPath, JSON.stringify({ version: 1, counts, lastTxnId: txnBefore, writtenAt: new Date().toISOString() } satisfies CompactionManifest));
+		fsyncFile(manifestPath);
+		crashPoint('after-manifest');
+		linkSync(originalPath, bakPath);
+		fsyncDir(dirname(originalPath));
+		crashPoint('after-link');
 		renameSync(compactPath, originalPath);
+		fsyncDir(dirname(originalPath));
+		crashPoint('after-rename');
 		// Lock files are a leftover from the previous open; LMDB
-		// recreates them on the next open. Best-effort cleanup.
+		// recreates them on the next open. Every handle is closed by now.
 		if (existsSync(lockPath)) rmSync(lockPath, { force: true });
 	} catch (e) {
-		// Try to roll back to a usable state. If `.bak` exists but
-		// `original` doesn't, restore it.
-		if (existsSync(bakPath) && !existsSync(originalPath)) {
-			try { renameSync(bakPath, originalPath); } catch { /* ignore */ }
-		}
-		throw new LmdbStoreError(`compact: rename failed: ${errMessage(e)}`, e);
+		if (e instanceof SimulatedCrash) throw e;
+		// The store name still holds the original or the copy; the next open sorts out the rest.
+		throw new LmdbStoreError(`compact: the swap failed: ${errMessage(e)}`, e);
 	}
 
-	// Step 4: re-open the env at the original path.
+	// Step 4: re-open the env at the original path; the open checks the copy
+	// against the manifest and removes .bak and the manifest, or restores the original.
+	_lastCompactionCheck = undefined;
 	await getGraphStore();
-
-	// Step 5: best-effort cleanup of .bak (the pre-compact original).
-	const afterBytes = statSync(originalPath).size;
-	if (existsSync(bakPath)) {
-		try {
-			rmSync(bakPath, { force: true });
-		} catch (e) {
-			log.warn(
-				{ path: bakPath, err: errMessage(e) },
-				'compact succeeded but .bak cleanup failed; remove manually',
-			);
-		}
+	if (_lastCompactionCheck !== 'verified') {
+		throw new LmdbStoreError('compact: the compacted copy did not match the store; the original was restored');
 	}
 
+	const afterBytes = statSync(originalPath).size;
 	return {
 		beforeBytes,
 		afterBytes,
 		savedBytes: beforeBytes - afterBytes,
 		elapsedMs:  Date.now() - t0,
 	};
+}
+
+// ---------------------------------------------------------------------------
+// Reclaimable space (daemon maintenance, Epic 86197ac6 s2)
+// ---------------------------------------------------------------------------
+
+/** One B-tree's page counts, as getStats() reports them. */
+export interface TreePages {
+	readonly treeBranchPageCount: number;
+	readonly treeLeafPageCount: number;
+	readonly overflowPages: number;
+}
+
+export interface Reclaimable {
+	readonly fileBytes: number;
+	readonly usedBytes: number;
+	readonly reclaimableBytes: number;
+	/** reclaimableBytes as a % of fileBytes. */
+	readonly reclaimablePct: number;
+}
+
+/** What compaction would give back: the file size less the pages the trees use (branch + leaf + overflow). */
+export function reclaimableFrom(trees: readonly TreePages[], pageSize: number, fileBytes: number): Reclaimable {
+	const pages = trees.reduce((n, t) => n + t.treeBranchPageCount + t.treeLeafPageCount + t.overflowPages, 0);
+	const usedBytes = Math.min(fileBytes, pages * pageSize);
+	const reclaimableBytes = fileBytes - usedBytes;
+	return { fileBytes, usedBytes, reclaimableBytes, reclaimablePct: fileBytes > 0 ? (reclaimableBytes / fileBytes) * 100 : 0 };
+}
+
+/** Whether `r` is worth a compaction: both thresholds must be met. */
+export function worthCompacting(r: Reclaimable, minPct: number, minMb: number): boolean {
+	return r.reclaimablePct >= minPct && r.reclaimableBytes >= minMb * 1024 * 1024;
+}
+
+/**
+ * The open store's reclaimable space: pages in use summed over every named
+ * database, plus the main and free-list trees, against the file size.
+ * Undefined when the store is not open on this thread.
+ */
+export function graphStoreReclaimable(): Reclaimable | undefined {
+	const inst = _instance;
+	if (inst === null) return undefined;
+	const root = inst.root.getStats() as TreePages & { pageSize: number; free?: TreePages };
+	const trees: TreePages[] = [root, ...(root.free !== undefined ? [root.free] : [])];
+	for (const [name, db] of Object.entries(inst)) {
+		if (name !== 'root') trees.push((db as AnyDb).getStats() as TreePages);
+	}
+	return reclaimableFrom(trees, root.pageSize, statSync(_path).size);
+}
+
+// ---------------------------------------------------------------------------
+// Compaction safety: the manifest, the check on open, crash recovery
+// ---------------------------------------------------------------------------
+
+/** What a swapped-in compacted copy must hold: entries per named database when the copy was taken. */
+interface CompactionManifest {
+	readonly version: 1;
+	readonly counts: Readonly<Record<string, number>>;
+	readonly lastTxnId: number;
+	readonly writtenAt: string;
+}
+
+/** Where compaction stops as if the process were killed there (tests only). */
+export type CompactionCrashPoint = 'before-swap' | 'after-manifest' | 'after-link' | 'after-rename';
+let _crashAt: CompactionCrashPoint | undefined;
+
+/** Thrown at the simulated crash point: nothing after it runs, so the files are as a kill -9 there leaves them. */
+export class SimulatedCrash extends Error {
+	constructor(readonly point: CompactionCrashPoint) { super(`simulated crash at ${point}`); }
+}
+
+/** Tests only: make the next compaction stop at `point`, leaving the files as a crash there would. */
+export function setCompactionCrashPointForTests(point: CompactionCrashPoint | undefined): void {
+	_crashAt = point;
+}
+
+function crashPoint(point: CompactionCrashPoint): void {
+	if (_crashAt === point) { _crashAt = undefined; throw new SimulatedCrash(point); }
+}
+
+/** The outcome of the last check of a swapped-in copy on open (read by compactGraphStore). */
+let _lastCompactionCheck: 'verified' | 'restored' | undefined;
+
+function compactionPaths(path: string): { compactPath: string; bakPath: string; manifestPath: string; lockPath: string } {
+	return { compactPath: `${path}.compact`, bakPath: `${path}.bak`, manifestPath: `${path}.compact-manifest`, lockPath: `${path}-lock` };
+}
+
+/** Entries per named database of the open store. */
+function entryCounts(store: GraphStore): Record<string, number> {
+	const counts: Record<string, number> = {};
+	for (const [name, db] of Object.entries(store)) {
+		if (name === 'root') continue;
+		counts[name] = ((db as AnyDb).getStats() as { entryCount: number }).entryCount;
+	}
+	return counts;
+}
+
+function lastTxnId(store: GraphStore): number {
+	return (store.root.getStats() as { lastTxnId: number }).lastTxnId;
+}
+
+function fsyncFile(path: string): void {
+	const fd = openSync(path, 'r+');
+	try { fsyncSync(fd); } finally { closeSync(fd); }
+}
+
+function fsyncDir(path: string): void {
+	let fd: number | undefined;
+	try {
+		fd = openSync(path, 'r');
+		fsyncSync(fd);
+	} catch (e) {
+		// Some file systems refuse fsync on a directory; the renames are still atomic.
+		log.debug({ path, err: errMessage(e) }, 'compaction: directory fsync not available');
+	} finally {
+		if (fd !== undefined) closeSync(fd);
+	}
+}
+
+/**
+ * Before the store opens: finish or roll back what an interrupted compaction
+ * left. Returns the manifest to check the store against when a compacted copy
+ * was swapped in and not yet checked.
+ *
+ *   - a .compact copy never replaced the store: removed;
+ *   - no store file but a .bak (a crash between the two renames of a daemon
+ *     before this change): the original is restored;
+ *   - .bak is the store file itself (a crash before the swap): removed;
+ *   - .bak differs and a manifest exists (a crash after the swap, before the
+ *     check): kept, and the copy is checked on open;
+ *   - .bak differs and no manifest (the check passed): removed.
+ */
+function recoverCompactionLeftovers(path: string): CompactionManifest | undefined {
+	const { compactPath, bakPath, manifestPath, lockPath } = compactionPaths(path);
+	if (existsSync(compactPath)) {
+		rmSync(compactPath, { force: true });
+		log.warn({ path: compactPath }, 'compaction recovery: removed a compacted copy that never replaced the store');
+	}
+	const hasBak = existsSync(bakPath);
+	const manifest = readManifest(manifestPath);
+	if (!existsSync(path)) {
+		if (hasBak) {
+			renameSync(bakPath, path);
+			if (existsSync(lockPath)) rmSync(lockPath, { force: true });
+			log.warn({ path }, 'compaction recovery: the store file was missing; restored the pre-compaction original');
+		}
+		if (existsSync(manifestPath)) rmSync(manifestPath, { force: true });
+		return undefined;
+	}
+	if (hasBak) {
+		const same = statSync(bakPath).ino === statSync(path).ino;
+		if (!same && manifest !== undefined) {
+			log.warn({ path }, 'compaction recovery: a compacted copy was swapped in and not checked; checking it on open');
+			return manifest;
+		}
+		rmSync(bakPath, { force: true });
+		log.warn({ path: bakPath, reason: same ? 'the swap never happened' : 'the copy was already checked' }, 'compaction recovery: removed the pre-compaction original');
+	}
+	if (existsSync(manifestPath)) rmSync(manifestPath, { force: true });
+	return undefined;
+}
+
+function readManifest(path: string): CompactionManifest | undefined {
+	if (!existsSync(path)) return undefined;
+	try {
+		const m = JSON.parse(readFileSync(path, 'utf8')) as CompactionManifest;
+		return m.version === 1 && typeof m.counts === 'object' ? m : undefined;
+	} catch {
+		// Torn (a crash while it was written, before .bak existed): nothing was swapped.
+		return undefined;
+	}
+}
+
+/** The checked copy stays: the manifest goes first, then .bak (a .bak without a manifest is known good to remove). */
+function finishVerifiedCompaction(path: string): void {
+	const { bakPath, manifestPath } = compactionPaths(path);
+	rmSync(manifestPath, { force: true });
+	fsyncDir(dirname(path));
+	rmSync(bakPath, { force: true });
+	log.info({ path }, 'compaction: the compacted copy matched the store it was taken from');
+}
+
+/** Put the original back under the store name (one atomic rename) and drop the manifest. */
+function restoreFromBak(path: string): void {
+	const { bakPath, manifestPath, lockPath } = compactionPaths(path);
+	renameSync(bakPath, path);
+	fsyncDir(dirname(path));
+	if (existsSync(lockPath)) rmSync(lockPath, { force: true });
+	rmSync(manifestPath, { force: true });
 }
 
 /**
@@ -910,12 +1184,13 @@ export async function closeGraphStore(): Promise<void> {
 	if (inst === null) return;
 	// A failure that no call has met yet must be found HERE: the library's
 	// close never returns once the semaphores are gone.
-	if (_health.state === 'ok') {
+	if (currentHealth().state === 'ok') {
 		const lost = probeForLockLoss(inst);
 		if (lost !== undefined) recordLocksLost('closing the store', 'read', lost);
 	}
-	if (_health.state === 'locks-lost') {
-		log.warn({ operation: _health.operation, at: _health.at }, 'lmdb graph store close skipped: the store lost its locks');
+	const health = currentHealth();
+	if (health.state === 'locks-lost') {
+		log.warn({ operation: health.operation, at: health.at }, 'lmdb graph store close skipped: the store lost its locks');
 		return;
 	}
 	try {
@@ -1027,7 +1302,8 @@ export function withWriteTxnSync<T>(
 	store: GraphStore,
 	fn: () => T,
 ): T {
-	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${_health.operation})`);
+	const health = currentHealth();
+	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${health.operation})`);
 	try {
 		return store.root.transactionSync(fn);
 	} catch (e) {

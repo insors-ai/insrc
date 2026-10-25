@@ -108,7 +108,7 @@ export async function handleStart(
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
 		// The run records its owner and the upstream revisions it starts from (a repo without a team policy records neither)
-		state:    encodeState(state, runMetaFor(repoPath, input.workflow, params)),
+		state:    await encodeState(state, runMetaFor(repoPath, input.workflow, params)),
 	};
 }
 

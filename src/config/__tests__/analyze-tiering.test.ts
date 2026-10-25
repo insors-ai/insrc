@@ -67,3 +67,35 @@ test('a byRepo entry with no valid tiering keys is not retained', () => {
 	const t = parseTiering({ byRepo: { '/r': { coreFloor: 'bad' } } });
 	assert.equal(t.byRepo, undefined);
 });
+
+test("parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort", () => {
+	const t = parseTiering({
+		tiers: {
+			core:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'high' },
+			mid:   { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'medium' },
+			cheap: { runner: 'cli-claude', model: 'haiku', effort: 'max' },
+		},
+		byRepo: { '/r': { tiers: { core: { runner: 'cli-claude', model: 'opus', effort: 'low' } } } },
+	});
+	assert.deepEqual(t.tiers?.core, { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'high' });
+	assert.equal(t.tiers?.mid?.effort, 'medium');
+	assert.equal(t.tiers?.cheap?.effort, 'max');
+	assert.deepEqual(t.efforts, { core: 'high', mid: 'medium', cheap: 'max' });
+	// The byRepo tier keeps its runner and model; its effort is ignored.
+	assert.deepEqual(t.byRepo?.['/r']?.tiers?.core, { runner: 'cli-claude', model: 'opus' });
+	assert.equal(t.byRepo?.['/r']?.efforts, undefined);
+
+	for (const effort of ['', undefined]) {
+		const u = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus', ...(effort !== undefined ? { effort } : {}) } } });
+		assert.deepEqual(u.tiers?.core, { runner: 'cli-claude', model: 'opus' }, `effort ${JSON.stringify(effort)}`);
+		assert.equal(u.efforts, undefined);
+	}
+});
+
+test('an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model', () => {
+	for (const effort of ['hgh', 'ultra', 3, { level: 'high' }, null]) {
+		const t = parseTiering({ tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort } } });
+		assert.deepEqual(t.tiers?.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol' }, `effort ${JSON.stringify(effort)}`);
+		assert.equal(t.efforts, undefined);
+	}
+});

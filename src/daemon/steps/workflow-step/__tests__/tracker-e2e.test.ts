@@ -209,7 +209,7 @@ async function walk(
 // ---------------------------------------------------------------------------
 
 test('tracker.push: happy path binds the Epic and Story heads to the pushed issues', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	const slug = HASH;
@@ -237,7 +237,7 @@ test('tracker.push: happy path binds the Epic and Story heads to the pushed issu
 });
 
 test('tracker.push: checklist failure refuses synthesize + leaves meta untouched', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	const slug = HASH;
@@ -256,7 +256,7 @@ test('tracker.push: checklist failure refuses synthesize + leaves meta untouched
 });
 
 test('tracker.sync: happy path merges status + lastSyncedAt into meta.tracker', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	const slug = HASH;
@@ -281,7 +281,7 @@ test('tracker.sync: happy path merges status + lastSyncedAt into meta.tracker', 
 });
 
 test('tracker.sync: refuses when Epic has no prior tracker refs', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	const slug = HASH;
@@ -306,7 +306,7 @@ test('tracker.sync: refuses when Epic has no prior tracker refs', async () => {
 });
 
 test('tracker.push: refuses without epicHash param', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	try {
@@ -320,7 +320,7 @@ test('tracker.push: refuses without epicHash param', async () => {
 });
 
 test('tracker.push: refuses when Epic is unapproved', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
 	const slug = HASH;

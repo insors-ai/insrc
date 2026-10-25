@@ -15,7 +15,7 @@ import { createConnection } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createIpcClient, type IpcClient } from '../ipc-client.js';
 import type { IpcStreamMessage } from '../types.js';
 
@@ -25,7 +25,7 @@ async function withServer(
 ): Promise<void> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-ipc-stream-'));
 	const path = join(dir, 'd.sock');
-	const server = new IpcServer({}, { 'test.stream': handler }, Date.now, path);
+	const server = new IpcServer(directDispatch({}, { 'test.stream': handler }), Date.now, path);
 	await server.listen();
 	try { await fn(createIpcClient(() => createConnection(path))); } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
 }

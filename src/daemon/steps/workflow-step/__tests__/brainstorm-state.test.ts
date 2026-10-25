@@ -40,24 +40,24 @@ const fixture = (): WorkflowStepStatePayload => ({
 	stage:       'awaiting_llm_step',
 });
 
-test('t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load', () => {
-	_clearWorkflowStateStoreForTests();
-	const token = saveState(fixture());
-	const loaded = loadState(token);
+test('t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load', async () => {
+	await _clearWorkflowStateStoreForTests();
+	const token = await saveState(fixture());
+	const loaded = await loadState(token);
 	assert.deepEqual(loaded.brainstorm, brainstorm);
 	assert.deepEqual(loaded, fixture());   // the whole payload is byte-identical
 });
 
-test('t5: releaseState frees the token (subsequent load throws StateTokenNotFound)', () => {
-	_clearWorkflowStateStoreForTests();
-	const token = saveState(fixture());
-	releaseState(token);
-	assert.throws(() => loadState(token), StateTokenNotFound);
+test('t5: releaseState frees the token (subsequent load throws StateTokenNotFound)', async () => {
+	await _clearWorkflowStateStoreForTests();
+	const token = await saveState(fixture());
+	await releaseState(token);
+	await assert.rejects(() => loadState(token), StateTokenNotFound);
 });
 
-test('t5: loadState for an unknown/expired token still throws unchanged — no brainstorm-specific silent-replace', () => {
-	_clearWorkflowStateStoreForTests();
-	assert.throws(() => loadState('this-token-was-never-saved'), StateTokenNotFound);
+test('t5: loadState for an unknown/expired token still throws unchanged — no brainstorm-specific silent-replace', async () => {
+	await _clearWorkflowStateStoreForTests();
+	await assert.rejects(() => loadState('this-token-was-never-saved'), StateTokenNotFound);
 });
 
 test('t5: BrainstormElicitState has exactly the three sc3 fields', () => {

@@ -100,7 +100,6 @@ export function runShell(
       stderrBytes += chunkBytes;
       if (stderrBytes <= maxBytes) { stderr += decodedChunk; }
     });
-
     child.on('error', err => {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onAbort);

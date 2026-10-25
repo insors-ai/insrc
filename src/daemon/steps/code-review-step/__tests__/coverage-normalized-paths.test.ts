@@ -66,7 +66,7 @@ const listedIn = (msgs: readonly LLMMessage[]): unknown => {
 
 test('on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block', async () => {
 	// Controller path: emit_judgements, then the controller's judgements.
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	const writes: { path: string; content: string }[] = [];
 	const deps: CodeReviewStepDeps = {
 		resolveSubject: async () => ({ ok: true, subject: subject() }),

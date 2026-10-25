@@ -4,11 +4,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createConnection } from 'node:net';
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 
 test('daemon request reader preserves UTF-8 split inside a multibyte request parameter', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-server-utf8-')), path = join(dir, 'd.sock');
-	const server = new IpcServer({ echo: async params => params }, {}, Date.now, path);
+	const server = new IpcServer(directDispatch({ echo: async params => params }), Date.now, path);
 	await server.listen();
 	const socket = createConnection(path);
 	try {

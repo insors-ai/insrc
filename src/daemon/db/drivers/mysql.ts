@@ -1,3 +1,4 @@
+import { allDriverWork } from '../driver-work.js';
 /**
  * MySQL / MariaDB driver (kind: `mysql`, `mariadb`).
  *
@@ -178,7 +179,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MYSQL_DIALECT);
 		log.debug({ id: this.id }, 'distinct query');
-		const [[countRows], [valueRows]] = await Promise.all([
+		const [[countRows], [valueRows]] = await allDriverWork([
 			withTimeout(
 				this.pool.query(compiled.distinctCountSql),
 				SAMPLE_TIMEOUT_MS,

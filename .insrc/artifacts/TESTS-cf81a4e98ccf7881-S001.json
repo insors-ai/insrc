@@ -1,0 +1,468 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "cf81a4e98ccf7881",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T14:09:49.281Z",
+    "updatedAt": "2026-10-22T15:06:07.961Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-22T13:58:30.878Z",
+    "epicSlug": "temporaltrend-fails-integer-overflow-sqlite-mysql"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "409b218b",
+        "ranAt": "2026-10-22T15:06:07.961Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/db/__tests__/rdbms-common.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/db/__tests__/rdbms-common.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/db/__tests__/sqlite-driver.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/db/__tests__/sqlite-driver.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/rdbms-common.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 474,
+            "titles": [
+              {
+                "title": "quotes a bare table name for each dialect",
+                "result": "pass"
+              },
+              {
+                "title": "quotes schema.table with a dot",
+                "result": "pass"
+              },
+              {
+                "title": "rejects identifiers with whitespace or SQL syntax",
+                "result": "pass"
+              },
+              {
+                "title": "quoteTarget",
+                "result": "pass"
+              },
+              {
+                "title": "returns empty text + values for no clauses",
+                "result": "pass"
+              },
+              {
+                "title": "compiles = / != with parametrised placeholders (postgres)",
+                "result": "pass"
+              },
+              {
+                "title": "compiles \"in\" with an array",
+                "result": "pass"
+              },
+              {
+                "title": "compiles \"is null\" with no placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "mysql uses `?` for every param",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown columns (defense against injection)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects empty \"in\" arrays",
+                "result": "pass"
+              },
+              {
+                "title": "column lookup is case-insensitive",
+                "result": "pass"
+              },
+              {
+                "title": "postgres uses ~ for regex and !~ for not regex",
+                "result": "pass"
+              },
+              {
+                "title": "mysql uses REGEXP / NOT REGEXP",
+                "result": "pass"
+              },
+              {
+                "title": "sqlite uses REGEXP / NOT REGEXP (driver registers the function)",
+                "result": "pass"
+              },
+              {
+                "title": "oracle uses REGEXP_LIKE function syntax",
+                "result": "pass"
+              },
+              {
+                "title": "mssql throws -- no portable native regex (caller must avoid this op)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects non-string regex values",
+                "result": "pass"
+              },
+              {
+                "title": "regex predicates compose with other clauses (parameter index shared)",
+                "result": "pass"
+              },
+              {
+                "title": "regex / not regex (Phase 5d.3 Gap 1)",
+                "result": "pass"
+              },
+              {
+                "title": "compileWhere",
+                "result": "pass"
+              },
+              {
+                "title": "assembles SELECT * FROM ... LIMIT N on postgres",
+                "result": "pass"
+              },
+              {
+                "title": "clamps the limit to SAMPLE_LIMIT (50)",
+                "result": "pass"
+              },
+              {
+                "title": "emits TOP N for mssql instead of LIMIT",
+                "result": "pass"
+              },
+              {
+                "title": "emits FETCH FIRST ... for oracle",
+                "result": "pass"
+              },
+              {
+                "title": "includes the WHERE clause when provided",
+                "result": "pass"
+              },
+              {
+                "title": "buildSampleSql",
+                "result": "pass"
+              },
+              {
+                "title": "flags DML/DDL keywords",
+                "result": "pass"
+              },
+              {
+                "title": "accepts clean SELECTs",
+                "result": "pass"
+              },
+              {
+                "title": "looksLikeMutation",
+                "result": "pass"
+              },
+              {
+                "title": "resolves when the op wins the race",
+                "result": "pass"
+              },
+              {
+                "title": "rejects with a typed message when the timer wins",
+                "result": "pass"
+              },
+              {
+                "title": "calls onTimeout() when it fires",
+                "result": "pass"
+              },
+              {
+                "title": "withTimeout",
+                "result": "pass"
+              },
+              {
+                "title": "formats <col>__<fn> for the simple cases",
+                "result": "pass"
+              },
+              {
+                "title": "embeds the percentile fraction (with `.` -> `_`)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects percentile spec missing args.p",
+                "result": "pass"
+              },
+              {
+                "title": "aggregateResultKey",
+                "result": "pass"
+              },
+              {
+                "title": "emits one quoted-aliased expression per aggregation",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown columns (count exempt)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects duplicate result-keys",
+                "result": "pass"
+              },
+              {
+                "title": "rejects empty aggregations",
+                "result": "pass"
+              },
+              {
+                "title": "uses dialect-specific stddev / variance for MSSQL",
+                "result": "pass"
+              },
+              {
+                "title": "uses STDDEV_SAMP / VAR_SAMP for the SQL-standard dialects",
+                "result": "pass"
+              },
+              {
+                "title": "rejects out-of-range percentile p",
+                "result": "pass"
+              },
+              {
+                "title": "renders skewness / kurtosis / mad as native function calls",
+                "result": "pass"
+              },
+              {
+                "title": "count_where compiles SUM(CASE) with predicate parameters",
+                "result": "pass"
+              },
+              {
+                "title": "count_where threads param indices via paramStartIndex",
+                "result": "pass"
+              },
+              {
+                "title": "count_where rejects an empty predicate",
+                "result": "pass"
+              },
+              {
+                "title": "composite_distinct_count uses native (a, b) on Postgres",
+                "result": "pass"
+              },
+              {
+                "title": "composite_distinct_count concats with sentinel on MySQL / SQLite / MSSQL",
+                "result": "pass"
+              },
+              {
+                "title": "composite_distinct_count rejects unknown columns + < 2 columns",
+                "result": "pass"
+              },
+              {
+                "title": "compileAggregateExprs",
+                "result": "pass"
+              },
+              {
+                "title": "wraps exprs in a SELECT ... FROM <quotedTarget>",
+                "result": "pass"
+              },
+              {
+                "title": "refuses suspicious target identifiers",
+                "result": "pass"
+              },
+              {
+                "title": "compiles a structured WHERE clause when supplied",
+                "result": "pass"
+              },
+              {
+                "title": "omits WHERE when the request has none (back-compat)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects WHERE on an unknown column",
+                "result": "pass"
+              },
+              {
+                "title": "compileAggregate",
+                "result": "pass"
+              },
+              {
+                "title": "coerces number / bigint / numeric-string / null",
+                "result": "pass"
+              },
+              {
+                "title": "NaN / non-numeric / object becomes null",
+                "result": "pass"
+              },
+              {
+                "title": "preserves ISO date / datetime strings (temporal min/max)",
+                "result": "pass"
+              },
+              {
+                "title": "readAggregateRow",
+                "result": "pass"
+              },
+              {
+                "title": "produces a count-distinct + top-N pair for postgres",
+                "result": "pass"
+              },
+              {
+                "title": "switches to TOP N for MSSQL (no LIMIT clause)",
+                "result": "pass"
+              },
+              {
+                "title": "uses FETCH FIRST N ROWS ONLY for oracle",
+                "result": "pass"
+              },
+              {
+                "title": "clamps topN to [1, 1000]",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown columns",
+                "result": "pass"
+              },
+              {
+                "title": "honors asTableExpr for non-identifier FROM (e.g. read_parquet(?))",
+                "result": "pass"
+              },
+              {
+                "title": "compileDistinct",
+                "result": "pass"
+              },
+              {
+                "title": "coerces count to number across number / bigint / string ships",
+                "result": "pass"
+              },
+              {
+                "title": "readDistinctRows",
+                "result": "pass"
+              },
+              {
+                "title": "reads the distinct_count scalar across coercion paths",
+                "result": "pass"
+              },
+              {
+                "title": "readDistinctCount",
+                "result": "pass"
+              },
+              {
+                "title": "postgres uses native REGR_* with EXTRACT(EPOCH FROM ts)",
+                "result": "pass"
+              },
+              {
+                "title": "mysql takes the expression-based path with UNIX_TIMESTAMP",
+                "result": "pass"
+              },
+              {
+                "title": "sqlite uses unixepoch()",
+                "result": "pass"
+              },
+              {
+                "title": "oracle uses native REGR_* with date-arithmetic epoch",
+                "result": "pass"
+              },
+              {
+                "title": "mssql uses DATEDIFF_BIG (expression path; T-SQL has no REGR_*)",
+                "result": "pass"
+              },
+              {
+                "title": "threads request-level WHERE through compileWhere",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown timestamp / value columns",
+                "result": "pass"
+              },
+              {
+                "title": "compileTemporalTrend",
+                "result": "pass"
+              },
+              {
+                "title": "reads a native REGR_* row directly",
+                "result": "pass"
+              },
+              {
+                "title": "computes slope/intercept/R² from SUM moments (expression path) -- perfect line",
+                "result": "pass"
+              },
+              {
+                "title": "returns null slope/r² when X variance is zero (expression path)",
+                "result": "pass"
+              },
+              {
+                "title": "handles n < 2 (expression path)",
+                "result": "pass"
+              },
+              {
+                "title": "returns empty result for undefined row",
+                "result": "pass"
+              },
+              {
+                "title": "readTemporalTrendRow",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/sqlite-driver.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 528,
+            "titles": [
+              {
+                "title": "describe returns columns + PK + FK + nullability",
+                "result": "pass"
+              },
+              {
+                "title": "sample with where + limit",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown columns in where",
+                "result": "pass"
+              },
+              {
+                "title": "rejects invalid target identifiers",
+                "result": "pass"
+              },
+              {
+                "title": "aggregate count / sum / avg / min / max returns flat numeric record",
+                "result": "pass"
+              },
+              {
+                "title": "aggregate rejects unknown columns and invalid target",
+                "result": "pass"
+              },
+              {
+                "title": "histogram equal-width returns bucket counts spanning min..max",
+                "result": "pass"
+              },
+              {
+                "title": "histogram equal-frequency uses NTILE and returns per-bucket bounds",
+                "result": "pass"
+              },
+              {
+                "title": "correlationMatrix pearson via portable formula",
+                "result": "pass"
+              },
+              {
+                "title": "correlationMatrix spearman ranks then correlates",
+                "result": "pass"
+              },
+              {
+                "title": "count_where with regex op uses the registered REGEXP function (Phase 5d.3 Gap 1)",
+                "result": "pass"
+              },
+              {
+                "title": "temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)",
+                "result": "pass"
+              },
+              {
+                "title": "aggregate stddev surfaces SQLite-no-such-function as a clean engine error",
+                "result": "pass"
+              },
+              {
+                "title": "SqliteDriver (via pool)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

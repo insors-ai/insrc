@@ -51,10 +51,12 @@ import type {
 	StructuredCompletionOpts,
 	StructuredSchema,
 } from '../../shared/types.js';
+import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
+import { ModelResponseShapeError } from './model-call-error.js';
 
 const log = getLogger('cli-provider');
 
@@ -124,7 +126,7 @@ function codexSchemaJson(schema: StructuredSchema): string {
 function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string): T {
 	const checked = validateCodexReply<T>(schema, parsed);
 	if (!checked.ok) {
-		throw new Error(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`);
+		throw new ModelResponseShapeError(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`, checked.errors);
 	}
 	return checked.value;
 }
@@ -146,6 +148,9 @@ export interface CliProviderOpts {
 	readonly embedDelegate?: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
 	/** How long a codex run may show no model output before it is treated as stalled. Default CODEX_FIRST_OUTPUT_MS. */
 	readonly codexFirstOutputMs?: number | undefined;
+	/** Reasoning effort for every call: claude `--effort <e>`, codex `-c model_reasoning_effort=<e>`.
+	 *  Absent: the CLI's own default. */
+	readonly effort?: TierEffort | undefined;
 }
 
 
@@ -185,6 +190,8 @@ export class CliProvider implements LLMProvider {
 	/** The `--model` id this provider forwards to the CLI, or undefined when it
 	 *  lets the CLI use its own default. Public for logging + testability. */
 	readonly defaultModel: string | undefined;
+	/** The reasoning effort this provider forwards to the CLI, if any. */
+	readonly effort: TierEffort | undefined;
 	private readonly binPath: string;
 	private readonly timeoutMs: number;
 	private readonly codexFirstOutputMs: number;
@@ -196,6 +203,7 @@ export class CliProvider implements LLMProvider {
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined;
 		this.defaultModel = opts.model;
+		this.effort = opts.effort;
 		this.binPath = opts.binPath ?? opts.kind;
 		// 10 min default: agentic `claude`/`codex --print` calls that generate a
 		// full artifact or a deep analyze bundle routinely exceed the old 120 s
@@ -333,7 +341,9 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal);
+			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
+			const { agentText } = await this.runCodex(args, prompt, silence);
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
@@ -422,15 +432,20 @@ export class CliProvider implements LLMProvider {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			try {
-				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, ...(opts.signal !== undefined ? { signal: opts.signal } : {}) });
+				return await this.reviewSessionOnce<T>(prompt, schema, {
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,
+					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
+					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+				});
 			} catch (err) {
 				if (isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
-				// A run that never started answering is retried once, as a fresh run,
-				// inside the time that remains (ISSUE-d4b2cd1c).
+				// A run that never started answering (or, with stallMs, went silent) is
+				// retried once, as a fresh run, inside the time that remains (ISSUE-d4b2cd1c).
 				if (err instanceof CliStallError) {
+					const what = opts.stallMs !== undefined ? 'the CLI printed nothing new within its silence limit' : 'the CLI produced no model output';
 					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
-						attempt < maxAttempts ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output; giving up');
+						`runReviewSession: ${what}; ${attempt < maxAttempts ? 'retrying once inside the remaining time' : 'giving up'}`);
 					if (attempt < maxAttempts) continue;
 					throw err;
 				}
@@ -442,7 +457,7 @@ export class CliProvider implements LLMProvider {
 		}
 	}
 
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean; signal?: AbortSignal | undefined }): Promise<T> {
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean; stallMs?: number | undefined; signal?: AbortSignal | undefined }): Promise<T> {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
@@ -504,14 +519,15 @@ export class CliProvider implements LLMProvider {
 
 	private modelArgs(opts?: CompletionOpts | StructuredCompletionOpts): string[] {
 		const model = this.defaultModel;
-		if (model === undefined || model.length === 0) return [];
 		// Both binaries support `--model <name>` / `-m <name>`. Use the long
 		// form for parity. `opts` is reserved for future per-call model
 		// overrides; currently the caller picks the model via the provider's
 		// default at construction time (which the model-class router on the
 		// caller side resolves before constructing the provider).
 		void opts;
-		return ['--model', model];
+		const modelArgs = model === undefined || model.length === 0 ? [] : ['--model', model];
+		if (this.effort === undefined) return modelArgs;
+		return [...modelArgs, ...(this.kind === 'claude' ? ['--effort', this.effort] : ['-c', `model_reasoning_effort=${this.effort}`])];
 	}
 
 
@@ -544,10 +560,12 @@ export class CliProvider implements LLMProvider {
 
 
 	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const stall = exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
+		const stall = exec?.stallMs !== undefined
+			? { ms: exec.stallMs, started: () => false, silence: true }
+			: exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
 		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal);
 		if (out.stalled === true) {
-			throw new CliStallError('codex', this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
+			throw new CliStallError('codex', stall?.ms ?? this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
 		}
 		const events: CodexEvent[] = [];
 		for (const line of out.stdout.split('\n')) {
@@ -626,6 +644,10 @@ interface ExecOverride {
 	/** Kill a codex run that shows no model output within the first-output limit
 	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
 	readonly watchStall?: boolean | undefined;
+	/** Kill a codex run that prints nothing new for this long (CliStallError).
+	 *  Set by a structured call or a reviewer session that passes `stallMs` (ISSUE-562b1bb5); takes
+	 *  the place of `watchStall` when both are set. */
+	readonly stallMs?: number | undefined;
 	/** Cancels the run in flight: its process group is killed and AbortError thrown (Epic 8315a11f s1). */
 	readonly signal?: AbortSignal | undefined;
 }

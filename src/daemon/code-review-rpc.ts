@@ -164,6 +164,13 @@ export async function codeReviewRunStart(
 				send({ id: 0, stream: 'error', data: { error: `codeReview.run: could not read the changed-file diff — ${err.message}`, reason: 'diff-unavailable', recoverable: false } });
 				return;
 			}
+			// An empty Story scope has nothing to review: decline as the subject does,
+			// before any judge runs or any record is written (ISSUE-b97752e9).
+			if (diff.changedFiles.length === 0) {
+				log.info({ repoPath, epicHash: params.epicHash, storyId: params.storyId }, 'codeReview.run declined: the diff-only scope is empty');
+				send({ id: 0, stream: 'error', data: { error: 'codeReview.run declined: no-build-record', reason: 'no-build-record', recoverable: false } });
+				return;
+			}
 			outcome = await runCodeReview(
 				{ ...resolved.subject, changedFiles: diff.changedFiles, changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded, excludedFromScope: diff.excludedFromScope }, provider,
 				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true, ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}) },

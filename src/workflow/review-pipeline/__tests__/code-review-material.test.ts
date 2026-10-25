@@ -17,7 +17,8 @@ import { coverageSpec, prepareCoverageGrounding } from '../../code-review/dimens
 import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
 import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
-import { codeReviewMaterial, neighbourSummary } from '../adapters/code-review-material.js';
+import { codeReviewMaterial, moduleOf, neighbourSummary, NEIGHBOUR_SIGNATURE_CHARS } from '../adapters/code-review-material.js';
+import type { ReviewAtom, ReviewMaterial, ReviewRelation } from '../types.js';
 
 const row = (entityId: string, file: string, name: string, callees: string[] = [], callers: string[] = [], kind = 'function'): ChangedSymbolSummary =>
 	({ entityId, file, kind, name, signature: `${name}()`, callers, callees, testsReaching: [] });
@@ -148,4 +149,129 @@ test('coverage material built from prepareCoverageGrounding keeps only eligible 
 	// The other dimensions take the grounding itself.
 	const quality = modelDimensionAdapter(qualitySpec(subject), subject, codeReviewSnapshot(subject, g));
 	assert.deepEqual(quality.material().atoms.map(a => a.id), ['fn', 'iface', 't', 'reached']);
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-e940023a: the material and its summaries scale with the material's size,
+// with exactly the output they had.
+// ---------------------------------------------------------------------------
+
+/** The implementation before ISSUE-e940023a, kept verbatim as the reference. */
+function referenceMaterial(grounding: CodeReviewGrounding): ReviewMaterial {
+	const atoms: ReviewAtom[] = [];
+	for (const row of grounding.symbols) atoms.push({ id: row.entityId, label: `${row.file}#${row.name}`, text: JSON.stringify(row), file: row.file, module: moduleOf(row.file) });
+	const relations: ReviewRelation[] = [];
+	const seenPair = new Set<string>();
+	const relate = (from: string, to: string, kind: ReviewRelation['kind']): void => {
+		if (from === to) return;
+		const [a, b] = kind === 'calls' || from < to ? [from, to] : [to, from];
+		const key = JSON.stringify([kind, a, b]);
+		if (seenPair.has(key)) return;
+		seenPair.add(key);
+		relations.push({ from, to, kind });
+	};
+	const idsByName = new Map<string, string[]>();
+	for (const row of grounding.symbols) idsByName.set(row.name, [...(idsByName.get(row.name) ?? []), row.entityId]);
+	for (const row of grounding.symbols) {
+		for (const callee of row.callees) for (const id of idsByName.get(callee) ?? []) relate(row.entityId, id, 'calls');
+		for (const caller of row.callers) for (const id of idsByName.get(caller) ?? []) relate(id, row.entityId, 'calls');
+	}
+	for (let i = 0; i < atoms.length; i++) {
+		for (let j = i + 1; j < atoms.length; j++) {
+			const a = atoms[i]!, b = atoms[j]!;
+			if (a.file === b.file) relate(a.id, b.id, 'same-file');
+			if (a.module === b.module) relate(a.id, b.id, 'same-module');
+		}
+	}
+	return { atoms, relations, obligations: [] };
+}
+
+function referenceSummary(atom: ReviewAtom, material: ReviewMaterial): string {
+	const row = JSON.parse(atom.text) as { kind: string; name: string; file: string; signature: string };
+	const nameOf = new Map(material.atoms.map(a => [a.id, (JSON.parse(a.text) as { name: string }).name] as const));
+	const names = (ids: readonly string[]): string => {
+		const unique = [...new Set(ids.map(id => nameOf.get(id)).filter((n): n is string => n !== undefined))];
+		return unique.length === 0 ? 'none' : unique.join(', ');
+	};
+	const calls = material.relations.filter(r => r.kind === 'calls');
+	const firstLine = (row.signature.split('\n')[0] ?? '').slice(0, NEIGHBOUR_SIGNATURE_CHARS);
+	return `${row.kind} ${row.name} in ${row.file}: ${firstLine}; calls: ${names(calls.filter(r => r.from === atom.id).map(r => r.to))}; called by: ${names(calls.filter(r => r.to === atom.id).map(r => r.from))}`;
+}
+
+/** A deterministic pseudo-random grounding: files spread over directories (the
+ *  root included), names that repeat, calls both ways, and rows out of file order. */
+function syntheticGrounding(n: number, seed: number): CodeReviewGrounding {
+	let x = seed;
+	const rnd = (k: number): number => { x = (x * 1103515245 + 12345) % 2147483648; return x % k; };
+	const dirs = ['', 'src/a/', 'src/a/b/', 'src/c/', 'lib/'];
+	return {
+		symbols: Array.from({ length: n }, (_, i) => ({
+			entityId: `e${i}`, file: `${dirs[rnd(dirs.length)]}f${rnd(6)}.ts`, kind: rnd(3) === 0 ? 'class' : 'function',
+			name: `n${rnd(Math.max(2, n >> 1))}`, signature: `sig ${i}\nsecond line ${i}`,
+			callers: Array.from({ length: rnd(3) }, () => `n${rnd(n)}`), callees: Array.from({ length: rnd(3) }, () => `n${rnd(n)}`),
+			testsReaching: [],
+		})),
+	} as unknown as CodeReviewGrounding;
+}
+
+test('ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before', () => {
+	for (const [n, seed] of [[1, 1], [2, 2], [40, 3], [120, 4], [300, 5]] as const) {
+		const g = syntheticGrounding(n, seed);
+		const now = codeReviewMaterial(g);
+		const before = referenceMaterial(g);
+		assert.deepEqual(now.atoms, before.atoms, `atoms n=${n}`);
+		assert.deepEqual(now.relations, before.relations, `relations, in order, n=${n}`);
+		for (const a of now.atoms) assert.equal(neighbourSummary(a, now), referenceSummary(a, before), `summary of ${a.id}, n=${n}`);
+		// A copy with other obligations, as the adapters make, summarises the same.
+		const copy: ReviewMaterial = { ...now, obligations: [] };
+		for (const a of now.atoms.slice(0, 5)) assert.equal(neighbourSummary(a, copy), referenceSummary(a, before));
+	}
+});
+
+test('ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took', () => {
+	const g = syntheticGrounding(3000, 7);
+	const started = Date.now();
+	const m = codeReviewMaterial(g);
+	for (const a of m.atoms) neighbourSummary(a, m);
+	const ms = Date.now() - started;
+	// The old code took over 1.6 s for 1000 atoms and grows with the square.
+	assert.ok(ms < 3000, `built and summarised 3000 atoms in ${ms} ms`);
+});
+
+test('ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time', () => {
+	const g = { symbols: Array.from({ length: 50000 }, (_, i) => ({
+		entityId: `e${i}`, file: `d${i}/f.ts`, kind: 'function', name: 'same', signature: 's', callers: [], callees: [], testsReaching: [],
+	})) } as unknown as CodeReviewGrounding;
+	const started = Date.now();
+	const m = codeReviewMaterial(g);
+	const ms = Date.now() - started;
+	assert.deepEqual(m.relations, [], 'no shared file, directory or call');
+	// About 45 ms here; copying the name bucket per row took 3.6 s.
+	assert.ok(ms < 1500, `built 50000 same-named atoms in ${ms} ms`);
+});
+
+
+// ---------------------------------------------------------------------------
+// ISSUE-2f4cb54c: an adapter builds its material once, however often it is read.
+// ---------------------------------------------------------------------------
+
+test('ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds', () => {
+	const subject = {
+		repoPath: '/repo', epicHash: 'e1a2b3c4d5e6f708', storyId: 's1', changedFiles: ['src/a.ts', 'src/b.ts'],
+		approvedLld: null, approvedPlan: null, buildRecord: null,
+	} as CodeReviewSubject;
+	const g = grounding(row('fn', 'src/a.ts', 'run'), row('other', 'src/b.ts', 'helper'), { ...row('reached', 'src/a.ts', 'call'), testsReaching: ['src/__tests__/a.test.ts#t'] });
+	for (const make of [coverageSpec, qualitySpec]) {
+		const spec = make(subject);
+		let builds = 0;
+		const counted = {
+			...spec,
+			materialGrounding: (gr: CodeReviewGrounding, mode: 'full' | 'degraded') => { builds++; return spec.materialGrounding?.(gr, mode) ?? gr; },
+		};
+		const adapter = modelDimensionAdapter(counted as typeof spec, subject, codeReviewSnapshot(subject, g));
+		const first = adapter.material();
+		for (let i = 0; i < 50; i++) assert.equal(adapter.material(), first, 'every read is the same material');
+		assert.equal(builds, 1, `${spec.dimension}: built once for 51 reads`);
+		assert.deepEqual(first, modelDimensionAdapter(make(subject), subject, codeReviewSnapshot(subject, g)).material(), `${spec.dimension}: the same material as before`);
+	}
 });

@@ -30,7 +30,7 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
-import { ReviewStreamError } from '../../../shared/review-stream.js';
+import { CEILING_TIMEOUT, IDLE_TIMEOUT, ReviewStreamError } from '../../../shared/review-stream.js';
 import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
 import { stepDaemonClient } from '../daemon-client.js';
 import type { StepDaemonClient } from '../daemon-client.js';
@@ -108,6 +108,10 @@ export interface CodeReviewStepDeps {
 	readonly client?: 'claude' | 'codex' | undefined;
 	/** Aborts the daemon code-review wait, and with it the review run. */
 	readonly signal?: AbortSignal | undefined;
+	/** The step tool's progress callback: each frame of the daemon review is relayed to it. */
+	readonly progress?: ((data: unknown) => void) | undefined;
+	/** The daemon code-review wait limits. Default: codeReviewWaitLimits() from config. */
+	readonly waitLimits?: (() => CodeReviewWaitLimits) | undefined;
 }
 
 /** The fixed poll interval for the block-and-poll (an internal constant, NOT a
@@ -254,7 +258,7 @@ async function handleStart(
 	let subject:  CodeReviewSubject;
 
 	if (resuming) {
-		const payload = loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
+		const payload = await loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
 		subject = payload.subject;
 
@@ -264,7 +268,7 @@ async function handleStart(
 		// the user's explicit choice), so a decline never silently upgrades to a full
 		// graph review.
 		if (step.proceed !== true) {
-			releaseState(step.state!);
+			await releaseState(step.state!);
 			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'declined' });
 		}
 	} else {
@@ -316,7 +320,7 @@ async function handleStart(
 				// to the DIFF-ONLY (degraded) review — the same escape the decline
 				// branch takes. Release the confirm_wait token first (mirrors the
 				// fresh-break path below) so the diff review saves a fresh state.
-				releaseState(step.state!);
+				await releaseState(step.state!);
 				return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, {
 					kind:                 'freshness-timeout',
 					waitedMs:             deps.now() - waitStart,
@@ -329,14 +333,14 @@ async function handleStart(
 		}
 		// Fresh: consume the confirm_wait token; a fresh emit_judgements state is
 		// saved below.
-		releaseState(step.state!);
+		await releaseState(step.state!);
 	} else {
 		const f = await deps.fetchFreshness(freshParams);
 		if (!f.ok) {
 			return errorResult('freshness-unavailable', `insrc_code_review_step: freshness check unavailable — ${f.reason}.`, true);
 		}
 		if (f.isProcessing || f.staleFiles.length > 0) {
-			const token = saveState({
+			const token = await saveState({
 				runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 				startedAtMs: Date.now(),
 				repo, epicHash, storyId, subject,
@@ -368,7 +372,7 @@ async function handleStart(
 	}
 
 	// 3. Save opaque state + hand the controller the four prompts + the schema.
-	const token = saveState({
+	const token = await saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 		startedAtMs: Date.now(),
 		repo, epicHash, storyId, subject, grounding,
@@ -425,11 +429,17 @@ async function beginDiffOnlyReview(
 		throw err;
 	}
 
+	// An empty Story scope has nothing to review: the same decline the subject
+	// gives, before any judge runs or any record is written (ISSUE-b97752e9).
+	if (changedFiles.length === 0) {
+		return errorResult('no-subject', 'insrc_code_review_step: cannot review — no-build-record (the Story\'s change set is empty).', false);
+	}
+
 	// Re-key the subject to the diff-derived changed set and to how the diff scoped
 	// it (ISSUE-b47dadc7), including what it left out (ISSUE-b97752e9).
 	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
 
-	const token = saveState({
+	const token = await saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 		startedAtMs: Date.now(),
 		repo, epicHash, storyId, subject: diffSubject, grounding,
@@ -507,7 +517,7 @@ async function handleJudgements(
 	if (typeof step.state !== 'string' || step.state.length === 0) {
 		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
 	}
-	const payload = loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+	const payload = await loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
 
 	// A judgements turn always resumes an emit_judgements state, which carries the
 	// fetched grounding. A confirm_wait state (grounding not yet fetched) is not a
@@ -521,7 +531,7 @@ async function handleJudgements(
 	// the controller wrote. `start` already sends such code to the daemon; this
 	// holds the rule at the point of the stamp, whatever led here.
 	if (authorOf(payload.repo, payload.epicHash, payload.storyId, deps) === 'controller') {
-		releaseState(step.state);
+		await releaseState(step.state);
 		return errorResult('same-party-review', new SamePartyReviewError('controller', `the code of Story ${payload.storyId}`).message, false);
 	}
 
@@ -585,7 +595,7 @@ async function driveRunner(
 	if (!outcome.ok) {
 		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
 	}
-	releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
+	await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
 	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
 	// ISSUE-11e4fa88 — say so when findings were dropped. The operator reads this
@@ -712,10 +722,36 @@ function authorOf(repo: string, epicHash: string, storyId: string, deps: CodeRev
 	return (deps.readBuildAuthor ?? buildAuthorParty)(repo, epicHash, storyId);
 }
 
-/** How long the tool waits for the daemon's code review. Daemon code reviews
- *  have taken up to about two and a half minutes. Tripled from 10 minutes on
- *  2026-10-08 with every other review limit. */
-export const DAEMON_CODE_REVIEW_WAIT_MS = 30 * 60_000;
+/** How long the tool waits for the daemon's code review: at most `ceilingMs` in
+ *  all, and at most `idleMs` without a progress frame (ISSUE-1973e125). A large
+ *  Story's review runs for hours while reporting a call about once a minute. */
+export interface CodeReviewWaitLimits {
+	readonly ceilingMs: number;
+	readonly idleMs:    number;
+}
+
+const CEILING_KEY = 'codeReview.daemonReviewCeilingMs';
+const IDLE_KEY = 'codeReview.daemonReviewIdleMs';
+const DEFAULT_CEILING_MS = 14_400_000;
+const DEFAULT_IDLE_MS = 1_200_000;
+
+/** The wait limits from `config` (default: `~/.insrc/config.json`). Fail-safe as
+ *  readFreshnessTimeoutMs: a missing, non-positive or non-numeric value is its
+ *  default, and the idle limit is at most the ceiling. Never throws. */
+export function codeReviewWaitLimits(config?: unknown): CodeReviewWaitLimits {
+	let raw = config;
+	if (raw === undefined) {
+		try {
+			raw = existsSync(PATHS.config) ? JSON.parse(readFileSync(PATHS.config, 'utf8')) : {};
+		} catch {
+			raw = {};
+		}
+	}
+	const section = (raw as { codeReview?: { daemonReviewCeilingMs?: unknown; daemonReviewIdleMs?: unknown } } | null)?.codeReview;
+	const valid = (v: unknown, dflt: number): number => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : dflt);
+	const ceilingMs = valid(section?.daemonReviewCeilingMs, DEFAULT_CEILING_MS);
+	return { ceilingMs, idleMs: Math.min(valid(section?.daemonReviewIdleMs, DEFAULT_IDLE_MS), ceilingMs) };
+}
 
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE_DAEMON_FAILURES: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);
@@ -735,11 +771,16 @@ async function reviewByDaemon(
 	reason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const { repoPath: repo, epicHash, storyId } = subject;
-	log.info({ repo, epicHash, storyId, mode }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
+	const limits = (deps.waitLimits ?? codeReviewWaitLimits)();
+	log.info({ repo, epicHash, storyId, mode, ...limits }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
 	try {
 		const res = await (deps.reviewByDaemon ?? stepDaemonClient().codeReviewStream)(
 			{ repo, epicHash, storyId, groundingMode: mode, ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(deps.client !== undefined ? { client: deps.client } : {}) },
-			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
+			{
+				timeoutMs: limits.ceilingMs, idleMs: limits.idleMs,
+				...(deps.progress !== undefined ? { onFrame: (_stream: 'progress' | 'delta', data: unknown) => deps.progress!(data) } : {}),
+				...(deps.signal !== undefined ? { signal: deps.signal } : {}),
+			},
 		);
 		// `codeReview.run` is older than the grounding mode and the reviewer stamp, so
 		// a daemon that predates them accepts this request and silently ignores both:
@@ -771,7 +812,12 @@ async function reviewByDaemon(
 		};
 	} catch (err) {
 		const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
-		const cause = err instanceof Error ? err.message : String(err);
+		let cause = err instanceof Error ? err.message : String(err);
+		// A timeout names the setting to raise.
+		if (failure === 'timeout' && err instanceof ReviewStreamError) {
+			if (err.reason === IDLE_TIMEOUT) cause += ` (the idle limit, ${IDLE_KEY})`;
+			else if (err.reason === CEILING_TIMEOUT) cause += ` (the overall limit, ${CEILING_KEY})`;
+		}
 		log.warn({ repo, epicHash, storyId, mode, failure, cause }, 'insrc_code_review_step: the daemon review did not complete; nothing stamped');
 		return errorResult(
 			`daemon-review-${failure}`,

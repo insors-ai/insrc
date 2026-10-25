@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 import { makeUpdateHandlers } from '../update-runner.js';
 import type { IpcRequest, DaemonUpdateOutcome } from '../../shared/types.js';
 
@@ -51,7 +51,7 @@ test('t3: daemon.update returns { launched:true } and schedules shutdown, withou
     readOutcome: () => null,
     scheduleShutdown: () => { shutdowns++; },
   });
-  const server = new IpcServer(handlers, {}, () => 1000);
+  const server = new IpcServer(directDispatch(handlers, {}), () => 1000);
   const sock = new CapturingSocket();
   internals(server).handleConnection(sock);
 
@@ -70,7 +70,7 @@ test('t3: a launch guard failure surfaces as a result.error envelope and does NO
     readOutcome: () => null,
     scheduleShutdown: () => { shutdowns++; },
   });
-  const server = new IpcServer(handlers, {}, () => 1000);
+  const server = new IpcServer(directDispatch(handlers, {}), () => 1000);
   const sock = new CapturingSocket();
   internals(server).handleConnection(sock);
 
@@ -87,7 +87,7 @@ test('t3: daemon.updateOutcome returns the last outcome, and null when none exis
 
   // present
   let handlers = makeUpdateHandlers({ launch: () => ({ launched: true }), readOutcome: () => outcome, scheduleShutdown: () => {} });
-  let server = new IpcServer(handlers, {}, () => 1000);
+  let server = new IpcServer(directDispatch(handlers, {}), () => 1000);
   let sock = new CapturingSocket();
   internals(server).handleConnection(sock);
   await internals(server).handleMessage(reqLine('daemon.updateOutcome'), sock);
@@ -95,7 +95,7 @@ test('t3: daemon.updateOutcome returns the last outcome, and null when none exis
 
   // absent → null
   handlers = makeUpdateHandlers({ launch: () => ({ launched: true }), readOutcome: () => null, scheduleShutdown: () => {} });
-  server = new IpcServer(handlers, {}, () => 1000);
+  server = new IpcServer(directDispatch(handlers, {}), () => 1000);
   sock = new CapturingSocket();
   internals(server).handleConnection(sock);
   await internals(server).handleMessage(reqLine('daemon.updateOutcome'), sock);

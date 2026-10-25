@@ -48,6 +48,7 @@ import { TODO_LIMITS, betweenOrderKeys } from '../shared/todos.js';
 import { isAgentFamily } from '../shared/agent-registry.js';
 import * as todos from '../db/todos.js';
 import { getLogger } from '../shared/logger.js';
+import { withBackgroundHold, withRefreshHold } from '../shared/locks/maintenance-lock.js';
 
 const log = getLogger('todos-rpc');
 
@@ -1148,8 +1149,9 @@ export async function subscribe(
 ): Promise<void> {
 	if (signal.aborted) return;
 
+	// The stream holds no maintenance lock; each push takes it with no wait and is skipped during maintenance.
 	const unsubscribe = subscribeToTodosBus(event => {
-		send({ id: 0, stream: 'todos', data: event });
+		void withRefreshHold(async () => { send({ id: 0, stream: 'todos', data: event }); });
 	});
 
 	await new Promise<void>(resolve => {
@@ -1182,13 +1184,14 @@ export function scheduleTodosRetention(
 		? opts.retentionDays
 		: 90;
 
+	// With daemon threads, under the maintenance lock's shared hold: it waits for maintenance (Epic 86197ac6 s2).
 	const run = async (): Promise<void> => {
 		try {
-			const result = await cleanup(db, {
+			const result = await withBackgroundHold(() => cleanup(db, {
 				caller: 'system',
 				statuses: ['archived'],
 				olderThanDays: retentionDays,
-			});
+			}));
 			if ('error' in result) {
 				log.warn({ result }, 'todos retention sweep rejected');
 				return;

@@ -1,204 +1,177 @@
-/**
- * bson → Parquet converter (Phase 2.3 of
- * plans/data-driver-duckdb-files.md).
- *
- * BSON is a length-prefixed binary stream of documents (one or many
- * concatenated). The existing bson driver reads the whole file into
- * memory + walks the length prefixes; we reuse that approach for v1
- * since BSON files in practice are bounded (Mongo dumps are
- * typically <2 GB).
- *
- * Type fidelity (parquetjs-lite, no DECIMAL or nested STRUCTs):
- *
- *   BSON                  Parquet (this converter)
- *   ----                  ------------------------
- *   Double                DOUBLE
- *   String                UTF8
- *   Int32                 INT32
- *   Int64 / Long          INT64
- *   Decimal128            UTF8 (string, precision-preserving)  <- LOSSY type
- *   Boolean               BOOLEAN
- *   Date                  TIMESTAMP_MILLIS
- *   ObjectId              UTF8 (24-char hex)
- *   Binary                BYTE_ARRAY
- *   Embedded document     UTF8 (JSON-stringified)              <- LOSSY shape
- *   Array                 UTF8 (JSON-stringified)              <- LOSSY shape
- *   RegExp / Code         UTF8 (string-ified)
- *
- * Heterogeneous documents (some have field X, some don't) merge into
- * a union schema with all fields nullable. Schema inference samples
- * the first 1000 documents; rare fields appearing only beyond that
- * sample are dropped (typed as a schema warning).
- */
-
-import { createRequire } from 'node:module';
-import { readFile } from 'node:fs/promises';
-
-import { BSON, deserialize, ObjectId, Decimal128, Binary, Long } from 'bson';
-
-const _require = createRequire(import.meta.url);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parquet: any = _require('parquetjs-lite');
-
-import { getLogger } from '../../../../shared/logger.js';
+/** Bounded two-pass BSON decoding shared by saved and private-memory sinks. */
+import { deserialize, ObjectId, Decimal128, Binary, Long } from 'bson';
 import { runDirectoryConvert } from './shared.js';
-import type {
-	ConvertDirectoryOpts,
-	ConvertDirectoryResult,
-	ConvertResult,
-	FileConverter,
-} from './types.js';
-
-const log = getLogger('converter-bson');
-
-// Schema inference uses up to this many docs.
-const INFER_SAMPLE = 1000;
-
-interface FieldKnowledge {
-	readonly name: string;
-	parquetType: string;
-	optional: boolean;
+import { BoundedInput, sourceStamp } from './bounded-input.js';
+import type { SourceStamp } from './bounded-input.js';
+import { DecoderBudget } from './decoder-budget.js';
+import { validateBsonDocument } from './bson-framing.js';
+import { convertedColumn, normalizeScalar } from './normalization.js';
+import { createTypedRowSource, emptyColumn } from './typed-row-source.js';
+import { writeTypedParquet } from './typed-parquet.js';
+import type { ConvertedColumn, MemoryRowSource, FileConverter, MemorySourceOptions, ConvertDirectoryOpts, ConvertDirectoryResult, ConvertResult } from './types.js';
+const MAX_DOCUMENT = 8 * 1024 * 1024;
+interface Field {
+	name: string;
+	type?: string;
 	stringify: boolean;
 }
-
-function classifyValue(v: unknown): { type: string; stringify: boolean } {
-	if (v === null || v === undefined) return { type: 'UTF8', stringify: false };
-	if (typeof v === 'boolean') return { type: 'BOOLEAN', stringify: false };
-	if (typeof v === 'string')  return { type: 'UTF8',    stringify: false };
-	if (typeof v === 'number')  return Number.isInteger(v)
-		? { type: 'INT64',  stringify: false }
-		: { type: 'DOUBLE', stringify: false };
-	if (typeof v === 'bigint')  return { type: 'INT64', stringify: false };
-	if (v instanceof Date)      return { type: 'TIMESTAMP_MILLIS', stringify: false };
-	if (v instanceof ObjectId)  return { type: 'UTF8', stringify: false };
-	if (v instanceof Decimal128) return { type: 'UTF8', stringify: false };
-	if (v instanceof Binary)    return { type: 'BYTE_ARRAY', stringify: false };
-	if (v instanceof Long)      return { type: 'INT64', stringify: false };
-	if (Array.isArray(v))       return { type: 'UTF8', stringify: true };
-	if (typeof v === 'object')  return { type: 'UTF8', stringify: true };
-	return { type: 'UTF8', stringify: false };
+function classify(value: unknown): {
+	type?: string;
+	stringify: boolean;
+} {
+	if (value === null || value === undefined)
+		return { stringify: false };
+	if (typeof value === 'boolean')
+		return { type: 'BOOLEAN', stringify: false };
+	if (typeof value === 'number')
+		return { type: Number.isInteger(value) ? 'INT64' : 'DOUBLE', stringify: false };
+	if (value instanceof Long)
+		return { type: value.greaterThan(Number.MAX_SAFE_INTEGER) || value.lessThan(Number.MIN_SAFE_INTEGER) ? 'UTF8' : 'INT64', stringify: false };
+	if (value instanceof Date)
+		return { type: 'TIMESTAMP_MILLIS', stringify: false };
+	if (value instanceof Binary)
+		return { type: 'BYTE_ARRAY', stringify: false };
+	if (value instanceof ObjectId || value instanceof Decimal128 || typeof value === 'string')
+		return { type: 'UTF8', stringify: false };
+	return { type: 'UTF8', stringify: typeof value === 'object' };
 }
-
-/** Merge two type observations -- type-promotion rules so e.g. INT64
- *  + DOUBLE collapse to DOUBLE rather than picking one. */
-function mergeType(a: string, b: string): string {
-	if (a === b) return a;
-	// Numeric promotion
-	if ((a === 'INT32' && b === 'INT64') || (b === 'INT32' && a === 'INT64')) return 'INT64';
-	if ((a === 'INT64' && b === 'DOUBLE') || (b === 'INT64' && a === 'DOUBLE')) return 'DOUBLE';
-	if ((a === 'INT32' && b === 'DOUBLE') || (b === 'INT32' && a === 'DOUBLE')) return 'DOUBLE';
-	// Anything mixed with strings collapses to UTF8 (lossy).
-	if (a === 'UTF8' || b === 'UTF8') return 'UTF8';
+function merge(a: string | undefined, b: string | undefined): string | undefined {
+	if (a === undefined)
+		return b;
+	if (b === undefined || a === b)
+		return a;
+	if ([a, b].every(t => t === 'INT64' || t === 'DOUBLE'))
+		return 'DOUBLE';
 	return 'UTF8';
 }
-
-function serialiseValue(v: unknown, fm: FieldKnowledge): unknown {
-	if (v === null || v === undefined) return null;
-	if (fm.stringify) {
-		try { return JSON.stringify(v, replacer); }
-		catch { return null; }
+function bsonJson(_key: string, value: unknown): unknown {
+	if (value instanceof Long || value instanceof Decimal128)
+		return value.toString();
+	if (typeof value === 'bigint')
+		return value.toString();
+	if (value instanceof ObjectId)
+		return value.toHexString();
+	if (value instanceof Binary)
+		return Buffer.from(value.buffer).toString('base64');
+	return value;
+}
+function normalize(value: unknown, field: Field, column: ConvertedColumn): unknown {
+	if (value === null || value === undefined)
+		return null;
+	if (field.stringify)
+		return JSON.stringify(value, bsonJson);
+	if (value instanceof Long)
+		value = column.physicalType === 'UTF8' ? value.toString() : value.toNumber();
+	if (value instanceof ObjectId)
+		value = value.toHexString();
+	if (value instanceof Decimal128)
+		value = value.toString();
+	if (value instanceof Binary)
+		value = Buffer.from(value.buffer);
+	if (value instanceof Date)
+		value = value.getTime();
+	return normalizeScalar(value, column);
+}
+async function* documents(path: string, stamp: SourceStamp, budget: DecoderBudget, signal?: AbortSignal): AsyncIterable<Record<string, unknown>> {
+	const input = await BoundedInput.open(path, budget, stamp);
+	try {
+		while (input.remaining) {
+			signal?.throwIfAborted();
+			const header = await input.read(4, 4);
+			let length: number;
+			try {
+				length = header.bytes.readInt32LE(0);
+			}
+			finally {
+				header.release();
+			}
+			if (length < 5 || length > MAX_DOCUMENT || length - 4 > input.remaining)
+				throw new Error('resource-limit');
+			input.seek(input.position - 4);
+			const doc = await input.read(length, MAX_DOCUMENT);
+			let releaseObject: (() => void) | undefined;
+			try {
+				validateBsonDocument(doc.bytes);
+				// Conservative object/string expansion allowance, reserved before deserialize.
+				releaseObject = budget.reserve(length * 8);
+				yield deserialize(doc.bytes, { promoteLongs: false }) as Record<string, unknown>;
+			}
+			finally {
+				releaseObject?.();
+				doc.release();
+			}
+		}
+		if ((await sourceStamp(path)).identity !== stamp.identity)
+			throw new Error('Source changed during conversion');
 	}
-	if (v instanceof ObjectId)  return v.toHexString();
-	if (v instanceof Decimal128) return v.toString();
-	if (v instanceof Long)      return Number(v);
-	if (v instanceof Date)      return v.getTime();
-	if (v instanceof Binary)    return v.buffer;
-	return v;
-}
-
-/** JSON.stringify replacer that handles BSON-specific types. */
-function replacer(_key: string, v: unknown): unknown {
-	if (v instanceof ObjectId)   return v.toHexString();
-	if (v instanceof Decimal128) return v.toString();
-	if (v instanceof Long)       return Number(v);
-	if (v instanceof Date)       return v.toISOString();
-	if (v instanceof Binary)     return Buffer.from(v.buffer).toString('base64');
-	return v;
-}
-
-async function readDocs(path: string): Promise<Record<string, unknown>[]> {
-	const buf = await readFile(path);
-	const out: Record<string, unknown>[] = [];
-	let off = 0;
-	while (off + 4 <= buf.length) {
-		const len = buf.readInt32LE(off);
-		if (len < 5 || off + len > buf.length) break;
-		const doc = deserialize(buf.subarray(off, off + len)) as Record<string, unknown>;
-		out.push(doc);
-		off += len;
+	finally {
+		await input.close();
 	}
-	return out;
 }
-
 class BsonConverter implements FileConverter {
 	readonly kind = 'bson' as const;
-
-	async convertFile(
-		source: string,
-		dest: string,
-		_options?: Readonly<Record<string, unknown>>,
-	): Promise<ConvertResult> {
-		const t0 = Date.now();
-		const docs = await readDocs(source);
-		// Schema inference -- sample first INFER_SAMPLE docs, merge
-		// observed field types.
-		const fieldMap = new Map<string, FieldKnowledge>();
-		const sample = docs.slice(0, INFER_SAMPLE);
-		for (const doc of sample) {
-			for (const [k, v] of Object.entries(doc)) {
-				const cls = classifyValue(v);
-				const existing = fieldMap.get(k);
-				if (existing === undefined) {
-					fieldMap.set(k, {
-						name: k,
-						parquetType: cls.type,
-						optional: true,
-						stringify: cls.stringify,
-					});
-				} else {
-					existing.parquetType = mergeType(existing.parquetType, cls.type);
-					existing.stringify = existing.stringify || cls.stringify;
+	async openMemory(source: string, controls: MemorySourceOptions): Promise<MemoryRowSource> {
+		const budget = controls.budget ?? new DecoderBudget(controls.memoryBudgetBytes);
+		const releases: (() => void)[] = [];
+		try {
+			const stamp = await sourceStamp(source);
+			const fields = new Map<string, Field>();
+			// Full streaming inference keeps rare fields; retained schema is separately bounded.
+			for await (const doc of documents(source, stamp, budget, controls.signal)) {
+				for (const [name, value] of Object.entries(doc)) {
+					let field = fields.get(name);
+					const observed = classify(value);
+					if (!field) {
+						if (fields.size >= 16 * 1024)
+							throw new Error('resource-limit');
+						releases.push(budget.reserve(Buffer.byteLength(name) * 2 + 256));
+						field = { name, stringify: false };
+						fields.set(name, field);
+					}
+					const type = merge(field.type, observed.type);
+					if (type !== undefined)
+						field.type = type;
+					field.stringify ||= observed.stringify;
 				}
 			}
+			const columns = fields.size ? [...fields.values()].map(f => convertedColumn(f.name, f.type ?? 'UTF8', true, f.stringify ? 'bson-json' : 'bson-scalar')) : [emptyColumn()];
+			const target = { targetId: 'data', sourceIdentity: stamp.identity, columns };
+			const close = async () => {
+				for (const release of releases.splice(0))
+					release();
+			};
+			return createTypedRowSource([{
+					target,
+					rows: signal => documents(source, stamp, budget, controls.signal ? AbortSignal.any([controls.signal, ...(signal ? [signal] : [])]) : signal),
+					normalize(row) {
+						const out: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+						for (const column of columns) {
+							const field = fields.get(column.name);
+							out[column.name] = field ? normalize(row[column.name], field, column) : null;
+						}
+						return out;
+					},
+				}], { memoryBudgetBytes: controls.memoryBudgetBytes, budget, close });
 		}
-
-		if (fieldMap.size === 0) {
-			// Empty BSON file -- write empty Parquet with a stub column.
-			const emptySchema = new parquet.ParquetSchema({ _empty: { type: 'UTF8', optional: true } });
-			const emptyWriter = await parquet.ParquetWriter.openFile(emptySchema, dest);
-			await emptyWriter.close();
-			return { destPath: dest, rowCount: 0, durationMs: Date.now() - t0 };
+		catch (error) {
+			for (const release of releases)
+				release();
+			if (error instanceof Error && ['resource-limit', 'Source changed during conversion'].includes(error.message))
+				throw error;
+			throw new Error('Invalid or unsupported BSON source');
 		}
-
-		const schemaFields: Record<string, { type: string; optional: boolean }> = {};
-		for (const fm of fieldMap.values()) {
-			schemaFields[fm.name] = { type: fm.parquetType, optional: true };
-		}
-		const schema = new parquet.ParquetSchema(schemaFields);
-		const writer = await parquet.ParquetWriter.openFile(schema, dest);
-		for (const doc of docs) {
-			const out: Record<string, unknown> = {};
-			for (const fm of fieldMap.values()) {
-				out[fm.name] = serialiseValue(doc[fm.name], fm);
-			}
-			await writer.appendRow(out);
-		}
-		await writer.close();
-		log.debug({ source, dest, rowCount: docs.length, durationMs: Date.now() - t0 }, 'bson converted');
-		return { destPath: dest, rowCount: docs.length, durationMs: Date.now() - t0 };
 	}
-
-	async convertDirectory(
-		sourceDir: string,
-		destDir: string,
-		opts: ConvertDirectoryOpts,
-		options?: Readonly<Record<string, unknown>>,
-	): Promise<ConvertDirectoryResult> {
-		return runDirectoryConvert(sourceDir, destDir, opts, this.kind, async (s, d) => {
-			return this.convertFile(s, d, options);
-		});
+	async convertFile(source: string, dest: string, _options?: Readonly<Record<string, unknown>>): Promise<ConvertResult> {
+		const start = Date.now(), rows = await this.openMemory(source, { memoryBudgetBytes: 256 * 1024 * 1024 });
+		try {
+			return { destPath: dest, rowCount: await writeTypedParquet(rows, 'data', dest), durationMs: Date.now() - start };
+		}
+		finally {
+			await rows.close();
+		}
+	}
+	async convertDirectory(source: string, dest: string, opts: ConvertDirectoryOpts, options?: Readonly<Record<string, unknown>>): Promise<ConvertDirectoryResult> {
+		return runDirectoryConvert(source, dest, opts, this.kind, (s, d) => this.convertFile(s, d, options));
 	}
 }
-
-void BSON;  // imported for completeness; replacer + ctor checks cover usage.
 export const bsonConverter: FileConverter = new BsonConverter();

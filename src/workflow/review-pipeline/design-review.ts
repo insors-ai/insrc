@@ -8,8 +8,8 @@
  *
  * Premise review (DEF, plan, ...): extract (a model stage; failing it fails the
  * review), probe (a deterministic stage over the claims), then verify. On the
- * daemon path verify is one call per premise with the 3-minute limit and the
- * repo as cwd, and a premise whose call fails twice is recorded as not judged;
+ * daemon path verify is one call per premise with the design-verify limits and the
+ * repo as cwd, and a premise whose call is exhausted is recorded as not judged;
  * on the controller path it is today's one batched verify call. The claims and
  * the evidence enter the snapshot once, and verify reads them from there.
  *
@@ -28,8 +28,10 @@ import {
 	buildTemplateReviewPrompt, TEMPLATE_ANSWER_SCHEMA, validateTemplateAnswer, type RawTemplateAnswer, type ReviewTemplate,
 } from '../review/template.js';
 import type { Claim, Evidence, Finding } from '../review/types.js';
-import { buildBatchedVerifyPrompt, buildVerifyPrompt, normalizeFinding, VERDICTS_SCHEMA, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA, type RawFinding } from '../review/verify.js';
+import { REVIEW_CALL_LIMITS, structuredLimits } from '../review/call-limits.js';
+import { buildBatchedVerifyPrompt, buildVerifyPrompt, normalizeFinding, VERDICTS_SCHEMA, VERIFY_SCHEMA, type RawFinding } from '../review/verify.js';
 import type { StructuredSchema } from '../../shared/types.js';
+import { attemptsText } from './job.js';
 import type { AdapterStage, NotJudged, ReviewAdapter, ReviewMaterialSnapshot, StageAnswer, StageOutputs } from './types.js';
 
 /** A design review's snapshot: the document, taken once. */
@@ -37,15 +39,16 @@ export function designReviewSnapshot(documentText: string): ReviewMaterialSnapsh
 	return { kind: 'design-review', documentText };
 }
 
-/** Today's record of a premise whose judgement failed twice: MED, never a pass (ISSUE-d4b2cd1c). */
-export function notJudgedFinding(claim: Claim, cause: string): Finding {
+/** The record of a premise whose judgement failed every attempt: MED, never a pass (ISSUE-d4b2cd1c).
+ *  `attempts` is how often the call was issued; without it the count is not stated. */
+export function notJudgedFinding(claim: Claim, cause: string, attempts?: number | undefined): Finding {
 	return {
 		claimId: claim.id,
 		...(claim.ref !== undefined ? { ref: claim.ref } : {}),
 		kind: claim.kind,
 		severity: 'MED',
 		premise: claim.text,
-		evidence: `Not judged: the reviewing model call failed twice. Last error: ${cause}`,
+		evidence: `Not judged: the reviewing model call failed${attempts !== undefined ? ` ${attemptsText(attempts)}` : ''}. Last error: ${cause}`,
 		action: 'Re-run the review, or judge this premise by hand.',
 		fixability: 'manual',
 	};
@@ -77,7 +80,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		// Today's extract prompt; like every structured review call, it runs in the repository (HLD).
 		singleCalls: () => {
 			const { system, user } = buildExtractPrompt(document, opts.stage);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo } }];
+			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-extract') } }];
 		},
 		chunkCalls: () => [],
 		snapshotField: 'claims',
@@ -97,25 +100,25 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		((snap.evidence ?? []) as Evidence[]).find(e => e.claimId === claim.id) ?? { claimId: claim.id, grepResults: [], reads: [] };
 	const verifyDaemon: AdapterStage = {
 		id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'record-not-judged',
-		// One call per premise, in claim order, with the 3-minute limit; the repo as cwd is an addition.
+		// One call per premise, in claim order, with the design-verify limits; the repo as cwd is an addition.
 		singleCalls: (_prior, snap) => ((snap.claims ?? []) as Claim[]).map(claim => {
 			const { system, user } = buildVerifyPrompt(claim, evidenceFor(snap, claim));
 			return {
 				key: claim.id, schema: VERIFY_SCHEMA,
 				messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-				execution: { mode: 'structured', cwd: opts.repo, timeoutMs: VERIFY_CALL_TIMEOUT_MS },
+				execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-verify') },
 			};
 		}),
 		chunkCalls: () => [],
 	};
 	const verifyController: AdapterStage = {
 		id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'fail-review',
-		// Today's one batched verify call holding every premise.
+		// Today's one batched verify call holding every premise, with the design-verify limits.
 		singleCalls: (_prior, snap) => {
 			const claims = (snap.claims ?? []) as Claim[];
 			if (claims.length === 0) return [];
 			const { system, user } = buildBatchedVerifyPrompt(claims, (snap.evidence ?? []) as Evidence[]);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: VERDICTS_SCHEMA as unknown as StructuredSchema, execution: { mode: 'structured', cwd: opts.repo } }];
+			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: VERDICTS_SCHEMA as unknown as StructuredSchema, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-verify') } }];
 		},
 		chunkCalls: () => [],
 	};
@@ -135,7 +138,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 				const raw = batched !== undefined ? batched.get(claim.id) : answers.find(a => a.key === claim.id)?.answer as RawFinding | undefined;
 				if (raw !== undefined) return normalizeFinding(claim, raw);
 				const failed = notJudged.get(claim.id);
-				return notJudgedFinding(claim, failed?.detail ?? failed?.cause ?? 'no verdict was returned for this premise');
+				return notJudgedFinding(claim, failed?.detail ?? failed?.cause ?? 'no verdict was returned for this premise', failed?.attempts);
 			});
 		},
 	};
@@ -163,7 +166,7 @@ export function templateCorrection(errors: readonly string[]): string {
 /** The template review's adapter; its result is the checklist's findings. */
 export function templateAdapter(snapshot: ReviewMaterialSnapshot, opts: TemplateAdapterOpts): ReviewAdapter<readonly Finding[]> {
 	const { system, user } = buildTemplateReviewPrompt(opts.template, snapshot.documentText ?? '', opts.stage);
-	const execution = { mode: 'reviewer-session' as const, cwd: opts.repo, deadlineMs: opts.limitMs, tools: 'read-only' as const };
+	const execution = { mode: 'reviewer-session' as const, cwd: opts.repo, deadlineMs: opts.limitMs, tools: 'read-only' as const, stallMs: REVIEW_CALL_LIMITS['design-session'].silenceMs };
 	const session: AdapterStage = {
 		id: 'template', kind: 'model', after: [], onCallFailure: 'fail-review',
 		singleCalls: () => [{ messages: [{ role: 'user', content: `${system}\n\n${user}` }], schema: TEMPLATE_ANSWER_SCHEMA as unknown as StructuredSchema, execution }],

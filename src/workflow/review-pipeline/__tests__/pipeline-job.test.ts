@@ -19,13 +19,15 @@ import { test } from 'node:test';
 
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
+import { ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
-import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
+import { notJudgedFinding } from '../design-review.js';
+import { applyFailure, applyOutput, createReviewJob, MAX_CALL_ATTEMPTS, MAX_GATHER_LEVELS, MAX_STALL_ATTEMPTS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { getLogger } from '../../../shared/logger.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
-import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
+import type { AdapterStage, EvidenceNote, ExecutionMode, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
 import { asSent, atom, atomIdsIn, callIdIn, drive, NOTE_SCHEMA, RELATION_SCHEMA, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, VERDICT_SCHEMA, type ToyOpts, type ToyResult } from './toy-adapter.js';
 
 test('the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens', () => {
@@ -195,9 +197,9 @@ test('a missing or wrong callId is rejected and the call re-issued once under a 
 	assert.deepEqual(result<ToyResult>(job).seen, ['a1']);
 });
 
-test('a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies', () => {
+test('a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies', () => {
 	const snap = toySnapshot([atom(1), atom(2)]);
-	for (const cause of ['transient', 'stall'] as const) {
+	for (const cause of ['transient'] as const) {
 		for (const policy of ['fail-review', 'record-not-judged', 'record-observation'] as const) {
 			const adapter = toyAdapter(snap, { onCallFailure: policy });
 			let job = createReviewJob(adapter, 'daemon', snap, 384_000);
@@ -449,15 +451,15 @@ test("runStage commits a deterministic stage's output; extract claims and probe 
 	assert.deepEqual(job.snapshot.evidence, [{ for: 'p1', hits: 1 }, { for: 'p2', hits: 1 }]);
 	assert.equal(job.stage, 'verify');
 	await assert.rejects(runStage(job, premiseAdapter(job.snapshot, probe)), /model stage/);
-	// Verify: one call per claim, keyed, with the 3-minute limit, built from the snapshot alone.
+	// Verify: one call per claim, keyed, with a per-call limit, built from the snapshot alone.
 	const verifies = nextCalls(job, premiseAdapter(job.snapshot, probe));
 	assert.deepEqual(verifies.map(c => c.carries.key), ['p1', 'p2']);
 	assert.ok(verifies.every(c => c.execution.mode === 'structured' && c.execution.timeoutMs === 180_000));
 	assert.ok(content(verifies[0]!).includes('"hits":1'), 'the evidence from the snapshot');
 	// A verify call failing twice records that premise as not judged; the other is kept.
-	let v = applyFailure(job, premiseAdapter(job.snapshot, probe), verifies[0]!.callId, 'stall');
+	let v = applyFailure(job, premiseAdapter(job.snapshot, probe), verifies[0]!.callId, 'transient');
 	const again = v.pending.find(c => c.carries.key === 'p1')!;
-	v = applyFailure(v, premiseAdapter(v.snapshot, probe), again.callId, 'stall');
+	v = applyFailure(v, premiseAdapter(v.snapshot, probe), again.callId, 'transient');
 	v = applyOutput(v, premiseAdapter(v.snapshot, probe), verifies[1]!.callId, { callId: verifies[1]!.callId, answer: { seen: [] } });
 	assert.equal(v.phase, 'done');
 	assert.deepEqual(v.notJudged.map(n => [n.key, n.policy]), [['p1', 'record-not-judged']]);
@@ -1210,4 +1212,116 @@ test('a call that did not complete is logged with the failure detail (ISSUE-d3a6
 	const warned = warnings.map(w => JSON.stringify(w)).find(w => w.includes('a call did not complete'));
 	assert.ok(warned !== undefined, 'the failed call is logged');
 	assert.ok(warned.includes('not parseable JSON: Unexpected token'), 'with its detail');
+});
+
+test('a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons', async () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap);
+	const sent: LLMMessage[][] = [];
+	await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT), adapter, {
+		completeStructured: async (messages: LLMMessage[]) => {
+			sent.push(messages);
+			if (sent.length === 1) throw new ModelResponseShapeError("codex answer does not satisfy the caller's schema: /answer/seen: must be array", ['/answer/seen: must be array']);
+			return seeingModel().answer({ messages } as unknown as ReviewCall);
+		},
+	} as unknown as LLMProvider);
+	assert.equal(sent.length, 2, 're-issued once');
+	const second = asSent(sent[1]!);
+	assert.ok(second.includes('REJECTED') && second.includes('/answer/seen: must be array'), 'the re-issue carries the reasons as its correction');
+	assert.ok(!asSent(sent[0]!).includes('REJECTED'), 'the first call carried no correction');
+});
+
+// --- the stall retry budget and attempt counts (ISSUE-562b1bb5) ----------------
+
+test('a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once', () => {
+	const snap = toySnapshot([atom(1)]);
+	assert.equal(MAX_STALL_ATTEMPTS, 3);
+	assert.equal(MAX_CALL_ATTEMPTS, 2);
+	const adapter = toyAdapter(snap, { onCallFailure: 'record-not-judged' });
+	let job = createReviewJob(adapter, 'daemon', snap, 384_000);
+	for (const attempt of [1, 2, 3]) {
+		const call = nextCalls(job, adapter)[0]!;
+		assert.equal(call.attempt, attempt, `stall attempt ${attempt} is issued`);
+		job = applyFailure(job, adapter, call.callId, 'stall');
+	}
+	assert.equal(job.phase, 'done', 'after the third stall the policy applies');
+	assert.equal(job.issuedHashes.length, 3, 'three attempts in all');
+	// An invalid answer keeps its single re-issue.
+	let other = createReviewJob(adapter, 'daemon', snap, 384_000);
+	for (const attempt of [1, 2]) {
+		const call = nextCalls(other, adapter)[0]!;
+		assert.equal(call.attempt, attempt);
+		other = applyFailure(other, adapter, call.callId, 'invalid-answer', undefined, { reasons: ['/seen: must be array'] });
+	}
+	assert.equal(other.phase, 'done', 'two attempts for an invalid answer');
+	assert.equal(other.issuedHashes.length, 2);
+});
+
+test('a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts', () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap, { onCallFailure: 'record-not-judged' });
+	for (const causes of [['stall', 'stall', 'stall'], ['stall', 'stall', 'transient']] as const) {
+		let job = createReviewJob(adapter, 'daemon', snap, 384_000);
+		for (const cause of causes) job = applyFailure(job, adapter, nextCalls(job, adapter)[0]!.callId, cause, undefined, { detail: `${cause} detail` });
+		assert.equal(job.notJudged.length, 1, causes.join(','));
+		assert.equal(job.notJudged[0]!.attempts, 3, `${causes.join(',')}: three attempts recorded`);
+		const finding = notJudgedFinding({ id: 'p1', kind: 'citation', text: 'x', anchors: [], probe: {} }, job.notJudged[0]!.detail!, job.notJudged[0]!.attempts);
+		assert.match(finding.evidence, /failed 3 times\. Last error: (stall|transient) detail/, causes.join(','));
+	}
+});
+
+test('ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders', () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap, { onCallFailure: 'fail-review' });
+	let job = createReviewJob(adapter, 'daemon', snap, 384_000);
+	job = applyFailure(job, adapter, nextCalls(job, adapter)[0]!.callId, 'stall');
+	job = applyFailure(job, adapter, nextCalls(job, adapter)[0]!.callId, 'stall');
+	const third = nextCalls(job, adapter)[0]!;
+	assert.throws(() => applyFailure(job, adapter, third.callId, 'stall', undefined, { detail: 'silent' }),
+		(e: unknown) => e instanceof ReviewCallFailedError && e.attempts === 3 && /the call failed 3 times \(stall\): silent/.test(e.message));
+	assert.match(new ReviewCallFailedError('verify', 'transient', 'boom').message, /the call failed twice \(transient\)/, 'the default count is two attempts');
+	const older = notJudgedFinding({ id: 'p1', kind: 'citation', text: 'x', anchors: [], probe: {} }, 'boom');
+	assert.equal(older.evidence, 'Not judged: the reviewing model call failed. Last error: boom', 'no count stated when none was recorded');
+});
+
+test("the pipeline driver forwards a structured call's stallMs to completeStructured", async () => {
+	const snap = toySnapshot([atom(1)]);
+	const adapter = toyAdapter(snap, { execution: { mode: 'structured', cwd: '/repo', timeoutMs: 600_000, stallMs: 60_000 } });
+	const seen: (StructuredCompletionOpts | undefined)[] = [];
+	await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT), adapter, {
+		completeStructured: async (messages: LLMMessage[], _schema: StructuredSchema, opts?: StructuredCompletionOpts) => {
+			seen.push(opts);
+			return seeingModel().answer({ messages } as unknown as ReviewCall);
+		},
+	} as unknown as LLMProvider);
+	assert.equal(seen.length, 1);
+	assert.equal(seen[0]?.stallMs, 60_000);
+	assert.equal(seen[0]?.timeoutMs, 600_000);
+	assert.equal(seen[0]?.internalRetry, false);
+});
+
+test("the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession", async () => {
+	const T = 1_000_000;
+	const snap = toySnapshot([atom(1)]);
+	const run = async (execution: ExecutionMode): Promise<ReviewSessionOpts[]> => {
+		const seen: ReviewSessionOpts[] = [];
+		const provider = {
+			completeStructured: async () => { throw new Error('a session review makes no structured call'); },
+			runReviewSession: async (prompt: string, _schema: unknown, o: ReviewSessionOpts) => {
+				seen.push(o);
+				return { callId: /This request's id is "([^"]+)"/.exec(prompt)![1], answer: { seen: ['a1'] } };
+			},
+		} as unknown as LLMProvider;
+		const adapter = toyAdapter(snap, { execution });
+		await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT, { now: T }), adapter, provider, { now: () => T });
+		return seen;
+	};
+	const withLimit = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only', stallMs: 300_000 });
+	assert.equal(withLimit.length, 1);
+	assert.equal(withLimit[0]?.stallMs, 300_000, 'the silence limit reaches the session');
+	assert.equal(withLimit[0]?.deadlineMs, 600_000);
+	assert.equal(withLimit[0]?.internalRetry, false);
+	const without = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' });
+	assert.equal(without.length, 1);
+	assert.ok(!('stallMs' in without[0]!), 'a session without a silence limit is sent none');
 });

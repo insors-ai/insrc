@@ -27,6 +27,9 @@
  * that is not determined.
  */
 
+import { resolve } from 'node:path';
+import { createConnectionResolver } from '../daemon/db/pool-cache.js';
+import { analysisConnectionContext } from './connection-access.js';
 import { dataSourceListingTimeoutMs } from '../config/analyze.js';
 import { listFilesForConnection } from '../daemon/db/list-files.js';
 import { findEntitiesByFile, getEntity, listEntitiesForRepo } from '../db/entities.js';
@@ -519,7 +522,7 @@ export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScop
 	} catch (err) {
 		return notDetermined('data-source', `the source '${id}' cannot be reached (${reasonOf(err)})`, sizeHint);
 	}
-	return measureConnection(pool, id, sizeHint, options);
+	return measureConnection(pool, scope.poolPath, id, sizeHint, options);
 }
 
 type DataPool = Awaited<ReturnType<typeof acquireDataPool>>;
@@ -605,7 +608,7 @@ const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
 /**
  * The measure of one connection of a pool that is already loaded.
  *
- * Reaching the connection (`pool.acquire`) and listing it are given ONE
+ * Reaching the connection through its callback lease and listing it are given ONE
  * bounded wait: the caller's limit, else the configured one. When the wait
  * ends first, or the request's signal fires, the measure is not determined
  * with its reason, and the driver's call is left to end in the background:
@@ -613,6 +616,7 @@ const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
  */
 async function measureConnection(
 	pool:     DataPool,
+	poolPath: string,
 	id:       string,
 	sizeHint: AnalyzeScope | undefined,
 	options?: MeasureOptions,
@@ -623,7 +627,7 @@ async function measureConnection(
 
 	// A source whose listing is a sample of keys is known by its kind, which the
 	// pool's own list gives: it is not connected to only to be declared uncountable.
-	const declaredKind = pool.list().find(c => c.id === id)?.kind;
+	const declaredKind = pool.safeList().find(c => c.key.id === id)?.kind;
 	if (declaredKind !== undefined && SAMPLED_KINDS.has(declaredKind)) {
 		return nd(`the source '${id}' (${declaredKind}) has no namespaces to count; its listing is a sample of keys`);
 	}
@@ -635,14 +639,17 @@ async function measureConnection(
 	// The call that is already out for this connection, or a new one.
 	let out = pendingListings.get(pool);
 	if (out === undefined) { out = new Map(); pendingListings.set(pool, out); }
-	let pending = out.get(id);
+	const pendingKey = JSON.stringify([poolPath, id]);
+	let pending = out.get(pendingKey);
 	if (pending === undefined) {
+		// The callback lease belongs to this shared work, not to any bounded waiter.
 		// The call reads the entry's own flag, so the entry exists before the call starts.
 		const entry = { abandoned: false } as PendingListing;
 		entry.work = reachAndList(entry);
 		const calls = out;
-		void entry.work.finally(() => { if (calls.get(id) === entry) calls.delete(id); });
-		out.set(id, entry);
+		const clear = (): void => { if (calls.get(pendingKey) === entry) calls.delete(pendingKey); };
+		void entry.work.then(clear, clear);
+		out.set(pendingKey, entry);
 		pending = entry;
 	}
 	const outcome = await withinLimit(pending.work, limitMs, options?.signal, err => late('call', err));
@@ -660,48 +667,51 @@ async function measureConnection(
 	async function reachAndList(state: { readonly abandoned: boolean }): Promise<RequestMeasure> {
 		const nd = (note: string): RequestMeasure => notDetermined('data-source', note);
 		const sizeHint = undefined;
-		let driver: Awaited<ReturnType<DataPool['acquire']>>;
 		try {
-			driver = await pool.acquire(id);
+			const resolver = createConnectionResolver({ poolSource: async () => pool });
+			return await resolver.withConnection(analysisConnectionContext(poolPath), id, async driver => {
+
+				try {
+					switch (driver.family) {
+						case 'rdbms': {
+							const r = driver as RdbmsDriver;
+							if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
+							const listing = await r.listTables({ complete: true });
+							if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
+							return dataMeasure(listing.tables.length, 0, sizeHint);
+						}
+						case 'kv': {
+							if (SAMPLED_KINDS.has(driver.kind)) {
+								return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
+							}
+							const k = driver as KvDriver;
+							if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
+							const listing = await k.listNamespaces({ complete: true });
+							if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
+							if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
+							return dataMeasure(listing.namespaces.length, 0, sizeHint);
+						}
+						case 'file': {
+							const config = pool.safeList().find(c => c.key.id === id);
+							const path = config?.publicConfig['path'];
+							if (config === undefined || typeof path !== 'string') return nd(`the file connection '${id}' has no path`);
+							const listing = await listFilesForConnection(resolve(poolPath, path), { recursive: config.publicConfig['recursive'] === true });
+							if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
+							return dataMeasure(listing.files.length, listing.files.length, sizeHint);
+						}
+						default:
+							return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
+					}
+				} catch (err) {
+					if (state.abandoned) late('listing', err);
+					return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+				}
+			});
 		} catch (err) {
 			if (state.abandoned) late('connection', err);
 			return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
 		}
 
-		try {
-			switch (driver.family) {
-				case 'rdbms': {
-					const r = driver as RdbmsDriver;
-					if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
-					const listing = await r.listTables({ complete: true });
-					if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
-					return dataMeasure(listing.tables.length, 0, sizeHint);
-				}
-				case 'kv': {
-					if (SAMPLED_KINDS.has(driver.kind)) {
-						return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
-					}
-					const k = driver as KvDriver;
-					if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
-					const listing = await k.listNamespaces({ complete: true });
-					if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
-					if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
-					return dataMeasure(listing.namespaces.length, 0, sizeHint);
-				}
-				case 'file': {
-					const config = pool.list().find(c => c.id === id);
-					if (config === undefined || typeof config.path !== 'string') return nd(`the file connection '${id}' has no path`);
-					const listing = await listFilesForConnection(config.path, { recursive: config.recursive === true });
-					if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
-					return dataMeasure(listing.files.length, listing.files.length, sizeHint);
-				}
-				default:
-					return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
-			}
-		} catch (err) {
-			if (state.abandoned) late('listing', err);
-			return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
-		}
 	}
 }
 
@@ -717,7 +727,7 @@ async function measureConnection(
 async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined, options?: MeasureOptions): Promise<RequestMeasure> {
 	const pool = await acquireDataPool(poolPath);
 	await pool.reload();
-	const ids = pool.list().map(c => c.id);
+	const ids = pool.safeList().map(c => c.key.id);
 
 	let objects = 0;
 	let files = 0;
@@ -726,7 +736,7 @@ async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefi
 	for (const id of ids) {
 		if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 		// The pool was loaded once, above: it is not reloaded for each connection.
-		const one = await measureConnection(pool, id, undefined, options);
+		const one = await measureConnection(pool, poolPath, id, undefined, options);
 		if (!one.determined) { uncounted.push(one.note ?? `the source '${id}' could not be counted`); continue; }
 		objects += one.items;
 		files += one.files;

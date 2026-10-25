@@ -158,3 +158,44 @@ test('compactGraphStore pre-clears stale .compact / .bak from a prior aborted ru
 	assert.ok(!existsSync(`${lmdbPath}.bak`));
 	assert.ok(!existsSync(`${lmdbPath}.compact`));
 });
+
+test('compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data', async () => {
+	await getGraphStore();
+	await bulkInsertEdges(5_000);
+	await deleteEdges(0, 4_000);
+	const lockPath = `${lmdbPath}-lock`;
+	const before = { file: statSync(lmdbPath).ino, size: statSync(lmdbPath).size, lock: existsSync(lockPath) ? statSync(lockPath).ino : undefined };
+
+	let calledWithCopy = false;
+	await assert.rejects(
+		() => compactGraphStore({ beforeRename: async () => { calledWithCopy = existsSync(`${lmdbPath}.compact`); return false; } }),
+		(e: unknown) => e instanceof Error && e.name === 'LmdbStoreError' && /the environment was still open; nothing renamed/.test(e.message),
+	);
+	assert.equal(calledWithCopy, true, 'the hook runs after the compacted copy is written');
+	assert.equal(statSync(lmdbPath).ino, before.file, 'graph.lmdb was not renamed or replaced');
+	assert.equal(statSync(lmdbPath).size, before.size);
+	assert.equal(existsSync(lockPath) ? statSync(lockPath).ino : undefined, before.lock, 'the lock file was not removed');
+	assert.ok(!existsSync(`${lmdbPath}.compact`), 'the compacted copy is removed');
+	assert.ok(!existsSync(`${lmdbPath}.bak`), 'no backup was made');
+	// The original store is open again with its rows, and takes writes.
+	assert.equal(await countOutEdges(), 1_000);
+	await bulkInsertEdges(10, 1_000_000);
+	assert.equal(await countOutEdges(), 1_010);
+});
+
+test('compactGraphStore with a hook returning true or no hook returns today\'s CompactResult', async () => {
+	await getGraphStore();
+	await bulkInsertEdges(5_000);
+	await deleteEdges(0, 4_500);
+	const originalIno = statSync(lmdbPath).ino;
+	let calls = 0;
+	const result = await compactGraphStore({ beforeRename: async () => { calls++; return true; } });
+	assert.equal(calls, 1);
+	assert.ok(result.savedBytes > 0 && result.savedBytes === result.beforeBytes - result.afterBytes);
+	assert.notEqual(statSync(lmdbPath).ino, originalIno, 'the compacted file replaced the original');
+	assert.equal(await countOutEdges(), 500);
+	// No hook: unchanged behaviour.
+	const again = await compactGraphStore();
+	assert.ok(again.afterBytes <= again.beforeBytes);
+	assert.equal(await countOutEdges(), 500);
+});

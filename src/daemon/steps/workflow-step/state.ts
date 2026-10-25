@@ -78,7 +78,7 @@ export class WorkflowStateDecodeError extends Error {
 	}
 }
 
-export function encodeState(payload: WorkflowStepStatePayload, meta?: RunEntryMeta): string {
+export async function encodeState(payload: WorkflowStepStatePayload, meta?: RunEntryMeta): Promise<string> {
 	if (payload.version !== STATE_VERSION) {
 		throw new WorkflowStateDecodeError(
 			'wrong-version',
@@ -96,7 +96,7 @@ export function encodeState(payload: WorkflowStepStatePayload, meta?: RunEntryMe
  * an N-turn run holds ~1 live token rather than leaking one per turn. start (first
  * mint) keeps calling encodeState; synthesize keeps its terminal releaseState.
  */
-export function reencodeState(previousToken: string, payload: WorkflowStepStatePayload): string {
+export async function reencodeState(previousToken: string, payload: WorkflowStepStatePayload): Promise<string> {
 	if (payload.version !== STATE_VERSION) {
 		throw new WorkflowStateDecodeError(
 			'wrong-version',
@@ -106,7 +106,7 @@ export function reencodeState(previousToken: string, payload: WorkflowStepStateP
 	return replaceState(previousToken, payload);
 }
 
-export function decodeState(token: string): WorkflowStepStatePayload {
+export async function decodeState(token: string): Promise<WorkflowStepStatePayload> {
 	if (typeof token !== 'string' || token.length < 8 || token.length > 128) {
 		throw new WorkflowStateDecodeError(
 			'malformed',
@@ -116,7 +116,7 @@ export function decodeState(token: string): WorkflowStepStatePayload {
 		);
 	}
 	try {
-		return loadState(token);
+		return await loadState(token);
 	} catch (err) {
 		if (err instanceof StateTokenNotFound) {
 			// An unknown / TTL-expired / already-completed continuation reference —

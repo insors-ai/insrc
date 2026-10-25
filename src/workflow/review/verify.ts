@@ -29,6 +29,7 @@
  */
 
 import { getLogger } from '../../shared/logger.js';
+import { REVIEW_CALL_LIMITS } from './call-limits.js';
 import type { LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type {
 	ArtifactEdit, Claim, Evidence, Finding, Fixability, ProposedFix, Severity,
@@ -55,28 +56,29 @@ export const VERIFY_SCHEMA: StructuredSchema = {
 	required: ['severity', 'evidence', 'action', 'fixability'],
 	properties: {
 		severity:   { type: 'string', enum: SEVERITIES as unknown as string[] },
-		evidence:   { type: 'string', minLength: 1 },
-		action:     { type: 'string', minLength: 1 },
+		evidence:   { type: 'string', minLength: 1, maxLength: 4000 },
+		action:     { type: 'string', minLength: 1, maxLength: 2000 },
 		fixability: { type: 'string', enum: FIXABILITIES as unknown as string[] },
 		proposedFix: {
 			type: 'object',
 			additionalProperties: false,
 			required: ['rationale'],
 			properties: {
-				rationale: { type: 'string' },
+				rationale: { type: 'string', maxLength: 2000 },
 				artifactEdits: {
 					type: 'array',
+					maxItems: 10,
 					items: {
 						type: 'object',
 						additionalProperties: false,
 						required: ['find', 'replace'],
 						properties: {
-							find:    { type: 'string', minLength: 1 },
-							replace: { type: 'string' },
+							find:    { type: 'string', minLength: 1, maxLength: 4000 },
+							replace: { type: 'string', maxLength: 4000 },
 						},
 					},
 				},
-				options: { type: 'array', items: { type: 'string' } },
+				options: { type: 'array', maxItems: 4, items: { type: 'string', maxLength: 500 } },
 			},
 		},
 	},
@@ -140,9 +142,12 @@ const SYSTEM = [
 	'               alternatives). Provide `proposedFix.options` (2–4 choices) and, only if',
 	'               safe, candidate `artifactEdits`.',
 	'  - manual   : needs a design decision (re-scope, change the type model, resolve a',
-	'               semantic gap) with NO safe auto-edit. Provide `proposedFix.options` only;',
-	'               do NOT emit `artifactEdits`.',
-	'A LOW/verified finding is `manual` with no edits and no options unless a cleanup is genuinely useful.',
+	'               semantic gap) with NO safe auto-edit. Provide `proposedFix.options`;',
+	'               leave `artifactEdits` an empty array.',
+	'Always emit `proposedFix` with all three fields. When a field has nothing to say, give',
+	'it empty: `rationale` an empty string (or one line), `artifactEdits` and `options` empty',
+	'arrays. A LOW/verified finding is `manual` with an empty rationale and empty arrays',
+	'unless a cleanup is genuinely useful.',
 ].join('\n');
 
 function renderEvidence(claim: Claim, evidence: Evidence): string {
@@ -203,13 +208,11 @@ export { renderEvidence };
  * Judge one claim against its gathered evidence. One structured LLM call;
  * evidence is placed at the prompt tail.
  */
-/**
- * The wall-clock cap of one premise judgement. A judgement normally returns in
- * well under a minute; a call that is still silent after this is treated as
- * stalled and retried by the review (ISSUE-d4b2cd1c), instead of holding the
- * whole review for the provider's 10-minute default.
- */
-export const VERIFY_CALL_TIMEOUT_MS = 180_000;
+/** The total cap of one premise judgement: the design-verify row of REVIEW_CALL_LIMITS. */
+export const VERIFY_CALL_TIMEOUT_MS = REVIEW_CALL_LIMITS['design-verify'].timeoutMs!;
+/** Its silence limit: a judgement that prints nothing new for this long is killed as
+ *  stalled and re-issued by the review (ISSUE-562b1bb5). The design-verify row too. */
+export const VERIFY_CALL_STALL_MS = REVIEW_CALL_LIMITS['design-verify'].silenceMs!;
 
 export async function verifyClaim(
 	claim:    Claim,
@@ -226,7 +229,7 @@ export async function verifyClaim(
 	const raw = await provider.completeStructured<RawFinding>(
 		messages,
 		VERIFY_SCHEMA,
-		{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, ...(signal !== undefined ? { signal } : {}) },
+		{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, stallMs: VERIFY_CALL_STALL_MS, ...(signal !== undefined ? { signal } : {}) },
 	);
 
 	const finding = normalizeFinding(claim, raw);

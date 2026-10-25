@@ -1,0 +1,401 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "697b9f8ff46b9deb",
+    "storyId": "S001",
+    "createdAt": "2026-10-24T07:24:47.778Z",
+    "updatedAt": "2026-10-24T18:13:22.037Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-23T14:01:46.590Z",
+    "epicSlug": "stop-codex-review-calls-stalling-keep",
+    "approvedAt": "2026-10-24T18:13:23.037Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      }
+    ],
+    "summary": "Rollout done (daemon fe21858a). Smoke: a live capture through the installed MCP server (t10-progress-capture.mjs/.json) shows 97 progress notifications reaching the controller during a real 19 min 53 s DEF-ce99b720 review: 19 per-minute heartbeats plus 78 phase frames, max gap 60 s, no stall, review done (block 0/18/57). A first real review (16 min 48 s, 67 codex calls) also completed without a stall. Stall retry covered by t5/t6 unit tests (amended PLAN). Full sweep attributed by clean-worktree sweeps (t10-full-sweep.md). Live VERIFY_SCHEMA check as before.",
+    "testRecord": {
+      "md": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-review-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/process-group.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/model-call-error.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/verify-answer.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/verify.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t3-importing-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/design-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-697b9f8ff46b9deb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-stdout-silence.py"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.py"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-697b9f8ff46b9deb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/call-limits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/call-limits.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/extract.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/template-review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/template-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-review-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/phases/start.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-live-verify.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-live-verify.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-full-sweep.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-def-smoke.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/DEF-ce99b72065d03b1b.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-progress-capture.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/t10-progress-capture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-697b9f8ff46b9deb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T18:13:22.037Z"
+      }
+    ],
+    "commit": "f02b573dc"
+  }
+}

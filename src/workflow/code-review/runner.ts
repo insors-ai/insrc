@@ -128,7 +128,7 @@ export interface RunCodeReviewOpts {
 
 /** Incremental progress frame streamed through `onProgress`. */
 export interface CodeReviewProgress {
-	readonly phase:      'grounding' | 'dimension-start' | 'dimension-done' | 'finalize' | 'done' | 'error';
+	readonly phase:      'grounding' | 'dimension-start' | 'call' | 'dimension-done' | 'finalize' | 'done' | 'error';
 	readonly dimension?: ReviewDimension | undefined;
 	readonly detail?:    string | undefined;
 }
@@ -223,7 +223,11 @@ export async function runCodeReview(
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
 			emit({ phase: 'dimension-start', dimension: slot.dimension });
-			const result = await slot.judge(subject, grounding, provider, ctx);
+			// A frame as each of the dimension's review calls starts, so a long review is seen to progress (ISSUE-1973e125).
+			let calls = 0;
+			const onCall = (call: { readonly stage: string; readonly role: string }): void =>
+				emit({ phase: 'call', dimension: slot.dimension, detail: `${call.stage} ${call.role} #${++calls}` });
+			const result = await slot.judge(subject, grounding, provider, { ...ctx, onCall });
 			dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}

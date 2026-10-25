@@ -1,0 +1,743 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "a27df0280289e6c6",
+    "storyId": "S001",
+    "createdAt": "2026-10-23T06:20:58.215Z",
+    "updatedAt": "2026-10-23T07:00:48.894Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-23T05:44:08.424Z",
+    "epicSlug": "add-per-tier-reasoning-effort-setting"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f59cf67b",
+        "ranAt": "2026-10-23T06:20:58.215Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tier-defaults.test.ts",
+                "title": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/analyze-tiering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "a valid tier table parses to {runner, model} TierModels",
+                "result": "pass"
+              },
+              {
+                "title": "a tier with a non-k1 runner is dropped (no direct-REST backend admitted)",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown tier name is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "coreFloor accepts only a TierName; other strings are dropped",
+                "result": "pass"
+              },
+              {
+                "title": "models.tasks parses valid RoleId→TierName entries and drops non-tier values",
+                "result": "pass"
+              },
+              {
+                "title": "byRepo tiering overrides are parsed per repo path (tasks key)",
+                "result": "pass"
+              },
+              {
+                "title": "absent tiering keys → {} (legacy single-provider path)",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiers:{} / tasks:{} are treated as absent, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "a byRepo entry with no valid tiering keys is not retained",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort",
+                "result": "pass"
+              },
+              {
+                "title": "an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/tier-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 555,
+            "titles": [
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the installer's claude choice writes cheap cli-claude haiku and its codex choice writes gpt-6-astra, gpt-6.1-sol and gpt-6-luna",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the plugin's copy of the installer is identical to the script",
+                "result": "pass"
+              },
+              {
+                "title": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b381c71a",
+        "ranAt": "2026-10-23T06:22:45.539Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 401,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 48 rows (flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults",
+                "result": "pass"
+              },
+              {
+                "title": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "67d06da3",
+        "ranAt": "2026-10-23T06:25:20.630Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "without effort every argv is byte-identical to today's",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15620,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "a7d23ea1",
+        "ranAt": "2026-10-23T06:28:10.027Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts",
+                "title": "the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts",
+                "title": "buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "with the core tier's effort set and the mid tier's unset, a routed mid role's provider gets no effort flag (roleEffort null), while a non-router caller gets the core effort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts",
+                "title": "with the core tier's effort set and the mid tier's unset, a routed mid role's provider gets no effort flag (roleEffort null), while a non-router caller gets the core effort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 607,
+            "titles": [
+              {
+                "title": "the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it",
+                "result": "pass"
+              },
+              {
+                "title": "buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort",
+                "result": "pass"
+              },
+              {
+                "title": "with the core tier's effort set and the mid tier's unset, a routed mid role's provider gets no effort flag (roleEffort null), while a non-router caller gets the core effort",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "8a6de98d",
+        "ranAt": "2026-10-23T06:30:56.692Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 627,
+            "titles": [
+              {
+                "title": "empty tiering: tiers = DEFAULT_TIERS (source default), coreFloor = mid (default)",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a critical role resolves to its core default (source taxonomy), unclamped",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a peripheral role resolves to its taxonomy default (mid/cheap)",
+                "result": "pass"
+              },
+              {
+                "title": "a configured tier model overrides the default and is marked source=config",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers override changes the effective tier and is marked source=override",
+                "result": "pass"
+              },
+              {
+                "title": "a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)",
+                "result": "pass"
+              },
+              {
+                "title": "a peripheral role below coreFloor is NEVER clamped",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers key that is not a current taxonomy role is surfaced as a stale override",
+                "result": "pass"
+              },
+              {
+                "title": "config dot-path helpers target the right keys",
+                "result": "pass"
+              },
+              {
+                "title": "isTierName guards the tier union",
+                "result": "pass"
+              },
+              {
+                "title": "ROLE_TIERS_PATH is the dotless map key (no role id appended)",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers keeps a dotted role id as a single FLAT key",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers merges into an existing map without disturbing other roles",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers with tier=null clears the override (sparse) and leaves siblings",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers does not mutate the input map",
+                "result": "pass"
+              },
+              {
+                "title": "computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2849,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a525aa3a",
+        "ranAt": "2026-10-23T06:33:15.463Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+                "title": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 437,
+            "titles": [
+              {
+                "title": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "f3f822b6",
+        "ranAt": "2026-10-23T06:37:52.885Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write; ModelTiersSection shows an effort combo per tier; with no effort row in the daemon's catalog it shows no effort combo and emits no effort write",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/model-tiers-effort-gradle.test.ts",
+                "title": "JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write; ModelTiersSection shows an effort combo per tier; with no effort row in the daemon's catalog it shows no effort combo and emits no effort write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/model-tiers-effort-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11029,
+            "titles": [
+              {
+                "title": "JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write; ModelTiersSection shows an effort combo per tier; with no effort row in the daemon's catalog it shows no effort combo and emits no effort write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "3c7e94e1",
+        "ranAt": "2026-10-23T07:00:48.894Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a codex CliProvider with model gpt-6.1-sol and effort high runs and codex reports reasoning effort high",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-live-effort.md (src/agent/providers/__tests__/cli-effort.live.test.ts, INSRC_LIVE_TESTS=1, ok 1)"
+            }
+          },
+          {
+            "name": "a claude CliProvider with effort low runs, and claude given an unknown --effort value warns and runs at its default",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-live-effort.md (src/agent/providers/__tests__/cli-effort.live.test.ts, INSRC_LIVE_TESTS=1, ok 2)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

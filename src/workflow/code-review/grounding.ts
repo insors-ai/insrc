@@ -341,19 +341,65 @@ function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
  *  A body joined from several diffs (unstaged and staged, or several units) can
  *  hold more than one section for a path: each is kept, in body order. Robust to
  *  the deterministic `git diff --no-color` output the builtin emits. */
-function splitDiffByFile(body: string): Map<string, string> {
+export function splitDiffByFile(body: string): Map<string, string> {
 	const map = new Map<string, string>();
 	if (!body) return map;
 	for (const section of body.split(/^(?=diff --git )/m)) {
 		if (!section.startsWith('diff --git')) continue;
-		const m = section.match(/^diff --git a\/(.+?) b\/(.+?)\s*$/m);
-		const path = m?.[2];
+		const path = diffHeaderNewPath(section.slice(0, section.indexOf('\n') >= 0 ? section.indexOf('\n') : section.length));
 		if (path) {
 			const prior = map.get(path);
 			map.set(path, prior === undefined ? section.trimEnd() : `${prior}\n${section.trimEnd()}`);
 		}
 	}
 	return map;
+}
+
+/** The new (`b/`) path of a `diff --git` header line. Git writes a path plainly,
+ *  or C-quoted when it holds a tab, newline, double quote, backslash or (with
+ *  core.quotePath) a non-ASCII byte: `diff --git "a/x\ty" "b/x\ty"`. A quoted path
+ *  is decoded to its literal form, octal escapes as UTF-8 bytes, so the section is
+ *  keyed by the same path git_diff's -z numstat reports (ISSUE-b97752e9). */
+function diffHeaderNewPath(line: string): string | undefined {
+	const rest = line.startsWith('diff --git ') ? line.slice('diff --git '.length).trimEnd() : undefined;
+	if (rest === undefined) return undefined;
+	if (!rest.includes('"')) return rest.match(/^a\/(.+?) b\/(.+)$/)?.[2];
+	// Two tokens, each plain or quoted; the second is the new path.
+	const first = readHeaderToken(rest, 0);
+	if (first === undefined || rest[first.end] !== ' ') return undefined;
+	const second = readHeaderToken(rest, first.end + 1);
+	return second !== undefined && second.value.startsWith('b/') ? second.value.slice(2) : undefined;
+}
+
+/** One header token from `pos`: a C-quoted string (decoded), or plain text up to
+ *  the next ` b/` / ` "b/` boundary or the line's end. */
+function readHeaderToken(s: string, pos: number): { value: string; end: number } | undefined {
+	if (s[pos] !== '"') {
+		const stop = [s.indexOf(' "b/', pos), s.indexOf(' b/', pos)].filter(i => i >= 0);
+		const end = stop.length > 0 && s.slice(pos, pos + 2) === 'a/' ? Math.min(...stop) : s.length;
+		return { value: s.slice(pos, end), end };
+	}
+	const bytes: number[] = [];
+	const simple: Readonly<Record<string, number>> = { t: 9, n: 10, '"': 34, '\\': 92, a: 7, b: 8, f: 12, r: 13, v: 11 };
+	for (let i = pos + 1; i < s.length; i++) {
+		const c = s[i]!;
+		if (c === '"') return { value: Buffer.from(bytes).toString('utf8'), end: i + 1 };
+		if (c !== '\\') { bytes.push(...Buffer.from(c, 'utf8')); continue; }
+		const n = s[i + 1];
+		if (n === undefined) return undefined;
+		if (/[0-7]/.test(n)) {
+			const oct = s.slice(i + 1, i + 4);
+			if (!/^[0-7]{3}$/.test(oct)) return undefined;
+			bytes.push(parseInt(oct, 8));
+			i += 3;
+			continue;
+		}
+		const b = simple[n];
+		if (b === undefined) return undefined;
+		bytes.push(b);
+		i += 1;
+	}
+	return undefined;
 }
 
 /** Extract the raw unified-diff body from a `git_diff` builtin result. The builtin

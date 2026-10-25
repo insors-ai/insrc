@@ -7,8 +7,9 @@
  * The step host: the daemon's `step.call` stream request (Epic c2ba6fa6,
  * Story s11). It runs one of the seven moved step handlers for an MCP
  * forwarder, inside the caller's StepCallContext and with the stream's signal,
- * and answers with one 'done' frame whose data is the handler's reply envelope,
- * unchanged, or one 'error' frame:
+ * sends what the handler reports through its progress callback as 'progress'
+ * frames (ISSUE-1973e125), and answers with one 'done' frame whose data is the
+ * handler's reply envelope, unchanged, or one 'error' frame:
  *
  *   - `step-unknown-tool`: the tool is not in this daemon's table (a forwarder
  *     newer than the daemon);
@@ -26,6 +27,7 @@ import { handleBuildStep } from './build-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from './code-review-step/handler.js';
 import type { CodeReviewStepDeps } from './code-review-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
+import type { ReviewStepDeps } from './review-step/types.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { registerParkOffer } from './workflow-step/park-offer.js';
@@ -44,17 +46,20 @@ export interface StepEnvelope {
 	readonly isError?: boolean | undefined;
 }
 
-export type StepToolRunner = (args: unknown, signal: AbortSignal) => Promise<StepEnvelope>;
+/** `progress`: report progress, sent as a 'progress' frame before the reply. */
+export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void) => Promise<StepEnvelope>;
 
 export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
 	readonly tools?: Partial<Record<string, StepToolRunner>> | undefined;
 	/** Test seam: the code-review deps the client and signal are added to. */
 	readonly codeReviewDeps?: CodeReviewStepDeps | undefined;
+	/** Test seam: the review deps the signal and progress are added to. */
+	readonly reviewDeps?: ReviewStepDeps | undefined;
 }
 
 /** The table of the seven tools. Only the review and code-review waits take
- *  the signal; the other handlers run to completion. */
+ *  the signal and report progress; the other handlers run to completion. */
 export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepToolRunner> {
 	// The workflow step runs the workflow runners, which the daemon otherwise
 	// registers only for its own workflow requests (workflow-rpc.ts). The MCP
@@ -71,8 +76,8 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 		insrc_analyze_step:     (args) => handleAnalyzeStep(args),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
-		insrc_review_step:      (args, signal) => handleReviewStep(args, { signal }),
-		insrc_code_review_step: (args, signal) => handleCodeReviewStep(args, { ...withStepClient(codeReviewBase), signal }),
+		insrc_review_step:      (args, signal, progress) => handleReviewStep(args, { ...opts.reviewDeps, signal, ...(progress !== undefined ? { progress } : {}) }),
+		insrc_code_review_step: (args, signal, progress) => handleCodeReviewStep(args, { ...withStepClient(codeReviewBase), signal, ...(progress !== undefined ? { progress } : {}) }),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
 	return { ...table, ...opts.tools } as Record<string, StepToolRunner>;
@@ -109,15 +114,28 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			return;
 		}
 		const run = table[p.tool]!;
+		// Never fails the step: a send that throws (the caller went away) is logged and dropped,
+		// and progress reported after the reply is ignored.
+		let answered = false;
+		const progress = (data: unknown): void => {
+			if (answered) return;
+			try {
+				send({ id: 0, stream: 'progress', data });
+			} catch (err) {
+				log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
+			}
+		};
 		let envelope: StepEnvelope;
 		try {
-			envelope = await runInStepContext(ctx, () => run(p.args, signal));
+			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress));
 		} catch (err) {
+			answered = true;
 			const message = err instanceof Error ? err.message : String(err);
 			log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
 			fail('step-failed', message);
 			return;
 		}
+		answered = true;
 		send({ id: 0, stream: 'done', data: envelope });
 	};
 }

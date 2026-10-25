@@ -72,7 +72,7 @@ async function pauseOn(p: ExplorationPlan, mutate?: (blob: unknown) => unknown):
 		version: STATE_VERSION, runId: 'r1', repoPath: REPO, repoIndexedAt: INDEXED_AT,
 		intent: intent(), synthesizerKey: 'adherence', plan: p, narrow: pause, stage: 'awaiting_narrow',
 	};
-	return { token: encodeState(payload), pause };
+	return { token: await encodeState(payload), pause };
 }
 
 function narrowInput(token: string, explorationId: string, narrow: unknown): StepInputNarrow {
@@ -80,8 +80,8 @@ function narrowInput(token: string, explorationId: string, narrow: unknown): Ste
 }
 
 /** The lookup outputs the tool holds after the narrow phase finished the plan. */
-function executedOf(out: StepOutputEmitBundle): readonly { exploration: Exploration; output: ExplorationOutput }[] {
-	const state = decodeState(out.state);
+async function executedOf(out: StepOutputEmitBundle): Promise<readonly { exploration: Exploration; output: ExplorationOutput }[]> {
+	const state = await decodeState(out.state);
 	assert.equal(state.stage, 'awaiting_bundle');
 	return state.executed!.results;
 }
@@ -170,7 +170,7 @@ test('a finalize that throws records the failed output and the run goes on', asy
 	const out = await handleNarrow(narrowInput(token, 'e1', VALID_ANSWER));
 	// It used to be a retryable 'narrow-finalize' error that no retry could clear.
 	assert.equal(out.next, 'emit_bundle', 'the run went on to the answer-writing turn');
-	const results = executedOf(out as StepOutputEmitBundle);
+	const results = await executedOf(out as StepOutputEmitBundle);
 	assert.deepEqual(results.map(r => r.exploration.id), ['e1', 'e2']);
 	assert.equal(results[0]!.output.type, 'failed');
 	assert.equal((results[0]!.output as FailedExplorationOutput).requested, 'doc.constraint.enumerate');
@@ -187,7 +187,7 @@ test('no answer at all to capability.reuse-check is accepted and gives a record 
 
 	const out = await handleNarrow(narrowInput(token, 'e1', null));
 	assert.equal(out.next, 'emit_bundle');
-	const [cap] = executedOf(out as StepOutputEmitBundle);
+	const [cap] = await executedOf(out as StepOutputEmitBundle);
 	assert.equal(cap!.output.type, 'capability.reuse-check');
 	const output = cap!.output as Extract<ExplorationOutput, { type: 'capability.reuse-check' }>;
 	assert.ok(output.candidates.length > 0);
@@ -215,7 +215,7 @@ test('a finalize that throws, and a prepare that throws, leave no row in the loo
 	// finalize throws
 	const { token } = await pauseOn(plan(E_DOC), () => null);
 	const out = await handleNarrow(narrowInput(token, 'e1', VALID_ANSWER));
-	assert.equal(executedOf(out as StepOutputEmitBundle)[0]!.output.type, 'failed');
+	assert.equal((await executedOf(out as StepOutputEmitBundle))[0]!.output.type, 'failed');
 	assert.equal(await getCachedExploration(REPO, BigInt(INDEXED_AT), E_DOC), null,
 		'a failed output is never stored: it would be served to every later run');
 
@@ -243,7 +243,7 @@ test('a step state minted before the change still resumes', async () => {
 
 	const out = await handleNarrow(narrowInput(token, 'e1', VALID_ANSWER));
 	assert.equal(out.next, 'emit_bundle', 'the run finishes');
-	const [doc, concept] = executedOf(out as StepOutputEmitBundle);
+	const [doc, concept] = await executedOf(out as StepOutputEmitBundle);
 	assert.equal(doc!.output.type, 'doc.constraint.enumerate');
 	const record = (doc!.output as Extract<ExplorationOutput, { type: 'doc.constraint.enumerate' }>).completeness;
 	// ...and says honestly that what was left out was not carried.

@@ -38,6 +38,7 @@ import { collectBuildChangeLog } from '../../../../workflow/runners/build/change
 import { mergeInProgress } from '../../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../../workflow/gates.js';
 import { MissingAnchorError, type PathIntent } from '../../../../workflow/artifact-ids.js';
+import { REVIEW_CALL_LIMITS } from '../../../../workflow/review/call-limits.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../../workflow/storage.js';
 import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
@@ -91,7 +92,7 @@ export function _setBuildValidateTestRecordWriterForTests(writer: typeof persist
 }
 
 /** Time the judge session may take, its one retry included. */
-const JUDGE_DEADLINE_MS = 300_000;
+export const JUDGE_DEADLINE_MS = 300_000;
 
 /** What the judge returns. testsPassed / typecheckClean are NOT asked of it:
  *  the daemon supplies both from its own check results. */
@@ -184,14 +185,14 @@ export function renderCheckEvidence(results: ValidationCheckResults): string {
  *  (default: claude opus; codex `gpt-6-astra` for a Codex install, or whatever the
  *  operator pinned core to). Edit sessions require a CLI (`runEditSession`), so a
  *  non-CLI resolution (an operator who pinned core→ollama) falls back to claude. */
-function resolveValidateProvider(repoPath: string): ValidateProvider {
+export function resolveValidateProvider(repoPath: string): ValidateProvider {
 	// Reuse the ambient sc6 router when a routing seam is established (handleValidate
 	// sets one), else construct one — either way the 'build' tier decides the model.
 	const router = currentRoutingContext()?.router ?? createRoleRouter({});
 	const { resolution } = router.resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
 	if (resolution.runner === 'cli-claude' || resolution.runner === 'cli-codex') {
 		const kind = resolution.runner === 'cli-codex' ? 'codex' : 'claude';
-		return new CliProvider({ kind, ...(resolution.model !== '' ? { model: resolution.model } : {}) });
+		return new CliProvider({ kind, ...(resolution.model !== '' ? { model: resolution.model } : {}), ...(resolution.effort !== undefined ? { effort: resolution.effort } : {}) });
 	}
 	log.warn({ runner: resolution.runner }, "build-step[validate]: 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — falling back to claude");
 	return new CliProvider({ kind: 'claude' });
@@ -491,7 +492,7 @@ async function runValidateTurn(
 		log.info({ taskId: ident.taskId, storyId: ident.storyId }, 'insrc_build_step[validate]: running judge session');
 		let judged: unknown;
 		try {
-			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS });
+			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS, stallMs: REVIEW_CALL_LIMITS['build-validate'].silenceMs });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			if (e instanceof ReviewSessionTimeoutError) {

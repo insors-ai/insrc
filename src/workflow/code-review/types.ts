@@ -135,6 +135,8 @@ export interface JudgeContext {
 	readonly snapshot?: ReviewMaterialSnapshot | undefined;
 	/** Cancels the review, including a call in flight. */
 	readonly signal?: AbortSignal | undefined;
+	/** Told as each review pipeline call of the judge starts (ISSUE-1973e125). */
+	readonly onCall?: ((call: { readonly stage: string; readonly role: string }) => void) | undefined;
 }
 
 /** The IPC-served grounding bundle — structured summaries only, never file text. */

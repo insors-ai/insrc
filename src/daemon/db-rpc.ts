@@ -17,49 +17,32 @@
  * `${secret:db:<repoId>:<connId>}`. Edit semantics follow naturally
  * by upserting on `id`.
  */
-
 import { isAbsolute, relative, resolve } from 'node:path';
 import { access } from 'node:fs/promises';
 import { constants as fsConst } from 'node:fs';
-
+import { randomUUID, createHash } from 'node:crypto';
+import type { TrustedRpcContext } from './request-context.js';
+import { managementContext } from './connection-management-rpc.js';
 import { getLogger } from '../shared/logger.js';
-import {
-	familyOf,
-	getFactory,
-	kindExists,
-	listRegisteredKinds,
-} from './db/registry.js';
-import {
-	loadConnections,
-	repoIdOf,
-	saveConnections,
-} from './db/config.js';
-import {
-	deleteSecret,
-	extractUrlPassword,
-	makeSecretRef,
-	resolveSecrets,
-} from './db/secrets.js';
+import { familyOf, getFactory, kindExists, listRegisteredKinds, } from './db/registry.js';
+import { connectionsPath, loadConnections, repoIdOf, saveConnections, } from './db/config.js';
+import { deleteSecret, extractUrlPassword, makeSecretRef, referencedSecrets, credentialKeystore, } from './db/secrets.js';
 import { reloadAll } from './db/pool-cache.js';
-import type {
-	ConnectionConfig,
-	Driver,
-	DriverFamily,
-} from '../shared/db-driver.js';
-
+import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store.js';
+import { savedManagementFor, withSavedRootGate } from './db/management.js';
+import { materializeDraft, safeConnection } from './db/driver-profiles.js';
+import { fileExecutionPolicy } from './db/file-policy.js';
+import type { ConnectionConfig, Driver, DriverFamily, } from '../shared/db-driver.js';
 const log = getLogger('db-rpc');
-
 // ---------------------------------------------------------------------------
 // Common shapes
 // ---------------------------------------------------------------------------
-
 export interface ListConnectionsResult {
 	readonly id: string;
 	readonly kind: string;
 	readonly family: DriverFamily;
 	readonly label?: string;
 }
-
 interface SaveConnectionInput {
 	readonly id: string;
 	readonly kind: string;
@@ -70,149 +53,198 @@ interface SaveConnectionInput {
 	readonly url?: string;
 	/** Repo-relative (or absolute) path. File family only. */
 	readonly path?: string;
-	readonly schemaSource?: { readonly type: 'prisma'; readonly path: string };
-	readonly namespace?: { readonly allow: readonly string[] };
+	readonly schemaSource?: {
+		readonly type: 'prisma';
+		readonly path: string;
+	};
+	readonly namespace?: {
+		readonly allow: readonly string[];
+	};
 	readonly options?: Readonly<Record<string, unknown>>;
 	readonly pii?: readonly string[];
 }
-
 // ---------------------------------------------------------------------------
 // listConnections
 // ---------------------------------------------------------------------------
-
-export async function listConnectionsRpc(
-	params: { readonly repoRoot?: unknown },
-): Promise<readonly ListConnectionsResult[]> {
+export async function listConnectionsRpc(params: {
+	readonly repoRoot?: unknown;
+}, transport?: TrustedRpcContext): Promise<readonly ListConnectionsResult[]> {
 	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
 	if (repoRoot === '') {
 		log.warn('db.listConnections called without repoRoot');
 		return [];
 	}
 	try {
-		const { resolved } = await loadConnections(repoRoot);
-		return resolved.map(c => {
+		const managed = savedManagementFor(repoRoot);
+		const loaded = managed ? undefined : await loadConnections(repoRoot);
+		if ((!transport && managed) || loaded?.file._management || (!managed && await managementMarkerExists(connectionsPath(repoRoot))))
+			return [];
+		const connections = managed ? await managed.list(managementContext(repoRoot, transport!))
+			: loaded!.resolved.map(config => safeConnection(config, { repoRoot, scope: 'saved', id: config.id }, 'legacy:' + createHash('sha256').update(JSON.stringify(config)).digest('hex')));
+		return connections.map(c => {
 			const base: ListConnectionsResult = {
-				id: c.id,
+				id: c.key.id,
 				kind: c.kind,
 				family: (c.family ?? 'rdbms') as DriverFamily,
 			};
 			return c.label === undefined ? base : { ...base, label: c.label };
 		});
-	} catch (err) {
-		log.warn({ repoRoot, err: (err as Error).message }, 'listConnections failed');
+	}
+	catch {
+		log.warn('legacy connection registry read failed');
 		return [];
 	}
 }
-
 // ---------------------------------------------------------------------------
 // listDriverKinds -- powers the kind picker in the setup UX
 // ---------------------------------------------------------------------------
-
 export interface DriverKindEntry {
 	readonly kind: string;
 	readonly family: DriverFamily;
 }
-
 export function listDriverKindsRpc(): readonly DriverKindEntry[] {
 	return listRegisteredKinds().slice().sort((a, b) => a.kind.localeCompare(b.kind));
 }
-
 // ---------------------------------------------------------------------------
 // saveConnection (covers add + edit by upserting on id)
 // ---------------------------------------------------------------------------
-
 export interface SaveConnectionResult {
 	readonly id: string;
 	readonly family: DriverFamily;
 	readonly redactedUrl?: string;
 	readonly wrotePath: string;
 }
-
 export async function saveConnectionRpc(params: {
 	readonly repoRoot?: unknown;
 	readonly config?: unknown;
-}): Promise<SaveConnectionResult | { error: string }> {
+}, transport?: TrustedRpcContext): Promise<SaveConnectionResult | {
+	error: string;
+}> {
+	if (!transport?.connectionIdentity || !transport.daemonEpoch)
+		return { error: 'invalid-input: Invalid connection request.' };
 	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
-	if (repoRoot === '') { return { error: 'repoRoot is required' }; }
-
-	const cfg = parseSaveInput(params.config);
-	if (typeof cfg === 'string') { return { error: cfg }; }
-	const validation = validateForFamily(cfg);
-	if (validation !== null) { return { error: validation }; }
-
-	const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
-	const ref = makeSecretRef(repoIdOf(repoRoot), cfg.id);
-
-	let urlForFile = cfg.url;
-	if (family !== 'file' && cfg.url !== undefined && !cfg.url.includes('${secret:')) {
-		urlForFile = await extractUrlPassword(cfg.url, ref);
+	if (repoRoot === '') {
+		return { error: 'repoRoot is required' };
 	}
-	const next: ConnectionConfig = buildPersistedConfig(cfg, family, urlForFile, ref);
-
-	const existing = await loadConnections(repoRoot)
-		.then(r => r.resolved)
-		.catch(() => [] as readonly ConnectionConfig[]);
-	const filtered = existing.filter(c => c.id !== cfg.id);
-	const wrotePath = await saveConnections(repoRoot, {
-		connections: [...filtered, next],
+	const cfg = parseSaveInput(params.config);
+	if (typeof cfg === 'string') {
+		return { error: cfg };
+	}
+	const managed = savedManagementFor(repoRoot);
+	if (managed) {
+		const outcome = await managed.legacyUpsert(managementContext(repoRoot, transport), cfg);
+		if (outcome.status === 'rejected')
+			return { error: `${outcome.code}: ${outcome.message}` };
+		const connection = managed.legacyProjection(cfg.id);
+		const endpoint = connection?.publicConfig['endpoint'];
+		return { id: cfg.id, family: connection?.family ?? cfg.family ?? familyOf(cfg.kind) ?? 'rdbms', wrotePath: connectionsPath(repoRoot), ...(typeof endpoint === 'string' ? { redactedUrl: endpoint } : {}) };
+	}
+	const validation = validateForFamily(cfg);
+	if (validation !== null)
+		return { error: validation };
+	return withSavedRootGate(repoRoot, async () => {
+		// Read and guard BEFORE any credential extraction. Only ENOENT is unmanaged empty.
+		let loaded: Awaited<ReturnType<typeof loadConnections>>;
+		try {
+			loaded = await loadConnections(repoRoot);
+		}
+		catch {
+			return { error: 'registry-unreadable: Connection registry cannot be read safely.' };
+		}
+		try {
+			await assertUnmanagedWrite(connectionsPath(repoRoot), loaded.file);
+		}
+		catch {
+			return { error: 'recovery-required: Connection management requires recovery.' };
+		}
+		const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
+		const allowedRefs = referencedSecrets(loaded.file.connections.find(config => config.id === cfg.id && config.kind === cfg.kind));
+		if ([...referencedSecrets(cfg)].some(ref => !allowedRefs.has(ref)))
+			return { error: 'invalid-input: Invalid credential reference.' };
+		const ref = makeSecretRef(repoIdOf(repoRoot), cfg.id);
+		let urlForFile = cfg.url;
+		if (family !== 'file' && cfg.url !== undefined && referencedSecrets(cfg.url).size === 0) {
+			urlForFile = await extractUrlPassword(cfg.url, ref);
+		}
+		const next: ConnectionConfig = buildPersistedConfig(cfg, family, urlForFile, ref);
+		const existing = loaded.file.connections;
+		const filtered = existing.filter(c => c.id !== cfg.id);
+		const wrotePath = await saveConnections(repoRoot, {
+			...loaded.file,
+			connections: [...filtered, next],
+		});
+		try {
+			await reloadAll();
+		}
+		catch (err) {
+			log.warn({ err: (err as Error).message }, 'pool reload after save failed');
+		}
+		let endpoint: unknown;
+		try {
+			endpoint = safeConnection(next, { repoRoot, scope: 'saved', id: next.id }, 'legacy').publicConfig['endpoint'];
+		}
+		catch { /* A committed legacy write still has its truthful success shape. */
+		}
+		const result: SaveConnectionResult = { id: next.id, family, wrotePath, ...(typeof endpoint === 'string' ? { redactedUrl: endpoint } : {}) };
+		return result;
 	});
-
-	try { await reloadAll(); }
-	catch (err) { log.warn({ err: (err as Error).message }, 'pool reload after save failed'); }
-
-	const result: SaveConnectionResult = next.url !== undefined
-		? { id: next.id, family, redactedUrl: next.url, wrotePath }
-		: { id: next.id, family, wrotePath };
-	return result;
 }
-
 // ---------------------------------------------------------------------------
 // deleteConnection
 // ---------------------------------------------------------------------------
-
 export interface DeleteConnectionResult {
 	readonly id: string;
 	readonly removed: boolean;
 	readonly removedPath?: string;
 }
-
 export async function deleteConnectionRpc(params: {
 	readonly repoRoot?: unknown;
 	readonly id?: unknown;
-}): Promise<DeleteConnectionResult | { error: string }> {
-	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
-	const id = typeof params.id === 'string' ? params.id : '';
-	if (repoRoot === '' || id === '') {
+}, transport?: TrustedRpcContext): Promise<DeleteConnectionResult | {
+	error: string;
+}> {
+	if (!transport?.connectionIdentity || !transport.daemonEpoch)
+		return { error: 'invalid-input: Invalid connection request.' };
+	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '', id = typeof params.id === 'string' ? params.id : '';
+	if (!repoRoot || !id)
 		return { error: 'repoRoot and id are required' };
-	}
-
-	const existing = await loadConnections(repoRoot)
-		.then(r => r.resolved)
-		.catch(() => [] as readonly ConnectionConfig[]);
-	if (existing.find(c => c.id === id) === undefined) {
-		return { id, removed: false };
-	}
-	const filtered = existing.filter(c => c.id !== id);
-	const wrotePath = await saveConnections(repoRoot, {
-		connections: filtered,
+	return withSavedRootGate(repoRoot, async () => {
+		let loaded: Awaited<ReturnType<typeof loadConnections>>;
+		try {
+			loaded = await loadConnections(repoRoot);
+		}
+		catch {
+			return { error: 'registry-unreadable: Connection registry cannot be read safely.' };
+		}
+		if (loaded.file._management || savedManagementFor(repoRoot))
+			return { error: 'upgrade-required: Managed connection removal is not available.' };
+		try {
+			await assertUnmanagedWrite(connectionsPath(repoRoot), loaded.file);
+		}
+		catch {
+			return { error: 'recovery-required: Connection management requires recovery.' };
+		}
+		if (!loaded.file.connections.some(config => config.id === id))
+			return { id, removed: false };
+		const wrotePath = await saveConnections(repoRoot, { ...loaded.file, connections: loaded.file.connections.filter(config => config.id !== id) });
+		try {
+			await deleteSecret(makeSecretRef(repoIdOf(repoRoot), id));
+		}
+		catch {
+			log.warn('legacy credential cleanup failed');
+		}
+		try {
+			await reloadAll();
+		}
+		catch {
+			log.warn('pool reload after legacy delete failed');
+		}
+		return { id, removed: true, removedPath: wrotePath };
 	});
-
-	const ref = makeSecretRef(repoIdOf(repoRoot), id);
-	try { await deleteSecret(ref); }
-	catch (err) {
-		log.warn({ ref, err: (err as Error).message }, 'keychain entry delete failed');
-	}
-
-	try { await reloadAll(); }
-	catch (err) { log.warn({ err: (err as Error).message }, 'pool reload after delete failed'); }
-
-	return { id, removed: true, removedPath: wrotePath };
 }
-
 // ---------------------------------------------------------------------------
 // testConnection -- transient driver build + close (no persistence)
 // ---------------------------------------------------------------------------
-
 export interface TestConnectionResult {
 	readonly ok: boolean;
 	readonly kind: string;
@@ -220,17 +252,20 @@ export interface TestConnectionResult {
 	readonly error?: string;
 	readonly tookMs: number;
 }
-
 export async function testConnectionRpc(params: {
 	readonly repoRoot?: unknown;
 	readonly config?: unknown;
-}): Promise<TestConnectionResult | { error: string }> {
+}): Promise<TestConnectionResult | {
+	error: string;
+}> {
 	const repoRoot = typeof params.repoRoot === 'string' ? params.repoRoot : '';
-	if (repoRoot === '') { return { error: 'repoRoot is required' }; }
-
+	if (repoRoot === '') {
+		return { error: 'repoRoot is required' };
+	}
 	const parsed = parseSaveInput(params.config);
-	if (typeof parsed === 'string') { return { error: parsed }; }
-
+	if (typeof parsed === 'string') {
+		return { error: parsed };
+	}
 	// Two flows merge here: the pane has the full plaintext config
 	// (test-before-save), or the palette only has { id, kind, family }
 	// (test-persisted). For the latter we hydrate from
@@ -249,57 +284,78 @@ export async function testConnectionRpc(params: {
 		}
 		cfg = mergePersisted(cfg, match);
 	}
-
 	const validation = validateForFamily(cfg);
-	if (validation !== null) { return { error: validation }; }
-
+	if (validation !== null) {
+		return { error: validation };
+	}
 	const family: DriverFamily = cfg.family ?? familyOf(cfg.kind) ?? 'rdbms';
 	const factory = getFactory(cfg.kind);
 	if (factory === undefined) {
 		return { error: `Unknown driver kind '${cfg.kind}'` };
 	}
-
 	const start = Date.now();
 	let driver: Driver | null = null;
 	try {
 		const transient = await materializeTransientConfig(cfg, family, repoRoot);
-		driver = await factory(transient);
+		driver = await factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {
+				lookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',
+			}) } : undefined);
 		return { ok: true, kind: cfg.kind, family, tookMs: Date.now() - start };
-	} catch (err) {
+	}
+	catch (err) {
 		return {
 			ok: false,
 			kind: cfg.kind,
 			family,
-			error: (err as Error).message,
+			error: familyOf(cfg.kind) === 'file' ? ((err instanceof Error && ['resource-limit', 'unsupported-temporary'].includes(err.message)) ? err.message : 'Temporary file initialization failed') : (err as Error).message,
 			tookMs: Date.now() - start,
 		};
-	} finally {
+	}
+	finally {
 		if (driver !== null) {
-			driver.close().catch(() => { /* best-effort */ });
+			await driver.close().catch(() => {
+			});
 		}
 	}
 }
-
 function mergePersisted(input: SaveConnectionInput, persisted: ConnectionConfig): SaveConnectionInput {
 	// Preserve the user-supplied input fields (in case the test has
 	// edits over what's persisted), only fill in the holes from disk.
-	const merged: { -readonly [K in keyof SaveConnectionInput]: SaveConnectionInput[K] } = { ...input };
-	if (merged.kind === '' || merged.kind === undefined) { merged.kind = persisted.kind; }
-	if (merged.family === undefined && persisted.family !== undefined) { merged.family = persisted.family; }
-	if (merged.url === undefined && persisted.url !== undefined) { merged.url = persisted.url; }
-	if (merged.path === undefined && persisted.path !== undefined) { merged.path = persisted.path; }
-	if (merged.label === undefined && persisted.label !== undefined) { merged.label = persisted.label; }
-	if (merged.schemaSource === undefined && persisted.schemaSource !== undefined) { merged.schemaSource = persisted.schemaSource; }
-	if (merged.namespace === undefined && persisted.namespace !== undefined) { merged.namespace = persisted.namespace; }
-	if (merged.options === undefined && persisted.options !== undefined) { merged.options = persisted.options; }
-	if (merged.pii === undefined && persisted.pii !== undefined) { merged.pii = persisted.pii; }
+	const merged: {
+		-readonly [K in keyof SaveConnectionInput]: SaveConnectionInput[K];
+	} = { ...input };
+	if (merged.kind === '' || merged.kind === undefined) {
+		merged.kind = persisted.kind;
+	}
+	if (merged.family === undefined && persisted.family !== undefined) {
+		merged.family = persisted.family;
+	}
+	if (merged.url === undefined && persisted.url !== undefined) {
+		merged.url = persisted.url;
+	}
+	if (merged.path === undefined && persisted.path !== undefined) {
+		merged.path = persisted.path;
+	}
+	if (merged.label === undefined && persisted.label !== undefined) {
+		merged.label = persisted.label;
+	}
+	if (merged.schemaSource === undefined && persisted.schemaSource !== undefined) {
+		merged.schemaSource = persisted.schemaSource;
+	}
+	if (merged.namespace === undefined && persisted.namespace !== undefined) {
+		merged.namespace = persisted.namespace;
+	}
+	if (merged.options === undefined && persisted.options !== undefined) {
+		merged.options = persisted.options;
+	}
+	if (merged.pii === undefined && persisted.pii !== undefined) {
+		merged.pii = persisted.pii;
+	}
 	return merged as SaveConnectionInput;
 }
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
 function parseSaveInput(raw: unknown): SaveConnectionInput | string {
 	if (raw === null || typeof raw !== 'object') {
 		return 'config must be an object';
@@ -311,16 +367,24 @@ function parseSaveInput(raw: unknown): SaveConnectionInput | string {
 	if (typeof c['kind'] !== 'string' || c['kind'] === '') {
 		return 'config.kind must be a non-empty string';
 	}
-	const out: { -readonly [K in keyof SaveConnectionInput]: SaveConnectionInput[K] } = {
+	const out: {
+		-readonly [K in keyof SaveConnectionInput]: SaveConnectionInput[K];
+	} = {
 		id: c['id'],
 		kind: c['kind'],
 	};
 	if (c['family'] === 'rdbms' || c['family'] === 'kv' || c['family'] === 'file') {
 		out.family = c['family'];
 	}
-	if (typeof c['label'] === 'string') { out.label = c['label']; }
-	if (typeof c['url'] === 'string')   { out.url   = c['url']; }
-	if (typeof c['path'] === 'string')  { out.path  = c['path']; }
+	if (typeof c['label'] === 'string') {
+		out.label = c['label'];
+	}
+	if (typeof c['url'] === 'string') {
+		out.url = c['url'];
+	}
+	if (typeof c['path'] === 'string') {
+		out.path = c['path'];
+	}
 	if (c['schemaSource'] !== undefined && c['schemaSource'] !== null && typeof c['schemaSource'] === 'object') {
 		const s = c['schemaSource'] as Record<string, unknown>;
 		if (s['type'] === 'prisma' && typeof s['path'] === 'string') {
@@ -341,7 +405,6 @@ function parseSaveInput(raw: unknown): SaveConnectionInput | string {
 	}
 	return out as SaveConnectionInput;
 }
-
 function validateForFamily(cfg: SaveConnectionInput): string | null {
 	if (!kindExists(cfg.kind)) {
 		return `Unknown driver kind '${cfg.kind}'. Registered: `
@@ -352,60 +415,77 @@ function validateForFamily(cfg: SaveConnectionInput): string | null {
 		if (cfg.path === undefined || cfg.path === '') {
 			return 'file connections require `path`';
 		}
-	} else {
+	}
+	else {
 		if (cfg.url === undefined || cfg.url === '') {
 			return `${family} connections require \`url\``;
 		}
 	}
 	return null;
 }
-
-function buildPersistedConfig(
-	input: SaveConnectionInput,
-	family: DriverFamily,
-	url: string | undefined,
-	ref: string,
-): ConnectionConfig {
-	const base: { -readonly [K in keyof ConnectionConfig]: ConnectionConfig[K] } = {
+function buildPersistedConfig(input: SaveConnectionInput, family: DriverFamily, url: string | undefined, ref: string): ConnectionConfig {
+	const base: {
+		-readonly [K in keyof ConnectionConfig]: ConnectionConfig[K];
+	} = {
 		id: input.id,
 		kind: input.kind,
 		family,
 	};
-	if (input.label !== undefined)        { base.label        = input.label; }
-	if (url !== undefined)                { base.url          = url; }
-	if (input.path !== undefined)         { base.path         = input.path; }
-	if (input.schemaSource !== undefined) { base.schemaSource = input.schemaSource; }
-	if (input.namespace !== undefined)    { base.namespace    = input.namespace; }
-	if (input.options !== undefined)      { base.options      = input.options; }
-	if (input.pii !== undefined)          { base.pii          = input.pii; }
+	if (input.label !== undefined) {
+		base.label = input.label;
+	}
+	if (url !== undefined) {
+		base.url = url;
+	}
+	if (input.path !== undefined) {
+		base.path = input.path;
+	}
+	if (input.schemaSource !== undefined) {
+		base.schemaSource = input.schemaSource;
+	}
+	if (input.namespace !== undefined) {
+		base.namespace = input.namespace;
+	}
+	if (input.options !== undefined) {
+		base.options = input.options;
+	}
+	if (input.pii !== undefined) {
+		base.pii = input.pii;
+	}
 	if (url !== undefined && url.includes('${secret:')) {
 		base.secretRef = ref;
 	}
 	return base;
 }
-
 /**
  * Build a ConnectionConfig suitable for handing to a driver factory
  * directly -- secrets resolved, file paths absolute. Used only by
  * `testConnectionRpc`; the production hot path goes through the
  * pool which does the same transforms.
  */
-async function materializeTransientConfig(
-	input: SaveConnectionInput,
-	family: DriverFamily,
-	repoRoot: string,
-): Promise<ConnectionConfig> {
-	const base: { -readonly [K in keyof ConnectionConfig]: ConnectionConfig[K] } = {
+async function materializeTransientConfig(input: SaveConnectionInput, family: DriverFamily, repoRoot: string): Promise<ConnectionConfig> {
+	const base: {
+		-readonly [K in keyof ConnectionConfig]: ConnectionConfig[K];
+	} = {
 		id: input.id,
 		kind: input.kind,
 		family,
 	};
-	if (input.label !== undefined)        { base.label        = input.label; }
-	if (input.schemaSource !== undefined) { base.schemaSource = input.schemaSource; }
-	if (input.namespace !== undefined)    { base.namespace    = input.namespace; }
-	if (input.options !== undefined)      { base.options      = input.options; }
-	if (input.pii !== undefined)          { base.pii          = input.pii; }
-
+	if (input.label !== undefined) {
+		base.label = input.label;
+	}
+	if (input.schemaSource !== undefined) {
+		base.schemaSource = input.schemaSource;
+	}
+	if (input.namespace !== undefined) {
+		base.namespace = input.namespace;
+	}
+	if (input.options !== undefined) {
+		base.options = input.options;
+	}
+	if (input.pii !== undefined) {
+		base.pii = input.pii;
+	}
 	if (family === 'file') {
 		if (input.path === undefined) {
 			throw new Error('file connection missing path');
@@ -413,17 +493,29 @@ async function materializeTransientConfig(
 		const abs = isAbsolute(input.path) ? input.path : resolve(repoRoot, input.path);
 		const rel = relative(repoRoot, abs);
 		if (rel.startsWith('..') || isAbsolute(rel)) {
-			throw new Error(
-				`file connection '${input.id}' path '${input.path}' resolves outside the repo root`,
-			);
+			throw new Error(`file connection '${input.id}' path '${input.path}' resolves outside the repo root`);
 		}
 		await access(abs, fsConst.R_OK);
 		base.path = abs;
-	} else {
-		if (input.url === undefined) { throw new Error(`${family} connection missing url`); }
-		base.url = input.url.includes('${secret:')
-			? await resolveSecrets(input.url)
-			: input.url;
 	}
-	return base;
+	else {
+		if (input.url === undefined) {
+			throw new Error(`${family} connection missing url`);
+		}
+		base.url = input.url;
+	}
+	const suppliedRefs = referencedSecrets(base);
+	let allowedRefs: ReadonlySet<string> = new Set();
+	if (suppliedRefs.size > 0) {
+		const snapshot = await loadConnections(repoRoot);
+		const stored = snapshot.file.connections.find(config => config.id === input.id && config.kind === input.kind);
+		allowedRefs = referencedSecrets(stored);
+		if ([...suppliedRefs].some(ref => !allowedRefs.has(ref)))
+			throw new Error('Invalid credential reference');
+	}
+	const effective = await materializeDraft({ key: { scope: 'saved', repoRoot: resolve(repoRoot), id: input.id },
+		mode: 'update', current: { config: base, revision: 'private-probe' }, expectedRevision: 'private-probe', publicPatch: {},
+		readSecret: async (ref) => allowedRefs.has(ref) ? credentialKeystore.getKey(ref) : null,
+	});
+	return effective.config;
 }

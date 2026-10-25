@@ -10,7 +10,7 @@ import { fork } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { DaemonRunFileOwnership, endForRunFileConflict } from '../run-file-ownership.js';
 import { acquireRunFileGuard } from '../../shared/daemon-run-files.js';
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 
 function fixture() {
  const dir = mkdtempSync(join(tmpdir(), 'insrc-owned-'));
@@ -34,7 +34,7 @@ test('Replacement run files survive original daemon cleanup and implicit socket 
 });
 
 test('Startup publication and awaited close are serialized under the same guard', async () => {
- const f = fixture(); const server = new IpcServer({}, {}, Date.now, f.paths.socketFile, f.owner);
+ const f = fixture(); const server = new IpcServer(directDispatch({}), Date.now, f.paths.socketFile, f.owner);
  try {
   const publication = f.owner.lease();
   assert.throws(() => acquireRunFileGuard(f.paths.guardPath), /conflict/);
@@ -70,7 +70,7 @@ test('Startup-error, fatal and stale-file cleanup honor ownership', async () => 
   const logPath = join(f.dir, 'fatal.log');
   endForRunFileConflict(new Error('replacement'), { logPath, killSelf: () => { killed = true; } });
   assert.equal(killed, true); assert.match(readFileSync(logPath, 'utf8'), /without cleanup/);
-  const unstarted = new IpcServer({}, {}, Date.now, f.paths.socketFile, f.owner);
+  const unstarted = new IpcServer(directDispatch({}), Date.now, f.paths.socketFile, f.owner);
   await unstarted.close(); assert.equal(readFileSync(f.paths.socketFile, 'utf8'), 'foreign');
  } finally { f.cleanup(); }
 });

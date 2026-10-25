@@ -47,8 +47,12 @@ export interface ProcessGroupOpts {
 	 * Stall watchdog: when `started(stdout)` is still false `ms` after the spawn,
 	 * the child has produced nothing it counts as output; the group is killed and
 	 * the result says `stalled`. ISSUE-d4b2cd1c.
+	 *
+	 * With `silence: true` the limit restarts on every stdout chunk instead: the
+	 * group is killed once the child has printed nothing for `ms`, at the start or
+	 * after earlier output, and `started` is not consulted. ISSUE-562b1bb5.
 	 */
-	readonly stall?:    { readonly ms: number; readonly started: (stdout: string) => boolean } | undefined;
+	readonly stall?:    { readonly ms: number; readonly started: (stdout: string) => boolean; readonly silence?: boolean | undefined } | undefined;
 	/** Cancels the run: the group is killed as on timeout and the result says
 	 *  `aborted`. An already-aborted signal spawns nothing. Epic 8315a11f s1. */
 	readonly signal?:   AbortSignal | undefined;
@@ -104,15 +108,22 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 			else child.kill('SIGKILL');
 		};
 		const timer = setTimeout(() => { timedOut = true; kill(); }, opts.timeoutMs);
-		const stall = opts.stall;
-		const stallTimer = stall !== undefined && stall.ms < opts.timeoutMs
-			? setTimeout(() => { if (!stall.started(stdout)) { stalled = true; kill(); } }, stall.ms)
-			: undefined;
+		const stall = opts.stall !== undefined && opts.stall.ms < opts.timeoutMs ? opts.stall : undefined;
+		const onStall = (): void => {
+			if (stall !== undefined && (stall.silence === true || !stall.started(stdout))) { stalled = true; kill(); }
+		};
+		let stallTimer = stall !== undefined ? setTimeout(onStall, stall.ms) : undefined;
 
 		const onAbort = (): void => { aborted = true; kill(); };
 		opts.signal?.addEventListener('abort', onAbort, { once: true });
 
-		child.stdout.on('data', (c: Buffer) => { stdout += c.toString(); });
+		child.stdout.on('data', (c: Buffer) => {
+			stdout += c.toString();
+			if (stall?.silence === true && stallTimer !== undefined && !stalled) {
+				clearTimeout(stallTimer);
+				stallTimer = setTimeout(onStall, stall.ms);
+			}
+		});
 		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });
 		child.stdin.on('error', () => { /* the child closed stdin early (EPIPE); its exit is reported below */ });
 		child.on('exit', () => { if (child.pid !== undefined) killProcessGroup(child.pid); });

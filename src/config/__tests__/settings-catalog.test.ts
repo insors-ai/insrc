@@ -8,8 +8,9 @@
  *   - buildSettingsCatalog (the pure assembler) — the payload the config.catalog
  *     IPC returns; unit-tested off fixtures without a running daemon.
  *   - config.catalog handler READ-ONLY invariant — a source-scan of the thin
- *     wiring in src/daemon/index.ts (the handler lives inline in main(), so it
- *     is verified the same way config-catalog-contract.test.ts scans source).
+ *     wiring in src/daemon/admin-handlers.ts (the handler is defined there,
+ *     so it is verified the same way config-catalog-contract.test.ts scans
+ *     source).
  *
  * Run: npx tsx --test src/config/__tests__/settings-catalog.test.ts
  */
@@ -79,10 +80,11 @@ test('buildSettingsCatalog is total: a garbage/array-shaped rawConfig never thro
 // ---- config.catalog handler READ-ONLY invariant (t4) ---------------------------
 
 test('config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads', () => {
-	const src = readFileSync(resolve(HERE, '..', '..', 'daemon', 'index.ts'), 'utf-8');
+	// The config.catalog handler lives in admin-handlers.ts, shared by the main thread's table and the admin worker (Epic 86197ac6 s2).
+	const src = readFileSync(resolve(HERE, '..', '..', 'daemon', 'admin-handlers.ts'), 'utf-8');
 	// locate the config.catalog handler block up to the next handler entry
 	const start = src.indexOf("'config.catalog':");
-	assert.ok(start >= 0, "config.catalog handler is registered in src/daemon/index.ts");
+	assert.ok(start >= 0, "config.catalog handler is registered in src/daemon/admin-handlers.ts");
 	const block = src.slice(start, start + 600);
 	assert.match(block, /buildSettingsCatalog\(/, 'handler delegates to buildSettingsCatalog');
 	assert.match(block, /readFileSync\(PATHS\.config/, 'handler reads PATHS.config (parse-or-{})');

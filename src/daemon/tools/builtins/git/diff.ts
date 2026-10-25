@@ -148,10 +148,24 @@ export const gitDiffTool: Tool = {
         error: `numstat failed: ${msg}`,
       }, failureKind(stat), msg);
     }
-    const files = parseNumstat(stat.stdout);
+    // The file list must be whole: one the capture cut, or that ends mid-record,
+    // would drop files from a review without saying so (ISSUE-b97752e9).
+    const parsed = stat.stdoutTruncated ? undefined : parseNumstat(stat.stdout);
+    if (parsed === undefined || !parsed.complete) {
+      const why = stat.stdoutTruncated ? 'its output passed the capture limit' : 'its output ends mid-record';
+      return {
+        output: `[git:diff] numstat incomplete: ${why}`,
+        format: 'text',
+        success: false,
+        error: `numstat incomplete: ${why}`,
+      };
+    }
+    const files = parsed.files;
     const totalInsertions = files.reduce((n, f) => n + f.insertions, 0);
     const totalDeletions  = files.reduce((n, f) => n + f.deletions, 0);
-    const truncated = diff.stdout.length >= maxBytes;
+    // The shell drops a whole chunk past the cap, so the captured text can be
+    // under the cap with output lost: its flag says so, the length alone does not.
+    const truncated = diff.stdoutTruncated || diff.stdout.length >= maxBytes;
     const diffBody = truncated ? diff.stdout.slice(0, maxBytes) : diff.stdout;
 
     const data: GitDiffData = {
@@ -243,7 +257,9 @@ export function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; rang
 }
 
 export function buildStatArgv(o: DiffOpts): string[] {
-  const base = ['git', 'diff', '--no-color', '--numstat'];
+  // -z: NUL-delimited records with literal paths, never git's quoted or compact
+  // `dir/{a => b}/file` rename display (ISSUE-b97752e9).
+  const base = ['git', 'diff', '--no-color', '--numstat', '-z'];
   if (o.staged) { base.push('--cached'); }
   else if (o.from) { base.push(`${o.from}..${o.to ?? 'HEAD'}`); }
   base.push(...pathspecArgs(o));
@@ -254,43 +270,45 @@ export function buildStatArgv(o: DiffOpts): string[] {
 // Parsing
 // ---------------------------------------------------------------------------
 
-function parseNumstat(raw: string): GitDiffFileStat[] {
+/**
+ * Parse `git diff --numstat -z`. Each record is `<ins>\t<del>\t<path>\0`, or for
+ * a rename or copy `<ins>\t<del>\t\0<old path>\0<new path>\0`; paths are literal
+ * (spaces, tabs, ` => `, any bytes). `complete` is false when the output does not
+ * end on a record boundary, so a caller can refuse a partial file list.
+ */
+function parseNumstat(raw: string): { files: GitDiffFileStat[]; complete: boolean } {
   const out: GitDiffFileStat[] = [];
-  for (const line of raw.split('\n')) {
-    const trimmed = line.trimEnd();
-    if (!trimmed) { continue; }
+  if (raw.length === 0) { return { files: out, complete: true }; }
+  if (!raw.endsWith('\0')) { return { files: out, complete: false }; }
+  const tokens = raw.slice(0, -1).split('\0');
+  for (let i = 0; i < tokens.length; i++) {
+    const head = tokens[i] ?? '';
     // Formats:
-    //   "<ins>\t<del>\t<path>"
-    //   "<ins>\t<del>\t<origPath> => <newPath>"     (rename/copy)
-    //   "-\t-\t<path>"                              (binary)
-    const parts = trimmed.split('\t');
-    if (parts.length < 3) { continue; }
-    const insRaw = parts[0] ?? '';
-    const delRaw = parts[1] ?? '';
-    const pathPart = parts.slice(2).join('\t');
+    //   "<ins>\t<del>\t<path>"                        (one token)
+    //   "<ins>\t<del>\t" + "<old>" + "<new>"           (rename/copy: three tokens)
+    //   "-\t-\t<path>"                                 (binary)
+    const first = head.indexOf('\t');
+    const second = first < 0 ? -1 : head.indexOf('\t', first + 1);
+    if (second < 0) { return { files: out, complete: false }; }
+    const insRaw = head.slice(0, first);
+    const delRaw = head.slice(first + 1, second);
+    const pathPart = head.slice(second + 1);
 
     const binary = insRaw === '-' || delRaw === '-';
     const insertions = binary ? 0 : Number(insRaw) || 0;
     const deletions  = binary ? 0 : Number(delRaw) || 0;
 
-    const renameMatch = pathPart.match(/^(.+?) => (.+)$/);
-    const entry: GitDiffFileStat = renameMatch
-      ? {
-          path: renameMatch[2] ?? pathPart,
-          origPath: renameMatch[1] ?? '',
-          insertions,
-          deletions,
-          change: binary ? 'binary' : 'renamed',
-        }
-      : {
-          path: pathPart,
-          insertions,
-          deletions,
-          change: binary ? 'binary' : classify(insertions, deletions),
-        };
-    out.push(entry);
+    if (pathPart.length === 0) {
+      const origPath = tokens[i + 1];
+      const path = tokens[i + 2];
+      if (origPath === undefined || path === undefined) { return { files: out, complete: false }; }
+      i += 2;
+      out.push({ path, origPath, insertions, deletions, change: binary ? 'binary' : 'renamed' });
+      continue;
+    }
+    out.push({ path: pathPart, insertions, deletions, change: binary ? 'binary' : classify(insertions, deletions) });
   }
-  return out;
+  return { files: out, complete: true };
 }
 
 function classify(ins: number, del: number): string {

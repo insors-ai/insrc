@@ -1,0 +1,149 @@
+{
+  "artifact": "design.epic",
+  "stage": "design.epic",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The architecture covers the upstream connection-management outcomes without adding the excluded product capabilities.",
+      "evidence": "DEF.md defines saved editing, draft testing, session-isolated temporary connections, safe removal, and management in both clients. Its constraints require protected credentials, idempotent reconciliation, busy refusal, and compatibility. These map to S001\u2013S005 and the proposed shared contracts. The PRD explicitly says testing is optional for saving; the HLD preserves that. No new driver, automatic discovery, ontology generation, or team-shared credential capability is introduced. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/connection-management-prd.html, src/daemon/db-rpc.ts, src/daemon/db/drivers/index.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current pools are shared by repository and do not provide workbench isolation or active-use leases.",
+      "evidence": "pool-cache.ts uses 'const CACHE = new Map<string, DriverPool>()' and indexes it only by repoPath. DriverPool.registerEphemeral inserts into the same entries map. acquire returns a Driver directly, while reload and idle timers can call closeEntry without an active-use count. Ordinary DB tools and schema-drift acquire and use these drivers without a release boundary. [files: src/daemon/db/pool-cache.ts, src/daemon/db/pool.ts, src/daemon/tools/builtins/db/index.ts, src/daemon/tools/builtins/data/schema-drift.ts]",
+      "action": "Retain the mandatory consumer migration before enabling removal.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.2",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Converted-file caching currently uses connection-only directories, mtime/size freshness, persisted source paths, and no per-driver ownership cleanup.",
+      "evidence": "cacheDirFor returns 'join(cacheRoot(), connectionId, \"files\")'. isCached compares sourceMtime and sourceSize, without checking the recorded sourcePath or converter options. ensureCached writes sourcePath into sidecars and logs sourcePath/destPath. DuckDBFileDriver invokes ensureCached, and its close method explicitly states 'per-driver close is a no-op'. [files: src/daemon/db/converter-cache.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/duckdb-pool.ts]",
+      "action": "None; these are correctly identified change sites.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The registry, credential wrappers, and driver catalog are reusable foundations, but revision-aware transactions, generation staging, and safe driver descriptors are new work.",
+      "evidence": "config.ts provides loadConnections/saveConnections, but saving is a direct writeFile. secrets.ts exposes setSecret/deleteSecret/resolveSecrets and currently mints 'db:${repoId}:${connId}' references. listRegisteredKinds returns only kind and family. The inspected management path has no revision checks, committed receipts, atomic replacement, or editable-field/secret-slot descriptors. [files: src/daemon/db/config.ts, src/daemon/db/secrets.ts, src/daemon/db/registry.ts, src/daemon/db-rpc.ts, src/shared/db-driver.ts]",
+      "action": "None; preserve the distinction between existing primitives and new invariants.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Legacy compatibility requires daemon adapters and synchronized external IDE service contracts.",
+      "evidence": "daemon/index.ts registers db.listConnections, db.listDriverKinds, db.saveConnection, db.deleteConnection, and db.testConnection. The external IDE implementation calls those exact methods. Its mirrored results require wrotePath for save, removed/removedPath for delete, and ok/tookMs for test. Its list implementation catches failures and returns [], so the new distinction between read-error and empty requires client work as well as backend work. [files: src/daemon/index.ts, src/daemon/db-rpc.ts, ../insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts, ../insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts]",
+      "action": "Preserve these legacy projections and explicitly replace error-to-empty behavior in the v2 client path.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.2",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Trusted workbench ownership requires extending the IPC handler context rather than trusting existing client labels or PIDs.",
+      "evidence": "server.ts assigns a server-owned connection ID, but RpcHandler accepts only params and StreamHandler receives params/send/signal. Dispatch does not supply connection identity. validClient explicitly handles a 'self-reported' and 'untrusted wire input' envelope; validation checks shape, not authentication. The proposed additive context is therefore necessary. [files: src/daemon/server.ts, src/daemon/tools/types.ts, src/analyze/executor/types.ts]",
+      "action": "Thread the server-owned identity through both standard and streaming dispatch, including the streaming fallback to standard handlers.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Saved-only analysis must retain directory-local registry resolution separately from registered-repository management eligibility.",
+      "evidence": "dataScopeOf returns scope.lookupPath for connection scopes and 'poolPath: scope.value' otherwise. resolveScope preserves directory lookup paths even when no registered repository contains them. Existing runtime tests assert own-directory pools for unregistered repo/workspace paths and nested manifest directories. The proposed lookupRoot/managementRepoRoot separation preserves this behavior. [files: src/analyze/runtimes/data/_shared.ts, src/analyze/context/scope.ts, src/analyze/runtimes/data/discovery-connections.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts]",
+      "action": "Keep these tests as regression gates; also preserve the existing discovery scopeRefValue override without attaching an unrelated temporary overlay.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "data-compatibility.2",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Legacy pinned families and supported fields must survive management edits instead of being normalized to registry defaults.",
+      "evidence": "loadConnections assigns 'family = conn.family' when present, emits 'Using user-pinned family', and creates resolved entries with '{ ...conn, family }'. config.test.ts explicitly verifies a postgres record pinned to kv remains kv. ConnectionConfig also contains recursive and partitioning fields that the current SaveConnectionInput/buildPersistedConfig path does not preserve. Server-side preservation addresses real compatibility requirements. [files: src/daemon/db/config.ts, src/daemon/db/__tests__/config.test.ts, src/shared/db-driver.ts, src/daemon/db-rpc.ts]",
+      "action": "Include recursive, partitioning, unknown fields, and mismatched pinned families in preservation fixtures.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "S002 and S003 are independent branches depending only on S001.",
+      "evidence": "The HLD assigns memory-only conversion and private DuckDB lifecycle changes to S003, but explicitly requires S002 draft workers to use 'this temporary conversion mode'. That capability does not already exist: FileConverter requires destination paths, BsonConverter calls 'parquet.ParquetWriter.openFile(schema, dest)', and DuckDBFileDriver routes converted reads through ensureCached. S002 therefore consumes an S003-owned deliverable despite the claimed independence and unchanged Epic dependency graph. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/daemon/db/drivers/converters/types.ts, src/daemon/db/drivers/converters/bson.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/converter-cache.ts]",
+      "action": "Resolve ownership before LLDs: move the shared memory-only conversion/probe foundation into S001, or explicitly amend the dependency graph so S002's converted-file acceptance depends on S003. Do not claim S002 independently complete using the existing disk-backed converter.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The proposed failure states address the existing read, credential, activation, and transient-driver failure boundaries separately.",
+      "evidence": "Current save extracts a password before loading the registry and converts every load failure into an empty list. Delete commits JSON before best-effort secret deletion. reloadAll catches individual pool failures. testConnectionRpc returns raw exception messages and starts close without awaiting it. The HLD explicitly replaces these paths with failed-read protection, staged credentials, committed cleanup-pending outcomes, separate activation status, sanitized errors, and bounded worker cleanup. [files: src/daemon/db-rpc.ts, src/daemon/db/pool-cache.ts, src/daemon/db/secrets.ts, src/daemon/db/config.ts]",
+      "action": "Exercise each boundary with the planned fault injection; this finding verifies design coverage, not implemented guarantees.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Every upstream Story acceptance criterion has a corresponding planned test obligation.",
+      "evidence": "DEF.md contains 12 acceptance criteria: three for S001, two each for S002\u2013S004, and three for S005. The HLD maps all 12 individually to CM-S1-A through CM-S5-C, including mixed versions and both clients. Its cited existing tests actually cover directory-local resolution and pinned-family behavior. The mapping is explicitly prospective and does not claim these new acceptance tests already pass. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts, src/daemon/db/__tests__/config.test.ts]",
+      "action": "Retain the complete mapping and resolve the S002/S003 dependency before scheduling converted-file test completion.",
+      "fixability": "manual",
+      "outcome": "holds"
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 1,
+    "low": 10,
+    "unverified": 0
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-21T08:10:11.613Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

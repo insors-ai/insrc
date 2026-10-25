@@ -1,3 +1,4 @@
+import { allDriverWork } from '../driver-work.js';
 /**
  * Oracle driver (kind: `oracle`).
  *
@@ -213,7 +214,7 @@ export class OracleDriver implements RdbmsDriver {
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
-			const [countRes, valuesRes] = await Promise.all([
+			const [countRes, valuesRes] = await allDriverWork([
 				conn.execute<Record<string, unknown>>(compiled.distinctCountSql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT }),
 				conn.execute<Record<string, unknown>>(compiled.topValuesSql,    [], { outFormat: oracledb.OUT_FORMAT_OBJECT }),
 			]);

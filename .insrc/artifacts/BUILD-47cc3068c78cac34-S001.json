@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "47cc3068c78cac34",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T14:10:28.124Z",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue -> build (no LLD), per approved ISSUE-47cc3068c78cac34.",
+    "epicCreatedAt": "2026-10-22T13:59:28.984Z",
+    "epicSlug": "review-decision-build-record-test-expects",
+    "updatedAt": "2026-10-22T14:10:47.685Z"
+  },
+  "body": {
+    "focus": "ISSUE-47cc3068c78cac34: in src/workflow/__tests__/review-decision.test.ts, the BUILD-record test ('handleReviewDecision on a BUILD record: approve goes through the same approve call ...') works in its temporary repository's real path, so it expects the artifact path the handler uses (the handler resolves real paths). No production code changes; the assertion keeps its meaning.",
+    "producesLld": false,
+    "commit": "8074aab4",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed ISSUE-47cc3068. The review-decision BUILD-record test now creates its temporary repository at its real path (realpathSync), so on macOS it expects the /private/var path the handler passes to approve. No production code changed; all 9 tests in the file pass.",
+    "testRecord": {
+      "md": "docs/standalone/review-decision-build-record-test-expects-E2026102247cc3068/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/review-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T14:10:47.685Z"
+      }
+    ]
+  }
+}

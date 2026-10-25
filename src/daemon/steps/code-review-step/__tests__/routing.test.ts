@@ -22,7 +22,7 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDim
 import type { PartyOrUnknown } from '../../../../workflow/review/party.js';
 import { codeReviewStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
-import { DAEMON_CODE_REVIEW_WAIT_MS, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import { codeReviewWaitLimits, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
@@ -86,7 +86,7 @@ function harness(author: PartyOrUnknown, overrides: Partial<CodeReviewStepDeps> 
 
 const START = { phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' } as const;
 const start = async (deps: CodeReviewStepDeps) => parse(await handleCodeReviewStep(START, deps));
-const reset = (): void => _clearCodeReviewStateStoreForTests();
+const reset = (): Promise<void> => _clearCodeReviewStateStoreForTests();
 
 function judgements(): { judgements: DimensionResult[] } {
 	const dims: ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
@@ -97,7 +97,7 @@ function judgements(): { judgements: DimensionResult[] } {
 
 for (const author of ['controller', 'unknown'] as const) {
 	test(`T10 code of ${author} author with fresh grounding is sent to the daemon (full) and returns done with its verdict`, async () => {
-		reset();
+		await reset();
 		const h = harness(author);
 		const out = await start(h.deps);
 		assert.ok(out.next === 'done', JSON.stringify(out));
@@ -117,7 +117,7 @@ for (const author of ['controller', 'unknown'] as const) {
 }
 
 test('T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked', async () => {
-	reset();
+	await reset();
 	const h = harness('daemon');
 	const out = await start(h.deps);
 	assert.ok(out.next === 'emit_judgements');
@@ -130,7 +130,7 @@ test('T10 daemon-authored code gets the judgements prompt as before, and the dae
 });
 
 test('T10 the invoking client is passed to the daemon when the tool knows it', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { client: 'codex' });
 	await start(h.deps);
 	assert.equal(h.asked[0]!.params.client, 'codex');
@@ -139,7 +139,7 @@ test('T10 the invoking client is passed to the daemon when the tool knows it', a
 // --- T17: the start phase keeps every outcome ------------------------------------
 
 test('T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { fetchFreshness: async () => STALE });
 	const out = await start(h.deps);
 	assert.ok(out.next === 'confirm_wait');
@@ -150,7 +150,7 @@ test('T17 a stale index returns confirm_wait and asks no daemon; the author is n
 });
 
 test('T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself', async () => {
-	reset();
+	await reset();
 	const h = harness('controller', { fetchFreshness: async () => STALE });
 	const cw = await start(h.deps);
 	assert.ok(cw.next === 'confirm_wait');
@@ -165,7 +165,7 @@ test('T17 a declined wait asks the daemon with the degraded mode, and the tool d
 });
 
 test('T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode', async () => {
-	reset();
+	await reset();
 	let t = 0;
 	const h = harness('controller', { fetchFreshness: async () => STALE, now: () => (t += 60_000), freshnessTimeoutMs: () => 120_000 });
 	const cw = await start(h.deps);
@@ -178,7 +178,7 @@ test('T17 an accepted wait that never becomes fresh asks the daemon with the deg
 });
 
 test('T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements', async () => {
-	reset();
+	await reset();
 	let calls = 0;
 	const h = harness('controller', { fetchFreshness: async () => (++calls <= 2 ? STALE : FRESH) });
 	const cw = await start(h.deps);
@@ -191,7 +191,7 @@ test('T17 an accepted wait that becomes fresh asks the daemon with the full mode
 });
 
 test('T17 fresh grounding with no symbols asks the daemon with the degraded mode', async () => {
-	reset();
+	await reset();
 	const h = harness('unknown', { fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }) });
 	const out = await start(h.deps);
 	assert.ok(out.next === 'done', JSON.stringify(out));
@@ -200,7 +200,7 @@ test('T17 fresh grounding with no symbols asks the daemon with the degraded mode
 });
 
 test('T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon', async () => {
-	reset();
+	await reset();
 	const a = harness('controller', { fetchFreshness: async () => ({ ok: false, reason: 'daemon-unreachable' }) as never });
 	const outA = await start(a.deps);
 	assert.ok(outA.next === 'error');
@@ -225,7 +225,7 @@ test('T17 an unavailable freshness check and unavailable grounding each return t
 });
 
 test('T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped', async () => {
-	reset();
+	await reset();
 	const cause = 'codeReview.run: could not read the changed-file diff — git diff exited 128';
 	const h = harness('controller', { fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }) }, new ReviewStreamError('daemon-error', cause, 'diff-unavailable'));
 	const out = await start(h.deps);
@@ -244,7 +244,7 @@ for (const [what, answer] of [
 	['stamped no reviewer', { meta: { model: 'claude:opus' }, body: { verdict: 'warn', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'degraded' } }],
 ] as const) {
 	test(`an older daemon that ${what} is an error, not a verdict`, async () => {
-		reset();
+		await reset();
 		const h = harness('controller', {
 			fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }),   // asks for degraded
 			reviewByDaemon: async () => ({ runId: 'cr-old', artifact: answer as never }),
@@ -270,7 +270,7 @@ const FAILURES = [
 
 for (const [failure, error, retryable] of FAILURES) {
 	test(`T11 a daemon code review that fails (${failure}) is an error: nothing stamped, no judgements prompt offered`, async () => {
-		reset();
+		await reset();
 		const h = harness('controller', {}, error);
 		const env = await handleCodeReviewStep(START, h.deps);
 		assert.equal((env as { isError?: boolean }).isError, true);
@@ -286,52 +286,98 @@ for (const [failure, error, retryable] of FAILURES) {
 	});
 }
 
-test('T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires', async () => {
-	reset();
-	assert.equal(DAEMON_CODE_REVIEW_WAIT_MS, 30 * MIN);
-	const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
-	const sockets: Socket[] = [];
-	let requests = 0;
-	const server = createServer((socket) => {
-		sockets.push(socket);
-		socket.on('data', () => { requests += 1; /* never answers */ });
-		socket.on('error', () => { /* client vanished */ });
+test('codeReviewWaitLimits reads both keys, falls back to the defaults on a bad value and clamps idle to the ceiling', () => {
+	const DEFAULTS = { ceilingMs: 240 * MIN, idleMs: 20 * MIN };
+	assert.deepEqual(codeReviewWaitLimits({}), DEFAULTS, 'absent keys: the defaults');
+	assert.deepEqual(codeReviewWaitLimits(null), DEFAULTS);
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 60 * MIN, daemonReviewIdleMs: 5 * MIN } }), { ceilingMs: 60 * MIN, idleMs: 5 * MIN });
+	for (const bad of [0, -1, 'x', Number.NaN, Number.POSITIVE_INFINITY, null]) {
+		assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: bad, daemonReviewIdleMs: 7 * MIN } }), { ceilingMs: 240 * MIN, idleMs: 7 * MIN }, `ceiling ${String(bad)}`);
+		assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 90 * MIN, daemonReviewIdleMs: bad } }), { ceilingMs: 90 * MIN, idleMs: 20 * MIN }, `idle ${String(bad)}`);
+	}
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 10 * MIN, daemonReviewIdleMs: 30 * MIN } }), { ceilingMs: 10 * MIN, idleMs: 10 * MIN }, 'idle clamped to the ceiling');
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 10 * MIN } }), { ceilingMs: 10 * MIN, idleMs: 10 * MIN }, 'the default idle, clamped too');
+});
+
+test('reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress', async () => {
+	await reset();
+	const relayed: unknown[] = [];
+	const FRAMES = [{ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' }, { kind: 'stage', stageLabel: 'call · adherence · judge reviewer #2' }];
+	const h = harness('controller', {
+		waitLimits: () => ({ ceilingMs: 90 * MIN, idleMs: 7 * MIN }),
+		progress: (data) => { relayed.push(data); },
+		reviewByDaemon: async (params, opts) => {
+			h.asked.push({ params, opts });
+			for (const f of FRAMES) opts.onFrame?.('progress', f);
+			return daemonAnswer('full');
+		},
 	});
-	await new Promise<void>((res) => server.listen(sock, () => res()));
-	try {
-		// The real stream helper over a real socket, with a timer this test fires.
-		const armed: number[] = [];
-		let fire: (() => void) | undefined;
-		const h = harness('controller', {
-			reviewByDaemon: (params, opts) => codeReviewStream(params, opts, {
-				connect: () => createConnection(sock),
-				setTimer: (fn, ms) => { armed.push(ms); fire = fn; return 1; },
-				clearTimer: () => { fire = undefined; },
-			}),
+	const out = await start(h.deps);
+	assert.ok(out.next === 'done', JSON.stringify(out));
+	assert.equal(h.asked[0]!.opts.timeoutMs, 90 * MIN);
+	assert.equal(h.asked[0]!.opts.idleMs, 7 * MIN);
+	assert.deepEqual(relayed, FRAMES, 'every frame, in order');
+
+	// Without waitLimits: the configured limits (the defaults when the config sets none).
+	await reset();
+	const d = harness('controller');
+	await start(d.deps);
+	const want = codeReviewWaitLimits();
+	assert.equal(d.asked[0]!.opts.timeoutMs, want.ceilingMs);
+	assert.equal(d.asked[0]!.opts.idleMs, want.idleMs);
+});
+
+test("a ceiling or idle timeout answers next:'error' naming the config key to raise", async () => {
+	for (const which of ['idle', 'ceiling'] as const) {
+		await reset();
+		const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
+		const sockets: Socket[] = [];
+		let requests = 0;
+		const server = createServer((socket) => {
+			sockets.push(socket);
+			socket.on('data', () => { requests += 1; /* never answers */ });
+			socket.on('error', () => { /* client vanished */ });
 		});
-		const pending = start(h.deps);
-		let settled = false;
-		pending.then(() => { settled = true; }, () => { settled = true; });
-		while (requests === 0) await new Promise(r => setImmediate(r));
-		assert.deepEqual(armed, [30 * MIN], 'the 30 minute limit is the one armed');
-		assert.equal(settled, false, 'still waiting before the limit');
-		fire?.();
-		const out = await pending;
-		assert.ok(out.next === 'error');
-		assert.equal(out.error.code, 'daemon-review-timeout');
-		assert.match(out.error.message, /within 30 minutes/);
-		assert.equal(out.error.retryable, true);
-	} finally {
-		for (const s of sockets) s.destroy();
-		await new Promise<void>((res) => server.close(() => res()));
-		try { rmSync(sock); } catch { /* ignore */ }
+		await new Promise<void>((res) => server.listen(sock, () => res()));
+		try {
+			// The real stream helper over a real socket, with timers this test fires.
+			const armed = new Map<number, () => void>();
+			const h = harness('controller', {
+				waitLimits: () => codeReviewWaitLimits({}),
+				reviewByDaemon: (params, opts) => codeReviewStream(params, opts, {
+					connect: () => createConnection(sock),
+					setTimer: (fn, ms) => { armed.set(ms, fn); return ms; },
+					clearTimer: (handle) => { armed.delete(handle as number); },
+				}),
+			});
+			const pending = start(h.deps);
+			let settled = false;
+			pending.then(() => { settled = true; }, () => { settled = true; });
+			while (requests === 0) await new Promise(r => setImmediate(r));
+			assert.deepEqual([...armed.keys()], [240 * MIN, 20 * MIN], 'the 4 hour ceiling and the 20 minute idle limit are armed');
+			assert.equal(settled, false, 'still waiting before a limit');
+			armed.get(which === 'idle' ? 20 * MIN : 240 * MIN)!();
+			const out = await pending;
+			assert.ok(out.next === 'error');
+			assert.equal(out.error.code, 'daemon-review-timeout');
+			assert.equal(out.error.retryable, true);
+			if (which === 'idle') {
+				assert.match(out.error.message, /no progress from the daemon for 20 minutes \(the idle limit, codeReview\.daemonReviewIdleMs\)/);
+			} else {
+				assert.match(out.error.message, /within 240 minutes \(the overall limit, codeReview\.daemonReviewCeilingMs\)/);
+			}
+		} finally {
+			for (const s of sockets) s.destroy();
+			await new Promise<void>((res) => server.close(() => res()));
+			try { rmSync(sock); } catch { /* ignore */ }
+		}
 	}
 });
 
 // --- T12: the judgements phase refuses controller-authored code ------------------
 
 test('T12 the judgements phase refuses controller-authored code and stamps nothing', async () => {
-	reset();
+	await reset();
 	// Start as daemon-authored so the controller loop begins, then the record names the controller.
 	let author: PartyOrUnknown = 'daemon';
 	const h = harness('daemon', { readBuildAuthor: () => author });
@@ -353,7 +399,7 @@ test('T12 the judgements phase refuses controller-authored code and stamps nothi
 });
 
 test('T12 an unknown author does not stop the judgements phase (only a known controller author does)', async () => {
-	reset();
+	await reset();
 	let author: PartyOrUnknown = 'daemon';
 	const h = harness('daemon', { readBuildAuthor: () => author });
 	const s = await start(h.deps);

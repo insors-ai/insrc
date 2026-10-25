@@ -33,7 +33,7 @@
 export interface FreshnessDeps {
 	/** The code-graph work for `repoPath` queued or in flight (IndexQueue.codeIndexWorkFor);
 	 *  other repos, config, re-embed and document-summary jobs are not counted (ISSUE-1102dc71). */
-	readonly codeIndexWork: (repoPath: string) => { inFlight: boolean; pending: number };
+	readonly codeIndexWork: (repoPath: string) => { inFlight: boolean; pending: number } | Promise<{ inFlight: boolean; pending: number }>;
 	/** The max per-entity `indexedAt` (unix ms) over entities DEFINED in `file`,
 	 *  or `null` when the file has NO indexed entities. */
 	readonly entityWatermark: (repoPath: string, file: string) => Promise<number | null>;
@@ -67,7 +67,7 @@ export async function computeCodeReviewFreshness(
 	changedFiles: readonly string[],
 	deps:         FreshnessDeps,
 ): Promise<FreshnessResult> {
-	const work = deps.codeIndexWork(repoPath);
+	const work = await deps.codeIndexWork(repoPath);
 	const isProcessing = work.inFlight || work.pending > 0;
 	const staleFiles: string[] = [];
 	// The repo-level watermark is only needed for files with no entities; read it

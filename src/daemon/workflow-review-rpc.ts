@@ -14,8 +14,9 @@
  * An artifact the daemon authored is refused inside `reviewArtifactFile`, before
  * any model call; that refusal reaches the caller as this handler's error frame.
  *
- * Frames: `progress` per review phase, then one terminal `done` or `error`.
- * Never throws.
+ * Frames: `progress` per review phase, a `progress` heartbeat every
+ * WORKFLOW_REVIEW_HEARTBEAT_MS while the review runs, then one terminal `done`
+ * or `error`. Never throws.
  */
 
 import { existsSync } from 'node:fs';
@@ -38,6 +39,9 @@ const log = getLogger('daemon:workflow-review-rpc');
 
 /** Who the store records for the daemon's review. */
 const REVIEW_ACTOR: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
+/** How often a running review reports that it is alive: a reviewer session can
+ *  run for up to 30 minutes with no stage frame in between (ISSUE-562b1bb5). */
+export const WORKFLOW_REVIEW_HEARTBEAT_MS = 60_000;
 
 interface WorkflowReviewParams {
 	readonly artifactPath: string;
@@ -95,11 +99,19 @@ export async function workflowReviewStart(
 	const refusal = repoSchemaRefusal(repoPath);
 	if (refusal !== undefined) { fail(refusal, 'repo-schema-unconverted'); return; }
 
+	// No heartbeat after the terminal frame: it is stopped before `done` or `error`.
+	let stopHeartbeat = (): void => {};
 	try {
 		const mdPath = params.artifactPath;
 		if (!mdPath.endsWith('.md')) throw new Error(`workflow.review: \`artifactPath\` must be the artifact's .md path, got '${mdPath}'`);
 		if (!existsSync(mdPath)) throw new Error(`workflow.review: no artifact at ${mdPath}`);
 		const jsonPath = jsonPathForMd(mdPath);
+
+		const startedAt = Date.now();
+		const heartbeat = setInterval(() => send({
+			id: 0, stream: 'progress', data: { kind: 'heartbeat', operation: 'workflow.review', elapsedMs: Date.now() - startedAt },
+		}), WORKFLOW_REVIEW_HEARTBEAT_MS);
+		stopHeartbeat = () => clearInterval(heartbeat);
 
 		let stageIndex = 0;
 		const progress = (label: string): void => send({
@@ -148,8 +160,10 @@ export async function workflowReviewStart(
 			report:       renderReviewReport(res.report),
 		};
 		log.info({ repoPath, mdPath, verdict: done.verdict, model }, 'workflow.review: reviewed');
+		stopHeartbeat();
 		send({ id: 0, stream: 'done', data: done });
 	} catch (err) {
+		stopHeartbeat();
 		const msg = err instanceof Error ? err.message : String(err);
 		const samePartyRefusal = err instanceof SamePartyReviewError;
 		log.info({ repoPath, artifactPath: params.artifactPath, err: msg, samePartyRefusal }, 'workflow.review: no review recorded');

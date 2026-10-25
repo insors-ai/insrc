@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "e340794b16e4d4b3",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T08:00:18.039Z",
+    "updatedAt": "2026-10-24T08:08:04.830Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicCreatedAt": "2026-10-24T07:31:35.750Z",
+    "epicSlug": "clarify-design-visual-authoring-independent-reviewer",
+    "approvedAt": "2026-10-24T08:08:04.947Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented approved prompt-only guidance and complete regression fixtures including author-consumer propagation, no reviewer substitution, rendering fallback, material omission failures and schema-valid notApplicable answers. Scope is ONLY commits 16ffb57e and 230882c4 with Insrc-Story e340794b16e4d4b3/s1. Concurrent dirty LLD-697b9f8ff46b9deb-S001.json and timeout-story LLD.md belong to another agent/task and are NOT this implementation; verify git show --stat for the two commits rather than attributing unrelated working-tree edits.",
+    "testRecord": {
+      "md": "docs/standalone/clarify-design-visual-authoring-independent-reviewer-E20261024e340794b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "AGENTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "CLAUDE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/component-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/er-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/sequence-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/ux-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/visual-guidance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/template.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-24T08:08:04.830Z"
+      }
+    ],
+    "commit": "230882c4"
+  }
+}

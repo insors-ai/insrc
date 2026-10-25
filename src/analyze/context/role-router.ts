@@ -31,7 +31,7 @@
  * attached.
  */
 
-import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierName, TierModel } from '../../config/analyze.js';
+import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort, TierName, TierModel } from '../../config/analyze.js';
 import { DEFAULT_TIERS } from '../../config/analyze.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import { roleDescriptor } from '../../config/role-taxonomy.js';
@@ -55,6 +55,9 @@ export interface RoleResolution {
 	readonly tier:           TierName;
 	readonly runner:         AnalyzeShaperProviderKind;
 	readonly model:          string;
+	/** The reasoning effort of the GLOBAL tier the role resolves to, also when a
+	 *  byRepo tier supplies its runner and model; absent: the CLI's default. */
+	readonly effort?:        TierEffort | undefined;
 	readonly clampedByFloor: boolean;
 }
 
@@ -146,9 +149,11 @@ function resolveRoleInternal(
 		roleResolved:   tierModel?.runner,
 	});
 	const model = tierModel?.model ?? cfg.shaperModel;
+	// The effort is a property of the global tier only; per-repo config picks the tier.
+	const effort = cfg.tiering.tiers?.[tier]?.effort;
 
 	return {
-		resolution: { role, tier, runner, model, clampedByFloor },
+		resolution: { role, tier, runner, model, ...(effort !== undefined ? { effort } : {}), clampedByFloor },
 		...(tierModel !== undefined ? { roleRunner: tierModel.runner, roleModel: tierModel.model } : {}),
 	};
 }
@@ -177,6 +182,8 @@ function materialize(internal: InternalResolution, cfg: AnalyzeConfig, deps: Rol
 		...(deps.cliTimeoutMs  !== undefined ? { cliTimeoutMs:  deps.cliTimeoutMs  } : {}),
 		...(internal.roleRunner !== undefined ? { roleRunner: internal.roleRunner } : {}),
 		...(internal.roleModel  !== undefined ? { roleModel:  internal.roleModel  } : {}),
+		// Always stated, null when the tier has none, so a routed role never runs at core's effort.
+		roleEffort: internal.resolution.effort ?? null,
 	});
 	return { provider, resolution: internal.resolution };
 }
@@ -206,6 +213,7 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 				tier:           'cheap',
 				runner:         cfg.summariserProvider,
 				model:          cfg.summariserModel,
+				...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}),
 				clampedByFloor: false,
 			};
 			return { provider, resolution };

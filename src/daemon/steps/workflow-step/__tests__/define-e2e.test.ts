@@ -187,7 +187,7 @@ async function walkToSynthesize(repo: string, s4: Record<string, unknown>): Prom
 // ---------------------------------------------------------------------------
 
 test('define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-e2e-'));
 	try {
@@ -215,7 +215,7 @@ test('define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.
 });
 
 test('define workflow: s4 sb1=missed forces synthesize hard-fail', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-e2e-'));
 	try {
@@ -234,7 +234,7 @@ test('define workflow: s4 sb1=missed forces synthesize hard-fail', async () => {
 });
 
 test('define workflow: ungrounded citation fails synthesize', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-e2e-'));
 	try {

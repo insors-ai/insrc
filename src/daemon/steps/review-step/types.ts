@@ -145,6 +145,8 @@ export interface ReviewStepDeps {
 	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 	/** Aborts the daemon review wait, and with it the review run. */
 	readonly signal?: AbortSignal | undefined;
+	/** The step tool's progress callback: each daemon progress frame is passed on (ISSUE-562b1bb5). */
+	readonly progress?: ((data: unknown) => void) | undefined;
 }
 
 export interface ReviewStepError {

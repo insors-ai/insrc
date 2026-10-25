@@ -121,6 +121,30 @@ class ModelTiersSection(
         }
         seedModelCombo(modelCombo, tier)
 
+        // The tier's reasoning effort, shown only when the daemon's catalog declares it.
+        val efforts = model.effortOptions(tier)
+        val effortCombo = JComboBox(efforts.toTypedArray())
+        effortCombo.isEditable = false
+        effortCombo.renderer = object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean,
+            ): Component {
+                val text = (value as? String)?.ifEmpty { "CLI default" } ?: ""
+                return super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus)
+            }
+        }
+        effortCombo.toolTipText = "Reasoning effort passed to the tier's CLI"
+        effortCombo.selectedItem = model.currentEffort(tier)
+        effortCombo.addActionListener {
+            if (suppressEdits) return@addActionListener
+            val sel = effortCombo.selectedItem as? String ?: return@addActionListener
+            model.selectEffort(tier, sel)
+        }
+
         runnerCombo.addActionListener {
             if (suppressEdits) return@addActionListener
             val sel = runnerCombo.selectedItem as? String ?: return@addActionListener
@@ -141,10 +165,12 @@ class ModelTiersSection(
         rowRefreshers.add {
             runnerCombo.selectedItem = model.currentRunner(tier)
             seedModelCombo(modelCombo, tier)
+            effortCombo.selectedItem = model.currentEffort(tier)
         }
 
         controls.add(runnerCombo)
         controls.add(modelCombo)
+        if (efforts.isNotEmpty()) controls.add(effortCombo)
         row.add(controls, BorderLayout.EAST)
         row.maximumSize = Dimension(Int.MAX_VALUE, row.preferredSize.height)
         return row

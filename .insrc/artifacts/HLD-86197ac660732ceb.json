@@ -1,0 +1,749 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1792588079400-heeqp4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T13:15:22.137Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 442734,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The non-goal 'running a session's requests in parallel' is not built: the HLD runs each session's requests one at a time, and lets requests overlap only on the unattributed worker, which serves requests that carry no session identity.",
+          "evidence": "DEF.md §3, first non-goal: 'Running work for one session in parallel'. DEF assumption at line 73: 'a request without a valid identity ... belongs to no session and is served on one shared unattributed thread'. HLD §3 matches: Session pool runs each session's requests one at a time in arrival order; the unattributed worker serves the requests that belong to no session. [files: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "compactGraphStore today closes the environment, then renames and removes the lock file (store.ts:861-875). It has no check that the native environment really closed, so the HLD rightly calls that check new.",
+          "evidence": "store.ts:858-875: `_instance = null; ... await inst.root.close(); ... renameSync(originalPath, bakPath); renameSync(compactPath, originalPath); if (existsSync(lockPath)) rmSync(lockPath...)`. Nothing between the close and the rename checks that the native environment really closed. [files: src/db/graph/store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Manual daemon.compact today refuses with 'indexer is busy' when the queue has work. Otherwise it returns compactGraphStore's CompactResult.",
+          "evidence": "index.ts:1652-1662: `if (queue.depth > 0 || queue.isProcessing) { throw new Error(`daemon.compact: indexer is busy ...`) } ... const result = await compactGraphStore(); return result;` [files: src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the server starts every request without waiting for earlier ones, so a session's requests can overlap. Running a session's requests one at a time is therefore new.",
+          "evidence": "server.ts:194: `void this.handleMessage(trimmed, socket);`, called for each line and not awaited. [files: src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildDaemonStatus (status.ts:61-90) can be reused unchanged with inputs taken from the status board. It takes listRepos, unattributedUnwritable, queueDepth and queueLanes as injected sources, and reads store health from the store module.",
+          "evidence": "status.ts:29-44: DaemonStatusSources has `listRepos: () => Promise<RegisteredRepo[]>`, `unattributedUnwritable?: () => Promise<...>`, `queueLanes?: () => QueueLanes` and a `storeHealth?` seam. Line 62 is `const health = src.storeHealth ?? getStoreHealth;`. Each input can be a closure over the board. [files: src/daemon/status.ts, src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.5",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The admin worker serves a 'ping' method, alongside daemon.status and the other admin reads.",
+          "evidence": "The daemon has no ping RPC. A search of src/daemon/**/*.ts for 'ping' finds only substrings (skipping, stopping, mapping). A search for a quoted 'ping' method across src, the CLI and both plugins finds nothing. daemon-ctl.sh:234 probes liveness with `method: \"daemon.status\"`. 'ping' in the DEF (FR001, k2) is the stakeholder's word for the liveness check, not a method. The HLD treats it as an admin-class method to route, and the latency targets in s3 ac7 and §7 name it. [files: src/daemon/index.ts, scripts/daemon-ctl.sh]",
+          "action": "Remove 'ping' as a method from §3 (Admin worker), §7 and s3 ac7, or name the method it stands for (daemon.status, the liveness probe). Otherwise the sc5 coverage test and the latency tests target a method the daemon does not serve.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The s1 contracts (sc1 store guard, sc2 step-state store, sc3 channel and registry, sc4 status board) already exist and are reused as the HLD states. The four step stores already go through the shared step-state store.",
+          "evidence": "All of these exist: src/db/store-guard.ts, src/daemon/threads/{channel,registry,status-board,step-state,store-health-hub}.ts. review-step/state-store.ts:16-53 calls `getStepStateStore().mint('review', ...)`, `.update('review', token, payload)` with the token kept stable, and `.release`. analyze-step and workflow-step expose replaceState, which rotates the token. code-review-step exposes saveState and releaseState. [files: src/daemon/steps/review-step/state-store.ts, src/daemon/threads/step-state.ts, src/daemon/threads/status-board.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The queue and indexer hooks the indexing split relies on already exist with the stated shapes: takeDocSummaryEdit, per-lane status, and summary-sweep progress. publishLane, forgetRun and underHold are new.",
+          "evidence": "queue.ts:233 `takeDocSummaryEdit(): {kind:'doc-summarise-entity'; entityId} | undefined`. queue.ts:241 `laneStatus(): { index:{depth,running}; summary:{depth,running} }`. queue.ts:333 isProcessing covers both lanes. indexer/index.ts:929 is summarySweepProgress(). A search of src/daemon/threads for publishLane, forgetRun or underHold finds nothing, so they are new. [files: src/daemon/queue.ts, src/indexer/index.ts, src/daemon/threads/status-board.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc4 amendment makes RepoStatusSnapshot.completeness optional, because today's withCompleteness leaves the field out when the completeness read fails. The code declares it required, so the amendment is needed.",
+          "evidence": "status-board.ts:40: `export type RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness };` (required). repo-completeness.ts:30-36: `completeness === undefined ? { ...row } : { ...row, completeness }`, which omits the field. The HLD declares the change as an amendment delivered by s2. [files: src/daemon/threads/status-board.ts, src/daemon/repo-completeness.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Run retention stays as today: 64 is a soft cap, cleanup runs when a run starts, and a running run is never evicted. A poll for an evicted run answers 'unknown'.",
+          "evidence": "workflow-run-registry.ts:74-76: `MAX_RUNS = 64` ('oldest TERMINAL runs are dropped first (a running run is never evicted)'). Lines 99-100: `runs.set(runId, state); gc();` at start. PollResult.status is `RunStatus | 'unknown'` for an unregistered runId (lines 55-59). RunState carries frames, model, result, error and abort, matching sc4's RunRecord plus the abort that stays in the owning worker. [files: src/daemon/workflow-run-registry.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Step tokens survive a worker release because step state already lives in the shared step-state store from Phase A. Its kinds and lifecycles match today's.",
+          "evidence": "Every step state-store module delegates to getStepStateStore() (threads/step-state.ts). review keeps its token through update(); analyze and workflow use replaceState for rotation. src/daemon/threads/__tests__/step-state.test.ts covers the store. [files: src/daemon/threads/step-state.ts, src/daemon/steps/analyze-step/state-store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The maintenance lock comes from a separate standalone Story (afcfa027, the lock framework). The HLD consumes it (shared and exclusive modes, ifAvailable, watchWorker) and does not redesign it.",
+          "evidence": ".insrc/artifacts/LLD-afcfa02717f5bf7d-S001.json exists. Commit bcf143d9 is 'LLD for a cross-thread named lock framework (Web Locks-shaped)', and commit 0c3b40bc resolved its open question by amending Epic 86197ac6. The HLD names only consumed operations and adds no lock-framework contract to §5. [files: .insrc/artifacts/LLD-afcfa02717f5bf7d-S001.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Store health is shared across threads: when any thread finds the LMDB locks lost, every thread sees it, and daemon.status on the admin worker reports storeFailure exactly as today.",
+          "evidence": "store.ts:444-473 describes a 'process-wide health word in the store guard's block' that says whether ANY thread found the locks lost; the finder broadcasts its full record, and adopt functions take it in. src/daemon/threads/store-health-hub.ts exists. status.ts:74 builds storeFailure from health(). [files: src/db/graph/store.ts, src/daemon/threads/store-health-hub.ts, src/daemon/status.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new pre-rename check in compaction can find whether another handle on the native LMDB environment is still open after the main thread's close.",
+          "evidence": "store.ts:861 only calls `inst.root.close()`. I found no existing lmdb-js API or helper in store.ts that reports whether the shared native environment is still referenced by another isolate's handle. The HLD names the check but not how to observe it. [files: src/db/graph/store.ts]",
+          "action": "The s2 LLD should name the concrete observation it uses (for example, a file reopen probe, or a count of handles the workers acknowledged as closed) and test it.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The s1 acceptance tests the HLD lists for the shared contracts exist: the worker-thread LMDB lock test, the guard tests, and step-state compatibility.",
+          "evidence": "These test files exist: src/db/graph/__tests__/worker-thread-lock.test.ts, src/db/__tests__/store-guard.test.ts, src/daemon/threads/__tests__/step-state.test.ts, registry-board.test.ts, channel.test.ts and worker-stores.test.ts. [files: src/db/graph/__tests__/worker-thread-lock.test.ts, src/db/__tests__/store-guard.test.ts, src/daemon/threads/__tests__/step-state.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 14,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-22T06:13:32.676Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewOverride": {
+      "reason": "Stakeholder approved with override 2026-10-22 (maintenance-lock amendment): 3 review rounds; round-1 HIGH (daemon.compact self-wait) and MEDs folded; round 2 had no HIGH/MED; round-3 MED (non-existent 'ping' method named) fixed by naming the liveness check daemon.status.",
+      "at": "2026-10-22T06:16:59.037Z"
+    },
+    "restructure": {
+      "at": "2026-10-21",
+      "by": "Subho Ghosh (stakeholder) via controller",
+      "summary": "Boundaries regrouped by layer to match the DEF: s2 = router + admin + code-indexing and document-summary workers (old s2 + s3, no fallback worker); s3 = session pool (old s4), owns sc6; s4 = main thread as controller + thread visibility (old s5). repo.stats/backup/compact are indexing class.",
+      "reason": "Stakeholder 2026-10-21: avoid a throwaway fallback and rework; split horizontally.",
+      "reviewFolds": "HLD review round 1 (2026-10-22): LMDB per-worker handles on the shared native environment; board and step state hub-served on the main thread; sc2 update token optional; daemon.info router hub op for non-board status inputs; board run eviction via forgetRun. Round 3: per-lane board publication (publishLane, s2) with idle derived from both lanes and processing->running mapping; sc4 additive amendments recorded with their delivering Stories (publishLane s2, forgetRun s3).",
+      "compactionDecision": "Stakeholder 2026-10-22: compaction is idle-triggered maintenance (30 min idle, worth-it threshold 25%/256 MB agreed), the daemon holds every request except the liveness check (daemon.status) while it runs; manual daemon.compact keeps today's contract."
+    },
+    "boundaryNotes": [
+      {
+        "at": "2026-10-22",
+        "note": "s2 supervises the workers it introduces; s4 extends supervision to every class (raised by the s2 LLD review round 1, to avoid an s2 worker crash breaking the daemon until s4)."
+      },
+      {
+        "at": "2026-10-22",
+        "note": "s2 LLD review round 2: risk row corrected to s1's verified behaviour (workers may close their handles; compaction closes every handle and verifies the environment closed before renaming); RepoStatusSnapshot.completeness optional (sc4 amendment delivered by s2); admin falls back to reading the registry from the store before the first publish."
+      }
+    ],
+    "amendments": [
+      {
+        "at": "2026-10-22",
+        "by": "Subho Ghosh (stakeholder) via controller",
+        "summary": "Maintenance compaction now uses the daemon maintenance lock from the lock framework afcfa027: requests are refused with the activity and reason instead of held; workers registered with watchWorker.",
+        "reviewFolds": "Round 1: daemon.compact exempt from the shared hold (no self-wait); shared hold taken only at top-level request entry; HLD aligned with the approved s2 LLD (whole queue on the code-indexing worker; summary worker executes jobs); pre-rename verification is new and gates rename + lock-file removal; ac8 validation tests listed."
+      }
+    ],
+    "approvedAt": "2026-10-22T06:16:59.037Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "The daemon's main thread becomes a router that only accepts connections and hands each request to the right worker thread: one admin worker, two indexing workers (code indexing, and document summaries that yield to it), and a pool of session workers with one worker per client session, reused while the session is active and released after it sits idle. Every worker opens the stores itself; a store proven safe across threads is used directly, and any other store is guarded by a process-wide semaphore that is always released. State that must outlive a worker, such as MCP step tokens, lives in a shared store, so releasing an idle worker loses nothing.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "Alternative a1: a routing main thread plus worker threads by class of work. The main thread owns the Unix socket, framing and the attached-client registry, and does no handler work. Each request is classified (admin, session or indexing) and forwarded over a thread channel to its target: the admin worker, the code-indexing worker, or the session's pooled worker (session id = the request's client label and process id). Workers each load the handler runtime and open their own store handles under a verified per-store threading policy: direct use where a store is proven safe, a shared semaphore with guaranteed release where it is not. MCP step state (the four step state stores) moves into a store shared by all threads, so it outlives any worker; a detached workflow run stays owned by the worker that started it, which is not released while the run is active, and the run's record is published where every thread can read it. A request that carries no valid client identity is served on one shared unattributed worker, as today's daemon serves it, kept apart from every session. A shared status board lets every thread publish what it is doing, which the admin worker reads for daemon status and liveness.",
+    "architectureShape": "Main thread (router): accepts socket connections, parses each request, looks up the method's class in the method-class registry and the session id from the request's client envelope, and sends a request envelope over the thread channel to the target registered for that class. It writes reply and stream-frame envelopes back to the originating connection and observes worker exits, failing that worker's in-flight requests with an error and reclaiming any semaphores the worker held.\n\nAdmin worker: one long-lived worker that serves every admin-class method (the liveness check daemon.status, daemon.debug-status, the TUI's and daemon-ctl's reads and controls). It never runs session or indexing work.\n\nIndexing workers: two long-lived workers. The code-indexing worker hosts the whole IndexQueue (both lanes, their ordering, deduplication and edit-before-sweep insertion, and the summary lane's yield to the index lane, all unchanged) and the file-watcher feed; indexing-class methods route to it (repo.add/remove/reindex, index.file, config.enqueue/reindex, repo.stats, daemon.backup, daemon.compact), so repo.stats's per-repo pending count and daemon.compact's busy check read both lanes as today. The summary lane's processor hands each summary job to the document-summary worker and awaits it, so a summary still starts only when the summary lane would start it today; the document-summary worker runs the summary itself, reading a shared code-busy flag for the sweep's own yield checks and asking the code-indexing worker for queued single-document edits (takeDocSummaryEdit). Lane status, idle state and sweep progress are published on the status board so other threads read them without calling into either worker.\n\nSession pool: a thread pool keyed by session id. A request whose session already has a mapped worker is queued to that worker, which runs its session's requests one at a time in arrival order; otherwise the pool creates a worker and maps it. A worker idle beyond the pool's idle timeout is released, unless it still owns an active detached workflow run; a later request from that session gets a new worker and finds its step state in the shared step-state store. Running a session's requests one at a time is new behaviour required by k1: today the server starts every request without waiting for earlier ones, so a session's requests can overlap. A call a running request makes to another method through the in-daemon client runs immediately on the same worker as part of that request, never queued behind it, so the in-order rule cannot deadlock a request on its own nested calls.\n\nUnattributed worker: a session-class request whose client identity is missing or invalid (the identity field is optional on the wire and some clients do not send it) goes to one shared unattributed worker that serves such requests the way today's daemon does, overlapping, and never mixes them into a real session.\n\nDetached workflow runs (s3 moves them with the session workers): a run started by workflow.run keeps its live execution (its driver and abort controller) in the worker that started it. The run's full poll state (status, the append-only sequence of progress frames, the model, and the terminal result or error) is written to shared run storage as it happens, so a poll from any thread returns the same frames-since-cursor, model, result and error it returns today, even after the owning worker has gone; only the live driver and its abort controller stay in the worker; an abort is sent to the owning worker over the thread channel; if the owning worker exits, the router marks its active runs failed. Retention stays today's: 64 is a soft target, cleanup runs when a run starts, and a running run is never evicted, so more than 64 runs can exist while they are running.\n\nStores: lmdb-js keeps one native LMDB environment per process; the main thread opens it at start and keeps it open until shutdown, and each worker opens its own handle on that shared environment (getGraphStore is a per-isolate module singleton). Story s1 verified that a worker's open, use, close and exit keep the process's LMDB locks (src/db/graph/__tests__/worker-thread-lock.test.ts), so a worker closing its handle or exiting is safe; only the main thread's close at shutdown ends the environment. Each worker opens its own handles to the other stores. Story s1 verifies each store's contract from several threads in one process (LMDB graph, each Lance table, the in-memory DuckDB pool). A store that passes is used directly; a store that does not is used only through the store guard, a process-wide counting semaphore in shared memory acquired by one helper that releases on success, throw and cancellation, and whose holder is recorded so the router can reclaim it if the holding worker exits; reclaim happens only after the dead worker's in-flight native store calls have finished, so no store call is still running when another thread takes the lock. Each store defines how that quiescence is observed (s1 verifies it per store), with a time limit: if quiescence cannot be established within it, the store is marked unhealthy and the router restarts the daemon through the shutdown path rather than let a second thread use the store. A worker holds at most one store lock at a time, so lock cycles cannot form, and an acquisition that waits past its limit fails with an error rather than hanging. A guarded operation that spans awaits keeps its lock for the whole operation, so no other thread sees it half-done. The guard serialises access; it does not make an operation atomic. Each LMDB write stays one synchronous transaction that commits all or nothing, as today, and an operation that commits LMDB and then writes Lance keeps today's order and today's recovery (a re-embed backfills vectors whose write failed after the commit).\n\nAdmin status reads never touch a store: everything daemon.status and repo.list report that comes from a store today (the full registered-repository records with each repository's index completeness, and the daemon-wide unattributed-entity count with its reasons) is published on the status board by the code-indexing worker after each change, in exactly today's response shapes, and those methods read only the board. Until the first store publish, the admin worker waits for it (at most 5 s) and then answers from it; past that bound it reads the registry from the store itself as today (a direct LMDB read), so the list is never answered empty for want of a publish. queueDepth and queueLanes come from the board's IndexingStatus (lane depths, running flags, summary-sweep progress), and storeFailure comes from the shared store health word, which every thread reads, so a status answered on the admin worker reports a lost-locks store exactly as today (buildDaemonStatus, src/daemon/status.ts:61-90, is reused unchanged). The DaemonStatus inputs that are not store-backed (uptime from the daemon's start time, the embedding model state, the installed commit and the LMDB file size) come from a router hub op, daemon.info, owned by s2: the embedding-model bootstrap runs once on the main thread, which pushes the decided backend to every worker (each thread holds its own copy of the embedder's backend). Methods that scan or rewrite a whole store (repo.stats, daemon.backup, daemon.compact) are indexing class and run on the code-indexing worker, not the admin worker: repo.stats scans every entity and edge synchronously and reads per-repo queue depth, which would hold the admin thread for the length of the scan.\n\nCross-class calls inside a handler (a session handler waiting for indexing to go idle, or the in-daemon step client calling another method) go through the thread channel to the method's class target instead of calling a local copy of the handler.\n\nShutdown: the router coordinates it. An admin request to stop (daemon.shutdown, daemon-ctl stop) asks the router, which stops accepting connections, drains the index queue and the workers, closes the stores and exits, as today's shutdown does. Store health is shared across threads: when any thread finds the LMDB locks lost, the router takes today's locks-lost path, skipping store closure and sending SIGKILL to the process.\n\nHub-served shared state: the status board and the shared step-state store live on the main thread (src/daemon/threads/status-board.ts, src/daemon/threads/step-state.ts); workers publish with one-way hub messages and read a snapshot or a step entry with one hub request, so those reads wait on the main thread's event loop. While session handlers still run on the main thread (Phase B, s2), a long synchronous session request delays admin answers too; s3 moves session work off the main thread and s4 leaves it running no handler, which keeps these hub services responsive.\n\nRun retention on the board: the run's owner applies today's retention (64 soft cap, cleanup when a run starts, a running run never evicted, as gc() in src/daemon/workflow-run-registry.ts does) and removes each evicted run from the board with a forgetRun(runId) board operation, so the board's run map stays bounded and a poll for an evicted run answers 'unknown' as today.\n\nMaintenance compaction (s2): compaction is background maintenance coordinated through the daemon maintenance lock, a named lock in the process-wide lock framework (standalone Story afcfa027: Web Locks-shaped named locks in shared memory with shared/exclusive modes, no-wait ifAvailable requests, writer preference, holder activity and reason, and reclaim of a dead worker's locks). Every top-level request other than daemon.status and daemon.compact makes a no-wait shared request on the maintenance lock at its entry (the router for main-thread work, the worker's request entry otherwise) and holds it until it finishes; nested in-daemon calls and cross-class channel calls made under that hold do not request it again (the lock framework refuses re-requesting a held name). daemon.status is exempt as the liveness probe; daemon.compact is exempt because it triggers maintenance itself and would otherwise wait on its own hold. Every other method, daemon.shutdown included, is refused during maintenance; a SIGTERM shutdown waits for the compaction to finish or the hard-exit backstop; background indexing jobs take it shared per job and wait rather than fail. When the daemon has been idle for 30 minutes (configurable: no non-admin request, no busy worker, both indexing lanes empty) and LMDB's statistics show at least 25% of the file and at least 256 MB reclaimable, the main thread requests the lock exclusively with activity 'compaction' and its reason (idle time, reclaimable percentage and bytes). From that moment, by writer preference, every new request is refused at once with that activity and reason (not queued); requests already running finish and release their shared holds, then the exclusive is granted. If they do not finish within the pause limit (10 minutes, configurable) the exclusive request times out, nothing is closed, and the daemon carries on. Holding the lock, the main thread tells every live worker to close its graph handle, compacts with compactGraphStore, which gains a new pre-rename check (not existing behaviour): after the close it verifies the native environment really closed (no other handle open) before the rename and the lock-file removal (src/db/graph/store.ts:861-875); if not, it removes the copy, reopens the original and fails without renaming or removing the lock file and releases the lock; threads reopen their handles on next use. daemon.status is the one method answered throughout, reporting maintenance with its activity, reason and start time, because it is the liveness probe daemon-ctl and the plugins use. The manual daemon.compact keeps today's contract: with indexing busy it returns today's 'indexer is busy' refusal; otherwise it runs maintenance now and returns today's CompactResult. Every decision (pause wait, idle time, reclaimable percentage and bytes) is logged for tuning. The router registers every worker it starts with the lock framework's watchWorker, so a dead worker's locks are reclaimed; s3's session workers are covered automatically.\n\nIndexing on the board: the code-indexing worker publishes the index lane and the document-summary worker the summary lane (with sweep progress) through publishLane, an additive sc4 method s2 delivers; the board merges them and derives idle from both. buildDaemonStatus receives queueDepth as index depth plus summary depth, and its QueueLanes' running flag is the board LaneStatus.processing of each lane, so daemon.status reads exactly as today.\n\nAmendments to sc4 (owned and delivered by s1): two additive methods are added by the Stories that first need them, with their hub bindings: publishLane (s2) and forgetRun (s3). Neither changes an existing sc4 method or shape.\n\nAmendment to sc3 (owned and delivered by s1): RequestEnvelope gains an optional underHold flag, delivered by s2, marking a cross-class call made under an outer request's maintenance hold so the receiving worker does not request the lock again.\n\nNon-request store users (main-thread timers such as conversation prune and todo retention, the watcher path, indexing jobs) take the maintenance lock shared with a bounded wait around each run, and getGraphStore refuses on other threads while compaction runs; long-lived subscription streams (understanding.watch, todos.subscribe) neither hold the lock for their lifetime nor count as activity, and skip refreshes during maintenance.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Store guard and per-store threading policy",
+        "purpose": "Lets any thread use a store safely: records, per store, whether it is used directly or through a semaphore, and gives one helper that acquires and always releases the store's semaphore. Waiting for a lock is always asynchronous, so a waiting thread keeps serving its other work.",
+        "interfaceSketch": "type StoreId = 'graph' | 'lance' | 'duckdb';\ninterface StoreThreadingPolicy {\n  readonly store: StoreId;\n  readonly mode: 'direct' | 'guarded';\n  /** Counting-semaphore size for a guarded store (duckdb: 1); absent for a direct store. */\n  readonly permits?: number | undefined;\n  /** Why: the verification evidence (test or library contract) behind the mode. */\n  readonly basis: string;\n}\ninterface StoreQuiescence {\n  readonly store: StoreId;\n  /** How long reclaim waits for a dead worker's native calls before marking the store unhealthy. */\n  readonly limitMs: number;\n}\ninterface StoreGuardOptions {\n  /** Fail with StoreLockTimeoutError instead of waiting past this limit. */\n  readonly acquireTimeoutMs: number;\n  readonly signal?: AbortSignal | undefined;\n}\ninterface StoreLockHolder {\n  readonly store: StoreId;\n  readonly threadId: number;\n  readonly acquiredAt: number;\n}\ntype WithStore = <T>(store: StoreId, op: () => Promise<T>, opts: StoreGuardOptions) => Promise<T>;\ninterface StoreGuard {\n  readonly withStore: WithStore;\n  readonly policy: (store: StoreId) => StoreThreadingPolicy;\n  readonly holders: () => readonly StoreLockHolder[];\n  /** Router only: release every lock a dead worker held. */\n  /** Waits for quiescence per store; a store that does not quiesce in time is reported unhealthy. */\n  readonly reclaim: (threadId: number) => Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>;\n  readonly quiescence: (store: StoreId) => StoreQuiescence;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "assumptions": [
+          "c7"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Shared step-state store",
+        "purpose": "Keeps MCP step tokens where every thread can read them, so a session served by a new worker after an idle release, or after its worker failed, resumes its step exactly as today. Each of the four step kinds keeps its own lifecycle through an adapter: a 100-entry least-recently-used cap, a read that refreshes the token's expiry, a 1-hour idle TTL, analyze and workflow updates that mint a new token and release the old one, review updates that keep the same token, and code-review transitions that consume the current token and mint a new one at each stage (wait → judgement, fallback), so a superseded token fails exactly as today.",
+        "interfaceSketch": "type StepKind = 'analyze' | 'workflow' | 'review' | 'code-review';\ninterface StepStateEntry<P> {\n  readonly token: string;\n  readonly kind: StepKind;\n  readonly payload: P;\n  readonly touchedAt: number;\n}\ninterface StepLifecycle {\n  /** analyze and workflow rotate; review keeps its token; code-review consumes and mints per stage. */\n  readonly update: 'rotate-token' | 'stable-token' | 'consume-per-stage';\n  readonly maxEntries: number;\n  readonly ttlMs: number;\n  /** A read refreshes touchedAt, as today. */\n  readonly readRefreshes: true;\n}\ninterface SharedStepStateStore {\n  readonly lifecycle: (kind: StepKind) => StepLifecycle;\n  readonly mint: <P>(kind: StepKind, payload: P) => Promise<string>;\n  readonly read: <P>(kind: StepKind, token: string) => Promise<StepStateEntry<P> | undefined>;\n  /** Returns the token to use next: the same one for stable-token kinds (whose token must exist), a new one otherwise (the old one, if given, is released and then fails); an undefined token on a rotating kind behaves as mint. */\n  readonly update: <P>(kind: StepKind, token: string | undefined, payload: P) => Promise<string>;\n  readonly release: (kind: StepKind, token: string) => Promise<void>;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s3"
+        ],
+        "assumptions": [
+          "c7"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Thread channel and target registry",
+        "purpose": "The one message contract between the router and every worker: request, reply, stream frame, cancel and error envelopes, plus the registry where a worker registers as the target for a class of work. A session-class request with no valid session id resolves to the unattributed target.",
+        "interfaceSketch": "type MethodClass = 'admin' | 'session' | 'indexing';\ninterface SessionId { readonly label: string; readonly pid: number; }\ninterface RequestEnvelope {\n  readonly kind: 'request';\n  readonly requestId: string;\n  readonly method: string;\n  readonly params: unknown;\n  readonly stream: boolean;\n  readonly session?: SessionId | undefined;\n}\ninterface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }\ninterface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }\ninterface CancelEnvelope { readonly kind: 'cancel'; readonly requestId: string; }\ntype ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CancelEnvelope;\ninterface ThreadTarget {\n  readonly threadId: number;\n  readonly cls: MethodClass;\n  readonly session?: SessionId | undefined;\n  /** The one shared worker for session-class requests that carry no valid identity. */\n  readonly unattributed?: true | undefined;\n}\ninterface TargetRegistry {\n  readonly register: (target: ThreadTarget) => void;\n  readonly unregister: (threadId: number) => void;\n  readonly targetFor: (cls: MethodClass, session?: SessionId) => ThreadTarget | undefined;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "assumptions": [
+          "c2"
+        ]
+      },
+      {
+        "id": "sc4",
+        "name": "Thread status board",
+        "purpose": "Shared record each thread updates as it starts and finishes work: the router publishes its attached-client snapshot, the indexing workers publish lane state, summary-sweep progress, each repository's completeness and the unattributed-entity count, and detached workflow runs publish their full poll state, so the admin thread can answer status, debug-status, liveness and run polls without calling into a busy thread or touching a store.",
+        "interfaceSketch": "interface ThreadStatus {\n  readonly threadId: number;\n  readonly cls: MethodClass | 'router';\n  readonly session?: SessionId | undefined;\n  readonly busy: boolean;\n  readonly method?: string | undefined;\n  readonly since?: number | undefined;\n  readonly queued: number;\n}\ninterface LaneStatus {\n  readonly depth: number;\n  readonly processing: boolean;\n}\ninterface SummarySweepProgress {\n  readonly repoPath: string;\n  readonly done: number;\n  readonly total: number;\n}\ninterface IndexingStatus {\n  readonly index: LaneStatus;\n  readonly summary: LaneStatus;\n  readonly sweep?: SummarySweepProgress | undefined;\n  readonly idle: boolean;\n}\n/** The existing AttachedClient shape from the server, lastMethod included. */\ninterface AttachedClientSnapshot {\n  readonly id: number;\n  readonly label: string;\n  readonly connectedAt: number;\n  readonly pid?: number | undefined;\n  readonly lastMethod?: string | undefined;\n}\n/** Today's shapes from src/shared/types.ts, published unchanged. */\ntype RepoStatusSnapshot = RegisteredRepo & { readonly completeness?: RepoCompleteness | undefined };  // optional as today's withCompleteness leaves it out on a failed read (amendment, delivered by s2)\ninterface StoreStatusSnapshot {\n  /** undefined until first published; responses then mark the value unavailable. */\n  readonly repos?: readonly RepoStatusSnapshot[] | undefined;\n  readonly unattributedUnwritable?: UnattributedUnwritableCount | undefined;\n  readonly publishedAt: number;\n}\ninterface RunRecord {\n  readonly runId: string;\n  readonly status: 'running' | 'done' | 'error' | 'aborted';\n  readonly ownerThreadId: number;\n  readonly startedAt: number;\n  readonly model: string;\n  /** The append-only progress sequence a poll slices from its cursor. */\n  readonly frames: readonly unknown[];\n  readonly result?: unknown;\n  readonly error?: string | undefined;\n}\ninterface StatusSnapshot {\n  readonly threads: readonly ThreadStatus[];\n  readonly indexing: IndexingStatus;\n  readonly clients: readonly AttachedClientSnapshot[];\n  readonly runs: readonly RunRecord[];\n  readonly store: StoreStatusSnapshot;\n}\ninterface StatusBoard {\n  readonly publish: (status: ThreadStatus) => void;\n  readonly publishIndexing: (status: IndexingStatus) => void;\n  /** Amendment (additive, delivered by s2): one indexing worker publishes only its own lane; the board keeps both and derives IndexingStatus.idle as both lanes empty and not processing. */\n  readonly publishLane: (lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress) => void;\n  readonly publishClients: (clients: readonly AttachedClientSnapshot[]) => void;\n  readonly publishRun: (run: RunRecord) => void;\n  /** Amendment (additive, delivered by s3 with the detached-run move): removes a run the owner's retention evicted; a later poll for it answers 'unknown', as today. */\n  readonly forgetRun: (runId: string) => void;\n  readonly publishStore: (store: StoreStatusSnapshot) => void;\n  readonly snapshot: () => StatusSnapshot;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "assumptions": []
+      },
+      {
+        "id": "sc5",
+        "name": "Method-class registry",
+        "purpose": "Declares the class of every RPC and stream method the daemon serves, so the router sends each request to the right kind of thread and no method is left unclassified.",
+        "interfaceSketch": "interface MethodClassEntry {\n  readonly method: string;\n  readonly cls: MethodClass;\n  readonly stream: boolean;\n}\ninterface MethodClassRegistry {\n  readonly classOf: (method: string) => MethodClass | undefined;\n  readonly entries: () => readonly MethodClassEntry[];\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s4"
+        ],
+        "assumptions": []
+      },
+      {
+        "id": "sc6",
+        "name": "Session pool",
+        "purpose": "Maps each session id to its worker, creating one on first need, queuing a session's requests to it in arrival order, running a request's nested calls inline, and releasing a worker after its idle timeout unless it owns an active detached run.",
+        "interfaceSketch": "interface SessionPoolOptions {\n  /** Release a session's worker after this long with no request. */\n  readonly idleTimeoutMs: number;\n}\ninterface SessionWorkerInfo {\n  readonly session: SessionId;\n  readonly threadId: number;\n  readonly createdAt: number;\n  readonly lastRequestAt: number;\n  readonly queued: number;\n  /** Detached workflow runs this worker owns; a worker with any is never idle-released. */\n  readonly activeRuns: number;\n}\ninterface SessionPool {\n  readonly workerFor: (session: SessionId) => Promise<SessionWorkerInfo>;\n  readonly sessions: () => readonly SessionWorkerInfo[];\n  readonly options: SessionPoolOptions;\n}",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4"
+        ],
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "Verifying each store from several threads of one process (the LMDB graph environment, every Lance table, the in-memory DuckDB pool), including that a worker opening and later releasing its handles does not close a descriptor the process's locks depend on; the semaphore implementation over process-wide shared memory and its holder record; moving the four in-memory step state stores onto the shared step-state store with today's TTL; the status board's attached-client, sweep-progress and run-record slots; the thread channel's serialisation and the target registry's bookkeeping; the status board's hub-served layout on the main thread. As the root Story it owns every cross-cutting contract the other Stories consume. Validation: ac1 — one thread writes a repo's entities while another reads the same graph, the reader sees only whole transactions, and an entity's vectors are written only after its graph commit; ac2 — two threads write different artifacts or config entries and a third thread reads both back; ac3 — no code path outside the daemon opens a store; ac4 — a throwing LMDB transaction on one thread leaves nothing visible to another. Also: a worker opening and releasing its handles keeps the process's LMDB locks; the guard releases on success, throw, cancel and worker kill; an acquisition past its limit fails; nested acquisition is refused. Step-state compatibility: for each of the four kinds, token rotation (analyze, workflow), stable-token update (review) or consume-and-mint per stage (code-review, where a superseded token fails), read refresh of expiry, the 100-entry eviction and a missing-token error behave as today. LMDB's native environment is opened by the main thread at start and closed by it at shutdown; a worker may open and close its own handle on it (s1 verified this keeps the process's locks); lock reclaim waits for a dead worker's in-flight native calls. Per store, a quiescence observation with a time limit and an unhealthy-store outcome when it is exceeded; a guard wait never blocks its thread."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The main-thread router (connection handling, classification through the method-class registry, envelope forwarding to registered targets, writing replies and frames back, observing worker exits and reclaiming a dead worker's store locks), the admin worker, and indexing on two workers: the code-indexing worker hosting the whole index queue (both lanes, unchanged) and the file-watcher feed and serving every indexing-class method, and the document-summary worker running the summary jobs the summary lane hands it, so a summary starts only while code indexing is idle, as today. Both indexing workers publish lane state, idleness, summary-sweep progress, the full registered-repository records with each repository's completeness, and the unattributed-entity count with its reasons on the status board after every change. Session-class methods keep running on the main thread exactly as today until s3 moves them; there is no fallback worker. Shutdown and the locks-lost path keep today's behaviour with the workers included (each stops its work, the queue drains, the main thread closes the stores after the workers exit). Validation: ac1 — daemon.status and the TUI's admin reads answer within 100 ms while an indexing pass runs and another worker keeps an LMDB write transaction open; ac2 — each admin method's response matches today's recorded response; ac3 — a test enumerates every served RPC and stream method and fails on any without a class, and dispatch tests assert admin methods ran on the admin thread and indexing methods on the code-indexing thread; ac4/ac5 — a session request is answered during an indexing pass, and a file change is indexed while a session request runs; ac6 — summaries start only while code indexing is idle, and lane order and indexed results equal the single-thread baseline; ac7 — queue status and idle waiting read from another thread reflect the indexing workers' real state. Also: debug-status keeps every field including lastMethod; daemon.status and repo.list read only the status board and keep today's full response shapes. Also maintenance compaction: idle detection (30 min, configurable), the reclaimable-space threshold (25% and 256 MB), the daemon maintenance lock from the lock framework (afcfa027): every request but daemon.status takes it shared with no wait and is refused with the maintenance activity and reason while maintenance holds it exclusively; workers close and reopen their graph handles around the main thread's compaction; every started worker is registered with watchWorker, and the manual daemon.compact keeping today's responses. s2 adds the additive sc4 method publishLane and its hub binding. s2 supervises the workers it introduces (admin, code-indexing, document-summary): exit handling, lock reclaim, replacement and restart limits. ac8 — with the maintenance lock held exclusively, a request other than daemon.status and daemon.compact is refused at once with the activity and reason; daemon.status answers and reports the maintenance; a request already running finishes before compaction starts; an exclusive request that times out leaves the store open and untouched; every row written before compaction is present after it; daemon.compact returns today's CompactResult when idle and today's 'indexer is busy' refusal while the queue has work."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The session pool, moving every session-class method off the main thread: session-id mapping, per-session FIFO, worker creation and idle release, containment of a failing worker (its in-flight requests fail with an error, the next request gets a new worker), routing each step handler's state through the shared step-state store, the unattributed worker, inline nested calls, and ownership of detached workflow runs (records on the status board, abort routed to the owner, failure on owner exit, never idle-released while a run is active). Validation: ac1 — session B is answered while session A's worker spins; ac2 — A's second request starts only after its first completes; ac3 — requests from one client process over separate connections run on one worker, released after the idle timeout; ac4 — a worker failure fails only its session's requests; ac5 — provider calls stay serial (no Promise.all reaching a provider); ac6 — a step token minted before an idle release resumes on the new worker; ac7 — the liveness check (daemon.status) answer within 100 ms while a session worker spins the CPU for minutes. Also: unattributed requests are served apart from sessions; a nested in-daemon call completes without deadlock; a detached run survives idle time, accepts an abort from another thread, and is marked failed when its owner exits; a poll from another thread, and after the owner has gone, returns the same frames-since-cursor, model, result and error as today. The board's forgetRun operation (an additive sc4 method) is added with the detached-run move, called by the run owner's retention. Session workers take the maintenance lock shared per request like every other request, and are registered with watchWorker when started."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The main thread becomes the controller: it loads no handler runtime and runs no request handler, only the socket, classification, forwarding, worker supervision extended to every class and unified (s2 already supervises admin and both indexing workers; s4 adds the session pool's workers and the unattributed worker: in-flight requests failed, store locks reclaimed, the worker replaced) and shutdown coordination, including the locks-lost path. It also adds a `threads` section to daemon.status and daemon.debug-status from the status board and session pool (additive fields only) and makes the liveness answer report a busy session as busy rather than as a failure. Validation: ac1 — no request handler runs on the main thread; ac2 — a failing worker of any class fails only its own in-flight requests and is replaced; ac3 — shutdown and the locks-lost path behave as today; ac4 — daemon.status lists each thread with class, session, busy state, method and elapsed time; ac5 — with a session worker busy for minutes the liveness answer reports the daemon alive and the session busy; ac6 — every field of today's daemon.status and daemon.debug-status, including clients and sweep progress, is present with the same meaning."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "The liveness check (daemon.status) answer within 100 ms at the 99th percentile while a session worker is CPU-bound and while an indexing pass runs; routing adds no more than 5 ms per request and per stream frame. A session worker's idle timeout defaults to 15 minutes and is configurable; step state keeps its own 1-hour TTL independent of worker release.",
+      "security": "No new listener or socket: the main thread keeps the existing Unix socket and its permissions; shared memory and thread channels are internal to the daemon process; clients still reach the stores only through IPC.",
+      "observability": "Every log line carries its thread id and class, and the session id for session work; daemon.status lists every thread with class, session, busy state, current method and elapsed time; a store-lock wait beyond its acquisition limit and a reclaimed lock after a worker exit are logged as warnings.",
+      "durability": "Step state survives a worker's release or failure because it lives in the shared step-state store; a detached workflow run lives in its owning worker, which is not released while the run is active, and is marked failed if that worker exits; its poll state lives in shared run storage, so polls still answer after the owner has gone. A worker that exits while holding a store lock has the lock reclaimed by the router. Atomicity is unchanged from today: each LMDB write transaction commits all or nothing, and an operation that writes LMDB then Lance keeps today's order and re-embed recovery. The process's one native LMDB environment is opened by the main thread at start and closed by it at shutdown; each worker opens and may close its own handle on it, which s1 verified keeps the process's locks; a lock held by a dead worker is reclaimed only after its in-flight native calls have finished."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — store safety and shared contracts",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Every other Story consumes sc1-sc4, which s1 owns; and no work may move off the main thread until each store's behaviour from several threads is verified and the step state lives where any thread can read it.",
+          "backwardCompat": "The daemon still runs single-threaded in this phase: the store guard, shared step-state store, channel and status board are exercised by tests and used in place of today's in-memory step maps, so step tokens keep their 1-hour TTL and every existing response is unchanged.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — router, admin worker and indexing workers",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "s2 depends only on s1: it puts the router in front of every request, classifies all methods, and moves admin and indexing work onto their own workers, leaving session work on the main thread as today.",
+          "backwardCompat": "Session-class methods run on the main thread exactly as today; IPC method names, request shapes and response fields are untouched. Admin answers no longer wait on indexing; they can still wait on a long synchronous session request on the main thread until Phase C.",
+          "featureFlag": "daemon.threads.enabled"
+        },
+        {
+          "name": "Phase C — session pool",
+          "includesStories": [
+            "s3"
+          ],
+          "rationale": "s3 consumes sc5 from s2 and sc2 from s1, so it follows Phase B; it moves session work onto per-session workers with idle release.",
+          "backwardCompat": "Step tokens minted before the switch remain valid because they already live in the shared step-state store from Phase A. Running a session's requests one at a time in arrival order is new behaviour (today they can overlap); nested in-daemon calls from a running request run inline on the same worker, and requests without a valid client identity keep today's overlapping behaviour on the unattributed worker.",
+          "featureFlag": "daemon.threads.enabled"
+        },
+        {
+          "name": "Phase D — controller and thread visibility",
+          "includesStories": [
+            "s4"
+          ],
+          "rationale": "s4 needs every class off the main thread (s2, s3) before the main thread can drop the handler runtime, and reads the session pool (sc6) for the threads section.",
+          "backwardCompat": "daemon.status and daemon.debug-status only gain a threads section; every existing field keeps its name and meaning for the TUI and both plugins.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "The order follows the Epic's dependsOn edges and contract ownership, split by layer: s1 owns sc1-sc4 consumed by all others; s2 owns sc5 and moves admin and indexing work off the main thread; s3 owns sc6 and moves session work off it; s4 makes what remains on the main thread a controller and reports every thread. No Story builds a stopgap that a later one removes. One flag (daemon.threads.enabled) gates the move of work off the main thread in Phases B and C, so the single-thread path stays available until the threaded daemon has run live.",
+      "riskyBits": [
+        {
+          "area": "LMDB lock file across threads",
+          "why": "This daemon has already lost its LMDB locks when another descriptor on the lock file closed; a worker that opens the environment and later closes it on idle release could drop the process's locks for every thread.",
+          "mitigation": "s1 reproduced open-and-release from a worker against the production open options first (src/db/graph/__tests__/worker-thread-lock.test.ts): a worker's open, use, close and exit keep the process's locks, so a worker may close its handle. lmdb-js shares one native environment per process and closes it only with its last handle; maintenance compaction therefore closes every thread's handle before the main thread compacts and renames, and verifies the environment really closed before renaming."
+        },
+        {
+          "area": "Module-scope state that silently splits per worker",
+          "why": "Beyond the step stores, caches and registries are module-scope (template caches, the run-record map, the repository-map cache, the chat session pool); a handler that relied on one shared copy would silently see a per-worker copy.",
+          "mitigation": "s1 inventories every module-scope mutable value in code reachable from a handler and classifies each as per-thread-safe, moved to a shared store, or owned by one class's worker; s2's classification refuses a method whose state is unclassified."
+        },
+        {
+          "area": "Lock leaks and deadlocks in the store guard",
+          "why": "A guarded operation that throws, is cancelled, or whose worker dies while holding the semaphore would block every other thread; a thread taking two locks could deadlock.",
+          "mitigation": "One acquire-and-release helper is the only way to take a lock; it releases in every exit path, records its holder for router reclaim on worker exit, fails an acquisition past its limit with an error, and forbids nested acquisition, each covered by a test that kills or throws inside the guarded operation."
+        },
+        {
+          "area": "Nested calls under per-session ordering",
+          "why": "Step handlers call other daemon methods through the in-daemon client; if such a call queued behind the request that made it, the request would wait on itself forever.",
+          "mitigation": "A nested call made from a running request executes inline on the same worker as part of that request and is never queued; s3 covers it with a test where a step handler's nested call completes."
+        },
+        {
+          "area": "Requests refused during compaction",
+          "why": "While maintenance holds the lock, every request other than daemon.status is refused with the maintenance activity and reason; a client that does not retry sees the refusal.",
+          "mitigation": "Compaction starts only after 30 idle minutes and only when at least 25% and 256 MB are reclaimable; the refusal names the activity, reason and start time so clients and users can retry; daemon.status reports the maintenance; each decision is logged so the thresholds can be tuned."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Router on the main thread; admin, indexing and session work all in worker threads",
+        "oneLineSummary": "The main thread only accepts connections and routes each request to a dedicated admin worker, the indexing worker or the session's pooled worker; every worker runs the handler runtime and opens its own store handles, with shared semaphores guarding stores that are not thread-safe.",
+        "approach": "The main thread keeps the Unix socket and the per-connection framing and does nothing else: it reads each request's method and client identity, classifies the method as admin, session or indexing work, and forwards it to the right worker. Admin work goes to one dedicated admin worker, index-queue work to one indexing worker, and session work to a thread pool keyed by session id that reuses the session's mapped worker or creates one, and releases a worker after an idle timeout. Replies and stream frames come back to the main thread, which writes them to the originating connection.\n\nEvery worker loads the handler runtime and opens its own handles to the stores. Each store is used directly where its threading contract is verified safe, and otherwise behind a semaphore shared by all workers (process-wide shared memory), acquired and released through one helper that releases on every exit path. Session state that must outlive a worker (MCP step state, the workflow run registry) moves out of worker module memory into a shared place every worker can read, so an idle-released or failed worker loses nothing.",
+        "pros": [
+          "The main thread does no handler work at all, so no handler of any class can delay accepting or routing a request.",
+          "Admin work cannot be delayed by routing load either: it has its own worker, satisfying k2 literally.",
+          "A crash in any worker is contained: the main thread observes the worker exit and fails only that worker's in-flight requests."
+        ],
+        "cons": [
+          "Every request crosses a thread boundary twice (route in, reply out), adding a message hop per request and per stream frame.",
+          "Four kinds of thread to start, supervise and shut down (main, admin, indexing, session pool), the most moving parts of the alternatives.",
+          "Every worker re-imports the handler runtime and re-opens store handles, multiplying start-up cost and open handles by the worker count."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Store-owner main thread; workers proxy every store call to it",
+        "oneLineSummary": "Workers run admin, indexing and session logic, but the stores stay open only on the main thread and every store call from a worker becomes a message to it.",
+        "approach": "Admin, indexing and session work move to worker threads as in the stakeholder's model, but no worker opens a store. The main thread keeps the single existing store handles and serves store operations as messages: a worker that reads the graph, writes an artifact or queries a table sends the operation to the main thread and awaits the result.\n\nConsistency comes from serialising all store work on one thread, so no store needs a semaphore and no worker-level store threading contract has to be verified. Session state can stay on the main thread beside the stores.",
+        "pros": [
+          "No store is ever opened twice in the process, so no per-store threading contract has to be verified.",
+          "Session state and store handles stay where they are today, so the smallest share of existing module-scope state moves."
+        ],
+        "cons": [
+          "All store access from every session and the indexer is serialised on one thread: a heavy indexing write pass delays every session's reads, the cross-session stall the Epic removes, for store-bound work.",
+          "Every graph traversal becomes a message per store call; analyzer recipes that make hundreds of graph reads per request pay a thread hop on each.",
+          "It is the owner-thread model the stakeholder declined in favour of semaphores for stores that are not thread-safe."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Strongest on k7 but only partial on k1, k2 and k3, because the store-owner thread re-couples every class of work; it is also the owner-thread model the stakeholder declined."
+      },
+      {
+        "id": "a3",
+        "name": "Main thread doubles as router and admin thread; indexing and sessions in workers",
+        "oneLineSummary": "The main thread accepts connections, routes, and itself serves the admin class; indexing and session work run in workers that open their own store handles behind shared semaphores where needed.",
+        "approach": "The main thread keeps the socket and routes requests as in a1, but instead of forwarding admin requests it runs the admin handlers itself, making the main thread the one admin thread. Session work goes to the session-keyed worker pool with idle release, and index-queue work to the one indexing worker.\n\nThe main thread must therefore stay free of long work: only handlers verified to be short and bounded may be classed as admin. Store use and shared session state are handled as in a1: verified-safe stores used directly, the rest behind shared semaphores with guaranteed release, and session state that must outlive a worker kept outside worker memory.",
+        "pros": [
+          "Admin requests are answered without any thread hop, the lowest-latency path for the liveness check and status.",
+          "One fewer thread kind to supervise than a1."
+        ],
+        "cons": [
+          "Routing and admin share one thread: a mis-classified slow admin handler blocks routing for every client, recreating today's freeze for the whole daemon.",
+          "Admin handlers that read the stores (daemon.status reads the repository list) put store access, and any semaphore wait, on the routing thread."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Matches a1 except on k2, where sharing routing with admin work puts any store wait of an admin handler on the thread every client depends on."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "request-path",
+      "narrative": "How one session request travels through the threaded daemon: the main thread only routes, the session's own worker runs it, and a guarded store is always released before the reply goes back.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "Client (MCP server / plugin / TUI)",
+          "description": "Opens a socket per request and sends its client label and process id."
+        },
+        {
+          "id": "router",
+          "label": "Main thread (router)",
+          "description": "Owns the socket; classifies the method and forwards the request envelope."
+        },
+        {
+          "id": "pool",
+          "label": "Session pool",
+          "description": "Maps the session id to its worker, creating one if none is mapped."
+        },
+        {
+          "id": "worker",
+          "label": "Session worker",
+          "description": "Runs the session's requests one at a time in arrival order."
+        },
+        {
+          "id": "guard",
+          "label": "Store guard",
+          "description": "Direct access for a verified-safe store; otherwise a shared semaphore released on every exit path."
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "router",
+          "label": "request (method, params, client label + pid)",
+          "description": "Arrives on a fresh connection."
+        },
+        {
+          "from": "router",
+          "to": "pool",
+          "label": "workerFor(session id)",
+          "description": "Session-class method: find or create the session's worker."
+        },
+        {
+          "from": "router",
+          "to": "worker",
+          "label": "request envelope",
+          "description": "Queued behind the session's earlier requests."
+        },
+        {
+          "from": "worker",
+          "to": "guard",
+          "label": "withStore(store, op)",
+          "description": "Acquire if the store is guarded; release on success, throw or cancel."
+        },
+        {
+          "from": "guard",
+          "to": "worker",
+          "label": "result",
+          "description": "The lock is already released when the result returns."
+        },
+        {
+          "from": "worker",
+          "to": "router",
+          "label": "reply / frame envelopes",
+          "description": "Streamed frames, then the final reply."
+        },
+        {
+          "from": "router",
+          "to": "client",
+          "label": "JSON-RPC response",
+          "description": "Written to the originating connection, unchanged in shape."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts:507-2099",
+      "quotedText": "main() in src/daemon/index.ts registers 173 RPC and 16 stream handlers (including the understanding routes merged at lines 1994-1995) and serves them through one IpcServer (line 1997)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/server.ts",
+      "quotedText": "The IPC surface is src/daemon/server.ts (IpcServer with listen/close/attachedClients/disconnectClients; RpcHandlers/StreamHandlers maps)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/queue.ts:41-334",
+      "quotedText": "Indexing runs through IndexQueue (src/daemon/queue.ts:41-334, instantiated at src/daemon/index.ts:269) with an index lane and a document-summary lane"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/steps/workflow-step/state-store.ts:28-36",
+      "quotedText": "the four MCP step state stores are `new Map` (src/daemon/steps/analyze-step/state-store.ts:72, code-review-step/state-store.ts:31, review-step/state-store.ts:31, workflow-step/state-store.ts:36, with a 1-hour TTL at workflow-step/state-store.ts:28)"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-21",
+      "quotedText": "use a threadpool, check if a thread already exists mapped to a session id else create new thread. threadpool should have a reasonable release on idle timeout."
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-21",
+      "quotedText": "stores that aren't thread safe should be controlled via semaphores, need to ensure lock release properly else will result in deadlocks"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/db/graph/store.ts:320",
+      "quotedText": "Store handles are module-scope singletons: the graph store `_instance` (src/db/graph/store.ts:320) behind getGraphStore(), one Lance connection `_instance` (src/db/lance/conn.ts:34) behind getLanceConn() with a per-table `_tableCache` in seven table modules, and a DuckDB `_instance` (src/daemon/db/duckdb-pool.ts:52)"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "node_modules/lmdb/README.md:415",
+      "quotedText": "LMDB and this library are designed for high concurrency, and we recommend using multiple processes to achieve concurrency (processes are more robust than threads, ...)"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "node_modules/lmdb/README.md:517",
+      "quotedText": "The object cache is stored separately for each process/worker, so if you are running across multiple workers or processes, you will either need to use messaging to invalidate cached entries when they are updated on other threads, or alternately ... set the `validated` flag"
+    },
+    {
+      "id": "c10",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/workflow-run-registry.ts:72",
+      "quotedText": "the workflow run registry (src/daemon/workflow-run-registry.ts:72) and the chat session pool (src/daemon/chat-handler.ts:39)"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/shared/types.ts:896",
+      "quotedText": "client?: { readonly label: string; readonly pid: number } | undefined;"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:194",
+      "quotedText": "void this.handleMessage(trimmed, socket);"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/workflow-run-registry.ts:51-76",
+      "quotedText": "readonly abort: AbortController; ... const MAX_RUNS = 64; (a running run is never evicted)"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/db/entities.ts:329",
+      "quotedText": "upsertEntities: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:967",
+      "quotedText": "throw new Error('withWriteTxn callbacks must be synchronous');"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/daemon/status.ts:49",
+      "quotedText": "sweep: { repoPath: string; done: number; total: number } | undefined,"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:149",
+      "quotedText": "...(c.lastMethod !== undefined ? { lastMethod: c.lastMethod } : {}),"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1074",
+      "quotedText": "listRepos: async () => withCompleteness(await listRepos(db), r => r.path),"
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/daemon/steps/review-step/state-store.ts:22",
+      "quotedText": "const MAX_ENTRIES = 100;"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts:12-15",
+      "quotedText": "`locks-lost`, the daemon NEVER calls `process.exit`. ... SIGKILL to itself, which runs no exit hook"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/handler.ts:262-364",
+      "quotedText": "releaseState(step.state!); ... const token = saveState({"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/shared/types.ts:708",
+      "quotedText": "export interface RegisteredRepo {"
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/shared/types.ts:751",
+      "quotedText": "export interface UnattributedUnwritableCount {"
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:585",
+      "quotedText": "'repo.list': async () => {"
+    }
+  ]
+}

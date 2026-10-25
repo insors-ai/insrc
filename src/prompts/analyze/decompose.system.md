@@ -163,7 +163,7 @@ Example placeholder patterns:
 - `"names": "$e2.profile.exports[0..2]"` — first three exports from e2's module.profile
 - `"subject": "$e1.decisions[0].decision"` — the first decision text from a decision trace
 
-If you cannot express a param via placeholders, leave the exploration's `params` empty and add a note in `purpose`. The executor will then skip the exploration + emit a `failed` output the synthesizer renders as a diagnostic.
+An optional param you do not set may be given as `null`; it means the param is absent. If you cannot express a param via placeholders, leave the exploration's `params` empty and add a note in `purpose`. The executor will then skip the exploration + emit a `failed` output the synthesizer renders as a diagnostic.
 
 ### Recipe: `structural-map`
 

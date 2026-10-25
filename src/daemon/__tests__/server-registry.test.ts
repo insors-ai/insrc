@@ -19,7 +19,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 import type { IpcRequest } from '../../shared/types.js';
 
 /** A fake Socket: an EventEmitter with a no-op write. */
@@ -50,7 +50,7 @@ function reqLine(method: string, client?: IpcRequest['client']): string {
 }
 
 test('a new connection registers an entry labelled unknown until a message identifies it', async () => {
-	const server = new IpcServer({}, {}, scriptedClock([1000, 2000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([1000, 2000]));
 	const sock = new FakeSocket();
 	internals(server).handleConnection(sock);
 
@@ -69,7 +69,7 @@ test('a new connection registers an entry labelled unknown until a message ident
 });
 
 test('handleMessage with a valid client envelope updates label/pid/lastMethod', async () => {
-	const server = new IpcServer({}, {}, scriptedClock([1000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([1000]));
 	const sock = new FakeSocket();
 	internals(server).handleConnection(sock);
 	await internals(server).handleMessage(reqLine('workflow.run', { label: 'mcp', pid: 4242 }), sock);
@@ -81,7 +81,7 @@ test('handleMessage with a valid client envelope updates label/pid/lastMethod', 
 });
 
 test('a malformed client envelope is ignored — the connection stays unknown/pid undefined', async () => {
-	const server = new IpcServer({}, {}, scriptedClock([1000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([1000]));
 	const sock = new FakeSocket();
 	internals(server).handleConnection(sock);
 
@@ -97,7 +97,7 @@ test('a malformed client envelope is ignored — the connection stays unknown/pi
 });
 
 test('socket close deletes the entry; a double-close / close-before-message is idempotent', async () => {
-	const server = new IpcServer({}, {}, scriptedClock([1000, 2000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([1000, 2000]));
 	const a = new FakeSocket();
 	const b = new FakeSocket();
 	internals(server).handleConnection(a);
@@ -115,7 +115,7 @@ test('socket close deletes the entry; a double-close / close-before-message is i
 });
 
 test('attachedClients() returns entries sorted by connectedAt', () => {
-	const server = new IpcServer({}, {}, scriptedClock([3000, 1000, 2000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([3000, 1000, 2000]));
 	const s1 = new FakeSocket();
 	const s2 = new FakeSocket();
 	const s3 = new FakeSocket();
@@ -130,11 +130,11 @@ test('attachedClients() returns entries sorted by connectedAt', () => {
 });
 
 test('the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)', async () => {
-	const server = new IpcServer({}, {}, scriptedClock([1000, 2000]));
+	const server = new IpcServer(directDispatch({}, {}), scriptedClock([1000, 2000]));
 	internals(server).handleConnection(new FakeSocket());
 	internals(server).handleConnection(new FakeSocket());
 
-	// This is exactly the daemon.debug-status handler body (index.ts).
+	// The daemon.debug-status handler (handler-runtime.ts) returns the server's attachedClients() through deps.attachedClients.
 	const handler = async (): Promise<{ clients: ReturnType<IpcServer['attachedClients']> }> => ({ clients: server.attachedClients() });
 	const before = server.attachedClients().length;
 	const res = await handler();

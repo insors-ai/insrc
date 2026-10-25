@@ -174,7 +174,7 @@ test('source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/
 // ── handler-map wiring (t3): revived, not offlineRpc (lc1) ───────────────
 
 test("handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)", () => {
-  const idx = readFileSync(join(HERE, '..', 'index.ts'), 'utf8');
+  const idx = readFileSync(join(HERE, '..', 'handler-runtime.ts'), 'utf8');   // the handler map (Epic 86197ac6 s2/t1)
   const entries = [...idx.matchAll(/'providers\.listModels':\s*([^\n,]+)/g)].map(m => m[1]!.trim());
   assert.equal(entries.length, 1, 'exactly one providers.listModels entry (no dead duplicate) — lc1');
   assert.match(entries[0]!, /listModels\(params\)/, 'delegates to the sc2 listModels dispatch');

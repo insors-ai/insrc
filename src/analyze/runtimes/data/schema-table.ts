@@ -32,6 +32,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { analysisConnectionContext } from '../../connection-access.js';
 
 import type {
 	FileDriver,
@@ -45,7 +46,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
-	acquireDataPool,
+	dataConnectionResolver,
 	optionalStringParam,
 	requireStringParam,
 	connectionWithinScope,
@@ -68,79 +69,80 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';
 
-		const pool   = await acquireDataPool(repoPath);
-		await pool.reload();
-		const driver = await pool.acquire(connectionId);
+		const access = analysisConnectionContext(repoPath);
+		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
-		let schema: SchemaDescription;
-		let indexes: IndexListing | undefined = undefined;
-		const skipped: SkippedItem[] = [];
 
-		switch (driver.family) {
-			case 'rdbms': {
-				const r = driver as RdbmsDriver;
-				schema = await r.describe(table);
-				if (deep && typeof r.listIndexes === 'function') {
-					try {
-						indexes = await r.listIndexes(table);
-					} catch (err) {
-						// Non-fatal: some dialects/permissions don't expose
-						// indexes. Log + omit; the schema itself is still valuable.
-						log.warn(
-							{ runId: args.runId, taskId: args.task.taskId, connectionId, table,
-							  err: (err as Error).message },
-							'listIndexes failed; omitting indexes from deep schema',
-						);
-						skipped.push({ what: `the indexes of ${table}`, reason: `the driver could not list them (${(err as Error).message})` });
+			let schema: SchemaDescription;
+			let indexes: IndexListing | undefined = undefined;
+			const skipped: SkippedItem[] = [];
+
+			switch (driver.family) {
+				case 'rdbms': {
+					const r = driver as RdbmsDriver;
+					schema = await r.describe(table);
+					if (deep && typeof r.listIndexes === 'function') {
+						try {
+							indexes = await r.listIndexes(table);
+						} catch (err) {
+							// Non-fatal: some dialects/permissions don't expose
+							// indexes. Log + omit; the schema itself is still valuable.
+							log.warn(
+								{ runId: args.runId, taskId: args.task.taskId, connectionId, table,
+								  err: (err as Error).message },
+								'listIndexes failed; omitting indexes from deep schema',
+							);
+							skipped.push({ what: `the indexes of ${table}`, reason: `the driver could not list them (${(err as Error).message})` });
+						}
 					}
+					break;
 				}
-				break;
-			}
-			case 'file': {
-				const f = driver as FileDriver;
-				if (typeof f.describe !== 'function') {
+				case 'file': {
+					const f = driver as FileDriver;
+					if (typeof f.describe !== 'function') {
+						throw new Error(
+							`${TEMPLATE_ID}: file driver '${driver.kind}' does not expose describe()`,
+						);
+					}
+					schema = await f.describe(table);
+					break;
+				}
+				case 'kv':
 					throw new Error(
-						`${TEMPLATE_ID}: file driver '${driver.kind}' does not expose describe()`,
+						`${TEMPLATE_ID}: kv driver '${driver.kind}' has no table concept; use a different family or template`,
 					);
-				}
-				schema = await f.describe(table);
-				break;
+				default:
+					throw new Error(
+						`${TEMPLATE_ID}: driver family '${(driver as { family: string }).family}' not supported`,
+					);
 			}
-			case 'kv':
-				throw new Error(
-					`${TEMPLATE_ID}: kv driver '${driver.kind}' has no table concept; use a different family or template`,
-				);
-			default:
-				throw new Error(
-					`${TEMPLATE_ID}: driver family '${(driver as { family: string }).family}' not supported`,
-				);
-		}
 
-		const result = {
-			connectionId,
-			table,
-			columns: schema.columns,
-			source:  schema.source,
-			...(indexes !== undefined ? { indexes: indexes.indexes } : {}),
-		};
-
-		log.info(
-			{
-				runId:        args.runId,
-				taskId:       args.task.taskId,
+			const result = {
 				connectionId,
 				table,
-				columnCount:  schema.columns.length,
-				source:       schema.source,
-				depth:        deep ? 'deep' : 'shallow',
-				indexCount:   indexes?.indexes.length ?? 0,
-			},
-			'data.schema.table: extracted',
-		);
+				columns: schema.columns,
+				source:  schema.source,
+				...(indexes !== undefined ? { indexes: indexes.indexes } : {}),
+			};
 
-		return {
-			outputs: new Map<string, unknown>([['table-schema', result]]),
-			completeness: buildCompleteness({ returned: schema.columns.length, skipped, basis: 'data-source' }),
-		};
+			log.info(
+				{
+					runId:        args.runId,
+					taskId:       args.task.taskId,
+					connectionId,
+					table,
+					columnCount:  schema.columns.length,
+					source:       schema.source,
+					depth:        deep ? 'deep' : 'shallow',
+					indexCount:   indexes?.indexes.length ?? 0,
+				},
+				'data.schema.table: extracted',
+			);
+
+			return {
+				outputs: new Map<string, unknown>([['table-schema', result]]),
+				completeness: buildCompleteness({ returned: schema.columns.length, skipped, basis: 'data-source' }),
+			};
+		});
 	},
 };

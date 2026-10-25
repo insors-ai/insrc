@@ -68,7 +68,7 @@ function parseEnvelope<T = unknown>(envelope: { content: { text: string }[] }): 
 // State codec: narrow-pause round-trip
 // ---------------------------------------------------------------------------
 
-test('state codec round-trips awaiting_narrow with preparedBlob + resumeState', () => {
+test('state codec round-trips awaiting_narrow with preparedBlob + resumeState', async () => {
 	const original: StepStatePayload = {
 		version:        STATE_VERSION,
 		runId:          'test-run-narrow',
@@ -105,8 +105,8 @@ test('state codec round-trips awaiting_narrow with preparedBlob + resumeState', 
 			},
 		},
 	};
-	const blob = encodeState(original);
-	const back = decodeState(blob);
+	const blob = await encodeState(original);
+	const back = await decodeState(blob);
 	assert.deepEqual(back, original);
 	assert.doesNotThrow(() => assertStage(back, 'awaiting_narrow'));
 });
@@ -188,7 +188,7 @@ test('handler rejects phase=narrow when explorationId does not match paused exp'
 			},
 		},
 	};
-	const stateBlob = encodeState(state);
+	const stateBlob = await encodeState(state);
 
 	const envelope = await handleAnalyzeStep({
 		phase:         'narrow',

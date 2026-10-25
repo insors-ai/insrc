@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const INDEX = resolve(HERE, '..', 'index.ts');           // src/daemon/index.ts
+const INDEX = resolve(HERE, '..', 'handler-runtime.ts'); // the handler map, moved out of index.ts's main() (Epic 86197ac6 s2/t1)
 const REPO_STATS = resolve(HERE, '..', 'repo-stats.ts'); // src/daemon/repo-stats.ts
 const TYPES = resolve(HERE, '..', '..', 'shared', 'types.ts');
 

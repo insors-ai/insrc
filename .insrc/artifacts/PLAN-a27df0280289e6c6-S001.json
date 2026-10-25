@@ -1,0 +1,406 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792736116818-0ip6mw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-23T06:17:50.112Z",
+    "epicCreatedAt": "2026-10-23T05:44:08.424Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 153252,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a27df0280289e6c6",
+    "epicSlug": "add-per-tier-reasoning-effort-setting",
+    "storyId": "S001",
+    "lldRunId": "wf-1792733816083-gtu5hw",
+    "lldEffectiveHash": "a27df0280289e6c6df585c32e7cac283a9fa4dd0ec62f0c1fc03708f03b13b9c",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-23T06:18:43.271Z",
+    "rangeBase": "7587c39fc588ba941f62f243f69f17488662e5ca"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story threads an optional reasoning effort from the global model tiers in config, through the role router and provider builders, to the claude and codex command lines, without changing any call when no effort is set. The config catalog declares the three effort keys, and each settings surface gets a control for them: a row in the TUI tier pane, manifest entries and a picker step in VS Code, and a combo in the JetBrains model-tiers section. It ends with live CLI checks, the full sweep, and one daemon update that also ships the code-review fix and the threading story, with core set to high and mid to medium.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Effort in the tier config: parse, fallback and derived fields",
+        "summary": "TierModel gains optional effort; parseTieringOverride reads it on the global tiers (invalid value dropped alone with a warning), records it in TieringOverride.efforts even when the tier is dropped, and ignores an effort under a byRepo tier with a warning. resolveTiers carries efforts[tier] onto a DEFAULT_TIERS fallback; assembleConfig derives AnalyzeConfig.shaperEffort (core) and summariserEffort (cheap). Existing tests that deepEqual {runner, model} still pass.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A global tier with effort low|medium|high|xhigh|max parses with that effort; '' or absent gives none",
+          "An invalid global effort is dropped with a warning and the tier keeps its runner and model",
+          "An effort under models.byRepo[repo].tiers.<tier> is ignored with a warning; the byRepo tier's runner/model are unchanged",
+          "core.model '' with core.effort high: resolveTiers gives DEFAULT_TIERS.core runner/model with effort high and shaperEffort is high; shaperProviderExplicit/shaperModelExplicit unchanged",
+          "summariserEffort is the resolved cheap tier's effort"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort"
+          },
+          {
+            "level": "unit",
+            "name": "an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model"
+          },
+          {
+            "level": "unit",
+            "name": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Declare the three effort rows in the config catalog",
+        "summary": "Add models.tiers.{core,mid,cheap}.effort to src/config/config-catalog.ts: enum ['', 'low','medium','high','xhigh','max'], default '', group 'Models — tiers'; raise the contract test's row count to 48.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The catalog has the three rows with the enum values and '' default, and 48 rows in total",
+          "The catalog contract tests pass (enum default in enumValues, reconcile idempotent)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "CliProvider passes the effort to the CLI",
+        "summary": "CliProviderOpts gains effort; modelArgs appends claude ['--effort', e] or codex ['-c', `model_reasoning_effort=${e}`] after the model args, so complete, structured, edit session and both review sessions carry it. Without effort the argv is unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "With effort, every claude invocation carries --effort <e> and every codex invocation carries -c model_reasoning_effort=<e>",
+          "Without effort every argv is byte-identical to today's (existing exact-argv tests pass)"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions"
+          },
+          {
+            "level": "unit",
+            "name": "without effort every argv is byte-identical to today's"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Route the global tier's effort to every provider",
+        "summary": "RoleResolution gains effort (the global tier of the resolved tier name, also when a byRepo tier supplies runner/model); materialize always passes roleEffort (null when unset); ShaperProviderOverrides.roleEffort; buildShaperProvider uses roleEffort when a value, none when null, cfg.shaperEffort when absent, CLI branch only; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes resolution.effort.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A routed role gets the global tier's effort, including when a byRepo tier sets its runner/model",
+          "Core effort set, mid unset: a routed mid role's provider has no effort; a non-router caller (code-review-rpc, workflow-rpc, docgen path) gets the core effort",
+          "The Ollama branch ignores effort",
+          "The summariser provider and its stamped resolution carry the cheap tier's effort; the validate provider carries the build tier's effort"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it"
+          },
+          {
+            "level": "unit",
+            "name": "buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort"
+          },
+          {
+            "level": "unit",
+            "name": "with the core tier's effort set and the mid tier's unset, a routed mid role's provider gets no effort flag (roleEffort null), while a non-router caller gets the core effort"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "TUI: effort row per tier",
+        "summary": "tierFieldPath accepts 'effort'; computeEffectiveTiers carries each tier's effort including tiering.efforts on a fallback; ModelTiersPane shows a third row per tier that cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort; row count and indices move to three rows per tier.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The pane shows an effort row per tier and writing it sets models.tiers.<tier>.effort ('' for CLI default)",
+          "core.model '' with core.effort high shows effort high",
+          "Runner, model and coreFloor rows still edit their keys"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort"
+          },
+          {
+            "level": "unit",
+            "name": "computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "VS Code: manifest entries and tier-picker effort step",
+        "summary": "Add insrc.models.tiers.{core,mid,cheap}.effort to vscode-plugin/package.json matching the catalog rows; the tier picker adds an effort step (CLI default + five values) after the model step for CLI runners and writes ['models','tiers',tier,'effort']. The seven keys the manifest already lacked (outside this Story) stay out of scope.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The manifest declares the three effort keys with the catalog's type/default/enum: the manifest-catalog test no longer lists them as missing or mismatched (its seven pre-existing missing keys are out of scope)",
+          "The picker offers the effort step for CLI runners and writes the chosen value; an Ollama runner gets no effort step"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "JetBrains: effort combo in the model-tiers section",
+        "summary": "ModelTiersModel's TierState gains effort seeded from the catalog row (saved and pending), collectWrites emits ['models','tiers',tier,'effort'] when changed; ModelTiersSection adds an effort combo per tier; with no effort row in the daemon's catalog the combo is hidden and nothing is written.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The model seeds effort from the catalog, tracks a pending change and emits the effort write",
+          "With no effort row in the catalog no combo is shown and no write is emitted",
+          "The JetBrains test suite passes under Gradle"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write; ModelTiersSection shows an effort combo per tier; with no effort row in the daemon's catalog it shows no effort combo and emits no effort write"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Live checks, full sweep, one daemon update and the motivating config",
+        "summary": "Run the live CLI checks (codex gpt-6.1-sol at high reports reasoning effort high; claude at low runs and warns on an unknown value) and the full test sweep. Set models.tiers.core.effort = high and models.tiers.mid.effort = medium, then update and restart the installed daemon once: that single update also ships ISSUE-1973e125's fix and Epic 86197ac6 s2, so it serves both stories.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "codex reports reasoning effort high for a CliProvider at high; claude runs at low and warns on an unknown value",
+          "Full test sweep passes",
+          "~/.insrc/config.json has core effort high and mid effort medium before the restart, and the one updated daemon runs with them"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "a codex CliProvider with model gpt-6.1-sol and effort high runs and codex reports reasoning effort high"
+          },
+          {
+            "level": "live",
+            "name": "a claude CliProvider with effort low runs, and claude given an unknown --effort value warns and runs at its default"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "with the core tier's effort set and the mid tier's unset, a routed mid role's provider gets no effort flag (roleEffort null), while a non-router caller gets the core effort",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "without effort every argv is byte-identical to today's",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write; ModelTiersSection shows an effort combo per tier; with no effort row in the daemon's catalog it shows no effort combo and emits no effort write",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a codex CliProvider with model gpt-6.1-sol and effort high runs and codex reports reasoning effort high",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a claude CliProvider with effort low runs, and claude given an unknown --effort value warns and runs at its default",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: TierModel, parseTieringOverride, TieringOverride, resolveTiers, assembleConfig"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: config models.tiers.<core|mid|cheap>.effort catalog rows"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: RoleResolution, ShaperProviderOverrides, resolveSummariser, resolveValidateProvider"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: CliProviderOpts, modelArgs"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: tierFieldPath, computeEffectiveTiers (TUI ModelTiersPane)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: VS Code manifest insrc.models.tiers.<tier>.effort and tier picker"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: JetBrains TierState"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths (invalid effort, per-repo effort ignored, CLI refusal, older daemon, edge cases)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration.migrationSteps order 7 (update the installed daemon, set core high and mid medium)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy live level (codex and claude effort checks)"
+    }
+  ]
+}

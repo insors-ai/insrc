@@ -26,13 +26,13 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const entry = join(daemonDir, 'index.js'), log = join(home, 'shutdown.log'), closing = join(home, 'closing'), watchdogFile = join(home, 'watchdog');
  const bound = mode === 'guard-death' ? 5000 : 600;
  writeFileSync(entry, `(async () => {
- const { IpcServer } = await import(${JSON.stringify(moduleUrl('daemon/server'))});
+ const { IpcServer, directDispatch } = await import(${JSON.stringify(moduleUrl('daemon/server'))});
  const { daemonRunFiles, endForRunFileConflict } = await import(${JSON.stringify(moduleUrl('daemon/run-file-ownership'))});
  const { createShutdown, realEndDeps } = await import(${JSON.stringify(moduleUrl('daemon/shutdown'))});
  const { armShutdownWatchdog } = await import(${JSON.stringify(moduleUrl('daemon/shutdown-watchdog'))});
  const fs = require('node:fs'); const mode = process.env.INSRC_EVIDENCE_MODE || ${JSON.stringify(mode)};
  const publication = daemonRunFiles.lease(); daemonRunFiles.writePid();
- const server = new IpcServer({ 'daemon.shutdown': async () => { shutdown('RPC'); return { ok: true }; } });
+ const server = new IpcServer(directDispatch({ 'daemon.shutdown': async () => { shutdown('RPC'); return { ok: true }; } }));
  let serverClosing;
  const shutdown = createShutdown({ log: { info() {}, warn() {} }, hardExitMs: ${bound}, queueDone: Promise.resolve(),
  armWatchdog: async options => { const watchdog = await armShutdownWatchdog(options); fs.writeFileSync(${JSON.stringify(watchdogFile)}, String(watchdog.pid)); return watchdog; },

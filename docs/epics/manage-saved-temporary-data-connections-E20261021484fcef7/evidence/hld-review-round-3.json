@@ -1,0 +1,161 @@
+{
+  "artifact": "design.epic",
+  "stage": "design.epic",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The architecture covers the upstream connection-management outcomes without introducing the excluded product capabilities.",
+      "evidence": "Read DEF requirements, all 12 acceptance criteria, and PRD CM01\u2013CM08. Saved editing, draft testing, temporary lifetime, removal, Settings integration and mixed-version behavior all have architecture and test obligations. The PRD excludes 'automatic application-config discovery, new drivers, ontology generation, and team-shared credentials'; the proposed conversion changes support existing registered formats rather than adding drivers. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/connection-management-prd.html, src/daemon/db/drivers/index.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "coverage-of-intent.2",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "External IDE contract inspection can be deferred until S005 LLD while satisfying the upstream HLD verification requirement.",
+      "evidence": "DEF \u00a74 calls external integration a dependency 'to verify during HLD'; its evidence explicitly says 'requires HLD to verify that external contract and plan integration'. This design instead defers inspection until S005 LLD. The actual IDE service has behavior requiring an explicit integration plan: list() catches failures and returns [], while save/remove/test use the legacy result shapes. Merely preserving those adapters cannot provide the new manager's distinct read-error state. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md, ../insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts, ../insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts, ../insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts, ../insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbConnectionCommands.ts]",
+      "action": "Record the external pane, command, service and mirrored-type integration findings in this HLD, including replacing swallowed list errors on the v2 path. Keep implementation and execution gates in S005.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current driver pools are shared by repository and do not provide workbench isolation or active-use removal protection.",
+      "evidence": "Read acquirePool and the complete DriverPool implementation. CACHE is Map<string, DriverPool> keyed by repoPath. registerEphemeral replaces the same ID in that pool; reload preserves ephemeral entries. acquire returns a driver without a release token, and reload/idle timers can close entries without active-use accounting. [files: src/daemon/db/pool-cache.ts, src/daemon/db/pool.ts]",
+      "action": "Retain the mandatory migration to tracked leases before enabling removal.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.2",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Converted file reads currently use persistent connection-ID caches with mtime/size freshness and no per-driver cleanup.",
+      "evidence": "cacheDirFor returns join(cacheRoot(), connectionId, 'files'); isCached compares only sourceMtime and sourceSize. ensureCached writes sourcePath into sidecars and logs sourcePath/destPath. DuckDBFileDriver.ensureConvertedAndGlob invokes that cache for converted formats; close() states 'per-driver close is a no-op.' [files: src/daemon/db/converter-cache.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/duckdb-pool.ts]",
+      "action": "Retain sc8 ownership of cache identity, memory-only execution and private driver lifecycle.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The registry, secret helpers and legacy RPCs are reusable foundations, but safe revisioned management and session overlays are new capabilities.",
+      "evidence": "Read config, secrets, registry and RPC implementations. Existing save extracts credentials before loading the registry, uses '.catch(() => [])', filters by ID and writes an upsert. Secret references are fixed db:<repoId>:<connId> names. Driver discovery returns only kind/family. These implementations do not supply immutable generations, receipts, revision checks, safe-edit descriptors or session overlays. [files: src/daemon/db/config.ts, src/daemon/db/secrets.ts, src/daemon/db/registry.ts, src/daemon/db-rpc.ts, src/daemon/db/pool.ts]",
+      "action": "Reuse the existing storage location and driver registrations while replacing unsafe mutation sequencing.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Trusted session propagation requires additive changes to server dispatch, tool dependencies and analyzer runtime arguments.",
+      "evidence": "Read server dispatch and the complete relevant interfaces. RpcHandler currently accepts only params; standard dispatch calls handler(request.params). Stream handlers receive params/send/signal. Socket identity exists internally, while client label/PID are explicitly untrusted. ToolDeps has sessionId but no validated connection capability; TemplateExecuteArgs and RunExecutorArgs have no connection-access context. [files: src/daemon/server.ts, src/daemon/tools/types.ts, src/analyze/executor/types.ts]",
+      "action": "Thread context through standard, streaming and streaming-fallback dispatch, plus executor construction and recursion.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.2",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The eventual lease/session migration inventory is complete.",
+      "evidence": "The HLD explicitly defers exhaustive caller enumeration to LLD. Searches found pool consumers in data runtimes, three analyze/explore modules, ordinary db tools and schema-drift, plus direct factory use in db-rpc. The analyzer failed with shaper-llm-unavailable caused by invalid response schema. Direct reads establish the named anchors, but no completed caller-by-caller migration inventory is supplied. [files: src/analyze/runtimes/data/_shared.ts, src/analyze/explore/db-connections-list.ts, src/analyze/explore/db-tables-list.ts, src/analyze/explore/db-table-describe.ts, src/daemon/tools/builtins/db/index.ts, src/daemon/tools/builtins/data/schema-drift.ts, src/daemon/db-rpc.ts]",
+      "action": "Produce an LLD inventory covering direct factory calls, pool aliases, scope discovery and full driver-use lifetimes; make its completion an enablement gate.",
+      "fixability": "manual",
+      "outcome": "could-not-verify"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Legacy saved lookup must retain scope-local directories independently of management registration.",
+      "evidence": "dataScopeOf returns scope.lookupPath for connection scopes and scope.value otherwise. The regression test asserts pools open at unregistered directories and nested manifest/workspace directories. Discovery also supports an explicit scopeRefValue override while retaining the selected-connection restriction. [files: src/analyze/runtimes/data/_shared.ts, src/analyze/runtimes/data/discovery-connections.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts]",
+      "action": "Preserve the explicit discovery override as well as the documented dataScopeOf behavior when deriving lookupRoot.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "data-compatibility.2",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Pinned-family mismatches and unknown stored fields require preservation rather than normalization during management edits.",
+      "evidence": "loadConnections retains the parsed document, spreads each connection, and selects conn.family when present, warning 'Using user-pinned family.' The config test explicitly verifies postgres pinned to kv. Existing save reconstructs the document as { connections: ... }, so metadata/top-level preservation requires the proposed writer change. [files: src/daemon/db/config.ts, src/daemon/db/__tests__/config.test.ts, src/daemon/db-rpc.ts]",
+      "action": "Keep preservation tests and route every legacy writer through the new document-preserving service.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Story ownership and dependency direction remain consistent with the approved Epic.",
+      "evidence": "DEF specifies S002\u2192S001, S003\u2192S001, S004\u2192S001+S003 and S005\u2192S001+S002+S003+S004. The HLD preserves those directions. Assigning reusable conversion/runtime policy to S001 allows S002 and S003 to consume it independently; current converted drivers share converter-cache and the DuckDB runtime, supporting a common foundation. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/duckdb-pool.ts, src/daemon/db/converter-cache.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The design explicitly handles the current mutation and probe failure classes rather than treating all failures as rollback.",
+      "evidence": "Current loadConnections distinguishes ENOENT from other failures, but RPC save/delete suppress load errors. Save mutates keychain state before persistence; delete persists before best-effort secret cleanup. testConnectionRpc returns raw exception messages and starts unawaited best-effort close. The HLD addresses these with failed-read blocking, immutable staging, committed cleanup-pending outcomes, reconciliation, sanitized worker errors and enforced worker termination. [files: src/daemon/db/config.ts, src/daemon/db-rpc.ts, src/daemon/db/secrets.ts]",
+      "action": "Validate these proposed guarantees with the specified fault-injection and cancellation tests; they are not current implementation guarantees.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Every upstream acceptance criterion has a planned test obligation, and the cited compatibility regression tests exercise the claimed behavior.",
+      "evidence": "Compared all DEF criteria against CM-S1-A/B/C, CM-S2-A/B, CM-S3-A/B, CM-S4-A/B and CM-S5-A/B/C: all 12 are mapped. Read the existing own-directory and pinned-family test bodies; their assertions match the proposed regression gates. The HLD correctly labels the new mappings as obligations, not implemented or passing tests. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts, src/daemon/db/__tests__/config.test.ts]",
+      "action": "Carry these IDs into executable tests and require both-client execution for S005. No tests were run during this review.",
+      "fixability": "manual",
+      "outcome": "holds"
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 1,
+    "low": 11,
+    "unverified": 1
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-21T08:14:22.129Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

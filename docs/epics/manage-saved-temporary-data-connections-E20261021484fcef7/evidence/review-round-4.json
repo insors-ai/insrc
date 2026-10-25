@@ -1,0 +1,296 @@
+{
+  "artifact": "define",
+  "stage": "define",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "p01",
+      "ref": "c1",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The CM01\u2013CM08 PRD cited at docs/connection-management-prd.html:41 supplies the product outcomes defined by this Epic.",
+      "evidence": "docs/connection-management-prd.html:41 explicitly lists the CM01\u2013CM08 product baseline, covering discovery/listing through discard/delete, and states these are required outcomes rather than assertions of existing production behavior. This confirms the cited source supplies product outcomes.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited line directly supports the premise."
+      }
+    },
+    {
+      "claimId": "p02",
+      "ref": "c2",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "The code reference src/daemon/db-rpc.ts:131 resolves to a source location; the artifact attaches no specific behavioral assertion to this reference.",
+      "evidence": "The supplied read confirms src/daemon/db-rpc.ts:131 exists and contains `export async function saveConnectionRpc(params: {`. This verifies the reference resolves; no behavioral assertion requires validation.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The source location is confirmed; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p03",
+      "ref": "k1/c3",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The PRD at docs/connection-management-prd.html:355 supports k1's required boundary that the daemon owns persistence and secrets while clients use IPC without receiving stored secret values.",
+      "evidence": "docs/connection-management-prd.html:355 explicitly states that the daemon owns connection persistence and secrets, clients use IPC, and stored secret values must never be returned to clients. It identifies this as required behavior, confirming the premise's required boundary.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited requirement directly confirms the premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p04",
+      "ref": "k2/c4",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD at docs/connection-management-prd.html:55 supports k2's required preservation of registry and credentials on failed reads or stale mutations and idempotent reconciliation of uncertain responses.",
+      "evidence": "docs/connection-management-prd.html:55 (CM05) requires retaining the draft after failed or uncertain persistence, reconciling lost save responses using a stable operation ID before another mutation, and never repeating create to recover refresh. It does not establish preservation of registry and credentials on failed reads or stale mutations. The premise is therefore only partially supported; the supplied evidence establishes no concrete build-breaking contradiction.",
+      "action": "Narrow the attribution to CM05's explicit recovery requirements, or supply evidence supporting registry and credential preservation on failed reads and stale mutations.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The cited row supports uncertain-save reconciliation and avoiding repeated creation, but does not address all preservation guarantees attributed to it.",
+        "options": [
+          "Narrow the premise to draft retention, stable-operation-ID reconciliation of unknown save outcomes, and retrying only failed activation or refresh operations.",
+          "Retain the broader premise after supplying an authoritative anchor explicitly requiring registry and credential preservation on failed reads and stale mutations."
+        ]
+      }
+    },
+    {
+      "claimId": "p05",
+      "ref": "k3/c5",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The PRD at docs/connection-management-prd.html:57 supports k3's required memory-only temporary connections isolated by repository and workbench session and expiring at session end or daemon restart.",
+      "evidence": "docs/connection-management-prd.html:57 (CM07) explicitly binds temporary connections to the originating workbench session and selected repository, restricts analysis visibility to that session context, stores configs and credentials only in daemon memory, and expires them when the workbench session ends or the daemon restarts. This confirms the premise.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited requirement directly supports all stated lifetime, storage, and isolation constraints."
+      }
+    },
+    {
+      "claimId": "p06",
+      "ref": "k4/c6",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The PRD at docs/connection-management-prd.html:58 supports k4's required refusal to remove busy connections and prohibition on deleting source files or database data.",
+      "evidence": "docs/connection-management-prd.html:58 (CM08) explicitly states that \u201cIn-use connections return a clear busy error without removal\u201d and that \u201csource files and database data are never deleted,\u201d confirming both requirements attributed to k4.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The provided evidence directly confirms the premise."
+      }
+    },
+    {
+      "claimId": "p07",
+      "ref": "k5/c7",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The evidence at review-anchors.md:7 supports k5's requirement for an explicit existing-client IPC compatibility strategy and synchronization of the separate IDE contract.",
+      "evidence": "review-anchors.md:7 states that db.listConnections and db.saveConnection are registered, separate IDE integration is required delivery work, and external IDE compatibility is not assumed verified. This supports an integration concern but does not establish existing-client compatibility requirements or synchronization of a separate IDE contract. No concrete build-breaking contradiction is demonstrated.",
+      "action": "Narrow the premise to the integration work the anchor supports, or supply evidence of the existing-client IPC contract and required IDE synchronization.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied anchor supports separate IDE integration, but the stronger compatibility and contract-synchronization claim remains unverified.",
+        "options": [
+          "Reword the premise to state that separate IDE integration is required and external compatibility remains unverified.",
+          "Retain the requirement and add evidence identifying existing clients, their IPC expectations, and the separate IDE contract requiring synchronization."
+        ]
+      }
+    },
+    {
+      "claimId": "p08",
+      "ref": "c8",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "The PRD at docs/connection-management-prd.html:63 identifies an illustrative fictional mock rather than evidence that production acceptance criteria have passed.",
+      "evidence": "docs/connection-management-prd.html:63 explicitly says \u201cFictional fixtures,\u201d states that no network, daemon, credential storage, or persistent writes occur, and describes the test result as simulated. This confirms the cited content is an illustrative mock, not evidence of passed production acceptance criteria.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read directly supports the premise."
+      }
+    },
+    {
+      "claimId": "p09",
+      "ref": "c9",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:12 supports runtime driver selection as the basis for the Epic's supported-driver scope.",
+      "evidence": "The supplied read of docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:12 explicitly defines driver scope by runtime discovery, states that listDriverKindsRpc returns registered kinds sorted by kind, and requires connection-manager choices to follow the daemon response. This supports the cited premise.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied anchor confirms the premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p10",
+      "ref": "k2/c10",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "CM06 at docs/connection-management-prd.html:56 requires preservation on read failure, supporting that part of k2.",
+      "evidence": "docs/connection-management-prd.html:56 identifies CM06 and explicitly states that a registry read failure \u201cblocks all mutations, including direct RPC calls, and leaves registry bytes and credentials unchanged,\u201d confirming the preservation requirement cited by the premise.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The evidence directly confirms the premise."
+      }
+    },
+    {
+      "claimId": "p11",
+      "ref": "c11",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:13 treats external IDE integration as a delivery dependency to verify during HLD rather than establishing current pane reuse or compatibility.",
+      "evidence": "review-anchors.md:13 explicitly requires HLD to verify the external IDE contract and plan integration before claiming compatibility. It identifies the pane/service as PRD-reported and rejects author inspection or a local summary as independent external verification, confirming the premise.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read directly confirms the premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p12",
+      "ref": "c12",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The PRD at docs/connection-management-prd.html:289 supports excluding new drivers, automatic configuration discovery, ontology generation, and team-shared credentials from this release.",
+      "evidence": "docs/connection-management-prd.html:289 explicitly states that \u201cautomatic application-config discovery, new drivers, ontology generation, and team-shared credentials are outside this small release,\u201d confirming all four exclusions.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read directly confirms the premise."
+      }
+    },
+    {
+      "claimId": "p13",
+      "ref": "s1/c13",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:3 provides the grounding that Story S001 extends for managing saved endpoints and credentials without losing configuration.",
+      "evidence": "review-anchors.md:3 identifies existing saved-connection behavior in src/daemon/db-rpc.ts:131 (saveConnectionRpc), :148 (URL-password extraction), and :154\u2013156 (registry-read fallback, ID filtering, and persistence). It explicitly distinguishes safe create/update, revisions, and rollback as new requirements. This supports the premise that S001 extends existing capability to preserve configuration.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied anchor provides the claimed grounding without asserting that configuration-preservation guarantees already exist."
+      }
+    },
+    {
+      "claimId": "p14",
+      "ref": "s2/c14",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:4 provides the grounding that Story S002 extends for safely testing the current draft and reporting truthful results.",
+      "evidence": "review-anchors.md:4 identifies testConnectionRpc at src/daemon/db-rpc.ts:224 as the existing capability: it builds a transient driver and returns duration. The anchor explicitly distinguishes shared Save/Test draft semantics, sanitized errors, a deadline, and late-result suppression as required build outcomes rather than existing guarantees. This supports the premise that S002 extends the documented grounding.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied anchor supports the cross-artifact premise without assuming the required safety guarantees already exist."
+      }
+    },
+    {
+      "claimId": "p15",
+      "ref": "s3/c15",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:5 provides the grounding that Story S003 extends for temporary connections within a workbench session.",
+      "evidence": "The supplied read of docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:5 explicitly identifies existing temporary capability for s3: registerEphemeral(config: ConnectionConfig) at src/daemon/db/pool.ts:159 and repository-keyed CACHE at src/daemon/db/pool-cache.ts:26. It distinguishes workbench-session isolation and expiry as new delivery requirements, confirming the grounding that S003 extends.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited evidence supports the premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p16",
+      "ref": "s4/c16",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:6 provides the grounding that Story S004 extends for safely discarding temporary connections and deleting saved registrations.",
+      "evidence": "The supplied read of docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:6 explicitly identifies existing removal capability for s4: deleteConnectionRpc rewrites registrations and deletes a secret reference. It distinguishes revision checks, busy-use refusal, and operation reconciliation as new delivery requirements, supporting the premise that S004 extends this grounding.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited evidence anchor supports the cross-artifact premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p17",
+      "ref": "s5/c17",
+      "kind": "cross-artifact",
+      "severity": "LOW",
+      "premise": "The evidence at review-anchors.md:7 provides the grounding that Story S005 extends for managing and filtering connections from Settings in the extension and IDE-fork clients.",
+      "evidence": "review-anchors.md:7 explicitly identifies the existing S005 integration foundation: extension configuration contributions in vscode-plugin/package.json and daemon registrations for db.listConnections and db.saveConnection. It identifies Settings management wiring and separate IDE integration as required delivery work, without claiming external IDE compatibility is verified. This supports the premise that S005 extends that foundation.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied anchor confirms the premise within its stated scope."
+      }
+    },
+    {
+      "claimId": "p18",
+      "ref": "s2/c19",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "Story S002 has a proposed delivery dependency on S001 justified by the rationale at review-anchors.md:8.",
+      "evidence": "review-anchors.md:8 explicitly declares \u201cs2 dependsOn s1\u201d because draft tests must use the same accepted configuration and credential semantics as saved mutation, and identifies this as the Epic author\u2019s proposed ordering. This confirms the premise.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence confirms the proposed dependency and its rationale."
+      }
+    },
+    {
+      "claimId": "p19",
+      "ref": "s3/c20",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "Story S003 has a proposed delivery dependency on S001 justified by the rationale at review-anchors.md:9.",
+      "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:9 explicitly declares \u201cs3 dependsOn s1\u201d as proposed delivery ordering, justified by temporary creation reusing accepted safe-configuration and duplicate-ID rules while keeping state in memory.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The cited evidence confirms both the proposed dependency and its rationale."
+      }
+    },
+    {
+      "claimId": "p20",
+      "ref": "s4/c21",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "Story S004 has proposed delivery dependencies on S001 and S003 justified by the rationale at review-anchors.md:10.",
+      "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:10 explicitly declares that s4 dependsOn s1 and s3, justified by Delete covering saved ownership and Discard covering temporary ownership, and identifies this as proposed delivery ordering.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence confirms the proposed dependencies and their stated rationale."
+      }
+    },
+    {
+      "claimId": "p21",
+      "ref": "s5/c22",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "Story S005 has proposed delivery dependencies on S001, S002, S003, and S004 justified by the rationale at review-anchors.md:11.",
+      "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-anchors.md:11 explicitly declares s5 dependsOn s1, s2, s3 and s4, explaining that client integration consumes saved editing, draft tests, temporary lifecycle and removal, and identifies this as proposed delivery ordering.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read confirms the proposed dependencies and their stated rationale."
+      }
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 2,
+    "low": 19
+  },
+  "reviewedAt": "2026-10-21T06:16:28.494Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const INDEX = resolve(HERE, '..', 'index.ts');                                    // src/daemon/index.ts
+const INDEX = resolve(HERE, '..', 'handler-runtime.ts');                           // the handler map, moved out of index.ts's main() (Epic 86197ac6 s2/t1)
 const BUILTINS = resolve(HERE, '..', 'tools', 'builtins', 'index.ts');            // builtins aggregator
 const PROVENANCE = resolve(HERE, '..', '..', 'workflow', 'artifacts', 'provenance');
 const REQUEST = resolve(HERE, '..', '..', 'workflow', 'feedback', 'legacy-request.ts');

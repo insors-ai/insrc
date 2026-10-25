@@ -80,6 +80,12 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
 	{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\'s origin', group: 'General' },
 	{ path: 'daemonUpdate.branch',   type: 'string', default: '',                        desc: 'branch the daemon update follows; empty keeps the checkout\'s current branch', group: 'General' },
+	{ path: 'daemon.threads.enabled', type: 'boolean', default: true,                    desc: 'serve admin and indexing work on their own worker threads (Epic 86197ac6); false runs the daemon on one thread', group: 'General' },
+	// Idle maintenance (graph compaction) with daemon threads (Epic 86197ac6 s2).
+	{ path: 'daemon.maintenance.idleMs', type: 'number', default: 1_800_000,            desc: 'ms with no non-admin request and both indexing lanes idle before idle maintenance (graph compaction) is considered', group: 'General' },
+	{ path: 'daemon.maintenance.minReclaimablePct', type: 'number', default: 25,         desc: 'idle maintenance compacts only when at least this % of the graph file is reclaimable', group: 'General' },
+	{ path: 'daemon.maintenance.minReclaimableMb', type: 'number', default: 256,         desc: 'idle maintenance compacts only when at least this many MiB of the graph file are reclaimable', group: 'General' },
+	{ path: 'daemon.maintenance.pauseLimitMs', type: 'number', default: 600_000,         desc: 'ms maintenance waits for running requests to finish before it gives up for this time', group: 'General' },
 	// NOTE: the model config is a single flat models.* surface. The former
 	// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
 	// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
@@ -92,6 +98,8 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
 	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
 	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
+	{ path: 'codeReview.daemonReviewCeilingMs', type: 'number', default: 14400000, desc: 'max ms insrc_code_review_step waits in total for a daemon code review, progress or not', group: 'Workflow & review' },
+	{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
 	// Design-review template (src/workflow/review/template.ts). Provisional defaults —
 	// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
 	{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
@@ -110,6 +118,10 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'models.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)', group: 'Models — tiers' },
 	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'cli-claude',     desc: "cheap-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
 	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'haiku',       desc: 'cheap-tier model id (e.g. haiku)', group: 'Models — tiers' },
+	// Reasoning effort, global tiers only ('' = the CLI's own default); per-repo config only picks a tier.
+	{ path: 'models.tiers.core.effort',  type: 'enum',   default: '',            desc: "core-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
+	{ path: 'models.tiers.mid.effort',   type: 'enum',   default: '',            desc: "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
+	{ path: 'models.tiers.cheap.effort', type: 'enum',   default: '',            desc: "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
 	{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
 	// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
 	// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).

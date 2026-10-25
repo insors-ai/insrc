@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "cf81a4e98ccf7881",
+    "storyId": "S001",
+    "createdAt": "2026-10-22T14:07:50.682Z",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue -> build (no LLD), per approved ISSUE-cf81a4e98ccf7881 (fix intent revised and re-approved 2026-10-22).",
+    "epicCreatedAt": "2026-10-22T13:58:30.878Z",
+    "epicSlug": "temporaltrend-fails-integer-overflow-sqlite-mysql",
+    "updatedAt": "2026-10-22T15:06:07.961Z"
+  },
+  "body": {
+    "focus": "ISSUE-cf81a4e98ccf7881: temporalTrend fails with 'integer overflow' on SQLite, MySQL and MSSQL for epoch-second timestamps. Compute the expression-path regression moments (buildExpressionRegrSql in src/daemon/db/drivers/rdbms-common.ts) in a numeric type that cannot overflow: promote x and y to a non-integer numeric before multiplying and summing. Query shape, result fields and the native REGR path are unchanged. The existing src/daemon/db/__tests__/sqlite-driver.test.ts temporalTrend test passes.",
+    "producesLld": false,
+    "commit": "07e6699a",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed ISSUE-cf81a4e9 to the revised and re-approved fix intent. The expression-path moments are taken on x centred on its minimum (a window over the filtered rows) and summed as non-integers, so epoch seconds neither overflow nor lose the slope to cancellation. readTemporalTrendRow shifts the intercept back by x0. The sqlite temporalTrend test passes and checks the intercept, and the MySQL SQL-shape test asserts the centred form.",
+    "testRecord": {
+      "md": "docs/standalone/temporaltrend-fails-integer-overflow-sqlite-mysql-E20261022cf81a4e9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/rdbms-common.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T15:06:07.961Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/sqlite-driver.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T15:06:07.961Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/drivers/rdbms-common.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T15:06:07.961Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792856007308-0jucbn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T15:33:27.308Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 52808,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9874475f902756f6",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-24T12:57:08.198Z",
+    "epicSlug": "let-codex-accept-analyzer-decomposer-s",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "9874475f902756f6",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/analyze/explore/__tests__/params-schema.test.ts",
+        "src/analyze/explore/params-schema.ts",
+        "src/analyze/context/__tests__/decompose-params.test.ts",
+        "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+        "src/analyze/context/decomposer.ts",
+        "src/prompts/analyze/decompose.system.md",
+        "src/analyze/planner/__tests__/wire-schema.test.ts",
+        "src/analyze/planner/wire-schema.ts",
+        "src/analyze/planner/__tests__/wire-decode.test.ts",
+        "src/analyze/planner/driver.ts",
+        "src/analyze/planner/__tests__/driver-unit.test.ts",
+        "src/analyze/planner/__tests__/wire-messages.test.ts",
+        "src/analyze/planner/render-catalog.ts",
+        "src/prompts/analyze/planner.system.md",
+        "src/analyze/__tests__/codex-plan-schemas.live.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+        "src/assets/connection-management-gates.json",
+        "src/daemon/db/__tests__/connection-leases.test.ts",
+        "src/daemon/db/__tests__/management-adoption.test.ts",
+        "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+        "src/daemon/db/management-adoption.ts",
+        "src/daemon/db/management-enablement.ts",
+        "src/daemon/db/management-startup.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

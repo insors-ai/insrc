@@ -13,12 +13,13 @@ import assert from 'node:assert/strict';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 import type { LoadedConnections } from '../../../daemon/db/config.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
-import type { Entity, RegisteredRepo } from '../../../shared/types.js';
+import type { Entity, LLMProvider, RegisteredRepo } from '../../../shared/types.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { AnswerReport } from '../../completeness.js';
 import type { RequestMeasure } from '../../measure.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import {
+	decompose,
 	DecomposerLlmUnavailableError,
 	DecomposerPromptMissingError,
 	DecomposerSchemaUnrecoverable,
@@ -105,7 +106,7 @@ interface Calls {
 }
 
 interface StandIns {
-	decompose?:   () => Promise<ExplorationPlan>;
+	decompose?:   (args: Parameters<PipelineSteps['decompose']>[0]) => Promise<ExplorationPlan>;
 	synthesize?:  () => Promise<RawBundle>;
 	fallback?:    PipelineSteps['fallbackFreeformPlan'];
 }
@@ -113,7 +114,7 @@ interface StandIns {
 function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 	const calls: Calls = { decompose: [], executePlan: [], synthesize: [], fallback: [], executed: [] };
 	const s: PipelineSteps = {
-		decompose: async (a) => { calls.decompose.push(a); return (over.decompose ?? (async () => PLAN))(); },
+		decompose: async (a) => { calls.decompose.push(a); return (over.decompose ?? (async () => PLAN))(a); },
 		executePlan: async (a) => {
 			calls.executePlan.push(a);
 			const executed = {
@@ -287,6 +288,22 @@ test('a planning call that fails for another reason is replaced by the free-form
 	assert.equal(calls.executePlan.length, 1);
 	const executed = calls.executePlan[0] as { plan: ExplorationPlan };
 	assert.equal(executed.plan.explorations[0]!.type, 'freeform.probe');
+	assert.equal(outcome.kind, 'bundle');
+});
+
+test('a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead', async () => {
+	// The real decompose, with a model that pairs module.profile with concept.resolve's params (ISSUE-8d39ef09).
+	const mismatched = { completeStructured: async () => ({
+		answerType: 'how-does-it-work', synthesisHint: 'h',
+		explorations: [{ id: 'e1', type: 'module.profile', purpose: 'p', params: { query: 'x' } }],
+	}) } as unknown as LLMProvider;
+	let refused: unknown;
+	const { outcome, calls } = await run({ decompose: args => decompose({ ...args, provider: mismatched }).catch(err => { refused = err; throw err; }) });
+	assert.ok(refused instanceof DecomposerSchemaUnrecoverable && /'e1' \(module\.profile\) has param 'query'/.test(refused.message), `refused by the params step: ${String(refused)}`);
+	assert.equal(calls.fallback.length, 1, 'the fallback plan was built');
+	assert.equal(calls.executePlan.length, 1, 'one plan was executed');
+	const executed = calls.executePlan[0] as { plan: ExplorationPlan };
+	assert.deepEqual(executed.plan.explorations.map(e => e.type), ['freeform.probe'], 'the mismatched plan never ran');
 	assert.equal(outcome.kind, 'bundle');
 });
 

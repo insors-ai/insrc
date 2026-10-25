@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "e940023a6962ede9",
+    "storyId": "S001",
+    "createdAt": "2026-10-21T09:46:34.376Z",
+    "updatedAt": "2026-10-21T09:48:32.542Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-21T09:42:09.459Z",
+    "epicSlug": "stop-code-review-s-material-building"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "98f91aaf",
+        "ranAt": "2026-10-21T09:48:32.542Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1325,
+            "titles": [
+              {
+                "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",
+                "result": "pass"
+              },
+              {
+                "title": "a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none",
+                "result": "pass"
+              },
+              {
+                "title": "same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only",
+                "result": "pass"
+              },
+              {
+                "title": "a duplicate entityId throws an error naming it",
+                "result": "pass"
+              },
+              {
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              },
+              {
+                "title": "a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names",
+                "result": "pass"
+              },
+              {
+                "title": "coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

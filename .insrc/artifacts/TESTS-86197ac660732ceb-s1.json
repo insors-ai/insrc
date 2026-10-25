@@ -1,0 +1,1056 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s1",
+    "createdAt": "2026-10-21T15:03:00.014Z",
+    "updatedAt": "2026-10-21T15:59:53.674Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b038c9e4",
+        "ranAt": "2026-10-21T15:03:00.014Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker thread's LMDB open, read, write, close and exit keep the daemon's lock, and the main thread writes after another process opens and closes the store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+                "title": "a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the lock probe reports a dropped lock after a stray descriptor on the lock file is closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+                "title": "control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 790,
+            "titles": [
+              {
+                "title": "a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store",
+                "result": "pass"
+              },
+              {
+                "title": "control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed",
+                "result": "pass"
+              },
+              {
+                "title": "a worker thread and the daemon's lock on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e61cc5a3",
+        "ranAt": "2026-10-21T15:16:42.801Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/store-guard.test.ts",
+                "title": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/store-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 889,
+            "titles": [
+              {
+                "title": "withStore releases its permit on resolve, reject, synchronous throw and abort",
+                "result": "pass"
+              },
+              {
+                "title": "an acquisition past its limit fails with StoreLockTimeoutError naming the holder",
+                "result": "pass"
+              },
+              {
+                "title": "two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim releases after quiescence and marks the store unhealthy past limitMs",
+                "result": "pass"
+              },
+              {
+                "title": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ce92f270",
+        "ranAt": "2026-10-21T15:18:51.724Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker's hub request is answered with its own requestId",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "closing the port rejects every pending hub request with HubUnavailableError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/channel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 580,
+            "titles": [
+              {
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              },
+              {
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b2c89fda",
+        "ranAt": "2026-10-21T15:20:58.413Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a status published from a worker appears in a main-thread snapshot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 494,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e3731fb0",
+        "ranAt": "2026-10-21T15:38:09.812Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1191,
+            "titles": [
+              {
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              },
+              {
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a43e7eeb",
+        "ranAt": "2026-10-21T15:41:11.904Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/cross-thread-stores.test.ts",
+                "title": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/cross-thread-stores.test.ts",
+                "title": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/cross-thread-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1778,
+            "titles": [
+              {
+                "title": "a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset",
+                "result": "pass"
+              },
+              {
+                "title": "two threads' DuckDB queries run one after the other behind the one permit and both succeed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "8a608951",
+        "ranAt": "2026-10-21T15:44:08.534Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/step-state.test.ts",
+                "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a real payload of each step kind survives a structured clone through the hub",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/step-state.test.ts",
+                "title": "a real payload of each step kind survives a structured clone through the hub",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "step state minted in one worker is read in another after the first exits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/step-state.test.ts",
+                "title": "step state minted in one worker is read in another after the first exits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 787,
+            "titles": [
+              {
+                "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
+                "result": "pass"
+              },
+              {
+                "title": "a real payload of each step kind survives a structured clone through the hub",
+                "result": "pass"
+              },
+              {
+                "title": "step state minted in one worker is read in another after the first exits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9ef84e1d",
+        "ranAt": "2026-10-21T15:50:23.544Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/__tests__/analyze-step-state.test.ts passes unchanged in meaning against the hub-backed store",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts passes unchanged in meaning, with today's not-found messages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "title": "encodeState mints a short URL-safe base64 token (22 chars, no padding)",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a token of the wrong shape (too short)",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage passes for a matching stage",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage throws on a stage mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "title": "token round-trips a state with an executed plan attached",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 563,
+            "titles": [
+              {
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "release drops the entry",
+                "result": "pass"
+              },
+              {
+                "title": "load throws on unknown token",
+                "result": "pass"
+              },
+              {
+                "title": "token is URL-safe base64 (no +, /, =)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState never deletes the just-minted token in the degenerate prev===next case",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)",
+                "result": "pass"
+              },
+              {
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "28bb36ea",
+        "ranAt": "2026-10-21T15:54:40.240Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts passes unchanged in meaning against the hub-backed stores",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step updateState on a released token fails with today's not-found message, across the hub",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a superseded code-review token fails with today's not-found message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/code-review-rpc-fallback.test.ts passes unchanged in meaning",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+                "title": "codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+                "title": "a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 935,
+            "titles": [
+              {
+                "title": "codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+                "result": "pass"
+              },
+              {
+                "title": "a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              },
+              {
+                "title": "review-step updateState on a released token fails with today's not-found message, across the hub",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c93a6782",
+        "ranAt": "2026-10-21T15:59:53.674Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two workers' artifact-vector and config writes are read back from a third thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2166,
+            "titles": [
+              {
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

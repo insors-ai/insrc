@@ -56,17 +56,29 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 
 	// Calls: B is among A's callees, or A among B's callers. A name matching several rows relates to each.
 	const idsByName = new Map<string, string[]>();
-	for (const row of grounding.symbols) idsByName.set(row.name, [...(idsByName.get(row.name) ?? []), row.entityId]);
+	// Appended in place: copying the bucket per row was quadratic in a repeated name.
+	for (const row of grounding.symbols) { const ids = idsByName.get(row.name); if (ids === undefined) idsByName.set(row.name, [row.entityId]); else ids.push(row.entityId); }
 	for (const row of grounding.symbols) {
 		for (const callee of row.callees) for (const id of idsByName.get(callee) ?? []) relate(row.entityId, id, 'calls');
 		for (const caller of row.callers) for (const id of idsByName.get(caller) ?? []) relate(id, row.entityId, 'calls');
 	}
-	// Same file, then same directory.
+	// Same file, then same directory. Only atoms of one directory can relate, so
+	// each atom is paired with the later atoms of its own directory, in index order:
+	// the same relations, in the same order, as pairing every atom with every later
+	// one (ISSUE-e940023a: that was quadratic in the whole material).
+	// Every atom built above carries its module; the key only satisfies the type.
+	const moduleKey = (a: ReviewAtom): string => a.module ?? '';
+	const byModule = new Map<string, number[]>();
+	atoms.forEach((a, i) => { const g = byModule.get(moduleKey(a)); if (g === undefined) byModule.set(moduleKey(a), [i]); else g.push(i); });
+	const place = new Map<number, number>();
+	for (const g of byModule.values()) g.forEach((i, k) => place.set(i, k));
 	for (let i = 0; i < atoms.length; i++) {
-		for (let j = i + 1; j < atoms.length; j++) {
-			const a = atoms[i]!, b = atoms[j]!;
+		const a = atoms[i]!;
+		const group = byModule.get(moduleKey(a))!;
+		for (let k = place.get(i)! + 1; k < group.length; k++) {
+			const b = atoms[group[k]!]!;
 			if (a.file === b.file) relate(a.id, b.id, 'same-file');
-			if (a.module === b.module) relate(a.id, b.id, 'same-module');
+			relate(a.id, b.id, 'same-module');
 		}
 	}
 	return { atoms, relations, obligations: [] };
@@ -85,12 +97,49 @@ export const NEIGHBOUR_SIGNATURE_CHARS = 200;
  */
 export function neighbourSummary(atom: ReviewAtom, material: ReviewMaterial): string {
 	const row = JSON.parse(atom.text) as { kind: string; name: string; file: string; signature: string };
-	const nameOf = new Map(material.atoms.map(a => [a.id, (JSON.parse(a.text) as { name: string }).name] as const));
+	const { nameOf, callees, callers } = indexOf(material);
 	const names = (ids: readonly string[]): string => {
 		const unique = [...new Set(ids.map(id => nameOf.get(id)).filter((n): n is string => n !== undefined))];
 		return unique.length === 0 ? 'none' : unique.join(', ');
 	};
-	const calls = material.relations.filter(r => r.kind === 'calls');
 	const firstLine = (row.signature.split('\n')[0] ?? '').slice(0, NEIGHBOUR_SIGNATURE_CHARS);
-	return `${row.kind} ${row.name} in ${row.file}: ${firstLine}; calls: ${names(calls.filter(r => r.from === atom.id).map(r => r.to))}; called by: ${names(calls.filter(r => r.to === atom.id).map(r => r.from))}`;
+	return `${row.kind} ${row.name} in ${row.file}: ${firstLine}; calls: ${names(callees.get(atom.id) ?? [])}; called by: ${names(callers.get(atom.id) ?? [])}`;
+}
+
+/** What neighbourSummary reads from a material, built once per material: the
+ *  pipeline summarises one neighbour at a time, and rebuilding this on every call
+ *  made summarising a material quadratic in its size (ISSUE-e940023a). Keyed on
+ *  the atoms and relations arrays, which a material never changes after it is
+ *  built, so a copy of a material with other obligations shares the index. */
+interface MaterialIndex {
+	readonly nameOf:  ReadonlyMap<string, string>;
+	/** Per atom, the ids its 'calls' relations reach, in relation order. */
+	readonly callees: ReadonlyMap<string, readonly string[]>;
+	/** Per atom, the ids whose 'calls' relations reach it, in relation order. */
+	readonly callers: ReadonlyMap<string, readonly string[]>;
+}
+
+const nameIndex = new WeakMap<readonly ReviewAtom[], ReadonlyMap<string, string>>();
+const callIndex = new WeakMap<readonly ReviewRelation[], Pick<MaterialIndex, 'callees' | 'callers'>>();
+
+function indexOf(material: ReviewMaterial): MaterialIndex {
+	let nameOf = nameIndex.get(material.atoms);
+	if (nameOf === undefined) {
+		nameOf = new Map(material.atoms.map(a => [a.id, (JSON.parse(a.text) as { name: string }).name] as const));
+		nameIndex.set(material.atoms, nameOf);
+	}
+	let calls = callIndex.get(material.relations);
+	if (calls === undefined) {
+		const callees = new Map<string, string[]>();
+		const callers = new Map<string, string[]>();
+		const add = (m: Map<string, string[]>, k: string, v: string): void => { const l = m.get(k); if (l === undefined) m.set(k, [v]); else l.push(v); };
+		for (const r of material.relations) {
+			if (r.kind !== 'calls') continue;
+			add(callees, r.from, r.to);
+			add(callers, r.to, r.from);
+		}
+		calls = { callees, callers };
+		callIndex.set(material.relations, calls);
+	}
+	return { nameOf, ...calls };
 }

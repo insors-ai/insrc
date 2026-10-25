@@ -133,7 +133,7 @@ function mkRepo(): string { return mkdtempSync(join(tmpdir(), 'insrc-oq-gate-'))
 // ---------------------------------------------------------------------------
 
 test('start gates on an unresolved HLD open question, returns resolve_questions with options', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	_setQuestionProviderForTests(stubProvider());
 	const repo = mkRepo();
@@ -153,7 +153,7 @@ test('start gates on an unresolved HLD open question, returns resolve_questions 
 });
 
 test('resolve_question resolve → HLD meta resolved, then start proceeds to emit_plan', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	_setQuestionProviderForTests(stubProvider());
 	const repo = mkRepo();
@@ -178,7 +178,7 @@ test('resolve_question resolve → HLD meta resolved, then start proceeds to emi
 });
 
 test('resolve_question ignore → HLD meta ignored, start proceeds', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	_setQuestionProviderForTests(stubProvider());
 	const repo = mkRepo();
@@ -199,7 +199,7 @@ test('resolve_question ignore → HLD meta ignored, start proceeds', async () =>
 });
 
 test('resolve_question defer → deferred does NOT re-trigger start, shows in review_deferred', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	_setQuestionProviderForTests(stubProvider());
 	const repo = mkRepo();
@@ -232,7 +232,7 @@ test('resolve_question defer → deferred does NOT re-trigger start, shows in re
 });
 
 test('start proceeds directly when the upstream HLD has no open questions', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkRepo();
 	try {
@@ -246,7 +246,7 @@ test('start proceeds directly when the upstream HLD has no open questions', asyn
 // ---------------------------------------------------------------------------
 
 test('synthesize `done` carries the new artifact\'s still-open questions', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkRepo();
 	try {
@@ -265,7 +265,7 @@ test('synthesize `done` carries the new artifact\'s still-open questions', async
 });
 
 test('synthesize `done` omits openQuestions when the artifact carries none', async () => {
-	_clearWorkflowStateStoreForTests();
+	await _clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkRepo();
 	try {

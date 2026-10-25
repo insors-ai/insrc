@@ -35,7 +35,7 @@ const log = getLogger('mcp:workflow-step:synthesize');
 export async function handleSynthesize(
 	input: WorkflowStepInputSynthesize,
 ): Promise<WorkflowStepDone | WorkflowStepError> {
-	const state = decodeState(input.state);
+	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_synthesize');
 	assertMayAuthor(state.intent);   // team gate: before the draft is finalized and written
 
@@ -101,7 +101,7 @@ export async function handleSynthesize(
 		{ runId: state.runId, workflow: state.intent.workflow, path: paths.md, elapsedMs },
 		'insrc_workflow_step[synthesize]: artifact written; releasing state',
 	);
-	releaseState(inputStateToken(input.state));
+	await releaseState(inputStateToken(input.state));
 
 	// Optional end-of-stage offer: surface the just-produced artifact's own
 	// still-open questions (DEF/HLD/LLD carry `body.openQuestions`). The

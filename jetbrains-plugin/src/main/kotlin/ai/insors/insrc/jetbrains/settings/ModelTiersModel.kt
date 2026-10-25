@@ -19,6 +19,8 @@ import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
  * without any hardcoded fallback. The write path is the EXISTING config.write
  * literal-segments key ['models','tiers',tier,'model'] (+ 'runner' only on a switch);
  * an empty/Unavailable list is never written (the saved value is left untouched).
+ * Each tier's reasoning effort (Story a27df028 S001) is offered only when the daemon's
+ * catalog declares `models.tiers.<tier>.effort`, and written at that key when changed.
  */
 class ModelTiersModel(
     catalog: SettingsCatalogDto,
@@ -40,9 +42,13 @@ class ModelTiersModel(
         var savedModel: String,
         /** Whether the saved model is an explicit OVERRIDE (not a built-in default). */
         var savedModelIsOverride: Boolean,
+        /** The catalog's effort values ("" = the CLI default), or null when the daemon declares no effort row. */
+        val effortValues: List<String>?,
+        var savedEffort: String,
     ) {
         var pendingRunner: String = savedRunner
         var pendingModel: String = savedModel
+        var pendingEffort: String = savedEffort
     }
 
     private var lists: Map<String, ModelListResult> = listsByProvider
@@ -54,12 +60,16 @@ class ModelTiersModel(
         val effRunner = ((runnerOpt?.currentValue as? String)?.takeIf { runnerOpt.isSet }) ?: runnerDefault
         val modelDefault = (modelOpt?.default as? String) ?: ""
         val modelOverride = (modelOpt?.currentValue as? String)?.takeIf { modelOpt.isSet && it.isNotBlank() }
+        val effortOpt = catalog.options.firstOrNull { it.path == "models.tiers.$tier.effort" }
+        val effortValue = ((effortOpt?.currentValue as? String)?.takeIf { effortOpt.isSet }) ?: (effortOpt?.default as? String) ?: ""
         TierState(
             runnerDefault = runnerDefault,
             modelDefault = modelDefault,
             savedRunner = effRunner,
             savedModel = modelOverride ?: modelDefault,
             savedModelIsOverride = modelOverride != null,
+            effortValues = effortOpt?.enumValues?.takeIf { it.isNotEmpty() },
+            savedEffort = effortValue,
         )
     }
 
@@ -74,6 +84,18 @@ class ModelTiersModel(
 
     /** The tier's pending model id ("" = none selected). */
     fun currentModel(tier: String): String = state(tier).pendingModel
+
+    /** The effort choices for a tier ("" = the CLI default); empty when the daemon declares no effort row. */
+    fun effortOptions(tier: String): List<String> = state(tier).effortValues ?: emptyList()
+
+    /** The tier's pending reasoning effort ("" = the CLI default). */
+    fun currentEffort(tier: String): String = state(tier).pendingEffort
+
+    /** Pick a tier's reasoning effort (a value outside the catalog's list is ignored). */
+    fun selectEffort(tier: String, effort: String) {
+        val s = state(tier)
+        if (s.effortValues?.contains(effort) == true) s.pendingEffort = effort
+    }
 
     /** True iff the tier's runner was switched away from its saved value (model cleared). */
     private fun providerSwitched(s: TierState): Boolean = s.pendingRunner != s.savedRunner
@@ -142,7 +164,9 @@ class ModelTiersModel(
     }
 
     /** True iff any tier has a pending runner/model edit different from its saved baseline. */
-    fun isModified(): Boolean = states.values.any { dirtyRunner(it) || dirtyModel(it) }
+    fun isModified(): Boolean = states.values.any { dirtyRunner(it) || dirtyModel(it) || dirtyEffort(it) }
+
+    private fun dirtyEffort(s: TierState): Boolean = s.effortValues != null && s.pendingEffort != s.savedEffort
 
     private fun dirtyRunner(s: TierState): Boolean = s.pendingRunner != s.savedRunner
 
@@ -162,6 +186,7 @@ class ModelTiersModel(
         for (s in states.values) {
             s.pendingRunner = s.savedRunner
             s.pendingModel = s.savedModel
+            s.pendingEffort = s.savedEffort
         }
     }
 
@@ -180,6 +205,7 @@ class ModelTiersModel(
                 val segments = listOf("models", "tiers", tier, "model")
                 add(PendingWrite(segments, if (s.pendingModel.isNotEmpty()) WriteOp.Set(s.pendingModel) else WriteOp.Clear))
             }
+            if (dirtyEffort(s)) add(PendingWrite(listOf("models", "tiers", tier, "effort"), WriteOp.Set(s.pendingEffort)))
         }
     }
 
@@ -188,6 +214,7 @@ class ModelTiersModel(
         val s = state(tier)
         val switched = providerSwitched(s)
         s.savedRunner = s.pendingRunner
+        s.savedEffort = s.pendingEffort
         when {
             s.pendingModel.isNotEmpty() -> {
                 s.savedModel = s.pendingModel

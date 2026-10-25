@@ -21,9 +21,9 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
-import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
+import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests, JUDGE_DEADLINE_MS } from '../phases/validate.js';
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
-import { ReviewSessionTimeoutError } from '../../../../agent/providers/cli-provider.js';
+import { ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../../agent/providers/cli-provider.js';
 import { jsonPathForMd } from '../../../../workflow/gates.js';
 import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
@@ -278,6 +278,28 @@ test('validate: a failing judge verdict gives passed:false', async () => {
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
 		assert.equal(out['passed'], false);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo);
+		seedLld(repo);
+		seedPlan(repo, true);
+		const seen: ReviewSessionOpts[] = [];
+		_setBuildValidateProviderForTests({
+			async runReviewSession<T>(_prompt: string, _schema: unknown, opts: ReviewSessionOpts) { seen.push(opts); return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'done');
+		assert.equal(seen.length, 1);
+		assert.equal(seen[0]?.stallMs, 90_000, "the build-validate row's silence limit");
+		assert.equal(seen[0]?.deadlineMs, JUDGE_DEADLINE_MS);
+		assert.equal(JUDGE_DEADLINE_MS, 300_000);
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });
@@ -755,7 +777,7 @@ test('t10 END-TO-END: a trivial-routed build produces ONE record carrying the ch
 			// The build commits its work before validate, as the implement prompt
 			// requires: since ISSUE-b97752e9 only the Story's commits decide its set.
 			beforeValidate: () => {
-				execFileSync('git', ['commit', '-qm', 'the Story work', '--', 'shipped.ts', 'added.ts'], { cwd: repo, stdio: 'ignore' });
+				execFileSync('git', ['commit', '-qm', `the Story work\n\nInsrc-Story: ${HASH}/s1`, '--', 'shipped.ts', 'added.ts'], { cwd: repo, stdio: 'ignore' });
 				head = gitOut(repo, 'rev-parse', '--short', 'HEAD');
 			},
 		});
@@ -878,7 +900,7 @@ test('t4: the validate writer EXCLUDES its own json + md from its own change-log
 		// does, so the record's own files ARE in the Story's committed range,
 		// alongside a genuine source change.
 		writeFileSync(join(repo, 'real-work.ts'), 'export const w = 1;\n');
-		git('add', '-A'); git('commit', '-qm', 'work: real-work.ts and the record');
+		git('add', '-A'); git('commit', '-qm', `work: real-work.ts and the record\n\nInsrc-Story: ${HASH}/s1`);
 		const raw = git('diff', '--name-only', base, 'HEAD').split('\n').filter(Boolean);
 		assert.ok(raw.some(f => f.endsWith('.json') && f.includes('BUILD-')),
 			`precondition: the record's own json IS in the range, got ${JSON.stringify(raw)}`);
@@ -1678,7 +1700,7 @@ test('ISSUE-b4b6b835: validate hands the check runner the other TypeScript proje
 		writeFileSync(join(repo, 'plugin/tsconfig.json'), '{}');
 		writeFileSync(join(repo, 'plugin/src/view.ts'), 'export const v = 1;\n');
 		execFileSync('git', ['add', 'plugin'], { cwd: repo });
-		execFileSync('git', ['commit', '-qm', 'the build touches the plugin', '--', 'plugin'], { cwd: repo, stdio: 'ignore' });
+		execFileSync('git', ['commit', '-qm', `the build touches the plugin\n\nInsrc-Story: ${HASH}/s1`, '--', 'plugin'], { cwd: repo, stdio: 'ignore' });
 		// And an unrelated project appears in the working tree only: not the Story's (ISSUE-b97752e9).
 		mkdirSync(join(repo, 'other/src'), { recursive: true });
 		writeFileSync(join(repo, 'other/tsconfig.json'), '{}');

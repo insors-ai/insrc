@@ -26,8 +26,8 @@ import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '..', '..', '..');
-const LLD = join(REPO, '.insrc', 'artifacts', 'LLD-d01caa994c304bcb-S001.json');
-const PLAN = join(REPO, '.insrc', 'artifacts', 'PLAN-d01caa994c304bcb-S001.json');
+const LLD = join(REPO, '.insrc', 'artifacts', 'LLD-d01caa994c304bcb-s1.json');
+const PLAN = join(REPO, '.insrc', 'artifacts', 'PLAN-d01caa994c304bcb-s1.json');
 
 interface Criterion { id: string; criterion: string; dischargedBy: string[] }
 

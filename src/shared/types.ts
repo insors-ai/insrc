@@ -247,6 +247,10 @@ export interface ReviewSessionOpts {
   readonly deadlineMs: number;
   /** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
   readonly internalRetry?: boolean | undefined;
+  /** Silence limit: a codex session that prints nothing new on stdout for this
+   *  long is killed (CliStallError), in place of the first-output watchdog.
+   *  Absent: the first-output watchdog, as before (ISSUE-562b1bb5). */
+  readonly stallMs?: number | undefined;
   /** Cancels the session. */
   readonly signal?: AbortSignal | undefined;
 }
@@ -319,7 +323,13 @@ export interface StructuredCompletionOpts {
   readonly cwd?: string | undefined;
   /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
    *  the provider's own default when unset. ISSUE-d4b2cd1c. */
-  readonly timeoutMs?: number | undefined;  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
+  readonly timeoutMs?: number | undefined;
+  /** Silence limit in milliseconds for a codex run: when set and below the
+   *  call's timeout, the run is killed and CliStallError thrown once codex has
+   *  printed nothing new for this long. Absent: no watchdog. The claude branch
+   *  ignores it. ISSUE-562b1bb5. */
+  readonly stallMs?: number | undefined;
+  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
    *  structured-output retry); the caller owns every retry. Absent or `true`:
    *  today's retries. The review pipeline sets it (Epic 8315a11f s1). */
   readonly internalRetry?: boolean | undefined;
@@ -1030,6 +1040,12 @@ export interface DaemonStatus {
    * that does not know this field sees no change.
    */
   queueLanes?:       QueueLanes;
+  /**
+   * Present ONLY while idle maintenance holds the daemon (Epic 86197ac6 s2):
+   * what it is doing, since when (ISO time), and why. Every request other than
+   * daemon.status is refused meanwhile with the same activity and reason.
+   */
+  maintenance?:      { state: 'compacting'; since: string; activity: string; reason: string };
 }
 
 /** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */

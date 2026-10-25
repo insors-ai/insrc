@@ -1,0 +1,43 @@
+{
+  "analysis": {
+    "system": "code-shaper: structural map anchored on /Users/subhagho/work/projects/insors/insrc/src/daemon/db.",
+    "focus": "HLD grounding for Epic 484fcef7efaf229e; target connection storage, handlers, pool and transport. No concept.resolve anchor was requested.",
+    "summary": "The db directory contains storage/secrets/pool/registry and driver modules (469 indexed entities). db-rpc exports list/save/delete/test operations and driver-kind discovery. Pool-cache has four graph importers including db-rpc, schema-drift, builtin db tools and a live test; two outgoing dependencies point at pool and logger. Capability retrieval surfaced four unrelated candidates and did not establish absence of reusable functionality.",
+    "structure": "src/daemon/db: config.ts, converter-cache.ts, duckdb-pool.ts, index.ts, list-files.ts, pool-cache.ts, pool.ts, registry.ts, secrets.ts; drivers/; __tests__/.\nTransport: src/daemon/server.ts (18 entities).\n## Conventions\nFunctions camelCase; classes PascalCase; files mixed snake_case/kebab-case; tests *.test.\n## Diagnostics\nGraph coverage incomplete: 49 missing-source relations. Capability retrieval limited to four of ten candidates; it did not identify the already-profiled RPC foundation.",
+    "surface": "deleteConnectionRpc\nlistConnectionsRpc\nlistDriverKindsRpc\nsaveConnectionRpc\ntestConnectionRpc\nIpcServer\nRpcHandler\nRpcHandlers\nStreamHandler\nStreamHandlers\nattachedClients\nclose\ndisconnectClients\nfailureMessage\nflushPendingWrites\nlisten",
+    "artefacts": "",
+    "upstream": ""
+  },
+  "discovery": {
+    "analyzeBundles": [
+      {
+        "kind": "code",
+        "focus": "Connection subsystem structural map, capability discovery, imports and conventions",
+        "summary": "The db directory contains storage/secrets/pool/registry and driver modules (469 indexed entities). db-rpc exports list/save/delete/test operations and driver-kind discovery. Pool-cache has four graph importers including db-rpc, schema-drift, builtin db tools and a live test; two outgoing dependencies point at pool and logger. Capability retrieval surfaced four unrelated candidates and did not establish absence of reusable functionality. Graph has incomplete relationship coverage; bounded capability retrieval did not establish absence. Direct source reads confirm repo-keyed pools, transport handlers accepting params only, and OS keychain helpers, informing subsequent design rather than asserting session isolation.",
+        "pathsCited": [
+          "src/daemon/db-rpc.ts",
+          "src/daemon/db/config.ts",
+          "src/daemon/db/secrets.ts",
+          "src/daemon/db/pool.ts",
+          "src/daemon/db/pool-cache.ts",
+          "src/daemon/server.ts",
+          "src/daemon/tools/builtins/db/index.ts",
+          "src/analyze/runtimes/data/_shared.ts"
+        ]
+      }
+    ],
+    "backFlowNotes": "No change to approved functional scope. External IDE contract requires source inspection and synchronized implementation; do not claim compatibility from backend-only review."
+  },
+  "limitations": [
+    "Graph coverage incomplete; bounded capability retrieval did not identify a complete manager and does not prove absence.",
+    "External IDE source is outside backend review read boundary; compatibility remains S005 acceptance dependency."
+  ],
+  "supplementalAnchors": [
+    "src/daemon/server.ts:203",
+    "src/daemon/server.ts:235",
+    "src/daemon/tools/types.ts:50",
+    "src/analyze/executor/types.ts:75",
+    "src/analyze/runtimes/data/_shared.ts:122",
+    "src/shared/keystore.ts:15"
+  ]
+}

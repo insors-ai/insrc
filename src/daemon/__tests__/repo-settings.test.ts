@@ -14,7 +14,7 @@ import { join } from 'node:path';
 
 import { createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 import { rpc } from '../../shared/ipc-client.js';
 import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
 import type { PortResult } from '../../workflow/tracker/port.js';
@@ -383,7 +383,7 @@ test('ensure writes the five keys once and concurrent sets both land', async () 
 		assert.equal(statSync(path).mtimeMs, mtime);
 
 		// Two clients set different keys at the same time through the daemon socket: both land.
-		const ipc = new IpcServer(handlers);
+		const ipc = new IpcServer(directDispatch(handlers));
 		const sockDir = mkdtempSync(join(tmpdir(), 'insrc-repo-sock-'));
 		const sock = join(sockDir, 'd.sock');
 		const server = createServer((s: Socket) => { (ipc as unknown as { handleConnection(s: Socket): void }).handleConnection(s); });

@@ -133,7 +133,7 @@ function turnFor(payload: WorkflowStepStatePayload): Omit<WorkflowStepEmitPlan, 
  * owned by the acting user with the checkpoint's upstream snapshot, and its next turn returned. A draft-only checkpoint: the files
  * are restored and a restart is returned. If anything fails after files were written they are rolled back and no state is saved.
  */
-export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = {}): ResumeResult {
+export async function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = {}): Promise<ResumeResult> {
 	if (check.kind === 'refused') return refusedWith(check.reason);
 	if (check.kind === 'nothing-to-resume') return check;
 	if (check.kind === 'restart') {
@@ -154,7 +154,7 @@ export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = 
 		const payload = rebindCheckpoint(checkpoint, { repoPath: repo, repoIndexedAt: null, now: Date.now() });
 		const turn = turnFor(payload);
 		if ('error' in turn) { restored.rollback(); return refusedWith(`${turn.error}; the working tree is as it was`); }
-		const state = saveState(payload, { owner, upstream: checkpoint.upstream });
+		const state = await saveState(payload, { owner, upstream: checkpoint.upstream });
 		restored.finish();
 		return { kind: 'resumed', turn: { ...turn, state } as WorkflowStepEmitPlan | WorkflowStepEmitStep | WorkflowStepEmitSynthesize };
 	} catch (err) {

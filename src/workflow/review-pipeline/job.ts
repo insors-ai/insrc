@@ -45,10 +45,20 @@ export const RETRY_NOTE_RESERVE_CHARS = 8_000;
 /** The pipeline's attempts per call: the first, and one re-issue under a new callId. */
 export const MAX_CALL_ATTEMPTS = 2;
 
-/** A call failed both attempts in a stage whose policy fails the review. Nothing is recorded. */
+/** A call whose run stalled may be issued this many times: the first and two re-issues.
+ *  A stall is a silent run, not a wrong answer, so a fresh run usually answers (ISSUE-562b1bb5). */
+export const MAX_STALL_ATTEMPTS = 3;
+
+/** "twice", or "N times". */
+export function attemptsText(attempts: number): string {
+	return attempts === 2 ? 'twice' : attempts === 1 ? 'once' : `${attempts} times`;
+}
+
+/** A call failed all its attempts in a stage whose policy fails the review. Nothing is recorded. */
 export class ReviewCallFailedError extends Error {
-	constructor(readonly stage: string, readonly cause: FailureCause | 'stage-error', readonly detail: string | undefined, readonly reasons: readonly string[] = []) {
-		super(`review stage ${stage}: the call failed twice (${cause})${detail !== undefined ? `: ${detail}` : ''}. No review was recorded.`);
+	/** `invalidAnswers`: how many of the attempts were invalid answers. */
+	constructor(readonly stage: string, readonly cause: FailureCause | 'stage-error', readonly detail: string | undefined, readonly reasons: readonly string[] = [], readonly attempts: number = MAX_CALL_ATTEMPTS, readonly invalidAnswers: number = 0) {
+		super(`review stage ${stage}: the call failed ${attemptsText(attempts)} (${cause})${detail !== undefined ? `: ${detail}` : ''}. No review was recorded.`);
 		this.name = 'ReviewCallFailedError';
 	}
 }
@@ -155,6 +165,7 @@ interface NewCall {
 	readonly role:     CallRole;
 	readonly carries:  CallCarries;
 	readonly attempt?: number | undefined;
+	readonly invalidAnswers?: number | undefined;
 	/** The pipelineCalls role the call is counted under; default its role. */
 	readonly countAs?: CallRole | undefined;
 }
@@ -178,7 +189,7 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 		issuedHashes.push(hash);
 		counts[c.countAs ?? c.role]++;
 		made.push({
-			callId, attempt: c.attempt ?? 1, stage: job.stage, role: c.role, messages, schema,
+			callId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
 			execution: c.prompt.execution, chars: promptChars(messages), carries: c.carries, prompt: c.prompt,
 		});
 	}
@@ -287,7 +298,9 @@ export function applyFailure(
 		return call.role === 'chunk' && own.redivide !== undefined ? redivideByStage(rest, own, call, maxChars) : redivide(rest, adapter, own, call, maxChars);
 	}
 
-	if (call.attempt < MAX_CALL_ATTEMPTS) {
+	// Invalid answers among this call's attempts, this one included.
+	const invalidAnswers = (call.invalidAnswers ?? 0) + (cause === 'invalid-answer' ? 1 : 0);
+	if (call.attempt < (cause === 'stall' ? MAX_STALL_ATTEMPTS : MAX_CALL_ATTEMPTS)) {
 		let prompt = call.prompt;
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
@@ -297,14 +310,14 @@ export function applyFailure(
 			else log.warn({ dimension: job.dimension, stage: stage.id, callId, reasons: more.reasons }, 'review pipeline: the correction does not fit beside the call; re-issuing it as planned, without the correction');
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
-		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1 }]);
+		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);
 	}
 
 	const detail = more.detail ?? (more.reasons !== undefined ? more.reasons.join('; ') : undefined);
-	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail, more.reasons ?? []);
+	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail, more.reasons ?? [], call.attempt, invalidAnswers);
 	const key = call.carries.key ?? call.carries.chunkId ?? call.callId;
-	log.warn({ dimension: job.dimension, stage: stage.id, key, cause }, 'review pipeline: a call failed twice; recorded and the review goes on');
-	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause, ...(detail !== undefined ? { detail } : {}), policy: stage.onCallFailure }] };
+	log.warn({ dimension: job.dimension, stage: stage.id, key, cause, attempts: call.attempt }, `review pipeline: a call failed ${attemptsText(call.attempt)}; recorded and the review goes on`);
+	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause, ...(detail !== undefined ? { detail } : {}), policy: stage.onCallFailure, attempts: call.attempt }] };
 	return stageDone(next) ? completeStage(next, adapter, now) : next;
 }
 

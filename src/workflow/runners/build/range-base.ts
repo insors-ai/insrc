@@ -326,6 +326,34 @@ function introducingCommit(repoPath: string, relPath: string): string | undefine
  * Resolve the Story's range base, or `undefined` when it genuinely cannot be
  * established. Synchronous and read-only; never throws.
  */
+/**
+ * Where a pre-trailer Story's committed range ENDS (ISSUE-b97752e9): the full sha
+ * of the commit its BUILD record names (`body.commit`), when that resolves to a
+ * commit; undefined when there is no record, no commit, or it does not resolve.
+ * For a Story none of whose commits carry its trailer, `body.commit` is HEAD when
+ * its record was first persisted and is never refreshed after (persistBuildRecord),
+ * so later untrailered commits by anyone are not the Story's. Read only by
+ * storyChangeSet's legacy case. Read-only; never throws.
+ */
+export function resolveStoryRangeEnd(repoPath: string, epicHash: string, storyId: string): string | undefined {
+	if (epicHash.length === 0 || storyId.length === 0) return undefined;
+	const p = join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`);
+	if (!existsSync(p)) return undefined;
+	try {
+		const commit = (JSON.parse(readFileSync(p, 'utf8')) as { body?: { commit?: unknown } }).body?.commit;
+		if (typeof commit !== 'string' || commit.length === 0) return undefined;
+		return execFileSync('git', ['rev-parse', '--verify', '--quiet', `${commit}^{commit}`], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The Story's range base: where its committed range starts. See the module
+ * comment for the precedence. A base is a CANDIDATE commit: only the build-start
+ * stamp is checked to exist, so one from an upstream artifact can fail to resolve,
+ * which makes the derivation that uses it fail (ISSUE-b97752e9).
+ */
 export function resolveStoryRangeBase(repoPath: string, epicHash: string, storyId: string): string | undefined {
 	if (epicHash.length === 0 || storyId.length === 0) return undefined;
 	const ids = upstreamIds(epicHash, storyId);

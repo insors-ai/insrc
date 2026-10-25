@@ -1,0 +1,579 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792842143818-kto4b1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T11:46:09.721Z",
+    "epicCreatedAt": "2026-10-23T14:01:46.590Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 225745,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "697b9f8ff46b9deb",
+    "epicSlug": "stop-codex-review-calls-stalling-keep",
+    "storyId": "S001",
+    "lldRunId": "wf-1792763798946-g7op3j",
+    "lldEffectiveHash": "697b9f8ff46b9deb7c9f49de3715d7269704a2669d032ecdbaf1514d8ab17aff",
+    "authoredBy": "controller",
+    "rangeBase": "b53943496e14ac18ef919298e60308455b4f48ea",
+    "approvedAt": "2026-10-24T17:15:27.956Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this fix touches three layers. The CLI provider gets an opt-in silence watchdog for codex structured calls and reviewer sessions plus a typed schema rejection; the review pipeline takes every call type's silence limit and cap from one table (verify 90 s / 600 s, extract none / 600 s, HLD/LLD sessions and code review 300 s, build validation 90 s), retries a stall up to three times and reports real attempt counts, with a bounded verify answer and a prompt that matches codex's grammar; and the daemon and step tool keep long reviews alive with a heartbeat and progress relay. Tasks t1-t4 are already built; it ends with a live codex check, one full test sweep and a daemon rollout confirmed on a real review.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Silence watchdog for opted-in structured codex calls",
+        "summary": "Add stallMs to StructuredCompletionOpts; give ProcessGroupOpts.stall a silence mode that kills the group when no new stdout chunk arrives for stall.ms (reset on each chunk); the codex branch of completeStructured arms it when stallMs is set and below timeoutMs. Reviewer sessions keep the first-output mode; claude ignores stallMs.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A structured codex call with stallMs kills a silent run and throws CliStallError",
+          "A run that prints an item event early then goes silent is killed stallMs after its last output",
+          "A run that keeps printing within stallMs completes",
+          "Without stallMs no watchdog is armed; reviewer sessions keep first-output behaviour"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError"
+          },
+          {
+            "level": "unit",
+            "name": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output"
+          },
+          {
+            "level": "unit",
+            "name": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed"
+          },
+          {
+            "level": "unit",
+            "name": "claude ignores stallMs and reviewer sessions keep the first-output watchdog"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Typed schema rejection with reasons",
+        "summary": "ModelResponseShapeError gains an optional reasons list; codexReply throws it with ValidationResult.errors when a codex answer fails the caller's schema; the review pipeline driver's classify returns those reasons with cause 'invalid-answer' and passes them to applyFailure.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A codex reply that breaks the caller's schema throws ModelResponseShapeError with reasons",
+          "The pipeline classifies it as invalid-answer and the re-issued prompt carries the correction note when it fits",
+          "Existing ModelResponseShapeError throw sites are unchanged"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons"
+          },
+          {
+            "level": "unit",
+            "name": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Bound the verify answer and align the verify prompt",
+        "summary": "Add the maxLength/maxItems bounds to VERIFY_SCHEMA (they reach VERDICTS_SCHEMA) and rewrite the SYSTEM fixability rules to ask for an always-present proposedFix with empty fields when there is no fix. Run the review and review-pipeline suites that import VERIFY_SCHEMA or VERDICTS_SCHEMA and update any schema snapshot they hold.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "VERIFY_SCHEMA and VERDICTS_SCHEMA carry the bounds and an over-long answer fails validation",
+          "SYSTEM no longer tells the model to omit fields and asks for empty fields when there is no fix",
+          "A no-fix answer normalises as before (no proposedFix with an empty rationale; rationale-only otherwise)",
+          "Suites that import VERIFY_SCHEMA or VERDICTS_SCHEMA pass"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "VERIFY_SCHEMA and VERDICTS_SCHEMA bound evidence, action, rationale, edits and options, and an answer over a bound fails validation"
+          },
+          {
+            "level": "unit",
+            "name": "the verify SYSTEM rules ask for an always-present proposedFix with empty fields when there is no fix and no longer tell the model to omit fields, in both the single and batched prompts"
+          },
+          {
+            "level": "unit",
+            "name": "a no-fix answer with an empty rationale normalises to a finding without proposedFix, and one with a rationale keeps a rationale-only proposedFix"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Stall retry budget and attempt counts in the review pipeline",
+        "summary": "ExecutionMode's structured mode carries stallMs and the driver forwards it (building on t2's classify change in driver.ts); applyFailure re-issues a 'stall' failure while attempt < MAX_STALL_ATTEMPTS (3), other causes keep MAX_CALL_ATTEMPTS; NotJudged gains attempts and notJudgedFinding, ReviewCallFailedError and the applyFailure log report the real count.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A stalling call is re-issued up to three times; an invalid answer only once",
+          "A claim exhausted after three attempts is reported as three attempts",
+          "An older NotJudged without attempts still renders",
+          "The driver forwards stallMs to completeStructured"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once"
+          },
+          {
+            "level": "unit",
+            "name": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts"
+          },
+          {
+            "level": "unit",
+            "name": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders"
+          },
+          {
+            "level": "unit",
+            "name": "the pipeline driver forwards a structured call's stallMs to completeStructured"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Silence limit for reviewer sessions",
+        "summary": "ReviewSessionOpts (src/shared/types.ts) gains stallMs; CliProvider.runReviewSession's codex run uses the silence watchdog with that limit instead of the first-output watchdog at codexFirstOutputMs when it is set (its deadline, single internal retry and size-refusal handling unchanged); the reviewer-session ExecutionMode gains stallMs and the pipeline driver's send() forwards it to runReviewSession. Ollama's runReviewSession ignores it.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+          "A reviewer session without stallMs keeps the first-output watchdog exactly as today",
+          "The pipeline driver forwards a reviewer-session call's stallMs to runReviewSession"
+        ],
+        "derivedFrom": [
+          "c14",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError"
+          },
+          {
+            "level": "unit",
+            "name": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall"
+          },
+          {
+            "level": "unit",
+            "name": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "REVIEW_CALL_LIMITS table and its call sites",
+        "summary": "Add src/workflow/review/call-limits.ts with REVIEW_CALL_LIMITS (design-verify 90 s / 600 s; design-extract no silence / 600 s; design-session 300 s silence beside its deadline; code-review 300 s / 600 s; build-validate 90 s silence inside JUDGE_DEADLINE_MS), with the survey evidence in its comment. Define VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS from the design-verify row; verifyClaim (and so calibration) passes both; the design-review extract, verify and template-session executions, every code-review execution (the shared one and the controller's) and the build-validation runReviewSession read their row. Update the tests that pin the old 180 s value.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "REVIEW_CALL_LIMITS holds the five rows and every silence limit is below its call's total limit",
+          "Every review and build-validation call site sends its row's silence limit and cap; no call site writes its own number",
+          "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+          "The validate phase's injected provider receives stallMs 90 s with deadlineMs JUDGE_DEADLINE_MS",
+          "The pinned-limit tests assert the new values"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row"
+          },
+          {
+            "level": "unit",
+            "name": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap"
+          },
+          {
+            "level": "unit",
+            "name": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap"
+          },
+          {
+            "level": "unit",
+            "name": "verifyClaim sends stallMs 90 s and timeoutMs 600 s"
+          },
+          {
+            "level": "unit",
+            "name": "the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Real attempt count in the template-review failure message",
+        "summary": "runTemplateReview's message and log for an exhausted invalid answer ('failed checklist … twice') state err.attempts and how many of those attempts were invalid answers, instead of a fixed 'twice'.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Two stalls then an invalid answer fail the template review with a message naming three attempts, not 'twice'",
+          "Two invalid answers still report two attempts"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Heartbeat frames from workflow.review",
+        "summary": "workflowReviewStart sends a {kind:'heartbeat', operation:'workflow.review', elapsedMs} progress frame every WORKFLOW_REVIEW_HEARTBEAT_MS (60 s) while a review runs and stops before the terminal frame.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Heartbeats arrive every 60 s during a review",
+          "No heartbeat after 'done' or 'error'",
+          "Stage frames are unchanged"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "insrc_review_step relays progress and waits with an idle limit",
+        "summary": "ReviewStepDeps gains progress; the step host wires insrc_review_step with its progress callback; reviewByDaemon passes onFrame (relaying every frame) and idleMs = DESIGN_REVIEW_IDLE_MS (5 min) beside the existing ceilings; an idle timeout names the idle limit.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Through step.call every daemon progress frame, heartbeats included, arrives as a 'progress' frame before 'done'",
+          "A healthy review longer than 15 minutes completes while heartbeats flow",
+          "No frame for 5 minutes fails with a daemon-review-timeout naming the idle limit"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'"
+          },
+          {
+            "level": "integration",
+            "name": "a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Live check, full sweep and daemon rollout",
+        "summary": "Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that it completes without a stall and progress reaches the controller; the retry of a stall within its call type's silence limit (about 90 s for a verify call) is covered by the t5/t6 unit tests, since a real stall cannot be forced against live codex (user decision A, 2026-10-24).",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Live: codex accepts the bounded VERIFY_SCHEMA strict copy and a verified finding passes the reply check",
+          "Full sweep passes (pre-existing failures named)",
+          "A real DEF review completes without a stall and relays progress to the controller; the retry within each call type's silence limit is covered by unit tests"
+        ],
+        "derivedFrom": [
+          "c12",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "codex accepts the strict copy of the bounded VERIFY_SCHEMA and a real verify call returns a finding that passes the reply check"
+          },
+          {
+            "level": "smoke",
+            "name": "a real DEF review on the rebuilt daemon completes without a stall and relays progress to the controller"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "CliProvider.completeStructured",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodex",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "job.ts re-issue decision",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "design-review verify stage execution",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "verifyClaim",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "VERIFY_SCHEMA",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "VERDICTS_SCHEMA",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildVerifyPrompt",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildBatchedVerifyPrompt",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "normalizeFix",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/host.ts insrc_review_step wiring",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "reviewByDaemon",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleReviewStep",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "workflowReviewStart heartbeat",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "CliProvider.completeStructured with VERIFY_SCHEMA on codex",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "codexReply",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "driver classify",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyFailure",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "REVIEW_CALL_LIMITS",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CliProvider.runReviewSession",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "design-review executions",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "code-review execution",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "build-validation session",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api CliProvider.completeStructured"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges StructuredCompletionOpts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api REVIEW_CALL_LIMITS"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api ExecutionMode"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api MAX_CALL_ATTEMPTS"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api handleReviewStep and dataModelChanges ReviewStepDeps"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api ModelResponseShapeError"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api workflowReviewStart and dataModelChanges workflow.review progress frame"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api buildVerifyPrompt"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api NotJudged and dataModelChanges NotJudged"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges VERIFY_SCHEMA"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration (rebuild and restart the installed daemon; confirm on a DEF review)"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy live level (CliProvider.completeStructured with VERIFY_SCHEMA on codex)"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api CliProvider.runReviewSession and dataModelChanges ReviewSessionOpts"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges Review call executions"
+    }
+  ]
+}

@@ -14,7 +14,7 @@
  *     instead of silently passing -- the analyzer downstream can
  *     emit that as a finding.
  *
- *   - **Live shape source: pool.acquire + driver.describe(target)**.
+ *   - **Live shape source: revision lease + driver.describe(target)**.
  *     Same path the `db_sql_describe` tool uses; we go through the
  *     pool directly so this tool doesn't need to invoke another
  *     tool from inside its execute loop.
@@ -42,7 +42,7 @@ import type {
 	RdbmsDriver,
 	SchemaDescription,
 } from '../../../../shared/db-driver.js';
-import { acquirePool } from '../../../db/pool-cache.js';
+import { savedConnectionResolver } from '../../../db/pool-cache.js';
 import { prismaSchemaDescription } from '../../../db/drivers/rdbms-prisma.js';
 import {
 	exceedsCrossAgentDepth,
@@ -140,8 +140,8 @@ export const dataSchemaDriftTool: Tool = {
 			return fail('session has no active repo; cannot resolve the connection');
 		}
 
-		const pool = await acquirePool(repoPath);
-		const conn = pool.list().find(c => c.id === connectionId);
+		const access = { lookupRoot: repoPath, daemonEpoch: 'saved-db-tools' };
+		const conn = (await savedConnectionResolver.list(access)).find(c => c.key.id === connectionId);
 		if (conn === undefined) {
 			return fail(`unknown connection '${connectionId}'`);
 		}
@@ -149,67 +149,75 @@ export const dataSchemaDriftTool: Tool = {
 			return fail(`connection '${connectionId}' is ${conn.family}; schema-drift v1 only supports rdbms`);
 		}
 
-		// Live shape via the existing driver path.
-		const driver = await pool.acquire(connectionId);
-		let live: SchemaDescription;
+		// Pin the metadata before constructing the driver, and retain both leases through the static/live comparison.
+		const pin = await savedConnectionResolver.lease(access, connectionId);
 		try {
-			live = await (driver as RdbmsDriver).describe(target);
-		} catch (err) {
-			return fail(`live describe failed: ${(err as Error).message}`);
-		}
+			if (pin.revision !== conn.revision) return fail('connection changed; retry the schema comparison');
+			return await savedConnectionResolver.withConnection(access, connectionId, async driver => {
+				let live: SchemaDescription;
+				try {
+					live = await (driver as RdbmsDriver).describe(target);
+				} catch (err) {
+					return fail(`live describe failed: ${(err as Error).message}`);
+				}
 
-		// Expected shape: Prisma only for v1.
-		const prismaPath = resolvePrismaPath(conn.schemaSource, repoPath);
-		if (prismaPath === undefined) {
-			const data: DriftData = {
-				connectionId,
-				target,
-				expectedSource: 'none',
-				drift: [],
-				expectedColumnCount: 0,
-				liveColumnCount: live.columns.length,
-				confidence: 'low',
-			};
-			return {
-				output: renderNoExpectedSource(target, connectionId, live),
-				format: 'markdown',
-				success: true,
-				data,
-			};
-		}
+				// Expected shape: Prisma only for v1.
+				const rawSource = conn.publicConfig['schemaSource'];
+				const source = rawSource && typeof rawSource === 'object' ? rawSource as Record<string, unknown> : undefined;
+				const schemaSource = source?.['type'] === 'prisma' && typeof source['path'] === 'string' ? { type: 'prisma' as const, path: source['path'] } : undefined;
+				const prismaPath = resolvePrismaPath(schemaSource, repoPath);
+				if (prismaPath === undefined) {
+					const data: DriftData = {
+						connectionId,
+						target,
+						expectedSource: 'none',
+						drift: [],
+						expectedColumnCount: 0,
+						liveColumnCount: live.columns.length,
+						confidence: 'low',
+					};
+					return {
+						output: renderNoExpectedSource(target, connectionId, live),
+						format: 'markdown',
+						success: true,
+						data,
+					};
+				}
 
-		let expected: SchemaDescription;
-		try {
-			expected = await prismaSchemaDescription(target, prismaPath);
-		} catch (err) {
-			// Prisma schema couldn't resolve the model -- surface as
-			// drift "missing-column"-style message rather than a tool
-			// failure so the analyzer can decide.
-			return fail(`prisma resolve failed: ${(err as Error).message}`);
-		}
+				let expected: SchemaDescription;
+				try {
+					expected = await prismaSchemaDescription(target, prismaPath);
+				} catch (err) {
+					// Prisma schema couldn't resolve the model -- surface as
+					// drift "missing-column"-style message rather than a tool
+					// failure so the analyzer can decide.
+					return fail(`prisma resolve failed: ${(err as Error).message}`);
+				}
 
-		const drift = diffSchemas(expected, live);
-		const data: DriftData = {
-			connectionId,
-			target,
-			expectedSource: 'prisma',
-			drift,
-			expectedColumnCount: expected.columns.length,
-			liveColumnCount: live.columns.length,
-			confidence: 'medium',
-		};
+				const drift = diffSchemas(expected, live);
+				const data: DriftData = {
+					connectionId,
+					target,
+					expectedSource: 'prisma',
+					drift,
+					expectedColumnCount: expected.columns.length,
+					liveColumnCount: live.columns.length,
+					confidence: 'medium',
+				};
 
-		log.info(
-			{ connectionId, target, prismaPath, drift: drift.length },
-			'data_schema-drift diff complete',
-		);
+				log.info(
+					{ connectionId, target, prismaPath, drift: drift.length },
+					'data_schema-drift diff complete',
+				);
 
-		return {
-			output: renderDriftReport(data, expected, live),
-			format: 'markdown',
-			success: true,
-			data,
-		};
+				return {
+					output: renderDriftReport(data, expected, live),
+					format: 'markdown',
+					success: true,
+					data,
+				};
+			});
+		} finally { await pin.release(); }
 	},
 };
 

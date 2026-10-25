@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792652840118-3dc7bn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T07:07:20.118Z",
+    "model": "claude:opus",
+    "elapsedMs": 42916,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "afcfa02717f5bf7d",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-22T05:17:03.574Z",
+    "epicSlug": "add-cross-thread-named-lock-framework",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "afcfa02717f5bf7d",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/shared/locks/__tests__/lock-manager.test.ts",
+        "src/shared/locks/lock-manager.ts",
+        "src/shared/locks/__tests__/helpers/lock-wait-worker.ts",
+        "src/daemon/threads/__tests__/helpers/store-worker.ts",
+        "src/daemon/threads/__tests__/worker-stores.test.ts",
+        "src/daemon/threads/worker-entry.ts",
+        "src/shared/locks/__tests__/helpers/lock-ops-worker.ts",
+        "src/shared/locks/__tests__/lock-manager-threads.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/mocks/ontology-editor.html",
+        "docs/mocks/ontology-source/ontology.template.html",
+        "docs/mocks/ontology-source/render.mjs",
+        "docs/mocks/ontology-viewer.html",
+        "docs/ontology-builder-prd.html",
+        "docs/ontology-builder-prd.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/shared/locks/lock-manager.ts:403",
+            "message": "LockManager.reclaim is declared `async reclaim(threadId: number): Promise<readonly LockInfo[]>`, while the approved contract is synchronous: `(threadId: number) => readonly LockInfo[]`. Because it is async, callers have to await it or attach .catch. watchWorker does the latter (line 787). The LLD expected a synchronous return because a lock holds no native resource. The API shape that the s2 router will consume therefore differs from the approved contract.",
+            "expectationRef": "contractDetails.api[LockManager.reclaim].signature: (threadId: number) => readonly LockInfo[]"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/shared/locks/__tests__/helpers/lock-ops-worker.ts:1",
+            "message": "errorOf(e: unknown): { name; message } is a test-helper copy of the identical serializer in the store worker helper. Both workers post errors back to the parent thread in the same shape, so a shared test-helper module would keep the two error contracts from drifting apart.",
+            "counterpartRef": "errorOf (src/daemon/threads/__tests__/helpers/store-worker.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/shared/locks/__tests__/lock-manager.test.ts:1",
+            "message": "strip(i: LockInfo) has no callers in the graph. It is either dead code left over from an earlier version or a helper whose intended assertion was dropped. Remove it, or wire it into the snapshot comparisons it was written for.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/shared/locks/lock-manager.ts:1",
+            "message": "LockManager.reclaim calls 13 separate primitives: the mutex take/unlock, recount, clearPending/clearHolder, bumpVersion, holdersOf/pendingOf, readHolder/readPending, and the slot base helpers. All of this runs under a dead-thread mutex takeover. A dead-worker cleanup routine this dense is the hardest place to check the shared-memory invariants. Splitting the holder sweep from the pending sweep would make each step reviewable. This is based only on the summary's call fan-out, with no confirmed defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

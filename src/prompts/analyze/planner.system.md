@@ -42,5 +42,6 @@ You emit a single JSON object conforming to the `PlanTask` schema. The validator
 ## Format reminders (HARD)
 
 - Emit a single JSON object matching the PlanTask schema. No markdown fences (no ```json prefix, no trailing ```). No prose, no commentary.
-- `params` is an object literal. Every value is the kind of value the template's `inputSchema` requires (string / object / array as schema demands) -- never `null` or empty strings as placeholders.
+- `params` is an object literal, except where it, or a value inside it, is a JSON-text slot: the catalog lists each template's slots under **emit as JSON text**. At a slot you emit the object's JSON as a string, and it is read back as the object. Example: an aggregator task's whole params is a slot, so it emits `"params": "{}"` (or the JSON of the keys it sets), not `"params": {}`.
+- Every other value is the kind of value the template's `inputSchema` requires (string / object / array as schema demands) -- never empty strings as placeholders. An optional value you do not set may be `null`; it means the value is absent. Inside a slot's JSON text, omit an absent key instead of writing `null`.
 - All seven layer values on the PlanTask are strings or arrays or scalars per the schema -- never nested objects outside `scopeRef` (and `scopeRef` only appears inside individual task `params` when an inputSchema requires it).

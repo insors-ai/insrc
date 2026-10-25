@@ -1,0 +1,333 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792700621434-9scchl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T20:26:57.210Z",
+    "epicCreatedAt": "2026-10-22T16:27:41.638Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 195753,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1973e125995f971e",
+    "epicSlug": "large-story-s-code-review-cancelled",
+    "storyId": "s1",
+    "lldRunId": "wf-1792686549988-vytnla",
+    "lldEffectiveHash": "07e2885ac3a24912879d96be4b5cd9a6329cbaf59ce86b41637da079198e6342",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-23T04:18:52.448Z",
+    "rangeBase": "d624f52527b1bfddd4c9c23e0ff587097f4ec431"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story replaces the fixed 30-minute wait on a daemon code review with an idle limit that every progress frame restarts, inside a configurable overall ceiling. The code-review runner reports each review call as progress; the step.call host gains a way to forward a step tool's progress, and the code-review step relays the daemon's frames through it, so the MCP client sees a live tool instead of a silent one. The work ends by shipping to the installed daemon and rerunning the blocked code review of Epic 86197ac6 Story s2.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Idle limit in the shared review stream wait",
+        "summary": "Add optional idleMs to ReviewStreamOpts (src/shared/review-stream.ts). runReviewStream arms an idle timer alongside the overall timeoutMs timer; every progress/delta frame restarts the idle timer only. On expiry fail with ReviewStreamError('timeout') whose message names which limit ran out, and cancel the transport as today. Without idleMs (or with an idleMs not > 0 or not below timeoutMs), behaviour is unchanged.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Frames arriving more often than idleMs keep a request alive past idleMs; it resolves on its final frame",
+          "No frame for idleMs fails 'timeout' with a message naming the idle limit and cancels the transport",
+          "Frames never extend timeoutMs; past it the request fails 'timeout' naming the ceiling",
+          "A caller passing no idleMs gets today's single wait (existing review-stream tests pass unchanged)",
+          "An idleMs that is not > 0 or not below timeoutMs arms no idle timer: the single wait applies"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runReviewStream with idleMs: frames more often than idleMs keep the request alive past idleMs; it resolves on its final frame"
+          },
+          {
+            "level": "unit",
+            "name": "runReviewStream with idleMs: no frame for idleMs fails 'timeout' naming the idle limit and cancels the transport"
+          },
+          {
+            "level": "unit",
+            "name": "runReviewStream: frames do not extend timeoutMs; past it the request fails 'timeout' naming the ceiling"
+          },
+          {
+            "level": "unit",
+            "name": "runReviewStream without idleMs (or with an out-of-range idleMs): today's single wait"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Per-call progress from the code-review runner",
+        "summary": "Add optional onCall to JudgeContext (src/workflow/code-review/types.ts); runDimensionJob (src/workflow/review-pipeline/code-review.ts) forwards ctx.onCall as runReviewJob's existing onCall. Add phase 'call' to CodeReviewProgress (src/workflow/code-review/runner.ts); runCodeReview builds a per-dimension onCall that emits { phase: 'call', dimension, detail: '<stage> <role> #n' }.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "runCodeReview emits one 'call' progress per pipeline call of a dimension, between that dimension's dimension-start and dimension-done, with stage, role and a running count in detail",
+          "Judges that ignore onCall and callers that pass no ctx.onCall behave as today"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runCodeReview emits a 'call' progress per pipeline call of a dimension, with stage, role and count in detail, between its dimension-start and dimension-done"
+          },
+          {
+            "level": "unit",
+            "name": "runDimensionJob forwards JudgeContext.onCall to runReviewJob's onCall; without it the job runs as today"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Progress frames from step tools on step.call",
+        "summary": "Extend StepToolRunner (src/daemon/steps/host.ts) with an optional third progress argument. createStepCallHandler passes a progress callback that sends each call as a 'progress' frame on the step.call stream before 'done'; a send that throws or hits a closed stream is swallowed and logged at debug; progress after the final frame is ignored. Other step tools are untouched. The MCP forwarder (src/mcp/server.ts) is consumed unchanged; a regression test proves it relays these frames.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A step tool's progress calls arrive as 'progress' frames before the 'done' frame",
+          "A failing progress send does not fail the step; it still answers with its envelope",
+          "A progress call after the final frame is ignored",
+          "Regression test, no change to src/mcp/server.ts: the existing forwarder relays step.call progress frames as notifications/progress when the client sent a progressToken"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored"
+          },
+          {
+            "level": "integration",
+            "name": "MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Configurable code-review wait limits and progress relay in the step",
+        "summary": "Declare codeReview.daemonReviewCeilingMs (14_400_000) and codeReview.daemonReviewIdleMs (1_200_000) in src/config/config-catalog.ts and bump the catalog-contract row count (43 -> 45). Replace DAEMON_CODE_REVIEW_WAIT_MS in src/daemon/steps/code-review-step/handler.ts with codeReviewWaitLimits(), read fail-safe like readFreshnessTimeoutMs with idle clamped to the ceiling. reviewByDaemon passes timeoutMs/idleMs and an onFrame that relays every frame to the new CodeReviewStepDeps.progress; a timeout answers with the cause and names the config key to raise. host.ts:69 threads the runner's progress into the deps. routing.test.ts asserts codeReviewWaitLimits' defaults instead of the removed constant.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "codeReviewWaitLimits returns the defaults when the keys are absent, falls back per key on 0/negative/non-number, and clamps idle to the ceiling",
+          "reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress",
+          "insrc_code_review_step's host entry threads progress into CodeReviewStepDeps.progress",
+          "A ceiling timeout's error names codeReview.daemonReviewCeilingMs; an idle timeout's names codeReview.daemonReviewIdleMs",
+          "DAEMON_CODE_REVIEW_WAIT_MS no longer exists; routing.test.ts and config-catalog-contract.test.ts pass with the new assertions",
+          "Design reviews (insrc_review_step) pass no idleMs and keep their limits"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "codeReviewWaitLimits reads both keys, falls back to the defaults on a bad value and clamps idle to the ceiling"
+          },
+          {
+            "level": "unit",
+            "name": "reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress"
+          },
+          {
+            "level": "unit",
+            "name": "a ceiling or idle timeout answers next:'error' naming the config key to raise"
+          },
+          {
+            "level": "unit",
+            "name": "the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "End-to-end proof: a review longer than 30 minutes completes",
+        "summary": "Integration test with a stubbed model and fake clock driving the code-review step through the in-daemon client: a review reporting a call every minute runs past 30 minutes and completes, writing its record; one that goes quiet past the idle limit fails with the idle cause and writes no record (never falling back to a controller review).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A daemon code review that keeps reporting calls runs past 30 minutes and writes its record",
+          "A daemon code review that goes silent past idleMs fails next:'error' with the idle cause and writes no record"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a daemon code review reporting a call every minute runs past 30 minutes and writes its record; one quiet past the idle limit fails with the idle cause and writes none"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Ship to the installed daemon and rerun the s2 code review",
+        "summary": "Run the full sweep, build, update the installed daemon, restart the MCP server so it loads the same build, then rerun insrc_code_review_step for Epic 86197ac660732ceb Story s2 and confirm it completes and writes CR-86197ac660732ceb-s2.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Full test sweep passes",
+          "The installed daemon runs this build",
+          "The code review of Epic 86197ac660732ceb Story s2 completes and writes CR-86197ac660732ceb-s2"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "The code review of Epic 86197ac660732ceb Story s2 completes and writes CR-86197ac660732ceb-s2"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "runReviewStream with idleMs: frames arriving more often than idleMs keep the request alive past idleMs, and it resolves on its final frame",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runReviewStream with idleMs: no frame for idleMs fails 'timeout' naming the idle limit and cancels the transport",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runReviewStream: frames do not extend timeoutMs; past it the request fails 'timeout' naming the ceiling",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runReviewStream without idleMs: today's single wait",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "codeReviewWaitLimits reads codeReview.daemonReviewCeilingMs and daemonReviewIdleMs, falls back to the defaults on a bad value and clamps idle to the ceiling",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "reviewByDaemon passes the limits as timeoutMs and idleMs through the in-daemon client (codeReviewStream) and relays every progress frame to the step's progress callback",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview emits a 'call' progress as each pipeline call of a dimension starts (JudgeContext.onCall forwarded to runReviewJob's onCall), with the stage and role in detail, between that dimension's start and done",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "step.call: a step tool's progress calls arrive as 'progress' frames before the 'done' frame, and a failing progress send does not fail the step",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A daemon code review (stubbed model, a fake clock) that runs past 30 minutes while reporting a call every minute completes and writes its record; one that goes quiet past the idle limit fails with the idle cause and writes none",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The code review of Epic 86197ac660732ceb Story s2 completes and writes CR-86197ac660732ceb-s2",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api ReviewStreamOpts (idleMs in runReviewStream, src/shared/review-stream.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api JudgeContext + CodeReviewProgress (onCall forwarded to runReviewJob, phase 'call')"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api StepToolRunner (progress frames on step.call)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs and contractDetails.api DAEMON_CODE_REVIEW_WAIT_MS -> codeReviewWaitLimits"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api CodeReviewStepDeps (progress threaded at src/daemon/steps/host.ts:69; routing.test.ts update)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration.migrationSteps order 5 (update the installed daemon, rerun Epic 86197ac6 s2 code review)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths (idle timeout, ceiling timeout, failing progress send, edge cases)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy integration level (a review longer than 30 minutes completes)"
+    }
+  ]
+}

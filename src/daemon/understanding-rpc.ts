@@ -6,6 +6,7 @@ import { getGraphStore } from '../db/graph/store.js';
 import { readAssessment } from '../understanding/storage.js';
 import type { UnderstandingService, Owner } from '../understanding/service.js';
 import type { RpcHandlers, StreamHandlers } from './server.js';
+import { withRefreshHold } from '../shared/locks/maintenance-lock.js';
 
 interface Dependencies {
   service(): UnderstandingService;
@@ -89,8 +90,9 @@ export function createUnderstandingRoutes(deps: Dependencies): { rpc: RpcHandler
         const p = parse(WatchSchema, input);
         assessmentId = p.assessmentId;
         const owner = await ownerFor(assessmentId);
+        // The stream holds no maintenance lock; each refresh takes it with no wait and is skipped during maintenance.
         const refresh = (): void => {
-          chain = chain.then(async () => {
+          chain = chain.then(() => withRefreshHold(async () => {
             if (closed || signal.aborted) return;
             try {
               const currentOwner = await ownerFor(assessmentId);
@@ -101,7 +103,7 @@ export function createUnderstandingRoutes(deps: Dependencies): { rpc: RpcHandler
                 send({ id: 0, stream: 'progress', data: { protocolVersion: 1, type: 'snapshot', assessmentId, revision, view } });
               }
             } catch (error) { if (error instanceof AssessmentError && error.code === 'not-found') close('unavailable'); else fatal(error); }
-          }).catch(fatal);
+          })).catch(fatal);
         };
         unsubscribe = await service().subscribe(owner, assessmentId, deleted => { if (deleted) close('deleted'); else refresh(); });
         if (closed || signal.aborted) { unsubscribe(); close(); return; }

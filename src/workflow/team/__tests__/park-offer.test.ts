@@ -195,6 +195,6 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 
 test('the daemon registers the park-offer provider at startup, not only when its step tools are first used', () => {
 	const main = readFileSync(join(__dirname, '..', '..', '..', 'daemon', 'index.ts'), 'utf8');
-	assert.match(main, /installStepDaemonClient\(createInDaemonClient\(rpcHandlers, streamHandlers\)\);\s*\n\s*\/\/[^\n]*\n\s*registerParkOffer\(\);/, 'main() calls registerParkOffer() when the daemon starts');
+	assert.match(main, /installStepDaemonClient\(createInDaemonClient\([\s\S]*?\)\);\s*\n\s*\/\/[^\n]*\n\s*registerParkOffer\(\);/, 'main() calls registerParkOffer() when the daemon starts');
 	assert.match(main, /import \{ registerParkOffer \} from '\.\/steps\/workflow-step\/park-offer\.js'/);
 });

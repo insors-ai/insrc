@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792601292606-xouwc4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T16:48:12.607Z",
+    "model": "claude:opus",
+    "elapsedMs": 81143,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/db/graph/__tests__/helpers/lmdb-open-close.mjs",
+        "src/db/graph/__tests__/helpers/lmdb-worker.mjs",
+        "src/db/graph/__tests__/worker-thread-lock.test.ts",
+        "src/db/__tests__/helpers/store-guard-worker.ts",
+        "src/db/__tests__/store-guard.test.ts",
+        "src/db/store-guard.ts",
+        "src/daemon/threads/__tests__/channel.test.ts",
+        "src/daemon/threads/__tests__/helpers/hub-worker.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/__tests__/helpers/board-worker.ts",
+        "src/daemon/threads/__tests__/registry-board.test.ts",
+        "src/daemon/threads/registry.ts",
+        "src/daemon/threads/status-board.ts",
+        "src/db/graph/__tests__/helpers/health-worker.ts",
+        "src/db/graph/__tests__/store-health-threads.test.ts",
+        "src/db/graph/store.ts",
+        "src/daemon/threads/store-health-hub.ts",
+        "src/db/graph/__tests__/helpers/health-hub-worker.ts",
+        "src/daemon/db/duckdb-pool.ts",
+        "src/db/__tests__/cross-thread-stores.test.ts",
+        "src/db/__tests__/helpers/duckdb-query-worker.ts",
+        "src/db/__tests__/helpers/lance-reader-worker.ts",
+        "src/db/lance/conn.ts",
+        "src/daemon/threads/__tests__/helpers/step-state-worker.ts",
+        "src/daemon/threads/__tests__/step-state.test.ts",
+        "src/daemon/threads/step-state.ts",
+        "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-measure.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-narrow.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+        "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/daemon/steps/analyze-step/phases/bundle.ts",
+        "src/daemon/steps/analyze-step/phases/narrow.ts",
+        "src/daemon/steps/analyze-step/phases/plan.ts",
+        "src/daemon/steps/analyze-step/phases/start.ts",
+        "src/daemon/steps/analyze-step/state-store.ts",
+        "src/daemon/steps/analyze-step/state.ts",
+        "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/handler.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+        "src/daemon/steps/workflow-step/phases/plan.ts",
+        "src/daemon/steps/workflow-step/phases/start.ts",
+        "src/daemon/steps/workflow-step/phases/step.ts",
+        "src/daemon/steps/workflow-step/phases/synthesize.ts",
+        "src/daemon/steps/workflow-step/state-store.ts",
+        "src/daemon/steps/workflow-step/state.ts",
+        "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+        "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+        "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/daemon/steps/code-review-step/state-store.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+        "src/daemon/steps/review-step/handler.ts",
+        "src/daemon/steps/review-step/phases/claims.ts",
+        "src/daemon/steps/review-step/phases/findings.ts",
+        "src/daemon/steps/review-step/phases/start.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/review-step/state-store.ts",
+        "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+        "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+        "src/daemon/threads/__tests__/helpers/store-worker.ts",
+        "src/daemon/threads/__tests__/worker-stores.test.ts",
+        "src/daemon/threads/worker-entry.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/mocks/ontology-editor.html",
+        "docs/mocks/ontology-source/ontology.template.html",
+        "docs/mocks/ontology-source/render.mjs",
+        "docs/mocks/ontology-viewer.html",
+        "docs/ontology-builder-prd.html",
+        "docs/ontology-builder-prd.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/db/graph/store.ts:564",
+            "message": "getGraphStore is marked reached-not-passing: its only reaching edge comes from src/daemon/threads/__tests__/helpers/store-worker.ts, a helper module that the test record does not list. That helper is loaded only by src/daemon/threads/__tests__/worker-stores.test.ts, which the record shows as passing (t10). So the symbol is almost certainly covered by a passing test, but the graph cannot show this directly. The pass-state is unverified, not failing.",
+            "expectationRef": "getGraphStore",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "605990"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/db/graph/store.ts:996",
+            "message": "withWriteTxn is marked reached-not-passing: its only reaching edge comes from the unlisted helper src/daemon/threads/__tests__/helpers/store-worker.ts. That helper is used only by worker-stores.test.ts, which passes, including 'a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread'. The pass-state is unverified through the helper edge, not failing.",
+            "expectationRef": "withWriteTxn",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "606000"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/db/lance/conn.ts:73",
+            "message": "getLanceConn is marked reached-not-passing: its only reaching edge comes from the unlisted helper src/daemon/threads/__tests__/helpers/store-worker.ts, which only the passing worker-stores.test.ts uses (Lance-path refusal and the cross-thread vector tests). The pass-state is unverified through the helper edge, not failing.",
+            "expectationRef": "getLanceConn",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "606019"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/threads/worker-entry.ts:40",
+            "message": "startDaemonWorker is marked reached-not-passing: its only reaching edge comes from the unlisted helper src/daemon/threads/__tests__/helpers/store-worker.ts, which only the passing worker-stores.test.ts uses ('…and startDaemonWorker refuses a main thread'). The pass-state is unverified through the helper edge, not failing.",
+            "expectationRef": "startDaemonWorker",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "605841"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/code-review-step/state-store.ts:48",
+            "message": "Each of the four step state-store modules (analyze, workflow, code-review, review) re-declares its own StateTokenNotFound class and the same saveState/loadState/releaseState/_clear*/_size* wrappers over getStepStateStore(). The only difference between them is the StepKind and the payload type. A generic per-kind adapter would remove four copies of the logic, which can drift apart (for example, one copy changing how a missing token is reported).",
+            "counterpartRef": "src/daemon/steps/analyze-step/state-store.ts StateTokenNotFound / saveState / loadState",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/db/duckdb-pool.ts:208",
+            "message": "errMessage(e: unknown) is a private copy of the identically-signatured errMessage helper in the graph store. Both files are in this change. A shared helper would keep error-message formatting the same across stores.",
+            "counterpartRef": "src/db/graph/store.ts errMessage",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 6
+    }
+  }
+}

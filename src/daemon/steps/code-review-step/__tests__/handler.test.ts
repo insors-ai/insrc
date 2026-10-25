@@ -119,12 +119,12 @@ async function runFullFlow(
 }
 
 // reset the shared state-store between tests (module-level Map)
-const reset = (): void => _clearCodeReviewStateStoreForTests();
+const reset = (): Promise<void> => _clearCodeReviewStateStoreForTests();
 
 // ---- ac1: start => emit_judgements ----
 
 test('start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)', async () => {
-	reset();
+	await reset();
 	const { deps } = makeDeps();
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.equal(start.next, 'emit_judgements');
@@ -141,7 +141,7 @@ test('start => next:emit_judgements with the four prompts + a file:line-pinned D
 // ---- ac2 + ac3: opaque resume => done, persists a CR record via runCodeReview ----
 
 test('the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)', async () => {
-	reset();
+	await reset();
 	const { done, writes } = await runFullFlow({}, judgements({
 		adherence: [{ dimension: 'adherence', severity: 'MED', location: 'src/a.ts:1', message: 'x' }],
 	}));
@@ -162,7 +162,7 @@ test('the opaque token resumes to next:done and persists a CR- record via runCod
 // ---- ac3 parity: out-of-changedFiles finding is dropped ----
 
 test('an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)', async () => {
-	reset();
+	await reset();
 	const { done, writes } = await runFullFlow({}, judgements({
 		adherence: [
 			{ dimension: 'adherence', severity: 'HIGH', location: 'src/a.ts:1',     message: 'in scope' },
@@ -183,7 +183,7 @@ test('an out-of-changedFiles finding is DROPPED so the persisted record matches 
 // ---- ac4: grounding only via the injected fetch ----
 
 test('fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)', async () => {
-	reset();
+	await reset();
 	let fetchCalls = 0;
 	const { deps } = makeDeps({ fetchGrounding: async () => { fetchCalls++; return { ok: true, grounding }; } });
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
@@ -195,7 +195,7 @@ test('fetchGrounding (injected) is the sole grounding source; the emit_judgement
 // ---- vacuous pass: all-empty judgements ----
 
 test('all-empty judgements => a written PASS record (vacuous but valid, ac3)', async () => {
-	reset();
+	await reset();
 	const { done, writes } = await runFullFlow();
 	assert.ok(done.next === 'done');
 	assert.equal(done.verdict, 'pass');
@@ -206,7 +206,7 @@ test('all-empty judgements => a written PASS record (vacuous but valid, ac3)', a
 // ---- ac5: malformed turns => error, no write ----
 
 test('ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write', async () => {
-	reset();
+	await reset();
 	const { deps, writes } = makeDeps();
 	assert.equal(parse(await handleCodeReviewStep(42, deps)).next, 'error');
 	assert.equal(parse(await handleCodeReviewStep({ phase: 'nope' }, deps)).next, 'error');
@@ -217,7 +217,7 @@ test('ac5: non-object input / unknown phase / missing state / unknown token => n
 });
 
 test('ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write', async () => {
-	reset();
+	await reset();
 	const cases: Array<{ label: string; j: unknown }> = [
 		{ label: 'empty',            j: { judgements: [] } },
 		{ label: 'missing dim',      j: { judgements: [{ dimension: 'adherence', findings: [] }, { dimension: 'conventions', findings: [] }, { dimension: 'coverage', findings: [] }] } },
@@ -239,7 +239,7 @@ test('ac5: missing/empty judgements, wrong-dimension set, malformed finding, mal
 // ---- ac5: declined subject + grounding unavailable => error at start ----
 
 test('ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved', async () => {
-	reset();
+	await reset();
 	const declined = makeDeps({ resolveSubject: async () => ({ ok: false, reason: 'no-build-record' }) });
 	const d1 = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, declined.deps));
 	assert.ok(d1.next === 'error' && d1.error.code === 'no-subject');
@@ -252,7 +252,7 @@ test('ac5: a declined subject (no-subject) and a grounding-unavailable start => 
 // ---- double-submit: token consumed on done ----
 
 test('resending the same judgements token after done fails loadState (no double-write)', async () => {
-	reset();
+	await reset();
 	const { deps, writes } = makeDeps();
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');
@@ -264,13 +264,30 @@ test('resending the same judgements token after done fails loadState (no double-
 	assert.equal(writes.length, writesAfterFirst, 'no second write on the consumed token');
 });
 
+test("a superseded code-review token fails with today's not-found message", async () => {
+	await reset();
+	const { deps } = makeDeps();
+	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(start.next === 'emit_judgements');
+	const first = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, deps));
+	assert.equal(first.next, 'done');
+	const resend = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, deps));
+	assert.ok(resend.next === 'error');
+	assert.equal(resend.error.code, 'state-not-found');
+	assert.equal(
+		resend.error.message,
+		`code-review state token '${start.state}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), `
+			+ `the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
+	);
+});
+
 // ---------------------------------------------------------------------------
 // s9 — the indexing-readiness freshness gate
 // ---------------------------------------------------------------------------
 
 // ac1: stale (staleFiles non-empty) and no proceed => confirm_wait, no grounding.
 test('s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called', async () => {
-	reset();
+	await reset();
 	let groundingCalls = 0;
 	const { deps } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -285,7 +302,7 @@ test('s9: start with a stale index (staleFiles) => next:confirm_wait with the st
 
 // ac1: isProcessing (empty staleFiles) also gates.
 test('s9: start with isProcessing:true (empty staleFiles) => confirm_wait too', async () => {
-	reset();
+	await reset();
 	const { deps } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: true, staleFiles: [] }) });
 	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(out.next === 'confirm_wait');
@@ -294,7 +311,7 @@ test('s9: start with isProcessing:true (empty staleFiles) => confirm_wait too', 
 
 // ac4: fresh => straight to emit_judgements; the persisted record is groundingMode:'full'.
 test('s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)', async () => {
-	reset();
+	await reset();
 	const { done, writes } = await runFullFlow();   // makeDeps defaults to fresh
 	assert.ok(done.next === 'done');
 	const json = writes.find(w => w.path.endsWith('.json'))!;
@@ -304,7 +321,7 @@ test('s9: a fresh index proceeds directly to emit_judgements and the persisted r
 
 // ac2: proceed:true block-and-polls until fresh, never reindexes, then continues.
 test('s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements', async () => {
-	reset();
+	await reset();
 	let ticks = 0;
 	let sleeps = 0;
 	const { deps } = makeDeps({
@@ -331,7 +348,7 @@ test('s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh
 // NOT an endless confirm_wait re-prompt (a wedged index never freshens). This
 // flips the pre-S001 behaviour where the timeout re-prompted confirm_wait.
 test('S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt', async () => {
-	reset();
+	await reset();
 	let clock = 0;
 	let diffCalls = 0;
 	const { deps, writes } = makeDeps({
@@ -353,7 +370,7 @@ test('S001: proceed:true that never becomes fresh before the timeout auto-falls-
 // S001 ac1 (token hygiene): the confirm_wait token is consumed before the diff
 // fallback runs, so a resend of it fails loadState (no leaked/double-usable token).
 test('S001: the timeout auto-diff releases the confirm_wait token before the diff review', async () => {
-	reset();
+	await reset();
 	let clock = 0;
 	const { deps } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -373,7 +390,7 @@ test('S001: the timeout auto-diff releases the confirm_wait token before the dif
 // S001 ac2: a FRESH index whose grounding is hollow (symbols:[]) auto-falls-back
 // to the diff review instead of emitting a full-mode review over nothing.
 test('S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit', async () => {
-	reset();
+	await reset();
 	let diffCalls = 0;
 	const { deps } = makeDeps({
 		fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }),   // fresh but empty
@@ -388,7 +405,7 @@ test('S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the dif
 // S001 ac2 (regression): a FRESH index with real (non-empty) grounding still
 // uses the FULL graph path — the auto-diff fallback does NOT fire.
 test('S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)', async () => {
-	reset();
+	await reset();
 	let diffCalls = 0;
 	const { done, writes } = await runFullFlow({
 		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
@@ -402,7 +419,7 @@ test('S001: a fresh index with >=1 changed-symbol still uses the FULL graph revi
 
 // error: freshness IPC failure => error frame, no confirm_wait, no write.
 test('s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write', async () => {
-	reset();
+	await reset();
 	const { deps, writes } = makeDeps({ fetchFreshness: async () => ({ ok: false, reason: 'daemon is not running' }) });
 	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(out.next === 'error' && out.error.code === 'freshness-unavailable');
@@ -430,7 +447,7 @@ async function declineTo(deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput
 
 // ac1: decline no longer fails closed — it runs the diff-only path.
 test('s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error', async () => {
-	reset();
+	await reset();
 	let diffCalls = 0;
 	const { deps } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -444,7 +461,7 @@ test('s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_
 
 // ac3 + ac4: the degraded judgements turn drives runReview with the degraded+cap opts and persists a record.
 test('s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record', async () => {
-	reset();
+	await reset();
 	const { runReview, opts } = reviewSpy();
 	const { deps, writes } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -473,7 +490,7 @@ test('s10: the degraded judgements turn drives runReview with groundingMode:degr
 // build-start file for this Story, so "the resolved base" is what the shipping
 // resolver returns and not a value the test invented.
 test('T48: the degraded review passes the Story\'s resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler', async () => {
-	reset();
+	await reset();
 	const repo = mkdtempSync(join(tmpdir(), 'cr-handler-base-'));
 	try {
 		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -500,7 +517,7 @@ test('T48: the degraded review passes the Story\'s resolved range base and LEDGE
 });
 
 test('T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base', async () => {
-	reset();
+	await reset();
 	const seen: unknown[][] = [];
 	const { deps } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -512,7 +529,7 @@ test('T48: with no resolvable base the degraded review still passes the ledger g
 
 // error: the diff cannot be read => diff-unavailable, nothing written.
 test('s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write', async () => {
-	reset();
+	await reset();
 	const { DiffUnavailableError } = await import('../../../../workflow/code-review/grounding.js');
 	const { deps, writes } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
@@ -526,7 +543,7 @@ test('s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:er
 
 // ac6 regression: the fresh graph path is byte-identical to s9 — runReview gets the DEFAULT opts (no degraded, no cap).
 test('s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full', async () => {
-	reset();
+	await reset();
 	const { runReview, opts } = reviewSpy();
 	const { deps, writes } = await (async () => {
 		const m = makeDeps({ runReview });   // makeDeps defaults to a fresh index
@@ -553,8 +570,8 @@ test('s10 ac6: a fresh index (no decline) still drives runReview with the DEFAUL
 
 /** The flow from the issue's own measurement: findings about real source files
  *  submitted against a changed set that does not contain them. */
-function droppedFlow(): Promise<{ done: CodeReviewStepOutput; writes: { path: string; content: string }[] }> {
-	reset();
+async function droppedFlow(): Promise<{ done: CodeReviewStepOutput; writes: { path: string; content: string }[] }> {
+	await reset();
 	return runFullFlow({}, judgements({
 		adherence: [
 			{ dimension: 'adherence', severity: 'MED',  location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
@@ -617,7 +634,7 @@ test('11e4fa88 — the markdown lists the dropped findings and says they are not
 });
 
 test('11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature', async () => {
-	reset();
+	await reset();
 	const { done, writes } = await runFullFlow({}, judgements({
 		adherence: [{ dimension: 'adherence', severity: 'MED', location: 'src/a.ts:1', message: 'x' }],
 	}));
@@ -658,7 +675,7 @@ async function finish(deps: CodeReviewStepDeps, writes: { path: string; content:
 
 test('a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason', async () => {
 	// Timed out: the record and the done frame carry what the wait was still on.
-	reset();
+	await reset();
 	let t = await timedOutFallback({ inFlight: false, pendingCodeIndexJobs: 4 });
 	let r = await finish(t.deps, t.writes, t.out);
 	const timedOut = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] };
@@ -668,7 +685,7 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	assert.match(t.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff:\*\* the wait for a fresh index timed out after 3 s .*queued: 4; stale files: src\/a\.ts/);
 
 	// proceed:false: declined.
-	reset();
+	await reset();
 	const d = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: true, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: [] }) });
 	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, d.deps));
 	assert.ok(cw.next === 'confirm_wait');
@@ -676,13 +693,13 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	assert.deepEqual(r.body.fallbackReason, { kind: 'declined' });
 
 	// A fresh but hollow grounding: hollow-grounding.
-	reset();
+	await reset();
 	const h = makeDeps({ fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }) });
 	r = await finish(h.deps, h.writes, parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, h.deps)));
 	assert.deepEqual(r.body.fallbackReason, { kind: 'hollow-grounding' });
 
 	// A fresh full review carries none, in the record or the done frame.
-	reset();
+	await reset();
 	const full = await runFullFlow();
 	const fullBody = JSON.parse(full.writes.find(w => w.path.endsWith('.json'))!.content) as { body: Record<string, unknown> };
 	assert.equal(fullBody.body['groundingMode'], 'full');
@@ -691,7 +708,7 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	assert.doesNotMatch(full.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff/);
 
 	// The daemon-reviewed path (code the controller wrote) forwards the reason to the daemon and onto the done frame.
-	reset();
+	await reset();
 	const asked: unknown[] = [];
 	t = await timedOutFallback({ inFlight: true, pendingCodeIndexJobs: 0 }, {
 		readBuildAuthor: () => 'controller',
@@ -708,7 +725,7 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 
 test('on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work', async () => {
 	for (const fresh of [{ inFlight: false, pendingCodeIndexJobs: 2 }, { inFlight: true, pendingCodeIndexJobs: 0 }]) {
-		reset();
+		await reset();
 		const t = await timedOutFallback(fresh);
 		assert.ok(t.out.next === 'emit_judgements');
 		assert.equal(t.writes.length, 0, 'nothing is written before the judgements turn');

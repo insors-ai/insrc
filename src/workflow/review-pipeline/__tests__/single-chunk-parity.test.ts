@@ -34,7 +34,7 @@ import { buildExtractPrompt, EXTRACT_SCHEMA, normalizeClaimsEnvelope } from '../
 import { gatherEvidence } from '../../review/probe.js';
 import { computeReviewVerdict, runReview } from '../../review/review.js';
 import { buildTemplateReviewPrompt, DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor, validateTemplateAnswer } from '../../review/template.js';
-import { buildBatchedVerifyPrompt, buildVerifyPrompt, VERDICTS_SCHEMA, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA } from '../../review/verify.js';
+import { buildBatchedVerifyPrompt, buildVerifyPrompt, VERDICTS_SCHEMA, VERIFY_CALL_STALL_MS, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA } from '../../review/verify.js';
 import { designReviewSnapshot, premiseAdapter, templateCorrection } from '../design-review.js';
 import { applyOutput, createReviewJob, nextCalls, result, runStage } from '../job.js';
 import type { ReviewAdapter } from '../types.js';
@@ -277,7 +277,7 @@ function premiseProvider(fail: { extract?: boolean; verify?: string } = {}): { p
 }
 const asText = (messages: readonly LLMMessage[]): string => messages.map(m => (typeof m.content === 'string' ? m.content : '')).join('\n');
 
-test('an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged', async () => {
+test('an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged', async () => {
 	const repo = defRepo();
 	try {
 		const { provider, seen } = premiseProvider();
@@ -294,7 +294,8 @@ test('an under-limit DEF review makes one extract call, a probe and one verify c
 			const v = buildVerifyPrompt(claim, evidence.find(e => e.claimId === claim.id)!);
 			assert.deepEqual(seen[i + 1]!.messages, [{ role: 'system', content: v.system }, { role: 'user', content: v.user }]);
 			assert.ok(asText(seen[i + 1]!.messages).includes('src/a.ts'), 'the probe\'s matches reached the judgement');
-			assert.equal(seen[i + 1]!.opts?.timeoutMs, VERIFY_CALL_TIMEOUT_MS, 'the 3-minute limit');
+			assert.equal(seen[i + 1]!.opts?.timeoutMs, VERIFY_CALL_TIMEOUT_MS, 'the design-verify cap');
+			assert.equal(seen[i + 1]!.opts?.stallMs, VERIFY_CALL_STALL_MS, 'the design-verify silence limit');
 			assert.equal(seen[i + 1]!.opts?.cwd, repo, 'the repo as cwd, the one addition');
 		});
 		assert.ok(seen.every(c => c.opts?.internalRetry === false));
@@ -409,7 +410,7 @@ test("an HLD answer that breaks the checklist is re-issued once by the pipeline 
 
 		// Broken twice: the review fails with today's message, after exactly two sessions.
 		const twice = run([broken, broken, templateAnswer()]);
-		await assert.rejects(twice.done, new RegExp(`failed checklist ${SPEC_TEMPLATE.id} twice\\. No review was recorded`));
+		await assert.rejects(twice.done, new RegExp(`failed checklist ${SPEC_TEMPLATE.id} \\(2 of 2 attempts were invalid answers\\)\\. No review was recorded`));
 		assert.equal(twice.p.sessions.length, 2, 'the stage never asks a third time');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

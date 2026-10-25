@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -224,3 +224,129 @@ Run at 2026-10-21T06:44:13.783Z on commit `a0a031cf`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/build-step/__tests__/build-step.test.ts` | 0 | 64 | 11.5 s |  |
 | `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` | 0 | 31 | 9.2 s |  |
+
+## t9
+
+Run at 2026-10-21T08:59:36.959Z on commit `3983ca96`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored | `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts` |
+
+**unit: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id | `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts` |
+
+**unit: src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits | `src/workflow/runners/build/__tests__/changed-files.test.ts` |
+
+**unit: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits | `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched | `src/workflow/code-review/__tests__/subject-attribution.test.ts` |
+
+**integration: src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it | `src/workflow/runners/build/__tests__/build-record.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/subject-attribution.test.ts` | 0 | 5 | 1.8 s |  |
+| `src/workflow/runners/build/__tests__/build-record.test.ts` | 0 | 43 | 1.9 s |  |
+| `src/workflow/runners/build/__tests__/changed-files.test.ts` | 0 | 43 | 5.3 s |  |
+| `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts` | 0 | 14 | 4.9 s |  |
+
+## t10
+
+Run at 2026-10-21T09:02:40.553Z on commit `c66188c6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record | `src/workflow/code-review/__tests__/subject-attribution.test.ts` |
+| pass | resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9) | `src/workflow/code-review/__tests__/subject.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/subject-attribution.test.ts` | 0 | 6 | 2.3 s |  |
+| `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 19 | 1.5 s |  |
+
+## t11
+
+Run at 2026-10-21T09:06:42.228Z on commit `ec90553f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces | `src/daemon/tools/builtins/git/__tests__/diff.test.ts` |
+
+**unit: src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call | `src/daemon/tools/builtins/git/__tests__/diff.test.ts` |
+
+**unit: src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/tools/builtins/git/__tests__/diff.test.ts` | 0 | 10 | 2.3 s |  |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 6 | 1.8 s |  |
+| `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 25 | 2.2 s |  |
+
+## t12
+
+Run at 2026-10-21T09:09:57.673Z on commit `d995207c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/tools/__tests__/shell-helper.test.ts: 'a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged | `src/daemon/tools/__tests__/shell-helper.test.ts` |
+
+**integration: src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks | `src/workflow/code-review/__tests__/diff-attribution.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/tools/__tests__/shell-helper.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/workflow/code-review/__tests__/diff-attribution.test.ts` | 0 | 7 | 2 s |  |

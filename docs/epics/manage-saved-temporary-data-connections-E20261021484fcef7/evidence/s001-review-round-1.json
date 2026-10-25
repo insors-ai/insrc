@@ -1,0 +1,161 @@
+{
+  "artifact": "design.story",
+  "stage": "design.story",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "S001 designs the upstream saved-editing, concurrency, credential preservation and truthful-outcome requirements.",
+      "evidence": "DEF S001/ac1 requires duplicate rejection, immutable ID/driver, field retention and explicit credential actions; ac2 requires stale-write protection and preservation on failure; ac3 separates persistence, activation and refresh. LLD \u00a7\u00a72\u20133 and \u00a76 address these through server-side merging, revision gates, immutable secrets, atomic receipts and phase-specific retries. These changes address the actual saveConnectionRpc implementation, which currently stages credentials before reading the registry and upserts by filtering the existing ID. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/db-rpc.ts]",
+      "action": "Retain this scope and the separation between commit, activation and refresh.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current saved mutations use unconditional JSON writes, ID-based upsert and fixed credential references.",
+      "evidence": "saveConnections executes `await writeFile(path, serialized, 'utf8')`. saveConnectionRpc constructs `existing.filter(c => c.id !== cfg.id)` and saves `[...filtered, next]`. makeSecretRef returns `db:${repoId}:${connId}`, and extractUrlPassword calls setSecret before registry persistence. The complete function bodies confirm the migration's description. [files: src/daemon/db/config.ts, src/daemon/db-rpc.ts, src/daemon/db/secrets.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.2",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Saved-only data resolution currently uses the scope's own directory, including nested and unregistered directories.",
+      "evidence": "dataScopeOf returns `{ poolPath: scope.lookupPath, connectionId: scope.connectionId }` for connection scopes and `{ poolPath: scope.value }` otherwise. The existing data-runtime regression test explicitly covers unregistered repo paths, nested manifest directories and workspaces, asserting that every pool opens at the scope's own path. [files: src/analyze/runtimes/data/_shared.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts]",
+      "action": "Preserve these existing regression cases when introducing ConnectionAccessContext.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Full-use driver leases and mutation barriers are new capabilities rather than existing pool behavior.",
+      "evidence": "DriverPool.acquire returns a raw Driver and starts an idle timer; there is no release operation or active-use counter. reload closes changed entries, and the timer calls closeEntry independently of ongoing use. pool-cache shares these pools by path. The existing DuckDB withConnection helper only bounds a query connection to a daemon-wide database; it does not provide revision-pinned application-driver leases. [files: src/daemon/db/pool.ts, src/daemon/db/pool-cache.ts, src/daemon/db/duckdb-pool.ts]",
+      "action": "Keep the new lease service distinct from the existing DuckDB helper with the same proposed helper name.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.2",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The installed DuckDB dependency supplies the appender and private-instance primitives proposed for reuse.",
+      "evidence": "The installed declarations expose `createAppender(table, schema?, catalog?)`, typed append methods, appendDataChunk, appender closeSync, DuckDBInstance.create and instance closeSync. Existing duckdb-pool.ts already creates an instance with `DuckDBInstance.create(':memory:')`. This verifies API availability, not the proposed conversion parity or memory guarantees. [files: node_modules/@duckdb/node-api/lib/DuckDBConnection.d.ts, node_modules/@duckdb/node-api/lib/DuckDBAppender.d.ts, node_modules/@duckdb/node-api/lib/DuckDBInstance.d.ts, src/daemon/db/duckdb-pool.ts]",
+      "action": "Use these installed interfaces and verify type conversion and cleanup behavior in the proposed integration fixtures.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The sc8 change-site inventory identifies the existing execution and cache integration points that must change.",
+      "evidence": "LLD \u00a73.6 lists converter types and four converters but omits converter-cache.ts, drivers/duckdb-file.ts and duckdb-pool.ts. HLD explicitly names the first two as S001 foundational change sites. The actual driver imports global `withConnection`, calls `ensureCached`, and implements close as a no-op because the database is daemon-wide. converter-cache uses `join(cacheRoot(), connectionId, 'files')`; duckdb-pool executes `INSTALL arrow`. Converter refactoring alone cannot connect the proposed private execution policy or replace these cache identities. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/converter-cache.ts, src/daemon/db/duckdb-pool.ts]",
+      "action": "Add these concrete integration sites and specify how the file-driver factory receives FileExecutionPolicy, how every query uses its resource, how close disposes it, and how saved cache callers receive root/revision/options identity.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Preserving pinned family and retaining unknown fields server-side matches the existing registry format and read behavior.",
+      "evidence": "loadConnections returns the parsed document as `file: doc` and constructs resolved records with `{ ...conn, family }`. When family is supplied it uses `family = conn.family` and emits a mismatch warning. The config regression test asserts this behavior. ConnectionConfig also includes recursive and partitioning fields that the current RPC input builder does not preserve, supporting the proposed complete-document merge rather than renderer round-tripping. [files: src/shared/db-driver.ts, src/daemon/db/config.ts, src/daemon/db-rpc.ts, src/daemon/db/__tests__/config.test.ts]",
+      "action": "Include recursive, partitioning and unknown top-level fields in preservation fixtures.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "data-compatibility.2",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The proposed adoption fence is proven to exclude the actual legacy writer on supported deployment filesystems.",
+      "evidence": "The legacy overwrite recipe is confirmed as writeFile against the canonical path, and existing CLI lifecycle code provides shutdown and guarded forced termination. However, the proposed managed writer, maintenance handoff and same-UID fence proof are not implemented. Read-only review could not execute the required inode-replacement and permission experiment. Source inspection therefore does not establish the deployment-specific EACCES guarantee. [files: src/daemon/db/config.ts, src/daemon/lifecycle.ts, src/cli/services/daemon.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md]",
+      "action": "Keep adoption disabled until CM-S1-F/G prove the actual filesystem fence and verify the captured old PID has exited. Use src/cli/services/daemon.ts for the existing stop control; src/daemon/lifecycle.ts alone only provides PID bookkeeping and liveness checks.",
+      "fixability": "manual",
+      "outcome": "could-not-verify"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "S001's shared conversion, lease and saved-management foundations respect the HLD's story ownership.",
+      "evidence": "HLD \u00a7\u00a75\u20136 assigns sc1/sc2/sc3/sc8 to s1, process probes to s2, session storage and propagation to s3, removal coordination to s4, and client UI to s5. Its explicit ownership correction requires S001 to deliver memory-only conversion and private DuckDB lifecycle before both branches. The LLD follows that allocation and supplies extension ports without implementing the adjacent stores or UI. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The design distinguishes registry-read failure, precommit credential failure and postcommit failure using the actual persistence boundaries.",
+      "evidence": "loadConnections already distinguishes ENOENT from other read errors and rejects invalid JSON, but saveConnectionRpc currently swallows load failures with `.catch(() => [])`. secrets.ts and keystore.ts perform independent keychain writes, with no shared JSON transaction. LLD \u00a76 explicitly removes failed-read-as-empty behavior, journals staged generations before commit, reconciles rename uncertainty from receipts, and reports activation/cleanup failures as committed outcomes. [files: src/daemon/db/config.ts, src/daemon/db-rpc.ts, src/daemon/db/secrets.ts, src/shared/keystore.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md]",
+      "action": "Retain separate fault injection at each keychain, write, rename and synchronization boundary.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.2",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The stated decoded-batch budget detects converter memory exhaustion before unbounded decoder allocations occur.",
+      "evidence": "BSON readDocs currently reads the entire file and accumulates all documents before conversion; XLSX constructs a full Workbook and calls workbook.xlsx.readFile before iterating worksheets. The LLD introduces byteSize on emitted batches and a 256 MiB decoded-batch budget, but does not specify how decoder buffers, workbook expansion or pre-batch allocations are bounded. Batch accounting alone does not establish that these existing allocation paths become bounded. [files: src/daemon/db/drivers/converters/bson.ts, src/daemon/db/drivers/converters/xlsx.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md]",
+      "action": "Specify streaming or pre-allocation limits for each decoder, including XLSX expansion and oversized individual BSON documents, and add tests proving failure before exceeding the resource budget with complete cleanup.",
+      "fixability": "manual",
+      "outcome": "could-not-verify"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The proposed acceptance mapping explicitly tests every S001 acceptance obligation.",
+      "evidence": "DEF ac1 requires 'cancel changes nothing'; ac3 requires failed activation/refresh retries not to repeat create. HLD's planned S001 tests explicitly include cancel byte/credential equality, activation-only retry and refresh failure. LLD CM-S1-A\u2013O names activation failure and replay, but no test explicitly exercises draft cancellation equality, activation-only retry, or successful commit followed by failed list refresh and read-only retry. CM-S1-M's cancellation concerns lease release, not canceling an edit. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md, src/daemon/db-rpc.ts]",
+      "action": "Add explicit assertions for cancel preserving registry bytes and keychain values; activation retry preserving revision, receipt and credential generation with zero persistence calls; and refresh failure followed only by a list retry. Map those cases to ac1/ac3.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 2,
+    "low": 10,
+    "unverified": 2
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-21T08:53:34.760Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

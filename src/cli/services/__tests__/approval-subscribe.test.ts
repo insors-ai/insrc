@@ -20,7 +20,7 @@ import { render } from 'ink-testing-library';
 
 import { createApprovalRpc } from '../../../daemon/approval.js';
 import { ApprovalBroker } from '../../../daemon/approval-broker.js';
-import { IpcServer } from '../../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../../daemon/server.js';
 import { createIpcClient } from '../../../shared/ipc-client.js';
 import type { ApprovalRequest } from '../../../shared/types.js';
 import { ApprovalPrompt } from '../../ui/ApprovalPrompt.js';
@@ -39,7 +39,7 @@ const until = async (cond: () => boolean, ms = 4000): Promise<void> => {
 async function startServer(path: string): Promise<{ broker: ApprovalBroker; server: IpcServer }> {
 	const broker = new ApprovalBroker();
 	const rpc = createApprovalRpc(broker);
-	const server = new IpcServer({ 'approval.answer': rpc.answer }, { 'approval.subscribe': rpc.subscribe }, Date.now, path);
+	const server = new IpcServer(directDispatch({ 'approval.answer': rpc.answer }, { 'approval.subscribe': rpc.subscribe }), Date.now, path);
 	await server.listen();
 	return { broker, server };
 }

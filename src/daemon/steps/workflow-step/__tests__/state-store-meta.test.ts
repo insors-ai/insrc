@@ -32,42 +32,42 @@ function withClock<T>(times: readonly number[], fn: () => T): T {
 	try { return fn(); } finally { Date.now = real; }
 }
 
-test('the state store keeps meta beside the payload, carries it through reencodeState and replaceState, lists entries newest first without touching expiry, and an entry saved without meta behaves as before', () => {
+test('the state store keeps meta beside the payload, carries it through reencodeState and replaceState, lists entries newest first without touching expiry, and an entry saved without meta behaves as before', async () => {
 	// encodeState keeps the meta beside the payload; the payload and the token format are unchanged
-	const first = encodeState(payload('r1'), META);
+	const first = await encodeState(payload('r1'), META);
 	assert.match(first, /^[A-Za-z0-9_-]{22}$/);
-	assert.deepEqual(loadState(first), payload('r1'));
+	assert.deepEqual(await loadState(first), payload('r1'));
 	assert.deepEqual(listStates().find(e => e.token === first)?.meta, META);
 
 	// reencodeState and replaceState carry the previous entry's meta onto the replacement
-	const second = reencodeState(first, payload('r1'));
+	const second = await reencodeState(first, payload('r1'));
 	assert.notEqual(second, first);
 	assert.deepEqual(listStates().find(e => e.token === second)?.meta, META);
 	assert.equal(listStates().some(e => e.token === first), false, 'the superseded token is released');
-	const third = replaceState(second, payload('r1'));
+	const third = await replaceState(second, payload('r1'));
 	assert.deepEqual(listStates().find(e => e.token === third)?.meta, META);
 
 	// an entry saved without meta behaves as before and has no owner
-	const plain = saveState(payload('r2'));
+	const plain = await saveState(payload('r2'));
 	assert.equal(listStates().find(e => e.token === plain)?.meta, undefined);
-	assert.equal(loadState(plain).runId, 'r2');
-	const replacedPlain = replaceState(plain, payload('r2'));
+	assert.equal((await loadState(plain)).runId, 'r2');
+	const replacedPlain = await replaceState(plain, payload('r2'));
 	assert.equal(listStates().find(e => e.token === replacedPlain)?.meta, undefined);
 	assert.equal(listStates().find(e => e.token === replacedPlain)?.meta?.owner, undefined);
 
 	// listStates: newest touch first, and reading it moves no expiry
 	_clearWorkflowStateStoreForTests();
 	const base = Date.now();
-	const a = withClock([base + 1_000], () => saveState(payload('a'), { owner: 'a' }));
-	const b = withClock([base + 2_000], () => saveState(payload('b'), { owner: 'b' }));
-	const c = withClock([base + 3_000], () => saveState(payload('c'), { owner: 'c' }));
-	withClock([base + 4_000], () => loadState(a));   // a is now the most recently touched
+	const a = await withClock([base + 1_000], () => saveState(payload('a'), { owner: 'a' }));
+	const b = await withClock([base + 2_000], () => saveState(payload('b'), { owner: 'b' }));
+	const c = await withClock([base + 3_000], () => saveState(payload('c'), { owner: 'c' }));
+	await withClock([base + 4_000], () => loadState(a));   // a is now the most recently touched
 	const before = listStates().map(e => [e.token, e.touchedAt]);
 	assert.deepEqual(before.map(x => x[0]), [a, c, b]);
 	listStates(); listStates();
 	assert.deepEqual(listStates().map(e => [e.token, e.touchedAt]), before, 'listing changed no touch time');
 	// an entry past its time to live is not listed, and listing does not sweep it
-	const stale = withClock([Date.now() - 2 * 60 * 60 * 1000], () => saveState(payload('old'), { owner: 'old' }));
+	const stale = await withClock([Date.now() - 2 * 60 * 60 * 1000], () => saveState(payload('old'), { owner: 'old' }));
 	assert.equal(listStates().some(e => e.token === stale), false);
-	assert.equal(loadState(stale).runId, 'old', 'the stale entry was left for the next save to sweep');
+	assert.equal((await loadState(stale)).runId, 'old', 'the stale entry was left for the next save to sweep');
 });

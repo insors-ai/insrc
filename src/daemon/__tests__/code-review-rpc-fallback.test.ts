@@ -130,7 +130,7 @@ test('codeReview.run with params.fallbackReason writes a record whose body.fallb
 });
 
 test("a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason", async () => {
-	_clearCodeReviewStateStoreForTests();
+	await _clearCodeReviewStateStoreForTests();
 	const r = controllerRepo();
 	try {
 		const rpc = rpcDeps();

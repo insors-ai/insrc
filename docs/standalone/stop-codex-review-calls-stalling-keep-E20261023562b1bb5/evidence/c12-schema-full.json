@@ -1,0 +1,91 @@
+{
+ "type": "object",
+ "required": [
+  "callId",
+  "answer"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "callId": {
+   "type": "string",
+   "const": "fea9a36d-7c35-43e2-a3d2-bb7a4c8b1c7d"
+  },
+  "answer": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "severity",
+    "evidence",
+    "action",
+    "fixability",
+    "proposedFix"
+   ],
+   "properties": {
+    "severity": {
+     "type": "string",
+     "enum": [
+      "HIGH",
+      "MED",
+      "LOW"
+     ]
+    },
+    "evidence": {
+     "type": "string",
+     "minLength": 1
+    },
+    "action": {
+     "type": "string",
+     "minLength": 1
+    },
+    "fixability": {
+     "type": "string",
+     "enum": [
+      "auto",
+      "assisted",
+      "manual"
+     ]
+    },
+    "proposedFix": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "rationale",
+      "artifactEdits",
+      "options"
+     ],
+     "properties": {
+      "rationale": {
+       "type": "string"
+      },
+      "artifactEdits": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "find",
+         "replace"
+        ],
+        "properties": {
+         "find": {
+          "type": "string",
+          "minLength": 1
+         },
+         "replace": {
+          "type": "string"
+         }
+        }
+       }
+      },
+      "options": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

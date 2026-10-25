@@ -301,6 +301,8 @@ describe('SqliteDriver (via pool)', () => {
 		assert.ok(Math.abs(r.slope - 3) < 1e-6, `expected slope ~3 per sec, got ${r.slope}`);
 		// R² = 1 (perfect line)
 		assert.ok(Math.abs(r.r2 - 1) < 1e-6, `expected R² ~1, got ${r.r2}`);
+		// val = 2 + 3 * (x - t0): the intercept at x = 0 is 2 - 3 * t0 (the moments are taken on x - min(x)).
+		assert.ok(Math.abs(r.intercept - (2 - 3 * t0)) < 1e-3, `expected intercept ${2 - 3 * t0}, got ${r.intercept}`);
 		assert.equal(r.minTimestampEpoch, t0);
 		assert.equal(r.maxTimestampEpoch, t0 + 9);
 		await pool.closeAll();

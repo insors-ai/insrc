@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d3a6b651962959a9",
+    "storyId": "S001",
+    "createdAt": "2026-10-21T12:29:25.733Z",
+    "updatedAt": "2026-10-21T12:29:25.733Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-21T12:21:18.488Z",
+    "epicSlug": "read-codex-s-last-agent-message"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "f71c59ae",
+        "ranAt": "2026-10-21T12:29:25.733Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-subprocess.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4806,
+            "titles": [
+              {
+                "title": "a timed-out CLI child is killed with its process group, so a grandchild it started is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured and complete run the CLI in opts.cwd when it is given",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured without opts.cwd runs the CLI in the inherited working directory",
+                "result": "pass"
+              },
+              {
+                "title": "a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run that narrates before answering yields its last agent message to completeStructured and complete",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 569,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

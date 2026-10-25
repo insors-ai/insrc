@@ -1,0 +1,604 @@
+{
+  "artifact": "/Users/subhagho/work/projects/insors/insrc/docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md",
+  "startedAt": "2026-10-24T17:34:33.936Z",
+  "frames": [
+    {
+      "atMs": 204,
+      "at": "2026-10-24T17:34:34.140Z",
+      "progress": 1,
+      "message": "▸ extract"
+    },
+    {
+      "atMs": 60166,
+      "at": "2026-10-24T17:35:34.102Z",
+      "progress": 2,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":60003}"
+    },
+    {
+      "atMs": 120165,
+      "at": "2026-10-24T17:36:34.101Z",
+      "progress": 3,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":120004}"
+    },
+    {
+      "atMs": 180166,
+      "at": "2026-10-24T17:37:34.102Z",
+      "progress": 4,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":180006}"
+    },
+    {
+      "atMs": 240166,
+      "at": "2026-10-24T17:38:34.102Z",
+      "progress": 5,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":240007}"
+    },
+    {
+      "atMs": 280455,
+      "at": "2026-10-24T17:39:14.391Z",
+      "progress": 6,
+      "message": "▸ probe"
+    },
+    {
+      "atMs": 300160,
+      "at": "2026-10-24T17:39:34.096Z",
+      "progress": 7,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":300007}"
+    },
+    {
+      "atMs": 342576,
+      "at": "2026-10-24T17:40:16.512Z",
+      "progress": 8,
+      "message": "▸ verify:p01"
+    },
+    {
+      "atMs": 351518,
+      "at": "2026-10-24T17:40:25.454Z",
+      "progress": 9,
+      "message": "▸ verify:p02"
+    },
+    {
+      "atMs": 360166,
+      "at": "2026-10-24T17:40:34.102Z",
+      "progress": 10,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":360008}"
+    },
+    {
+      "atMs": 362930,
+      "at": "2026-10-24T17:40:36.866Z",
+      "progress": 11,
+      "message": "▸ verify:p03"
+    },
+    {
+      "atMs": 374260,
+      "at": "2026-10-24T17:40:48.196Z",
+      "progress": 12,
+      "message": "▸ verify:p04"
+    },
+    {
+      "atMs": 385825,
+      "at": "2026-10-24T17:40:59.761Z",
+      "progress": 13,
+      "message": "▸ verify:p05"
+    },
+    {
+      "atMs": 392506,
+      "at": "2026-10-24T17:41:06.442Z",
+      "progress": 14,
+      "message": "▸ verify:p06"
+    },
+    {
+      "atMs": 399749,
+      "at": "2026-10-24T17:41:13.685Z",
+      "progress": 15,
+      "message": "▸ verify:p07"
+    },
+    {
+      "atMs": 405851,
+      "at": "2026-10-24T17:41:19.787Z",
+      "progress": 16,
+      "message": "▸ verify:p08"
+    },
+    {
+      "atMs": 418025,
+      "at": "2026-10-24T17:41:31.961Z",
+      "progress": 17,
+      "message": "▸ verify:p09"
+    },
+    {
+      "atMs": 420164,
+      "at": "2026-10-24T17:41:34.100Z",
+      "progress": 18,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":420010}"
+    },
+    {
+      "atMs": 439443,
+      "at": "2026-10-24T17:41:53.379Z",
+      "progress": 19,
+      "message": "▸ verify:p10"
+    },
+    {
+      "atMs": 452200,
+      "at": "2026-10-24T17:42:06.136Z",
+      "progress": 20,
+      "message": "▸ verify:p11"
+    },
+    {
+      "atMs": 459230,
+      "at": "2026-10-24T17:42:13.166Z",
+      "progress": 21,
+      "message": "▸ verify:p12"
+    },
+    {
+      "atMs": 468227,
+      "at": "2026-10-24T17:42:22.163Z",
+      "progress": 22,
+      "message": "▸ verify:p13"
+    },
+    {
+      "atMs": 476913,
+      "at": "2026-10-24T17:42:30.849Z",
+      "progress": 23,
+      "message": "▸ verify:p14"
+    },
+    {
+      "atMs": 480165,
+      "at": "2026-10-24T17:42:34.101Z",
+      "progress": 24,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":480012}"
+    },
+    {
+      "atMs": 486096,
+      "at": "2026-10-24T17:42:40.032Z",
+      "progress": 25,
+      "message": "▸ verify:p15"
+    },
+    {
+      "atMs": 494004,
+      "at": "2026-10-24T17:42:47.940Z",
+      "progress": 26,
+      "message": "▸ verify:p16"
+    },
+    {
+      "atMs": 503461,
+      "at": "2026-10-24T17:42:57.397Z",
+      "progress": 27,
+      "message": "▸ verify:p17"
+    },
+    {
+      "atMs": 511030,
+      "at": "2026-10-24T17:43:04.966Z",
+      "progress": 28,
+      "message": "▸ verify:p18"
+    },
+    {
+      "atMs": 518879,
+      "at": "2026-10-24T17:43:12.815Z",
+      "progress": 29,
+      "message": "▸ verify:p19"
+    },
+    {
+      "atMs": 526345,
+      "at": "2026-10-24T17:43:20.281Z",
+      "progress": 30,
+      "message": "▸ verify:p20"
+    },
+    {
+      "atMs": 533530,
+      "at": "2026-10-24T17:43:27.466Z",
+      "progress": 31,
+      "message": "▸ verify:p21"
+    },
+    {
+      "atMs": 540172,
+      "at": "2026-10-24T17:43:34.108Z",
+      "progress": 32,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":540014}"
+    },
+    {
+      "atMs": 541888,
+      "at": "2026-10-24T17:43:35.824Z",
+      "progress": 33,
+      "message": "▸ verify:p22"
+    },
+    {
+      "atMs": 550525,
+      "at": "2026-10-24T17:43:44.461Z",
+      "progress": 34,
+      "message": "▸ verify:p23"
+    },
+    {
+      "atMs": 567385,
+      "at": "2026-10-24T17:44:01.321Z",
+      "progress": 35,
+      "message": "▸ verify:p24"
+    },
+    {
+      "atMs": 576141,
+      "at": "2026-10-24T17:44:10.077Z",
+      "progress": 36,
+      "message": "▸ verify:p25"
+    },
+    {
+      "atMs": 596828,
+      "at": "2026-10-24T17:44:30.764Z",
+      "progress": 37,
+      "message": "▸ verify:p26"
+    },
+    {
+      "atMs": 600180,
+      "at": "2026-10-24T17:44:34.116Z",
+      "progress": 38,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":600018}"
+    },
+    {
+      "atMs": 606408,
+      "at": "2026-10-24T17:44:40.344Z",
+      "progress": 39,
+      "message": "▸ verify:p27"
+    },
+    {
+      "atMs": 612202,
+      "at": "2026-10-24T17:44:46.138Z",
+      "progress": 40,
+      "message": "▸ verify:p28"
+    },
+    {
+      "atMs": 619194,
+      "at": "2026-10-24T17:44:53.130Z",
+      "progress": 41,
+      "message": "▸ verify:p29"
+    },
+    {
+      "atMs": 626021,
+      "at": "2026-10-24T17:44:59.957Z",
+      "progress": 42,
+      "message": "▸ verify:p30"
+    },
+    {
+      "atMs": 636360,
+      "at": "2026-10-24T17:45:10.296Z",
+      "progress": 43,
+      "message": "▸ verify:p31"
+    },
+    {
+      "atMs": 643926,
+      "at": "2026-10-24T17:45:17.862Z",
+      "progress": 44,
+      "message": "▸ verify:p32"
+    },
+    {
+      "atMs": 655389,
+      "at": "2026-10-24T17:45:29.325Z",
+      "progress": 45,
+      "message": "▸ verify:p33"
+    },
+    {
+      "atMs": 660173,
+      "at": "2026-10-24T17:45:34.109Z",
+      "progress": 46,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":660020}"
+    },
+    {
+      "atMs": 664908,
+      "at": "2026-10-24T17:45:38.844Z",
+      "progress": 47,
+      "message": "▸ verify:p34"
+    },
+    {
+      "atMs": 672875,
+      "at": "2026-10-24T17:45:46.811Z",
+      "progress": 48,
+      "message": "▸ verify:p35"
+    },
+    {
+      "atMs": 682904,
+      "at": "2026-10-24T17:45:56.840Z",
+      "progress": 49,
+      "message": "▸ verify:p36"
+    },
+    {
+      "atMs": 692650,
+      "at": "2026-10-24T17:46:06.586Z",
+      "progress": 50,
+      "message": "▸ verify:p37"
+    },
+    {
+      "atMs": 703106,
+      "at": "2026-10-24T17:46:17.042Z",
+      "progress": 51,
+      "message": "▸ verify:p38"
+    },
+    {
+      "atMs": 710680,
+      "at": "2026-10-24T17:46:24.616Z",
+      "progress": 52,
+      "message": "▸ verify:p39"
+    },
+    {
+      "atMs": 720180,
+      "at": "2026-10-24T17:46:34.116Z",
+      "progress": 53,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":720023}"
+    },
+    {
+      "atMs": 721128,
+      "at": "2026-10-24T17:46:35.064Z",
+      "progress": 54,
+      "message": "▸ verify:p40"
+    },
+    {
+      "atMs": 728534,
+      "at": "2026-10-24T17:46:42.470Z",
+      "progress": 55,
+      "message": "▸ verify:p41"
+    },
+    {
+      "atMs": 736652,
+      "at": "2026-10-24T17:46:50.588Z",
+      "progress": 56,
+      "message": "▸ verify:p42"
+    },
+    {
+      "atMs": 744697,
+      "at": "2026-10-24T17:46:58.633Z",
+      "progress": 57,
+      "message": "▸ verify:p43"
+    },
+    {
+      "atMs": 752442,
+      "at": "2026-10-24T17:47:06.378Z",
+      "progress": 58,
+      "message": "▸ verify:p44"
+    },
+    {
+      "atMs": 761893,
+      "at": "2026-10-24T17:47:15.829Z",
+      "progress": 59,
+      "message": "▸ verify:p45"
+    },
+    {
+      "atMs": 768551,
+      "at": "2026-10-24T17:47:22.487Z",
+      "progress": 60,
+      "message": "▸ verify:p46"
+    },
+    {
+      "atMs": 780184,
+      "at": "2026-10-24T17:47:34.120Z",
+      "progress": 61,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":780026}"
+    },
+    {
+      "atMs": 784570,
+      "at": "2026-10-24T17:47:38.506Z",
+      "progress": 62,
+      "message": "▸ verify:p47"
+    },
+    {
+      "atMs": 792837,
+      "at": "2026-10-24T17:47:46.773Z",
+      "progress": 63,
+      "message": "▸ verify:p48"
+    },
+    {
+      "atMs": 801985,
+      "at": "2026-10-24T17:47:55.921Z",
+      "progress": 64,
+      "message": "▸ verify:p49"
+    },
+    {
+      "atMs": 810029,
+      "at": "2026-10-24T17:48:03.965Z",
+      "progress": 65,
+      "message": "▸ verify:p50"
+    },
+    {
+      "atMs": 819332,
+      "at": "2026-10-24T17:48:13.268Z",
+      "progress": 66,
+      "message": "▸ verify:p51"
+    },
+    {
+      "atMs": 829738,
+      "at": "2026-10-24T17:48:23.674Z",
+      "progress": 67,
+      "message": "▸ verify:p52"
+    },
+    {
+      "atMs": 840186,
+      "at": "2026-10-24T17:48:34.122Z",
+      "progress": 68,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":840028}"
+    },
+    {
+      "atMs": 840582,
+      "at": "2026-10-24T17:48:34.518Z",
+      "progress": 69,
+      "message": "▸ verify:p53"
+    },
+    {
+      "atMs": 850001,
+      "at": "2026-10-24T17:48:43.937Z",
+      "progress": 70,
+      "message": "▸ verify:p54"
+    },
+    {
+      "atMs": 872244,
+      "at": "2026-10-24T17:49:06.180Z",
+      "progress": 71,
+      "message": "▸ verify:p55"
+    },
+    {
+      "atMs": 880789,
+      "at": "2026-10-24T17:49:14.725Z",
+      "progress": 72,
+      "message": "▸ verify:p56"
+    },
+    {
+      "atMs": 892648,
+      "at": "2026-10-24T17:49:26.584Z",
+      "progress": 73,
+      "message": "▸ verify:p57"
+    },
+    {
+      "atMs": 900185,
+      "at": "2026-10-24T17:49:34.121Z",
+      "progress": 74,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":900031}"
+    },
+    {
+      "atMs": 906231,
+      "at": "2026-10-24T17:49:40.167Z",
+      "progress": 75,
+      "message": "▸ verify:p58"
+    },
+    {
+      "atMs": 916338,
+      "at": "2026-10-24T17:49:50.274Z",
+      "progress": 76,
+      "message": "▸ verify:p59"
+    },
+    {
+      "atMs": 939212,
+      "at": "2026-10-24T17:50:13.148Z",
+      "progress": 77,
+      "message": "▸ verify:p60"
+    },
+    {
+      "atMs": 953191,
+      "at": "2026-10-24T17:50:27.127Z",
+      "progress": 78,
+      "message": "▸ verify:p61"
+    },
+    {
+      "atMs": 960194,
+      "at": "2026-10-24T17:50:34.130Z",
+      "progress": 79,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":960035}"
+    },
+    {
+      "atMs": 981110,
+      "at": "2026-10-24T17:50:55.046Z",
+      "progress": 80,
+      "message": "▸ verify:p62"
+    },
+    {
+      "atMs": 999080,
+      "at": "2026-10-24T17:51:13.016Z",
+      "progress": 81,
+      "message": "▸ verify:p63"
+    },
+    {
+      "atMs": 1011624,
+      "at": "2026-10-24T17:51:25.560Z",
+      "progress": 82,
+      "message": "▸ verify:p64"
+    },
+    {
+      "atMs": 1019710,
+      "at": "2026-10-24T17:51:33.646Z",
+      "progress": 83,
+      "message": "▸ verify:p65"
+    },
+    {
+      "atMs": 1020189,
+      "at": "2026-10-24T17:51:34.125Z",
+      "progress": 84,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":1020036}"
+    },
+    {
+      "atMs": 1029130,
+      "at": "2026-10-24T17:51:43.066Z",
+      "progress": 85,
+      "message": "▸ verify:p66"
+    },
+    {
+      "atMs": 1038099,
+      "at": "2026-10-24T17:51:52.035Z",
+      "progress": 86,
+      "message": "▸ verify:p67"
+    },
+    {
+      "atMs": 1057992,
+      "at": "2026-10-24T17:52:11.928Z",
+      "progress": 87,
+      "message": "▸ verify:p68"
+    },
+    {
+      "atMs": 1075104,
+      "at": "2026-10-24T17:52:29.040Z",
+      "progress": 88,
+      "message": "▸ verify:p69"
+    },
+    {
+      "atMs": 1080203,
+      "at": "2026-10-24T17:52:34.139Z",
+      "progress": 89,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":1080038}"
+    },
+    {
+      "atMs": 1094968,
+      "at": "2026-10-24T17:52:48.904Z",
+      "progress": 90,
+      "message": "▸ verify:p70"
+    },
+    {
+      "atMs": 1109681,
+      "at": "2026-10-24T17:53:03.617Z",
+      "progress": 91,
+      "message": "▸ verify:p71"
+    },
+    {
+      "atMs": 1124069,
+      "at": "2026-10-24T17:53:18.005Z",
+      "progress": 92,
+      "message": "▸ verify:p72"
+    },
+    {
+      "atMs": 1140197,
+      "at": "2026-10-24T17:53:34.133Z",
+      "progress": 93,
+      "message": "▸ {\"kind\":\"heartbeat\",\"operation\":\"workflow.review\",\"elapsedMs\":1140041}"
+    },
+    {
+      "atMs": 1142507,
+      "at": "2026-10-24T17:53:36.443Z",
+      "progress": 94,
+      "message": "▸ verify:p73"
+    },
+    {
+      "atMs": 1160530,
+      "at": "2026-10-24T17:53:54.466Z",
+      "progress": 95,
+      "message": "▸ verify:p74"
+    },
+    {
+      "atMs": 1177887,
+      "at": "2026-10-24T17:54:11.823Z",
+      "progress": 96,
+      "message": "▸ verify:p75"
+    },
+    {
+      "atMs": 1193260,
+      "at": "2026-10-24T17:54:27.196Z",
+      "progress": 97,
+      "message": "▸ done"
+    }
+  ],
+  "result": {
+    "isError": false,
+    "next": "done",
+    "verdict": "block",
+    "counts": {
+      "high": 0,
+      "med": 18,
+      "low": 57
+    },
+    "reviewedBy": "daemon"
+  },
+  "finishedAt": "2026-10-24T17:54:27.254Z",
+  "elapsedMs": 1193318,
+  "frameCount": 97,
+  "maxGapMs": 60001,
+  "firstFrameMs": 204
+}

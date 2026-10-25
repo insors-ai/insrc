@@ -22,7 +22,7 @@ import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { closeLanceConn, setLanceConnPath } from '../../db/lance/conn.js';
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import type { StreamHandler } from '../../daemon/server.js';
 import { handleAnalyzeStep } from '../../daemon/steps/analyze-step/handler.js';
 import { handleWorkflowStep } from '../../daemon/steps/workflow-step/handler.js';
@@ -227,7 +227,7 @@ test('ac3: with no daemon every moved tool returns DaemonUnreachableError throug
 	mkdirSync(join(old, '.insrc'), { recursive: true });
 	let ran = 0;
 	const other: StreamHandler = async (_p, send) => { ran += 1; send({ id: 0, stream: 'done', data: {} }); };
-	const ipc = new IpcServer({ 'daemon.status': async () => { ran += 1; return {}; } }, { 'workflow.review': other });
+	const ipc = new IpcServer(directDispatch({ 'daemon.status': async () => { ran += 1; return {}; } }, { 'workflow.review': other }));
 	const server = createServer((s: Socket) => { (ipc as unknown as { handleConnection(x: Socket): void }).handleConnection(s); });
 	await new Promise<void>(r => server.listen(sockOf(old), () => r()));
 	try {

@@ -118,7 +118,7 @@ function parse(env: { content: { text: string }[] }): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 test('review-step drives the full loop and records the review with model=client', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const fx = makeFixture();
 	try {
 		// --- start ---
@@ -184,7 +184,7 @@ test('review-step drives the full loop and records the review with model=client'
 // ---------------------------------------------------------------------------
 
 test('review-step verdicts with an unknown state token returns an error envelope', async () => {
-	_clearReviewStateStoreForTests();
+	await _clearReviewStateStoreForTests();
 	const env = await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: 'no-such-token' });
 	assert.equal(env.isError, true);
 	const out = parse(env);

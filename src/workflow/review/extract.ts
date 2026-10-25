@@ -17,6 +17,7 @@
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type { Claim, ClaimKind } from './types.js';
+import { structuredLimits } from './call-limits.js';
 
 const log = getLogger('review');
 
@@ -178,7 +179,7 @@ export async function extractClaims(
 	const env = await provider.completeStructured<ClaimsEnvelope>(
 		messages,
 		EXTRACT_SCHEMA,
-		signal !== undefined ? { signal } : {},
+		{ ...structuredLimits('design-extract'), ...(signal !== undefined ? { signal } : {}) },
 	);
 
 	const claims = normalizeClaims(env.claims);

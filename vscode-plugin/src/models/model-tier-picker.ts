@@ -82,7 +82,7 @@ const PROVIDERS: ReadonlyArray<{ readonly id: ModelProvider; readonly label: str
 
 /** The QuickPick item the flow drives; `kind` names its role so the k7 states live here. */
 interface PickItem extends QuickPickItemLike {
-  readonly kind: 'tier' | 'provider' | 'model' | 'refresh' | 'current-not-in-catalog' | 'no-models';
+  readonly kind: 'tier' | 'provider' | 'model' | 'refresh' | 'current-not-in-catalog' | 'no-models' | 'effort';
   /** Present on a model item (its id) and a provider item (the ModelProvider). */
   readonly value?: string;
 }
@@ -107,8 +107,9 @@ function effective(snapshot: ConfigCatalogSnapshot, path: string): unknown {
  * Run the 'insrc: Set model tier' flow. Picks a tier, reads its effective runner +
  * model, lets the user (re)choose the provider then a model from the daemon's
  * authoritative list, and writes the chosen model (and the runner on a provider
- * switch) via the sc8 writeKeyPath ARRAY form. Never throws; a cancel at any step
- * is a clean no-op; every failure/empty path leaves the saved value untouched.
+ * switch) via the sc8 writeKeyPath ARRAY form, then, for a CLI tier, offers the
+ * tier's reasoning effort and writes it when it changes. Never throws; a cancel at
+ * any step is a clean no-op; every failure/empty path leaves the saved value untouched.
  */
 export async function runSetModelTier(deps: SetModelTierDeps): Promise<void> {
   // A single outer backstop so NOTHING escapes into VS Code (never-throw idiom):
@@ -183,9 +184,40 @@ async function runSetModelTierInner(deps: SetModelTierDeps): Promise<void> {
     if (chosen.kind === 'current-not-in-catalog') return; // non-selectable — no-op.
     // A real model pick.
     const modelId = chosen.value ?? '';
-    if (!providerChanged && modelId === savedModel) return; // idempotent — no needless write.
-    await commit(deps, tier, provider, providerChanged, modelId);
+    // Idempotent: an unchanged model needs no write, but its effort can still be set.
+    if (providerChanged || modelId !== savedModel) {
+      if (!(await commit(deps, tier, provider, providerChanged, modelId))) return;
+    }
+    // 5) A CLI tier's reasoning effort ('' = the CLI's own default); Ollama takes none.
+    if (provider !== 'ollama') await pickAndWriteEffort(deps, tier, readString(effective(snapshot, `models.tiers.${tier}.effort`)) ?? '');
     return;
+  }
+}
+
+/** The effort values offered: the CLI default ('') and the catalog row's enum, from the plugin's bundled catalog. */
+function effortValues(tier: Tier): readonly string[] {
+  return CONFIG_CATALOG.find((o) => o.path === `models.tiers.${tier}.effort`)?.enumValues ?? [];
+}
+
+/** Step 5 — the effort dropdown (current marked); writes ['models','tiers',tier,'effort'] when it changes. */
+async function pickAndWriteEffort(deps: SetModelTierDeps, tier: Tier, current: string): Promise<void> {
+  const values = effortValues(tier);
+  if (values.length === 0) return;
+  const items: PickItem[] = values.map((v) => {
+    const label = v === '' ? 'CLI default' : v;
+    return v === current
+      ? { label, description: '(current)', kind: 'effort' as const, value: v }
+      : { label, kind: 'effort' as const, value: v };
+  });
+  const picked = await deps.pick(items, { placeHolder: `Select the reasoning effort for the ${tier} tier` });
+  if (picked === undefined || picked.value === undefined || picked.value === current) return; // cancel / unchanged — no write.
+  try {
+    const w = await deps.writeKeyPath(['models', 'tiers', tier, 'effort'], picked.value);
+    deps.notify(w.ok
+      ? `insrc: ${tier} tier reasoning effort set to ${picked.value === '' ? 'the CLI default' : picked.value}.`
+      : `insrc: could not set the ${tier} reasoning effort — ${w.reason}.`);
+  } catch {
+    deps.notify(`insrc: couldn't save the ${tier} reasoning effort — is the daemon running?`);
   }
 }
 
@@ -268,14 +300,14 @@ function modelLabel(m: ModelInfo): string {
   return m.displayName !== undefined && m.displayName.length > 0 ? m.displayName : m.id;
 }
 
-/** Write the chosen model (and the runner on a provider switch); surface the outcome. */
+/** Write the chosen model (and the runner on a provider switch); surface the outcome. True when it was saved. */
 async function commit(
   deps: SetModelTierDeps,
   tier: Tier,
   provider: ModelProvider,
   providerChanged: boolean,
   modelId: string,
-): Promise<void> {
+): Promise<boolean> {
   // The write seam (config.write over the socket) can REJECT if the daemon went
   // down between the pick and the write — guard it so nothing escapes (never-throw).
   try {
@@ -283,7 +315,7 @@ async function commit(
       const r = await deps.writeKeyPath(['models', 'tiers', tier, 'runner'], provider);
       if (!r.ok) {
         deps.notify(`insrc: could not set the ${tier} provider — ${r.reason}. Nothing was changed.`);
-        return;
+        return false;
       }
     }
     const w = await deps.writeKeyPath(['models', 'tiers', tier, 'model'], modelId);
@@ -294,14 +326,16 @@ async function commit(
         ? ` The provider was changed to ${providerLabel(provider)} but the model was NOT set — re-run to finish.`
         : '';
       deps.notify(`insrc: could not set the ${tier} model — ${w.reason}.${partial}`);
-      return;
+      return false;
     }
     deps.notify(`insrc: ${tier} tier set to ${modelId} (${providerLabel(provider)}).`);
+    return true;
   } catch {
     // A socket rejection mid-write. On a switch the runner may already have landed;
     // tell the user so a half-applied tier is visible, not silent.
     const partial = providerChanged ? ' The provider change may have partially applied — re-run to confirm.' : '';
     deps.notify(`insrc: couldn't save the ${tier} tier — is the daemon running?${partial}`);
+    return false;
   }
 }
 

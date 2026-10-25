@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { test } from 'node:test';
+import { mock, test } from 'node:test';
 import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
@@ -32,7 +32,8 @@ afterAll(async () => {
 
 import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../workflow/review/template.js';
-import { workflowReviewStart } from '../workflow-review-rpc.js';
+import { WORKFLOW_REVIEW_HEARTBEAT_MS, workflowReviewStart } from '../workflow-review-rpc.js';
+import { reviewArtifactFile } from '../../workflow/review/index.js';
 import type { WorkflowReviewDeps, WorkflowReviewDone } from '../workflow-review-rpc.js';
 import { envelopeProvider } from '../../workflow/review-pipeline/__tests__/enveloped.js';
 import { lifecycleReviewOf } from '../../workflow/artifact-core/approval-view.js';
@@ -167,4 +168,66 @@ test('a bad request, a missing artifact and a failing review each end in one err
 		assert.equal(last.stream, 'error');
 		assert.match((last.data as { error: string }).error, /passed its time limit/);
 	} finally { f.cleanup(); }
+});
+
+test('workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged', async () => {
+	assert.equal(WORKFLOW_REVIEW_HEARTBEAT_MS, 60_000);
+	const beatsOf = (frames: readonly IpcStreamMessage[]) => frames.filter(m => m.stream === 'progress' && (m.data as { kind: string }).kind === 'heartbeat');
+	const f = fixture('LLD', { authoredBy: 'controller' });
+	mock.timers.enable({ apis: ['setInterval'] });
+	try {
+		// A review held open while three heartbeat periods pass, then let finish.
+		let release!: () => void;
+		const gate = new Promise<void>(r => { release = r; });
+		let entered!: () => void;
+		const inReview = new Promise<void>(r => { entered = r; });
+		const frames: IpcStreamMessage[] = [];
+		const p = countingProvider();
+		const running = workflowReviewStart({ artifactPath: f.md, repo: f.repo }, m => frames.push(m), new AbortController().signal, {
+			...withProvider(p.provider),
+			review: async o => { o.onProgress?.('template'); entered(); await gate; return reviewArtifactFile(o); },
+		});
+		await inReview;
+		assert.equal(beatsOf(frames).length, 0, 'none before the first period');
+		for (let i = 0; i < 3; i++) mock.timers.tick(WORKFLOW_REVIEW_HEARTBEAT_MS);
+		const beats = beatsOf(frames);
+		assert.equal(beats.length, 3, 'one per 60 s');
+		for (const b of beats) {
+			const d = b.data as { operation: string; elapsedMs: number };
+			assert.equal(d.operation, 'workflow.review');
+			assert.ok(typeof d.elapsedMs === 'number' && d.elapsedMs >= 0);
+		}
+		release();
+		await running;
+		assert.equal(frames[frames.length - 1]!.stream, 'done');
+		// Stage frames keep their shape.
+		const stages = frames.filter(m => m.stream === 'progress' && (m.data as { kind: string }).kind === 'stage');
+		assert.deepEqual(stages[0]!.data, { kind: 'stage', operation: 'workflow.review', stageId: 'template', stageLabel: 'template', index: 0, total: null });
+		const count = frames.length;
+		mock.timers.tick(WORKFLOW_REVIEW_HEARTBEAT_MS * 3);
+		assert.equal(frames.length, count, 'no heartbeat after done');
+
+		// A review that fails: the heartbeat stops at the error frame too.
+		const failed: IpcStreamMessage[] = [];
+		let fail!: () => void;
+		const failing = new Promise<void>(r => { fail = r; });
+		let started!: () => void;
+		const inFailing = new Promise<void>(r => { started = r; });
+		const ending = workflowReviewStart({ artifactPath: f.md, repo: f.repo }, m => failed.push(m), new AbortController().signal, {
+			...withProvider(p.provider),
+			review: async () => { started(); await failing; throw new Error('the reviewer session passed its time limit'); },
+		});
+		await inFailing;
+		mock.timers.tick(WORKFLOW_REVIEW_HEARTBEAT_MS);
+		assert.equal(beatsOf(failed).length, 1);
+		fail();
+		await ending;
+		assert.equal(failed[failed.length - 1]!.stream, 'error');
+		const errCount = failed.length;
+		mock.timers.tick(WORKFLOW_REVIEW_HEARTBEAT_MS * 3);
+		assert.equal(failed.length, errCount, 'no heartbeat after error');
+	} finally {
+		mock.timers.reset();
+		f.cleanup();
+	}
 });

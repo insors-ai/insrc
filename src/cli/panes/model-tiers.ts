@@ -15,8 +15,8 @@
  * the daemon-owned config service.
  */
 
-import type { AnalyzeTiering, TierModel, TierName } from '../../config/analyze.js';
-import { DEFAULT_TIERS } from '../../config/analyze.js';
+import type { AnalyzeTiering, TierEffort, TierModel, TierName } from '../../config/analyze.js';
+import { DEFAULT_TIERS, resolveTier, TIER_EFFORTS } from '../../config/analyze.js';
 import type { Criticality } from '../../config/role-taxonomy.js';
 import { reasoningRoleTaxonomy } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
@@ -59,8 +59,9 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
 	const tiers: Record<TierName, TierModel> = { core: DEFAULT_TIERS.core, mid: DEFAULT_TIERS.mid, cheap: DEFAULT_TIERS.cheap };
 	const tierSource: Record<TierName, 'config' | 'default'> = { core: 'default', mid: 'default', cheap: 'default' };
 	for (const t of TIER_NAMES) {
-		const configured = tiering.tiers?.[t];
-		if (configured !== undefined) { tiers[t] = configured; tierSource[t] = 'config'; }
+		// The same fallback the config applies: a default tier keeps its configured effort.
+		tiers[t] = resolveTier(tiering, t);
+		if (tiering.tiers?.[t] !== undefined) tierSource[t] = 'config';
 	}
 
 	const coreFloor: TierName = tiering.coreFloor ?? DEFAULT_CORE_FLOOR;
@@ -91,9 +92,17 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
 	return { tiers, tierSource, coreFloor, coreFloorSource, roles, staleOverrides };
 }
 
-/** The config dot-path for a tier's runner/model field (for config.write). */
-export function tierFieldPath(tier: TierName, field: 'runner' | 'model'): string {
+/** The config dot-path for a tier's runner/model/effort field (for config.write). */
+export function tierFieldPath(tier: TierName, field: 'runner' | 'model' | 'effort'): string {
 	return `models.tiers.${tier}.${field}`;
+}
+
+/** The effort values the pane cycles through; '' is the CLI's own default. */
+export const EFFORT_CYCLE: readonly ('' | TierEffort)[] = ['', ...TIER_EFFORTS];
+
+/** The effort after `current` in EFFORT_CYCLE (wrapping back to the CLI default). */
+export function nextEffort(current: TierEffort | undefined): '' | TierEffort {
+	return EFFORT_CYCLE[(EFFORT_CYCLE.indexOf(current ?? '') + 1) % EFFORT_CYCLE.length]!;
 }
 
 /** The config dot-path for a role's tier override.

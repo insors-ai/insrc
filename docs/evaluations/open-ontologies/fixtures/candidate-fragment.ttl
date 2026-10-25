@@ -1,0 +1,1 @@
+@prefix ex: <urn:insrc:eval:> . ex:Customer ex:domain "Commerce" .

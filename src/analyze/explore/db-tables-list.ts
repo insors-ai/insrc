@@ -17,6 +17,8 @@
  */
 
 import { acquirePool } from '../../daemon/db/index.js';
+import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
+import { analysisConnectionContext } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import type { KvDriver, RdbmsDriver } from '../../daemon/db/index.js';
 
@@ -83,89 +85,90 @@ export async function runDbTablesList(
 	// The registry cannot be read, the connection cannot be opened, or the
 	// listing call fails: the lookup could not run. Each throws, and the
 	// executor reports the lookup as failed.
-	const pool = await acquire(ctx.repoPath);
-	const driver = await pool.acquire(params.connectionId);
+	const resolver = createConnectionResolver({ poolSource: acquire });
+	return resolver.withConnection(analysisConnectionContext(ctx.repoPath), params.connectionId, async driver => {
 
-	const family = driver.family;
-	let tables: DbTableSummary[] = [];
-	let truncated = false;
-	let notFoundNote = '';
-	// A driver that cannot list is an expected condition: the result is
-	// returned and its record names the listing as skipped.
-	let unsupported: string | undefined;
+		const family = driver.family;
+		let tables: DbTableSummary[] = [];
+		let truncated = false;
+		let notFoundNote = '';
+		// A driver that cannot list is an expected condition: the result is
+		// returned and its record names the listing as skipped.
+		let unsupported: string | undefined;
 
-	if (family === 'rdbms') {
-		const rdbms = driver as RdbmsDriver;
-		if (rdbms.listTables === undefined) {
-			notFoundNote = `Driver kind '${driver.kind}' does not implement listTables.`;
-			unsupported = notFoundNote;
-		} else {
-			const opts: { readonly schema?: string; readonly limit?: number } =
-				params.schema !== undefined ? { schema: params.schema, limit } : { limit };
-			const listing = await rdbms.listTables(opts);
-			tables = listing.tables.map(t => ({
-				name:   t.name,
-				...(t.schema !== undefined ? { schema: t.schema } : {}),
-				kind:   t.kind,
-				...(t.approxRowCount !== undefined ? { rowEstimate: t.approxRowCount } : {}),
-			}));
-			truncated = listing.truncated;
-		}
-	} else if (family === 'kv') {
-		const kv = driver as KvDriver;
-		if (kv.listNamespaces === undefined) {
-			notFoundNote = `Driver kind '${driver.kind}' does not implement listNamespaces.`;
-			unsupported = notFoundNote;
-		} else {
-			const listing = await kv.listNamespaces({ limit });
-			tables = listing.namespaces.map(n => ({
-				name: n.name,
-				kind: n.kind ?? 'namespace',
-				...(n.approxCount !== undefined ? { rowEstimate: n.approxCount } : {}),
-			}));
-			truncated = listing.truncated;
-			if (!listing.supported) {
-				notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
+		if (family === 'rdbms') {
+			const rdbms = driver as RdbmsDriver;
+			if (rdbms.listTables === undefined) {
+				notFoundNote = `Driver kind '${driver.kind}' does not implement listTables.`;
 				unsupported = notFoundNote;
+			} else {
+				const opts: { readonly schema?: string; readonly limit?: number } =
+					params.schema !== undefined ? { schema: params.schema, limit } : { limit };
+				const listing = await rdbms.listTables(opts);
+				tables = listing.tables.map(t => ({
+					name:   t.name,
+					...(t.schema !== undefined ? { schema: t.schema } : {}),
+					kind:   t.kind,
+					...(t.approxRowCount !== undefined ? { rowEstimate: t.approxRowCount } : {}),
+				}));
+				truncated = listing.truncated;
 			}
+		} else if (family === 'kv') {
+			const kv = driver as KvDriver;
+			if (kv.listNamespaces === undefined) {
+				notFoundNote = `Driver kind '${driver.kind}' does not implement listNamespaces.`;
+				unsupported = notFoundNote;
+			} else {
+				const listing = await kv.listNamespaces({ limit });
+				tables = listing.namespaces.map(n => ({
+					name: n.name,
+					kind: n.kind ?? 'namespace',
+					...(n.approxCount !== undefined ? { rowEstimate: n.approxCount } : {}),
+				}));
+				truncated = listing.truncated;
+				if (!listing.supported) {
+					notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
+					unsupported = notFoundNote;
+				}
+			}
+		} else {
+			// family === 'file'; each connection is a single target (a
+			// file or a directory-as-table). No cross-target listing --
+			// surface the connection itself as the only "table".
+			notFoundNote =
+				`Connection '${params.connectionId}' is a file-family driver -- ` +
+				`each connection is a single target and does not enumerate multiple tables.`;
 		}
-	} else {
-		// family === 'file'; each connection is a single target (a
-		// file or a directory-as-table). No cross-target listing --
-		// surface the connection itself as the only "table".
-		notFoundNote =
-			`Connection '${params.connectionId}' is a file-family driver -- ` +
-			`each connection is a single target and does not enumerate multiple tables.`;
-	}
 
-	log.info(
-		{
-			runId:        ctx.runId,
+		log.info(
+			{
+				runId:        ctx.runId,
+				connectionId: params.connectionId,
+				family,
+				tables:       tables.length,
+				truncated,
+			},
+			'db.tables.list: complete',
+		);
+
+		const completeness = buildCompleteness({
+			returned: tables.length,
+			// The driver's own cut flag: it stopped at the limit it was given.
+			limited:  truncated ? [reachedLimit(family === 'kv' ? 'namespaces' : 'tables', limit, 'overall', null)] : [],
+			skipped:  unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : [],
+			basis:    'data-source',
+			...(family === 'file' ? { basisNote: notFoundNote } : {}),
+		});
+
+		return {
+			type:         'db.tables.list',
+			completeness,
 			connectionId: params.connectionId,
 			family,
-			tables:       tables.length,
-			truncated,
-		},
-		'db.tables.list: complete',
-	);
-
-	const completeness = buildCompleteness({
-		returned: tables.length,
-		// The driver's own cut flag: it stopped at the limit it was given.
-		limited:  truncated ? [reachedLimit(family === 'kv' ? 'namespaces' : 'tables', limit, 'overall', null)] : [],
-		skipped:  unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : [],
-		basis:    'data-source',
-		...(family === 'file' ? { basisNote: notFoundNote } : {}),
+			tables,
+			// A note that reports an unsupported listing is in the record;
+			// the note left here explains an empty listing that is complete.
+			notFoundNote: unsupported !== undefined ? '' : notFoundNote,
+		};
 	});
-
-	return {
-		type:         'db.tables.list',
-		completeness,
-		connectionId: params.connectionId,
-		family,
-		tables,
-		// A note that reports an unsupported listing is in the record;
-		// the note left here explains an empty listing that is complete.
-		notFoundNote: unsupported !== undefined ? '' : notFoundNote,
-	};
 }

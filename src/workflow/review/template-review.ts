@@ -89,9 +89,10 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 		// A cancel of this review keeps today's message; a provider's own abort propagates as it was.
 		if (opts.signal?.aborted === true) throw new Error('review: aborted');
 		if (err instanceof ReviewCallFailedError && err.stage === 'template' && err.cause === 'invalid-answer') {
-			log.warn({ stage, template: template.id }, 'review:template: the answer failed the checklist twice');
+			const tried = `${err.invalidAnswers} of ${err.attempts} attempts`;
+			log.warn({ stage, template: template.id, attempts: err.attempts, invalidAnswers: err.invalidAnswers }, `review:template: the answer failed the checklist (${tried})`);
 			throw new Error(
-				`The design review answer failed checklist ${template.id} twice. No review was recorded.\n` +
+				`The design review answer failed checklist ${template.id} (${tried} were invalid answers). No review was recorded.\n` +
 				err.reasons.map(e => `- ${e}`).join('\n'),
 			);
 		}

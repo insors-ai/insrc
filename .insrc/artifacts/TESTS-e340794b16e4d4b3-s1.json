@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "e340794b16e4d4b3",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T08:00:18.039Z",
+    "updatedAt": "2026-10-24T08:02:20.428Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-24T07:31:35.750Z",
+    "epicSlug": "clarify-design-visual-authoring-independent-reviewer"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "230882c4",
+        "ranAt": "2026-10-24T08:02:20.428Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Author/build guides distinguish isolated edits from relationship documentation and select relevant definitions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/visual-guidance.test.ts",
+                "title": "author and builder guidance selects relevant visuals without a blanket ERD rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Reviewer prompt independently assesses artifact necessity without existing definitions and qualifies rendering",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/visual-guidance.test.ts",
+                "title": "reviewer independently checks absent and generated artifacts with honest verdicts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Steering copies and three-round rule remain synchronized",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/visual-guidance.test.ts",
+                "title": "shipped steering copy and review cycle limit remain synchronized",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/visual-guidance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 365,
+            "titles": [
+              {
+                "title": "author and builder guidance selects relevant visuals without a blanket ERD rule",
+                "result": "pass"
+              },
+              {
+                "title": "reviewer independently checks absent and generated artifacts with honest verdicts",
+                "result": "pass"
+              },
+              {
+                "title": "shipped steering copy and review cycle limit remain synchronized",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

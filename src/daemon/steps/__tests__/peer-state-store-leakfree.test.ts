@@ -19,8 +19,17 @@
  * Run: npx tsx --test src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts
  */
 
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { MessageChannel } from 'node:worker_threads';
+
+import { HubClient, serveHub } from '../../threads/channel.js';
+import {
+	HubStepStateStore,
+	installStepStateStore,
+	LocalStepStateStore,
+	stepStateHubHandlers,
+} from '../../threads/step-state.js';
 
 import {
 	saveState as reviewSave,
@@ -40,6 +49,19 @@ import {
 	_codeReviewStateStoreSize,
 } from '../code-review-step/state-store.js';
 import type { CodeReviewStepStatePayload } from '../code-review-step/types.js';
+
+// Both stores are reached through the hub, as they are from a session worker
+// (Epic 86197ac6 s1/t9).
+const hubChannel = new MessageChannel();
+before(() => {
+	serveHub(hubChannel.port1, stepStateHubHandlers(new LocalStepStateStore()));
+	installStepStateStore(new HubStepStateStore(new HubClient(hubChannel.port2)));
+});
+after(() => {
+	installStepStateStore(new LocalStepStateStore());
+	hubChannel.port1.close();
+	hubChannel.port2.close();
+});
 
 const reviewPayload = (): ReviewStepStatePayload => ({
 	runId:       'rev-1',
@@ -62,27 +84,39 @@ const crPayload = (): CodeReviewStepStatePayload => ({
 	subject:     {} as unknown as CodeReviewStepStatePayload['subject'],
 });
 
-test('review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token', () => {
-	_clearReviewStateStoreForTests();
-	const token = reviewSave(reviewPayload());
-	assert.equal(_reviewStateStoreSize(), 1);
+test('review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token', async () => {
+	await _clearReviewStateStoreForTests();
+	const token = await reviewSave(reviewPayload());
+	assert.equal(await _reviewStateStoreSize(), 1);
 	// Many intermediate updates on the SAME token (the claims-phase pattern): no new
 	// token minted, so the store never grows — the leak-free mechanism this fix relies on.
 	for (let i = 0; i < 150; i++) {
-		reviewUpdate(token, { ...reviewPayload(), stage: `turn-${i}` });
-		assert.equal(_reviewStateStoreSize(), 1);
+		await reviewUpdate(token, { ...reviewPayload(), stage: `turn-${i}` });
+		assert.equal(await _reviewStateStoreSize(), 1);
 	}
-	assert.equal(reviewLoad(token).stage, 'turn-149');
-	reviewRelease(token);
-	assert.equal(_reviewStateStoreSize(), 0);
+	assert.equal((await reviewLoad(token)).stage, 'turn-149');
+	await reviewRelease(token);
+	assert.equal(await _reviewStateStoreSize(), 0);
 });
 
-test('code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState', () => {
-	_clearCodeReviewStateStoreForTests();
-	const token = crSave(crPayload());
-	assert.equal(_codeReviewStateStoreSize(), 1);
-	assert.equal(crLoad(token).runId, 'cr-1');
-	crRelease(token);                                   // consumed (the handler.ts:493 property)
-	assert.equal(_codeReviewStateStoreSize(), 0);
-	assert.throws(() => crLoad(token));                 // a resend fails — no double-write
+test('code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState', async () => {
+	await _clearCodeReviewStateStoreForTests();
+	const token = await crSave(crPayload());
+	assert.equal(await _codeReviewStateStoreSize(), 1);
+	assert.equal((await crLoad(token)).runId, 'cr-1');
+	await crRelease(token);                                   // consumed (the handler.ts:493 property)
+	assert.equal(await _codeReviewStateStoreSize(), 0);
+	await assert.rejects(() => crLoad(token));          // a resend fails — no double-write
+});
+
+test("review-step updateState on a released token fails with today's not-found message, across the hub", async () => {
+	await _clearReviewStateStoreForTests();
+	const token = await reviewSave(reviewPayload());
+	await reviewRelease(token);
+	await assert.rejects(
+		() => reviewUpdate(token, reviewPayload()),
+		(err: unknown) => err instanceof Error && err.name === 'StateTokenNotFound'
+			&& err.message === `review state token '${token}' not found while updating: the insrc daemon was restarted, the token went unused for an hour, `
+				+ `or the run was already completed. Start the run again with phase='start'.`,
+	);
 });

@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { trackerSetup, TRACKER_CONFIG_TIMEOUT_MS } from '../services/workflow.js';
 import type { TrackerSetupDeps } from '../services/workflow.js';
 import { makeServices } from '../services/index.js';
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createRepoSettingsHandlers } from '../../daemon/repo-settings.js';
 import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
 import { githubConfigPath } from '../../workflow/config/github.js';
@@ -68,7 +68,7 @@ function setup(): Env {
 async function daemon(env: Env): Promise<{ connect: () => Socket; close: () => Promise<void> }> {
 	const handlers = createRepoSettingsHandlers({ registeredRepos: async () => [env.repo], configPath: githubConfigPath });
 	const ensure = handlers['repo.trackerConfig.ensure']!;
-	const ipc = new IpcServer({ 'repo.trackerConfig.ensure': async (p) => { env.ensureCalls++; return await ensure(p); } });
+	const ipc = new IpcServer(directDispatch({ 'repo.trackerConfig.ensure': async (p) => { env.ensureCalls++; return await ensure(p); } }));
 	const path = join(env.dir, 'd.sock');
 	const server = createServer((s: Socket) => { (ipc as unknown as { handleConnection(s: Socket): void }).handleConnection(s); });
 	await new Promise<void>(r => server.listen(path, () => r()));
@@ -132,7 +132,7 @@ test('config step done, already and failed through the terminal service', async 
 		// A daemon business error becomes a failed step carrying its message.
 		rmSync(env.cfg);
 		const handlers = createRepoSettingsHandlers({ registeredRepos: async () => [], configPath: githubConfigPath });
-		const refusing = new IpcServer({ 'repo.trackerConfig.ensure': handlers['repo.trackerConfig.ensure']! });
+		const refusing = new IpcServer(directDispatch({ 'repo.trackerConfig.ensure': handlers['repo.trackerConfig.ensure']! }));
 		const refusePath = join(env.dir, 'refuse.sock');
 		const refuseServer = createServer((s: Socket) => { (refusing as unknown as { handleConnection(s: Socket): void }).handleConnection(s); });
 		await new Promise<void>(r => refuseServer.listen(refusePath, () => r()));
@@ -225,7 +225,7 @@ test('the remaining setup steps still run after a failed config step', async () 
 
 			// A daemon business error (the repo is not registered with it): failed, other steps still report.
 			const handlers = createRepoSettingsHandlers({ registeredRepos: async () => [], configPath: githubConfigPath });
-			const ipc = new IpcServer({ 'repo.trackerConfig.ensure': handlers['repo.trackerConfig.ensure']! });
+			const ipc = new IpcServer(directDispatch({ 'repo.trackerConfig.ensure': handlers['repo.trackerConfig.ensure']! }));
 			const refusePath = join(env.dir, 'refuse.sock');
 			const refuseServer = createServer((c: Socket) => { (ipc as unknown as { handleConnection(s: Socket): void }).handleConnection(c); });
 			await new Promise<void>(r => refuseServer.listen(refusePath, () => r()));

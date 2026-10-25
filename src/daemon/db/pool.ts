@@ -1,241 +1,296 @@
-/**
- * Per-repo driver pool for the data driver.
- *
- * Responsibilities:
- *   - Lazy build. First tool call for a connection wakes a driver;
- *     subsequent calls reuse it. Drivers are expensive to build
- *     (TCP handshake, TLS, protocol ping) so pooling matters.
- *   - Idle-close. A driver that hasn't been touched in
- *     `IDLE_CLOSE_MS` closes automatically. Keeps open sockets
- *     bounded when the user leaves a session idle.
- *   - Shutdown-close. On daemon shutdown + on explicit pool reload,
- *     all drivers close cleanly.
- *   - Secret resolution. `${secret:<ref>}` tokens in `config.url`
- *     are resolved against the keychain right before the factory
- *     call; drivers see plaintext URLs.
- *
- * Scope: one pool instance per repo. The daemon wires one on demand
- * when a tool asks for a connection by id.
- */
-
+/** Per-directory driver owner. Management eligibility is separate from saved lookup scope. */
 import { access } from 'node:fs/promises';
 import { constants as fsConst } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
-
+import { createHash, randomUUID } from 'node:crypto';
 import { getLogger } from '../../shared/logger.js';
-import type {
-	ConnectionConfig,
-	Driver,
-} from '../../shared/db-driver.js';
+import type { ConnectionConfig, Driver, DriverFactory } from '../../shared/db-driver.js';
+import type { ConnectionLease, SafeConnection } from '../../shared/connection-management.js';
 import { familyOf, getFactory } from './registry.js';
 import { resolveSecrets } from './secrets.js';
 import { loadConnections } from './config.js';
-
+import { safeConnection } from './driver-profiles.js';
+import { RevisionLeaseGate, ConnectionUseError } from './lease-gate.js';
+import { guardedDriver, driverFailure } from './driver-guard.js';
+import { fileExecutionPolicy } from './file-policy.js';
 const log = getLogger('db-pool');
-
 const IDLE_CLOSE_MS = 10 * 60 * 1000;
-
 interface PoolEntry {
 	readonly connectionId: string;
 	readonly config: ConnectionConfig;
+	readonly stored: ConnectionConfig;
+	readonly revision: string;
 	driver: Driver | null;
-	/** In-flight build promise so concurrent first-calls wait for the
-	 *  same driver instead of racing to build duplicates. */
 	building: Promise<Driver> | null;
+	closing: Promise<void> | null;
 	lastUsedAt: number;
 	idleTimer: ReturnType<typeof setTimeout> | null;
 }
-
+export interface DriverPoolOptions {
+	readonly idleCloseMs?: number | undefined;
+	readonly factory?: ((kind: string) => DriverFactory | undefined) | undefined;
+	readonly gate?: RevisionLeaseGate | undefined;
+}
 export class DriverPool {
+	readonly #ownerId = randomUUID();
 	private readonly entries = new Map<string, PoolEntry>();
-
-	constructor(private readonly repoPath: string) { }
-
-	/**
-	 * Load (or reload) the connections file for this pool's repo.
-	 * Replaces the in-memory set of entries; closes drivers whose
-	 * config disappeared or changed.
-	 */
-	async reload(): Promise<{ warnings: readonly string[] }> {
-		const { resolved, warnings } = await loadConnections(this.repoPath);
-
-		const nextIds = new Set(resolved.map(c => c.id));
-		for (const [id, entry] of this.entries) {
-			// Preserve ephemeral entries across reload. The data-analyzer
-			// (and future siblings) can register a one-off local file
-			// connection mid-run; that entry isn't in db-connections.json
-			// so the prune pass would drop it on the next reload triggered
-			// by an unrelated Data Sources edit. Skipping ephemerals here
-			// keeps the analyzer's run-time view of registered connections
-			// stable.
-			if (!nextIds.has(id) && entry.config.ephemeral !== true) {
-				await this.closeEntry(entry);
-				this.entries.delete(id);
-			}
-		}
-
+	readonly #gate: RevisionLeaseGate;
+	readonly #replacing = new Set<string>();
+	#reloadTail: Promise<void> = Promise.resolve();
+	#closing = false;
+	constructor(private readonly repoPath: string, private readonly options: DriverPoolOptions = {}) {
+		this.#gate = options.gate ?? new RevisionLeaseGate(repoPath);
+	}
+	async reload(): Promise<{
+		warnings: readonly string[];
+	}> {
+		if (this.#closing)
+			throw new ConnectionUseError('busy');
+		const run = this.#reloadTail.then(() => this.reloadNow());
+		this.#reloadTail = run.then(() => {
+		}, () => {
+		});
+		return run;
+	}
+	private async reloadNow(): Promise<{
+		warnings: readonly string[];
+	}> {
+		if (this.#closing)
+			throw new ConnectionUseError('busy');
+		const { file, resolved, warnings } = await loadConnections(this.repoPath);
+		const next = new Map<string, PoolEntry>();
 		for (const config of resolved) {
-			const existing = this.entries.get(config.id);
-			if (existing === undefined) {
-				this.entries.set(config.id, {
-					connectionId: config.id,
-					config,
-					driver: null,
-					building: null,
-					lastUsedAt: 0,
-					idleTimer: null,
-				});
-				continue;
-			}
-			if (!shallowEqual(existing.config, config)) {
-				await this.closeEntry(existing);
-				this.entries.set(config.id, {
-					connectionId: config.id,
-					config,
-					driver: null,
-					building: null,
-					lastUsedAt: 0,
-					idleTimer: null,
-				});
-			}
+			const stored = file.connections.find(c => c.id === config.id)!;
+			const revision = file._management?.revisions[config.id] ?? 'legacy:' + createHash('sha256').update(JSON.stringify(stored)).digest('hex');
+			const old = this.entries.get(config.id);
+			next.set(config.id, old && old.revision === revision && shallowEqual(old.config, config) ? old : this.entry(config, stored, revision));
 		}
-
-		log.debug(
-			{ repoPath: this.repoPath, count: this.entries.size },
-			'pool reloaded',
-		);
+		for (const [id, old] of this.entries)
+			if (!next.has(id) && old.config.ephemeral === true)
+				next.set(id, old);
+		// Preflight all replacements before closing any driver. No await between gate sync and blocking new uses.
+		for (const [id, old] of this.entries)
+			if (next.get(id) !== old && this.#gate.snapshot(id).active > 0)
+				throw new ConnectionUseError('busy');
+		this.#gate.sync(new Map([...next].map(([id, e]) => [id, e.revision])));
+		for (const [id, old] of this.entries)
+			if (next.get(id) !== old)
+				this.#replacing.add(id);
+		for (const [id] of next)
+			if (!this.entries.has(id))
+				this.#replacing.add(id);
+		try {
+			for (const [id, old] of this.entries)
+				if (next.get(id) !== old)
+					await this.closeEntry(old);
+			this.entries.clear();
+			for (const [id, e] of next)
+				this.entries.set(id, e);
+		}
+		finally {
+			this.#replacing.clear();
+		}
+		log.debug({ repoPath: this.repoPath, count: this.entries.size }, 'pool reloaded');
 		return { warnings };
 	}
-
-	list(): readonly ConnectionConfig[] {
-		return Array.from(this.entries.values()).map(e => e.config);
+	private entry(config: ConnectionConfig, stored: ConnectionConfig, revision: string): PoolEntry {
+		return { connectionId: config.id, config: structuredClone(config), stored: structuredClone(stored), revision, driver: null, building: null, closing: null, lastUsedAt: 0, idleTimer: null };
 	}
-
-	/**
-	 * Get a live driver for `connectionId`. Builds on first call,
-	 * resets the idle timer, throws when the connection is not in
-	 * config.
-	 */
-	async acquire(connectionId: string): Promise<Driver> {
-		const entry = this.entries.get(connectionId);
-		if (entry === undefined) {
-			throw new Error(
-				`data-driver: no connection '${connectionId}' for repo ${this.repoPath}. ` +
-				`Known: ${Array.from(this.entries.keys()).join(', ') || '(none)'}`,
-			);
+	/** Legacy metadata port; callers migrate to safeList. Returns detached snapshots. */
+	list(): readonly ConnectionConfig[] {
+		return [...this.entries.values()].map(e => structuredClone(e.config));
+	}
+	safeList(): readonly SafeConnection[] {
+		return [...this.entries.values()].map(e => {
+			const key = { repoRoot: this.repoPath, scope: 'saved' as const, id: e.connectionId };
+			try {
+				return safeConnection(e.stored, key, e.revision);
+			}
+			catch {
+				const family = e.config.family ?? familyOf(e.config.kind) ?? 'rdbms';
+				return { key, revision: e.revision, kind: e.config.kind, family, effectiveFamily: family, publicConfig: {}, credentialPresence: {}, hasUrl: e.config.url !== undefined, hasPath: e.config.path !== undefined, ...(e.config.ephemeral === true ? { ephemeral: true as const } : {}), readOnly: true, compatibilityWarning: 'This connection requires a supported driver profile.' };
+			}
+		});
+	}
+	leaseState(id: string) {
+		return this.#gate.snapshot(id);
+	}
+	beginMutation(id: string, mode: 'create' | 'update' | 'remove', expectedRevision?: string): () => void {
+		if (this.#closing || this.#replacing.has(id))
+			throw new ConnectionUseError('busy');
+		return this.#gate.beginMutation(id, mode, expectedRevision);
+	}
+	async lease(id: string): Promise<ConnectionLease> {
+		if (this.#closing || this.#replacing.has(id))
+			throw new ConnectionUseError('busy');
+		const lease = this.#gate.lease(id);
+		return { ...lease, release: async () => {
+				await lease.release();
+				const entry = this.entries.get(id);
+				if (entry && !this.#closing)
+					this.touch(entry);
+			} };
+	}
+	async withConnection<T>(id: string, use: (driver: Driver) => Promise<T>): Promise<T> {
+		const lease = await this.lease(id);
+		let guard: ReturnType<typeof guardedDriver> | undefined;
+		try {
+			const driver = await this.acquire(id);
+			guard = guardedDriver(driver);
+			return await use(guard.driver);
 		}
-		if (entry.driver !== null) {
+		catch (error) {
+			throw driverFailure(error);
+		}
+		finally {
+			try {
+				await guard?.finish();
+			}
+			catch (error) {
+				throw driverFailure(error);
+			}
+			finally {
+				await lease.release();
+			}
+		}
+	}
+	/** @deprecated Raw acquisition is a migration-only port; never use it from a v2 consumer. */
+	async acquire(connectionId: string): Promise<Driver> {
+		if (this.#closing || this.#replacing.has(connectionId))
+			throw new ConnectionUseError('busy');
+		this.#gate.assertAcquirable(connectionId);
+		const entry = this.entries.get(connectionId);
+		if (!entry)
+			throw new ConnectionUseError('not-found');
+		if (entry.closing)
+			await entry.closing;
+		if (this.entries.get(connectionId) !== entry)
+			throw new ConnectionUseError('conflict');
+		if (entry.driver) {
 			this.touch(entry);
 			return entry.driver;
 		}
-		if (entry.building !== null) {
-			return entry.building;
-		}
-		entry.building = this.build(entry).finally(() => {
-			entry.building = null;
-		});
+		if (!entry.building)
+			entry.building = this.build(entry).then(driver => {
+				entry.driver = driver;
+				return driver;
+			}).finally(() => {
+				entry.building = null;
+			});
 		const driver = await entry.building;
-		entry.driver = driver;
 		this.touch(entry);
 		return driver;
 	}
-
 	async closeAll(): Promise<void> {
+		this.#closing = true;
+		await this.#reloadTail;
 		for (const entry of this.entries.values()) {
+			await this.#gate.idle(entry.connectionId);
 			await this.closeEntry(entry);
 		}
 		this.entries.clear();
+		this.#gate.sync(new Map());
 	}
-
-	/**
-	 * Register an ephemeral session-scoped connection -- used by the
-	 * data-analyzer (and future siblings) when the user references a
-	 * local file path in their prompt that isn't in
-	 * db-connections.json. Idempotent: replaces any existing entry
-	 * with the same id, closing the previous driver. The entry is
-	 * marked `ephemeral: true` so `reload()` preserves it across
-	 * unrelated Data Sources edits.
-	 */
 	async registerEphemeral(config: ConnectionConfig): Promise<void> {
-		const stamped: ConnectionConfig = { ...config, ephemeral: true };
-		const existing = this.entries.get(stamped.id);
-		if (existing !== undefined) {
-			await this.closeEntry(existing);
+		if (this.#closing || this.#gate.snapshot(config.id).barrier !== 'none')
+			throw new ConnectionUseError('busy');
+		const stamped = { ...config, ephemeral: true };
+		const existing = this.entries.get(config.id);
+		const revisions = new Map([...this.entries].map(([id, e]) => [id, e.revision]));
+		const revision = randomUUID();
+		revisions.set(config.id, revision);
+		this.#gate.sync(revisions);
+		this.#replacing.add(config.id);
+		try {
+			if (existing)
+				await this.closeEntry(existing);
+			this.entries.set(config.id, this.entry(stamped, stamped, revision));
 		}
-		this.entries.set(stamped.id, {
-			connectionId: stamped.id,
-			config: stamped,
-			driver: null,
-			building: null,
-			lastUsedAt: 0,
-			idleTimer: null,
-		});
-		log.debug({ id: stamped.id, kind: stamped.kind, path: stamped.path }, 'pool: ephemeral connection registered');
+		finally {
+			this.#replacing.delete(config.id);
+		}
+		log.debug({ id: config.id, kind: config.kind }, 'pool: ephemeral connection registered');
 	}
-
 	private async build(entry: PoolEntry): Promise<Driver> {
-		const factory = getFactory(entry.config.kind);
-		if (factory === undefined) {
-			throw new Error(
-				`data-driver: no driver registered for kind '${entry.config.kind}' ` +
-				`(connection '${entry.config.id}')`,
-			);
-		}
+		const factory = (this.options.factory ?? getFactory)(entry.config.kind);
+		if (!factory)
+			throw new ConnectionUseError('not-found');
 		const withSecrets = await resolveConfigSecrets(entry.config);
-		const resolvedConfig = await resolveConfigPath(withSecrets, this.repoPath);
-		log.debug(
-			{ id: entry.config.id, kind: entry.config.kind },
-			'building driver',
-		);
-		return factory(resolvedConfig);
+		const config = await resolveConfigPath(withSecrets, this.repoPath);
+		log.debug({ id: entry.config.id, kind: entry.config.kind }, 'building driver');
+		return factory(config, familyOf(config.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(config, {
+			lookupRoot: this.repoPath, ownerId: this.#ownerId, revision: entry.revision,
+			persistence: config.ephemeral === true ? 'memory-only' : 'saved-cache',
+		}) } : undefined);
 	}
-
 	private touch(entry: PoolEntry): void {
 		entry.lastUsedAt = Date.now();
-		if (entry.idleTimer !== null) { clearTimeout(entry.idleTimer); }
+		if (entry.idleTimer)
+			clearTimeout(entry.idleTimer);
 		entry.idleTimer = setTimeout(() => {
-			void this.closeEntry(entry).catch(err => {
-				log.warn(
-					{ err: (err as Error).message, id: entry.config.id },
-					'idle-close failed',
-				);
-			});
-		}, IDLE_CLOSE_MS);
+			if (this.#gate.snapshot(entry.connectionId).active > 0) {
+				this.touch(entry);
+				return;
+			}
+			void this.closeEntry(entry).catch(() => log.warn({ id: entry.connectionId }, 'idle-close failed'));
+		}, this.options.idleCloseMs ?? IDLE_CLOSE_MS);
 		entry.idleTimer.unref();
 	}
-
 	private async closeEntry(entry: PoolEntry): Promise<void> {
-		if (entry.idleTimer !== null) {
+		if (entry.closing)
+			return entry.closing;
+		if (this.#gate.snapshot(entry.connectionId).active > 0)
+			throw new ConnectionUseError('busy');
+		if (entry.idleTimer) {
 			clearTimeout(entry.idleTimer);
 			entry.idleTimer = null;
 		}
-		if (entry.driver !== null) {
-			try { await entry.driver.close(); }
-			catch (err) {
-				log.warn(
-					{ err: (err as Error).message, id: entry.config.id },
-					'driver close failed',
-				);
+		const closing = (async () => {
+			if (entry.building)
+				await entry.building.catch(() => {
+				});
+			if (entry.driver) {
+				try {
+					await entry.driver.close();
+				}
+				catch {
+					log.warn({ id: entry.connectionId }, 'driver close failed');
+				}
+				entry.driver = null;
 			}
-			entry.driver = null;
+		})();
+		entry.closing = closing;
+		try {
+			await closing;
+		}
+		finally {
+			entry.closing = null;
 		}
 	}
 }
-
 // ---------------------------------------------------------------------------
 // Pre-build config transforms: secret resolution + file-path resolution
 // ---------------------------------------------------------------------------
-
-async function resolveConfigSecrets(
-	config: ConnectionConfig,
-): Promise<ConnectionConfig> {
-	if (config.url === undefined || !config.url.includes('${secret:')) {
-		return config;
-	}
-	const url = await resolveSecrets(config.url);
-	return { ...config, url };
+async function resolveConfigSecrets(config: ConnectionConfig): Promise<ConnectionConfig> {
+	const visit = async (value: unknown): Promise<unknown> => {
+		if (typeof value === 'string')
+			return resolveSecrets(value);
+		if (Array.isArray(value)) {
+			const result: unknown[] = [];
+			for (const v of value)
+				result.push(await visit(v));
+			return result;
+		}
+		if (value && typeof value === 'object') {
+			const result: Record<string, unknown> = {};
+			for (const [key, v] of Object.entries(value))
+				result[key] = await visit(v);
+			return result;
+		}
+		return value;
+	};
+	return { ...config, ...(config.url === undefined ? {} : { url: await resolveSecrets(config.url) }), ...(config.options === undefined ? {} : { options: await visit(config.options) as Readonly<Record<string, unknown>> }) };
 }
-
 /**
  * For file-family connections, convert the (repo-relative) `path`
  * into an absolute path. Rejects paths that escape the repo root --
@@ -246,13 +301,9 @@ async function resolveConfigSecrets(
  * for RDBMS describe()) into an absolute path against the repo
  * root. Same containment rule.
  */
-async function resolveConfigPath(
-	config: ConnectionConfig,
-	repoRoot: string,
-): Promise<ConnectionConfig> {
+async function resolveConfigPath(config: ConnectionConfig, repoRoot: string): Promise<ConnectionConfig> {
 	const family = familyOf(config.kind);
 	let next: ConnectionConfig = config;
-
 	// File-family connections always carry a `path`. SQLite (rdbms
 	// family) is a single-file db, so it carries `path` too -- treat
 	// both the same for repo-root containment.
@@ -260,42 +311,29 @@ async function resolveConfigPath(
 	if (needsPathResolution && config.path !== undefined) {
 		const abs = await resolveAndCheckRepoPath(config.id, config.path, repoRoot, 'path');
 		next = { ...next, path: abs };
-	} else if (family === 'file' && config.path === undefined) {
+	}
+	else if (family === 'file' && config.path === undefined) {
 		throw new Error(`data-driver: file connection '${config.id}' missing path`);
 	}
-
 	if (config.schemaSource !== undefined) {
-		const abs = await resolveAndCheckRepoPath(
-			config.id, config.schemaSource.path, repoRoot, 'schemaSource.path',
-		);
+		const abs = await resolveAndCheckRepoPath(config.id, config.schemaSource.path, repoRoot, 'schemaSource.path');
 		next = { ...next, schemaSource: { type: config.schemaSource.type, path: abs } };
 	}
-
 	return next;
 }
-
-async function resolveAndCheckRepoPath(
-	connId: string,
-	givenPath: string,
-	repoRoot: string,
-	field: string,
-): Promise<string> {
+async function resolveAndCheckRepoPath(connId: string, givenPath: string, repoRoot: string, field: string): Promise<string> {
 	const abs = isAbsolute(givenPath) ? givenPath : resolve(repoRoot, givenPath);
 	const rel = relative(repoRoot, abs);
 	if (rel.startsWith('..') || isAbsolute(rel)) {
-		throw new Error(
-			`data-driver: connection '${connId}' ${field} '${givenPath}' ` +
-			`resolves outside the repo root`,
-		);
+		throw new Error(`data-driver: connection '${connId}' ${field} '${givenPath}' ` +
+			`resolves outside the repo root`);
 	}
 	await access(abs, fsConst.R_OK);
 	return abs;
 }
-
 // ---------------------------------------------------------------------------
 // Shallow config equality (for reload-aware replacement)
 // ---------------------------------------------------------------------------
-
 function shallowEqual(a: ConnectionConfig, b: ConnectionConfig): boolean {
 	return a.id === b.id
 		&& a.kind === b.kind

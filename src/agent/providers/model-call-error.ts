@@ -28,8 +28,11 @@ export class ModelCallFailedError extends Error {
  * A failure of shape, not of the call.
  */
 export class ModelResponseShapeError extends Error {
-	constructor(message: string) {
+	/** What the answer got wrong, when it was checked against a schema; a re-issue can quote them. */
+	readonly reasons: readonly string[];
+	constructor(message: string, reasons: readonly string[] = []) {
 		super(message);
 		this.name = 'ModelResponseShapeError';
+		this.reasons = reasons;
 	}
 }

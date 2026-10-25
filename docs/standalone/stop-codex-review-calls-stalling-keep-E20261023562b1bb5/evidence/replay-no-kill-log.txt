@@ -1,0 +1,17 @@
+run 1 exit=0 13s outbytes=801 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":179,"reasoning_output_tokens":40}
+run 2 exit=0 35s outbytes=873 "usage":{"input_tokens":17867,"cached_input_tokens":17664,"cache_write_input_tokens":0,"output_tokens":198,"reasoning_output_tokens":46}
+run 3 exit=0 12s outbytes=809 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":230,"reasoning_output_tokens":87}
+run 4 exit=0 12s outbytes=781 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":180,"reasoning_output_tokens":45}
+run 5 exit=0 11s outbytes=794 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":185,"reasoning_output_tokens":48}
+run 6 exit=0 13s outbytes=826 "usage":{"input_tokens":17867,"cached_input_tokens":15872,"cache_write_input_tokens":0,"output_tokens":227,"reasoning_output_tokens":90}
+run 7 exit=0 12s outbytes=800 "usage":{"input_tokens":17019,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":225,"reasoning_output_tokens":85}
+run 8 exit=0 14s outbytes=918 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":229,"reasoning_output_tokens":72}
+run 9 exit=0 11s outbytes=807 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":217,"reasoning_output_tokens":81}
+run 10 exit=0 13s outbytes=819 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":186,"reasoning_output_tokens":43}
+run 11 exit=0 14s outbytes=756 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":193,"reasoning_output_tokens":62}
+run 12 exit=0 11s outbytes=806 "usage":{"input_tokens":17019,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":189,"reasoning_output_tokens":48}
+run 13 exit=0 12s outbytes=792 "usage":{"input_tokens":17019,"cached_input_tokens":13440,"cache_write_input_tokens":0,"output_tokens":169,"reasoning_output_tokens":34}
+run 14 exit=0 11s outbytes=786 "usage":{"input_tokens":17867,"cached_input_tokens":15872,"cache_write_input_tokens":0,"output_tokens":214,"reasoning_output_tokens":77}
+run 15 exit=0 8s outbytes=785 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":182,"reasoning_output_tokens":48}
+run 16 exit=0 11s outbytes=799 "usage":{"input_tokens":17867,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":192,"reasoning_output_tokens":51}
+DONE

@@ -156,10 +156,13 @@ const changeLog = (fx: Fx, storyId: string): string[] =>
 	((buildRecord(fx, storyId).body['changeLog'] ?? []) as { target: { file: string } }[]).map(e => e.target.file).sort();
 
 /** The Story's work: write `file` and commit. `how` says what rides along. */
-function work(fx: Fx, file: string, how: 'everything' | 'source-only'): void {
+/** Commit `file`; with `story`, the commit carries that Story's Insrc-Story
+ *  trailer, as a real build's does. Without one it is untrailered work, which
+ *  after a Story's first BUILD record is not that Story's (ISSUE-b97752e9). */
+function work(fx: Fx, file: string, how: 'everything' | 'source-only', story?: string): void {
 	writeFileSync(join(fx.repo, file), `export const x = '${file}';\n`);
 	if (how === 'everything') fx.git('add', '-A'); else fx.git('add', file);
-	fx.git('commit', '-qm', `work: ${file}`);
+	fx.git('commit', '-qm', story !== undefined ? `work: ${file}\n\nInsrc-Story: ${HASH}/${story}` : `work: ${file}`);
 }
 
 /** Commit whatever records the workflow left behind, so the next build starts clean. */
@@ -248,7 +251,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 
 		await implement(fx, 's1/t1');
 		const start = stampedBase(fx, 's1');
-		work(fx, 'task-one.ts', 'everything');
+		work(fx, 'task-one.ts', 'everything', 's1');
 		await validate(fx, 's1/t1', 't1');
 		// Completing a Story requires a code review by the other party; this one has it.
 		stampOtherPartyReview(artifact(fx, buildArtifactId(HASH, 's1')));
@@ -262,13 +265,13 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 
 		await implement(fx, 's1/t2');
 		assert.equal(stampedBase(fx, 's1'), start, 'the stamp must not move: the plan\'s second task is not built yet');
-		work(fx, 'task-two.ts', 'everything');
+		work(fx, 'task-two.ts', 'everything', 's1');
 		await validate(fx, 's1/t2', 't2');
 
-		// Both tasks' files, and nothing of the work is lost. The Story's code-review
-		// record (completion requires one) was committed inside the range, so it is
-		// listed too, as any record committed since the build started is.
-		assert.deepEqual(changeLog(fx, 's1'), [`${ARTIFACTS_DIR}/${codeReviewArtifactId(HASH, 's1')}.json`, 'task-one.ts', 'task-two.ts']);
+		// Both tasks' files, and nothing of the work is lost. The tasks' commits carry
+		// the Story's trailer, as a real build's do, so the untrailered record commits
+		// in the range are not the Story's (ISSUE-b97752e9).
+		assert.deepEqual(changeLog(fx, 's1'), ['task-one.ts', 'task-two.ts']);
 	} finally { fx.cleanup(); }
 });
 
@@ -279,7 +282,7 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 		const approvalBase = await approvePlansInOneSweep(fx, ['s1']);
 
 		await implement(fx, 's1/t1');
-		work(fx, 'task-one.ts', 'source-only');
+		work(fx, 'task-one.ts', 'source-only', 's1');
 		await validate(fx, 's1/t1', 't1');
 		await approveTarget({ repoPath: fx.repo, epicHash: HASH });
 		unlinkSync(stampFile(fx, 's1'));
@@ -289,14 +292,14 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 		assert.equal(existsSync(stampFile(fx, 's1')), false, 'an approved but half-built record must not be stamped at HEAD');
 		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), approvalBase, 'the base is what the resolver gave before this change: the plan\'s approval-time stamp');
 
-		work(fx, 'task-two.ts', 'source-only');
+		work(fx, 'task-two.ts', 'source-only', 's1');
 		await validate(fx, 's1/t2', 't2');
-		// From the approval-time base the range also holds the plan's approval
-		// rewrite and the records committed since; the Story's own record is
-		// excluded. Both task files are there, which is what a moved base would lose.
+		// From the approval-time base, both task files are there, which is what a
+		// moved base would lose. The untrailered approval and record commits in the
+		// range are not the Story's (ISSUE-b97752e9).
 		const log = changeLog(fx, 's1');
 		assert.ok(log.includes('task-one.ts') && log.includes('task-two.ts'), `both tasks' files must be listed, got ${JSON.stringify(log)}`);
-		assert.deepEqual(log, [`${ARTIFACTS_DIR}/${planArtifactId(HASH, 's1')}.json`, `${ARTIFACTS_DIR}/${planArtifactId(HASH, 's1')}.log.jsonl`, 'task-one.ts', 'task-two.ts'].sort());
+		assert.deepEqual(log, ['task-one.ts', 'task-two.ts']);
 	} finally { fx.cleanup(); }
 });
 
@@ -394,7 +397,7 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 		assert.equal(rec.body['tasks'], undefined, 'the Trivial record is task-less');
 
 		const bytes = readFileSync(stampFile(fx, 's1'), 'utf8');
-		work(fx, 'trivial-work.ts', 'source-only');
+		work(fx, 'trivial-work.ts', 'source-only', 's1');
 		const second = out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }));
 		assert.equal(second['next'], 'implement');
 		assert.equal(readFileSync(stampFile(fx, 's1'), 'utf8'), bytes, 'the task-less record must not trigger a re-stamp or a skip');
@@ -413,7 +416,7 @@ test('Trivial route: validate runs the test files touched since the build-start 
 	try {
 		assert.equal(out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }))['next'], 'implement');
 		mkdirSync(join(fx.repo, '__tests__'), { recursive: true });
-		work(fx, '__tests__/flag.test.ts', 'source-only');
+		work(fx, '__tests__/flag.test.ts', 'source-only', 's1');
 		commitRecords(fx, 'records');
 		let plan: ValidationCheckPlan | undefined;
 		_setBuildValidateCheckRunnerForTests(async (_repo, p) => { plan = p; return PASSING_CHECKS; });

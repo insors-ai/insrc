@@ -1,0 +1,1423 @@
+{
+  "purpose": "Current-source classification, not proof of enablement. Typed pool and v2 resolver aliases/members remain in the exact AST site multiset; every source owner has an explicit lease or metadata rationale.",
+  "files": {
+    "src/analyze/explore/db-connections-list.ts": {
+      "classification": "metadata-only",
+      "rationale": "t10: safe list through injected resolver; no driver use"
+    },
+    "src/analyze/explore/db-table-describe.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t10: injected alias must retain lease through describe"
+    },
+    "src/analyze/explore/db-tables-list.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t10: injected alias must retain lease through complete list"
+    },
+    "src/analyze/measure.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t11: metadata snapshots separate; underlying late listings retain shared lease beyond bounded wait"
+    },
+    "src/analyze/runtimes/data/_shared.ts": {
+      "classification": "resolver-port",
+      "rationale": "t9/t10: injectable poolSource/acquireDataPool may not bypass context"
+    },
+    "src/analyze/runtimes/data/discovery-connections.ts": {
+      "classification": "metadata-only",
+      "rationale": "t10: reload/list only; preserve own-directory lookup"
+    },
+    "src/analyze/runtimes/data/discovery-objects.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t10: retain lease through listTables/listNamespaces"
+    },
+    "src/analyze/runtimes/data/schema-table.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t10: retain lease through describe"
+    },
+    "src/daemon/db-rpc.ts": {
+      "classification": "bounded-private-probe",
+      "rationale": "t21: bounded private profile-materialized probe receives daemon memory-only authority and awaits cleanup; legacy writes require transport identity and the shared root gate, and responses use safe projections. S002 owns worker orchestration."
+    },
+    "src/daemon/db/drivers/mssql.ts": {
+      "classification": "driver-internal-library-pool",
+      "rationale": "t12: tedious pool acquire nested within outer Driver lease; not management pool"
+    },
+    "src/daemon/db/index.ts": {
+      "classification": "resolver-port",
+      "rationale": "t9/t23: barrel exports cannot preserve an unaudited bypass"
+    },
+    "src/daemon/db/pool-cache.ts": {
+      "classification": "pool-owner",
+      "rationale": "t9: canonical-root cache, active lease-aware reload and close"
+    },
+    "src/daemon/db/pool.ts": {
+      "classification": "pool-owner",
+      "rationale": "t19: canonical lookup owner supplies revision-scoped saved execution or memory-only ephemeral execution authority through daemon factory context; own ownerId/repoPath reads are construction metadata, never raw-driver escape."
+    },
+    "src/daemon/db/registry.ts": {
+      "classification": "factory-metadata",
+      "rationale": "t19/t23: metadata declaration; getFactory consumers audited independently"
+    },
+    "src/daemon/tools/builtins/data/schema-drift.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t12: metadata list separate; drift collection retains lease"
+    },
+    "src/daemon/tools/builtins/db/index.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t12: acquireDriver consumers and iterators retain lease; policy/list operations use safe snapshots"
+    },
+    "src/db/store-guard.ts": {
+      "classification": "unrelated-lock",
+      "rationale": "StoreGuard acquire is a storage-lock slot, not DriverPool"
+    },
+    "src/shared/locks/lock-manager.ts": {
+      "classification": "unrelated-lock",
+      "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
+    },
+    "src/shared/db-driver.ts": {
+      "classification": "factory-contract",
+      "rationale": "t2/t19: shared factory type declaration, no actual construction"
+    },
+    "src/daemon/db/management.ts": {
+      "classification": "management-owner",
+      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
+    },
+    "src/shared/connection-management.ts": {
+      "classification": "protocol-declarations",
+      "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
+    },
+    "src/daemon/connection-management-rpc.ts": {
+      "classification": "metadata-only",
+      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
+    },
+    "src/daemon/db/management-adoption.ts": {
+      "classification": "non-driver-lock",
+      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
+    },
+    "src/daemon/db/management-startup.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
+    }
+  },
+  "sites": [
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "createConnectionResolver({ poolSource: acquire })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "expression": "resolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "createConnectionResolver({ poolSource: acquire })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "expression": "resolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "createConnectionResolver({ poolSource: acquire })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "expression": "resolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool",
+      "boundary": "symbol:acquireDataPool"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool",
+      "boundary": "symbol:acquireDataPool"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool",
+      "boundary": "symbol:acquireDataPool"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool",
+      "boundary": "symbol:acquireDataPool"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool(poolPath)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "acquireDataPool(scope.poolPath)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "createConnectionResolver({ poolSource: async () => pool })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "resolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "acquireDataPool",
+      "boundary": "symbol:acquireDataPool"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "createConnectionResolver({poolSource: path => poolSource(path)})",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "poolSource(path)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "poolSource(repoPath)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-connections.ts",
+      "expression": "dataConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-connections.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-connections.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "expression": "dataConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "expression": "dataConnectionResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/schema-table.ts",
+      "expression": "dataConnectionResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/runtimes/data/schema-table.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/runtimes/data/schema-table.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db-rpc.ts",
+      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t\t}) } : undefined)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db-rpc.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db-rpc.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/drivers/mssql.ts",
+      "expression": "this.pool.acquire()",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/index.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/index.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/index.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/index.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/management-adoption.ts",
+      "expression": "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "(ports.pool ?? acquirePool)(root)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "pool.withConnection",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.beginMutation",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).withConnection",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(ports.poolSource ?? acquirePool)(context.lookupRoot)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "CACHE.get(repoPath)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "createConnectionResolver()",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "overlay(context)",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "overlay(context)",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "overlay(context)",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool.closeAll",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ports.sessionOverlay(context)",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "factory(config, familyOf(config.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(config, {\n\t\t\tlookupRoot: this.repoPath, ownerId: this.#ownerId, revision: entry.revision,\n\t\t\tpersistence: config.ephemeral === true ? 'memory-only' : 'saved-cache',\n\t\t}) } : undefined)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "registerEphemeral",
+      "boundary": "symbol:registerEphemeral"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#ownerId",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.acquire",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.acquire(id)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.build",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.build(entry)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.closeEntry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.closeEntry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.closeEntry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.closeEntry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.options",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.options",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.reloadNow",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/registry.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/registry.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/registry.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/db/index.ts",
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
+    },
+    {
+      "file": "src/db/store-guard.ts",
+      "expression": "this.acquire(store, opts)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/shared/connection-management.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/shared/db-driver.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/shared/db-driver.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/shared/locks/lock-manager.ts",
+      "expression": "this.acquire(index, name, req, options)",
+      "boundary": "acquire-call"
+    }
+  ]
+}

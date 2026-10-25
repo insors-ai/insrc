@@ -20,7 +20,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const indexSrc = readFileSync(resolve(HERE, '..', 'index.ts'), 'utf8');
+// The handler map is built in handler-runtime.ts (moved out of index.ts's main(), Epic 86197ac6 s2/t1).
+const indexSrc = readFileSync(resolve(HERE, '..', 'handler-runtime.ts'), 'utf8');
 
 /** Slice out one `'<method>': async (...) => { ... }` handler body. */
 function handlerBody(method: string): string {

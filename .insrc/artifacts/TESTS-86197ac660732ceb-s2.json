@@ -1,0 +1,2200 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s2",
+    "createdAt": "2026-10-22T08:05:05.885Z",
+    "updatedAt": "2026-10-22T15:26:51.591Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e3f1203a",
+        "ranAt": "2026-10-22T08:05:05.885Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 851,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6ce2d867",
+        "ranAt": "2026-10-22T08:08:05.117Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the method-class module loads on a worker without importing a handler module",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 911,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "eb38fa92",
+        "ranAt": "2026-10-22T08:21:14.153Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "closing the socket aborts a stream request and drops a unary request's late reply while its handler completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the registry hook fires on connect, close and each message before the request is forwarded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-forward.test.ts",
+                "title": "the registry hook fires on connect, close and each message before the request is forwarded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "existing server, dispatch, update, understanding, step and MCP suites and the store-child suites pass with servers built through directDispatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/server-registry.test.ts",
+                "title": "handleMessage with a valid client envelope updates label/pid/lastMethod",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/server-registry.test.ts",
+                "title": "the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/update-handlers.test.ts",
+                "title": "t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/steering-refresh-through-daemon.test.ts",
+                "title": "the steering refresh of an update gets the repositories from the daemon and opens no store",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 993,
+            "titles": [
+              {
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/steering-refresh-through-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 729,
+            "titles": [
+              {
+                "title": "the steering refresh of an update gets the repositories from the daemon and opens no store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/server-forward.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 569,
+            "titles": [
+              {
+                "title": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
+                "result": "pass"
+              },
+              {
+                "title": "closing the socket aborts a stream request and drops a unary request's late reply while its handler completes",
+                "result": "pass"
+              },
+              {
+                "title": "the registry hook fires on connect, close and each message before the request is forwarded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/server-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 537,
+            "titles": [
+              {
+                "title": "a new connection registers an entry labelled unknown until a message identifies it",
+                "result": "pass"
+              },
+              {
+                "title": "handleMessage with a valid client envelope updates label/pid/lastMethod",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed client envelope is ignored — the connection stays unknown/pid undefined",
+                "result": "pass"
+              },
+              {
+                "title": "socket close deletes the entry; a double-close / close-before-message is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "attachedClients() returns entries sorted by connectedAt",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3784,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3253,
+            "titles": [
+              {
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              },
+              {
+                "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1480,
+            "titles": [
+              {
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "title": "All five understanding roles require critical core descriptors",
+                "result": "pass"
+              },
+              {
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/update-handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 548,
+            "titles": [
+              {
+                "title": "t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a launch guard failure surfaces as a result.error envelope and does NOT schedule shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "t3: daemon.updateOutcome returns the last outcome, and null when none exists",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1192,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 899,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4754,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "021748c3",
+        "ranAt": "2026-10-22T08:24:16.622Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+                "title": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+                "title": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 577,
+            "titles": [
+              {
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/board-amendments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
+                "result": "pass"
+              },
+              {
+                "title": "a repo row without completeness is published unchanged; underHold and maintenance are absent by default",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 475,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "7fb004d7",
+        "ranAt": "2026-10-22T08:26:15.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore reclaims space after large deletes",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/compact.test.ts",
+                "title": "compactGraphStore re-opens the env so subsequent writes go through",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/compact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1851,
+            "titles": [
+              {
+                "title": "compactGraphStore reclaims space after large deletes",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore preserves all rows when nothing has been freed",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore cleans up .bak after success",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore re-opens the env so subsequent writes go through",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore throws when env is not open",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore pre-clears stale .compact / .bak from a prior aborted run",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data",
+                "result": "pass"
+              },
+              {
+                "title": "compactGraphStore with a hook returning true or no hook returns today's CompactResult",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "8679c338",
+        "ranAt": "2026-10-22T08:29:13.498Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 613,
+            "titles": [
+              {
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              },
+              {
+                "title": "the sweep waits for code work before each single-document job and each document, runs an edit queued during the wait before the next document, and ends with stopped when shutdown comes during the wait",
+                "result": "pass"
+              },
+              {
+                "title": "code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown that comes while a document is read ends the sweep without summarising it",
+                "result": "pass"
+              },
+              {
+                "title": "a kept-good result is counted as skipped, not failed",
+                "result": "pass"
+              },
+              {
+                "title": "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1780,
+            "titles": [
+              {
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              },
+              {
+                "title": "the indexer's sweep pauses while the queue's index lane has work and continues when it is idle",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives",
+                "result": "pass"
+              },
+              {
+                "title": "an edited document queued while the indexer's sweep is paused for code work runs before the sweep's next document",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "71c15a71",
+        "ranAt": "2026-10-22T08:32:18.528Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the code-busy and stopping words track the index lane and stop()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pause() resolves once no job is in flight and no job starts until resume()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 521,
+            "titles": [
+              {
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              },
+              {
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              },
+              {
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6c0bef54",
+        "ranAt": "2026-10-22T08:37:57.250Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/main-services.test.ts",
+                "title": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the real CONFIG_CATALOG has 39 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled)",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 421,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 39 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/main-services.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 766,
+            "titles": [
+              {
+                "title": "a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply",
+                "result": "pass"
+              },
+              {
+                "title": "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.threads.enabled is a config schema key defaulting to off and daemon.info returns its four fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "68147045",
+        "ranAt": "2026-10-22T08:41:28.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1687,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+                "result": "pass"
+              },
+              {
+                "title": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+                "result": "pass"
+              },
+              {
+                "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "791ba857",
+        "ranAt": "2026-10-22T08:48:38.137Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each admin-class method runs on the admin worker's thread id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "each admin-class method runs on the admin worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/settings-catalog.test.ts",
+                "title": "config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.status answers with storeFailure when store health is locks-lost",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "daemon.status answers with storeFailure when store health is locks-lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/settings-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 445,
+            "titles": [
+              {
+                "title": "buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws",
+                "result": "pass"
+              },
+              {
+                "title": "config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6568,
+            "titles": [
+              {
+                "title": "each admin-class method runs on the admin worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "title": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status answers with storeFailure when store health is locks-lost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "b4c98ee7",
+        "ranAt": "2026-10-22T08:55:51.332Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each indexing-class method runs on the code-indexing worker's thread id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a file change is indexed while a session request spins the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9928,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "3602a797",
+        "ranAt": "2026-10-22T09:01:42.169Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1971,
+            "titles": [
+              {
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3070,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "96671195",
+        "ranAt": "2026-10-22T09:33:13.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+                "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+                "title": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3489,
+            "titles": [
+              {
+                "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "9b2deef7",
+        "ranAt": "2026-10-22T09:52:45.302Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a sixth restart within 60 s shuts the daemon down",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9484,
+            "titles": [
+              {
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10601,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "aef1dc6d",
+        "ranAt": "2026-10-22T11:17:33.745Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2630,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+                "result": "pass"
+              },
+              {
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              },
+              {
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+                "result": "pass"
+              },
+              {
+                "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "769f9bf5",
+        "ranAt": "2026-10-22T12:14:53.345Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3532,
+            "titles": [
+              {
+                "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+                "result": "pass"
+              },
+              {
+                "title": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+                "result": "pass"
+              },
+              {
+                "title": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+                "result": "pass"
+              },
+              {
+                "title": "unit",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+                "result": "pass"
+              },
+              {
+                "title": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+                "result": "pass"
+              },
+              {
+                "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              },
+              {
+                "title": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+                "result": "pass"
+              },
+              {
+                "title": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+                "result": "pass"
+              },
+              {
+                "title": "integration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15275,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "3d98673a",
+        "ranAt": "2026-10-22T15:26:51.591Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+                "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a session request on the main thread is answered while an indexing pass runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+                "title": "a session request on the main thread is answered while an indexing pass runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "existing status, shutdown, repo-stats, queue and MCP suites pass unchanged in meaning with threads enabled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-completeness.test.ts",
+                "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-threads.test.ts",
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run with `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME; it passed on 2026-10-22, and the output of the last run is in /tmp/insrc-s2-t17-daemon-ctl-smoke.log."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 703,
+            "titles": [
+              {
+                "title": "the code-busy and stopping words track the index lane and stop()",
+                "result": "pass"
+              },
+              {
+                "title": "pause() resolves once no job is in flight and no job starts until resume()",
+                "result": "pass"
+              },
+              {
+                "title": "every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-completeness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18580,
+            "titles": [
+              {
+                "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1665,
+            "titles": [
+              {
+                "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+                "result": "pass"
+              },
+              {
+                "title": "No indexing object is constructed on the main thread with the flag on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9447,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37312,
+            "titles": [
+              {
+                "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
+                "result": "pass"
+              },
+              {
+                "title": "a session request on the main thread is answered while an indexing pass runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17688,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4172,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

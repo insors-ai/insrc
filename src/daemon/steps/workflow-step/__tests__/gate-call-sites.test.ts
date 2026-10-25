@@ -94,14 +94,14 @@ test('workflow-step start, plan, step and synthesize on a stage held by someone 
 			['step', 'awaiting_llm_step', { stepId: 's1', response: {} }],
 			['synthesize', 'awaiting_synthesize', { artifact: { body: {}, citations: [] } }],
 		] as const) {
-			const state = encodeState(payload(repo, stage));
+			const state = await encodeState(payload(repo, stage));
 			const out = parse(await handleWorkflowStep({ phase, state, ...extra } as never));
 			assert.equal(out.next, 'error', phase);
 			assert.equal(out.error?.code, 'team-gate-refused', phase);
 			assert.match(out.error?.message ?? '', /held by bob/, phase);
 		}
 		assert.deepEqual(readdirSync(repo), [], 'nothing was written under the repo');
-		assert.equal(_workflowStateStoreSize(), 3, 'no run state was saved by the refused start (only the three states this test built)');
+		assert.equal(await _workflowStateStoreSize(), 3, 'no run state was saved by the refused start (only the three states this test built)');
 
 		// the first author turn of a stage with no issue and no artifact is let through the gate
 		inject(null, { issue: null, artifact: false });

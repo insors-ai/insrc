@@ -64,12 +64,12 @@ function intent(): ClassifiedIntent {
 }
 
 /** The state the tool holds while it waits for the agent's plan. */
-function awaitingPlan(): string {
+async function awaitingPlan(): Promise<string> {
 	const payload: StepStatePayload = {
 		version: STATE_VERSION, runId: 'r1', repoPath: REPO, repoIndexedAt: INDEXED_AT,
 		intent: intent(), synthesizerKey: 'code', stage: 'awaiting_plan',
 	};
-	return encodeState(payload);
+	return await encodeState(payload);
 }
 
 /** Run the plan to its pause and mint the state the tool would hold there. */
@@ -81,7 +81,7 @@ async function awaitingNarrow(p: ExplorationPlan): Promise<string> {
 		intent: intent(), synthesizerKey: 'adherence', plan: p, stage: 'awaiting_narrow',
 		narrow: { explorationId: step.explorationId, explorationType: step.explorationType, preparedBlob: step.preparedBlob, resumeState: step.resumeState },
 	};
-	return encodeState(payload);
+	return await encodeState(payload);
 }
 
 const VALID_ANSWER = { subject: 'refund', constraints: [], notFoundNote: 'none found' };
@@ -133,7 +133,7 @@ function assertCarriesFindings(out: StepOutputError, ids: readonly string[]): vo
 
 test('a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase', async () => {
 	// With the prompt present both phases reach the answer-writing turn.
-	const planOk = await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: awaitingPlan() } as StepInputPlan);
+	const planOk = await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: await awaitingPlan() } as StepInputPlan);
 	assert.equal(planOk.next, 'emit_bundle');
 	const narrowToken = await awaitingNarrow(PLAN_WITH_MODEL);
 	const narrowOk = await handleNarrow({ phase: 'narrow', explorationId: 'e1', narrow: VALID_ANSWER, state: narrowToken } as unknown as StepInputNarrow);
@@ -141,7 +141,7 @@ test('a missing answer prompt after the lookups ran returns a non-retryable erro
 
 	// Plan phase: every lookup of the plan ran in this call; then the prompt is found missing.
 	_setSynthesizerPromptPathForTest('code', MISSING);
-	const fromPlan = await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: awaitingPlan() } as StepInputPlan);
+	const fromPlan = await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: await awaitingPlan() } as StepInputPlan);
 	assertCarriesFindings(fromPlan as StepOutputError, ['e2', 'e3']);
 
 	// Narrow phase: the agent's answer finished the plan; then the prompt is found missing.
@@ -156,7 +156,7 @@ test('a missing answer prompt after the lookups ran returns a non-retryable erro
 
 test("the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member", async () => {
 	_setSynthesizerPromptPathForTest('code', MISSING);
-	const envelope = await handleAnalyzeStep({ phase: 'plan', plan: PLAN_NO_MODEL, state: awaitingPlan() });
+	const envelope = await handleAnalyzeStep({ phase: 'plan', plan: PLAN_NO_MODEL, state: await awaitingPlan() });
 	const text = envelope.content[0]?.text ?? '';
 	const out = JSON.parse(text) as StepOutputError;
 	// The agent reads this JSON: the data arrives as part of it, with no rendering step.
@@ -166,7 +166,7 @@ test("the step tool's JSON output carries error.data, its message starts with th
 	// Errors of other kinds, from the plan phase, the narrow phase and the router.
 	const others: StepOutputError[] = [];
 	// A plan that fails its schema.
-	others.push(await handlePlan({ phase: 'plan', plan: { answerType: 'how-does-it-work' }, state: awaitingPlan() } as unknown as StepInputPlan) as StepOutputError);
+	others.push(await handlePlan({ phase: 'plan', plan: { answerType: 'how-does-it-work' }, state: await awaitingPlan() } as unknown as StepInputPlan) as StepOutputError);
 	// A state token that cannot be decoded.
 	others.push(await handlePlan({ phase: 'plan', plan: PLAN_NO_MODEL, state: 'not-a-token' } as StepInputPlan) as StepOutputError);
 	// An answer that fails its lookup's schema.
@@ -174,7 +174,7 @@ test("the step tool's JSON output carries error.data, its message starts with th
 	// An answer for a lookup the tool is not waiting on.
 	others.push(await handleNarrow({ phase: 'narrow', explorationId: 'e9', narrow: VALID_ANSWER, state: await awaitingNarrow(PLAN_WITH_MODEL) } as unknown as StepInputNarrow) as StepOutputError);
 	// A phase called at the wrong stage, through the router.
-	others.push(JSON.parse((await handleAnalyzeStep({ phase: 'narrow', explorationId: 'e1', narrow: VALID_ANSWER, state: awaitingPlan() })).content[0]?.text ?? '') as StepOutputError);
+	others.push(JSON.parse((await handleAnalyzeStep({ phase: 'narrow', explorationId: 'e1', narrow: VALID_ANSWER, state: await awaitingPlan() })).content[0]?.text ?? '') as StepOutputError);
 
 	assert.equal(others.length, 5);
 	const codes = new Set<string>();

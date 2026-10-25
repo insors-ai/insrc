@@ -18,7 +18,7 @@ import { join } from 'node:path';
 
 import { createApprovalRpc } from '../../approval.js';
 import { ApprovalBroker } from '../../approval-broker.js';
-import { IpcServer } from '../../server.js';
+import { IpcServer, directDispatch } from '../../server.js';
 import type { ApprovalGateFrame, ApprovalRequest } from '../../../shared/types.js';
 
 let seq = 0;
@@ -67,7 +67,7 @@ async function withServer(fn: (ctx: { broker: ApprovalBroker; path: string }) =>
 	const path = join(dir, 'd.sock');
 	const broker = new ApprovalBroker();
 	const rpc = createApprovalRpc(broker);
-	const server = new IpcServer({ 'approval.answer': rpc.answer }, { 'approval.subscribe': rpc.subscribe }, Date.now, path);
+	const server = new IpcServer(directDispatch({ 'approval.answer': rpc.answer }, { 'approval.subscribe': rpc.subscribe }), Date.now, path);
 	await server.listen();
 	try { await fn({ broker, path }); } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
 }

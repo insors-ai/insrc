@@ -25,7 +25,7 @@ import type { StepCallContext } from '../../../shared/step-context.js';
 import type { IpcStreamMessage } from '../../../shared/types.js';
 import { runCodeReview } from '../../../workflow/code-review/runner.js';
 import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/code-review/types.js';
-import { IpcServer } from '../../server.js';
+import { IpcServer, directDispatch } from '../../server.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../server.js';
 import { loadState as loadAnalyzeState } from '../analyze-step/state-store.js';
 import { loadState as loadCodeReviewState } from '../code-review-step/state-store.js';
@@ -90,6 +90,36 @@ test("step host: done frame carries the handler's envelope unchanged; unknown to
 
 	// The table holds exactly the seven tools.
 	assert.deepEqual(Object.keys(stepToolTable()).sort(), [...STEP_TOOL_NAMES].sort());
+});
+
+test("step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored", async () => {
+	let late: ((data: unknown) => void) | undefined;
+	const host = createStepCallHandler({
+		...stepToolTable(),
+		insrc_code_review_step: async (_args, _signal, progress) => {
+			progress?.({ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' });
+			progress?.('a plain line');
+			late = progress;
+			return ENVELOPE;
+		},
+	});
+
+	const frames = await collect(host, { tool: 'insrc_code_review_step', args: {}, context: CTX });
+	assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'done']);
+	assert.deepEqual(frames.slice(0, 2).map(f => f.data), [{ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' }, 'a plain line']);
+	assert.equal(frames[2]!.data, ENVELOPE);
+	// After the reply: ignored, nothing sent.
+	late!('too late');
+	assert.equal(frames.length, 3);
+
+	// A send that throws for progress (the caller went away): the step still answers.
+	const sent: IpcStreamMessage[] = [];
+	await host({ tool: 'insrc_code_review_step', args: {}, context: CTX }, (m) => {
+		if (m.stream === 'progress') throw new Error('stream closed');
+		sent.push(m);
+	}, new AbortController().signal);
+	assert.deepEqual(sent.map(f => f.stream), ['done']);
+	assert.equal(sent[0]!.data, ENVELOPE);
 });
 
 // --- equivalence on a temporary store ---------------------------------------------
@@ -213,7 +243,7 @@ function untilAborted() {
 
 /** An IpcServer serving `stream` on a temporary socket path, through its own connection handling. */
 async function serve(stream: StreamHandlers, rpc: RpcHandlers = {}) {
-	const ipc = new IpcServer(rpc, stream);
+	const ipc = new IpcServer(directDispatch(rpc, stream));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-step-sock-'));
 	const path = join(dir, 'd.sock');
 	const server = createServer((socket: Socket) => {
@@ -299,9 +329,52 @@ test('cancellation: closing the stream during a design-review wait and during a 
 	}
 });
 
+test("insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'", async () => {
+	const FRAME = { kind: 'stage', operation: 'codeReview.run', stageId: 'call', stageLabel: 'call · adherence · judge reviewer #1', index: 0, total: null };
+	const host = createStepCallHandler(stepToolTable({ codeReviewDeps: {
+		...crDeps,
+		readBuildAuthor: () => 'controller',
+		fetchGrounding: async () => ({ ok: true, grounding: GROUNDING }),
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: [] }),
+		reviewByDaemon: async (_params, opts) => {
+			opts.onFrame?.('progress', FRAME);
+			return { runId: 'cr', artifact: { meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'full' } } as never };
+		},
+	} }));
+	const frames = await collect(host, { tool: 'insrc_code_review_step', args: { phase: 'start', epicHash: 'e1a2b3c4d5e6f7a8', storyId: 's8', repo: '/repo' }, context: CTX });
+	assert.deepEqual(frames.map(f => f.stream), ['progress', 'done']);
+	assert.deepEqual(frames[0]!.data, FRAME);
+	assert.match(JSON.stringify(frames[1]!.data), /\\"next\\": \\"done\\"/);
+});
+
+test("insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'", async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-relay-'));
+	try {
+		const dir = join(repo, 'docs', 'stub');
+		mkdirSync(dir, { recursive: true });
+		const md = join(dir, 's1.md');
+		writeFileSync(md, '# Doc\n\nThe body.\n');
+		writeFileSync(join(dir, 's1.json'), JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'controller' }, body: {} }) + '\n');
+		const STAGE = { kind: 'stage', operation: 'workflow.review', stageId: 'template', stageLabel: 'template', index: 0, total: null };
+		const BEAT = { kind: 'heartbeat', operation: 'workflow.review', elapsedMs: 60_000 };
+		const host = createStepCallHandler(stepToolTable({ reviewDeps: {
+			reviewByDaemon: async (_params, opts) => {
+				opts.onFrame?.('progress', STAGE);
+				opts.onFrame?.('progress', BEAT);
+				opts.onFrame?.('progress', { ...BEAT, elapsedMs: 120_000 });
+				return { artifactPath: md, verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, reviewedBy: 'daemon', model: 'm', applied: 0, pending: 0, report: 'R' };
+			},
+		} }));
+		const frames = await collect(host, { tool: 'insrc_review_step', args: { phase: 'start', artifact: md, repo }, context: CTX });
+		assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'progress', 'done']);
+		assert.deepEqual(frames.slice(0, 3).map(f => f.data), [STAGE, BEAT, { ...BEAT, elapsedMs: 120_000 }]);
+		assert.match(JSON.stringify(frames[3]!.data), /\\"next\\": \\"done\\"/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 // --- the state stores' miss message -------------------------------------------------
 
-test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', () => {
+test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', async () => {
 	const misses: [string, () => unknown][] = [
 		['analyze',      () => loadAnalyzeState('no-such-token')],
 		['workflow',     () => loadWorkflowState('no-such-token')],
@@ -310,7 +383,7 @@ test('state store miss: each of the four stores says the daemon was restarted an
 		['code-review',  () => loadCodeReviewState('no-such-token')],
 	];
 	for (const [store, miss] of misses) {
-		assert.throws(miss, (err: unknown) => {
+		await assert.rejects(async () => miss(), (err: unknown) => {
 			const message = err instanceof Error ? err.message : '';
 			assert.match(message, /the insrc daemon was restarted/, `${store}: ${message}`);
 			assert.match(message, /Start the run again with phase='start'/, `${store}: ${message}`);

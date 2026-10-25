@@ -63,7 +63,7 @@ export async function handleBundle(
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = decodeState(input.state);
+		state = await decodeState(input.state);
 		assertStage(state, 'awaiting_bundle');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -129,7 +129,7 @@ export async function handleBundle(
 
 	// Run completed -- drop the state entry so a busy MCP subprocess
 	// doesn't accumulate finished-run payloads.
-	releaseState(input.state);
+	await releaseState(input.state);
 
 	return {
 		next:     'done',

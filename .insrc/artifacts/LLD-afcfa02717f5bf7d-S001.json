@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792645989237-ndo9ea",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T05:17:03.574Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 234315,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "afcfa02717f5bf7d",
+    "epicSlug": "add-cross-thread-named-lock-framework",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792645989237-ndo9ea",
+    "hldEffectiveHash": "afcfa02717f5bf7dcb148e5ebcbe40714d202a8789d1d47a071f6af53b4b86a0",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive capability under a single design: a new process-wide lock module (named locks, shared/exclusive, no-wait and waiting acquires, writer preference, holder metadata and reclaim, query) built on SharedArrayBuffer/Atomics. It has real design choices (shared-memory layout and name table, fairness and writer preference, waking waiters with Atomics.waitAsync, dead-thread reclaim, holder metadata storage) and several build tasks, so it is more than small. It is not an epic: it is one module with one contract, no several independent stories. The only lock primitive in the code today is the s1 store guard (src/db/store-guard.ts, a per-store counting semaphore over a shared block with holder records and reclaim), which is prior art to reuse patterns from but has no named locks, no shared/exclusive modes and no holder metadata; no lock library is a dependency.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers the triage scope (named locks, shared/exclusive, no-wait and waiting acquires, writer preference, holder metadata, reclaim, query), maps ac1–ac6 to tests, and builds no non-goal (global FIFO coordinator, store-guard rewrite).",
+          "evidence": "triageRationale (.insrc/artifacts/LLD-afcfa02717f5bf7d-S001.json:28) lists exactly those capabilities; §2.1–2.3 design each one; acceptanceMapping (json:560-603) covers ac1..ac6; §6 says 'The store guard is unchanged'; a2/a3 (FIFO coordinators) are rejected. A standalone Story has no DEF, so the full ac1–ac6 wording could only be read from the mapping labels. [files: .insrc/artifacts/LLD-afcfa02717f5bf7d-S001.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today startDaemonWorker installs only the store-guard block, no production code spawns daemon workers, and the store guard is a per-store counting semaphore with ALS nesting refusal, waitAsync with a keep-alive timer, and a main-thread async reclaim after 'exit'.",
+          "evidence": "worker-entry.ts:25-30 DaemonWorkerInit {guardBlock, hubPort}; :43 installStoreGuard(init.guardBlock). Grep for `new Worker(` under src finds only __tests__ files. store-guard.ts:168 `held = new AsyncLocalStorage<Held>()`, :239-240 StoreLockNestedError, :303-313 waitAsync + `setTimeout(() => {}, left)`, :255 `async reclaim(threadId)`. [files: src/daemon/threads/worker-entry.ts, src/db/store-guard.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The store guard's record() publishes the slot state first and fills its fields afterward, so its order must not be copied (§3.1).",
+          "evidence": "store-guard.ts:325 `compareExchange(this.words, base, 0, storeIndex(store) + 1)` and only then :326-328 write times/threadId/id. §3.1 now says this order must not be copied and that claim(-1)-then-publish-last is new. [files: src/db/store-guard.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No named shared/exclusive lock framework exists yet. installStoreGuard/getStoreGuard (a private block when none is installed) and createStoreGuardBlock exist with the shape the design copies.",
+          "evidence": "store-guard.ts:95-102 createStoreGuardBlock(): SharedArrayBuffer; :380-389 installStoreGuard(block) / getStoreGuard() creates `new StoreGuard(createStoreGuardBlock())` when _guard is null. No other lock block shows up in a grep for guardBlock/startDaemonWorker. [files: src/db/store-guard.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The callers to update for the required DaemonWorkerInit.lockBlock are worker-stores.test.ts:42, :57, :96 and helpers/store-worker.ts:23-24.",
+          "evidence": "A grep for startDaemonWorker|guardBlock|DaemonWorkerInit finds exactly: store-worker.ts:23 destructuring workerData and :24 `startDaemonWorker({ guardBlock: guardBlock!, hubPort: hubPort! })`; worker-stores.test.ts:42 createStoreGuardBlock, :57 workerData, :96 `startDaemonWorker({ guardBlock, hubPort: port2 })`. :127 installStoreGuard does not touch DaemonWorkerInit. §6 now says 'required', consistent with §2.5/§3.2. [files: src/daemon/threads/__tests__/worker-stores.test.ts, src/daemon/threads/__tests__/helpers/store-worker.ts, src/daemon/threads/worker-entry.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "watchWorker(worker) reclaims with LockManager.reclaim(worker.threadId) when the worker's 'exit' event fires.",
+          "evidence": "@types/node worker_threads.d.ts:392-398 documents threadId only as a unique per-Worker id. Recent Node docs say worker.threadId becomes -1 once the thread stops, which can happen before 'exit'. I could not check the Node 22 runtime here. The existing reclaim test does not read worker.threadId after exit: it uses the threadId the worker reported by message (store-guard.test.ts:128,134). If the field reads -1 at 'exit', reclaim would match no slot and the dead worker's locks would leak. [files: src/db/__tests__/store-guard.test.ts]",
+          "action": "State that watchWorker captures worker.threadId when it registers (right after new Worker) and passes that captured id to reclaim on 'exit'.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing is persisted: the lock block is a per-process SharedArrayBuffer like the guard block, and the only shape change is an in-process DaemonWorkerInit field whose callers are all tests.",
+          "evidence": "store-guard.ts:96 `new SharedArrayBuffer(BLOCK_BYTES)` is created per process; worker-entry.ts:25-30 is an in-memory init shape; every caller found by grep is under __tests__. [files: src/db/store-guard.ts, src/daemon/threads/worker-entry.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design no longer takes over Epic 86197ac6 s2's store-permit reclaim. watchWorker reclaims only named locks, and the s2 changes are deferred to an amendment (§9) rather than redesigned here.",
+          "evidence": "§2.6 postcondition: 'Store-guard permits are not touched here: Epic 86197ac6 s2's router owns StoreGuard.reclaim'. §9 lists the s2 amendment (maintenance lock plus a watchWorker call). The s2 LLD (docs/epics/.../S002/LLD.md:543-550) still uses a pause-ack mechanism with no named lock, so the amendment is still needed; it is recorded as an open question, not built into s2 here. [files: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/LLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A grant is never left without its holder record, so reclaim(threadId) frees every lock a dead worker held (§4 invariant; reclaim scans the holder table for slots carrying that threadId).",
+          "evidence": "§4 orders the grant as: take the lock word (CAS), then claim a holder slot (state 0→-1), write its fields, and publish last. On capacity failure it gives the lock word back ('a lock word already taken is given back first'). worker.terminate() can stop a worker between any two of those steps, as the store guard's own terminate test does (store-guard.test.ts:117-137). A worker killed after the lock-word CAS and before its slot carries its threadId leaves the lock word at -1 or n with no slot reclaim can find, so the lock leaks forever. A slot stuck at -1 also never frees. The name table has the same gap: a worker killed while a name slot is in state 1 ('being claimed') leaves it there, and threads waiting for state 2 never see it. Store-guard's record() has the same window, but its permit is a counter; here a leaked -1 blocks the name for good. [files: src/db/store-guard.ts, src/db/__tests__/store-guard.test.ts]",
+          "action": "Reserve the holder (and pending) slot with threadId written before taking the lock word, so every grant is findable by threadId. Have reclaim also clear slots in the -1 state for that thread, and handle name slots stuck in 'being claimed' (write the claimer's threadId at claim time and reclaim it, or let readers time out on it). Add a test that terminates a worker between the grant steps.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Timeout and abort cleanup follow the store guard's waitOrAbort and deadline loop, and also remove the pending entry and the pending-exclusive count.",
+          "evidence": "store-guard.ts:352-361 waitOrAbort calls signal.throwIfAborted() and rejects with signal.reason from an abort listener; :297-301 deadline check → StoreLockTimeoutError with holders. §4 adds removing the pending entry, decrementing the count and bumping the version on both paths. [files: src/db/store-guard.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to a unit and an integration test that appear among the §5 subjects, using the existing real-worker test pattern.",
+          "evidence": "acceptanceMapping (json:560-603) gives ac1..ac6 one unit and one integration test each, and each label matches a §5 subject (ac4 ↔ 'a worker terminated while holding exclusive ... is reclaimed'; ac5 ↔ 'writer preference across threads ... worker C'). The real-worker pattern exists at src/db/__tests__/store-guard.test.ts:117-137. No subject covers a worker killed partway through a grant (see error-paths). [files: .insrc/artifacts/LLD-afcfa02717f5bf7d-S001.json, src/db/__tests__/store-guard.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-22T05:20:31.561Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-22T05:54:53.873Z",
+    "rangeBase": "c426af49ec673bdc50609340142992cd2038f8b5",
+    "reviewOverride": {
+      "reason": "Stakeholder approved with override 2026-10-22: 3 daemon review rounds, 0 HIGH; round-3's one MED (lock leak when a worker dies mid-grant) folded after the round with per-name owner-tagged mutex + exact recount on reclaim + mid-grant termination test; rounds 1-2 MEDs all folded (nesting rule, claim/publish slot state, watchWorker reclaim wiring, required lockBlock, store-reclaim stays with s2's router).",
+      "at": "2026-10-22T05:54:53.870Z"
+    },
+    "questionResolutions": {
+      "qb472bde2": {
+        "question": "Epic 86197ac6 s2 must be amended to use this framework: its maintenance lock (exclusive, held by maintenance with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata), and its router calls watchWorker for every worker it starts beside its own StoreGuard.reclaim on exit.",
+        "status": "resolved",
+        "choice": "Amend s2 now, before planning",
+        "rationale": "Stakeholder 2026-10-22: amend Epic 86197ac6's DEF, HLD and s2 LLD to use the lock framework (maintenance takes the exclusive lock with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata; the router calls watchWorker) before planning the framework.",
+        "resolvedAt": "2026-10-22T05:56:03.030Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds a named-lock framework that every thread of the daemon shares, shaped like the browser and Node Web Locks API (navigator.locks), which Node 22 lacks. A caller asks for a lock by name in shared or exclusive mode, either waiting (with a timeout or an abort signal) or not waiting at all, and the lock is released when its callback finishes, whatever happens. A waiting exclusive request stops new shared grants so it cannot be starved, every holder can carry an activity and a reason that any thread can read, and a lock held by a worker that dies is reclaimed. Its first user is the daemon's maintenance lock (Epic 86197ac6 s2).",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add a cross-thread named lock framework with shared and exclusive modes"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "LockManager.request",
+          "signature": "<T>(name: string, options: LockOptions, callback: (lock: Lock | null, blockedBy: readonly LockInfo[]) => T | Promise<T>) => Promise<T>",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "purpose": "The lock's name, 1 to 64 UTF-8 bytes; locks with the same name are the same lock in every thread of the process.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "LockOptions = { readonly mode?: 'shared' | 'exclusive'; readonly ifAvailable?: boolean; readonly signal?: AbortSignal; readonly timeoutMs?: number; readonly metadata?: { readonly activity: string; readonly reason: string } }",
+              "purpose": "mode defaults to 'exclusive' as in Web Locks; ifAvailable grants now or calls back with null; signal and timeoutMs bound a waiting request; metadata is stored with the holder for any thread to read.",
+              "optional": false
+            },
+            {
+              "name": "callback",
+              "type": "(lock: Lock | null, blockedBy: readonly LockInfo[]) => T | Promise<T>",
+              "purpose": "Runs while the lock is held (lock = {name, mode, metadata}); with ifAvailable and the lock unavailable it runs with lock = null and blockedBy = the holders (with their metadata) and, for a shared request, the pending exclusive requests that block it.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "The callback's result; the lock is released when the callback's promise settles, in a finally, whether it resolves, rejects or the callback throws synchronously."
+          },
+          "errors": [
+            {
+              "type": "LockTimeoutError",
+              "condition": "A waiting request was not granted within timeoutMs; carries name, waitedMs and the holders at that moment."
+            },
+            {
+              "type": "AbortError (signal.reason)",
+              "condition": "The signal aborted while the request waited; a request whose signal is already aborted is refused before it queues."
+            },
+            {
+              "type": "LockNestedError",
+              "condition": "The same name is requested again inside a callback holding it on the same async call chain (it would wait on itself forever); or a different name is requested inside a held callback as a waiting request with no timeoutMs (an unbounded nested wait could form a cross-name or cross-thread cycle: A holds x and waits for y while B holds y and waits for x). A nested request for another name is allowed only with ifAvailable or a timeoutMs, so any cycle ends in a null callback or a LockTimeoutError instead of waiting forever."
+            },
+            {
+              "type": "LockCapacityError",
+              "condition": "No free name, holder or pending slot; nothing is granted or queued, and the error names which table is full."
+            },
+            {
+              "type": "LockArgumentError",
+              "condition": "An empty or over-long name, an activity over 64 bytes or a reason over 1024 bytes, a negative timeoutMs, or ifAvailable combined with signal or timeoutMs (no waiting to bound). Values are refused, never truncated."
+            }
+          ],
+          "preconditions": [
+            "installLockManager(block) has run on this thread with the process's one block (the main thread creates it with createLockBlock() and passes it to every worker, as the store guard's block is passed: src/daemon/threads/worker-entry.ts:25-48).",
+            "Mirrors navigator.locks.request (Node PR #58666; measured unavailable on Node 22.23.2): same name/mode/ifAvailable/signal semantics, plus timeoutMs, metadata and the blockedBy argument, which Web Locks lacks."
+          ],
+          "postconditions": [
+            "Exclusive is granted only when no shared or exclusive holder exists; shared is granted only when no exclusive holder exists and no exclusive request is pending (writer preference).",
+            "A pending exclusive request is counted from the moment it starts waiting until it is granted, times out or aborts; while counted, every new shared request (waiting or ifAvailable) is refused or waits.",
+            "An ifAvailable request never waits: it does a fixed number of atomic reads and at most a few compare-and-swaps on the caller's own thread.",
+            "Requests for one name from one thread are served in arrival order; across threads, competing waiters are granted by compare-and-swap (no global FIFO).",
+            "The holder slot (name, mode, threadId, acquisition id, since, metadata) is written before the callback runs and cleared on release.",
+            "Nesting rule (deadlock prevention, after the store guard's 'no lock cycle forms', src/db/store-guard.ts:15-16): a thread holding a lock may ask for another name only without waiting (ifAvailable) or with a bounded wait (timeoutMs); it may never re-request a name it holds.",
+            "Every change to one name's state (its lock word, pending-exclusive count, holder and pending records) happens inside that name's short critical section: a per-name mutex word taken by compare-and-swap with the taker's threadId as its value, held only for a few atomic writes and never across an await. A thread that finds the mutex taken retries the compare-and-swap; waits for the lock itself still use Atomics.waitAsync on the version word."
+          ]
+        },
+        {
+          "name": "LockManager.query",
+          "signature": "() => LockManagerSnapshot",
+          "parameters": [],
+          "returns": {
+            "type": "LockManagerSnapshot = { readonly held: readonly LockInfo[]; readonly pending: readonly LockInfo[] }; LockInfo = { readonly name: string; readonly mode: 'shared' | 'exclusive'; readonly threadId: number; readonly since: number; readonly metadata?: { readonly activity: string; readonly reason: string } }",
+            "meaning": "Every held and pending request in the process, read from shared memory, as navigator.locks.query() returns held and pending plus thread, time and metadata."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Synchronous and lock-free: it reads the tables and never waits; an entry being written concurrently may be omitted from one snapshot but never shown torn (slots are published with their name last and read only when published)."
+          ]
+        },
+        {
+          "name": "LockManager.reclaim",
+          "signature": "(threadId: number) => readonly LockInfo[]",
+          "parameters": [
+            {
+              "name": "threadId",
+              "type": "number",
+              "purpose": "A worker thread that has exited.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly LockInfo[]",
+            "meaning": "The holds released and the pending requests removed for that thread."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called on the main thread after the worker's 'exit' event, as StoreGuard.reclaim is (src/db/store-guard.ts:254-276); a lock holds no native resource, so no quiescence wait is needed."
+          ],
+          "postconditions": [
+            "Each released hold is logged as a warning with its name, mode and metadata; waiters are woken.",
+            "A name mutex whose value is the dead threadId is taken over by reclaim; the dead thread's holder and pending records for that name are removed, and the lock word and pending-exclusive count are recomputed from the remaining published records. Because every change to a name happens under its mutex, the recount is exact even when the worker died mid-grant.",
+            "A name-table slot left 'being claimed' by the dead thread (its claimer threadId is stored at claim time) is reset to free."
+          ]
+        },
+        {
+          "name": "createLockBlock",
+          "signature": "(capacity?: { readonly names?: number; readonly holders?: number; readonly pending?: number }) => SharedArrayBuffer",
+          "parameters": [
+            {
+              "name": "capacity",
+              "type": "{ names?: number; holders?: number; pending?: number }",
+              "purpose": "Table sizes; defaults 64 names, 512 holders, 256 pending.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "SharedArrayBuffer",
+            "meaning": "The process's lock block, created once by the main thread, as createStoreGuardBlock is (src/db/store-guard.ts:95-103)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The capacities are stored in the block's header, so every thread reads the same layout."
+          ]
+        },
+        {
+          "name": "installLockManager",
+          "signature": "(block: SharedArrayBuffer) => LockManager",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "SharedArrayBuffer",
+              "purpose": "The process's lock block.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LockManager",
+            "meaning": "This thread's manager over the block; getLockManager() returns it afterwards, as installStoreGuard/getStoreGuard do (src/db/store-guard.ts:380-389)."
+          },
+          "errors": [],
+          "preconditions": [
+            "startDaemonWorker installs the block from DaemonWorkerInit.lockBlock, a required field beside guardBlock, so no daemon worker can run with a private lock table; on the main thread installLockManager is called once with the block it created. getLockManager() outside a daemon (single-threaded tests and tools) creates a private block, as getStoreGuard does."
+          ],
+          "postconditions": []
+        },
+        {
+          "name": "watchWorker",
+          "signature": "(worker: Worker) => void",
+          "parameters": [
+            {
+              "name": "worker",
+              "type": "Worker",
+              "purpose": "A daemon worker the main thread has just started.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers the worker's 'exit' listener that reclaims every named lock it held or waited for."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called on the main thread right after new Worker(...) for every daemon worker; it captures worker.threadId at registration and passes that captured id to reclaim on 'exit' (the field may read -1 once the thread has stopped). Epic 86197ac6 s2's worker starter is its first caller (no production code spawns daemon workers yet)."
+          ],
+          "postconditions": [
+            "On the worker's exit, LockManager.reclaim(worker.threadId) runs, so no named lock outlives its holder; each reclaimed entry is logged as a warning.",
+            "Store-guard permits are not touched here: Epic 86197ac6 s2's router owns StoreGuard.reclaim (asynchronous, with quiescence and unhealthy-store handling) on the same exit event, as its HLD assigns."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Lock block (SharedArrayBuffer)",
+        "change": "new",
+        "details": "Header: capacities, an acquisition counter. Name table (per slot): state (0 free, 1 being claimed, 2 ready), name hash, name length, name bytes (64); a slot is claimed by CAS and never freed (lock names are few and long-lived). Per name: a lock word (0 free, n > 0 shared holders, -1 exclusive), a pending-exclusive count, and a version word incremented on every change, which waiters Atomics.waitAsync on (with a keep-alive timer, as the store guard does, because a pending waitAsync does not keep a thread alive). Holder table (per slot): a state word claimed by CAS from 0 to -1 (being written) and set to name index + 1 only after every other field is written (published last), so query() reads a slot only when its state is > 0; mode, threadId, acquisition id, since (Float64), activity (64 bytes) and reason (1024 bytes) with their lengths. Pending table (per slot): the same claim/publish state word (0 free, -1 being written, name index + 1 published), then mode, threadId, since, so query() can list waiters. This claim(-1)-then-publish-last protocol is new: the store guard's record() (src/db/store-guard.ts:321-330) publishes the slot first and fills it after, so its order must not be copied. Each name also has a mutex word (0 free, else the threadId of the thread inside the name's critical section); the name table's 'being claimed' state stores the claimer's threadId so reclaim can reset a claim abandoned by a dead thread.",
+        "callSites": [
+          "src/db/store-guard.ts:76-85",
+          "src/db/store-guard.ts:303-349"
+        ]
+      },
+      {
+        "entity": "DaemonWorkerInit.lockBlock",
+        "change": "field-add",
+        "details": "A required lockBlock field beside guardBlock; startDaemonWorker installs it, so every daemon worker shares the main thread's locks and none can run with a private block. Callers updated: src/daemon/threads/__tests__/worker-stores.test.ts:42 and :57 (create a lock block and pass it in workerData) and :96, and src/daemon/threads/__tests__/helpers/store-worker.ts:23-24 (read it from workerData and pass it).",
+        "callSites": [
+          "src/daemon/threads/worker-entry.ts:25-48",
+          "src/daemon/threads/__tests__/worker-stores.test.ts:42",
+          "src/daemon/threads/__tests__/worker-stores.test.ts:57",
+          "src/daemon/threads/__tests__/worker-stores.test.ts:96",
+          "src/daemon/threads/__tests__/helpers/store-worker.ts:23-24"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A worker dies (crash, terminate, out of memory) while holding a lock or waiting for one.",
+          "detection": "watchWorker(worker), registered by the main thread when it starts each daemon worker, hears the worker's 'exit' and calls LockManager.reclaim(threadId), which scans the holder and pending tables for slots carrying that threadId (store-guard permits are reclaimed separately by Epic 86197ac6 s2's router).",
+          "response": "Each hold is released (lock word decremented or cleared, holder slot cleared, version bumped, waiters notified) and each pending entry removed (the pending-exclusive count decremented if it was an exclusive waiter), logged as a warning with name, mode and metadata.",
+          "userImpact": "Other threads waiting on the lock proceed; nothing stays locked by a dead thread.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A waiting request reaches its timeoutMs.",
+          "detection": "The deadline check after each waitAsync wake (or the wait's own timeout) finds the deadline passed.",
+          "response": "The request removes its pending entry (and decrements the pending-exclusive count for an exclusive request, then bumps the version so shared waiters re-check) and rejects with LockTimeoutError carrying the name, the time waited and the current holders.",
+          "userImpact": "The caller gets a named error with who held the lock; no state is left behind.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The AbortSignal fires while a request waits.",
+          "detection": "The abort listener attached while waiting rejects the wait (as waitOrAbort does in the store guard).",
+          "response": "Same clean-up as a timeout, then reject with signal.reason.",
+          "userImpact": "As with Web Locks, the caller sees its abort reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The callback throws synchronously or its promise rejects.",
+          "detection": "The try/finally around the callback's invocation and awaited result.",
+          "response": "The lock is released in finally and the error is rethrown to the caller unchanged.",
+          "userImpact": "The error surfaces; the lock does not leak.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A callback requests the same name again, or another name with an unbounded wait, on the same async call chain.",
+          "detection": "An AsyncLocalStorage set of names held by the current chain, as the store guard's nesting check; a nested request is checked for the same name, and for a different name, for ifAvailable or timeoutMs.",
+          "response": "LockNestedError at once; the outer hold is unaffected.",
+          "userImpact": "A self-deadlock, or a cross-name cycle that could wait forever, becomes an immediate error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A table (names, holders or pending) is full.",
+          "detection": "The CAS scan for a free slot finds none.",
+          "response": "LockCapacityError naming the table; for a holder slot, a lock word already taken is given back first (as the store guard's record() returns its permit), so nothing is granted without a record.",
+          "userImpact": "Loud failure instead of a hold that cannot be reclaimed or queried.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid arguments: empty or over-long name, activity over 64 bytes, reason over 1024 bytes, negative timeoutMs, ifAvailable with signal or timeoutMs.",
+          "detection": "Validation at the start of request, before any shared state is touched.",
+          "response": "LockArgumentError naming the argument and its limit; nothing is truncated.",
+          "userImpact": "The caller fixes its input; shared state is untouched.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two threads take two names in opposite order with bounded nested waits (A holds x and waits for y; B holds y and waits for x).",
+          "detection": "The nested waits carry timeoutMs (required for nested waiting requests), so the deadline check fires.",
+          "response": "The first nested wait to reach its deadline rejects with LockTimeoutError naming the holder; its callback unwinds and releases its outer lock, which lets the other thread proceed.",
+          "userImpact": "A cycle costs at most one timeout and an error, never a hang.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A worker is killed in the middle of a grant or release (between taking the lock word and publishing its holder record, or while claiming a name slot).",
+          "detection": "reclaim(threadId) finds a name mutex or a 'being claimed' name slot carrying the dead threadId.",
+          "response": "reclaim takes over that mutex, removes the dead thread's records for the name, recomputes the lock word and pending-exclusive count from the remaining published records, releases the mutex and bumps the version; an abandoned name claim is reset to free.",
+          "userImpact": "No lock leaks because of where a worker happened to die.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An ifAvailable shared request while an exclusive request is pending but no exclusive holder exists.",
+          "expected": "Refused: callback(null, blockedBy) with the pending exclusive request in blockedBy (writer preference)."
+        },
+        {
+          "input": "An ifAvailable exclusive request while only shared holders exist.",
+          "expected": "callback(null, blockedBy) listing the shared holders; it does not register as pending (it never waits), so it does not block new shared grants."
+        },
+        {
+          "input": "Many shared holders from several threads, then one exclusive waiter.",
+          "expected": "New shared requests are refused or wait from the moment the exclusive waiter counts itself; the exclusive is granted when the last shared holder releases."
+        },
+        {
+          "input": "Two threads race for an exclusive lock that just became free.",
+          "expected": "Exactly one CAS wins; the other waits again on the version word."
+        },
+        {
+          "input": "A lock name first used on a worker before the main thread ever used it.",
+          "expected": "The worker claims the name slot by CAS; every thread then resolves the same name to that slot."
+        },
+        {
+          "input": "A request whose signal is already aborted.",
+          "expected": "Rejects with signal.reason before touching shared state, as Web Locks does."
+        },
+        {
+          "input": "A thread whose only pending work is a lock wait.",
+          "expected": "A keep-alive timer for the wait's duration keeps the thread alive, as in the store guard, so the wait completes."
+        },
+        {
+          "input": "metadata omitted.",
+          "expected": "The holder is recorded without metadata; query() and blockedBy omit it."
+        },
+        {
+          "input": "A worker started without startDaemonWorker's lock block (a test or tool calling getLockManager() alone).",
+          "expected": "Outside a daemon it gets a private block, as getStoreGuard does; inside the daemon this cannot happen because DaemonWorkerInit.lockBlock is required."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Waiting never blocks a thread's event loop: Atomics.waitAsync only, never Atomics.wait.",
+          "source": "c1"
+        },
+        {
+          "text": "Release runs in finally on every exit path, and a grant is never left without its holder record.",
+          "source": "c1"
+        },
+        {
+          "text": "A shared block is created once by the main thread and installed by each worker at start.",
+          "source": "c2"
+        },
+        {
+          "text": "request/query keep Web Locks' meaning for name, mode, ifAvailable, signal and release-on-settle, so a later swap to navigator.locks is mechanical.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict through tsx; real worker_threads via helper scripts under __tests__/helpers, as src/db/__tests__/store-guard.test.ts does",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the lock semantics on one thread.",
+          "subjects": [
+            "exclusive excludes exclusive and shared; shared admits shared; mode defaults to exclusive",
+            "ifAvailable: granted when free; callback(null, blockedBy) with the holders and their metadata when not; it never registers as pending",
+            "writer preference: with an exclusive request waiting, an ifAvailable shared request gets null with the pending exclusive in blockedBy and a waiting shared request waits until the exclusive has run",
+            "release on resolve, reject, synchronous throw and abort, with the holder slot cleared each time",
+            "timeoutMs: LockTimeoutError naming the holders, and the pending entry and pending-exclusive count are gone afterwards",
+            "signal: an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up",
+            "same-name nesting on one async chain fails with LockNestedError; a nested different name is allowed with ifAvailable or timeoutMs and refused as an unbounded wait",
+            "query(): held and pending entries with mode, threadId, since and metadata",
+            "capacity: a full holder or pending or name table gives LockCapacityError and leaves no grant behind",
+            "arguments: empty or over-long name, over-long activity or reason, negative timeout and ifAvailable with signal/timeout are refused with LockArgumentError and nothing is truncated",
+            "requests for one name from one thread are served in arrival order",
+            "holder and pending slots: query() run concurrently with grants never returns a slot in its being-written state"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the same semantics across real worker threads sharing one block.",
+          "subjects": [
+            "the main thread holds shared, a worker's ifAvailable exclusive gets null with the main thread as blocker, and gets the lock after the main thread releases",
+            "a worker waiting for exclusive is woken and granted when another worker releases (no polling: the wait ends within 50 ms of the release)",
+            "writer preference across threads: shared holders on worker A, exclusive waiter on worker B, a new shared request on worker C is refused (ifAvailable) and B is granted when A releases",
+            "a worker terminated while holding exclusive (and another while waiting) is reclaimed by reclaim(threadId) on the main thread; a third worker then gets the lock and query() shows no entry for the dead threads",
+            "holder metadata written on one worker is read by query() and blockedBy on another",
+            "startDaemonWorker installs the lock block, so a daemon worker and the main thread contend for the same named lock",
+            "two workers taking x then y and y then x with bounded nested waits: one gets LockTimeoutError, the other completes, nothing stays held",
+            "watchWorker: a worker terminated while holding a named lock and waiting for another has both reclaimed without any explicit reclaim call in the test",
+            "a worker terminated at each point of a grant (test hooks pause it inside the critical section, after the lock word changes, and before publishing its record) leaves nothing held after watchWorker's reclaim; another worker then gets the lock",
+            "watchWorker reclaims using the threadId captured at registration even though worker.threadId reads -1 after exit"
+          ],
+          "fixturesNeeded": [
+            "a helper worker script that runs scripted lock operations and reports outcomes"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: exclusive and shared modes",
+            "integration: main thread and worker contend for the same named lock"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: ifAvailable grants or calls back with null and blockedBy",
+            "integration: worker's ifAvailable exclusive gets null while the main thread holds shared"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: timeoutMs and signal clean up and reject",
+            "integration: a waiting worker is woken and granted on release"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: release on resolve, reject, synchronous throw and abort",
+            "integration: a terminated worker's hold and pending request are reclaimed and another worker then gets the lock",
+            "integration: a worker terminated mid-grant leaves nothing held after reclaim"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: writer preference on one thread",
+            "integration: writer preference across three workers"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "unit: query() lists held and pending with metadata",
+            "integration: metadata written on one worker is read on another"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The only cross-thread lock is the s1 store guard (src/db/store-guard.ts), a per-store counting semaphore with no named locks, modes, writer preference or holder metadata; startDaemonWorker installs only the guard block (src/daemon/threads/worker-entry.ts:25-48). Node 22's runtime has no navigator.locks.",
+      "stateAfter": "A LockManager module (src/shared/locks/lock-manager.ts) with named shared/exclusive locks, ifAvailable, timeout and abort, release on settle, writer preference, holder metadata, query and reclaim over one process-wide block; startDaemonWorker installs that block beside the guard block. Nothing uses it yet; Epic 86197ac6 s2's maintenance lock is the first consumer. The store guard is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the lock module with its unit tests on one thread.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the required lockBlock field to DaemonWorkerInit, install it in startDaemonWorker, update its callers, add watchWorker, and add the cross-thread integration tests with real workers.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "A new module, a new required DaemonWorkerInit field whose only callers are two test files updated in this Story, and watchWorker; no existing production API, store or IPC behaviour changes, and the store guard keeps its own block and reclaim.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Lock table in shared memory, no coordinator",
+        "oneLineSummary": "A Web Locks-shaped LockManager over one SharedArrayBuffer: a name table, per-lock state words, holder and pending slot tables with metadata bytes; every thread grants, waits (Atomics.waitAsync) and releases by compare-and-swap, with no thread in the middle.",
+        "approach": "A new module (src/shared/locks/lock-manager.ts) with createLockBlock() on the main thread and installLockManager(block) on each thread, passed to workers like the store guard's block. request(name, options, callback) mirrors navigator.locks.request: options.mode 'shared' | 'exclusive', ifAvailable (grant now or call back with null plus the blocking holders), signal and timeoutMs for waiting requests, and metadata {activity, reason} stored with the holder. The callback's settlement releases the lock in finally. Per lock: a state word (exclusive bit plus shared count), a pending-exclusive count that blocks new shared grants (writer preference), and a version word bumped on every change that waiters wait on. A holder table records [lock, mode, threadId, acquisition id, since, metadata bytes] for query() and reclaim(threadId); a pending table records waiting requests for query(). Nested requests for the same name on one async chain are refused (AsyncLocalStorage) to prevent self-deadlock.",
+        "pros": [
+          "A no-wait check is a few atomic reads and one CAS on the caller's own thread: it never waits on another thread's event loop, so it stays instant even while the main thread is busy",
+          "Same proven patterns as the s1 store guard (CAS, waitAsync with keep-alive, abort, reclaim on worker exit)",
+          "Holder metadata is readable by any thread directly from shared memory"
+        ],
+        "cons": [
+          "Fixed capacity (names, holder and pending slots) chosen up front; exhaustion must fail loudly",
+          "Strict global FIFO among waiting exclusive requests is approximate (CAS race among waiters); writer preference still holds"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Coordinator on the main thread over the hub",
+        "oneLineSummary": "A plain-JS LockManager lives on the main thread with exact Web Locks queue semantics; workers request, release and query over hub messages.",
+        "approach": "The main thread hosts a Map of named locks with FIFO request queues and holder records; workers send lock.request / lock.release / lock.query hub requests and get grants back; the main thread's own calls are local. Reclaim is a removal of a dead worker's entries on its exit.",
+        "pros": [
+          "Exact FIFO and Web Locks semantics in ordinary code",
+          "Unbounded names and holders"
+        ],
+        "cons": [
+          "Every grant, including the no-wait check every s2 request makes, is a round trip through the main thread's event loop, which in s2 still runs session handlers: a busy main thread delays every lock check in every worker",
+          "Release depends on the main thread receiving a message; a lost message leaves a lock held",
+          "Adds hub traffic to every request"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Exact FIFO and unbounded names, but the no-wait check and release depend on the main thread's event loop, which defeats the s2 use case."
+      },
+      {
+        "id": "a3",
+        "name": "Shared-memory fast path with a main-thread coordinator for waiters",
+        "oneLineSummary": "No-wait checks and uncontended grants by CAS in shared memory; contended requests queue at a main-thread coordinator for exact FIFO.",
+        "approach": "As a1 for the state words and ifAvailable; a request that must wait registers with a coordinator on the main thread, which hands out grants in FIFO order and notifies the waiter.",
+        "pros": [
+          "Instant no-wait checks",
+          "Exact FIFO for waiters"
+        ],
+        "cons": [
+          "Two mechanisms that must agree on every state change; races between the CAS path and the coordinator are the hardest part to get right",
+          "Waiting grants still depend on the main thread's event loop",
+          "Most code of the three for ordering nobody asked for"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Instant no-wait checks, but waiting grants still depend on the main thread and two mechanisms must stay consistent, for an ordering guarantee nobody asked for."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Epic 86197ac6 s2 must be amended to use this framework: its maintenance lock (exclusive, held by maintenance with activity and reason; every request takes an ifAvailable shared hold and is refused with the holder's metadata), and its router calls watchWorker for every worker it starts beside its own StoreGuard.reclaim on exit."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/store-guard.ts:160-389"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/threads/worker-entry.ts:25-48"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "https://developer.mozilla.org/docs/Web/API/Web_Locks_API"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s1"
+    }
+  ]
+}

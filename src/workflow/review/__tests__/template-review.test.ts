@@ -32,6 +32,7 @@ afterAll(async () => {
 	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
 });
 
+import { CliStallError } from '../../../agent/providers/cli-provider.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { artifactJsonPath } from '../../storage.js';
 import { reviewArtifactFile, runReview } from '../index.js';
@@ -170,8 +171,22 @@ test('T10 a second invalid answer fails the review', async () => {
 	const bad = answer(SPEC);
 	bad.items.pop();
 	const f = fakeProvider([bad, bad, answer(SPEC)]);
-	await assert.rejects(run(f), /failed checklist design-spec twice[\s\S]*check item `tests` is not answered/);
+	await assert.rejects(run(f), /failed checklist design-spec \(2 of 2 attempts were invalid answers\)[\s\S]*check item `tests` is not answered/);
 	assert.equal(f.sessions.length, 2, 'never a third session');
+});
+
+test('a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts', async () => {
+	const bad = answer(SPEC);
+	bad.items.pop();
+	const stalled = fakeProvider([new CliStallError('codex', 300_000, 't-stall'), new CliStallError('codex', 300_000, 't-stall'), bad, answer(SPEC)]);
+	const err = await run(stalled).then(() => undefined, (e: unknown) => e as Error);
+	assert.ok(err !== undefined, 'the review fails');
+	assert.match(err.message, /failed checklist design-spec \(1 of 3 attempts were invalid answers\)/);
+	assert.doesNotMatch(err.message, /twice/);
+	assert.equal(stalled.sessions.length, 3, 'two stalls re-issued, then the invalid answer ends it');
+	const twice = fakeProvider([bad, bad, answer(SPEC)]);
+	await assert.rejects(run(twice), /failed checklist design-spec \(2 of 2 attempts were invalid answers\)/);
+	assert.equal(twice.sessions.length, 2);
 });
 
 // --- T11 -----------------------------------------------------------------------

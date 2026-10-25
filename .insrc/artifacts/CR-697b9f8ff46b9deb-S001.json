@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792864589170-hm2frw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T17:56:29.170Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 62960,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "697b9f8ff46b9deb",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T14:01:46.590Z",
+    "epicSlug": "stop-codex-review-calls-stalling-keep",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "697b9f8ff46b9deb",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/cli-review-session.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/shared/process-group.ts",
+        "src/shared/types.ts",
+        "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+        "src/agent/providers/model-call-error.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+        "src/workflow/review-pipeline/driver.ts",
+        "src/workflow/review/__tests__/verify-answer.test.ts",
+        "src/workflow/review/verify.ts",
+        "src/workflow/review-pipeline/design-review.ts",
+        "src/workflow/review-pipeline/job.ts",
+        "src/workflow/review-pipeline/types.ts",
+        "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+        "src/workflow/review-pipeline/code-review.ts",
+        "src/workflow/review/__tests__/call-limits.test.ts",
+        "src/workflow/review/__tests__/review.test.ts",
+        "src/workflow/review/call-limits.ts",
+        "src/workflow/review/extract.ts",
+        "src/workflow/review/__tests__/template-review.test.ts",
+        "src/workflow/review/template-review.ts",
+        "src/daemon/__tests__/workflow-review-rpc.test.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+        "src/daemon/steps/review-step/phases/start.ts",
+        "src/daemon/steps/review-step/types.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "src/assets/connection-management-gates.json",
+        "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+        "src/daemon/db/management-enablement.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "completeStructured's reaching test file, src/analyze/__tests__/codex-plan-schemas.live.test.ts, is absent from the test record. This coverage is present but failing/unverified: its pass-state is unverified, although the Story's structured-call tests pass. All promised tests are present and passing, including the live and smoke tests reported by the builder.",
+            "expectationRef": "completeStructured",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "630183"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

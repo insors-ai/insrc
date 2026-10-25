@@ -1,0 +1,161 @@
+{
+  "artifact": "design.epic",
+  "stage": "design.epic",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The five stories cover the approved connection-management scope without introducing the declared non-goals.",
+      "evidence": "DEF \u00a76 assigns saved editing, draft testing, temporary lifetime, removal, and both-client Settings integration to S001\u2013S005. The HLD preserves those assignments and adopts the PRD mock as its UX baseline. DEF \u00a73 excludes new drivers, automatic discovery, ontology generation and shared credentials; none is proposed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/connection-management-prd.html]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current pools are repository keyed, and existing ephemeral registration does not provide workbench-session isolation or busy-use leases.",
+      "evidence": "pool-cache.ts uses `const CACHE = new Map<string, DriverPool>()` and `CACHE.get(repoPath)`. DriverPool.registerEphemeral stores entries in that same pool and closes an existing same-ID entry. acquire returns a Driver directly; PoolEntry tracks building and idle time but no active-use count. [files: src/daemon/db/pool-cache.ts, src/daemon/db/pool.ts]",
+      "action": "None; the proposed isolation and lease migration address real limitations.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The registry, keychain helpers and driver catalog are reusable foundations, while transactional management and safe driver descriptors are new work.",
+      "evidence": "saveConnections directly calls `writeFile(path, serialized, 'utf8')`. saveConnectionRpc extracts credentials before loading the registry and handles load failure with `.catch(() => [] ...)`. registry.ts exposes only kind/family catalog entries; secrets.ts provides set, delete and token resolution, without generation staging or receipts. These are foundations, not existing implementations of the proposed guarantees. [files: src/daemon/db/config.ts, src/daemon/db-rpc.ts, src/daemon/db/secrets.ts, src/daemon/db/registry.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Trusted session propagation requires the named IPC handler and execution-context extensions.",
+      "evidence": "RpcHandler currently accepts only params, and dispatch calls `handler(request.params)`. The socket identity remains inside IpcServer; client labels/PIDs are explicitly described as untrusted. ToolDeps has a sessionId but no connection capability, TemplateExecuteArgs has no access context, and acquireDataPool forwards only repoPath. [files: src/daemon/server.ts, src/daemon/tools/types.ts, src/analyze/executor/types.ts, src/analyze/runtimes/data/_shared.ts]",
+      "action": "Include standard dispatch, streaming dispatch and streaming-to-standard fallback when adding handler context.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.2",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "Session-isolated pools and unchanged driver implementations suffice to keep temporary inputs memory-only and permit repeated IDs across sessions.",
+      "evidence": "Converted file drivers call `destForSource(this.id, sourceRoot, this.path)` and `ensureCached(...)`. converter-cache.ts keys destinations by connection ID alone, persists a sidecar containing `sourcePath`, and logs sourcePath/destPath. Its freshness check compares mtime and size without comparing sourcePath. DuckDBFileDriver.close is a no-op. Consequently, separate session pools still share persistent cache destinations; same-ID sources can collide or reuse another source's converted data, and temporary paths reach disk and logs. The HLD does not include this cache boundary in its migration. [files: src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/converter-cache.ts, src/daemon/db/drivers/index.ts]",
+      "action": "Add converter-cache ownership and driver lifecycle to S003's change sites. Define a memory-only temporary conversion path, session/repo/revision-aware cache identity, and cleanup/logging rules; test same-ID sources with matching names, sizes and timestamps across sessions.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Additive registry metadata and immutable secret reference names can retain the existing JSON and token-reading foundations.",
+      "evidence": "loadConnections returns the parsed document as `file: doc`, validates connections without rejecting extra top-level fields, and spreads connection fields into resolved records. resolveSecrets accepts `${secret:([^}]+)}` and looks up the captured reference without requiring the legacy deterministic naming convention. Existing writers reconstruct `{ connections: ... }`, supporting the HLD's requirement to replace every writer and block unsafe downgrade. [files: src/daemon/db/config.ts, src/daemon/db/secrets.ts, src/daemon/db-rpc.ts]",
+      "action": "Retain round-trip tests for extra fields and both legacy and generation-based references when replacing writers.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "data-compatibility.2",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Existing saved records remain compatible when family becomes exclusively server-derived.",
+      "evidence": "loadConnections explicitly accepts a family differing from the registered driver and reports `Using user-pinned family.` config.test.ts verifies that behavior. The HLD promises existing JSON remains readable and also makes family server-derived, but does not specify whether mismatched legacy records are preserved, normalized or rejected. [files: src/daemon/db/config.ts, src/shared/db-driver.ts, src/daemon/db/__tests__/config.test.ts]",
+      "action": "Specify the legacy pinned-family migration and its read, edit, activation and rollback behavior.",
+      "fixability": "manual",
+      "outcome": "could-not-verify"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The HLD preserves the approved Epic dependency graph.",
+      "evidence": "DEF specifies S002\u2192S001, S003\u2192S001, S004\u2192S001+S003, and S005\u2192S001+S002+S003+S004. HLD \u00a76 and rollout retain these dependencies and assign each shared contract one owner. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.2",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "Applying canonical registered-repository eligibility to every resolver operation preserves existing saved-only analysis behavior.",
+      "evidence": "dataScopeOf returns `{ poolPath: scope.value }` for non-connection scopes. Its documented contract explicitly preserves a manifest directory's own connections file, whether registered or not. data-runtimes.test.ts exercises an unregistered repo directory, a nested manifest directory and workspace directories, asserting each pool opens at the scope's own path. The HLD's universal registered-root gate would reject these callers or redirect them to a different registry despite promising saved-only calls continue working. [files: src/analyze/context/scope.ts, src/analyze/runtimes/data/_shared.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts]",
+      "action": "Separate management eligibility from legacy analysis lookup scope, or explicitly approve and design migration of directory-scoped registries. Preserve the existing scope contract until that decision is made.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The design distinguishes real read, commit, activation and credential-cleanup failure boundaries that current adapters conflate.",
+      "evidence": "saveConnectionRpc converts failed reads to an empty list and suppresses reload errors. deleteConnectionRpc commits the registry before catching secret-deletion errors and still returns removed:true. The external IDE service catches list failures and returns []. The HLD explicitly replaces these behaviors with registry-unreadable, separate activation outcomes and committed cleanup-pending, and assigns client integration to S005. [files: src/daemon/db-rpc.ts, src/daemon/db/pool-cache.ts, /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts]",
+      "action": "Ensure the new IDE list adapter preserves read errors instead of returning an empty array.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.2",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The proposed protocol can distinguish a never-submitted operation from an operation whose receipt expired after 30 days.",
+      "evidence": "HLD \u00a73 requires older unknown results to become reconciliation-required. MutationRequest carries a UUID operationId but no issuance time or server-issued validity token; OperationStatus distinguishes not-seen from reconciliation-required. No retained tombstone or age-detection mechanism is specified. Existing RPC/config code has no operation history to supply that distinction. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/db-rpc.ts, src/daemon/db/config.ts]",
+      "action": "Define how the daemon identifies expired operations after receipt pruning and rejects their replay, including across restart.",
+      "fixability": "manual",
+      "outcome": "could-not-verify"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Every upstream acceptance criterion maps to a test in the design.",
+      "evidence": "DEF defines 12 acceptance criteria across S001\u2013S005. The HLD names broad failure-injection, load, mixed-version and family-fixture testing, but provides no AC-to-test mapping. The PRD supplies a verification checklist rather than such a mapping. Existing config and secret tests exercise legacy loading, writing and token handling; they do not establish coverage of the new acceptance criteria. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/connection-management-prd.html, src/daemon/db/__tests__/config.test.ts, src/daemon/db/__tests__/secrets.test.ts]",
+      "action": "Add a compact mapping of all 12 ACs to planned tests and owning stories, including concurrency, restart/replay, cache isolation, busy leases, stale draft results, accessibility and both-client compatibility. Tests need not be implemented at HLD stage.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    }
+  ],
+  "counts": {
+    "high": 2,
+    "med": 1,
+    "low": 9,
+    "unverified": 2
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-21T08:04:02.293Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "s1",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T06:44:13.783Z",
+    "updatedAt": "2026-10-21T09:09:57.673Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
     "epicSlug": "scope-story-s-code-review-what",
@@ -1895,6 +1895,1035 @@
               },
               {
                 "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "3983ca96",
+        "ranAt": "2026-10-21T08:59:36.959Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+                "title": "on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+                "title": "a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1761,
+            "titles": [
+              {
+                "title": "the review subject holds only the Story's own files and records attribution story-trailer",
+                "result": "pass"
+              },
+              {
+                "title": "a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree",
+                "result": "pass"
+              },
+              {
+                "title": "with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1877,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist whose prior commit does not resolve records HEAD (ISSUE-b97752e9: one that resolves is kept)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5283,
+            "titles": [
+              {
+                "title": "changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)",
+                "result": "pass"
+              },
+              {
+                "title": "changedFiles: throws NoBuildChangesError on a non-git directory",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: version is threaded onto target when supplied",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: an empty changed set → []",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a base on the ctx REACHES the seam as opts.base",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an exclude list on the ctx REACHES the seam as opts.exclude",
+                "result": "pass"
+              },
+              {
+                "title": "t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`",
+                "result": "pass"
+              },
+              {
+                "title": "with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with unrelated work plus the record's own paths still derives the Story's committed range; the unrelated file is reported, the record's own paths are not",
+                "result": "pass"
+              },
+              {
+                "title": "t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match",
+                "result": "pass"
+              },
+              {
+                "title": "T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)",
+                "result": "pass"
+              },
+              {
+                "title": "T26: the constant is exactly the four globs, and frozen",
+                "result": "pass"
+              },
+              {
+                "title": "T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITH excludeGlobs every one of the three diffs carries them",
+                "result": "pass"
+              },
+              {
+                "title": "T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "a clean tree with a base reports only the Story's own files, not files a merge brought in",
+                "result": "pass"
+              },
+              {
+                "title": "without a base the derivation is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge",
+                "result": "pass"
+              },
+              {
+                "title": "a committed ledger file stays out of the range result after a mid-build merge",
+                "result": "pass"
+              },
+              {
+                "title": "an uncommitted edit to a file the Story's commits changed is part of the Story's set",
+                "result": "pass"
+              },
+              {
+                "title": "a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike",
+                "result": "pass"
+              },
+              {
+                "title": "a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change",
+                "result": "pass"
+              },
+              {
+                "title": "a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change",
+                "result": "pass"
+              },
+              {
+                "title": "rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included",
+                "result": "pass"
+              },
+              {
+                "title": "on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4872,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts",
+                "result": "pass"
+              },
+              {
+                "title": "with no foreign commit, a Story with no carrying commit gets today's first-parent range, read as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "when reading trailers fails without strict, the set is today's first-parent range",
+                "result": "pass"
+              },
+              {
+                "title": "with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set",
+                "result": "pass"
+              },
+              {
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              },
+              {
+                "title": "a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)",
+                "result": "pass"
+              },
+              {
+                "title": "storyLines reads every whole Insrc-Story line and nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c66188c6",
+        "ranAt": "2026-10-21T09:02:40.553Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/subject.test.ts",
+                "title": "resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2298,
+            "titles": [
+              {
+                "title": "the review subject holds only the Story's own files and records attribution story-trailer",
+                "result": "pass"
+              },
+              {
+                "title": "a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree",
+                "result": "pass"
+              },
+              {
+                "title": "with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched",
+                "result": "pass"
+              },
+              {
+                "title": "a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1534,
+            "titles": [
+              {
+                "title": "resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: git derivation failure -> no-build-record",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: read-only — only the injected read seams are called",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either",
+                "result": "pass"
+              },
+              {
+                "title": "T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "T41: a base naming a commit that does not exist -> no-build-record, never the working tree, and exactly one warning (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented",
+                "result": "pass"
+              },
+              {
+                "title": "the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam",
+                "result": "pass"
+              },
+              {
+                "title": "T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one",
+                "result": "pass"
+              },
+              {
+                "title": "T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback",
+                "result": "pass"
+              },
+              {
+                "title": "the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "ec90553f",
+        "ranAt": "2026-10-21T09:06:42.228Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+                "title": "a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+                "title": "a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2331,
+            "titles": [
+              {
+                "title": "T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both",
+                "result": "pass"
+              },
+              {
+                "title": "T22: an excluded file does not count against maxBytes",
+                "result": "pass"
+              },
+              {
+                "title": "T23: with no exclude, and with an empty one, both argument vectors are exactly today's (numstat reads -z since ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "T23: the body and the numstat command receive the SAME pathspecs",
+                "result": "pass"
+              },
+              {
+                "title": "T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it",
+                "result": "pass"
+              },
+              {
+                "title": "T25: a malformed exclude is invalid-input and git is not run",
+                "result": "pass"
+              },
+              {
+                "title": "T25: the closed input schema declares exclude as an array of non-empty strings",
+                "result": "pass"
+              },
+              {
+                "title": "when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure",
+                "result": "pass"
+              },
+              {
+                "title": "a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces",
+                "result": "pass"
+              },
+              {
+                "title": "a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1835,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject",
+                "result": "pass"
+              },
+              {
+                "title": "the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit",
+                "result": "pass"
+              },
+              {
+                "title": "storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding",
+                "result": "pass"
+              },
+              {
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2192,
+            "titles": [
+              {
+                "title": "assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a truncated diff still yields a valid grounding (bounded hunks + a truncation note, review proceeds)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a working-tree git failure propagates (DiffUnavailableError)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a range git failure propagates at once — no step-down to the working tree or a last commit",
+                "result": "pass"
+              },
+              {
+                "title": "assembler (integration): a real repo with no base is refused, and the assembler is read-only",
+                "result": "pass"
+              },
+              {
+                "title": "a base and no globs: the range then the working tree, with no excludeGlobs argument",
+                "result": "pass"
+              },
+              {
+                "title": "a base and globs: the RANGE is read first, then the working tree, both with the globs",
+                "result": "pass"
+              },
+              {
+                "title": "a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope",
+                "result": "pass"
+              },
+              {
+                "title": "T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported",
+                "result": "pass"
+              },
+              {
+                "title": "seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not a diff failure propagates at once",
+                "result": "pass"
+              },
+              {
+                "title": "T44 (integration, real git): ledger hunks larger than the diff cap that sort before src/ — with the exclusion every source file keeps its diff text; without it the text is lost",
+                "result": "pass"
+              },
+              {
+                "title": "integration, real git: with no base and a clean tree nothing is reviewed in the Story's place",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff carries full hunks for the Story files and none for merged-in files",
+                "result": "pass"
+              },
+              {
+                "title": "a file changed by both a Story commit and the merge carries only the Story's own hunks",
+                "result": "pass"
+              },
+              {
+                "title": "edits folded into a merge commit are reviewed and marked",
+                "result": "pass"
+              },
+              {
+                "title": "a range with no Story change gives an empty grounding without calling git_diff",
+                "result": "pass"
+              },
+              {
+                "title": "a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first",
+                "result": "pass"
+              },
+              {
+                "title": "without hunksByFile buildDiffSymbols splits the body as before",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff applies the exclusions to every per-unit call",
+                "result": "pass"
+              },
+              {
+                "title": "a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "d995207c",
+        "ranAt": "2026-10-21T09:09:57.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/shell-helper.test.ts: 'a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/shell-helper.test.ts",
+                "title": "a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/shell-helper.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "a multibyte UTF-8 character split across two output chunks is decoded whole, and the byte cap and truncation flag are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2024,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject",
+                "result": "pass"
+              },
+              {
+                "title": "the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit",
+                "result": "pass"
+              },
+              {
+                "title": "storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding",
+                "result": "pass"
+              },
+              {
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks",
                 "result": "pass"
               }
             ],

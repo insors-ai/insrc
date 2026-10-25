@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createStepCallHandler } from '../../daemon/steps/host.js';
 import { _setForwardConnectForTests } from '../forward-step.js';
 import { handleInsrcSchema } from '../schema/handler.js';
@@ -34,7 +34,7 @@ const OTHER_PHASES = ['start', 'plan', 'step', 'synthesize', 'resolve_question',
 test('an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases', async () => {
 	const seen: unknown[] = [];
 	const spy = async (args: unknown) => { seen.push(args); return { content: [{ type: 'text' as const, text: '{"next":"parked"}' }] }; };
-	const ipc = new IpcServer({}, { 'step.call': createStepCallHandler({ insrc_workflow_step: spy as never }) });
+	const ipc = new IpcServer(directDispatch({}, { 'step.call': createStepCallHandler({ insrc_workflow_step: spy as never }) }));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-park-phases-'));
 	const path = join(dir, 'd.sock');
 	const daemon = createServer((socket: Socket) => { (ipc as unknown as { handleConnection(s: Socket): void }).handleConnection(socket); });

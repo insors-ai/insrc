@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { resolveApprovalClass } from '../../../approval-policy.js';
 import { ghApprovalClass, registerGhApproval } from '../helpers.js';
+import { ghReleaseEditTool } from '../release.js';
+import { ghRepoCloneTool } from '../repo.js';
 
 test('gh-approval.test.ts: every rename, close, merge, delete, transfer, logout, visibility, force, clobber and non-empty extraArgs is destructive and an unknown op is destructive', () => {
 	registerGhApproval({
@@ -34,4 +37,13 @@ test('gh-approval.test.ts: every rename, close, merge, delete, transfer, logout,
 	// an op no row names asks, even on a tool that has a class of its own
 	assert.equal(ghApprovalClass('gh_pr_list', { op: 'unknown' }), 'destructive');
 	assert.equal(ghApprovalClass('gh_pr_create', {}), 'common');
+});
+
+test('gh-approval.test.ts: gh_release_edit with newTag and gh_repo_clone with extraArgs are destructive and common without them', () => {
+	// the classes the registered tools resolve, not only the table
+	assert.equal(resolveApprovalClass(ghReleaseEditTool, { tag: 'v1', newTag: 'v2' }), 'destructive');
+	assert.equal(resolveApprovalClass(ghReleaseEditTool, { tag: 'v1', title: 't' }), 'common');
+	assert.equal(resolveApprovalClass(ghRepoCloneTool, { repo: 'a/b', extraArgs: ['--upload-pack=x'] }), 'destructive');
+	assert.equal(resolveApprovalClass(ghRepoCloneTool, { repo: 'a/b', extraArgs: [] }), 'common');
+	assert.equal(resolveApprovalClass(ghRepoCloneTool, { repo: 'a/b' }), 'common');
 });

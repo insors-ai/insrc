@@ -4,8 +4,13 @@
  * list / view are read-only. create / edit / publish / delete gate.
  */
 
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, md, fail, shellFail, ghExec, parseJson } from './helpers.js';
+import { Type } from '@sinclair/typebox';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, num, md, fail, ghApprovalClass, ghExec, parseJson, withGhFailureNet } from './helpers.js';
+import { ghFailResult } from './legacy.js';
+import {
+  GhReleaseListDataSchema, GhReleaseRowSchema, GhReleaseCreateDataSchema, GhReleaseTagDataSchema,
+} from './schemas.js';
 
 interface RawRelease {
   tagName: string;
@@ -19,20 +24,17 @@ interface RawRelease {
   body?: string;
 }
 
-export const ghReleaseListTool: Tool = {
+export const ghReleaseListTool = withGhFailureNet({
   id: 'gh_release_list',
   description: 'List releases.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      limit: { type: 'number', minimum: 1, maximum: 200 },
-      excludeDrafts: { type: 'boolean' },
-      excludePrereleases: { type: 'boolean' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 200 })),
+    excludeDrafts: Type.Optional(Type.Boolean()),
+    excludePrereleases: Type.Optional(Type.Boolean()),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'release', 'list'];
@@ -41,8 +43,8 @@ export const ghReleaseListTool: Tool = {
     if (input['excludeDrafts']      === true) { argv.push('--exclude-drafts'); }
     if (input['excludePrereleases'] === true) { argv.push('--exclude-pre-releases'); }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_release_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_list' } });
+    const bad = ghFailResult('gh_release_list', r, false); if (bad) { return bad; }
     // gh release list has no --json option on older versions; parse the
     // tab-separated output: "<tag>\t<type>\t<tag>\t<published>"
     const releases: RawRelease[] = [];
@@ -71,20 +73,17 @@ export const ghReleaseListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: releases.length, releases } };
   },
-};
+});
 
-export const ghReleaseViewTool: Tool = {
+export const ghReleaseViewTool = withGhFailureNet({
   id: 'gh_release_view',
   description: 'View a release (tag, body, assets).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      tag: { type: 'string', description: 'Release tag. Default: latest.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    tag: Type.Optional(Type.String({ description: 'Release tag. Default: latest.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseRowSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const tag = str(input, 'tag');
@@ -92,8 +91,8 @@ export const ghReleaseViewTool: Tool = {
     if (tag) { argv.push(tag); }
     argv.push('--json', 'tagName,name,isDraft,isPrerelease,author,publishedAt,createdAt,url,body');
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_release_view', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_view' } });
+    const bad = ghFailResult('gh_release_view', r, false); if (bad) { return bad; }
     const rel = parseJson<RawRelease>(r.stdout);
     if (!rel) { return fail('gh_release_view', 'could not parse JSON'); }
     const lines: string[] = [
@@ -107,29 +106,25 @@ export const ghReleaseViewTool: Tool = {
     ].filter(Boolean);
     return { output: lines.join('\n').trimEnd(), format: 'markdown', success: true, data: rel };
   },
-};
+});
 
-export const ghReleaseCreateTool: Tool = {
+export const ghReleaseCreateTool = withGhFailureNet({
   id: 'gh_release_create',
   description: 'Create a release.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      tag: { type: 'string' },
-      title: { type: 'string' },
-      notes: { type: 'string' },
-      target: { type: 'string', description: 'Branch or commit SHA (default: repo default).' },
-      draft: { type: 'boolean' },
-      prerelease: { type: 'boolean' },
-      generateNotes: { type: 'boolean', description: 'Auto-generate release notes.' },
-      assets: { type: 'array', items: { type: 'string' }, description: 'File paths to attach.' },
-    },
-    required: ['tag'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    tag: Type.String(),
+    title: Type.Optional(Type.String()),
+    notes: Type.Optional(Type.String()),
+    target: Type.Optional(Type.String({ description: 'Branch or commit SHA (default: repo default).' })),
+    draft: Type.Optional(Type.Boolean()),
+    prerelease: Type.Optional(Type.Boolean()),
+    generateNotes: Type.Optional(Type.Boolean({ description: 'Auto-generate release notes.' })),
+    assets: Type.Optional(Type.Array(Type.String(), { description: 'File paths to attach.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseCreateDataSchema,
+  approval: ghApprovalClass('gh_release_create', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -171,30 +166,26 @@ export const ghReleaseCreateTool: Tool = {
     const assets = Array.isArray(input['assets']) ? (input['assets'] as unknown[]).map(String) : [];
     argv.push(...assets);
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_create' } });
-    if (r.code !== 0) { return shellFail('gh_release_create', r); }
+    const bad = ghFailResult('gh_release_create', r, true); if (bad) { return bad; }
     return { output: `Created release \`${tag}\`.\n${r.stdout.trim()}`, format: 'markdown', success: true, data: { tag, url: r.stdout.trim() } };
   },
-};
+});
 
-export const ghReleaseEditTool: Tool = {
+export const ghReleaseEditTool = withGhFailureNet({
   id: 'gh_release_edit',
   description: 'Edit a release (title / notes / tag / draft / prerelease flags).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      tag: { type: 'string' },
-      newTag: { type: 'string' },
-      title: { type: 'string' },
-      notes: { type: 'string' },
-      draft: { type: 'boolean' },
-      prerelease: { type: 'boolean' },
-    },
-    required: ['tag'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    tag: Type.String(),
+    newTag: Type.Optional(Type.String()),
+    title: Type.Optional(Type.String()),
+    notes: Type.Optional(Type.String()),
+    draft: Type.Optional(Type.Boolean()),
+    prerelease: Type.Optional(Type.Boolean()),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseTagDataSchema,
+  approval: (input: ToolInput) => ghApprovalClass('gh_release_edit', input),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const parts: string[] = [];
@@ -225,26 +216,22 @@ export const ghReleaseEditTool: Tool = {
     if (input['prerelease'] === true) { argv.push('--prerelease=true'); }
     if (input['prerelease'] === false) { argv.push('--prerelease=false'); }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_release_edit', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_edit' } });
+    const bad = ghFailResult('gh_release_edit', r, true); if (bad) { return bad; }
     return { output: `Edited release \`${tag}\`.`, format: 'markdown', success: true, data: { tag } };
   },
-};
+});
 
-export const ghReleasePublishTool: Tool = {
+export const ghReleasePublishTool = withGhFailureNet({
   id: 'gh_release_publish',
   description: 'Publish a draft release.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      tag: { type: 'string' },
-    },
-    required: ['tag'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    tag: Type.String(),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseTagDataSchema,
+  approval: ghApprovalClass('gh_release_publish', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -262,27 +249,23 @@ export const ghReleasePublishTool: Tool = {
     if (!tag) { return fail('gh_release_publish', 'missing tag'); }
     const argv = ['gh', 'release', 'edit', tag, '--draft=false'];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_release_publish', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_publish' } });
+    const bad = ghFailResult('gh_release_publish', r, true); if (bad) { return bad; }
     return { output: `Published release \`${tag}\`.`, format: 'markdown', success: true, data: { tag } };
   },
-};
+});
 
-export const ghReleaseDeleteTool: Tool = {
+export const ghReleaseDeleteTool = withGhFailureNet({
   id: 'gh_release_delete',
   description: 'Delete a release.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      tag: { type: 'string' },
-      cleanupTag: { type: 'boolean', description: 'Also delete the git tag.' },
-    },
-    required: ['tag'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    tag: Type.String(),
+    cleanupTag: Type.Optional(Type.Boolean({ description: 'Also delete the git tag.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhReleaseTagDataSchema,
+  approval: ghApprovalClass('gh_release_delete', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -304,8 +287,8 @@ export const ghReleaseDeleteTool: Tool = {
     const argv = ['gh', 'release', 'delete', tag, '-y'];
     if (input['cleanupTag'] === true) { argv.push('--cleanup-tag'); }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_release_delete', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_delete' } });
+    const bad = ghFailResult('gh_release_delete', r, true); if (bad) { return bad; }
     return { output: `Deleted release \`${tag}\`.`, format: 'markdown', success: true, data: { tag } };
   },
-};
+});

@@ -53,3 +53,19 @@ test('gh-timeouts.test.ts: no ghExec call in issue.ts or pr.ts passes its own ti
 		assert.ok(!/timeoutMs/.test(text), `${file} names no timeoutMs`);
 	}
 });
+
+test('gh-timeouts.test.ts: no ghExec call in repo.ts, release.ts or project.ts passes its own timeout and clone keeps 600 s', () => {
+	const dir = dirname(dirname(fileURLToPath(import.meta.url)));
+	for (const file of ['repo.ts', 'release.ts', 'project.ts']) {
+		const text = readFileSync(join(dir, file), 'utf8');
+		const calls = text.match(/ghExec\([^;]*;/g) ?? [];
+		assert.ok(calls.length > 0, `${file} calls ghExec`);
+		for (const call of calls) {
+			assert.ok(!/timeoutMs/.test(call), `${file}: ${call}`);
+			assert.ok(/key: \{ toolId: /.test(call), `${file} passes its limit key: ${call}`);
+		}
+		assert.ok(!/timeoutMs/.test(text), `${file} names no timeoutMs`);
+	}
+	assert.equal(ghTimeoutMs({ toolId: 'gh_repo_clone' }), 600_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_release_create' }), 180_000);
+});

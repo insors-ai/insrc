@@ -10,8 +10,13 @@
  * lookups, `repo` can be supplied instead.
  */
 
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, md, fail, shellFail, ghExec, parseJson } from './helpers.js';
+import { Type } from '@sinclair/typebox';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, num, md, fail, ghApprovalClass, ghExec, parseJson, withGhFailureNet } from './helpers.js';
+import { ghFailResult } from './legacy.js';
+import {
+  GhProjectListDataSchema, GhProjectRowSchema, GhProjectItemListDataSchema, GhProjectItemAddDataSchema, GhProjectItemUpdateDataSchema, GhProjectItemArchiveDataSchema, GhProjectItemDeleteDataSchema, GhProjectFieldListDataSchema,
+} from './schemas.js';
 
 interface RawProject {
   number: number;
@@ -44,20 +49,17 @@ interface RawItem {
 // list / view (read-only)
 // ---------------------------------------------------------------------------
 
-export const ghProjectListTool: Tool = {
+export const ghProjectListTool = withGhFailureNet({
   id: 'gh_project_list',
   description: 'List Projects v2 for an owner (user or org).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      owner: { type: 'string', description: 'User or org login. Default: current gh user.' },
-      limit: { type: 'number', minimum: 1, maximum: 200 },
-      closed: { type: 'boolean', description: 'Include closed projects.' },
-      format: { type: 'string', enum: ['json', 'summary'], description: 'Default summary.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    owner: Type.Optional(Type.String({ description: 'User or org login. Default: current gh user.' })),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 200 })),
+    closed: Type.Optional(Type.Boolean({ description: 'Include closed projects.' })),
+    format: Type.Optional(Type.Unsafe<'json' | 'summary'>({ type: 'string', enum: ['json', 'summary'], description: 'Default summary.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'project', 'list', '--format', 'json'];
@@ -65,8 +67,8 @@ export const ghProjectListTool: Tool = {
     const limit = num(input, 'limit') ?? 30;
     argv.push('-L', String(limit));
     if (input['closed'] === true) { argv.push('--closed'); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_project_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_project_list' } });
+    const bad = ghFailResult('gh_project_list', r, false); if (bad) { return bad; }
     const payload = parseJson<{ projects?: RawProject[] }>(r.stdout);
     const projects = payload?.projects ?? [];
     const lines: string[] = [`# ${projects.length} project${projects.length === 1 ? '' : 's'}`, ''];
@@ -79,29 +81,25 @@ export const ghProjectListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: projects.length, projects } };
   },
-};
+});
 
-export const ghProjectViewTool: Tool = {
+export const ghProjectViewTool = withGhFailureNet({
   id: 'gh_project_view',
   description: 'View a Project v2 (title, fields summary, item count).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      number: { type: 'number', minimum: 1 },
-      owner: { type: 'string' },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1 }),
+    owner: Type.Optional(Type.String()),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectRowSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
     if (!n) { return fail('gh_project_view', 'missing number'); }
     const argv = ['gh', 'project', 'view', String(n), '--format', 'json'];
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_project_view', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_project_view' } });
+    const bad = ghFailResult('gh_project_view', r, false); if (bad) { return bad; }
     const p = parseJson<RawProject>(r.stdout);
     if (!p) { return fail('gh_project_view', 'could not parse JSON'); }
     const lines: string[] = [];
@@ -112,26 +110,22 @@ export const ghProjectViewTool: Tool = {
     if (p.url) { lines.push('', `URL: ${p.url}`); }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: p };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // item-list (read-only)
 // ---------------------------------------------------------------------------
 
-export const ghProjectItemListTool: Tool = {
+export const ghProjectItemListTool = withGhFailureNet({
   id: 'gh:project:item-list',
   description: 'List items in a Project v2.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      number: { type: 'number', minimum: 1 },
-      owner: { type: 'string' },
-      limit: { type: 'number', minimum: 1, maximum: 500 },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1 }),
+    owner: Type.Optional(Type.String()),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 500 })),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectItemListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
@@ -140,8 +134,8 @@ export const ghProjectItemListTool: Tool = {
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
     const limit = num(input, 'limit') ?? 50;
     argv.push('-L', String(limit));
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:item-list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-list' } });
+    const bad = ghFailResult('gh:project:item-list', r, false); if (bad) { return bad; }
     const payload = parseJson<{ items?: RawItem[] }>(r.stdout);
     const items = payload?.items ?? [];
     const lines: string[] = [`# ${items.length} item${items.length === 1 ? '' : 's'} in project #${n}`, ''];
@@ -157,29 +151,25 @@ export const ghProjectItemListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: items.length, items } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // item-add / update / archive / delete (gated)
 // ---------------------------------------------------------------------------
 
-export const ghProjectItemAddTool: Tool = {
+export const ghProjectItemAddTool = withGhFailureNet({
   id: 'gh:project:item-add',
   description: 'Add an issue or PR to a Project v2.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      number: { type: 'number', minimum: 1, description: 'Project number.' },
-      owner: { type: 'string' },
-      url: { type: 'string', description: 'Issue or PR URL (preferred).' },
-      repo: { type: 'string', description: 'owner/name for the issue. Used with issueNumber.' },
-      issueNumber: { type: 'number', minimum: 1, description: 'Issue/PR number to add (requires repo).' },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1, description: 'Project number.' }),
+    owner: Type.Optional(Type.String()),
+    url: Type.Optional(Type.String({ description: 'Issue or PR URL (preferred).' })),
+    repo: Type.Optional(Type.String({ description: 'owner/name for the issue. Used with issueNumber.' })),
+    issueNumber: Type.Optional(Type.Number({ minimum: 1, description: 'Issue/PR number to add (requires repo).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectItemAddDataSchema,
+  approval: ghApprovalClass('gh:project:item-add', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const ref = str(input, 'url') ?? (str(input, 'repo') && num(input, 'issueNumber') ? `${str(input, 'repo')}#${num(input, 'issueNumber')}` : '(missing)');
@@ -203,32 +193,28 @@ export const ghProjectItemAddTool: Tool = {
     if (!url) { return fail('gh:project:item-add', 'need url or (repo + issueNumber)'); }
     const argv = ['gh', 'project', 'item-add', String(n), '--url', url];
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:item-add', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-add' } });
+    const bad = ghFailResult('gh:project:item-add', r, true); if (bad) { return bad; }
     return { output: `Added \`${url}\` to project #${n}.`, format: 'markdown', success: true, data: { number: n, url } };
   },
-};
+});
 
-export const ghProjectItemUpdateTool: Tool = {
+export const ghProjectItemUpdateTool = withGhFailureNet({
   id: 'gh:project:item-update',
   description: 'Set a field value on a project item (status, priority, iteration, custom fields).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      projectId: { type: 'string', description: 'Project node ID (ask gh:project:view).' },
-      itemId: { type: 'string', description: 'Item node ID (ask gh:project:item-list).' },
-      fieldId: { type: 'string' },
-      owner: { type: 'string' },
-      value: { type: 'string', description: 'For single-select: option name; for text/number/date: raw value.' },
-      singleSelectOptionId: { type: 'string', description: 'Preferred for single-select fields (bypasses name matching).' },
-      date: { type: 'string', description: 'For date fields: ISO date.' },
-      number: { type: 'number', description: 'For number fields.' },
-    },
-    required: ['projectId', 'itemId', 'fieldId'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    projectId: Type.String({ description: 'Project node ID (ask gh:project:view).' }),
+    itemId: Type.String({ description: 'Item node ID (ask gh:project:item-list).' }),
+    fieldId: Type.String(),
+    owner: Type.Optional(Type.String()),
+    value: Type.Optional(Type.String({ description: 'For single-select: option name; for text/number/date: raw value.' })),
+    singleSelectOptionId: Type.Optional(Type.String({ description: 'Preferred for single-select fields (bypasses name matching).' })),
+    date: Type.Optional(Type.String({ description: 'For date fields: ISO date.' })),
+    number: Type.Optional(Type.Number({ description: 'For number fields.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectItemUpdateDataSchema,
+  approval: ghApprovalClass('gh:project:item-update', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -263,28 +249,24 @@ export const ghProjectItemUpdateTool: Tool = {
     else if (num(input, 'number') !== undefined) { argv.push('--number', String(num(input, 'number'))); }
     else { return fail('gh:project:item-update', 'provide one of value / singleSelectOptionId / date / number'); }
 
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:item-update', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-update' } });
+    const bad = ghFailResult('gh:project:item-update', r, true); if (bad) { return bad; }
     return { output: `Updated item \`${itemId}\`.`, format: 'markdown', success: true, data: { projectId, itemId, fieldId } };
   },
-};
+});
 
-export const ghProjectItemArchiveTool: Tool = {
+export const ghProjectItemArchiveTool = withGhFailureNet({
   id: 'gh:project:item-archive',
   description: 'Archive an item (hides it without deleting).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      projectId: { type: 'string' },
-      itemId: { type: 'string' },
-      owner: { type: 'string' },
-      undo: { type: 'boolean', description: 'Unarchive instead.' },
-    },
-    required: ['projectId', 'itemId'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    projectId: Type.String(),
+    itemId: Type.String(),
+    owner: Type.Optional(Type.String()),
+    undo: Type.Optional(Type.Boolean({ description: 'Unarchive instead.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectItemArchiveDataSchema,
+  approval: ghApprovalClass('gh:project:item-archive', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -304,27 +286,23 @@ export const ghProjectItemArchiveTool: Tool = {
     const argv = ['gh', 'project', 'item-archive', '--project-id', projectId, '--id', itemId];
     if (input['undo'] === true) { argv.push('--undo'); }
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:item-archive', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-archive' } });
+    const bad = ghFailResult('gh:project:item-archive', r, true); if (bad) { return bad; }
     return { output: `${input['undo'] === true ? 'Unarchived' : 'Archived'} item \`${itemId}\`.`, format: 'markdown', success: true, data: { projectId, itemId, undo: input['undo'] === true } };
   },
-};
+});
 
-export const ghProjectItemDeleteTool: Tool = {
+export const ghProjectItemDeleteTool = withGhFailureNet({
   id: 'gh:project:item-delete',
   description: 'Remove an item from a Project v2 (does not delete the issue/PR).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      projectId: { type: 'string' },
-      itemId: { type: 'string' },
-      owner: { type: 'string' },
-    },
-    required: ['projectId', 'itemId'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    projectId: Type.String(),
+    itemId: Type.String(),
+    owner: Type.Optional(Type.String()),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectItemDeleteDataSchema,
+  approval: ghApprovalClass('gh:project:item-delete', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -343,37 +321,33 @@ export const ghProjectItemDeleteTool: Tool = {
     if (!projectId || !itemId) { return fail('gh:project:item-delete', 'missing projectId or itemId'); }
     const argv = ['gh', 'project', 'item-delete', '--project-id', projectId, '--id', itemId];
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:item-delete', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-delete' } });
+    const bad = ghFailResult('gh:project:item-delete', r, true); if (bad) { return bad; }
     return { output: `Removed item \`${itemId}\` from project.`, format: 'markdown', success: true, data: { projectId, itemId } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // field-list (read-only)
 // ---------------------------------------------------------------------------
 
-export const ghProjectFieldListTool: Tool = {
+export const ghProjectFieldListTool = withGhFailureNet({
   id: 'gh:project:field-list',
   description: 'List fields + options on a Project v2.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      number: { type: 'number', minimum: 1 },
-      owner: { type: 'string' },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1 }),
+    owner: Type.Optional(Type.String()),
+  }, { additionalProperties: false }),
+  outputSchema: GhProjectFieldListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
     if (!n) { return fail('gh:project:field-list', 'missing number'); }
     const argv = ['gh', 'project', 'field-list', String(n), '--format', 'json'];
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh:project:field-list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:field-list' } });
+    const bad = ghFailResult('gh:project:field-list', r, false); if (bad) { return bad; }
     const payload = parseJson<{ fields?: RawField[] }>(r.stdout);
     const fields = payload?.fields ?? [];
     const lines: string[] = [`# Fields in project #${n} (${fields.length})`, ''];
@@ -385,4 +359,4 @@ export const ghProjectFieldListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { number: n, fields } };
   },
-};
+});

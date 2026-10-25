@@ -73,3 +73,75 @@ export const GhPrFilesDataSchema = Type.Object({
 export const GhPrUrlDataSchema = Type.Object({ url: Type.String() });
 export const GhPrReviewDataSchema = Type.Object({ number: Type.Number(), event: Type.String() });
 export const GhPrMergeDataSchema = Type.Object({ number: Type.Number(), method: Type.String() });
+
+const NameOnly = Type.Object({ name: Maybe(Type.String()) });
+
+export const GhRepoRowSchema = Type.Object({
+  nameWithOwner: Type.String(),
+  description: Maybe(Type.String()),
+  visibility: Maybe(Type.String()),
+  isPrivate: Maybe(Type.Boolean()),
+  isFork: Maybe(Type.Boolean()),
+  isArchived: Maybe(Type.Boolean()),
+  pushedAt: Maybe(Type.String()),
+  stargazerCount: Maybe(Type.Number()),
+  forkCount: Maybe(Type.Number()),
+  defaultBranchRef: Maybe(NameOnly),
+  primaryLanguage: Maybe(NameOnly),
+  url: Maybe(Type.String()),
+});
+export const GhRepoListDataSchema = Type.Object({ count: Type.Number(), repos: Type.Array(GhRepoRowSchema) });
+export const GhRepoCreateDataSchema = Type.Object({ name: Type.String(), url: Type.String() });
+export const GhRepoForkDataSchema = Type.Object({ source: Type.String() });
+export const GhRepoNameDataSchema = Type.Object({ repo: Type.String() });
+export const GhRepoCloneDataSchema = Type.Object({ repo: Type.String(), dir: Maybe(Type.String()) });
+
+export const GhReleaseRowSchema = Type.Object({
+  tagName: Type.String(),
+  name: Maybe(Type.String()),
+  isDraft: Maybe(Type.Boolean()),
+  isPrerelease: Maybe(Type.Boolean()),
+  author: Maybe(Login),
+  publishedAt: Maybe(Type.String()),
+  createdAt: Maybe(Type.String()),
+  url: Maybe(Type.String()),
+  body: Maybe(Type.String()),
+});
+export const GhReleaseListDataSchema = Type.Object({ count: Type.Number(), releases: Type.Array(GhReleaseRowSchema) });
+export const GhReleaseCreateDataSchema = Type.Object({ tag: Type.String(), url: Type.String() });
+export const GhReleaseTagDataSchema = Type.Object({ tag: Type.String() });
+
+const Count = Type.Object({ totalCount: Maybe(Type.Number()) });
+export const GhProjectRowSchema = Type.Object({
+  number: Type.Number(),
+  title: Type.String(),
+  shortDescription: Maybe(Type.String()),
+  public: Maybe(Type.Boolean()),
+  closed: Maybe(Type.Boolean()),
+  url: Maybe(Type.String()),
+  owner: Maybe(Type.Object({ login: Maybe(Type.String()), type: Maybe(Type.String()) })),
+  fields: Maybe(Count),
+  items: Maybe(Count),
+  updatedAt: Maybe(Type.String()),
+});
+export const GhProjectListDataSchema = Type.Object({ count: Type.Number(), projects: Type.Array(GhProjectRowSchema) });
+export const GhProjectItemRowSchema = Type.Object({
+  id: Type.String(),
+  title: Maybe(Type.String()),
+  content: Maybe(Type.Object({
+    title: Maybe(Type.String()), number: Maybe(Type.Number()), url: Maybe(Type.String()), type: Maybe(Type.String()),
+  })),
+  fieldValues: Maybe(Type.Object({ nodes: Maybe(Type.Array(Type.Record(Type.String(), Type.Unknown()))) })),
+});
+export const GhProjectItemListDataSchema = Type.Object({ count: Type.Number(), items: Type.Array(GhProjectItemRowSchema) });
+export const GhProjectItemAddDataSchema = Type.Object({ number: Type.Number(), url: Type.String() });
+export const GhProjectItemUpdateDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String(), fieldId: Type.String() });
+export const GhProjectItemArchiveDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String(), undo: Type.Boolean() });
+export const GhProjectItemDeleteDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String() });
+export const GhProjectFieldListDataSchema = Type.Object({
+  number: Type.Number(),
+  fields: Type.Array(Type.Object({
+    id: Maybe(Type.String()), name: Type.String(), type: Maybe(Type.String()),
+    options: Maybe(Type.Array(Type.Object({ id: Maybe(Type.String()), name: Type.String() }))),
+  })),
+});

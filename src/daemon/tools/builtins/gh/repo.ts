@@ -6,8 +6,13 @@
  * permanently.
  */
 
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, md, fail, shellFail, ghExec, parseJson } from './helpers.js';
+import { Type } from '@sinclair/typebox';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, num, md, fail, ghApprovalClass, ghExec, parseJson, withGhFailureNet } from './helpers.js';
+import { ghFailResult } from './legacy.js';
+import {
+  GhRepoRowSchema, GhRepoListDataSchema, GhRepoCreateDataSchema, GhRepoForkDataSchema, GhRepoNameDataSchema, GhRepoCloneDataSchema,
+} from './schemas.js';
 
 interface RawRepo {
   nameWithOwner: string;
@@ -24,23 +29,20 @@ interface RawRepo {
   url?: string;
 }
 
-export const ghRepoViewTool: Tool = {
+export const ghRepoViewTool = withGhFailureNet({
   id: 'gh_repo_view',
   description: 'View a repository\'s metadata.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string', description: 'owner/name. Default: current repo.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String({ description: 'owner/name. Default: current repo.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoRowSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'repo', 'view', '--json', 'nameWithOwner,description,visibility,isPrivate,isFork,isArchived,pushedAt,stargazerCount,forkCount,defaultBranchRef,primaryLanguage,url'];
     if (str(input, 'repo')) { argv.push(str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_repo_view', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_view' } });
+    const bad = ghFailResult('gh_repo_view', r, false); if (bad) { return bad; }
     const repo = parseJson<RawRepo>(r.stdout);
     if (!repo) { return fail('gh_repo_view', 'could not parse JSON'); }
     const lines: string[] = [
@@ -55,24 +57,21 @@ export const ghRepoViewTool: Tool = {
     ].filter(Boolean);
     return { output: lines.join('\n').trimEnd(), format: 'markdown', success: true, data: repo };
   },
-};
+});
 
-export const ghRepoListTool: Tool = {
+export const ghRepoListTool = withGhFailureNet({
   id: 'gh_repo_list',
   description: 'List repositories owned by a user or org.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      owner: { type: 'string', description: 'User or org. Default: current gh user.' },
-      limit: { type: 'number', minimum: 1, maximum: 500 },
-      visibility: { type: 'string', enum: ['public', 'private', 'internal'] },
-      archived: { type: 'boolean' },
-      source: { type: 'boolean', description: 'Only non-forks.' },
-      fork: { type: 'boolean', description: 'Only forks.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    owner: Type.Optional(Type.String({ description: 'User or org. Default: current gh user.' })),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 500 })),
+    visibility: Type.Optional(Type.Unsafe<'public' | 'private' | 'internal'>({ type: 'string', enum: ['public', 'private', 'internal'] })),
+    archived: Type.Optional(Type.Boolean()),
+    source: Type.Optional(Type.Boolean({ description: 'Only non-forks.' })),
+    fork: Type.Optional(Type.Boolean({ description: 'Only forks.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'repo', 'list'];
@@ -84,8 +83,8 @@ export const ghRepoListTool: Tool = {
     if (input['archived'] === true) { argv.push('--archived'); }
     if (input['source']   === true) { argv.push('--source'); }
     if (input['fork']     === true) { argv.push('--fork'); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_repo_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_list' } });
+    const bad = ghFailResult('gh_repo_list', r, false); if (bad) { return bad; }
     const repos = parseJson<RawRepo[]>(r.stdout) ?? [];
     const lines: string[] = [`# ${repos.length} repo${repos.length === 1 ? '' : 's'}`, ''];
     if (repos.length > 0) {
@@ -97,28 +96,24 @@ export const ghRepoListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: repos.length, repos } };
   },
-};
+});
 
-export const ghRepoCreateTool: Tool = {
+export const ghRepoCreateTool = withGhFailureNet({
   id: 'gh_repo_create',
   description: 'Create a repository.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      name: { type: 'string', description: 'owner/name or bare name (uses current user as owner).' },
-      visibility: { type: 'string', enum: ['public', 'private', 'internal'] },
-      description: { type: 'string' },
-      homepage: { type: 'string' },
-      license: { type: 'string', description: 'Open-source license key (e.g. "mit").' },
-      gitignore: { type: 'string', description: 'gitignore template.' },
-      team: { type: 'string' },
-      clone: { type: 'boolean', description: 'Clone locally after creation.' },
-    },
-    required: ['name', 'visibility'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    name: Type.String({ description: 'owner/name or bare name (uses current user as owner).' }),
+    visibility: Type.Unsafe<'public' | 'private' | 'internal'>({ type: 'string', enum: ['public', 'private', 'internal'] }),
+    description: Type.Optional(Type.String()),
+    homepage: Type.Optional(Type.String()),
+    license: Type.Optional(Type.String({ description: 'Open-source license key (e.g. "mit").' })),
+    gitignore: Type.Optional(Type.String({ description: 'gitignore template.' })),
+    team: Type.Optional(Type.String()),
+    clone: Type.Optional(Type.Boolean({ description: 'Clone locally after creation.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoCreateDataSchema,
+  approval: ghApprovalClass('gh_repo_create', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -149,27 +144,23 @@ export const ghRepoCreateTool: Tool = {
     if (str(input, 'team'))        { argv.push('-t', str(input, 'team')!); }
     if (input['clone'] === true)   { argv.push('--clone'); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_create' } });
-    if (r.code !== 0) { return shellFail('gh_repo_create', r); }
+    const bad = ghFailResult('gh_repo_create', r, true); if (bad) { return bad; }
     return { output: `Created repo: ${r.stdout.trim()}`, format: 'markdown', success: true, data: { name, url: r.stdout.trim() } };
   },
-};
+});
 
-export const ghRepoForkTool: Tool = {
+export const ghRepoForkTool = withGhFailureNet({
   id: 'gh_repo_fork',
   description: 'Fork a repository.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string', description: 'Source repo (owner/name).' },
-      org: { type: 'string', description: 'Fork into this org instead of the current user.' },
-      clone: { type: 'boolean' },
-      defaultBranchOnly: { type: 'boolean', description: 'Only mirror the default branch.' },
-    },
-    required: ['repo'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.String({ description: 'Source repo (owner/name).' }),
+    org: Type.Optional(Type.String({ description: 'Fork into this org instead of the current user.' })),
+    clone: Type.Optional(Type.Boolean()),
+    defaultBranchOnly: Type.Optional(Type.Boolean({ description: 'Only mirror the default branch.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoForkDataSchema,
+  approval: ghApprovalClass('gh_repo_fork', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -194,24 +185,20 @@ export const ghRepoForkTool: Tool = {
     if (input['clone']              === true) { argv.push('--clone'); }
     if (input['defaultBranchOnly']  === true) { argv.push('--default-branch-only'); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_fork' } });
-    if (r.code !== 0) { return shellFail('gh_repo_fork', r); }
+    const bad = ghFailResult('gh_repo_fork', r, true); if (bad) { return bad; }
     return { output: `Forked \`${repo}\`.\n\n\`\`\`\n${r.stdout.trim() || r.stderr.trim()}\n\`\`\``, format: 'markdown', success: true, data: { source: repo } };
   },
-};
+});
 
-export const ghRepoDeleteTool: Tool = {
+export const ghRepoDeleteTool = withGhFailureNet({
   id: 'gh_repo_delete',
   description: 'Delete a repository. DESTRUCTIVE -- no undo.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string', description: 'owner/name.' },
-    },
-    required: ['repo'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.String({ description: 'owner/name.' }),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoNameDataSchema,
+  approval: ghApprovalClass('gh_repo_delete', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -233,27 +220,23 @@ export const ghRepoDeleteTool: Tool = {
     const repo = str(input, 'repo');
     if (!repo) { return fail('gh_repo_delete', 'missing repo'); }
     const argv = ['gh', 'repo', 'delete', repo, '--yes'];
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_repo_delete', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_delete' } });
+    const bad = ghFailResult('gh_repo_delete', r, true); if (bad) { return bad; }
     return { output: `Deleted \`${repo}\`.`, format: 'markdown', success: true, data: { repo } };
   },
-};
+});
 
-export const ghRepoCloneTool: Tool = {
+export const ghRepoCloneTool = withGhFailureNet({
   id: 'gh_repo_clone',
   description: 'Clone a repository locally.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      dir: { type: 'string', description: 'Target directory. Default: repo name.' },
-      extraArgs: { type: 'array', items: { type: 'string' }, description: 'Extra git flags, e.g. ["--depth=1"].' },
-    },
-    required: ['repo'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.String(),
+    dir: Type.Optional(Type.String({ description: 'Target directory. Default: repo name.' })),
+    extraArgs: Type.Optional(Type.Array(Type.String(), { description: 'Extra git flags, e.g. ["--depth=1"].' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRepoCloneDataSchema,
+  approval: (input: ToolInput) => ghApprovalClass('gh_repo_clone', input),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -275,8 +258,8 @@ export const ghRepoCloneTool: Tool = {
     if (extra.length > 0) {
       argv.push('--', ...extra);
     }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_clone' }, maxBytes: 2 * 1024 * 1024 });
-    if (r.code !== 0) { return shellFail('gh_repo_clone', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_clone' }, maxBytes: 2 * 1024 * 1024, cutIsAnswer: true });
+    const bad = ghFailResult('gh_repo_clone', r, true); if (bad) { return bad; }
     return { output: `Cloned \`${repo}\`.\n\n\`\`\`\n${r.stdout.trim() || r.stderr.trim()}\n\`\`\``, format: 'markdown', success: true, data: { repo, dir: str(input, 'dir') } };
   },
-};
+});

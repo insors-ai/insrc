@@ -38,7 +38,9 @@ const snapshot = snapshotFile.tools;
 const PER_INPUT_SINCE_S4 = new Set(['git_reset', 'git_push', 'git_checkout']);
 
 /** Former requiresApproval-true tools that Story s5 made destructive or per-input: never none. */
-const PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 = new Set(['gh_issue_close', 'gh_pr_close', 'gh_pr_merge']);
+const PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 = new Set([
+	'gh_issue_close', 'gh_pr_close', 'gh_pr_merge', 'gh_release_delete', 'gh_repo_delete', 'gh:project:item-delete', 'gh_release_edit', 'gh_repo_clone',
+]);
 
 registerBuiltinTools();
 const live = new Map(listTools().map(t => [t.id, t]));

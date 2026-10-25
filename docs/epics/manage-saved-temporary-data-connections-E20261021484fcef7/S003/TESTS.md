@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-10-25T16:03:00.124Z on commit `139b18307`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-25T16:07:36.903Z on commit `449b3b87c`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-INVENTORY: TypeScript-resolved alias/injection/factory/serializer baseline and missing-policy fail-closed tests**
 
@@ -25,5 +25,5 @@ Run at 2026-10-25T16:03:00.124Z on commit `139b18307`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 11.4 s |  |
-| `src/shared/__tests__/connection-execution.test.ts` | 0 | 4 | 1.1 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 11.2 s |  |
+| `src/shared/__tests__/connection-execution.test.ts` | 0 | 4 | 1 s |  |

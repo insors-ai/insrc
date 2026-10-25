@@ -412,6 +412,7 @@ async function servedFromCache(
 
 export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
 	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
+	if (args.opts?.connectionExecution !== undefined) requireConnectionExecution(args.opts.connectionExecution);
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;

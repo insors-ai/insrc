@@ -107,6 +107,7 @@ export async function runAnalyze(
 	opts: RunAnalyzeOpts = {},
 ): Promise<RunAnalyzeResult> {
 	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
+	if (opts.connectionExecution !== undefined) requireConnectionExecution(opts.connectionExecution);
 	const start = Date.now();
 	const runId = args.runId;
 

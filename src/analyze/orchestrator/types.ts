@@ -73,6 +73,8 @@ export interface RunAnalyzeArgs {
  * surface plug into.
  */
 export interface RunAnalyzeOpts {
+	/** Trusted carrier lives in options as well as the direct internal entry. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/**
 	 * Streaming progress callback. Fires synchronously at every
 	 * pipeline transition (stage boundaries, planner attempts,

@@ -60,6 +60,7 @@ test('CM-S3-INVENTORY: staged production executors refuse supplied unadmitted po
 	const { runShaper, runShaperToolLoop } = await import('../../analyze/context/driver.js');
 	const { runExecutor } = await import('../../analyze/executor/walker.js');
 	const { runAnalyze } = await import('../../analyze/orchestrator/driver.js');
+	const { shaperFor } = await import('../../analyze/context/index.js');
 	const { measureRequestScope, measureResolvedScope, measureDataSource } = await import('../../analyze/measure.js');
 	const connectionExecution = { mode: 'session-memory', bindingId: 'forged' } as ConnectionExecutionContext;
 	const entry = { connectionExecution };
@@ -70,6 +71,11 @@ test('CM-S3-INVENTORY: staged production executors refuse supplied unadmitted po
 		() => runShaperToolLoop(entry as Parameters<typeof runShaperToolLoop>[0]),
 		() => runExecutor(entry as Parameters<typeof runExecutor>[0]),
 		() => runAnalyze(entry as Parameters<typeof runAnalyze>[0]),
+		() => runAnalyze({} as Parameters<typeof runAnalyze>[0], entry),
+		() => runShaper({ opts: entry } as Parameters<typeof runShaper>[0]),
+		() => shaperFor('classification').buildClassificationBundle({} as never, { ...entry, runId: 'refused-classification' }),
+		() => shaperFor('run', 'data').buildRunBundle({} as never, { ...entry, runId: 'refused-run' }),
+		() => shaperFor('task', 'data').buildTaskBundle({} as never, { ...entry, runId: 'refused-task' }),
 		() => measureRequestScope({ kind: 'repo', value: '/not-read' }, 'code', undefined, entry),
 		() => measureResolvedScope({} as Parameters<typeof measureResolvedScope>[0], 'code', undefined, entry),
 		() => measureDataSource({ poolPath: '/not-read' }, undefined, entry),

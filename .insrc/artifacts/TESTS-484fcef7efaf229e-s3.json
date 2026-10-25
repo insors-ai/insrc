@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T16:03:00.124Z",
+    "updatedAt": "2026-10-25T16:07:36.903Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "139b18307",
-        "ranAt": "2026-10-25T16:03:00.124Z",
+        "commit": "449b3b87c",
+        "ranAt": "2026-10-25T16:07:36.903Z",
         "testsPassed": true,
         "tests": [
           {
@@ -60,7 +60,7 @@
             "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 11444,
+            "durationMs": 11171,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
@@ -77,7 +77,7 @@
             "file": "src/shared/__tests__/connection-execution.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1079,
+            "durationMs": 1000,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: missing or forged execution never defaults to saved",

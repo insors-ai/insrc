@@ -83,9 +83,18 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 	const sites: InventorySite[] = [...acquisitions];
 	const providerNames = new Set(['LLMProvider', 'OllamaProvider', 'CliProvider']);
 	const connectionNames = new Set(['ConnectionResolver', 'DriverPool', 'DriverFactory', 'Driver', 'BaseDriver', 'RdbmsDriver', 'KvDriver', 'FileDriver']);
-	const named = (type: ts.Type, names: Set<string>): boolean =>
-		names.has(type.symbol?.name ?? '') || names.has(type.aliasSymbol?.name ?? '')
-		|| type.isUnionOrIntersection() && type.types.some(t => named(t, names));
+	const named = (type: ts.Type, names: Set<string>, seen = new Set<ts.Type>()): boolean => {
+		if (seen.has(type)) return false;
+		seen.add(type);
+		if (names.has(type.symbol?.name ?? '') || names.has(type.aliasSymbol?.name ?? '')) return true;
+		if (type.isUnionOrIntersection() && type.types.some(t => named(t, names, seen))) return true;
+		const constraint = checker.getBaseConstraintOfType(type);
+		if (constraint && constraint !== type && named(constraint, names, seen)) return true;
+		if (type.flags & ts.TypeFlags.Object && (type as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) {
+			return checker.getBaseTypes(type as ts.InterfaceType).some(t => named(t, names, seen));
+		}
+		return false;
+	};
 	for (const source of program.getSourceFiles()) {
 		const file = relative(root, source.fileName).replaceAll('\\', '/');
 		if (!file.startsWith('src/') || file.includes('/__tests__/') || source.isDeclarationFile) continue;
@@ -101,7 +110,7 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 				const declaration = signature?.declaration;
 				const declaredName = declaration?.name && ts.isIdentifier(declaration.name) ? declaration.name.text : name;
 				const parent = declaration?.parent;
-				const ownerName = parent && ts.isInterfaceDeclaration(parent) ? parent.name.text : '';
+				const ownerName = parent && (ts.isInterfaceDeclaration(parent) || ts.isClassDeclaration(parent)) ? parent.name?.text ?? '' : '';
 				const boundaries = new Set<string>();
 				if (providerNames.has(ownerName)) boundaries.add('provider-use');
 				if (connectionNames.has(ownerName)) boundaries.add('connection-use');
@@ -109,6 +118,16 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 					const receiver = checker.getTypeAtLocation(callee.expression);
 					if (named(receiver, providerNames)) boundaries.add('provider-use');
 					if (named(receiver, connectionNames)) boundaries.add('connection-use');
+					// Function.call/apply/bind must retain the source API's classification.
+					for (const port of receiver.getCallSignatures()) {
+						const origin = port.declaration?.getSourceFile().fileName.replaceAll('\\', '/') ?? '';
+						const owner = port.declaration?.parent;
+						const ownerId = owner && (ts.isClassDeclaration(owner) || ts.isInterfaceDeclaration(owner)) ? owner.name?.text ?? '' : '';
+						if (providerNames.has(ownerId) || /\/src\/(?:agent\/providers\/|indexer\/embedder\.ts$)/.test(origin)) boundaries.add('provider-use');
+						if (connectionNames.has(ownerId)) boundaries.add('connection-use');
+						if (/\/node_modules\/(?:msgpackr|@msgpack|bson)\//.test(origin)) boundaries.add('serialization');
+						if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(origin)) boundaries.add('diagnostic');
+					}
 				}
 				if (signature) {
 					const result = checker.getReturnTypeOfSignature(signature);
@@ -129,7 +148,11 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 				if (/\/node_modules\/(?:ollama\/|@huggingface\/transformers\/|onnxruntime)/.test(declarationFile)) boundaries.add('provider-backend');
 				if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(declarationFile)
 					|| /^(?:console\.|process\.(?:stdout|stderr)\.)/.test(expression)) boundaries.add('diagnostic');
-				if (ownerName === 'JSON' && declaredName === 'stringify' || /(?:serialize|checkpoint|persist|trace)/i.test(declaredName)) boundaries.add('serialization');
+				if (ownerName === 'JSON' && /^(?:stringify|parse)$/.test(declaredName)
+					|| /(?:serialize|checkpoint|persist|trace|^pack$|^unpack$|^encode|^decode|toJSON|postMessage)/i.test(declaredName)
+					|| /\/node_modules\/(?:msgpackr|@msgpack|bson)\//.test(declarationFile)) boundaries.add('serialization');
+				if (/^(?:send|write)$/.test(declaredName) && /\/node_modules\/@types\/node\//.test(declarationFile)) boundaries.add('serialization');
+				if (!declaration) boundaries.add('unresolved-call');
 				if (/^(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rename|renameSync|mkdir|mkdirSync|rm|rmSync|unlink|unlinkSync)$/.test(declaredName)
 					&& /(?:\/node_modules\/@types\/node\/fs|\/src\/)/.test(declarationFile)) boundaries.add('filesystem-write');
 				if (/\/src\/(?:db\/|analyze\/(?:.*\/)?(?:cache|persistence)\.ts)/.test(declarationFile)) boundaries.add('storage-call');

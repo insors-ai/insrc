@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test, { mock } from 'node:test';
+import { executePlan, stepPlan } from '../../../../analyze/explore/executor.js';
+import { runExecutor } from '../../../../analyze/executor/walker.js';
+import { registerTemplateRuntime } from '../../../../analyze/executor/registry.js';
+import { setGraphStorePath, closeGraphStore } from '../../../../db/graph/store.js';
 import { PATHS } from '../../../../shared/paths.js';
 import { saveConnections } from '../../../db/config.js';
 import { acquirePool, closeAll } from '../../../db/pool-cache.js';
@@ -30,7 +34,8 @@ import type { TemplateExecuteArgs } from '../../../../analyze/executor/types.js'
 registerDbTools();
 test('owner tool runtime and exploration matrix', async () => {
  const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-tool-owner-'))), root = join(directory, 'root'), other = join(directory,'other'); await mkdir(root); await mkdir(other);
- const originalIns=PATHS.insrc;PATHS.insrc=join(directory,'insrc');
+ const originalIns=PATHS.insrc;PATHS.insrc=join(directory,'insrc');setGraphStorePath(join(directory,'graph.lmdb'));
+ registerTemplateRuntime(dataSchemaTableRuntime);
  const overlays = new Map<string,TemporaryConnectionOverlay>();
  const runtime = new ConnectionSessionRpc({ enabled: async()=>true, isRegistered:async r=>r===root||r===other, createOverlay:(r,h,c)=>{ const o=createTemporaryOverlay(r,h,c);overlays.set(h,o);return o; }, dropOverlay:o=>o.close() });
  _setTaskScopeDepsForTest({listRepos:async()=>[],findEntitiesByFile:async()=>[],listEntitiesForRepo:async()=>[],loadConnections:async()=>{throw new Error('saved enumeration forbidden');}});
@@ -58,6 +63,13 @@ test('owner tool runtime and exploration matrix', async () => {
    const ctx={connectionExecution:execution,repoPath:selected,runId:'fixture',closureRepos:[selected],readDep:()=>undefined,ignoreFilter:permissiveIgnoreFilter(selected)};
    const exp={id:'e',type:'db.table.describe' as const,params:{connectionId:'same',target:'data'},dependsOn:[],rationale:'fixture'};
    const described=await runDbTableDescribe(exp,ctx);assert.equal(described.columns[0]?.name,marker);
+   const executionArgs={connectionExecution:execution,runId:'relay-'+marker,repoPath:selected,closureRepos:[selected],repoLastIndexedAtMs:BigInt(owners.indexOf(owner)*2+1),plan:{answerType:'structural-map',synthesisHint:'fixture',explorations:[{...exp,purpose:'carrier'}]}};
+   const executed=await executePlan(executionArgs);assert.ok(JSON.stringify(executed).includes(marker));assert.equal(JSON.stringify(executed).includes('session-expired'),false);
+   // A fresh key exercises the multi-turn deterministic runner rather than a cache hit.
+   const stepped=await stepPlan({...executionArgs,repoLastIndexedAtMs:BigInt(owners.indexOf(owner)*2+2)});assert.ok(JSON.stringify(stepped).includes(marker));
+   const task={taskId:'schema',template:'data.schema.table',kind:'leaf' as const,params:{connectionId:'same',table:'data'},produces:['table-schema'],rationale:'carrier'};
+   const walked=await runExecutor({connectionExecution:execution,intent,runId:'walker-'+marker,tree:{plan:{planId:'fixture',goal:'carrier',tasks:[task]},children:new Map(),childErrors:new Map()}});assert.equal(walked.root.tasksCompleted,1);assert.ok(JSON.stringify([...walked.root.perTask]).includes(marker));
+
    const tables=await runDbTablesList({...exp,type:'db.tables.list'},ctx);assert.ok(JSON.stringify(tables).includes('data'));
    const listed=await runDbConnectionsList({...exp,type:'db.connections.list'},ctx);assert.ok(JSON.stringify(listed).includes('same'));
    assert.equal((await executeTool('db_sql_sample',{connectionId:'same',target:'data'}, {...deps,repoPath:selected===root?other:root})).success,false);
@@ -93,12 +105,12 @@ test('owner tool runtime and exploration matrix', async () => {
    const describing=new Promise<void>(r=>{describeStarted=r;}), describeHeld=new Promise<void>(r=>{describeProceed=r;});
    const originalDescribe=SqliteDriver.prototype.describe;
    const describeSpy=mock.method(SqliteDriver.prototype,'describe',async function(this:SqliteDriver,...args:Parameters<typeof originalDescribe>){const value=await originalDescribe.apply(this,args);describeStarted();await describeHeld;return value;});
-   const late=index===0?runDbTableDescribe(savedExp,{...savedCtx,connectionExecution:owner.execution}):dataSchemaTableRuntime.execute({connectionExecution:owner.execution,intent:{target:'data',scope:'S',focused:false,scopeRef:{kind:'repo',value:root},reasoning:'late saved runtime'},task:{taskId:'late',template:'data.schema.table',kind:'leaf',params:{connectionId:'saved',table:'data'},produces:['schema'],rationale:'fixture'},upstreamOutputs:new Map(),runId:'late'});
+   const late=index===0?runDbTableDescribe(savedExp,{...savedCtx,connectionExecution:owner.execution}):dataSchemaTableRuntime.execute({connectionExecution:owner.execution,intent:{target:'data',scope:'S',focused:false,scopeRef:{kind:'repo',value:root},reasoning:'late saved runtime'},task:{taskId:'late',template:'data.schema.table',kind:'leaf',params:{connectionId:'saved',table:'data'},produces:['table-schema'],rationale:'fixture'},upstreamOutputs:new Map(),runId:'late'});
    const rejection=assert.rejects(late,{code:'session-expired'});
    try { await describing;owner.lifetime.abort();const pool=await acquirePool(root);assert.ok(pool.leaseState('saved').active>0);describeProceed();await rejection;assert.equal(pool.leaseState('saved').active,0); }
    finally {describeProceed();await rejection;describeSpy.mock.restore();}
   }
   const poison=new Proxy({}, {get(){throw new Error('input read before authority');}});
   await assert.rejects(executeTool('db_sql_sample',poison,{sessionId:'fixture',repoPath:root,requestId:1,send:()=>{},connectionExecution:first.execution}),{code:'session-expired'});
- } finally {for(const o of owners){o.lifetime.abort();o.lifetime.complete();await o.lifetime.drained;} _setTaskScopeDepsForTest(undefined);await runtime.close();await closeAll();PATHS.insrc=originalIns;await rm(directory,{recursive:true,force:true});}
+ } finally {for(const o of owners){o.lifetime.abort();o.lifetime.complete();await o.lifetime.drained;} _setTaskScopeDepsForTest(undefined);await runtime.close();await closeAll();await closeGraphStore();PATHS.insrc=originalIns;await rm(directory,{recursive:true,force:true});}
 });

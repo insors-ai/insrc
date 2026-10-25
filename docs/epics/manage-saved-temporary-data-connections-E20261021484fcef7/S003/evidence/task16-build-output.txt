@@ -3,7 +3,7 @@
 > tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs
 
 [check-model-definitions] model definitions v1 valid (/Users/subhagho/work/projects/insors/insrc/src/assets/models)
-[21:37:59] INFO: [daemon:model-catalog] model definitions validated
+[21:43:07] INFO: [daemon:model-catalog] model definitions validated
     module: "daemon:model-catalog"
     dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
     version: 1

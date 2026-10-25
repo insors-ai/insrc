@@ -71,6 +71,7 @@ import { taskPath } from './plan-sources.js';
 const log = getLogger('analyze:executor:walker');
 
 interface WalkOpts {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly onTaskEvent?:    ((event: TaskExecutionEvent) => void) | undefined;
 	readonly parentTaskPath?: string | undefined;
 }
@@ -83,6 +84,7 @@ export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult
 	assertExplicitConnectionExecution(args.connectionExecution);
 	return executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
+		connectionExecution: args.connectionExecution,
 	});
 }
 
@@ -179,6 +181,7 @@ async function executePlan(
 		if (task.kind === 'planner') {
 			const childOpts: WalkOpts = {
 				onTaskEvent:    opts.onTaskEvent,
+				connectionExecution: opts.connectionExecution,
 				parentTaskPath: appendTaskPath(parentTaskPath, task.taskId),
 			};
 			const planRes = await executePlannerTask(task, node, intent, runId, childOpts);
@@ -187,7 +190,7 @@ async function executePlan(
 				children.set(task.taskId, planRes.childResult);
 			}
 		} else {
-			result = await executeLeafTask(task, intent, runId, outputs, absentInputs);
+			result = await executeLeafTask(task, intent, runId, outputs, absentInputs, opts.connectionExecution);
 		}
 
 		// Step 4 + 5: persist + accumulate. A record that cannot be written
@@ -243,6 +246,7 @@ async function executeLeafTask(
 	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
 	/** For the aggregate-report task only: what the plan did not produce. */
 	absentInputs?: readonly AbsentInput[] | undefined,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
@@ -256,7 +260,7 @@ async function executeLeafTask(
 	let result: TemplateExecuteResult;
 	try {
 		result = await runtime.execute({
-			task, intent, upstreamOutputs, runId,
+			task, intent, upstreamOutputs, runId, connectionExecution: execution,
 			...(absentInputs !== undefined && absentInputs.length > 0 ? { absentInputs } : {}),
 		});
 	} catch (err) {

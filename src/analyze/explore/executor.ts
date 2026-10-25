@@ -220,6 +220,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 			if (!cached) {
 				try {
 					const ctx: ExplorationRunnerContext = {
+                        connectionExecution: args.connectionExecution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,
@@ -530,6 +531,7 @@ export async function stepPlan(
 			} else {
 				const narrow = NARROW_RUNNERS[exp.type]!;
 				const ctx: ExplorationRunnerContext = {
+                        connectionExecution: args.connectionExecution,
 					runId:        args.runId,
 					repoPath:     args.repoPath,
 					closureRepos: args.closureRepos,
@@ -593,6 +595,7 @@ export async function stepPlan(
 			} else {
 				try {
 					const ctx: ExplorationRunnerContext = {
+                        connectionExecution: args.connectionExecution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,

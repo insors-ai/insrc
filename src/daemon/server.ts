@@ -48,6 +48,7 @@ export type StreamHandler = (
   params: unknown,
   send: (msg: IpcStreamMessage) => void,
   signal: AbortSignal,
+  context?: TrustedRpcContext | undefined,
 ) => Promise<void>;
 
 export type RpcHandlers = Record<string, RpcHandler>;
@@ -93,17 +94,29 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
       ).catch(() => { /* Delivery failure cannot strand internal completion. */ });
       return () => lifetime?.abort();
     }
+    const lifetime = request.lifetime;
     const abortController = new AbortController();
-    const send = (msg: IpcStreamMessage): void => deliver({ kind: 'frame', requestId, frame: msg });
+    const signals = [abortController.signal, lifetime?.signal, request.trustedContext?.connectionSignal,
+      request.trustedContext?.connectionSession?.signal, request.trustedContext?.connectionExecution?.lifetime.signal,
+      request.trustedContext?.signal].filter((signal): signal is AbortSignal => signal !== undefined);
+    const signal = AbortSignal.any(signals);
+    const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, signal,
+      ...(lifetime ? { registerDrain: lifetime.registerDrain } : {}) }) : undefined;
+    let terminal = false;
+    const send = (msg: IpcStreamMessage): void => {
+      if (terminal || signal.aborted) return;
+      if (msg.stream === 'done' || msg.stream === 'error') terminal = true;
+      try { deliver({ kind: 'frame', requestId, frame: msg }); }
+      catch (error) { abortController.abort(); lifetime?.abort(); throw error; }
+    };
     let running: Promise<void>;
-    try { running = streamHandler(request.params, send, abortController.signal); } catch (err) { running = Promise.reject(err); }
-    running.catch(err => {
-      // Handler threw: send an error frame if the request is still wanted.
-      if (!abortController.signal.aborted) {
+    try { running = Promise.resolve(streamHandler(request.params, send, signal, context)); } catch (err) { running = Promise.reject(err); }
+    void running.catch(err => {
+      if (!signal.aborted && !terminal) {
         send({ id: 0, stream: 'error', data: { error: failureMessage(err, method), recoverable: true } });
       }
-    });
-    return () => abortController.abort();
+    }).finally(() => lifetime?.complete()).catch(() => { /* Delivery failure must still complete the admitted lifetime. */ });
+    return () => { abortController.abort(); lifetime?.abort(); };
   };
 }
 
@@ -140,7 +153,7 @@ export class IpcServer {
   private readonly pendingWrites = new Set<Promise<boolean>>();
   private writeFailed = false;
 
-  private writeLine(socket: Socket, line: string): void {
+  private writeLine(socket: Socket, line: string, onFailure?: () => void): void {
     let complete!: (ok: boolean) => void;
     const pending = new Promise<boolean>(resolve => { complete = resolve; });
     this.pendingWrites.add(pending);
@@ -151,7 +164,10 @@ export class IpcServer {
       socket.removeListener('close', failed);
       socket.removeListener('error', failed);
       this.pendingWrites.delete(pending);
-      if (!ok) this.writeFailed = true;
+      if (!ok) {
+        this.writeFailed = true;
+        try { onFailure?.(); } catch { /* Cancellation failure cannot strand write completion. */ }
+      }
       complete(ok);
     };
     const failed = (): void => finish(false);
@@ -315,15 +331,17 @@ export class IpcServer {
 
     const running = this.inflight.get(socket);
     const requestId = String(++this.requestSeq);
-    const lifetime = request.stream === true ? undefined : new RequestLifetime();
+    const lifetime = new RequestLifetime();
     let ended = false;
     let settle!: () => void;
     const settled = new Promise<void>(resolve => { settle = resolve; });
     let cancel: () => void = () => {};
-    const end = (): void => { ended = true; running?.delete(requestId); settle(); };
+    const end = (): void => { ended = true; settle(); };
+    // A terminal frame ends delivery; socket cancellation remains live through actual cleanup.
+    void Promise.all([lifetime.completed, lifetime.drained]).then(() => { running?.delete(requestId); settle(); });
     const deliver: DeliverEnvelope = (envelope) => {
       // The socket closed: the reply or frame is dropped, as a write to a closed socket was.
-      if (!this.inflight.has(socket)) return;
+      if (ended || !this.inflight.has(socket)) return;
       if (envelope.kind === 'reply') {
         end();
         this.send(socket, envelope.error !== undefined ? { id: request.id, error: envelope.error } : { id: request.id, result: envelope.result });
@@ -333,10 +351,10 @@ export class IpcServer {
       const frame = { ...(envelope.frame as IpcStreamMessage), id: request.id };
       if (frame.stream === 'done' || frame.stream === 'error') end();
       try {
-        this.writeLine(socket, JSON.stringify(frame) + '\n');
+        this.writeLine(socket, JSON.stringify(frame) + '\n', () => { lifetime.abort(); cancel(); });
       } catch {
-        // Socket broken: abort the handler.
-        cancel();
+        // Serialization or delivery failure cancels work without releasing its drains.
+        lifetime.abort(); cancel();
       }
     };
     try { cancel = this.forward({
@@ -350,7 +368,7 @@ export class IpcServer {
       finally { lifetime?.complete(); }
     }
     // Remember it until it ends or its socket closes (unless it was answered already).
-    if (!ended && running !== undefined && this.inflight.has(socket)) running.set(requestId, () => { cancel(); settle(); });
+    if (running !== undefined && this.inflight.has(socket)) running.set(requestId, () => { lifetime.abort(); cancel(); settle(); });
     else if (!ended) settle();
     return settled;
   }

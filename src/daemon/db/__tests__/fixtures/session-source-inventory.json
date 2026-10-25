@@ -9755,7 +9755,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "904c16594c8ca03569bd77d8ac8fc54ff54633305b7846b0f60a1d17ed9e10fb",
+      "sourceDigest": "fe4bb4c584460e3546731dd1601e06882aa29a1a6255721d025067249a3bef2c",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -12971,7 +12971,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "f24da9809b8d0f90c26dd7e8b6812ec861fea39bb2e7b0251148625eb38a9dd0",
+      "sourceDigest": "47815c83e28dbf1a452f95b57bcfc636397a1d840bd093894f281068f6ebc00e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14351,7 +14351,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "199a8adefe4877200ac64a73c13616cd893053255e4b0d200e3962e955667cca",
-      "sourceDigest": "e69447432113aba160fc2366d2c57fdbbc247a43533cc0a1d266a3820b95f8be",
+      "sourceDigest": "dbdf815f07c24b3f2427efd26618b4bc7334960a2aa3a89945d59def0dfb25c5",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14618,7 +14618,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "c57bfe4ffa1690615a2b8913fd3ad828599d44584d353948c1ce3fe982e3e4ec",
-      "sourceDigest": "f855cf0df4d1b7896616e0092651cd26126bdf646b8ee68e4951fa02d657ca90",
+      "sourceDigest": "ab2fc5e751260b58afeaef859448576e9196d7596bd916fffb024e64f3fe5b4d",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14902,11 +14902,15 @@
         [
           "serialization",
           "port.postMessage"
+        ],
+        [
+          "serialization",
+          "port.postMessage"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "2975cde95c21cc6f3168fb697ec3f94649c9f2b88238b4d2077dd9c096351136",
-      "sourceDigest": "962931f49f88ae5c15cda42da16ca2da87179ff34dcd16c4992b61b2238526ea",
+      "siteCount": 6,
+      "sitesDigest": "2a8ac5652daacda2c12bd121c6c9bb2e85c94646cf07989d97b09feb534be8fc",
+      "sourceDigest": "f7e8012089dce55dfa6699d3c9cafc36c940a55386aad03c43132c1f09f36151",
       "boundaries": [
         "diagnostic",
         "serialization"

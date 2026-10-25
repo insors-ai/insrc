@@ -26,7 +26,7 @@ export const UNHELD_METHODS: ReadonlySet<string> = new Set(['daemon.status', 'da
 /** `forward`, with each request run under the maintenance lock's shared hold. */
 export function holdingForward(forward: ForwardRequest): ForwardRequest {
 	return (request, deliver) => {
-		if (!maintenanceLockEnabled() || UNHELD_METHODS.has(request.method) || request.underHold === true || holdsMaintenanceLock()) {
+		if (!maintenanceLockEnabled() || (UNHELD_METHODS.has(request.method) && request.trustedContext?.connectionSession === undefined && request.trustedContext?.connectionExecution?.mode !== 'session-memory') || request.underHold === true || holdsMaintenanceLock()) {
 			return forward(request, deliver);
 		}
 		let cancel: (() => void) | undefined;
@@ -46,7 +46,7 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 					if (envelope.kind === 'reply') { complete(); if (!request.lifetime) resolve(); }
 					else {
 						const stream = (envelope.frame as IpcStreamMessage).stream;
-						if (stream === 'done' || stream === 'error') resolve();
+						if (!request.lifetime && (stream === 'done' || stream === 'error')) resolve();
 					}
 				}
 			};
@@ -66,7 +66,7 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 			request.lifetime?.abort();
 			if (cancel) cancel();
 			else complete();
-			if (request.stream) release();
+			if (request.stream && !request.lifetime) release();
 		};
 	};
 }

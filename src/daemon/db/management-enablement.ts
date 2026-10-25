@@ -27,7 +27,7 @@ export const CONNECTION_TEST_GATE_FILES = [
 export const CONNECTION_SESSION_GATE_FILES = [
 	'daemon/db/session-owner', 'daemon/db/management-root', 'daemon/connection-session-rpc',
 	'daemon/connection-management-rpc', 'daemon/request-context', 'daemon/server', 'daemon/index',
-	'daemon/threads/router', 'daemon/threads/channel', 'daemon/threads/method-class',
+	'daemon/threads/router', 'daemon/threads/channel', 'daemon/threads/method-class', 'daemon/threads/worker-requests',
 	'shared/step-context', 'shared/connection-management', 'shared/connection-management-wire',
 ] as const;
 export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url), additionalScopes: readonly string[] = []): Promise<ManagementEnablement> {

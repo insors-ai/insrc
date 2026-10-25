@@ -39,6 +39,8 @@ export interface RequestEnvelope {
 	readonly method: string;
 	readonly params: unknown;
 	readonly stream: boolean;
+	/** Internal stream completion acknowledgement, independent of terminal delivery. */
+	readonly trackCompletion?: true | undefined;
 	readonly session?: SessionId | undefined;
 	/** Constructed by the socket server; session label/pid and params are untrusted. */
 	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch'> | undefined;
@@ -61,6 +63,7 @@ export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
 	return {
 		kind: 'request', requestId: request.requestId, method: request.method,
 		params: request.params, stream: request.stream,
+		...(request.stream && request.lifetime ? { trackCompletion: true as const } : {}),
 		...(request.session ? { session: { label: request.session.label, pid: request.session.pid } } : {}),
 		...(request.underHold !== undefined ? { underHold: request.underHold } : {}),
 		...(request.trustedContext ? { trustedContext: { connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch } } : {}),
@@ -68,8 +71,9 @@ export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
 }
 export interface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }
 export interface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }
+export interface CompletionEnvelope { readonly kind: 'complete'; readonly requestId: string; }
 export interface CancelEnvelope { readonly kind: 'cancel'; readonly requestId: string; }
-export type ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CancelEnvelope;
+export type ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CompletionEnvelope | CancelEnvelope;
 
 // ---------------------------------------------------------------------------
 // Hub protocol

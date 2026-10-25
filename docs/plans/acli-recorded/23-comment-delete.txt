@@ -1,0 +1,2 @@
+✓ Successfully deleted the comment with id 10001
+exit=0

@@ -1,0 +1,17 @@
+{
+  "issueLinkTypes": [
+    {
+      "name": "Blocks"
+    },
+    {
+      "name": "Cloners"
+    },
+    {
+      "name": "Duplicate"
+    },
+    {
+      "name": "Relates"
+    }
+  ]
+}
+exit=0

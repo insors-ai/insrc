@@ -1,0 +1,12 @@
+{
+  "results": [
+    {
+      "status": "SUCCESS",
+      "message": "Work item IN-1 has been successfully cloned as https://insors.atlassian.net/browse/IN-3",
+      "id": "IN-1"
+    }
+  ],
+  "totalCount": 1,
+  "successCount": 1
+}
+exit=0

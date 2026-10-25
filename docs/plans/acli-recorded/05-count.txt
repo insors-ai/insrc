@@ -1,0 +1,2 @@
+✓ Number of work items in the search: 2
+exit=0

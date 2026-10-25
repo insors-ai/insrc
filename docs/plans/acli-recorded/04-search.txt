@@ -1,0 +1,41 @@
+[
+  {
+    "changelog": null,
+    "editmeta": null,
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "fields": {
+      "summary": "insrc probe B (safe to delete)"
+    },
+    "fieldsToInclude": null,
+    "id": "10037",
+    "key": "IN-2",
+    "names": null,
+    "operations": null,
+    "properties": null,
+    "renderedFields": null,
+    "schema": null,
+    "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/issue/10037",
+    "transitions": null,
+    "versionedRepresentations": null
+  },
+  {
+    "changelog": null,
+    "editmeta": null,
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "fields": {
+      "summary": "insrc probe A (safe to delete)"
+    },
+    "fieldsToInclude": null,
+    "id": "10036",
+    "key": "IN-1",
+    "names": null,
+    "operations": null,
+    "properties": null,
+    "renderedFields": null,
+    "schema": null,
+    "self": "https://jira-prod-eu-77-2.prod.atl-paas.net/rest/api/3/issue/10036",
+    "transitions": null,
+    "versionedRepresentations": null
+  }
+]
+exit=0

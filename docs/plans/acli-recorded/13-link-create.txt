@@ -1,0 +1,2 @@
+✓ Link between issues has been successfully created (IN-1 Blocks IN-2)
+exit=0

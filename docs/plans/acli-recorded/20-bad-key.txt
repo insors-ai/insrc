@@ -1,0 +1,12 @@
+{
+  "results": [
+    {
+      "status": "FAILURE",
+      "message": "Issue does not exist or you do not have permission to see it.",
+      "id": "IN-999"
+    }
+  ],
+  "totalCount": 1,
+  "successCount": 0
+}
+exit=0

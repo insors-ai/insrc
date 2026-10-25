@@ -1,0 +1,2 @@
+✓ Comment 10001 has been successfully updated on work item IN-1
+exit=0

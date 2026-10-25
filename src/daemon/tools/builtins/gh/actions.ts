@@ -282,7 +282,7 @@ export const ghWorkflowRunTool = withGhFailureNet({
     repo: Type.Optional(Type.String()),
     workflow: Type.String({ description: 'Workflow file (e.g. ci.yml) or name.' }),
     ref: Type.Optional(Type.String({ description: 'Branch / tag to run on. Default: repo default.' })),
-    inputs: Type.Optional(Type.Record(Type.String(), Type.String(), { description: 'Workflow inputs as key-value pairs.' })),
+    inputs: Type.Optional(Type.Unsafe<Record<string, string>>({ type: 'object', additionalProperties: { type: 'string' }, description: 'Workflow inputs as key-value pairs.' })),
   }, { additionalProperties: false }),
   outputSchema: GhWorkflowRunDataSchema,
   approval: ghApprovalClass('gh_workflow_run', {}),

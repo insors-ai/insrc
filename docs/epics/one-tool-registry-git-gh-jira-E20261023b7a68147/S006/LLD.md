@@ -651,6 +651,8 @@ Each operation is a Tool with its own typebox input (with its own maximum and ma
 
 - `qc77aecf0` — The sc2 amendment proposed in s4 (fieldAdd, breaking false: family tools are checked at run time and typed for callTool as TSchema) must be filed and approved with this LLD; adding concrete per-family types for gh and Jira together is left to a later Story (alternative a2 or a hand-written Static type per family).
   - **resolved**: File sc2 with this LLD — Filed as AMD-b7a68147dcf72034-10 and approved by the user on 2026-10-25. _(2026-10-25T19:29:02.747Z)_
+- `q80654a57` — ep3: the invariants cite the schema's c<number> ids; the supporting s1 analyze bundles (approval, op builder and helpers) are not named in the field itself.
+  - **ignored**: left to implementer judgment — Documentation traceability only; the review passed without it. Not worth a design cycle. _(2026-10-25T19:29:28.574Z)_
 
 ## Citations
 

@@ -69,7 +69,7 @@
   },
   "reviewCycle2": {
     "authorizedBy": "user",
-    "status": "round2 corrections ready for independent review",
+    "status": "round3 corrections ready for independent review",
     "changes": [
       "root-bound connection scope checks and all discovered callers",
       "holdingForward holds maintenance through handler settlement AND drains",
@@ -83,6 +83,12 @@
       "direct query embeddings and hybrid retrieval/lineage routes explicitly refused before SDK/ONNX submission",
       "delegation owns zero-to-many data transports, separate control attachment",
       "explicit CM-S5-LIFETIME-COPY pending external release dependency"
+    ],
+    "round2RecoveredResult": "Block: one HIGH unmanaged legacy saved-write reservation bypass; no MED findings",
+    "round3Corrections": [
+      "shared reservation check in adopted legacyUpsert and unmanaged saveConnectionRpc before credentials/registry writes",
+      "unattached legacy and complete connection owner RPC catalog forced main-daemon routing",
+      "canonical root/alias lock identity and production race matrix across adopted/unadopted roots"
     ]
   }
 }

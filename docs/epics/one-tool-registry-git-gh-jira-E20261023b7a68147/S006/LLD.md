@@ -647,23 +647,15 @@ Each operation is a Tool with its own typebox input (with its own maximum and ma
 - ep3: the invariants cite the schema's c<number> ids; the supporting s1 analyze bundles (approval, op builder and helpers) are not named in the field itself.
 - The exact success text of project create, update, restore, archive and delete is unknown until the gated disposable-project probe records it; the readers accept the success mark only until then. The probe needs a company-managed source project key, a scratch project key and a lead email from the user.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qc77aecf0` — The sc2 amendment proposed in s4 (fieldAdd, breaking false: family tools are checked at run time and typed for callTool as TSchema) must be filed and approved with this LLD; adding concrete per-family types for gh and Jira together is left to a later Story (alternative a2 or a hand-written Static type per family).
+  - **resolved**: File sc2 with this LLD — Filed as AMD-b7a68147dcf72034-10 and approved by the user on 2026-10-25. _(2026-10-25T19:29:02.747Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 2 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T19:20:53.452Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| change-sites | The proposed dependency relationship is adequately documented and its generated companion renders consistently. | The HTML source contains four components and three directed arrows from Jira to op-table, helpers, and shell-helper, matching §3.4 and its ownership explanation. No persistent entity relationship or UX change requires an ERD or mock. Rendering was attempted with headless Chrome but failed with 'Failed to create a unique user data directory for headless' in the restricted environment; layout and rendered labels were not verified. [files: docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S006/component-dependency.html] | Render the existing companion in a writable browser environment and inspect arrows, labels, and layout. |
-| error-paths | A success mark reliably identifies successful output for every project mutation. | The recorded project mutation inventory explicitly states 'The success text of these five commands is not recorded yet'. Existing write-probe evidence covers work items, comments and links, not project mutations. The LLD acknowledges this gap and requires a disposable-project probe; no recorded project success output was available to validate its readers. [files: docs/plans/tool-registry.md, docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S006/LLD.md] | Complete the authorized disposable-project probe and capture each mutation's real output before accepting those readers. |
+- **[[c1]]** `doc` `docs/plans/tool-registry.md` — "acli inventory for s6"
+- **[[c2]]** `code` `src/daemon/tools/builtins/gh/op-table.ts`
+- **[[c3]]** `code` `src/daemon/tools/builtins/gh/helpers.ts`
+- **[[c4]]** `code` `src/daemon/tools/approval-policy.ts`
+- **[[c5]]** `code` `src/daemon/tools/shell-helper.ts`

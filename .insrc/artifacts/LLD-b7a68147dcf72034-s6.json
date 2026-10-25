@@ -82,6 +82,15 @@
         },
         "at": "2026-10-25T19:26:09.035Z"
       }
+    },
+    "questionResolutions": {
+      "qc77aecf0": {
+        "question": "The sc2 amendment proposed in s4 (fieldAdd, breaking false: family tools are checked at run time and typed for callTool as TSchema) must be filed and approved with this LLD; adding concrete per-family types for gh and Jira together is left to a later Story (alternative a2 or a hand-written Static type per family).",
+        "status": "resolved",
+        "choice": "File sc2 with this LLD",
+        "rationale": "Filed as AMD-b7a68147dcf72034-10 and approved by the user on 2026-10-25.",
+        "resolvedAt": "2026-10-25T19:29:02.747Z"
+      }
     }
   },
   "body": {

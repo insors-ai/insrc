@@ -5,8 +5,14 @@
  * list definitions and manually dispatch runs.
  */
 
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, md, fail, shellFail, ghExec, parseJson } from './helpers.js';
+import { Type } from '@sinclair/typebox';
+import type { ToolApprovalGate, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import { str, num, md, fail, ghApprovalClass, ghExec, parseJson, withGhFailureNet } from './helpers.js';
+import { ghConvert } from './convert.js';
+import { ghFailResult } from './legacy.js';
+import {
+  GhRunListDataSchema, GhLogStepsSchema, GhRunViewDataSchema, GhRunIdDataSchema, GhWorkflowListDataSchema, GhWorkflowRunDataSchema,
+} from './schemas.js';
 
 interface RawRun {
   databaseId?: number;
@@ -35,23 +41,20 @@ interface RawWorkflow {
 // gh:run:list
 // ---------------------------------------------------------------------------
 
-export const ghRunListTool: Tool = {
+export const ghRunListTool = withGhFailureNet({
   id: 'gh_run_list',
   description: 'Recent workflow runs.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      limit: { type: 'number', minimum: 1, maximum: 200 },
-      workflow: { type: 'string', description: 'Filter by workflow file / name.' },
-      branch: { type: 'string' },
-      user: { type: 'string' },
-      event: { type: 'string', description: 'push / pull_request / schedule / workflow_dispatch / ...' },
-      status: { type: 'string', description: 'completed / queued / in_progress / failure / success / cancelled / skipped.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 200 })),
+    workflow: Type.Optional(Type.String({ description: 'Filter by workflow file / name.' })),
+    branch: Type.Optional(Type.String()),
+    user: Type.Optional(Type.String()),
+    event: Type.Optional(Type.String({ description: 'push / pull_request / schedule / workflow_dispatch / ...' })),
+    status: Type.Optional(Type.String({ description: 'completed / queued / in_progress / failure / success / cancelled / skipped.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRunListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'run', 'list', '--json', 'databaseId,number,name,workflowName,displayTitle,conclusion,status,event,headBranch,headSha,url,createdAt,updatedAt'];
@@ -63,8 +66,8 @@ export const ghRunListTool: Tool = {
     if (str(input, 'user'))     { argv.push('-u', str(input, 'user')!); }
     if (str(input, 'event'))    { argv.push('-e', str(input, 'event')!); }
     if (str(input, 'status'))   { argv.push('-s', str(input, 'status')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_run_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_run_list' } });
+    const bad = ghFailResult('gh_run_list', r, false); if (bad) { return bad; }
     const runs = parseJson<RawRun[]>(r.stdout) ?? [];
     const lines: string[] = [`# ${runs.length} run${runs.length === 1 ? '' : 's'}`, ''];
     if (runs.length > 0) {
@@ -76,29 +79,25 @@ export const ghRunListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: runs.length, runs } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // gh:run:view
 // ---------------------------------------------------------------------------
 
-export const ghRunViewTool: Tool = {
+export const ghRunViewTool = withGhFailureNet({
   id: 'gh_run_view',
   description: 'View a workflow run: jobs + failed-step logs by default.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      runId: { type: 'number', minimum: 1, description: 'Run databaseId.' },
-      logFailedOnly: { type: 'boolean', description: 'Default true: only failed-step logs.' },
-      maxLogBytes: { type: 'number', minimum: 1024, maximum: 4 * 1024 * 1024 },
-    },
-    required: ['runId'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    runId: Type.Number({ minimum: 1, description: 'Run databaseId.' }),
+    logFailedOnly: Type.Optional(Type.Boolean({ description: 'Default true: only failed-step logs.' })),
+    maxLogBytes: Type.Optional(Type.Number({ minimum: 1024, maximum: 4194304 })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRunViewDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
     const id = num(input, 'runId');
     if (!id) { return fail('gh_run_view', 'missing runId'); }
     const repoFlag = str(input, 'repo') ? ['-R', str(input, 'repo')!] : [];
@@ -107,18 +106,23 @@ export const ghRunViewTool: Tool = {
 
     const baseArgv = ['gh', 'run', 'view', String(id), '--json', 'jobs,conclusion,status,workflowName,displayTitle,headBranch,url'];
     baseArgv.push(...repoFlag);
-    const base = await ghExec(baseArgv, { cwd: str(input, 'cwd') });
-    if (base.code !== 0) { return shellFail('gh_run_view', base); }
-    const payload = parseJson<{ jobs?: Array<{ name: string; status?: string; conclusion?: string; url?: string }>; conclusion?: string; status?: string; workflowName?: string; displayTitle?: string; headBranch?: string; url?: string }>(base.stdout);
+    const base = await ghExec(baseArgv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_run_view' } });
+    const baseBad = ghFailResult('gh_run_view', base, false); if (baseBad) { return baseBad; }
+    const payload = parseJson<{ jobs?: Array<{ name: string; status?: string | null; conclusion?: string | null; url?: string | null }>; conclusion?: string; status?: string; workflowName?: string; displayTitle?: string; headBranch?: string; url?: string }>(base.stdout);
     if (!payload) { return fail('gh_run_view', 'could not parse JSON'); }
 
     const logsArgv = ['gh', 'run', 'view', String(id)];
     if (logFailedOnly) { logsArgv.push('--log-failed'); }
     else               { logsArgv.push('--log'); }
     logsArgv.push(...repoFlag);
-    const logs = await ghExec(logsArgv, { cwd: str(input, 'cwd'), maxBytes: maxLogBytes, key: { toolId: 'gh_run_view' } });
-    const logBody = logs.code === 0 ? logs.stdout : logs.stderr;
-    const truncated = logBody.length >= maxLogBytes;
+    // a cut at the display cap is the answer, not a failure; a failed log command fails the call with its stderr
+    const logs = await ghExec(logsArgv, { cwd: str(input, 'cwd'), maxBytes: maxLogBytes, cutIsAnswer: true, key: { toolId: 'gh_run_view' } });
+    const logsBad = ghFailResult('gh_run_view', logs, false); if (logsBad) { return logsBad; }
+    const truncated = logs.stdoutTruncated;
+    const logBody = logs.stdout;
+
+    const conv = await ghConvert('gh_run_view', logBody, GhLogStepsSchema, v => v.steps.flatMap(s => [s.job, s.step]), deps);
+    if (!conv.ok) { return conv.failure; }
 
     const lines: string[] = [];
     lines.push(`# Run #${id} -- ${md(payload.workflowName ?? '?')}`);
@@ -131,36 +135,34 @@ export const ghRunViewTool: Tool = {
     for (const j of payload.jobs ?? []) {
       lines.push(`- ${j.name} -- ${j.status ?? '?'} / ${j.conclusion ?? '?'}${j.url ? ` -- ${j.url}` : ''}`);
     }
+    if (conv.value !== undefined && conv.value.steps.length > 0) {
+      lines.push('');
+      lines.push(`## Steps in the log (${conv.value.steps.length})`);
+      lines.push('');
+      for (const s of conv.value.steps) { lines.push(`- ${md(s.job)} / ${md(s.step)}`); }
+    }
     lines.push('');
     lines.push(`## Logs (${logFailedOnly ? 'failed steps only' : 'all'})${truncated ? `, truncated @ ${maxLogBytes} bytes` : ''}`);
     lines.push('');
     lines.push('```');
-    lines.push((truncated ? logBody.slice(0, maxLogBytes) : logBody).replace(/\n+$/, ''));
+    lines.push(logBody.replace(/\n+$/, ''));
     lines.push('```');
-    return { output: lines.join('\n'), format: 'markdown', success: true, data: { runId: id, jobs: payload.jobs ?? [] } };
+    return { output: lines.join('\n'), format: 'markdown', success: true, data: { runId: id, jobs: payload.jobs ?? [], truncated } };
   },
-};
+});
 
-// ---------------------------------------------------------------------------
-// gh:run:rerun / cancel
-// ---------------------------------------------------------------------------
-
-export const ghRunRerunTool: Tool = {
+export const ghRunRerunTool = withGhFailureNet({
   id: 'gh_run_rerun',
   description: 'Re-run a workflow run (failed jobs only by default).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      runId: { type: 'number', minimum: 1 },
-      allJobs: { type: 'boolean', description: 'Re-run every job, not just failed ones.' },
-      debug: { type: 'boolean', description: 'Enable debug logging (--debug).' },
-    },
-    required: ['runId'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    runId: Type.Number({ minimum: 1 }),
+    allJobs: Type.Optional(Type.Boolean({ description: 'Re-run every job, not just failed ones.' })),
+    debug: Type.Optional(Type.Boolean({ description: 'Enable debug logging (--debug).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhRunIdDataSchema,
+  approval: ghApprovalClass('gh_run_rerun', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -184,26 +186,22 @@ export const ghRunRerunTool: Tool = {
     if (input['allJobs'] !== true) { argv.push('--failed'); }
     if (input['debug'] === true) { argv.push('--debug'); }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_run_rerun', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_run_rerun' } });
+    const bad = ghFailResult('gh_run_rerun', r, true); if (bad) { return bad; }
     return { output: `Re-queued run ${id}.`, format: 'markdown', success: true, data: { runId: id } };
   },
-};
+});
 
-export const ghRunCancelTool: Tool = {
+export const ghRunCancelTool = withGhFailureNet({
   id: 'gh_run_cancel',
   description: 'Cancel an in-progress workflow run.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      runId: { type: 'number', minimum: 1 },
-    },
-    required: ['runId'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    runId: Type.Number({ minimum: 1 }),
+  }, { additionalProperties: false }),
+  outputSchema: GhRunIdDataSchema,
+  approval: ghApprovalClass('gh_run_cancel', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
@@ -221,35 +219,32 @@ export const ghRunCancelTool: Tool = {
     if (!id) { return fail('gh_run_cancel', 'missing runId'); }
     const argv = ['gh', 'run', 'cancel', String(id)];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_run_cancel', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_run_cancel' } });
+    const bad = ghFailResult('gh_run_cancel', r, true); if (bad) { return bad; }
     return { output: `Cancelled run ${id}.`, format: 'markdown', success: true, data: { runId: id } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // gh:workflow:list
 // ---------------------------------------------------------------------------
 
-export const ghWorkflowListTool: Tool = {
+export const ghWorkflowListTool = withGhFailureNet({
   id: 'gh_workflow_list',
   description: 'List workflow definitions.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      all: { type: 'boolean', description: 'Include disabled workflows.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    all: Type.Optional(Type.Boolean({ description: 'Include disabled workflows.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhWorkflowListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'workflow', 'list'];
     if (input['all'] === true) { argv.push('-a'); }
     if (str(input, 'repo'))    { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_workflow_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_workflow_list' } });
+    const bad = ghFailResult('gh_workflow_list', r, false); if (bad) { return bad; }
     // gh workflow list doesn't support --json, so parse the plain output.
     const workflows: RawWorkflow[] = [];
     for (const line of r.stdout.split('\n')) {
@@ -273,32 +268,24 @@ export const ghWorkflowListTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data: { count: workflows.length, workflows } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // gh:workflow:run (workflow_dispatch)
 // ---------------------------------------------------------------------------
 
-export const ghWorkflowRunTool: Tool = {
+export const ghWorkflowRunTool = withGhFailureNet({
   id: 'gh_workflow_run',
   description: 'Manually dispatch a workflow (workflow_dispatch event).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      workflow: { type: 'string', description: 'Workflow file (e.g. ci.yml) or name.' },
-      ref: { type: 'string', description: 'Branch / tag to run on. Default: repo default.' },
-      inputs: {
-        type: 'object',
-        additionalProperties: { type: 'string' },
-        description: 'Workflow inputs as key-value pairs.',
-      },
-    },
-    required: ['workflow'],
-    additionalProperties: false,
-  },
-  approval: 'common',
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    workflow: Type.String({ description: 'Workflow file (e.g. ci.yml) or name.' }),
+    ref: Type.Optional(Type.String({ description: 'Branch / tag to run on. Default: repo default.' })),
+    inputs: Type.Optional(Type.Record(Type.String(), Type.String(), { description: 'Workflow inputs as key-value pairs.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhWorkflowRunDataSchema,
+  approval: ghApprovalClass('gh_workflow_run', {}),
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const inputs = input['inputs'] && typeof input['inputs'] === 'object' ? input['inputs'] as Record<string, string> : {};
@@ -328,7 +315,7 @@ export const ghWorkflowRunTool: Tool = {
     }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_workflow_run' } });
-    if (r.code !== 0) { return shellFail('gh_workflow_run', r); }
+    const bad = ghFailResult('gh_workflow_run', r, true); if (bad) { return bad; }
     return { output: `Dispatched \`${wf}\`.`, format: 'markdown', success: true, data: { workflow: wf } };
   },
-};
+});

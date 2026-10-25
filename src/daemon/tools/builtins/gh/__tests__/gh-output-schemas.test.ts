@@ -12,6 +12,7 @@ import * as pr from '../pr.js';
 import * as project from '../project.js';
 import * as release from '../release.js';
 import * as repo from '../repo.js';
+import * as actions from '../actions.js';
 import { ghApprovalClass } from '../helpers.js';
 import { installFakeGh } from './_fakegh.js';
 
@@ -70,13 +71,18 @@ const CASES: Array<[Tool, Record<string, unknown>, string]> = [
 	[project.ghProjectItemUpdateTool, { projectId: 'p', itemId: 'i', fieldId: 'f', value: 'v' }, ''],
 	[project.ghProjectItemArchiveTool, { projectId: 'p', itemId: 'i' }, ''],
 	[project.ghProjectFieldListTool, { number: 2 }, JSON.stringify({ fields: [{ id: 'f', name: 'Status', type: 'SINGLE_SELECT', options: [{ id: 'o', name: 'Todo' }] }] })],
+	[actions.ghRunListTool, {}, JSON.stringify([{ databaseId: 9, number: 1, name: 'ci', workflowName: 'ci', conclusion: null, status: 'queued', headBranch: 'main' }])],
+	[actions.ghRunRerunTool, { runId: 9 }, ''],
+	[actions.ghRunCancelTool, { runId: 9 }, ''],
+	[actions.ghWorkflowListTool, {}, 'ci\tactive\t123\n'],
+	[actions.ghWorkflowRunTool, { workflow: 'ci.yml' }, ''],
 	[repo.ghRepoDeleteTool, { repo: 'o/r' }, ''],
 	[release.ghReleaseDeleteTool, { tag: 'v1' }, ''],
 	[project.ghProjectItemDeleteTool, { projectId: 'p', itemId: 'i' }, ''],
 ];
 
 test('gh-output-schemas.test.ts: issue and pr tool results validate against their output schemas for success and failure', async () => {
-	assert.equal(CASES.length, 44);
+	assert.equal(CASES.length, 49);
 	for (const [tool] of CASES) {
 		// the class a tool declares is the one ghApprovalClass gives its id
 		if (tool.approval !== undefined) { assert.equal(resolveApprovalClass(tool, {}), ghApprovalClass(tool.id, {}), tool.id); }

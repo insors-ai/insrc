@@ -145,3 +145,39 @@ export const GhProjectFieldListDataSchema = Type.Object({
     options: Maybe(Type.Array(Type.Object({ id: Maybe(Type.String()), name: Type.String() }))),
   })),
 });
+
+export const GhRunRowSchema = Type.Object({
+  databaseId: Maybe(Type.Number()),
+  number: Maybe(Type.Number()),
+  name: Maybe(Type.String()),
+  workflowName: Maybe(Type.String()),
+  displayTitle: Maybe(Type.String()),
+  conclusion: Maybe(Type.String()),
+  status: Maybe(Type.String()),
+  event: Maybe(Type.String()),
+  headBranch: Maybe(Type.String()),
+  headSha: Maybe(Type.String()),
+  url: Maybe(Type.String()),
+  createdAt: Maybe(Type.String()),
+  updatedAt: Maybe(Type.String()),
+});
+export const GhRunListDataSchema = Type.Object({ count: Type.Number(), runs: Type.Array(GhRunRowSchema) });
+export const GhRunViewDataSchema = Type.Object({
+  runId: Type.Number(),
+  jobs: Type.Array(Type.Object({
+    name: Type.String(), status: Maybe(Type.String()), conclusion: Maybe(Type.String()), url: Maybe(Type.String()),
+  })),
+  truncated: Type.Boolean(),
+});
+export const GhRunIdDataSchema = Type.Object({ runId: Type.Number() });
+export const GhWorkflowListDataSchema = Type.Object({
+  count: Type.Number(),
+  workflows: Type.Array(Type.Object({
+    id: Maybe(Type.Number()), name: Type.String(), path: Maybe(Type.String()), state: Maybe(Type.String()),
+  })),
+});
+export const GhWorkflowRunDataSchema = Type.Object({ workflow: Type.String() });
+
+/** What the model reads out of gh's free text: file paths of a diff and job/step names of a run log. */
+export const GhDiffFilesSchema = Type.Object({ files: Type.Array(Type.String()) });
+export const GhLogStepsSchema = Type.Object({ steps: Type.Array(Type.Object({ job: Type.String(), step: Type.String() })) });

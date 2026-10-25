@@ -11,11 +11,12 @@
  */
 
 import { Type } from '@sinclair/typebox';
-import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { str, num, strArr, joinCsv, md, fail, ghExec, ghApprovalClass, parseJson, withGhFailureNet } from './helpers.js';
+import { ghConvert } from './convert.js';
 import { ghFailResult } from './legacy.js';
 import {
-  GhIssueCommentDataSchema, GhNumberDataSchema, GhPrChecksDataSchema, GhPrDiffDataSchema, GhPrFilesDataSchema, GhPrListDataSchema,
+  GhDiffFilesSchema, GhIssueCommentDataSchema, GhNumberDataSchema, GhPrChecksDataSchema, GhPrDiffDataSchema, GhPrFilesDataSchema, GhPrListDataSchema,
   GhPrMergeDataSchema, GhPrReviewDataSchema, GhPrRowSchema, GhPrUrlDataSchema,
 } from './schemas.js';
 import type { GhPrRow } from './schemas.js';
@@ -112,21 +113,28 @@ export const ghPrDiffTool = withGhFailureNet({
   }, { additionalProperties: false }),
   outputSchema: GhPrDiffDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
     const n = num(input, 'number');
     if (!n) { return fail('gh_pr_diff', 'missing number'); }
     const maxBytes = num(input, 'maxBytes') ?? 256 * 1024;
     const argv = ['gh', 'pr', 'diff', String(n)];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
+    // a cut at the display cap is the answer, not a failure
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), maxBytes, cutIsAnswer: true, key: { toolId: 'gh_pr_diff' } });
     const bad = ghFailResult('gh_pr_diff', r, false); if (bad) { return bad; }
-    const truncated = r.stdout.length >= maxBytes;
-    const body = (truncated ? r.stdout.slice(0, maxBytes) : r.stdout).replace(/\n+$/, '');
+    const truncated = r.stdoutTruncated;
+    const body = r.stdout.replace(/\n+$/, '');
+
+    const conv = await ghConvert('gh_pr_diff', body, GhDiffFilesSchema, v => v.files, deps);
+    if (!conv.ok) { return conv.failure; }
+    const files = conv.value !== undefined && conv.value.files.length > 0
+      ? `Files (${conv.value.files.length}): ${conv.value.files.map(f => `\`${f}\``).join(', ')}\n\n`
+      : '';
     return {
-      output: `# PR #${n} diff${truncated ? `  _(truncated at ${maxBytes} bytes)_` : ''}\n\n\`\`\`diff\n${body}\n\`\`\``,
+      output: `# PR #${n} diff${truncated ? `  _(truncated at ${maxBytes} bytes)_` : ''}\n\n${files}\`\`\`diff\n${body}\n\`\`\``,
       format: 'markdown',
       success: true,
-      data: { number: n, diffBytes: body.length, truncated },
+      data: { number: n, diffBytes: Buffer.byteLength(body, 'utf8'), truncated },
     };
   },
 });

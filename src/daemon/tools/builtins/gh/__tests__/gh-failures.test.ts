@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { ghRunViewTool } from '../actions.js';
+import { installFakeGh } from './_fakegh.js';
 import { GH_UNKNOWN_OUTCOME, ghFailureOf, type GhOutcome } from '../helpers.js';
 
 function outcome(over: Partial<GhOutcome> = {}): GhOutcome {
@@ -73,4 +75,17 @@ test('gh-failures.test.ts: spawn error, authentication text, probe-only authenti
 	assert.equal(ghFailureOf(outcome({ code: 1, stderr: 'HTTP 403: forbidden', probe: { code: 1, output: 'unexpected error' } }), { mutating: false })?.kind, 'rejected');
 	assert.equal(ghFailureOf(outcome({ code: 1, stderr: 'dial tcp: lookup api.github.com: no such host' }), { mutating: false })?.kind, 'unreachable');
 	assert.equal(ghFailureOf(outcome({ code: 1, stderr: 'HTTP 403', probe: { code: 1, output: 'could not resolve host' } }), { mutating: false })?.kind, 'unreachable');
+});
+
+test('gh-failures.test.ts: a failed gh run view log command fails the call with stderr in error', async () => {
+	const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
+	const gh = installFakeGh('ok', undefined, { json: JSON.stringify({ jobs: [{ name: 'build' }], status: 'completed', conclusion: 'failure' }), fail: 'log not found: run expired' });
+	try {
+		const r = await ghRunViewTool.execute({ runId: 9 }, deps);
+		assert.equal(r.success, false);
+		assert.equal(r.error, 'log not found: run expired');
+		assert.equal(r.output, '[gh_run_view] log not found: run expired');
+		assert.equal(r.failure?.kind, 'rejected');
+		assert.equal(r.data, undefined);
+	} finally { gh.restore(); }
 });

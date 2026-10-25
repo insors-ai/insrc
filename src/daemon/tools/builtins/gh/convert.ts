@@ -1,0 +1,36 @@
+/**
+ * Free-text reads of gh (a diff, a run log) go through convertText, and every value the model reads out is
+ * cross-checked against the raw text. Without a conversion provider the read still answers with the raw text.
+ */
+
+import type { Static, TSchema } from '@sinclair/typebox';
+import { convertText } from '../../convert-text.js';
+import type { ToolDeps, ToolResult } from '../../types.js';
+
+/** The most raw text kept in failure.original. */
+const ORIGINAL_CAP = 64 * 1024;
+
+export type GhConversion<S extends TSchema> =
+  | { ok: true; value: Static<S> | undefined }
+  | { ok: false; failure: ToolResult };
+
+/**
+ * Convert `raw` to `schema`. Empty text and a daemon with no conversion provider give no value (the caller shows
+ * the raw text); a conversion that fails its cross-check after the one escalation is a conversion-failed result
+ * that keeps the raw text in failure.original.
+ */
+export async function ghConvert<S extends TSchema>(
+  toolId: string, raw: string, schema: S, keyValues: (value: Static<S>) => string[], deps: ToolDeps,
+): Promise<GhConversion<S>> {
+  if (raw.trim().length === 0 || deps.conversion === undefined) { return { ok: true, value: undefined }; }
+  const c = await convertText({ toolId, rawText: raw, schema, keyValues }, deps);
+  if (c.ok) { return { ok: true, value: c.value }; }
+  const msg = `${toolId}: its text could not be converted and checked against the raw output (${c.failure.detail})`;
+  return {
+    ok: false,
+    failure: {
+      output: `[${toolId}] ${msg}`, format: 'text', success: false, error: msg,
+      failure: { kind: 'conversion-failed', message: msg, original: raw.slice(0, ORIGINAL_CAP) },
+    },
+  };
+}

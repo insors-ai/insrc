@@ -1,0 +1,245 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792945615359-bu2l8a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T16:28:44.301Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 108921,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "storyId": "s2",
+    "lldRunId": "wf-1792943748771-a1ifrf",
+    "lldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s2 adds one module that turns the daemon's model registry into the models.definitions answer, registers that request, and rebuilds providers.listModels on top of the same answer so the two cannot disagree. The s1 stopgap accessor goes away, and a real-daemon test checks both requests over the socket."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the models.definitions projection and register the request",
+        "summary": "Add src/daemon/model-definitions.ts with the ModelDefinitionsResult type and modelDefinitions(deps): it projects getModelRegistry() and the validated file's version into the sc3 answer (registry order, aliases always a list, optional fields omitted, rejectedModels on CLI families limited to ids the family does not serve) and marks each listed Ollama model installed from one bounded listing call, omitting installed when the listing rejects. Register 'models.definitions' in buildHandlerRuntime, the method-class table (session) and handler-runtime.test.ts's RECORDED_RPC; refresh the source-inventory digests the edits trip and classify model-definitions.ts if it has boundary sites.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "models.definitions returns every sc3 field of a fixture file, with aliases always a list and optional fields omitted",
+          "A user-approved model follows the shipped ones with source 'user-approved'; an unlisted rejected id appears only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels",
+          "installed is exact-match true/false, absent on every Ollama model when the lister rejects, and an installed unlisted model does not appear",
+          "method-class.test.ts and handler-runtime.test.ts pass with the new method",
+          "session-source-inventory.test.ts passes, with model-definitions.ts classified if it has boundary sites"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted"
+          },
+          {
+            "level": "unit",
+            "name": "model-definitions.test.ts: user-approved after shipped; unlisted rejected id only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels"
+          },
+          {
+            "level": "unit",
+            "name": "model-definitions.test.ts: installed exact-match true/false, absent when the lister rejects, unlisted installed models absent"
+          },
+          {
+            "level": "unit",
+            "name": "handler-runtime, method-class and session-source-inventory suites pass with models.definitions registered"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Derive providers.listModels from the projection and remove the curated accessor",
+        "summary": "Change ListModelsDeps from catalog() to registry() and catalogVersion(); listModels keeps its request/result shape and takes its models from the projection: CLI families without calling the Ollama lister, Ollama as the listed-and-installed models, available:false + [] when the lister rejects. Remove getCuratedCatalog, CuratedCatalog, CatalogModel and CloudProvider from model-catalog.ts, update list-models, model-catalog and model-registry tests, and refresh the source-inventory digests of list-models.ts and model-catalog.ts.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "For every family listModels(family).models equals the definitions answer's models for that family (ollama: installed === true) mapped to { id, displayName? }",
+          "A CLI-family request never calls the Ollama lister; ollama returns available:false + [] when the lister rejects; invalid params return the unchanged error",
+          "No file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel",
+          "session-source-inventory.test.ts passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "list-models.test.ts: CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "list-models.test.ts: for every family listModels agrees with models.definitions, and an installed unlisted Ollama model appears in neither"
+          },
+          {
+            "level": "unit",
+            "name": "list-models.test.ts: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel"
+          },
+          {
+            "level": "unit",
+            "name": "model-catalog, model-registry and session-source-inventory suites pass without the curated accessor"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Prove both requests over a real daemon socket",
+        "summary": "Add an integration test that starts the daemon in a temp home (startDaemon) and checks models.definitions returns the three shipped families and providers.listModels('cli-claude') agrees with it.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A real daemon answers models.definitions with cli-claude, cli-codex and ollama from the shipped asset",
+          "providers.listModels('cli-claude') over the socket equals the cli-claude models of models.definitions"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "models-definitions-daemon.test.ts: a real daemon answers models.definitions with the three shipped families and providers.listModels('cli-claude') agrees with it"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "models.definitions projection in src/daemon/model-definitions.ts (new src/daemon/__tests__/model-definitions.test.ts): every sc3 field of a fixture file, aliases always a list, optional fields omitted, rejectedModels on CLI families only, user-approved models after shipped ones; a rejected id the file also lists is served as shipped and left out of rejectedModels",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed state: exact-match true/false, absent on every Ollama model when the lister rejects, unlisted installed models absent",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels in src/daemon/list-models.ts (src/daemon/__tests__/list-models.test.ts, rewritten deps): CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "agreement: for every family, listModels(family).models equals the definitions answer's models for that family (ollama: installed === true) mapped to { id, displayName? }",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "handler map: 'models.definitions' is a real read-only handler in buildHandlerRuntime, 'providers.listModels' still delegates to listModels, and src/daemon/__tests__/handler-runtime.test.ts's RECORDED_RPC includes 'models.definitions'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "method-class: src/daemon/threads/__tests__/method-class.test.ts passes with ['models.definitions', 'session', false] (coverage equals handler keys; admin/indexing counts unchanged)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "source scan: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a daemon started in a temp home answers models.definitions with the three shipped families and providers.listModels('cli-claude') agreeing with it",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api models.definitions",
+      "quotedText": "'models.definitions': (params: unknown) => Promise<ModelDefinitionsResult>"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api listModels",
+      "quotedText": "Builds its answer from the same projection models.definitions uses"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges ModelDefinitionsResult",
+      "quotedText": "The IPC answer type exactly as the HLD sc3 sketch"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges ListModelsDeps",
+      "quotedText": "The catalog() dependency is replaced by registry() and catalogVersion(); ollamaList() stays."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges curated catalog accessor",
+      "quotedText": "getCuratedCatalog, CuratedCatalog and CatalogModel are removed"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges method-class table",
+      "quotedText": "Adds ['models.definitions', 'session', false]"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths",
+      "quotedText": "Builds the answer without installed on any Ollama model and returns it as a success"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy",
+      "quotedText": "The real daemon answers models.definitions over its socket from the shipped asset."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration",
+      "quotedText": "Switch listModels' deps from catalog() to registry() and catalogVersion()"
+    }
+  ]
+}

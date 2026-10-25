@@ -10,6 +10,7 @@ if [ "$1 $2 $3" = "jira auth status" ]; then
   case "$FAKE_PROBE" in
     unauthorized) echo "✗ Error: unauthorized: use acli jira auth login to authenticate" >&2; exit 1 ;;
     network) echo "dial tcp: lookup example.atlassian.net: no such host" >&2; exit 1 ;;
+    file) cat "$FAKE_STDOUT_FILE"; exit 0 ;;
     sleep) sleep 5 ;;
     *) printf '✓ Authenticated\\n  Site: example.atlassian.net\\n'; exit 0 ;;
   esac
@@ -19,6 +20,7 @@ case "$FAKE_MODE" in
   fail-reject) echo "✗ Error: Issue does not exist or you do not have permission to see it." >&2; exit 1 ;;
   fail-unauthorized) echo "✗ Error: unauthorized: use acli jira auth login to authenticate" >&2; exit 1 ;;
   fail-network) echo "dial tcp: lookup example.atlassian.net: no such host" >&2; exit 1 ;;
+  fail-file) cat "$FAKE_STDOUT_FILE" >&2; exit 1 ;;
   exit127) exit 127 ;;
   sleep) sleep 5 ;;
   big) head -c 300000 /dev/zero | tr '\\0' 'x' ;;

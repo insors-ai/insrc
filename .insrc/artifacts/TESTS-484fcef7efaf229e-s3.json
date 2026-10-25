@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T17:52:22.586Z",
+    "updatedAt": "2026-10-25T18:01:05.712Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -349,6 +349,123 @@
               },
               {
                 "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "65cbe88a9",
+        "ranAt": "2026-10-25T18:01:05.712Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-STREAM: real server/router/maintenance terminal frame, disconnect, throwing delivery and delayed completion+drain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: real socket done retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: real socket error retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+                "title": "CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1780,
+            "titles": [
+              {
+                "title": "CM-S3-STREAM: real socket done retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: real socket error retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery",
                 "result": "pass"
               }
             ],

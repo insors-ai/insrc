@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -97,3 +97,28 @@ Run at 2026-10-25T17:52:22.586Z on commit `6e61c679a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/connection-session-rpc.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t5
+
+Run at 2026-10-25T18:01:05.712Z on commit `65cbe88a9`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-STREAM: real server/router/maintenance terminal frame, disconnect, throwing delivery and delayed completion+drain**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-STREAM: real socket done retains handler completion and late registered drains | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: real socket error retains handler completion and late registered drains | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+| pass | CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery | `src/daemon/threads/__tests__/stream-lifetime.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/stream-lifetime.test.ts` | 0 | 10 | 1.8 s |  |

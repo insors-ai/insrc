@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T21:22:28.740Z",
+    "updatedAt": "2026-10-25T21:34:23.908Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1110,6 +1110,170 @@
               },
               {
                 "title": "CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "b351620ad",
+        "ranAt": "2026-10-25T21:34:23.908Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CONTEXT: actual db/data tools, schema-drift, runtime and exploration resolver callbacks with saved positive controls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/tool-owner-context.test.ts",
+                "title": "CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts",
+                "title": "CM-S1-M: schema drift retains its revision lease through both live schema and asynchronous Prisma comparison",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 941,
+            "titles": [
+              {
+                "title": "a data task with a connection scope works on that connection only",
+                "result": "pass"
+              },
+              {
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "title": "the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: present non-empty -> returns; missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: empty string -> throws (empty != non-empty)",
+                "result": "pass"
+              },
+              {
+                "title": "optionalStringParam: present -> value; missing -> undefined; empty -> throws",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all 4 data runtimes",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.connections: lists the registered sqlite connection (no secret leak)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: lists rdbms tables for the sqlite connection",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: kind filter narrows the result",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: unknown connectionId -> throws (no such connection)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: missing connectionId param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes the users table -- columns + types + nullability",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes orders table -- FK to users surfaces",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: missing table param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: nonexistent table -> driver error propagates",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/tool-owner-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1687,
+            "titles": [
+              {
+                "title": "CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1590,
+            "titles": [
+              {
+                "title": "CM-S1-V: ordinary DB tool async iteration retains full-use ownership through completion cancellation failure and nested library cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: schema drift retains its revision lease through both live schema and asynchronous Prisma comparison",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: metadata discovery and access policies remain scoped and never acquire a driver before admission",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: metadata-only file listing keeps its pin until the filesystem result finishes without building a driver",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-V: actual MSSQL sample timeout retains underlying library work through late success or failure",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-V: parallel driver calls settle every library request before propagating a sibling failure",
                 "result": "pass"
               }
             ],

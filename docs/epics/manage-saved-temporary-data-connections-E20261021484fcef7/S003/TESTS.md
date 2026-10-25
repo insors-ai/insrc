@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 69 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 72 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -330,3 +330,23 @@ Run at 2026-10-25T21:22:28.740Z on commit `029156e6b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/analysis-client-refusal.test.ts` | 0 | 2 | 3.3 s |  |
+
+## t16
+
+Run at 2026-10-25T21:34:23.908Z on commit `b351620ad`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CONTEXT: actual db/data tools, schema-drift, runtime and exploration resolver callbacks with saved positive controls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority | `src/daemon/steps/__tests__/tool-owner-context.test.ts` |
+| pass | CM-S1-M: schema drift retains its revision lease through both live schema and asynchronous Prisma comparison | `src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts` |
+| pass | a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo) | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` | 0 | 19 | 0.9 s |  |
+| `src/daemon/steps/__tests__/tool-owner-context.test.ts` | 0 | 1 | 1.7 s |  |
+| `src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts` | 0 | 6 | 1.6 s |  |

@@ -232,7 +232,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			assertActive();
 			if (current.overlay !== overlay || current.binding.controlGeneration !== owned.binding.controlGeneration) throw fail('session-expired');
 			return overlay.resolver(access, { assertActive, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) });
-		});
+		}, { assertActive, retainWork: work => { context.registerDrain?.(work); overlay.retainWork(work); } });
 		assertActive(); return access;
 	}
  async executionFor(context: TrustedRpcContext, root: string) {

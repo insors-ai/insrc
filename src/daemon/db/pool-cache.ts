@@ -19,6 +19,8 @@
  */
 import { getLogger } from '../../shared/logger.js';
 import { ConnectionUseError } from './lease-gate.js';
+import { guardedDriver } from './driver-guard.js';
+import { temporaryDriverFailure } from './session-resources.js';
 import { DriverPool } from './pool.js';
 import type { ConnectionAccessContext, ConnectionResolver } from '../../shared/connection-management.js';
 const log = getLogger('db-pool-cache');
@@ -35,11 +37,16 @@ export class SessionAccessError extends Error {
 		this.name = 'SessionAccessError';
 	}
 }
-const sessionResolvers = new WeakMap<ConnectionAccessContext, () => Promise<ConnectionResolver>>();
+interface SessionResolverBinding {
+ readonly resolve: () => Promise<ConnectionResolver>;
+ readonly assertActive?: (() => void) | undefined;
+ readonly retainWork?: ((work: Promise<unknown>) => void) | undefined;
+}
+const sessionResolvers = new WeakMap<ConnectionAccessContext, SessionResolverBinding>();
 /** Main-daemon owner binds an exact frozen access object. A serialized copy is never authority. */
-export function bindSessionConnectionResolver(access: Readonly<ConnectionAccessContext>, resolve: () => Promise<ConnectionResolver>): void {
+export function bindSessionConnectionResolver(access: Readonly<ConnectionAccessContext>, resolve: () => Promise<ConnectionResolver>, ports: Omit<SessionResolverBinding, 'resolve'> = {}): void {
 	if (!access.sessionHandle || !Object.isFrozen(access) || sessionResolvers.has(access)) throw new SessionAccessError();
-	sessionResolvers.set(access, resolve);
+	sessionResolvers.set(access, { resolve, ...ports });
 }
 /** Saved reads retain the caller's own directory, independently of registry membership. */
 export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionResolver {
@@ -50,11 +57,13 @@ export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionR
 		if (ports.sessionOverlay) return ports.sessionOverlay(context);
 		const resolve = sessionResolvers.get(context);
 		if (!resolve) throw new SessionAccessError();
-		return resolve();
+		resolve.assertActive?.();
+		return resolve.resolve();
 	};
 	const sources = async (context: ConnectionAccessContext) => {
 		const session = await overlay(context), saved = await pool(context);
 		const temporary = session ? await session.list(context) : [];
+		sessionResolvers.get(context)?.assertActive?.();
 		if (session) {
 			const savedIds = new Set(saved.safeList().map(entry => entry.key.id));
 			if (temporary.some(entry => savedIds.has(entry.key.id))) throw new ConnectionUseError('duplicate-id');
@@ -72,7 +81,19 @@ export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionR
 		},
 		async withConnection(context, id, use) {
 			const { session, saved, temporary } = await sources(context);
-			return session && temporary.some(entry => entry.key.id === id) ? session.withConnection(context, id, use) : saved.withConnection(id, use);
+			if (session && temporary.some(entry => entry.key.id === id)) return session.withConnection(context, id, use);
+            if (!session) return saved.withConnection(id, use);
+            // Saved substeps of an attached invocation remain owned by that invocation.
+            const binding = sessionResolvers.get(context);
+            const work = saved.withConnection(id, async driver => {
+                await session.list(context);
+                const guard = guardedDriver(driver, { assertActive: binding?.assertActive, failure: temporaryDriverFailure });
+                try { const result = await use(guard.driver); await session.list(context); binding?.assertActive?.(); return result; }
+                finally { await guard.finish(); }
+            });
+            binding?.retainWork?.(work);
+            try { const result = await work; await session.list(context); binding?.assertActive?.(); return result; }
+            catch (error) { throw temporaryDriverFailure(error); }
 		},
 	};
 }

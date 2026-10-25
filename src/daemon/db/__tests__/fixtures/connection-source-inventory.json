@@ -722,7 +722,7 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "resolve()",
+      "expression": "resolve.resolve()",
       "boundary": "resolver-port-call"
     },
     {
@@ -747,12 +747,32 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.withConnection",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
       "expression": "savedConnectionResolver",
       "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "session.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
       "boundary": "resolver-member"
     },
     {

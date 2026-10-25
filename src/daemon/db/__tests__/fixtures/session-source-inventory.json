@@ -7455,7 +7455,7 @@
       ],
       "siteCount": 28,
       "sitesDigest": "7361f037222b47316c113cc37873720870d7277099083d9578cff7ff216c4dad",
-      "sourceDigest": "a05902bb6b53b14ae4945ca6d570b9065b61319bb26b0628e0db1130d1ee509e",
+      "sourceDigest": "c44191931d2c1b87b21a328ad085bfafd3d7e9483cb77b1d4ba57a0f112aac6a",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -10506,11 +10506,11 @@
         ],
         [
           "connection-factory",
-          "resolve"
+          "resolve.resolve"
         ],
         [
           "acquisition:resolver-port-call",
-          "resolve()"
+          "resolve.resolve()"
         ],
         [
           "acquisition:pool-member",
@@ -10538,6 +10538,14 @@
         ],
         [
           "acquisition:pool-member",
+          "saved.withConnection"
+        ],
+        [
+          "acquisition:pool-member",
+          "saved.withConnection"
+        ],
+        [
+          "connection-use",
           "saved.withConnection"
         ],
         [
@@ -10561,6 +10569,30 @@
           "session.list"
         ],
         [
+          "acquisition:resolver-member",
+          "session.list"
+        ],
+        [
+          "acquisition:resolver-member",
+          "session.list"
+        ],
+        [
+          "acquisition:resolver-member",
+          "session.list"
+        ],
+        [
+          "connection-use",
+          "session.list"
+        ],
+        [
+          "connection-use",
+          "session.list"
+        ],
+        [
+          "connection-use",
+          "session.list"
+        ],
+        [
           "connection-use",
           "session.list"
         ],
@@ -10573,9 +10605,9 @@
           "session.withConnection"
         ]
       ],
-      "siteCount": 57,
-      "sitesDigest": "5c52410f3de1305ecaa980e00b6a3aa00ac9a7f3180db75801422f4e606d3084",
-      "sourceDigest": "6c87cb0fde8d96327a5d21f4277adaecdaf2ea605c730bd4a1454c79ba0526e9",
+      "siteCount": 65,
+      "sitesDigest": "3cd3026c5a82062a0cfd6bc6dd0949ca02ef94da8dd8b9b282afb43e390c1eda",
+      "sourceDigest": "0c1d5b1e38be5f2af6968e1188ab20dcc29dfa941c6429163fefec498a103f55",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",

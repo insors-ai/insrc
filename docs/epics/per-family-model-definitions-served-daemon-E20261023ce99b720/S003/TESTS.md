@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 64 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -392,3 +392,32 @@ Run at 2026-10-25T21:32:23.092Z on commit `d3dc23a03`. Tests check: **passed**. 
 | `vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts` | 0 | 1 | 0.9 s |  |
 | `vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts` | 0 | 1 | 2.2 s |  |
 | `vscode-plugin/src/models/__tests__/tier-effort.test.ts` | 0 | 1 | 0.5 s |  |
+
+## t10
+
+Run at 2026-10-25T21:37:41.604Z on commit `5e89d4996`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story | `src/daemon/__tests__/model-literal-scan.test.ts` |
+
+**integration: models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier | `src/daemon/__tests__/models-daemon-s3.test.ts` |
+
+**integration: models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel | `src/daemon/__tests__/models-daemon-s3.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/model-literal-scan.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/daemon/__tests__/models-daemon-s3.test.ts` | 0 | 2 | 3.6 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T21:32:23.092Z",
+    "updatedAt": "2026-10-25T21:37:41.604Z",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
   },
@@ -1674,6 +1674,85 @@
             "titles": [
               {
                 "title": "VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5e89d4996",
+        "ranAt": "2026-10-25T21:37:41.604Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-daemon-s3.test.ts",
+                "title": "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-daemon-s3.test.ts",
+                "title": "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 923,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/models-daemon-s3.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3641,
+            "titles": [
+              {
+                "title": "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier",
+                "result": "pass"
+              },
+              {
+                "title": "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel",
                 "result": "pass"
               }
             ],

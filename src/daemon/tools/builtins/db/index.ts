@@ -759,11 +759,19 @@ const fileListFilesTool: Tool = {
 		try {
 			if (pin.revision !== config.revision) return fail(this.id, 'The connection changed; retry to check its current resource.', 'CONNECTION_CHANGED');
 			const { listFilesForConnection } = await import('../../../db/list-files.js');
-			const result = await listFilesForConnection(resolve(repoPath, path), {
-				recursive: config.publicConfig['recursive'] === true,
-				...(pattern !== undefined ? { pattern } : {}),
-				limit,
-			});
+            let admitted = false;
+            const work = Promise.resolve().then(() => {
+                if (!admitted) throw new Error('Connection session is unavailable.');
+                assertAnalysisConnectionExecution(deps.connectionExecution);
+                return listFilesForConnection(resolve(repoPath, path), {
+                    recursive: config.publicConfig['recursive'] === true,
+                    ...(pattern !== undefined ? { pattern } : {}), limit,
+                });
+            });
+            void work.catch(() => {});
+            pin.retainWork?.(work);
+            admitted = true;
+            const result = await work;
 			assertAnalysisConnectionExecution(deps.connectionExecution);
 			const lines: string[] = [
 				`**${connectionId}** -- ${result.files.length} file${result.files.length === 1 ? '' : 's'}` +

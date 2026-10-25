@@ -8,7 +8,9 @@ import { PATHS } from '../../../../shared/paths.js';
 import { saveConnections } from '../../../db/config.js';
 import { acquirePool, closeAll } from '../../../db/pool-cache.js';
 import { SqliteDriver } from '../../../db/drivers/sqlite.js';
-import { mkdtemp, mkdir, realpath, rm } from 'node:fs/promises';
+import fsPromises, { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
+import { setTimeout as delay } from 'node:timers/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -110,6 +112,19 @@ test('owner tool runtime and exploration matrix', async () => {
    try { await describing;owner.lifetime.abort();const pool=await acquirePool(root);assert.ok(pool.leaseState('saved').active>0);describeProceed();await rejection;assert.equal(pool.leaseState('saved').active,0); }
    finally {describeProceed();await rejection;describeSpy.mock.restore();}
   }
+  const fileOwner=owners[2]!, filePath=join(other,'rows.csv');await writeFile(filePath,'n\n1\n');
+  const fileEntry=fileOwner.overlay.commit(await fileOwner.overlay.prepare({key:{repoRoot:other,scope:'temporary',id:'files'},mode:'create',publicPatch:{kind:'csv',path:'rows.csv'}}));
+  let fileStarted!:()=>void,fileProceed!:()=>void;const fileEntered=new Promise<void>(r=>{fileStarted=r;}),fileHeld=new Promise<void>(r=>{fileProceed=r;});
+  const originalStat=fsPromises.stat;
+  const statSpy=mock.method(fsPromises,'stat',async (...args:Parameters<typeof originalStat>)=>{if(args[0]===filePath){fileStarted();await fileHeld;}return originalStat(...args);});syncBuiltinESMExports();
+  const listing=getTool('db_file_list_files')!.execute({connectionId:'files'},{sessionId:'fixture',repoPath:other,requestId:1,send:()=>{},connectionExecution:fileOwner.execution});const refusedListing=listing.then(result=>{assert.equal(result.success,false);assert.equal(result.error,'session-expired');assert.equal(result.data,undefined);});
+  let ending:Promise<unknown>|undefined;
+  try {
+   await fileEntered;fileOwner.lifetime.abort();
+   await assert.rejects(fileOwner.overlay.prepare({key:{repoRoot:other,scope:'temporary',id:'files'},mode:'update',expectedRevision:fileEntry.revision,publicPatch:{label:'busy'}}),{code:'busy'});
+   ending=runtime.call('db.connections.v2.session.end',{}, {connectionIdentity:fileOwner.context.connectionIdentity,daemonEpoch:fileOwner.context.daemonEpoch});assert.equal(await Promise.race([ending.then(()=>false),delay(5,true)]),true);
+   fileProceed();await refusedListing;await ending;
+  } finally {fileProceed();await refusedListing;await ending;statSpy.mock.restore();syncBuiltinESMExports();}
   const poison=new Proxy({}, {get(){throw new Error('input read before authority');}});
   await assert.rejects(executeTool('db_sql_sample',poison,{sessionId:'fixture',repoPath:root,requestId:1,send:()=>{},connectionExecution:first.execution}),{code:'session-expired'});
  } finally {for(const o of owners){o.lifetime.abort();o.lifetime.complete();await o.lifetime.drained;} _setTaskScopeDepsForTest(undefined);await runtime.close();await closeAll();await closeGraphStore();PATHS.insrc=originalIns;await rm(directory,{recursive:true,force:true});}

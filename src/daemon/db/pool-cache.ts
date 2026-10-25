@@ -77,7 +77,10 @@ export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionR
 		},
 		async lease(context, id) {
 			const { session, saved, temporary } = await sources(context);
-			return session && temporary.some(entry => entry.key.id === id) ? session.lease(context, id) : saved.lease(id);
+			if (session && temporary.some(entry => entry.key.id === id)) return session.lease(context, id);
+            const lease = await saved.lease(id);
+            if (!session) return lease;
+            return { ...lease, retainWork: work => { sessionResolvers.get(context)?.assertActive?.(); sessionResolvers.get(context)?.retainWork?.(work); } };
 		},
 		async withConnection(context, id, use) {
 			const { session, saved, temporary } = await sources(context);

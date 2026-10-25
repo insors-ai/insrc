@@ -121,12 +121,18 @@ export class TemporaryConnectionOverlay {
    lease: async (candidate: ConnectionAccessContext, id: string): Promise<ConnectionLease> => {
     check(candidate); const lease = this.#gate.lease(id); let done!: () => void, released = false;
     const drained = new Promise<void>(resolve => { done = resolve; });
-    const release = async () => { if (released) return; released = true; authority.signal.removeEventListener('abort', abort); this.#externalLeases.delete(release); try { await lease.release(); } finally { done(); } };
-    const abort = () => { void release(); };
+    let retainedWork: Promise<unknown> | undefined;
+    const release = async () => { if (released) return; released = true; if (retainedWork) await retainedWork.catch(() => {}); authority.signal.removeEventListener('abort', abort); this.#externalLeases.delete(release); try { await lease.release(); } finally { done(); } };
+    let retained = false;
+    const abort = () => { if (!retained) void release(); };
     this.#externalLeases.add(release); authority.signal.addEventListener('abort', abort, { once: true });
     try { authority.registerDrain?.(drained); check(candidate); }
     catch { await release(); throw reject('session-expired'); }
-    return { ...lease, key: { repoRoot: this.#root, scope: 'temporary', id }, release };
+    return { ...lease, key: { repoRoot: this.#root, scope: 'temporary', id }, release, retainWork: work => {
+     check(candidate); if (released || retained) throw reject('session-expired');
+     authority.registerDrain?.(work); this.retainWork(work); retainedWork = work; retained = true;
+     void work.then(() => { if (authority.signal.aborted) void release(); }, () => { if (authority.signal.aborted) void release(); });
+    } };
    },
    withConnection: <T>(candidate: ConnectionAccessContext, id: string, use: (driver: Driver) => Promise<T>) => {
     check(candidate); let admitted = false;

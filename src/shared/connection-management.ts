@@ -82,7 +82,7 @@ export interface ConnectionAccessContext {
 }
 /** This context is provided by server transport, never deserialized from a draft. */
 export interface ManagementRequestContext { readonly connectionIdentity: string; readonly access: ConnectionAccessContext }
-export interface ConnectionLease { readonly key: ConnectionKey; readonly revision: string; release(): Promise<void> }
+export interface ConnectionLease { readonly key: ConnectionKey; readonly revision: string; retainWork?(work: Promise<unknown>): void; release(): Promise<void> }
 export interface ConnectionResolver {
  list(context: ConnectionAccessContext): Promise<readonly SafeConnection[]>;
  lease(context: ConnectionAccessContext, id: string): Promise<ConnectionLease>;

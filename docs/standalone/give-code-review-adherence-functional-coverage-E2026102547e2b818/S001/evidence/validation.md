@@ -50,3 +50,9 @@ The same-file current-code recheck reported 309 tests, 267 pass and 42 fail (33.
 ## Final task validation
 
 The user approved the narrow PLAN correction on 2026-10-25. It removes the circular prerequisite that t3's completed review had to precede t3 validation; the final current-BUILD independent review and human approval remain mandatory framework gates. The daemon then passed t3: all three acceptance checks, typecheck and all 18 mapped cases passed. All tasks t1/t2/t3 are now validated. Final BUILD approval is still pending the current-BUILD review and explicit user approval.
+
+## Final independent review
+
+The daemon finished the final diff review after the MCP client's five-minute timeout. Its persisted verdict is WARN solely because grounding is degraded, with **HIGH 0 / MED 0 / LOW 0**. All four dimensions contain no findings. The recorded BUILD fingerprint matches current BUILD revision 6, whose three tasks all passed.
+
+The strict completion coverage check still flags BUILD targets excluded by the diff assembler: workflow JSON/Markdown records and validation evidence under this Story's documentation directory, including the reproduction harness. All BUILD targets under `src/` are covered. These excluded evidence files were inspected during the independent t3 validation, but they are not in the final CR's changed-file set. Closure therefore requires the user's explicit scope override; no override or BUILD approval has been granted by this controller.

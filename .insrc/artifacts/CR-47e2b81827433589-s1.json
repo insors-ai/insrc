@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "5283a21289bea8016d5a599c933ca92ce4774906dc3401e63a0f8f6235d5eee9",
-        "at": "2026-10-25T13:26:35.912Z",
+        "number": 3,
+        "contentHash": "c5e021eebe518c2f04654d6a40f730271d4c2e7007e3259417361a54273a5d7b",
+        "at": "2026-10-25T15:01:21.376Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -20,11 +20,11 @@
       "signoffs": []
     },
     "workflow": "code-review",
-    "runId": "cr-1792934737575-xa98qc",
+    "runId": "cr-1792940029986-8vsroc",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-25T13:25:39.469Z",
+    "createdAt": "2026-10-25T14:53:52.688Z",
     "model": "codex:gpt-6.1-sol",
-    "elapsedMs": 56441,
+    "elapsedMs": 448686,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "47e2b81827433589",
@@ -33,7 +33,7 @@
     "epicCreatedAt": "2026-10-25T10:08:06.461Z",
     "epicSlug": "give-code-review-adherence-functional-coverage",
     "standalone": true,
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "kind": "code-review",
@@ -46,6 +46,7 @@
     "subject": {
       "changedFiles": [
         ".insrc/artifacts/BUILD-47e2b81827433589-s1.log.jsonl",
+        ".insrc/artifacts/CR-47e2b81827433589-s1.log.jsonl",
         ".insrc/artifacts/LLD-47e2b81827433589-s1.log.jsonl",
         ".insrc/artifacts/PLAN-47e2b81827433589-s1.log.jsonl",
         ".insrc/artifacts/TASKS-47e2b81827433589-s1.log.jsonl",
@@ -68,11 +69,11 @@
         "src/workflow/review-pipeline/adapters/code-review-gather.ts",
         "src/workflow/review-pipeline/code-review.ts"
       ],
-      "buildFingerprint": "c9bcb97298f55a046a0bc2f63e9d6a43ccf47e88a055ccb776917f1901b9b7bd",
+      "buildFingerprint": "a058eea2f08dbf8a99bb3dd98a7d3ef38baaab0897bb03e969ab84b726028f64",
       "changeSetAttribution": "story-trailer",
       "sharedWithExcluded": [],
       "excludedFromScope": [
-        ".insrc/artifacts/LLD-b7a68147dcf72034-s5.log.jsonl"
+        "src/daemon/tools/builtins/gh/helpers.ts"
       ]
     },
     "dimensions": [
@@ -86,18 +87,7 @@
       },
       {
         "dimension": "coverage",
-        "findings": [
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts:1",
-            "message": "Present but failing/unverified: both recorded test files pass, but validation task t3 is marked fail. The record does not confirm that the affected suites and npm run build all pass.",
-            "expectationRef": "Affected review-pipeline and dimension suites plus npm run build pass.",
-            "confidence": "observation",
-            "findingKind": "promised-test",
-            "symbolId": ""
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "quality",
@@ -107,7 +97,7 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 1,
+      "med": 0,
       "low": 0
     }
   },

@@ -2377,7 +2377,7 @@
     "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
     "src/shared/db-driver.ts": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
-    "src/daemon/db-rpc.ts": "7b371f397c2ae065abff80f86b5d1d0ccae3915f800781ce4d8f00eb77f87c58",
+    "src/daemon/db-rpc.ts": "1c713bb489b1d0f6906266a610a0568172b706a616b32bbdbed9e51094036930",
     "src/daemon/db/management.ts": "0f0827dfada4af87bcc1b4e087e1c5c9ce5a75d47215976b2fff472043e9a478"
   },
   "classificationUpdates": [

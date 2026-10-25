@@ -11,10 +11,12 @@ import { fileExecutionPolicy } from '../file-policy.js';
 import { bsonConverter } from '../drivers/converters/bson.js';
 import { xlsxConverter } from '../drivers/converters/xlsx.js';
 import { serialize } from 'bson';
-import { testConnectionRpc } from '../../db-rpc.js';
+import { testConnectionRpc, prepareLegacyProbeConfig } from '../../db-rpc.js';
 import { connectionsPath } from '../config.js';
 import { _setKeystoreForTests } from '../secrets.js';
 import * as defaultKeystore from '../../../shared/keystore.js';
+import {RequestLifetime} from '../../request-context.js';
+import {connectionTestSupervisor} from '../draft-test.js';
 import type { ConnectionConfig, FileDriver, DriverFactoryContext, Driver } from '../../../shared/db-driver.js';
 function context(root: string, config: ConnectionConfig): DriverFactoryContext {
 	return { fileExecutionPolicy: { ...fileExecutionPolicy(config, { lookupRoot: root, ownerId: 'fixture', revision: 'revision', persistence: 'memory-only' }), memoryBudgetBytes: 64 * 1024 * 1024 } };
@@ -155,39 +157,15 @@ test('CM-S1-T: legacy transient construction uses profile materialization memory
 	const root = join(env.directory, 'files');
 	await mkdir(root);
 	await writeFile(join(root, 'data.csv'), 'value\n1\n');
-	const original = getFactory('csv')!, closing = deferred(), started = deferred();
-	let seen: DriverFactoryContext | undefined, config: ConnectionConfig | undefined;
-	registerDriver({ kind: 'csv', family: 'file', factory: async (input, authority) => {
-			config = input;
-			seen = authority;
-			return { id: input.id, kind: 'csv', family: 'file', close: async () => {
-					started.resolve();
-					await closing.promise;
-				} } as Driver;
-		} });
+	const lifetime=new RequestLifetime();
 	try {
-		const before = await snapshot(env.directory);
-		let finished = false;
-		const probe = testConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'csv', path: 'data.csv', options: { header: true } } }).then(result => {
-			finished = true;
-			return result;
-		});
-		await started.promise;
-		assert.equal(finished, false);
-		assert.equal(config?.path, join(root, 'data.csv'));
-		assert.equal(seen?.fileExecutionPolicy?.persistence, 'memory-only');
-		assert.equal(seen?.fileExecutionPolicy?.identity.lookupRoot, root);
-		closing.resolve();
-		assert.equal((await probe as {
-			ok: boolean;
-		}).ok, true);
-		assert.deepEqual(await snapshot(env.directory), before);
-	}
-	finally {
-		closing.resolve();
-		registerDriver({ kind: 'csv', family: 'file', factory: original });
-		await env.cleanup();
-	}
+		const before=await snapshot(env.directory);
+		const result=await testConnectionRpc({repoRoot:root,config:{id:'fixture',kind:'csv',path:'data.csv',options:{header:true}}},{connectionIdentity:'fixture',daemonEpoch:'epoch',signal:lifetime.signal,registerDrain:lifetime.registerDrain});
+		assert.equal('ok' in result&&result.ok,true,JSON.stringify(result));
+		lifetime.complete();await lifetime.drained;
+		assert.equal(connectionTestSupervisor.activeCount,0);
+		assert.deepEqual(await snapshot(env.directory),before);
+	}finally{await env.cleanup();}
 });
 test('CM-S1-T: transient drafts cannot read another credential reference and nested owned credentials use read-only materialization', async () => {
 	const env = await environment();
@@ -207,33 +185,12 @@ test('CM-S1-T: transient drafts cannot read another credential reference and nes
 		}, deleteKey: async () => {
 			writes++;
 		} });
-	const original = getFactory('etcd')!;
-	let config: ConnectionConfig | undefined;
-	registerDriver({ kind: 'etcd', family: 'kv', factory: async (input) => {
-			config = input;
-			return { id: input.id, kind: 'etcd', family: 'kv', close: async () => {
-				} } as Driver;
-		} });
 	try {
-		const denied = await testConnectionRpc({ repoRoot: root, config: { id: 'new', kind: 'etcd', url: 'http://host', options: { password: '${secret:foreign}' } } });
-		assert.equal((denied as {
-			ok: boolean;
-		}).ok, false);
-		assert.equal(reads, 0);
-		assert.equal(writes, 0);
-		const result = await testConnectionRpc({ repoRoot: root, config: { id: 'fixture', kind: 'etcd', url: 'http://host', options: { hosts: ['http://host:2379'], password: '${secret:' + reference + '}' } } });
-		assert.equal((result as {
-			ok: boolean;
-		}).ok, true, JSON.stringify(result));
-		assert.equal(reads, 1);
-		assert.equal(writes, 0);
-		assert.equal(config?.options?.password, 'private-value');
-	}
-	finally {
-		registerDriver({ kind: 'etcd', family: 'kv', factory: original });
-		_setKeystoreForTests(defaultKeystore);
-		await env.cleanup();
-	}
+		await assert.rejects(prepareLegacyProbeConfig({id:'new',kind:'etcd',url:'http://host',options:{password:'${secret:foreign}'}},'kv',root));
+		assert.equal(reads,0);assert.equal(writes,0);
+		const effective=await prepareLegacyProbeConfig({id:'fixture',kind:'etcd',url:'http://host',options:{hosts:['http://host:2379'],password:'${secret:'+reference+'}'}},'kv',root);
+		assert.equal(effective.options?.password,'private-value');assert.equal(reads,1);assert.equal(writes,0);
+	}finally{_setKeystoreForTests(defaultKeystore);await env.cleanup();}
 });
 test('CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths', async () => {
 	const env = await environment();

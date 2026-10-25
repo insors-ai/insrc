@@ -4,7 +4,7 @@
 
 ## Summary
 
-Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) moves into one definitions file shipped with insrc, listing every model that may be selected together with its own settings: aliases, effort levels, input limit and output budget, plus each family's tier defaults and summariser model. The daemon checks the file at startup and every thread that runs models builds the same registry from it; Ollama's own listing only says which listed models are installed, and the old global Ollama settings are gone. A Claude or Codex model the user has checked and approved is added from a separate per-user store, takes effect without a restart, and a model that is neither listed nor approved is never run. Clients get the whole picture from one daemon request and keep no lists of their own.
+Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) moves into one definitions file shipped with insrc, listing every model that may be selected with its aliases, effort levels and input limit, plus each family's tier defaults, summariser model and, for Ollama, the default tool-loop model. The daemon checks the file at startup and every thread that runs models builds the same registry from it; Ollama's own listing only says which listed models are installed, and the global Ollama context-window setting is replaced by each model's own. A Claude or Codex model the user has checked and approved is added from a separate per-user store and takes effect without a restart, while a model that is neither listed nor approved is never run. Clients get the whole picture from one daemon request and keep no lists of their own.
 
 ## Contents
 
@@ -25,11 +25,11 @@ Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) m
 
 ## 2. Framework summary
 
-A revisioned model-definitions registry, grown from the curated cloud catalog and built in every daemon thread that runs models. One shipped JSON file (replacing src/assets/models/cloud-model-catalog.json and the global models.shaper.ollamaNumCtx / ollamaNumPredict settings) lists, per family, its runner identity and CLI kind and every selectable model with its aliases, accepted effort levels, input limit and output budget, plus the family's core/mid/cheap tier defaults and summariser model, and names the family a fresh install defaults to. Ollama models are listed like the others; Ollama's live listing only reports which listed models are installed. The main thread validates the file before it starts the worker threads (src/daemon/index.ts:205) and before it listens; every model-running thread builds the registry at its start. User-approved Claude and Codex models live in a per-user store owned by the main thread, written atomically, and published to every thread as a new registry revision only after the write succeeds; every cache that holds a resolved model is rebuilt on a new revision. A tier set to a model that is neither listed nor approved, or to a listed Ollama model that is not installed, runs a tier default with a warning (user decision A). One read-only IPC request serves the merged view; providers.listModels is drawn from it. Tier settings become global-only; role assignments stay persisted under `tasks` and coreFloor stays a tier name.
+A revisioned model-definitions registry, grown from the curated cloud catalog and built in every daemon thread that runs models. One shipped JSON file (replacing src/assets/models/cloud-model-catalog.json and the global models.shaper.ollamaNumCtx setting) lists, per family, its runner identity and CLI kind and every selectable model with its aliases, accepted effort levels and input limit, plus the family's core/mid/cheap tier defaults and summariser model, the Ollama family's tool-loop default model, and the family a fresh install defaults to. Ollama models are listed like the others; Ollama's live listing only reports which listed models are installed. The output cap models.shaper.ollamaNumPredict stays a global setting (user decision 2026-10-25). The main thread validates the file before it starts the worker threads (src/daemon/index.ts:205) and before it listens; every model-running thread builds the registry at its start. User-approved Claude and Codex models live in a per-user store owned by the main thread, written atomically, and published to every thread as a new registry revision only after the write succeeds; every cache that holds a resolved model is rebuilt on a new revision. A tier set to a model that is neither listed nor approved, or to a listed Ollama model that is not installed, runs a tier default with a warning (user decision A); the Ollama tool loop runs a listed, installed model or fails with a clear message. One read-only IPC request serves the merged view; providers.listModels is drawn from it. Tier settings become global-only; role assignments stay persisted under `tasks` and coreFloor stays a tier name.
 
 ## 3. Architecture shape
 
-Every model-running thread: (1) a ModelRegistry built at thread start from the validated definitions file plus the current approved-model set, carrying a revision; it answers every model question: families, listed models and aliases, accepted efforts, a model's input limit and output budget, a family's tier defaults and summariser model, the runner and CLI kind of a family, and what a tier setting resolves to (with the fallback of decision A). (2) Every consumer asks the registry instead of DEFAULT_TIERS, TIER_EFFORTS, SUMMARISER_CLI_FALLBACK, CODEX_INPUT_BUDGET_CHARS and the global Ollama settings: tier resolution (resolveTier and the role router's default fallback), shaper and summariser provider selection (including the summary worker's path, src/analyze/summariser/driver.ts:195 and :211), CliProvider's input budget and effort forwarding, OllamaProvider's num_ctx (src/agent/providers/ollama.ts:444, set today at src/analyze/context/shaper-provider.ts:267, :303 and src/analyze/context/driver.ts:531, :833), and the output budget of the synthesizer, planner, aggregator and tool-loop calls (src/analyze/context/synthesizer.ts:142, src/analyze/planner/driver.ts:227, src/analyze/runtimes/shared/aggregator.ts:126, src/analyze/context/driver.ts:554, :852). (3) The caches that hold resolved models (the analyze config, src/config/analyze.ts:234, and the role router's provider map, src/analyze/context/role-router.ts:196-201) are keyed by the registry revision and rebuilt when it changes, so already-built CliProviders are replaced. Main thread only: (4) validation of the definitions file before the thread services start and before the socket listens; (5) the approved-model store and the unknown-model check service, which probes the installed CLIs one call at a time, writes the store atomically and only then publishes the new revision to every worker over the hub channel (src/daemon/threads/main-services.ts:154, src/daemon/threads/channel.ts:124); (6) the config reconcile rules that remove per-repo tier overrides and prune the retired global Ollama settings (src/config/reconcile.ts:316). IPC: models.definitions returns the merged view with each Ollama model's installed state; providers.listModels keeps its shape but is drawn from the registry; models.check / models.approve / models.reject drive the unknown-model flow; each new method is classified in src/daemon/threads/method-class.ts. Clients: the TUI model-tiers pane, the VS Code model-tier picker and repo panel, and the JetBrains model-tiers and per-repo sections render models.definitions and call the check/approve requests; none keeps a runner, model or effort list. Installer: both copies of the install script take the chosen family's tier defaults from the definitions file.
+Every model-running thread: (1) a ModelRegistry built at thread start from the validated definitions file plus the current approved-model set, carrying a revision; it answers every model question: families, listed models and aliases, accepted efforts, a model's input limit, a family's tier defaults and summariser model, the Ollama tool-loop default, the runner and CLI kind of a family, what a tier setting resolves to (with the fallback of decision A) and which model the tool loop runs. (2) Every consumer asks the registry instead of DEFAULT_TIERS, TIER_EFFORTS, SUMMARISER_CLI_FALLBACK, CODEX_INPUT_BUDGET_CHARS and the global ollamaNumCtx: tier resolution (resolveTier and the role router's default fallback), shaper and summariser provider selection (including the summary worker's path, src/analyze/summariser/driver.ts:195 and :211), CliProvider's input budget and effort forwarding, OllamaProvider's num_ctx (src/agent/providers/ollama.ts:444, set today at src/analyze/context/shaper-provider.ts:267, :303 and src/analyze/context/driver.ts:531, :833), and the tool-loop model choice (localToolLoopModel, src/analyze/context/driver.ts:1100-1104, today the cheap tier's Ollama model or models.local.coreModel). The output cap ollamaNumPredict is read as today. (3) The caches that hold resolved models (the analyze config, src/config/analyze.ts:234, and the role router's provider map, src/analyze/context/role-router.ts:196-201) are keyed by the registry revision and rebuilt when it changes, so already-built CliProviders are replaced. Main thread only: (4) validation of the definitions file before the thread services start and before the socket listens; (5) the approved-model store and the unknown-model check service, which probes the installed CLIs one call at a time, writes the store atomically and only then publishes the new revision to every worker over the hub channel (src/daemon/threads/main-services.ts:154, src/daemon/threads/channel.ts:124); (6) the config reconcile rules that remove per-repo tier overrides and prune the retired ollamaNumCtx setting (src/config/reconcile.ts:316). IPC: models.definitions returns the merged view with each Ollama model's installed state; providers.listModels keeps its shape but is drawn from the registry; models.check / models.approve / models.reject drive the unknown-model flow; each new method is classified in src/daemon/threads/method-class.ts. Clients: the TUI model-tiers pane, the VS Code model-tier picker and repo panel, and the JetBrains model-tiers and per-repo sections render models.definitions and call the check/approve requests; none keeps a runner, model or effort list. Installer: both copies of the install script take the chosen family's tier defaults from the definitions file.
 
 ## 4. Diagrams
 
@@ -42,7 +42,7 @@ Every model-running thread: (1) a ModelRegistry built at thread start from the v
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`, `s4`
 
-**Purpose:** The shipped, versioned data format listing every selectable model of every family with its own settings (k4): aliases, accepted efforts, input limit and output budget. It replaces the global Ollama settings; Ollama models must be listed to be selectable. Validated before the daemon starts its workers or listens (k7).
+**Purpose:** The shipped, versioned data format listing every selectable model of every family with its facts (k4): aliases, accepted efforts and input limit, plus each family's tier defaults and summariser model and the Ollama tool-loop default. It replaces the global ollamaNumCtx setting; Ollama models must be listed to be selectable. Validated before the daemon starts its workers or listens (k7).
 
 **Interface sketch (type-level):**
 
@@ -57,7 +57,6 @@ interface ModelDefinition {
   readonly displayName?: string | undefined;
   readonly efforts: readonly EffortLevel[];      // accepted effort levels ([] = no effort passed)
   readonly inputLimit?: InputLimit | undefined;  // required for ollama models; absent on a CLI model = the CLI's own refusal decides
-  readonly outputBudget: number;                 // max output tokens for any call that runs this model
 }
 interface TierDefault { readonly model: string; readonly effort?: EffortLevel | undefined; } // model: an id or alias of THIS family
 interface FamilyDefinition {
@@ -67,10 +66,11 @@ interface FamilyDefinition {
   readonly models: readonly ModelDefinition[];        // the ONLY selectable models of the family, Ollama included
   readonly tierDefaults?: Readonly<Record<TierName, TierDefault>> | undefined; // required for the CLI families
   readonly summariserModel?: string | undefined;      // id or alias of this family; required for the CLI families
+  readonly toolLoopModel?: string | undefined;        // ollama only, required: id of one of its listed models
 }
 interface ModelDefinitionsFile {
   readonly version: number;
-  readonly defaultFamily: 'cli-claude' | 'cli-codex'; // the family a fresh install, an unset tier and every fallback use
+  readonly defaultFamily: 'cli-claude' | 'cli-codex'; // the family a fresh install, an unset tier and every tier fallback use
   readonly families: readonly FamilyDefinition[];
 }
 ```
@@ -82,7 +82,7 @@ interface ModelDefinitionsFile {
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`, `s4`
 
-**Purpose:** The only in-process source of model facts and settings, built at the start of every model-running thread from the validated sc1 file plus the current approved-model set, so every thread answers identically. It carries a revision that every cache holding a resolved model keys on, resolves aliases, reports Ollama installation, and applies user decision A: a tier set to a model that is neither listed nor approved, or to a listed Ollama model that is not installed, resolves to a tier default, flagged as a fallback.
+**Purpose:** The only in-process source of model facts, built at the start of every model-running thread from the validated sc1 file plus the current approved-model set, so every thread answers identically. It carries a revision that every cache holding a resolved model keys on, resolves aliases, reports Ollama installation, applies user decision A to tiers, and chooses the tool-loop model: the requested Ollama model (cheap tier's, else models.local.coreModel) when listed, else the Ollama family's tool-loop default, and only when installed.
 
 **Interface sketch (type-level):**
 
@@ -100,6 +100,9 @@ interface TierResolution {
   readonly droppedEffort?: EffortLevel | undefined;
   readonly fallback?: { readonly reason: FallbackReason; readonly requested: string } | undefined; // decision A
 }
+type ToolLoopResolution =
+  | { readonly ok: true; readonly model: ResolvedModel; readonly substitutedFor?: string | undefined } // substitutedFor: an unlisted requested model
+  | { readonly ok: false; readonly reason: 'not-installed' | 'ollama-unreachable'; readonly model: string };
 interface ModelRegistry {
   readonly revision: number;                   // changes on every published approved set
   families(): readonly FamilyDefinition[];
@@ -108,11 +111,11 @@ interface ModelRegistry {
   find(family: FamilyId, idOrAlias: string): ResolvedModel | undefined;
   acceptsEffort(family: FamilyId, idOrAlias: string, effort: EffortLevel): boolean;
   inputLimit(family: FamilyId, idOrAlias: string): InputLimit | undefined;
-  outputBudget(family: FamilyId, idOrAlias: string): number;
   tierDefault(family: FamilyId, tier: TierName): TierDefault | undefined; // undefined for ollama
   summariserModel(family: 'cli-claude' | 'cli-codex'): ResolvedModel;
   cliKind(family: FamilyId): 'claude' | 'codex' | undefined;
   resolveTier(setting: { family: FamilyId; model?: string | undefined; effort?: EffortLevel | undefined } | undefined, tier: TierName, installedOllama: ReadonlySet<string>): TierResolution;
+  resolveToolLoopModel(requested: string, installedOllama: ReadonlySet<string> | undefined): ToolLoopResolution; // undefined set = Ollama unreachable
   applyApproved(set: ApprovedModelSet): void;  // replaces the overlay and advances revision; later revisions win
 }
 ```
@@ -124,7 +127,7 @@ interface ModelRegistry {
 **Owner Story:** `s2`
 **Consumed by:** `s4`, `s5`, `s6`, `s7`
 
-**Purpose:** The one read-only daemon request every client uses to learn families, listed models with aliases, per-model efforts, limits and output budgets, each family's tier defaults and summariser model, the default family, and which listed Ollama models are installed (k2). Carries user-approved models marked as such (s4/ac5). providers.listModels is drawn from the same registry and agrees with it (s2/ac2).
+**Purpose:** The one read-only daemon request every client uses to learn families, listed models with aliases, per-model efforts and limits, each family's tier defaults and summariser model, the Ollama tool-loop default, the default family, and which listed Ollama models are installed (k2). Carries user-approved models marked as such (s4/ac5). providers.listModels is drawn from the same registry and agrees with it (s2/ac2).
 
 **Interface sketch (type-level):**
 
@@ -139,13 +142,13 @@ interface ModelDefinitionsResult {
     readonly displayName: string;
     readonly tierDefaults?: Readonly<Record<TierName, TierDefault>> | undefined;
     readonly summariserModel?: string | undefined;
+    readonly toolLoopModel?: string | undefined;     // ollama only
     readonly models: readonly {
       readonly id: string;
       readonly aliases: readonly string[];
       readonly displayName?: string | undefined;
       readonly efforts: readonly EffortLevel[];
       readonly inputLimit?: InputLimit | undefined;
-      readonly outputBudget: number;
       readonly source: 'shipped' | 'user-approved';
       readonly installed?: boolean | undefined;   // ollama only: from Ollama's live listing; absent when Ollama is unreachable
     }[];
@@ -171,8 +174,7 @@ interface ModelCheckResult {
   readonly family: 'cli-claude' | 'cli-codex';
   readonly modelId: string;
   readonly runs: boolean;
-  readonly inputLimit?: InputLimit | undefined;
-  readonly outputBudget?: number | undefined;   // from the CLI's own output where it states one
+  readonly inputLimit?: InputLimit | undefined; // from the CLI's own output where it states one
   readonly efforts: readonly { readonly effort: EffortLevel; readonly verdict: EffortVerdict; readonly evidence: string }[];
   readonly checkId: string;
   readonly error?: string | undefined;     // the CLI could not be reached (s4/ac4)
@@ -186,7 +188,6 @@ interface ApprovedProfile {
   readonly status: 'approved' | 'rejected';
   readonly efforts: readonly EffortLevel[];  // approved: only checked AND approved levels (s4/ac3)
   readonly inputLimit?: InputLimit | undefined;
-  readonly outputBudget: number;
   readonly decidedAt: string;               // ISO time
   readonly cliVersion: string;
 }
@@ -200,7 +201,7 @@ interface ApprovedProfile {
 **Owner Story:** `s3`
 **Consumed by:** `s5`, `s6`, `s7`
 
-**Purpose:** The settings shape clients write after k6, matching today's on-disk keys: tier runner, model and effort exist only globally; a repo may only assign roles to tiers under `tasks` (src/config/analyze.ts:404) and set the core floor, which stays a tier name (src/config/analyze.ts:144). The daemon ignores and removes per-repo tier overrides (s3/ac5), keeps every existing `tasks` and coreFloor value, and prunes the retired global Ollama settings.
+**Purpose:** The settings shape clients write after k6, matching today's on-disk keys: tier runner, model and effort exist only globally; a repo may only assign roles to tiers under `tasks` (src/config/analyze.ts:404) and set the core floor, which stays a tier name (src/config/analyze.ts:144). The daemon ignores and removes per-repo tier overrides (s3/ac5), keeps every existing `tasks` and coreFloor value, and prunes the retired ollamaNumCtx; ollamaNumPredict and models.local.coreModel stay as they are.
 
 **Interface sketch (type-level):**
 
@@ -211,7 +212,8 @@ interface PersistedModels { // config.json `models`
   readonly tasks?: Readonly<Record<string, TierName>> | undefined;      // role -> tier (parsed internally as roleTiers)
   readonly coreFloor?: TierName | undefined;
   readonly byRepo?: Readonly<Record<string, PersistedRepoModels>> | undefined;
-  // retired, pruned by reconcile: shaper.ollamaNumCtx, shaper.ollamaNumPredict
+  // kept: shaper.ollamaNumPredict (global output cap), local.coreModel (requested tool-loop model)
+  // retired, pruned by reconcile: shaper.ollamaNumCtx
 }
 interface PersistedRepoModels { // models.byRepo[repo]
   readonly tasks?: Readonly<Record<string, TierName>> | undefined;
@@ -228,28 +230,28 @@ interface PersistedRepoModels { // models.byRepo[repo]
 
 **Owns:** `sc1`, `sc2`
 
-The definitions file contents (seeded from the curated catalog with current ids such as the Claude haiku the CLI resolves today, the CLI aliases the tier defaults use, and the Ollama models insrc ships with, each with its context window and output budget taken from today's defaults), the validator (missing file, malformed JSON, unknown family, duplicate id or alias in a family, a tier default or summariser model that is not an id or alias of its family, an Ollama model without a token input limit, a model without an output budget, a defaultFamily without tier defaults; each failure names the entry), its run in the main thread before the thread services start and before the socket listens, and building the revisioned registry at the start of the main thread and of each model-running worker. Both installer copies take the chosen family's tier defaults from the file. Retires the curated catalog asset and its loader. Tests: a validator suite with one fixture per refusal reason (ac3); a data-only addition test that adds a model, alias and output budget to a fixture and reads them back through the registry with no code change (ac2); a boot-order test that the file is validated before thread services start and before listen (ac1, k7); the main thread and a worker build equal registries; the existing model-catalog and model-catalog-asset suites are adapted.
+The definitions file contents (seeded from the curated catalog with current ids such as the Claude haiku the CLI resolves today, the CLI aliases the tier defaults use, and the Ollama models insrc ships with, each with its context window taken from today's default, and the Ollama tool-loop default set to today's models.local.coreModel default), the validator (missing file, malformed JSON, unknown family, duplicate id or alias in a family, a tier default or summariser model that is not an id or alias of its family, an Ollama model without a token input limit, an Ollama tool-loop default that is not one of its listed models, a defaultFamily without tier defaults; each failure names the entry), its run in the main thread before the thread services start and before the socket listens, and building the revisioned registry at the start of the main thread and of each model-running worker. Both installer copies take the chosen family's tier defaults from the file. Retires the curated catalog asset and its loader. Tests: a validator suite with one fixture per refusal reason (ac3); a data-only addition test that adds a model and alias to a fixture and reads them back through the registry with no code change (ac2); a boot-order test that the file is validated before thread services start and before listen (ac1, k7); the main thread and a worker build equal registries; the existing model-catalog and model-catalog-asset suites are adapted.
 
 ### 6.2 Story E20261025ce99b720:S002
 
 **Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
-The handler for models.definitions, the projection of the registry into the result (with each listed Ollama model's installed state from Ollama's live listing), its entry in src/daemon/threads/method-class.ts, and re-sourcing providers.listModels from the registry so the two answers agree; for Ollama, providers.listModels returns only listed models. Tests: models.definitions returns every family, model, alias, effort list, limit, output budget, tier default and summariser model of a fixture file (ac1); providers.listModels and models.definitions agree for every family, and an installed but unlisted Ollama model appears in neither (ac2); the method-class coverage test passes; the existing list-models suite is adapted.
+The handler for models.definitions, the projection of the registry into the result (with each listed Ollama model's installed state from Ollama's live listing), its entry in src/daemon/threads/method-class.ts, and re-sourcing providers.listModels from the registry so the two answers agree; for Ollama, providers.listModels returns only listed models. Tests: models.definitions returns every family, model, alias, effort list, limit, tier default, summariser model and the tool-loop default of a fixture file (ac1); providers.listModels and models.definitions agree for every family, and an installed but unlisted Ollama model appears in neither (ac2); the method-class coverage test passes; the existing list-models suite is adapted.
 
 ### 6.3 Story E20261025ce99b720:S003
 
 **Owns:** `sc5`
 **Depends on:** `sc1`, `sc2`
 
-Moving every daemon consumer, in the main thread and the workers, onto the registry: resolveTier and the role router's default fallback, the summariser selection including the summary worker's path, the effort list (TIER_EFFORTS and the config catalog's effort rows), CliProvider's input budget and effort forwarding, OllamaProvider's num_ctx, and the output budget of every synthesizer, planner, aggregator and tool-loop call, plus the runner/CLI-kind literals in routing, provider construction, attribution and workflow code. Keys the analyze-config cache and the role router's provider cache on the registry revision so a new revision rebuilds them. Applies decision A at resolution and logs a warning naming the tier, the requested model, the reason and the default used. Also the settings parse and reconcile rules: read and keep `tasks` and coreFloor, stop reading then remove per-repo tier overrides with a warning naming repo and tier, and prune shaper.ollamaNumCtx and shaper.ollamaNumPredict (with their config-catalog rows). Tests: an unset tier resolves to the family's tier default from a fixture (ac1); an unsupported effort is not passed and a warning names model and effort (ac2); a source scan fails on runner or model literals outside the family implementations (ac3); a repo's `tasks` choice applies while the tier's model comes from global settings (ac4); reconcile removes per-repo tier overrides, warns with repo and tier, keeps `tasks` and coreFloor, and prunes the two Ollama settings (ac5); an unlisted model and a not-installed Ollama model fall back with the warning (decision A); changing a fixture model's input limit and output budget changes the num_ctx and maxTokens a provider is built with; after caches are populated, a new revision makes the next call use the newly resolved model; the summariser in a worker resolves the same model as in the main thread; the existing analyze-tiering, tier-defaults and core-floor suites are adapted.
+Moving every daemon consumer, in the main thread and the workers, onto the registry: resolveTier and the role router's default fallback, the summariser selection including the summary worker's path, the effort list (TIER_EFFORTS and the config catalog's effort rows), CliProvider's input budget and effort forwarding, OllamaProvider's num_ctx, both tool-loop entry points' model choice (localToolLoopModel), and the runner/CLI-kind literals in routing, provider construction, attribution and workflow code. Keys the analyze-config cache and the role router's provider cache on the registry revision so a new revision rebuilds them. Applies decision A to tiers, logging the tier, the requested model, the reason and the default used; for the tool loop, substitutes the Ollama family's tool-loop default for an unlisted requested model with a warning, and fails the tool-loop analysis with a message naming the model and saying it is not installed (or that Ollama is unreachable) instead of falling back to a CLI. Also the settings parse and reconcile rules: read and keep `tasks` and coreFloor, stop reading then remove per-repo tier overrides with a warning naming repo and tier, and prune shaper.ollamaNumCtx with its config-catalog row; ollamaNumPredict is read as today. Tests: an unset tier resolves to the family's tier default from a fixture (ac1); an unsupported effort is not passed and a warning names model and effort (ac2); a source scan fails on runner or model literals outside the family implementations and on any remaining read of ollamaNumCtx (ac3); a repo's `tasks` choice applies while the tier's model comes from global settings (ac4); reconcile removes per-repo tier overrides, warns with repo and tier, keeps `tasks` and coreFloor, and prunes ollamaNumCtx (ac5); an unlisted model and a not-installed Ollama model fall back with the warning (decision A); the tool loop runs a listed installed model, substitutes the default for an unlisted one, and fails with the stated message when the model is not installed or Ollama is unreachable, for both tool-loop entry points; changing a fixture Ollama model's input limit changes the num_ctx its provider is built with; after caches are populated, a new revision makes the next call use the newly resolved model; the summariser in a worker resolves the same model as in the main thread; the existing analyze-tiering, tier-defaults and core-floor suites are adapted.
 
 ### 6.4 Story E20261025ce99b720:S004
 
 **Owns:** `sc4`
 **Depends on:** `sc1`, `sc2`, `sc3`
 
-The per-family check procedures for the two CLI families (Codex: model list from the CLI plus a run; Claude: a run, input limit and output budget from the JSON output, recognised effort names), their serial execution, the approved-model store under the insrc home (approved and rejected profiles) with atomic write by temporary file and rename and its validation on read, publishing a new revision to the main thread's registry and over the hub channel to every worker only after a successful write, a later-started worker reading the store at its start, the method-class entries for models.check, models.approve and models.reject, and refusing to set a tier to a model whose profile is rejected or whose check could not reach the CLI. Tests: per-family checks against fake CLIs record each verdict and run one call at a time (ac1); results list each claimed level with evidence and nothing is usable before approval (ac2); an approved profile admits only the passed and approved levels (ac3); a rejected profile or an unreachable CLI refuses the model with a reason (ac4); an approved model appears in models.definitions marked user-approved (ac5); a failed store write returns write-failed, publishes no revision and leaves the previous store intact after a restart; an approval and a rejection reach a worker's registry; a malformed store is reported and ignored without stopping the daemon; the method-class coverage test passes.
+The per-family check procedures for the two CLI families (Codex: model list from the CLI plus a run; Claude: a run, input limit from the JSON output, recognised effort names), their serial execution, the approved-model store under the insrc home (approved and rejected profiles) with atomic write by temporary file and rename and its validation on read, publishing a new revision to the main thread's registry and over the hub channel to every worker only after a successful write, a later-started worker reading the store at its start, the method-class entries for models.check, models.approve and models.reject, and refusing to set a tier to a model whose profile is rejected or whose check could not reach the CLI. Tests: per-family checks against fake CLIs record each verdict and run one call at a time (ac1); results list each claimed level with evidence and nothing is usable before approval (ac2); an approved profile admits only the passed and approved levels (ac3); a rejected profile or an unreachable CLI refuses the model with a reason (ac4); an approved model appears in models.definitions marked user-approved (ac5); a failed store write returns write-failed, publishes no revision and leaves the previous store intact after a restart; an approval and a rejection reach a worker's registry; a malformed store is reported and ignored without stopping the daemon; the method-class coverage test passes.
 
 ### 6.5 Story E20261025ce99b720:S005
 
@@ -273,8 +275,8 @@ The JetBrains model-tiers settings section driven by models.definitions instead 
 
 - **Performance:** The definitions file is parsed and validated once in the main thread at boot and read once more by each worker at its start; every later model question is an in-memory lookup. models.definitions touches no CLI; it asks Ollama for its installed list with the same bounded timeout providers.listModels uses today. An approval reaches every worker in one hub message, and caches are rebuilt only when the revision changes.
 - **Security:** No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs, and Ollama is only asked which models are installed. The approved-model store is a per-user file under the insrc home, written only by the daemon's main thread; clients reach it only through models.approve and models.reject (k2).
-- **Observability:** A bad definitions file stops the daemon with a log naming the faulty entry (s1/ac3). Dropping an unsupported effort logs the model and effort (s3/ac2). Every fallback logs the tier, the requested model, the reason (unlisted, rejected, not installed) and the default used (decision A). Removing a per-repo tier override logs the repo and tier, and pruning the retired Ollama settings logs each path (s3/ac5). Each unknown-model check logs every CLI call and its verdict; a failed store write is logged with its cause.
-- **Durability:** Approved and rejected profiles survive restarts and insrc updates because they live outside the shipped file and outside config.json; the store is replaced atomically, so a crash mid-write leaves the previous store, and a decision is acknowledged only after it is durable. When an update ships a model a user had approved, the shipped definition wins. A malformed store is reported and ignored rather than stopping the daemon. Existing `tasks` and coreFloor values are kept when per-repo tier overrides are removed.
+- **Observability:** A bad definitions file stops the daemon with a log naming the faulty entry (s1/ac3). Dropping an unsupported effort logs the model and effort (s3/ac2). Every tier fallback logs the tier, the requested model, the reason (unlisted, rejected, not installed) and the default used (decision A); a tool-loop substitution logs the requested and substituted models, and a tool-loop failure names the model and whether it is not installed or Ollama is unreachable. Removing a per-repo tier override logs the repo and tier, and pruning ollamaNumCtx logs the path (s3/ac5). Each unknown-model check logs every CLI call and its verdict; a failed store write is logged with its cause.
+- **Durability:** Approved and rejected profiles survive restarts and insrc updates because they live outside the shipped file and outside config.json; the store is replaced atomically, so a crash mid-write leaves the previous store, and a decision is acknowledged only after it is durable. When an update ships a model a user had approved, the shipped definition wins. A malformed store is reported and ignored rather than stopping the daemon. Existing `tasks`, coreFloor, ollamaNumPredict and models.local.coreModel values are kept.
 
 ## 8. Rollout
 
@@ -284,15 +286,15 @@ The JetBrains model-tiers settings section driven by models.definitions instead 
 
 s1 owns sc1 and sc2, which every other Story consumes; it has no dependencies.
 
-**Backward compat:** providers.listModels keeps answering the same Claude and Codex models: the definitions file is seeded from the curated catalog (stale ids refreshed) and adds the aliases today's tier defaults use, so every tier already set to opus, sonnet, haiku or a catalogued Codex id still resolves. The Ollama models insrc ships with are listed with today's context window and output budget, so analysis behaves as before. Fail-fast startup is kept and now runs before the worker threads start.
+**Backward compat:** providers.listModels keeps answering the same Claude and Codex models: the definitions file is seeded from the curated catalog (stale ids refreshed) and adds the aliases today's tier defaults use, so every tier already set to opus, sonnet, haiku or a catalogued Codex id still resolves. The Ollama models insrc ships with are listed with today's context window, and the tool-loop default is today's models.local.coreModel default, so analysis behaves as before. Fail-fast startup is kept and now runs before the worker threads start.
 
 **Phase B — daemon serves and runs by the definitions**
 
 **Stories:** `s2`, `s3`
 
-Both depend only on s1. s2 adds models.definitions and re-sources providers.listModels; s3 moves every daemon consumer, in every thread, onto the registry, rebuilds caches on a new revision, retires the global Ollama settings, applies the fallback and makes tiers global-only.
+Both depend only on s1. s2 adds models.definitions and re-sources providers.listModels; s3 moves every daemon consumer, in every thread, onto the registry, rebuilds caches on a new revision, retires ollamaNumCtx, applies the fallback, picks the tool-loop model from the registry and makes tiers global-only.
 
-**Backward compat:** providers.listModels keeps its request and result shape. A tier set to a listed model or alias keeps running it; only an effort its model does not accept is dropped, with a warning. A tier set to a model that is neither listed nor approved, or to an Ollama model that is listed but not installed, runs a tier default with a warning naming the tier, the requested model, the reason and the default (decision A). Per-repo tier overrides are removed with a warning naming repo and tier; `tasks` and coreFloor values are kept. A user who had set ollamaNumCtx or ollamaNumPredict sees the prune logged; those values are now set per model in the definitions file.
+**Backward compat:** providers.listModels keeps its request and result shape. A tier set to a listed model or alias keeps running it; only an effort its model does not accept is dropped, with a warning. A tier set to a model that is neither listed nor approved, or to an Ollama model that is listed but not installed, runs a tier default with a warning naming the tier, the requested model, the reason and the default (decision A). The tool loop keeps using models.local.coreModel when it is listed and installed. Per-repo tier overrides are removed with a warning naming repo and tier; `tasks`, coreFloor and ollamaNumPredict are kept. A user who had set ollamaNumCtx sees the prune logged; the context window is now set per model in the definitions file.
 
 **Phase C — unknown-model check and approval**
 
@@ -317,28 +319,28 @@ Each client Story depends on s2, s3 and s4 and on nothing else from the others, 
 | Area | Why | Mitigation |
 | :--- | :--- | :--- |
 | Stale resolved models after an approval (s3, s4) | The analyze config is cached for the process lifetime, the role router memoises built providers, and CliProvider fixes its model at construction (src/config/analyze.ts:234, src/analyze/context/role-router.ts:196-201, src/agent/providers/cli-provider.ts:205-206), in every thread. | Every such cache is keyed by the registry revision and rebuilt on change; the revision is published only after the store write succeeds; tests populate the caches first, then approve, and check that the next call runs the new model in the main thread and in a worker. |
-| Daemon-wide literal and setting removal (s3) | 30 non-test files import src/config/analyze.ts, 14 carry runner literals and five call sites read the global Ollama budgets; a missed site keeps a stale default, effort or budget. | s3 adds a source scan test that fails on runner or model literals outside the family implementations and on any remaining read of the retired Ollama settings, and keeps resolveTier's signature so callers change only where they read literals. |
-| Upgrade of existing settings (s1, s3) | Users have tiers set to aliases, to catalogued ids, to unlisted models and to Ollama models insrc does not list, plus tuned global Ollama budgets; silently changing what runs would surprise them, and running an unlisted model would break k5. | The definitions keep today's aliases and catalogued ids and list the shipped Ollama models with today's budgets; every fallback and every pruned setting is logged with the reason; per-repo overrides are removed only with a logged warning, keeping `tasks` and coreFloor. |
+| Tool-loop analysis on a machine without the expected Ollama model (s3) | Tool-calling analysis needs Ollama (src/analyze/context/driver.ts:1100-1104) and cannot fall back to a CLI; restricting it to listed models could stop analysis that runs today on an unlisted local model. | An unlisted requested model is replaced by the family's listed tool-loop default with a warning; only a model that is not installed fails, with a message naming the model so the user can pull it; both tool-loop entry points are tested for each case. |
+| Upgrade of existing settings (s1, s3) | Users have tiers set to aliases, to catalogued ids, to unlisted models and to Ollama models insrc does not list, plus a tuned ollamaNumCtx; silently changing what runs would surprise them, and running an unlisted model would break k5. | The definitions keep today's aliases and catalogued ids and list the shipped Ollama models with today's context window; every fallback and the ollamaNumCtx prune are logged with the reason; per-repo overrides are removed only with a logged warning, keeping `tasks` and coreFloor. |
 
 ## 9. Alternatives considered
 
 ### 9.1 a1: One definitions registry per daemon thread, grown from the curated catalog — **CHOSEN**
 
-Replace the curated cloud catalog and the global Ollama settings with one shipped definitions file listing every selectable model of all three families with its own settings, validated once at boot and loaded into a revisioned registry in every model-running thread, with user-approved CLI models in a separate daemon-owned store pushed to every thread.
+Replace the curated cloud catalog and the global Ollama context-window setting with one shipped definitions file listing every selectable model of all three families with its own facts, validated once at boot and loaded into a revisioned registry in every model-running thread, with user-approved CLI models in a separate daemon-owned store pushed to every thread.
 
-The curated catalog becomes the single model-definitions file: per family its runner identity and CLI kind, and every model that may be selected, each with its aliases, accepted effort levels, input limit and output budget, plus the family's own tier defaults and summariser model and the family a fresh install defaults to. Ollama models are listed like the others; Ollama's live listing only says which listed models are installed, and an unlisted installed model is never offered or run. The global ollamaNumCtx and ollamaNumPredict settings are retired: every call takes its context window and output budget from the model it runs. The main thread validates the file before it starts the worker threads and before it listens. Each model-running thread builds the same registry from the validated file at its start; the registry carries a revision, and everything that caches a resolved model (the analyze config, the role router's providers) is rebuilt when the revision changes.
+The curated catalog becomes the single model-definitions file: per family its runner identity and CLI kind, and every model that may be selected, each with its aliases, accepted effort levels and input limit, plus the family's own tier defaults and summariser model, the Ollama family's tool-loop default model, and the family a fresh install defaults to. Ollama models are listed like the others; Ollama's live listing only says which listed models are installed, and an unlisted installed model is never offered or run. The global ollamaNumCtx setting is retired: each Ollama call takes its context window from the model it runs; the output cap ollamaNumPredict stays a global setting. The main thread validates the file before it starts the worker threads and before it listens. Each model-running thread builds the same registry from the validated file at its start; the registry carries a revision, and everything that caches a resolved model (the analyze config, the role router's providers) is rebuilt when the revision changes.
 
-User-approved unknown Claude and Codex models are per-user facts, kept in a daemon-owned store under the insrc home and written atomically; the main thread publishes a new revision to every worker over the hub channel only after the write succeeds. A tier set to a model that is neither listed nor approved runs a tier default from the definitions, with a warning, until the user approves it. One read-only IPC request returns the merged view, providers.listModels is derived from it, and the unknown-model check probes the CLIs one call at a time. Clients render the IPC answer; tiers become global-only, with the role assignments still persisted under `tasks`.
+User-approved unknown Claude and Codex models are per-user facts, kept in a daemon-owned store under the insrc home and written atomically; the main thread publishes a new revision to every worker over the hub channel only after the write succeeds. A tier set to a model that is neither listed nor approved runs a tier default from the definitions, with a warning, until the user approves it; the Ollama tool loop runs a listed, installed model or fails with a clear message. One read-only IPC request returns the merged view, providers.listModels is derived from it, and the unknown-model check probes the CLIs one call at a time. Clients render the IPC answer; tiers become global-only, with the role assignments still persisted under `tasks`.
 
 **Pros:**
-- One source for every model fact and setting: adding a model, alias, effort level, limit or output budget is a data-file edit and a daemon restart, with no code change and no user setting to keep in step.
-- Every thread resolves the same model with the same settings, and an approval takes effect in already-built providers because caches follow the registry revision.
+- One source for every model fact: adding a model, alias, effort level or limit is a data-file edit and a daemon restart, with no code change and no user setting to keep in step.
+- Every thread resolves the same model, and an approval takes effect in already-built providers because caches follow the registry revision.
 - Clients reach facts only over IPC (k2), so a new model or effort level needs no VS Code or JetBrains release.
 - Shipped facts (k4) and per-user approvals (k5) stay apart, and an approval is never acknowledged before it is durable.
 
 **Cons:**
-- Widest migration: 30 non-test files import src/config/analyze.ts, 14 carry runner literals, and five call sites read the global Ollama budgets.
-- Users who tuned ollamaNumCtx or ollamaNumPredict lose that knob; a different value needs a definitions-file edit.
+- Widest migration: 30 non-test files import src/config/analyze.ts, 14 carry runner literals, and four call sites pass the global Ollama context window.
+- Users who tuned ollamaNumCtx lose that knob; a different value needs a definitions-file edit.
 - Approval changes must reach worker threads and invalidate their caches, adding a message type and a rebuild path that tests must cover.
 
 **Cost estimate:** L
@@ -424,5 +426,6 @@ Unknown models are handled by letting the user pick any effort the CLI recognise
 - **[[c14]]** `code` `src/daemon/threads/method-class.ts:148` — "['providers.listModels', 'session', false],"
 - **[[c15]]** `stakeholder` `user 2026-10-25` — "ollama models need to be pre-registered in the disributed config. only models specified in the config should be avaiable for selection"
 - **[[c16]]** `stakeholder` `user 2026-10-25` — "remove the global settings, add per model settings"
-- **[[c17]]** `code` `src/config/analyze.ts:234` — "let cached: AnalyzeConfig | undefined;"
-- **[[c18]]** `code` `src/config/analyze.ts:404` — "if (isObject(src['tasks'])) {"
+- **[[c17]]** `stakeholder` `user 2026-10-25` — "this is a global setting and doesn't need to be moved to per model, can we leave it as is?"
+- **[[c18]]** `code` `src/analyze/context/driver.ts:1100` — "function localToolLoopModel(cfg: AnalyzeConfig): string {"
+- **[[c19]]** `code` `src/config/analyze.ts:404` — "if (isObject(src['tasks'])) {"

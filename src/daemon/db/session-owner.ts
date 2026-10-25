@@ -44,7 +44,7 @@ export interface SessionOwnerPorts<Overlay> {
 	readonly isRegistered: (root: string) => Promise<boolean>;
 	/** Creates an empty owned memory aggregate, never a saved pool. */
 	readonly createOverlay: (root: string, sessionHandle: string, context: SessionOverlayContext<Overlay>) => Overlay;
-	readonly dropOverlay?: ((overlay: Overlay) => void) | undefined;
+	readonly dropOverlay?: ((overlay: Overlay) => void | Promise<void>) | undefined;
 	readonly monotonicNow?: (() => number) | undefined;
 	readonly wallNow?: (() => number) | undefined;
 }
@@ -66,13 +66,14 @@ export class ConnectionSessionOwner<Overlay> {
 	readonly #controlTransports = new Set<string>();
 	readonly #ports: SessionOwnerPorts<Overlay>;
 	readonly #timer: ReturnType<typeof setInterval>;
+	readonly #cleanup = new Map<Promise<void>, readonly Overlay[]>();
 	#lastNow = -Infinity;
 	#closed = false;
 
 	constructor(ports: SessionOwnerPorts<Overlay>) {
 		if (!ports.daemonEpoch) throw new ManagementServiceError('invalid-input');
 		this.#ports = Object.freeze({ ...ports });
-		this.#timer = setInterval(() => { try { this.sweepExpired(); } catch { this.close(); } }, 1000);
+		this.#timer = setInterval(() => { try { this.sweepExpired(); } catch { void this.close().catch(() => {}); } }, 1000);
 		this.#timer.unref();
 	}
 	/** Boolean root-local reservations only; never exposes another owner's entries. */
@@ -98,7 +99,7 @@ export class ConnectionSessionOwner<Overlay> {
 	#session(handle: string): Session<Overlay> {
 		const session = this.#sessions.get(handle);
 		if (!session || session.phase !== 'active') throw expired();
-		if (this.#now() >= session.deadline) { this.#expire(session); throw expired(); }
+		if (this.#now() >= session.deadline) { void this.#expire(session); throw expired(); }
 		return session;
 	}
 	#control(context: TrustedRpcContext): Session<Overlay> {
@@ -109,7 +110,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (session.controlIdentity !== context.connectionIdentity || session.generation !== attachment.generation) throw expired();
 		return session;
 	}
-	#expire(session: Session<Overlay>): void {
+	#expire(session: Session<Overlay>): Promise<void> {
 		session.phase = 'closing';
 		this.#sessions.delete(session.handle);
 		if (session.controlIdentity) this.#controls.delete(session.controlIdentity);
@@ -118,8 +119,15 @@ export class ConnectionSessionOwner<Overlay> {
 		session.signingKey.fill(0); session.ledger.close();
 		this.#revokeData(session);
 		session.controlController.abort();
-		for (const overlay of session.overlays.values()) this.#ports.dropOverlay?.(overlay);
+		const closing: Promise<void>[] = [], owned = [...session.overlays.values()];
+		for (const overlay of owned) {
+			try { closing.push(Promise.resolve(this.#ports.dropOverlay?.(overlay))); }
+			catch { closing.push(Promise.reject(new ManagementServiceError('recovery-required'))); }
+		}
 		session.overlays.clear();
+		const drain = Promise.allSettled(closing).then(results => { if (results.some(result => result.status === 'rejected')) throw new ManagementServiceError('recovery-required'); });
+		this.#cleanup.set(drain, owned); void drain.then(() => this.#cleanup.delete(drain), () => {});
+		return drain;
 	}
 	#revokeData(session: Session<Overlay>): void {
 		const controllers: AbortController[] = [];
@@ -138,7 +146,7 @@ export class ConnectionSessionOwner<Overlay> {
 	sweepExpired(): void {
 		if (this.#closed) return;
 		const now = this.#now();
-		for (const session of this.#sessions.values()) if (now >= session.deadline) this.#expire(session);
+		for (const session of this.#sessions.values()) if (now >= session.deadline) void this.#expire(session);
 	}
 	#result(session: Session<Overlay>, capability: string): OpenConnectionSessionResult {
 		return Object.freeze({ sessionHandle: session.handle, capability, daemonEpoch: this.#ports.daemonEpoch,
@@ -151,7 +159,7 @@ export class ConnectionSessionOwner<Overlay> {
 		this.#context(context);
 		if (this.#dataTransports.has(context.connectionIdentity)) throw expired();
 		this.sweepExpired();
-		if (this.#controls.has(context.connectionIdentity) || this.#sessions.size >= MAX_CONNECTION_SESSIONS) throw new ManagementServiceError('busy');
+		if (this.#controls.has(context.connectionIdentity) || this.#sessions.size + this.#cleanup.size >= MAX_CONNECTION_SESSIONS) throw new ManagementServiceError('busy');
 		const handle = token(), capability = token(), signingKey = randomBytes(32);
 		let session!: Session<Overlay>;
 		const ledger = new SessionOperationLedger({ key: signingKey, daemonEpoch: this.#ports.daemonEpoch, sessionHandle: handle, now: () => this.#now(), deadline: () => session.deadline, assertActive: () => { if (this.#session(handle) !== session) throw expired(); }, ...(this.#ports.wallNow ? { wallNow: this.#ports.wallNow } : {}) });
@@ -283,7 +291,7 @@ export class ConnectionSessionOwner<Overlay> {
 	heartbeat(context: TrustedRpcContext): { readonly status: 'active'; readonly leaseMs: 90000 } {
 		const session = this.#control(context);
 		const now = this.#now();
-		if (now >= session.deadline) { this.#expire(session); throw expired(); }
+		if (now >= session.deadline) { void this.#expire(session); throw expired(); }
 		session.deadline = now + CONNECTION_SESSION_LEASE_MS;
 		return { status: 'active', leaseMs: CONNECTION_SESSION_LEASE_MS };
 	}
@@ -304,7 +312,7 @@ export class ConnectionSessionOwner<Overlay> {
 		}
 		return session.overlays.get(root)!;
 	}
-	end(context: TrustedRpcContext): void { this.#expire(this.#control(context)); }
+	end(context: TrustedRpcContext): Promise<void> { return this.#expire(this.#control(context)); }
 	disconnect(context: TrustedRpcContext): void {
 		if (context.daemonEpoch !== this.#ports.daemonEpoch) return;
 		this.#dataTransports.delete(context.connectionIdentity);
@@ -321,10 +329,11 @@ export class ConnectionSessionOwner<Overlay> {
 		const session = this.#sessions.get(attachment.handle);
 		if (session?.controlIdentity === context.connectionIdentity) { session.controlIdentity = undefined; session.controlController.abort(); }
 	}
-	close(): void {
+	close(): Promise<void> {
 		clearInterval(this.#timer);
 		this.#closed = true;
-		for (const session of this.#sessions.values()) this.#expire(session);
+		for (const session of this.#sessions.values()) void this.#expire(session);
 		this.#dataTransports.clear(); this.#controlTransports.clear();
+		return Promise.allSettled([...this.#cleanup.keys()]).then(results => { if (results.some(result => result.status === 'rejected')) throw new ManagementServiceError('recovery-required'); });
 	}
 }

@@ -3,6 +3,8 @@ import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
 import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
+import { bindSessionConnectionResolver } from './db/pool-cache.js';
+import type { ConnectionAccessContext, MutationOutcome } from '../shared/connection-management.js';
 import { installConnectionReservations } from './db/connection-reservations.js';
 import { savedConnectionIds } from './db/managed-store.js';
 import { connectionsPath } from './db/config.js';
@@ -40,6 +42,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 	#owner: ConnectionSessionOwner<Overlay> | undefined;
 	#epoch: string | undefined;
 	#closed = false;
+	#drained: Promise<void> | undefined;
 	constructor(ports: ConnectionSessionRpcPorts<Overlay>) {
 		this.#ports = Object.freeze({ ...ports });
 		this.#uninstallReservations = installConnectionReservations({ ready: () => this.ready(), isRegistered: ports.isRegistered,
@@ -145,17 +148,62 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			if (!(overlay instanceof TemporaryConnectionOverlay)) throw fail('upgrade-required');
 			const assertRequest = () => { binding.assertActive(); current.assertActive(); };
 			assertRequest();
+			const signal = AbortSignal.any([binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
+			const activate = async (id: string, revision: string): Promise<MutationOutcome> => {
+				assertRequest(); if (overlay.read(id).revision !== revision) throw new ManagementServiceError('conflict');
+				const outcome = ledger.outcome(revision);
+				try {
+					const privateResolver = overlay.resolver(current.access, { assertActive: assertRequest, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) });
+					await privateResolver.withConnection(current.access, id, async () => {});
+					assertRequest(); ledger.activation(outcome.operationId, revision, 'active');
+				} catch {
+					assertRequest(); ledger.activation(outcome.operationId, revision, 'failed');
+				}
+				return { status: 'committed', value: ledger.outcome(revision) };
+			};
 			if (command.method === 'db.connections.v2.ticket') return ledger.issue(command.key, command.mode);
 			if (command.method === 'db.connections.v2.status') return ledger.status(command.ticket);
 			if (command.method === 'db.connections.v2.read') return overlay.read(command.key.id);
-			return await ledger.mutate(command.request, (request, commit) => withSavedRootGate(command.root, async () => {
-				assertRequest();
-				if ((await savedConnectionIds(connectionsPath(command.root))).has(request.key.id)) throw new ManagementServiceError('duplicate-id');
-				assertRequest();
-				const prepared = await overlay.prepare({ key: request.key, mode: request.mode as 'create' | 'update', publicPatch: request.publicPatch ?? {}, credentials: request.credentials ?? {}, ...(request.expectedRevision !== undefined ? { expectedRevision: request.expectedRevision } : {}) }, context.signal);
-				assertRequest(); return commit(() => overlay.commit(prepared));
-			}), assertRequest);
+			if (command.method === 'db.connections.v2.activate') return await activate(command.key.id, command.revision);
+			return await ledger.mutate(command.request, async (request, commit) => {
+				const result = await withSavedRootGate(command.root, async () => {
+					assertRequest();
+					if ((await savedConnectionIds(connectionsPath(command.root))).has(request.key.id)) throw new ManagementServiceError('duplicate-id');
+					assertRequest();
+					const prepared = await overlay.prepare({ key: request.key, mode: request.mode as 'create' | 'update', publicPatch: request.publicPatch ?? {}, credentials: request.credentials ?? {}, ...(request.expectedRevision !== undefined ? { expectedRevision: request.expectedRevision } : {}) }, context.signal);
+					assertRequest(); return commit(() => overlay.commit(prepared));
+				});
+				if (result.status !== 'committed') return result;
+				if (overlay.cleanupPending) {
+					ledger.cleanup(result.value.operationId, result.value.revision, 'pending');
+					const cleanup = overlay.retiredCleanup(); context.registerDrain?.(cleanup);
+					void cleanup.then(() => { try { ledger.cleanup(result.value.operationId, result.value.revision, 'complete'); } catch { /* Lost session has no surviving receipt. */ } }, () => {});
+				}
+				return activate(request.key.id, result.value.revision);
+			}, assertRequest);
 		} catch (error) { return managementRejection(error); }
+	}
+	/** Internal owner entry only. JSON copies of the returned object cannot redeem resolver authority. */
+	async accessFor(context: TrustedRpcContext, root: string): Promise<Readonly<ConnectionAccessContext>> {
+		if (!await this.ready() || !this.#owner) throw fail('session-expired');
+		const binding = await this.#binding({ kind: 'request', requestId: 'local-access', method: 'db.connections.v2.read', params: {}, stream: false, trustedContext: context }, root);
+		if (binding.audience !== 'workbench-ui') throw fail('upgrade-required');
+		const owned = await this.#owner.management(context, root);
+		if (!(owned.overlay instanceof TemporaryConnectionOverlay)) throw fail('upgrade-required');
+		const overlay = owned.overlay, access = owned.binding.access;
+		const assertActive = () => {
+			try { context.assertRequestActive?.(); } catch { throw fail('session-expired'); }
+			binding.assertActive(); owned.binding.assertActive();
+		};
+		const signal = AbortSignal.any([binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
+		bindSessionConnectionResolver(access, async () => {
+			assertActive();
+			const current = await this.#owner!.management(context, root);
+			assertActive();
+			if (current.overlay !== overlay || current.binding.controlGeneration !== owned.binding.controlGeneration) throw fail('session-expired');
+			return overlay.resolver(access, { assertActive, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) });
+		});
+		assertActive(); return access;
 	}
 	/** Failed/pending attachment stays sticky: never retry that connection as saved-only.
 	 * Only audited metadata and temporary management methods are currently admitted.
@@ -200,10 +248,15 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		this.#owner?.disconnect(context);
 		this.#claims.delete(context.connectionIdentity); this.#intents.delete(context.connectionIdentity);
 	}
-	stopAdmission(): void { this.#closed = true; this.#uninstallReservations(); this.#owner?.close(); }
+	stopAdmission(): void {
+		this.#closed = true; this.#uninstallReservations();
+		this.#drained ??= this.#owner?.close() ?? Promise.resolve();
+		void this.#drained.catch(() => {});
+	}
 	async close(): Promise<void> {
 		this.stopAdmission(); this.#claims.clear();
 		// Keep safe role markers until each socket disconnects: closing authority cannot downgrade a live channel.
+		await this.#drained;
 	}
 }
 

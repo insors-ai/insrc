@@ -7330,7 +7330,7 @@
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
-      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Only audited metadata and temporary ticket/mutate/status/read are admitted; other data consumers refuse until concrete integrations are installed; fixed rejections and terminal stream errors carry no capability.",
+      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Only audited metadata and temporary management are admitted; other data consumers refuse until concrete integrations are installed; fixed rejections and terminal stream errors carry no capability.",
       "sites": [
         [
           "connection-factory",
@@ -7343,6 +7343,22 @@
         [
           "storage-call",
           "lookupRepoId"
+        ],
+        [
+          "connection-factory",
+          "overlay.resolver"
+        ],
+        [
+          "connection-factory",
+          "overlay.resolver"
+        ],
+        [
+          "acquisition:resolver-port-call",
+          "overlay.resolver(access, { assertActive, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })"
+        ],
+        [
+          "acquisition:resolver-port-call",
+          "overlay.resolver(current.access, { assertActive: assertRequest, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })"
         ],
         [
           "connection-use",
@@ -7381,6 +7397,18 @@
           "owner.resume"
         ],
         [
+          "acquisition:resolver-member",
+          "privateResolver.withConnection"
+        ],
+        [
+          "connection-use",
+          "privateResolver.withConnection"
+        ],
+        [
+          "connection-use",
+          "this.#owner!.management"
+        ],
+        [
           "connection-use",
           "this.#owner?.close"
         ],
@@ -7405,14 +7433,20 @@
           "this.#owner.management"
         ],
         [
+          "connection-use",
+          "this.#owner.management"
+        ],
+        [
           "connection-factory",
           "this.#ownerFor"
         ]
       ],
-      "siteCount": 19,
-      "sitesDigest": "baf0351cb09318c73d887d4dc6a49f8231995e2a23f56a6357ff8a15d4561775",
-      "sourceDigest": "90e0abed7b1915a061f2027206b723499b07d34dfa9c5699e823eb7f3be9d90c",
+      "siteCount": 27,
+      "sitesDigest": "b77411aede10cf626cb968bd3d1d9bbac74125c158e838a665e309e6095eb743",
+      "sourceDigest": "5ebac403ce2472b22db019626ce4dd2a6ec46590d7c313e0e220bcbe46b3595c",
       "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:resolver-port-call",
         "connection-factory",
         "connection-use",
         "storage-call"
@@ -7777,7 +7811,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "7ad586119774e65d0e3dbd72e646b2efd755e4c4e6cfc12d826c7a337083faf0",
-      "sourceDigest": "62a746c7d2e8ff6dce0eefdefaa03b9404aa5791beed6faa3d6e999aa1c7b9fa",
+      "sourceDigest": "f670aee4116b2120c293c4ea676f7989558d6e3c1ccca2cefb0ce1c940e094b9",
       "boundaries": [
         "serialization"
       ]
@@ -9779,7 +9813,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "27e6915d14c4bc08ba3644057fc5b443de721bae841fb84443ff7f5187960170",
+      "sourceDigest": "7db21ceeaf8139542d8c2c5b26de28ac85ff7afc2f4303dc3c6877bb1d00debb",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -10317,6 +10351,14 @@
           "ConnectionResolver"
         ],
         [
+          "acquisition:symbol:ConnectionResolver",
+          "ConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:ConnectionResolver",
+          "ConnectionResolver"
+        ],
+        [
           "acquisition:symbol:createConnectionResolver",
           "createConnectionResolver"
         ],
@@ -10429,6 +10471,14 @@
           "ports.sessionOverlay(context)"
         ],
         [
+          "connection-factory",
+          "resolve"
+        ],
+        [
+          "acquisition:resolver-port-call",
+          "resolve()"
+        ],
+        [
           "acquisition:pool-member",
           "saved.lease"
         ],
@@ -10489,9 +10539,9 @@
           "session.withConnection"
         ]
       ],
-      "siteCount": 53,
-      "sitesDigest": "47725d6921d51bd0a739e01195ec614cc1780925c5aaeecf0f2c3936df92bf0f",
-      "sourceDigest": "bbc082428dcdafd95ce3dd355d4a2af2c976c92dfd6ec406d3f1ef73dc584e55",
+      "siteCount": 57,
+      "sitesDigest": "5c52410f3de1305ecaa980e00b6a3aa00ac9a7f3180db75801422f4e606d3084",
+      "sourceDigest": "6c87cb0fde8d96327a5d21f4277adaecdaf2ea605c730bd4a1454c79ba0526e9",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",
@@ -11113,17 +11163,36 @@
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "session-private-generations",
-      "rationale": "S003 memory-only owner/root config generations. Materialization uses only selected private prior generation and a deny-only secret-read port; readonly runtime path preparation and safe profile projections do not persist. Fixed session-wide counters are shared only by sibling overlays; opaque staged tokens commit by identity after live/cancel/quota rechecks. Runtime callbacks remain private and gain full leases in t9.",
+      "rationale": "S003 memory-only owner/root config generations. Materialization uses only selected private prior generation and a deny-only secret-read port; readonly runtime path preparation and safe profile projections do not persist. Fixed session-wide counters are shared only by sibling overlays; opaque staged tokens commit by identity after live/cancel/quota rechecks. Runtime callbacks use the existing revision gate and driver guard for full construction/callback/late-work leases, with request/owner checks before use and result publication.",
       "sites": [
+        [
+          "acquisition:symbol:ConnectionResolver",
+          "ConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:ConnectionResolver",
+          "ConnectionResolver"
+        ],
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "connection-factory",
+          "this.#resources.acquire"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "this.#resources.acquire(entry.config, entry.revision)"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "d7fbc7435a5e936a49cf173489e1062fb4fc71778e51100c993c184e9613a4df",
-      "sourceDigest": "a7e350f925c7773634f6979ba2a92b3d7d31fa1b9016d75d84d1beaeef95a00e",
+      "siteCount": 5,
+      "sitesDigest": "e7af791139404a5e3b98583a239777d13ca0cd13e304a89b2e757cb69a3aa28d",
+      "sourceDigest": "921fdb4b70ce95c946b2bc7a7b7002ca013dfac4e686abe0c65449d852ea0e5f",
       "boundaries": [
+        "acquisition:driver-port-call",
+        "acquisition:symbol:ConnectionResolver",
+        "connection-factory",
         "serialization"
       ]
     },
@@ -11162,7 +11231,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "5ca3861f6d88337eb2f00fabc94c4200548bbca4a02e57e6b7b373e21ddee30b",
-      "sourceDigest": "3cdfb4ac255993f67351bfdd46837c6f54c4c16de26183ab7e9ff6e03e1960e7",
+      "sourceDigest": "c0283b4d8b11ee266d87ce91da74e9c017d38190d9805799c49b2927f46bcb03",
       "boundaries": [
         "serialization"
       ]
@@ -11178,7 +11247,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "8af27afaadebe6f3add0a11d36eaa05634d25d6f29baf287615176c7fe1ed2df",
-      "sourceDigest": "f012c20ff75f52e58b0875f364d5cd73fb965b11c0affaa8b9dc5913479f5362",
+      "sourceDigest": "fb132714f4124c57747aa564e74268492cf17bf72cd69cc2fdab19bbb79c7226",
       "boundaries": [
         "serialization"
       ]
@@ -11466,10 +11535,78 @@
       ],
       "siteCount": 69,
       "sitesDigest": "d427225ca93a488e1c5b32e9dc9ceb089443c3cac690c6fb9361b4209e5eebfe",
-      "sourceDigest": "785a81dc384c15d7820563ac603d773a58168bfb7f1c2cc053933a9359620294",
+      "sourceDigest": "3e2eb3e552748fece3da9a959166f250afe6a3b355609973d82cfe101bd5d9fb",
       "boundaries": [
         "connection-use",
         "serialization"
+      ]
+    },
+    "src/daemon/db/session-resources.ts": {
+      "classification": "session-private-sdk-resources",
+      "rationale": "Private session/root/revision driver construction consumes immutable in-memory config and existing sc8 file policy, never a saved pool or secret lookup. Late construction remains cleanup-owned after admission closes; failed close retains closed handles and blocks new SDK admission. Owner-local errors are fixed; concrete SDK diagnostic quiet authority/proof is still t10/t11 and release remains disabled.",
+      "sites": [
+        [
+          "connection-factory",
+          "(this.#ports.factory ?? getFactory)"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "connection-factory",
+          "factory"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) })"
+        ],
+        [
+          "acquisition:symbol:getFactory",
+          "getFactory"
+        ],
+        [
+          "acquisition:symbol:getFactory",
+          "getFactory"
+        ],
+        [
+          "connection-factory",
+          "Promise.resolve().then"
+        ],
+        [
+          "connection-factory",
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })"
+        ],
+        [
+          "connection-factory",
+          "record.building?.catch"
+        ],
+        [
+          "connection-use",
+          "record.driver.close"
+        ]
+      ],
+      "siteCount": 13,
+      "sitesDigest": "306272ce1f9753656f445f7c5df6e8aee0f0a088c8aec3a3ef4cad53ffb540bf",
+      "sourceDigest": "e5ea4a050abecb1f5547c139f62003fca2428e4cd5c3c1cc14261098378e8f99",
+      "boundaries": [
+        "acquisition:driver-port-call",
+        "acquisition:symbol:DriverFactory",
+        "acquisition:symbol:getFactory",
+        "connection-factory",
+        "connection-use"
       ]
     },
     "src/daemon/fatal.ts": {
@@ -13075,7 +13212,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "47815c83e28dbf1a452f95b57bcfc636397a1d840bd093894f281068f6ebc00e",
+      "sourceDigest": "c7ae49d253a9dafc29adcf8e4c6624e897e71b0cabd19a6a2eca000d700f31cd",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

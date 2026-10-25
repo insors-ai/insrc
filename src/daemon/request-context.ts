@@ -18,6 +18,7 @@ export interface TrustedRpcContext {
 	readonly connectionSignal?: AbortSignal | undefined;
 	/** Local-only lifecycle. Never projected onto a worker-thread channel. */
 	readonly signal?: AbortSignal | undefined;
+	readonly assertRequestActive?: (() => void) | undefined;
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;
 }
 /** A response can finish while admitted work is still being disposed. */
@@ -40,6 +41,7 @@ export class RequestLifetime {
 		this.#pending++;
 		void Promise.resolve(work).then(() => this.#settled(), () => this.#settled());
 	};
+	readonly assertActive = (): void => { if (this.#complete || this.signal.aborted) throw new Error('Request is no longer accepting work'); };
 	abort(): void { this.#controller.abort(); }
 	seal(): void { this.#sealed = true; this.#check(); }
 	complete(): void {

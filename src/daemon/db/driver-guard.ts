@@ -4,16 +4,22 @@ import { withDriverWork } from './driver-work.js';
 const METHODS = new Set(['describe', 'sample', 'explain', 'aggregate', 'distinct', 'listTables', 'listIndexes', 'functionalDependency', 'antiJoin', 'histogram', 'correlationMatrix', 'outliers', 'temporalTrend', 'dickeyFuller', 'temporalGapStats', 'scan', 'get', 'sampleShape', 'listNamespaces', 'describeNamespace']);
 const RESULT_PROTOTYPES = new Set<object>([Object.prototype, Array.prototype, Date.prototype, Buffer.prototype, Uint8Array.prototype, ArrayBuffer.prototype, DataView.prototype, RegExp.prototype, Map.prototype, Set.prototype]);
 /** A callback sees only interface members; retained views cannot start work after callback exit. */
-export function guardedDriver(driver: Driver): {
+export interface DriverGuardPorts {
+	readonly assertActive?: (() => void) | undefined;
+	readonly failure?: ((error: unknown) => Error) | undefined;
+}
+export function guardedDriver(driver: Driver, ports: DriverGuardPorts = {}): {
 	readonly driver: Driver;
 	finish(): Promise<void>;
 } {
+	const failure = ports.failure ?? driverFailure;
 	let accepting = true;
 	const pending = new Set<Promise<unknown>>();
 	const iterators = new Set<AsyncIterator<unknown>>();
 	const check = () => {
 		if (!accepting)
 			throw new ConnectionUseError('conflict');
+		ports.assertActive?.();
 	};
 	const track = <T>(value: Promise<T>): Promise<T> => {
 		const promise = Promise.resolve(value);
@@ -107,11 +113,12 @@ export function guardedDriver(driver: Driver): {
 		return result;
 	};
 	const wrap = (value: unknown): unknown => {
-		if (value === driver)
-			return view;
+		if (value === driver) { ports.assertActive?.(); return view; }
 		if (value && typeof value === 'object' && Symbol.asyncIterator in value) {
 			const iterator = (value as AsyncIterable<unknown>)[Symbol.asyncIterator]();
 			iterators.add(iterator);
+			// Track a late iterator before refusing publication so finish still closes it.
+			ports.assertActive?.();
 			const call = (kind: 'next' | 'return' | 'throw', arg?: unknown) => {
 				try {
 					check();
@@ -125,17 +132,18 @@ export function guardedDriver(driver: Driver): {
 							iterators.delete(iterator);
 						return { done: result.done, value: wrap(result.value) };
 					}).catch(error => {
-						throw driverFailure(error);
+						throw failure(error);
 					}));
 				}
 				catch (error) {
-					throw driverFailure(error);
+					throw failure(error);
 				}
 			};
 			return { [Symbol.asyncIterator]() {
 					return this;
 				}, next: (arg?: unknown) => call('next', arg), return: (arg?: unknown) => call('return', arg), throw: (arg?: unknown) => call('throw', arg) };
 		}
+		ports.assertActive?.();
 		return snapshot(value);
 	};
 	const target = Object.create(null) as Record<string, unknown>;
@@ -149,7 +157,7 @@ export function guardedDriver(driver: Driver): {
 					return value;
 				}
 				catch (error) {
-					throw driverFailure(error);
+					throw failure(error);
 				}
 			} });
 	for (const key of METHODS) {
@@ -158,7 +166,7 @@ export function guardedDriver(driver: Driver): {
 			method = Reflect.get(driver, key);
 		}
 		catch (error) {
-			throw driverFailure(error);
+			throw failure(error);
 		}
 		if (typeof method !== 'function')
 			continue;
@@ -168,12 +176,12 @@ export function guardedDriver(driver: Driver): {
 					const result = withDriverWork(track, () => Reflect.apply(method, driver, args));
 					if (result && (typeof result === 'object' || typeof result === 'function') && typeof Reflect.get(result, 'then') === 'function')
 						return track(Promise.resolve(result).then(wrap).catch(error => {
-							throw driverFailure(error);
+							throw failure(error);
 						}));
 					return wrap(result);
 				}
 				catch (error) {
-					throw driverFailure(error);
+					throw failure(error);
 				}
 			} });
 	}

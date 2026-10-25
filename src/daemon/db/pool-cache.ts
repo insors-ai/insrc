@@ -35,15 +35,22 @@ export class SessionAccessError extends Error {
 		this.name = 'SessionAccessError';
 	}
 }
+const sessionResolvers = new WeakMap<ConnectionAccessContext, () => Promise<ConnectionResolver>>();
+/** Main-daemon owner binds an exact frozen access object. A serialized copy is never authority. */
+export function bindSessionConnectionResolver(access: Readonly<ConnectionAccessContext>, resolve: () => Promise<ConnectionResolver>): void {
+	if (!access.sessionHandle || !Object.isFrozen(access) || sessionResolvers.has(access)) throw new SessionAccessError();
+	sessionResolvers.set(access, resolve);
+}
 /** Saved reads retain the caller's own directory, independently of registry membership. */
 export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionResolver {
 	const pool = (context: ConnectionAccessContext) => (ports.poolSource ?? acquirePool)(context.lookupRoot);
 	const overlay = async (context: ConnectionAccessContext): Promise<ConnectionResolver | undefined> => {
 		if (context.sessionHandle === undefined)
 			return undefined;
-		if (!ports.sessionOverlay)
-			throw new SessionAccessError();
-		return ports.sessionOverlay(context);
+		if (ports.sessionOverlay) return ports.sessionOverlay(context);
+		const resolve = sessionResolvers.get(context);
+		if (!resolve) throw new SessionAccessError();
+		return resolve();
 	};
 	const sources = async (context: ConnectionAccessContext) => {
 		const session = await overlay(context), saved = await pool(context);

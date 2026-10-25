@@ -67,13 +67,13 @@ export class SessionOperationLedger {
    const request = parseMutationRequest(JSON.parse(canonicalRequestJson(value))), { expired } = this.inspect(request.ticket);
    if (request.key.scope !== 'temporary' || request.mode === 'remove') throw fail('operation-mismatch');
    const mac = this.#mac('request', request), receipt = this.#receipts.get(request.operationId);
+   const pending = this.#inflight.get(request.operationId);
+   if (pending) { if (!this.#same(mac, pending.mac)) throw fail('operation-mismatch'); const result = await pending.promise; this.#active(); assertRequest(); return structuredClone(result); }
    if (receipt) { if (!this.#same(mac, receipt.requestMac)) throw fail('operation-mismatch'); return { status: 'committed', value: { ...receipt.outcome } }; }
    if (expired) throw fail('reconciliation-required');
    const issued = this.#issued.get(request.operationId);
    if (!issued) throw fail('reconciliation-required');
    if (issued.requestMac && !this.#same(mac, issued.requestMac)) throw fail('operation-mismatch');
-   const pending = this.#inflight.get(request.operationId);
-   if (pending) { if (!this.#same(mac, pending.mac)) throw fail('operation-mismatch'); const result = await pending.promise; this.#active(); assertRequest(); return structuredClone(result); }
    if (this.#receipts.size >= MAX_SESSION_OPERATION_RECORDS) throw fail('busy');
    issued.requestMac = mac;
    let committed = false;
@@ -92,6 +92,16 @@ export class SessionOperationLedger {
    try { const result = await promise; this.#active(); assertRequest(); return structuredClone(result); }
    finally { if (this.#inflight.get(request.operationId)?.promise === promise) this.#inflight.delete(request.operationId); }
   } catch (error) { return managementRejection(error); }
+ }
+ outcome(revision: string): CommittedOutcome {
+  this.#active();
+  for (const receipt of this.#receipts.values()) if (receipt.outcome.revision === revision) return { ...receipt.outcome };
+  throw fail('operation-mismatch');
+ }
+ cleanup(operationId: string, revision: string, phase: 'complete' | 'pending'): void {
+  this.#active(); const receipt = this.#receipts.get(operationId);
+  if (!receipt || receipt.outcome.revision !== revision) throw fail('operation-mismatch');
+  this.#receipts.set(operationId, { requestMac: receipt.requestMac, outcome: Object.freeze({ ...receipt.outcome, credentialCleanup: phase }) });
  }
  /** Activation follows commit; changing its phase never erases committed registration truth. */
  activation(operationId: string, revision: string, phase: 'active' | 'failed'): void {

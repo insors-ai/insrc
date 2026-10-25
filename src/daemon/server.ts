@@ -86,7 +86,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
         return () => {};
       }
       let running: Promise<unknown>;
-      const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain } : {}) }) : undefined;
+      const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain, assertRequestActive: lifetime.assertActive } : {}) }) : undefined;
       try { running = Promise.resolve(handler(request.params, context)); } catch (err) { running = Promise.reject(err); }
       void running.then(
         result => finish({ kind: 'reply', requestId, result }),
@@ -101,7 +101,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
       request.trustedContext?.signal].filter((signal): signal is AbortSignal => signal !== undefined);
     const signal = AbortSignal.any(signals);
     const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, signal,
-      ...(lifetime ? { registerDrain: lifetime.registerDrain } : {}) }) : undefined;
+      ...(lifetime ? { registerDrain: lifetime.registerDrain, assertRequestActive: lifetime.assertActive } : {}) }) : undefined;
     let terminal = false;
     const send = (msg: IpcStreamMessage): void => {
       if (terminal || signal.aborted) return;

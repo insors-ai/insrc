@@ -51,9 +51,13 @@ export interface RequestEnvelope {
 }
 /** Main-thread request only: local lifecycle must never be structured-cloned. */
 export interface LocalRequestEnvelope extends RequestEnvelope {
+	readonly trustedContext?: TrustedRpcContext | undefined;
 	readonly lifetime?: RequestLifetime | undefined;
 }
 export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
+	if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution !== undefined) {
+		throw new Error('Session execution cannot cross a worker channel.');
+	}
 	return {
 		kind: 'request', requestId: request.requestId, method: request.method,
 		params: request.params, stream: request.stream,

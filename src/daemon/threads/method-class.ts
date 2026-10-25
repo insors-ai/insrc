@@ -99,6 +99,12 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['conversation.stats', 'session', false],
 	['dataAnalyzer.clearCache', 'session', false],
 	['dataAnalyzer.diffRuns', 'session', false],
+	['db.connections.v2.session.open', 'session', false],
+	['db.connections.v2.session.resume', 'session', false],
+	['db.connections.v2.session.attach', 'session', false],
+	['db.connections.v2.session.delegate', 'session', false],
+	['db.connections.v2.session.heartbeat', 'session', false],
+	['db.connections.v2.session.end', 'session', false],
 	['db.connections.v2.activate', 'session', false],
 	['db.connections.v2.capabilities', 'session', false],
 	['db.connections.v2.drivers', 'session', false],
@@ -244,4 +250,11 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 });
 
 /** These operations own process-local admission and transport lifetimes. */
-export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set(['db.testConnection','db.connections.v2.test','db.connections.v2.cancelTest']);
+export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
+ 'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',
+ 'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
+ 'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',
+ 'db.connections.v2.test','db.connections.v2.cancelTest',
+ 'db.connections.v2.session.open','db.connections.v2.session.resume','db.connections.v2.session.attach',
+ 'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
+]);

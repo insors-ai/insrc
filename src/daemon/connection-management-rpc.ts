@@ -14,7 +14,12 @@ import { driverDescriptors, materializeDraft } from './db/driver-profiles.js';
 import { savedConnectionResolver } from './db/pool-cache.js';
 import { loadConnections, connectionsPath } from './db/config.js';
 import { managementMarkerExists } from './db/managed-store.js';
+import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
+import type { ConnectionSessionMethod } from '../shared/connection-management.js';
+import { connectionSessionRuntime } from './connection-session-rpc.js';
+import type { SessionRpcRuntime } from './connection-session-rpc.js';
 export const CONNECTION_V2_METHODS = [
+	...CONNECTION_SESSION_METHODS,
 	'db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.connections.v2.list', 'db.connections.v2.read',
 	'db.connections.v2.test', 'db.connections.v2.cancelTest', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate',
 ] as const;
@@ -58,6 +63,7 @@ async function safeList(repoRoot: string, context: TrustedRpcContext) {
 	return savedConnectionResolver.list({ lookupRoot: repoRoot, daemonEpoch: context.daemonEpoch });
 }
 export interface ConnectionTestPorts {
+ readonly sessionRuntime?: SessionRpcRuntime | undefined;
  readonly enabled?: (()=>Promise<boolean>) | undefined;
  readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal)=>Promise<EffectiveDraft>) | undefined;
  readonly isRegistered?: ((root:string)=>Promise<boolean>) | undefined;
@@ -66,6 +72,9 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 	try {
 		const context = trusted(transport);
 		if (!CONNECTION_V2_METHODS.includes(method)) throw new ManagementInputError();
+		if ((CONNECTION_SESSION_METHODS as readonly string[]).includes(method)) {
+			return (testPorts.sessionRuntime ?? connectionSessionRuntime).call(method as ConnectionSessionMethod, value, context);
+		}
 		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
 		if(method==='db.connections.v2.test'){
 			const request=parseDraftTestRequest(value);
@@ -87,6 +96,7 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if (method === 'db.connections.v2.capabilities') {
 			const params = object(value, [], ['repoRoot']);
 			const features = ['safe-read', 'driver-descriptors'];
+			if (await (testPorts.sessionRuntime ?? connectionSessionRuntime).ready()) features.push('workbench-sessions', 'session-delegation');
 			if(await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())features.push('draft-test','test-cancellation');
 			if (params.repoRoot !== undefined) {
 				const repoRoot = await root(params.repoRoot), service = savedManagementFor(repoRoot);

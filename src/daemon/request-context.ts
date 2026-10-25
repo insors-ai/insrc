@@ -1,9 +1,21 @@
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
+import type { ConnectionAccessContext, ConnectionSessionAudience } from '../shared/connection-management.js';
+export interface TrustedConnectionSession {
+	readonly role: 'control' | 'data';
+	readonly access: Readonly<ConnectionAccessContext>;
+	readonly audience: ConnectionSessionAudience;
+	readonly controlGeneration: number;
+	readonly signal: AbortSignal;
+	readonly assertActive: () => void;
+}
 /** Server-owned transport metadata; never deserialized from request params or client labels. */
 export interface TrustedRpcContext {
 	readonly connectionIdentity: string;
 	readonly daemonEpoch: string;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
+	readonly connectionSession?: TrustedConnectionSession | undefined;
+	/** Connection lifetime, including after a prior unary request completed. */
+	readonly connectionSignal?: AbortSignal | undefined;
 	/** Local-only lifecycle. Never projected onto a worker-thread channel. */
 	readonly signal?: AbortSignal | undefined;
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;

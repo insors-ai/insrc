@@ -6,6 +6,13 @@ export interface SessionResume { readonly sessionHandle: string; readonly capabi
 export interface OpenConnectionSessionResult extends SessionResume { readonly heartbeatMs: 30000; readonly leaseMs: 90000 }
 export type ConnectionSessionAudience = 'workbench-ui' | 'mcp-unverified';
 export interface SessionDataAttach extends SessionResume { readonly repoRoot: string }
+export interface SessionOpen { readonly repoRoot: string }
+export interface SessionDelegate { readonly repoRoot: string; readonly audience: ConnectionSessionAudience }
+export const CONNECTION_SESSION_METHODS = [
+ 'db.connections.v2.session.open', 'db.connections.v2.session.resume', 'db.connections.v2.session.attach',
+ 'db.connections.v2.session.delegate', 'db.connections.v2.session.heartbeat', 'db.connections.v2.session.end',
+] as const;
+export type ConnectionSessionMethod = typeof CONNECTION_SESSION_METHODS[number];
 export interface ConnectionKey { readonly repoRoot: string; readonly scope: ConnectionScope; readonly id: string }
 export type CredentialPatch = { readonly action: 'keep' } | { readonly action: 'replace'; readonly value: string } | { readonly action: 'clear' };
 export interface DraftTestRequest {

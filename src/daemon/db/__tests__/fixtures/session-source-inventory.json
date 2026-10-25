@@ -7319,12 +7319,94 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "d360f2e66765bcf9b95cc44f2e56dd8221ab85ffcdce7f2f8762a83e2e7eea85",
+      "sourceDigest": "6028ebaf2f71c2fd306acfeb0171f2407dda832103b2e7f2a9bc74cdd67ad503",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
         "connection-use",
         "serialization",
+        "storage-call"
+      ]
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "classification": "session-transport-authority",
+      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Only static metadata is admitted until concrete memory-only consumers are installed; fixed rejections and terminal stream errors carry no capability.",
+      "sites": [
+        [
+          "connection-factory",
+          "ConnectionSessionOwner"
+        ],
+        [
+          "connection-use",
+          "ConnectionSessionOwner"
+        ],
+        [
+          "storage-call",
+          "lookupRepoId"
+        ],
+        [
+          "connection-use",
+          "owner.attach"
+        ],
+        [
+          "connection-use",
+          "owner.controlRoot"
+        ],
+        [
+          "connection-use",
+          "owner.controlRoot"
+        ],
+        [
+          "connection-use",
+          "owner.controlRoot"
+        ],
+        [
+          "connection-use",
+          "owner.delegate"
+        ],
+        [
+          "connection-use",
+          "owner.end"
+        ],
+        [
+          "connection-use",
+          "owner.heartbeat"
+        ],
+        [
+          "connection-use",
+          "owner.open"
+        ],
+        [
+          "connection-use",
+          "owner.resume"
+        ],
+        [
+          "connection-use",
+          "this.#owner?.close"
+        ],
+        [
+          "connection-use",
+          "this.#owner?.disconnect"
+        ],
+        [
+          "connection-use",
+          "this.#owner.controlBinding"
+        ],
+        [
+          "connection-use",
+          "this.#owner.dataBinding"
+        ],
+        [
+          "connection-factory",
+          "this.#ownerFor"
+        ]
+      ],
+      "siteCount": 17,
+      "sitesDigest": "37452ec14c94fc017ec99f45fd3f4113904cde250762e4a43028bde090601951",
+      "sourceDigest": "a0d9ac07fbe54ab8b6892d803b7b8225b6ff95c87f91fc24f42ea0d59a815273",
+      "boundaries": [
+        "connection-factory",
+        "connection-use",
         "storage-call"
       ]
     },
@@ -9673,7 +9755,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "9eeff3c49b4495993055cc5d731399f4e1ec3c4e4fd2e13b04126b3319528626",
+      "sourceDigest": "904c16594c8ca03569bd77d8ac8fc54ff54633305b7846b0f60a1d17ed9e10fb",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -11099,6 +11181,22 @@
         ],
         [
           "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
           "this.#control"
         ],
         [
@@ -11196,6 +11294,10 @@
         [
           "connection-use",
           "this.#revokeData"
+        ],
+        [
+          "connection-use",
+          "this.#session"
         ],
         [
           "connection-use",
@@ -11258,9 +11360,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 52,
-      "sitesDigest": "123664ddd0ab344e03ddd938321622f6e9460cb5082b562233aa9e4545c68b39",
-      "sourceDigest": "7adb1516909bc71250efaf250412457c888c7cdf02a9ed76e21b327f799682c7",
+      "siteCount": 57,
+      "sitesDigest": "407458daa28f2a13707bae6d5000361c71c8fd6b42500ee2b722f0c80bc9b15c",
+      "sourceDigest": "d07da0570eb5e1a11be4a7b080f94202f0891eb2dae1d3aa77a9ebb602557e3a",
       "boundaries": [
         "connection-use",
         "serialization"
@@ -12315,7 +12417,7 @@
       ],
       "siteCount": 61,
       "sitesDigest": "1c3a213da34485c9803d67c1740ceb71116fcbcb06618e980c69b6d7ef990d95",
-      "sourceDigest": "745b7bde620a3659dfadfa73d4fa1ad1ab2ddff2ad3f96bba2ece3a507603b8e",
+      "sourceDigest": "ba527fd60a7f3dea9af4534c75f377996436a2abd191a2998573a476b9a3cca2",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -12869,7 +12971,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "a1ef1616af4cf43102f2ae4bb13c4b77da776ac7406b6a8675a67eb67c43a51f",
+      "sourceDigest": "f24da9809b8d0f90c26dd7e8b6812ec861fea39bb2e7b0251148625eb38a9dd0",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14249,7 +14351,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "199a8adefe4877200ac64a73c13616cd893053255e4b0d200e3962e955667cca",
-      "sourceDigest": "fe2c2275c75b429656309ce713559e85ec57e96d2cced8095eed1763052608b6",
+      "sourceDigest": "e69447432113aba160fc2366d2c57fdbbc247a43533cc0a1d266a3820b95f8be",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14516,7 +14618,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "c57bfe4ffa1690615a2b8913fd3ad828599d44584d353948c1ce3fe982e3e4ec",
-      "sourceDigest": "9e5a57de3c1e04f40bf101bdb5e8392de619fd62d8c63e3514f414b42ea53ce4",
+      "sourceDigest": "f855cf0df4d1b7896616e0092651cd26126bdf646b8ee68e4951fa02d657ca90",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -29003,6 +29105,22 @@
         "serialization"
       ]
     },
+    "src/shared/connection-management-wire.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "641c6659954427c018ceea0bf938a8af6dd268bedf63528b630cf35d23c42e69",
+      "sourceDigest": "0a749f3a4225960f4eec6b84298162a58508ce0e4ee8f5dcbe43520ee1e5d745",
+      "boundaries": [
+        "serialization"
+      ]
+    },
     "src/shared/connection-management.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -29014,7 +29132,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d7257b8bbda3a7731bafaa9c6ac9ce22972da63122247d4476d5432999535c5a",
-      "sourceDigest": "e1eefe790a9011a528b0e0e6076ab0e413b842abb3c080f42ba57ac0a92d5da3",
+      "sourceDigest": "ba76b9388cc5fe65244e1976f68d61e4f5e8d5e36432bb569ebc928f0951d5cb",
       "boundaries": [
         "acquisition:symbol:ConnectionResolver"
       ]

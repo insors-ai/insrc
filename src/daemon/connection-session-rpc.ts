@@ -1,0 +1,176 @@
+/** sc5 control protocol and transport admission. No caller JSON grants authority. */
+import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
+import type { ConnectionSessionMethod } from '../shared/connection-management.js';
+import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
+import { ConnectionSessionOwner } from './db/session-owner.js';
+import type { SessionOwnerPorts } from './db/session-owner.js';
+import { ManagementServiceError, managementRejection } from './db/management.js';
+import { connectionManagementEnablement } from './db/management-enablement.js';
+import { lookupRepoId } from '../db/repos.js';
+import type { ForwardRequest, DeliverEnvelope } from './server.js';
+import type { TrustedRpcContext, TrustedConnectionSession } from './request-context.js';
+import type { LocalRequestEnvelope } from './threads/channel.js';
+
+type ChannelKind = 'control' | 'data' | 'unknown';
+interface Claim { readonly kind: 'control' | 'data'; readonly root: string; readonly handle: string }
+export interface SessionRpcRuntime {
+	call(method: ConnectionSessionMethod, value: unknown, context: TrustedRpcContext): Promise<unknown>;
+	ready(): Promise<boolean>;
+}
+export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPorts<Overlay>, 'daemonEpoch'> {
+	readonly enabled: () => Promise<boolean>;
+}
+const SESSION_METHODS: ReadonlySet<string> = new Set(CONNECTION_SESSION_METHODS);
+const SAFE_METADATA: ReadonlySet<string> = new Set(['db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.listDriverKinds']);
+const PREFIX = 'db.connections.v2.session.';
+const fail = (code: 'session-expired' | 'upgrade-required') => new ManagementServiceError(code);
+
+export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
+	readonly #ports: ConnectionSessionRpcPorts<Overlay>;
+	readonly #intents = new Map<string, ChannelKind>();
+	readonly #claims = new Map<string, Claim>();
+	#owner: ConnectionSessionOwner<Overlay> | undefined;
+	#epoch: string | undefined;
+	#closed = false;
+	constructor(ports: ConnectionSessionRpcPorts<Overlay>) { this.#ports = Object.freeze({ ...ports }); }
+	async ready(): Promise<boolean> { return !this.#closed && await this.#ports.enabled() && !this.#closed; }
+	#context(context: TrustedRpcContext): void {
+		if (this.#closed || !context?.connectionIdentity || !context.daemonEpoch || context.signal?.aborted || context.connectionSignal?.aborted) throw fail('session-expired');
+		if (this.#epoch !== undefined && context.daemonEpoch !== this.#epoch) throw fail('session-expired');
+	}
+	#mark(context: TrustedRpcContext, method: string): void {
+		this.#context(context);
+		const kind: ChannelKind = !SESSION_METHODS.has(method) ? 'unknown' : method.endsWith('.attach') ? 'data' : 'control';
+		const old = this.#intents.get(context.connectionIdentity);
+		if (old !== undefined && old !== kind) throw fail('session-expired');
+		this.#intents.set(context.connectionIdentity, kind);
+	}
+	#ownerFor(context: TrustedRpcContext): ConnectionSessionOwner<Overlay> {
+		this.#context(context);
+		if (!this.#owner) {
+			this.#epoch = context.daemonEpoch;
+			this.#owner = new ConnectionSessionOwner({ daemonEpoch: context.daemonEpoch, isRegistered: this.#ports.isRegistered,
+				createOverlay: this.#ports.createOverlay, ...(this.#ports.monotonicNow ? { monotonicNow: this.#ports.monotonicNow } : {}) });
+		}
+		return this.#owner;
+	}
+	async call(method: ConnectionSessionMethod, value: unknown, context: TrustedRpcContext): Promise<unknown> {
+		try {
+			this.#mark(context, method);
+			// Decode before any owner/registry access. The method is not an input flag.
+			const request = method.endsWith('.open') ? parseSessionOpen(value)
+				: method.endsWith('.resume') ? parseSessionResume(value)
+				: method.endsWith('.attach') ? parseSessionAttach(value)
+				: method.endsWith('.delegate') ? parseSessionDelegate(value)
+				: (parseSessionEmpty(value), undefined);
+			if (!SESSION_METHODS.has(method)) throw fail('upgrade-required');
+			// Cleanup must remain available when release evidence is withdrawn.
+			if (method !== 'db.connections.v2.session.end' && !await this.ready()) throw fail('upgrade-required');
+			this.#context(context);
+			const owner = method === 'db.connections.v2.session.end' ? this.#owner : this.#ownerFor(context);
+			if (!owner) throw fail('session-expired');
+			if (method === 'db.connections.v2.session.open') {
+				const { repoRoot } = request as ReturnType<typeof parseSessionOpen>;
+				const result = await owner.open(context, repoRoot);
+				this.#context(context); owner.controlRoot(context);
+				this.#claims.set(context.connectionIdentity, { kind: 'control', root: repoRoot, handle: result.sessionHandle });
+				return result;
+			}
+			if (method === 'db.connections.v2.session.resume') {
+				const result = owner.resume(context, request as ReturnType<typeof parseSessionResume>);
+				this.#claims.set(context.connectionIdentity, { kind: 'control', root: owner.controlRoot(context), handle: result.sessionHandle });
+				return result;
+			}
+			if (method === 'db.connections.v2.session.attach') {
+				const binding = await owner.attach(context, request as ReturnType<typeof parseSessionAttach>);
+				this.#context(context); binding.assertActive();
+				this.#claims.set(context.connectionIdentity, { kind: 'data', root: binding.access.lookupRoot, handle: binding.access.sessionHandle! });
+				return { attached: true, daemonEpoch: context.daemonEpoch, repoRoot: binding.access.lookupRoot,
+					audience: binding.audience, controlGeneration: binding.controlGeneration };
+			}
+			if (method === 'db.connections.v2.session.delegate') {
+				const { repoRoot, audience } = request as ReturnType<typeof parseSessionDelegate>;
+				const result = await owner.delegate(context, repoRoot, audience);
+				this.#context(context); owner.controlRoot(context);
+				this.#claims.set(context.connectionIdentity, { kind: 'control', root: repoRoot, handle: result.sessionHandle });
+				return result;
+			}
+			if (method === 'db.connections.v2.session.heartbeat') return owner.heartbeat(context);
+			const endedClaim = this.#claims.get(context.connectionIdentity);
+			await owner.end(context);
+			if (this.#claims.get(context.connectionIdentity) === endedClaim) this.#claims.delete(context.connectionIdentity);
+			return { status: 'ended' };
+		} catch (error) { return managementRejection(error); }
+	}
+	async #binding(request: LocalRequestEnvelope): Promise<TrustedConnectionSession> {
+		const context = request.trustedContext;
+		if (!context) throw fail('session-expired');
+		this.#context(context);
+		const claim = this.#claims.get(context.connectionIdentity);
+		if (!claim || !this.#owner) throw fail('session-expired');
+		let root = claim.root;
+		if (request.method === 'db.connections.v2.capabilities') {
+			if (request.params !== undefined && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
+			else parseSessionEmpty(request.params);
+		} else parseSessionEmpty(request.params);
+		if (claim.kind === 'data') {
+			if (root !== claim.root) throw fail('session-expired');
+			const binding = this.#owner.dataBinding(context, root);
+			if (binding.access.sessionHandle !== claim.handle) throw fail('session-expired');
+			return binding;
+		}
+		const binding = await this.#owner.controlBinding(context, root);
+		if (binding.access.sessionHandle !== claim.handle) throw fail('session-expired');
+		return binding;
+	}
+	/** Failed/pending attachment stays sticky: never retry that connection as saved-only.
+	 * Data-bearing methods are admitted by their later concrete integration tasks;
+	 * until installed they refuse here before handler/state/provider access.
+	 */
+	forward(next: ForwardRequest): ForwardRequest {
+		return (request, deliver) => {
+			const context = request.trustedContext;
+			const sessionMethod = typeof request.method === 'string' && request.method.startsWith(PREFIX);
+			const claimed = context !== undefined && this.#intents.has(context.connectionIdentity);
+			if (!sessionMethod && !claimed) return next(request, deliver);
+			const reject = (error: unknown) => {
+				const result = managementRejection(error);
+				try { deliver(request.stream
+					? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error: result.message, code: result.code, recoverable: false } } }
+					: { kind: 'reply', requestId: request.requestId, result }); }
+				finally { request.lifetime?.complete(); }
+			};
+			if (sessionMethod) {
+				try {
+					if (!context) throw fail('session-expired');
+					this.#mark(context, request.method);
+					if (!SESSION_METHODS.has(request.method)) throw fail('upgrade-required');
+					if (request.stream) throw new ManagementInputError();
+					return next(request, deliver);
+				} catch (error) { reject(error); return () => {}; }
+			}
+			if (!SAFE_METADATA.has(request.method) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
+			let cancelled = false, cancel: (() => void) | undefined;
+			void this.#binding(request).then(binding => {
+				if (cancelled || request.lifetime?.signal.aborted) { request.lifetime?.complete(); return; }
+				binding.assertActive();
+				const authenticated: LocalRequestEnvelope = { ...request, trustedContext: Object.freeze({ ...context!, connectionSession: binding }) };
+				const checked: DeliverEnvelope = envelope => { try { binding.assertActive(); deliver(envelope); } catch (error) { reject(error); } };
+				cancel = next(authenticated, checked);
+			}).catch(error => { if (!cancelled) reject(error); else request.lifetime?.complete(); });
+			return () => { cancelled = true; request.lifetime?.abort(); if (cancel) cancel(); else request.lifetime?.complete(); };
+		};
+	}
+	disconnect(context: TrustedRpcContext): void {
+		this.#owner?.disconnect(context);
+		this.#claims.delete(context.connectionIdentity); this.#intents.delete(context.connectionIdentity);
+	}
+	stopAdmission(): void { this.#closed = true; this.#owner?.close(); }
+	async close(): Promise<void> { this.stopAdmission(); this.#claims.clear(); this.#intents.clear(); }
+}
+
+export const connectionSessionRuntime = new ConnectionSessionRpc({
+	enabled: async () => (await connectionManagementEnablement(undefined, ['sc5'])).ready,
+	isRegistered: async root => await lookupRepoId(root) !== undefined,
+	createOverlay: () => new Map<string, never>(),
+});

@@ -20,6 +20,7 @@ const MAX_LABEL_LEN = 64;
 interface ConnInfo {
   readonly id:          number;
   readonly connectedAt: number;
+  readonly controller: AbortController;
   label:                string;
   pid?:                 number;
   lastMethod?:          string;
@@ -190,6 +191,7 @@ export class IpcServer {
   /** In-flight requests per open connection: requestId -> the cancel function forward() returned. */
   private readonly inflight = new Map<Socket, Map<string, () => void>>();
   private registryListener: ((clients: AttachedClient[]) => void) | undefined;
+  private connectionCloseListener: ((context: TrustedRpcContext) => void) | undefined;
 
   constructor(private readonly forward: ForwardRequest, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
     this.now = now;
@@ -202,6 +204,12 @@ export class IpcServer {
    */
   onRegistryChange(listener: (clients: AttachedClient[]) => void): void {
     this.registryListener = listener;
+  }
+
+  onConnectionClose(listener: (context: TrustedRpcContext) => void): void { this.connectionCloseListener = listener; }
+
+  private connectionContext(conn: ConnInfo): TrustedRpcContext {
+    return Object.freeze({ connectionIdentity: `${this.daemonEpoch}:${conn.id}`, daemonEpoch: this.daemonEpoch, connectionSignal: conn.controller.signal });
   }
 
   private registryChanged(): void {
@@ -252,13 +260,16 @@ export class IpcServer {
     let buffer = '';
 
     // Register the connection (Story s4) — 'unknown' until a message identifies it.
-    this.conns.set(socket, { id: ++this.connSeq, connectedAt: this.now(), label: 'unknown' });
+    const conn: ConnInfo = { id: ++this.connSeq, connectedAt: this.now(), label: 'unknown', controller: new AbortController() };
+    this.conns.set(socket, conn);
     this.inflight.set(socket, new Map());
     socket.on('close', () => {
       this.conns.delete(socket);
       // Cancel what is still running for this socket: streams abort, unary replies are dropped.
       const running = this.inflight.get(socket);
       this.inflight.delete(socket);
+      conn.controller.abort();
+      try { this.connectionCloseListener?.(this.connectionContext(conn)); } catch { /* No private context in diagnostics. */ }
       for (const cancel of running?.values() ?? []) cancel();
       this.registryChanged();
     });
@@ -331,7 +342,7 @@ export class IpcServer {
     try { cancel = this.forward({
       kind: 'request', requestId, method: request.method, params: request.params, stream: request.stream === true,
       ...(client !== undefined ? { session: client } : {}),
-      trustedContext: Object.freeze({ connectionIdentity: `${this.daemonEpoch}:${conn.id}`, daemonEpoch: this.daemonEpoch }),
+      trustedContext: this.connectionContext(conn),
       ...(lifetime ? { lifetime } : {}),
     }, deliver); }
     catch (error) {

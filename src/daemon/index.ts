@@ -1,4 +1,5 @@
 import { connectionTestSupervisor } from './db/draft-test.js';
+import { connectionSessionRuntime } from './connection-session-rpc.js';
 import { UnderstandingService } from '../understanding/service.js';
 /**
  * Daemon entry point.
@@ -433,7 +434,9 @@ async function main(): Promise<void> {
 	// s2): routed classes go to their workers, everything else runs here.
 	const local = directDispatch(rpcHandlers, streamHandlers);
 	localForward = local;
-	const server = new IpcServer(router?.forward ?? local);
+	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
+	server.onConnectionClose(context => connectionSessionRuntime.disconnect(context));
+	connectionOwners.push({ close: () => connectionSessionRuntime.close() });
 	if (threadServices !== undefined && router !== undefined) {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
 		threadServices.onShutdown(reason => shutdown(reason));
@@ -505,6 +508,7 @@ async function main(): Promise<void> {
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
+			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
 			understandingRoutes.stop();

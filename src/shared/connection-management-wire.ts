@@ -1,5 +1,5 @@
 /** Structural wire validation only. Signature, registry rights and driver fields are daemon gates. */
-import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket, DraftTestRequest, DraftTestResult, TestCancellation } from './connection-management.js';
+import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket, DraftTestRequest, DraftTestResult, TestCancellation, SessionOpen, SessionResume, SessionDataAttach, SessionDelegate } from './connection-management.js';
 
 export class ManagementInputError extends Error {
  readonly code: 'invalid-input' | 'operation-mismatch';
@@ -19,6 +19,35 @@ function text(value: unknown): asserts value is string {
  if (typeof value !== 'string' || value.length === 0 || value.length > 16384 || /[\u0000-\u001f]/.test(value)) throw new ManagementInputError();
 }
 function scope(value: unknown): void { if (value !== 'saved' && value !== 'temporary') throw new ManagementInputError(); }
+
+export const CONNECTION_SESSION_MAX_BYTES = 64 * 1024;
+/** Session payloads contain only bounded primitive fields. Reject accessors before reading them. */
+function sessionObject(value: unknown, required: readonly string[]): Record<string, unknown> {
+ const o = object(value === undefined ? {} : value); keys(o, required);
+ if (Object.getOwnPropertySymbols(o).length || Object.values(Object.getOwnPropertyDescriptors(o)).some(d => !d.enumerable || !Object.hasOwn(d,'value'))) throw new ManagementInputError();
+ for (const child of Object.values(o)) text(child);
+ if (Buffer.byteLength(JSON.stringify(o)) > CONNECTION_SESSION_MAX_BYTES) throw new ManagementInputError();
+ return o;
+}
+function sessionToken(o: Record<string, unknown>): void {
+ if (!/^[A-Za-z0-9_-]{43}$/.test(o['sessionHandle'] as string) || !/^[A-Za-z0-9_-]{43}$/.test(o['capability'] as string)
+  || (o['daemonEpoch'] as string).length > 128) throw new ManagementInputError();
+}
+export function parseSessionOpen(value: unknown): SessionOpen {
+ sessionObject(value,['repoRoot']); return value as SessionOpen;
+}
+export function parseSessionResume(value: unknown): SessionResume {
+ sessionToken(sessionObject(value,['sessionHandle','capability','daemonEpoch'])); return value as SessionResume;
+}
+export function parseSessionAttach(value: unknown): SessionDataAttach {
+ sessionToken(sessionObject(value,['sessionHandle','capability','daemonEpoch','repoRoot'])); return value as SessionDataAttach;
+}
+export function parseSessionDelegate(value: unknown): SessionDelegate {
+ const o=sessionObject(value,['repoRoot','audience']);
+ if(o['audience']!=='workbench-ui'&&o['audience']!=='mcp-unverified')throw new ManagementInputError();
+ return value as SessionDelegate;
+}
+export function parseSessionEmpty(value: unknown): void { sessionObject(value,[]); }
 function mode(value: unknown): void { if (typeof value !== 'string' || !['create','update','remove'].includes(value)) throw new ManagementInputError(); }
 export const DRAFT_TEST_MAX_BYTES = 256 * 1024;
 export function assertDraftTestUuid(value: unknown): asserts value is string {

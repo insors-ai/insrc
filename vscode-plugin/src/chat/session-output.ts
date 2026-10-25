@@ -158,7 +158,14 @@ export interface SessionOutputDeps {
 export interface SessionOutput {
   beginTurn(sessionId: string, turnId: string): Promise<TurnSegment>;
   endTurn(sessionId: string, turnId: string, exit: TurnExit): Promise<void>;
-  tail(cursor: SegmentCursor, opts: { readonly finished: () => boolean; readonly signal?: AbortSignal | undefined }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
+  tail(cursor: SegmentCursor, opts: {
+    readonly finished: () => boolean;
+    readonly signal?: AbortSignal | undefined;
+    /** Reconstruct state from this turn's marker, without replaying another turn. */
+    readonly fromTurnStart?: boolean | undefined;
+    /** Bounded prefix read: complete lines ending at/before this byte offset; never polls. */
+    readonly beforeOffset?: number | undefined;
+  }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
   /** The last part of the current turn's stderr ('' when there is none). */
   errTail(sessionId: string): string;
   /** Deletes a session's files (its session was removed). */
@@ -268,8 +275,18 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
 
     async *tail(cursor, opts) {
+      if (opts.signal?.aborted === true) return;
       const file = await fileFor(cursor);
       let offset = cursor.offset;
+      const limit = opts.beforeOffset;
+      if (opts.fromTurnStart === true) {
+        const anchor = await turnStartOffset(file, cursor.turnId);
+        if (anchor === undefined) throw new SegmentGone(cursor);
+        offset = anchor;
+      }
+      if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < offset || limit > ((await fs.size(file)) ?? 0))) {
+        throw new SegmentGone(cursor);
+      }
       if (offset > ((await fs.size(file)) ?? 0)) {
         // The file is shorter than the cursor (truncated or replaced): re-anchor at the turn's start.
         const anchor = await turnStartOffset(file, cursor.turnId);
@@ -280,9 +297,11 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       let pending: Buffer = Buffer.alloc(0);
       for (;;) {
         if (opts.signal?.aborted === true) return;
+        const remaining = limit === undefined ? READ_CHUNK : limit - offset - pending.length;
+        if (remaining <= 0) return; // a checkpoint in a partial line does not make that line complete
         // Read finished() BEFORE reading, so bytes written just before the writer finished are not missed.
         const done = opts.finished();
-        const chunk = await fs.readRange(file, offset + pending.length, READ_CHUNK);
+        const chunk = await fs.readRange(file, offset + pending.length, Math.min(READ_CHUNK, remaining));
         if (chunk.length > 0) {
           pending = pending.length === 0 ? chunk : Buffer.concat([pending, chunk]);
           for (let nl = pending.indexOf(0x0a); nl !== -1; nl = pending.indexOf(0x0a)) {
@@ -299,6 +318,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           }
           continue; // there may be more right away
         }
+        if (limit !== undefined) return; // bounded reconstruction never waits or flushes a partial line
         if (done) {
           // The writer has finished: an unterminated last line is complete now.
           if (pending.length > 0) {

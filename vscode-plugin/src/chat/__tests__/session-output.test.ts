@@ -218,3 +218,48 @@ test("remove deletes a session's files; sweep removes old files of sessions not 
   clock += 1;
   await createSessionOutput({ root: join(dir, 'missing') }).sweep({ olderThanMs: 1, keep: new Set() });
 });
+
+test('bounded prefix selects only requested turn and complete pre-checkpoint lines', async () => {
+  const out = createSessionOutput({ root: root(), pollMs: 5 });
+  const old = await out.beginTurn('prefix', 'old');
+  appendFileSync(old.outPath, 'old reply\n');
+  await out.endTurn('prefix', 'old', { code: 0, signal: null });
+  const seg = await out.beginTurn('prefix', 'wanted');
+  const first = 'α reply\n';
+  appendFileSync(seg.outPath, first + 'second\nafter checkpoint\n');
+  const offset = seg.cursor.offset + Buffer.byteLength(first + 'second\n');
+  const saved = { ...seg.cursor, offset };
+  const read = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: offset, finished: () => false }));
+  await read.done;
+  assert.deepEqual(read.lines, ['α reply', 'second']);
+  assert.equal(read.cursors.at(-1)?.offset, offset);
+  const partial = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: offset - 2, finished: () => true }));
+  await partial.done;
+  assert.deepEqual(partial.lines, ['α reply'], 'partial boundary line is not replayed');
+  const empty = follow(out.tail(seg.cursor, { fromTurnStart: true, beforeOffset: seg.cursor.offset, finished: () => false }));
+  await empty.done;
+  assert.deepEqual(empty.lines, []);
+});
+
+test('bounded prefix terminates while writer lives; abort, rotated generation and missing marker', async () => {
+  const out = createSessionOutput({ root: root(), maxBytes: 1, pollMs: 5 });
+  const seg = await out.beginTurn('prefix', 'wanted');
+  appendFileSync(seg.outPath, 'reply\n');
+  const saved = { ...seg.cursor, offset: seg.cursor.offset + Buffer.byteLength('reply\n') };
+  const live = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false }));
+  await live.done;
+  assert.deepEqual(live.lines, ['reply']);
+  const next = await out.beginTurn('prefix', 'next'); // wanted is now in previous generation
+  appendFileSync(next.outPath, 'new reply\n');
+  const rotated = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false }));
+  await rotated.done;
+  assert.deepEqual(rotated.lines, ['reply']);
+  const controller = new AbortController();
+  controller.abort();
+  const aborted = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false, signal: controller.signal }));
+  await aborted.done;
+  assert.deepEqual(aborted.lines, []);
+  await assert.rejects(follow(out.tail({ ...saved, turnId: 'missing' }, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false })).done, SegmentGone);
+  await out.beginTurn('prefix', 'third'); // wanted generation is gone
+  await assert.rejects(follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false })).done, SegmentGone);
+});

@@ -18,7 +18,7 @@ export const viewShape: Shape = { item: Type.Object({ ...KeyId, transitions: Typ
 export const searchShape: Shape = { count: Type.Number(), items: Type.Array(Type.Object(KeyId)) };
 export const countShape: Shape = { count: Type.Number() };
 export const attachmentListShape: Shape = { count: Type.Number(), attachments: Type.Array(Type.Unknown()) };
-export const watcherListShape: Shape = { count: Type.Number(), watchers: Type.Array(Type.Object({ accountId: Type.Optional(Type.String()), displayName: Type.Optional(Type.String()) })) };
+export const watcherListShape: Shape = { count: Type.Number(), watchers: Type.Array(Type.Object({ accountId: Type.Optional(Type.Union([Type.String(), Type.Null()])) })) };
 export const commentListShape: Shape = { total: Type.Number(), isLast: Type.Boolean(), comments: Type.Array(Type.Unknown()) };
 /** One of the two, by the lookup asked for. */
 export const visibilityShape: Shape = {

@@ -45,6 +45,10 @@ test('jira-output-schemas.test.ts: each shape accepts its recorded answer, passe
     assert.equal(ok({ op: name === 'types' ? 'view' : 'types', ...answer }), false, `${name} answer under an op whose shape it does not fit`);
     assert.equal(ok({ op: 'nope', ...answer }), false, `${name} answer under an unknown op`);
   }
+  // a watcher is typed by its accountId only: a null displayName or a null accountId is not a failure
+  assert.equal(ok({ op: 'watcher-list', count: 1, watchers: [{ accountId: 'a', displayName: null, emailAddress: null }] }), true);
+  assert.equal(ok({ op: 'watcher-list', count: 1, watchers: [{ accountId: null }] }), true);
+  assert.equal(ok({ op: 'watcher-list', count: 1, watchers: [{ accountId: 5 }] }), false);
   // the roles variant of visibility, and a signed-out status
   assert.equal(ok({ op: 'visibility', roles: ['Administrators'] }), true);
   assert.equal(ok({ op: 'status', signedIn: false }), true);

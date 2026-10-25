@@ -50,3 +50,11 @@ test('CM-S2-B1: disconnect cancels a real stalled worker and waits owned child r
   await connected;lifetime.abort();assert.equal((await pending).status,'canceled');lifetime.complete();await lifetime.drained;assert.equal(supervisor.activeCount,0);
  }finally{for(const socket of sockets)socket.destroy();await new Promise<void>(r=>server.close(()=>r()));await supervisor.shutdown();}
 });
+
+test('CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains',async()=>{
+ const supervisor=new DraftTestSupervisor(),lifetime=new RequestLifetime();let release!:()=>void;
+ const wait=new Promise<void>(r=>{release=r;});const pending=supervisor.run(request('/tmp'),context(lifetime),async signal=>{await wait;signal.throwIfAborted();throw new Error();});
+ let stopped=false;const shutdown=supervisor.shutdown().then(()=>{stopped=true;});assert.equal((await pending).status,'canceled');
+ assert.throws(()=>supervisor.run(request('/tmp'),context(new RequestLifetime()),async()=>{throw new Error();}),/busy/);
+ await Promise.resolve();assert.equal(stopped,false);assert.equal(supervisor.activeCount,1);lifetime.complete();release();await lifetime.drained;await shutdown;assert.equal(supervisor.activeCount,0);
+});

@@ -6,6 +6,12 @@ export interface ManagementEnablement {
 	readonly ready: boolean;
 	readonly digest: string;
 }
+export const CONNECTION_TEST_GATE_FILES = [
+	'bin/insrc-connection-test', 'daemon/db/draft-test', 'daemon/db/draft-probe', 'daemon/db/probe-kinds',
+	'daemon/request-context', 'daemon/server', 'daemon/threads/channel', 'daemon/threads/router',
+	'daemon/threads/maintenance-entry', 'daemon/connection-management-rpc', 'daemon/db-rpc',
+	'daemon/db/runtime-config', 'daemon/db/dynamo-identity', 'shared/logger',
+] as const;
 export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url)): Promise<ManagementEnablement> {
 	try {
 		const evidence = JSON.parse(await readFile(evidenceUrl, 'utf8')) as {
@@ -17,11 +23,13 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 			testReportDigest: string;
 			scopes: string[];
 		};
-		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc8'].some(scope => !evidence.scopes?.includes(scope)))
+		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'].some(scope => !evidence.scopes?.includes(scope)))
 			throw new Error();
 		const files = import.meta.url.endsWith('.ts') ? evidence.sourceFiles : evidence.compiledFiles;
 		if (!files || Object.keys(files).length < 10)
 			throw new Error();
+		const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js';
+		if (CONNECTION_TEST_GATE_FILES.some(path => !Object.hasOwn(files, path + extension))) throw new Error();
 		for (const [path, expected] of Object.entries(files)) {
 			if (path.startsWith('/') || path.split('/').includes('..') || !/^[a-f0-9]{64}$/.test(expected))
 				throw new Error();

@@ -1,3 +1,4 @@
+import { connectionTestSupervisor } from './db/draft-test.js';
 import { UnderstandingService } from '../understanding/service.js';
 /**
  * Daemon entry point.
@@ -503,6 +504,7 @@ async function main(): Promise<void> {
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
+			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
 			understandingRoutes.stop();
 			clearInterval(pruneTimer);
@@ -516,6 +518,7 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
+			await connectionTestSupervisor.shutdown();
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();
 			// closeDb() is a no-op post-LMDB migration (kept for

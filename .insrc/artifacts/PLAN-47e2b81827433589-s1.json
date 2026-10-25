@@ -1,0 +1,226 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792924251303-8zb69p",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:32:15.378Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 83346,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "epicSlug": "give-code-review-adherence-functional-coverage",
+    "storyId": "s1",
+    "lldRunId": "wf-1792923694985-ba40bw",
+    "lldEffectiveHash": "3efd443b024fe1b11872d683c00b933be9e60ddb56a3bfdc3b6181118075e297",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d42d186bb391883e041f704e50b65bb8f5b9578380cd629e69ddc789ddb605c",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:40:42.770Z"
+      }
+    },
+    "rangeBase": "a3d4990eab73254262d5bbf75e949d718c5bfef1"
+  },
+  "body": {
+    "summary": {
+      "prose": "Reuse the existing read-only reviewer sessions so adherence and functional-coverage judgments can inspect implementation. Update shared divided-review prompts and conservative evidence outcomes, then prove that real omissions remain findings and the four prior false HIGH findings disappear on the affected Story.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add opt-in source-inspecting execution and divided prompts",
+        "summary": "Extend ModelDimensionSpec with source-inspection opt-in; use existing reviewer-session execution with code-review timeout/silence limits. Update shared chunk and gather builders for opt-in-aware source inspection in chunk, obligation, relation and reduction calls, preserving citations/uncertainty and other dimensions.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Opted-in single/chunk/gather/relation/reduction calls select reviewer-session mode, repo cwd and existing deadlines; no summary-only or closed-evidence instruction remains on those calls.",
+          "Shared prompts allow read-only Read/Grep/Glob and Codex commands, prohibit writes/test execution, preserve source citations and uncertainty; absent opt-in retains current behavior.",
+          "Regression tests cover execution roles, retry/deadline propagation and missing-session failure without fabricated pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Source-inspection opt-in reaches single, chunk, obligation, relation and reduction calls with bounded read-only sessions; unchanged dimensions retain structured mode."
+          },
+          {
+            "level": "unit",
+            "name": "Shared prompts preserve source citations and uncertainty; no summary-only/closed-evidence assumptions for opted-in calls."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Ground both dimension verdicts in source evidence",
+        "summary": "Opt adherence and functional coverage into source inspection; revise single/divided guidance, require confidence and normalize unverified or legacy confidence gaps LOW. Preserve source-proven omissions, scope/FR filters and no-contract behavior. Extend fixtures to read-only sessions.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Both dimensions check relevant source/helpers before breach; summaries and absent notes never prove missing implementation.",
+          "HIGH/MED observations and legacy missing confidence normalize to LOW observation; explicit source-proven full or partial breaches retain appropriate severity and real code location.",
+          "Tests for both dimensions and both paths distinguish helper-implemented behavior absent from summaries, genuinely omitted behavior, missing notes, unreadable source, out-of-scope locations and invalid FR ids."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Both dimension prompts/schema/results distinguish proven breach, LOW observation and legacy missing confidence while preserving filters."
+          },
+          {
+            "level": "integration",
+            "name": "Both dimensions in single/divided pipeline: helper implementation missing from summaries passes, genuine omission remains HIGH, missing notes/unreadable source remain LOW."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Validate regression on the affected Story and record build evidence",
+        "summary": "Run affected pipeline/dimension tests and build; use updated code for source-backed re-review of b7a68147dcf72034 s4, assert the four false HIGH findings do not recur. Preserve original historical review; record commands, results and source dispositions. Complete mandatory code review for this Story.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Affected suites and npm run build pass; results recorded with commands and test counts.",
+          "Updated-code s4 re-review provides source-backed dispositions for all four prior false HIGH findings and none recur; unavailable live verification leaves acceptance outstanding.",
+          "This Story has build validation and independent code review; present resulting records for approval without auto-approval."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Affected review-pipeline and dimension suites plus npm run build pass."
+          },
+          {
+            "level": "live",
+            "name": "Updated-code b7a68147dcf72034 s4 re-review: all four prior false HIGH findings absent, with source-backed dispositions."
+          },
+          {
+            "level": "live",
+            "name": "Independent mandatory code review completes Story s1 BUILD."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "adherence prompt/schema/result tests",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "functional-coverage prompt/schema/result tests",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "modelDimensionAdapter",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "codeReviewGather",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runReviewJob",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Story s4 prior four HIGH findings",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Mandatory post-build code review for this Story",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges ModelDimensionSpec and shared prompt builders"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 finding invariants, errorPaths and testStrategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration and ac3 live regression"
+    }
+  ]
+}

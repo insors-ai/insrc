@@ -26,6 +26,7 @@
  * applies the dimension's own result filters once over the whole (finalize).
  */
 
+import { SOURCE_INSPECTION_RULES } from '../../code-review/source-inspection.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
 import { envelopeMessages, promptChars } from '../envelope.js';
@@ -161,7 +162,10 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const ref = expectationRefOf(obligation);
 		const system = [
 			chunk.obligationFraming ?? chunk.framing,
-			'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
+			chunk.sourceInspection
+				? 'This review was DIVIDED into chunks. Judge ONE obligation using source inspection and the notes as navigation. Missing notes are missing evidence, never proof that implementation is absent. Read the relevant changed files and helpers before deciding.'
+				: 'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
+			...(chunk.sourceInspection ? [SOURCE_INSPECTION_RULES] : []),
 			chunk.judge ?? '',
 			`${refRule(ref)}, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name), never at an evidence note id.`,
 			'If the obligation is met, return an EMPTY findings array. Never manufacture findings.',
@@ -188,6 +192,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const system = [
 			`You condense evidence notes from a divided ${dimension} code review into ONE note, at most ${cap} characters.`,
 			'Keep every fact a judgement of the obligation needs: what the code does, where (the symbols named), and anything that departs from or only partly meets it. Drop repetition, never a departure.',
+			...(chunk.sourceInspection ? [SOURCE_INSPECTION_RULES, 'Preserve inspected source file:line citations and uncertainty. Never turn an unverified note into a proven breach, or an absence of notes into absent implementation. Condense these notes; do not invent new source evidence.'] : []),
 		].join('\n');
 		const user = [
 			`## Obligation ${key}`,
@@ -212,6 +217,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const build = (full: readonly ReviewAtom[], summarised: ReviewAtom | undefined): { messages: LLMMessage[]; schema: StructuredSchema; execution: ExecutionMode; key: string } => {
 			const system = [
 				chunk.framing,
+				...(chunk.sourceInspection ? [SOURCE_INSPECTION_RULES] : []),
 				`This review was DIVIDED into chunks. You judge ONE call that crosses chunks: ${caller.label} calls ${callee.label}. Judge whether the caller's use matches the callee: the arguments it passes, how it uses the return value, and the callee's error contract.`,
 				chunk.relation ?? '',
 				`A mismatch is a finding located at the CALLER: \`file:line\` in its file, ${JSON.stringify(caller.file ?? caller.label)}, with its name, ${JSON.stringify((JSON.parse(caller.text) as { name?: string }).name ?? caller.id)}, in the message. Name a counterpart (counterpartRef) only as one of the two symbols. If the call matches, return an EMPTY findings array.`,

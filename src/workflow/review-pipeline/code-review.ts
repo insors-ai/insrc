@@ -33,7 +33,7 @@ import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
-import { structuredLimits } from '../review/call-limits.js';
+import { REVIEW_CALL_LIMITS, structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
 
 const log = getLogger('review-pipeline:code-review');
@@ -76,6 +76,8 @@ function groundingOf(snapshot: ReviewMaterialSnapshot): GroundingFacts {
 /** A model dimension: today's prompt (with today's correction note on a re-issue), schema and mapping. */
 export interface ModelDimensionSpec<O> {
 	readonly dimension: ReviewDimension;
+	/** Inspect source using the existing read-only reviewer session, rather than summaries alone. */
+	readonly sourceInspection?: boolean | undefined;
 	readonly schema:    StructuredSchema;
 	readonly prompt:    (grounding: CodeReviewGrounding, mode: 'full' | 'degraded', note: string | undefined) => LLMMessage[];
 	/** Today's mapping and filters, applied once over the dimension's answer. */
@@ -153,7 +155,10 @@ function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: Re
  */
 export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
-	const execution = { mode: 'structured' as const, cwd: subject.repoPath, ...structuredLimits('code-review') };
+	const execution = spec.sourceInspection
+		? { mode: 'reviewer-session' as const, cwd: subject.repoPath, tools: 'read-only' as const, deadlineMs: REVIEW_CALL_LIMITS['code-review'].timeoutMs!, stallMs: REVIEW_CALL_LIMITS['code-review'].silenceMs }
+		: { mode: 'structured' as const, cwd: subject.repoPath, ...structuredLimits('code-review') };
+	const chunkSpec = spec.chunk === undefined ? undefined : { ...spec.chunk, sourceInspection: spec.sourceInspection };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
 	// obligations and their context. From the snapshot and the saved subject only, so it
 	// is built once and every caller reads the same material: the pipeline asks for it
@@ -185,7 +190,6 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 			return [{ id: 'skip', kind: 'deterministic', after: [], onCallFailure: 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async () => spec.skip!() }];
 		}
 		void stagePath;
-		const chunkSpec = spec.chunk;
 		const judge: AdapterStage = {
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
@@ -209,8 +213,8 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		neighbourSummary,
 		stagesFor: stages,
 		// Story s3: a divided review judges each obligation once, over every chunk's notes.
-		...(spec.chunk !== undefined && spec.skip === undefined
-			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: spec.chunk, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles, finalize }) }
+		...(chunkSpec !== undefined && spec.skip === undefined
+			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: chunkSpec, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles, finalize }) }
 			: {}),
 		finish: (outputs, ctx) => {
 			if (spec.skip !== undefined) return outputs['skip'] as DimensionResult;

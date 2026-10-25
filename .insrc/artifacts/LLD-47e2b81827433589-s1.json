@@ -1,0 +1,398 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792923694985-ba40bw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:22:32.607Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 56829,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "epicSlug": "give-code-review-adherence-functional-coverage",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792923694985-ba40bw",
+    "hldEffectiveHash": "3efd443b024fe1b11872d683c00b933be9e60ddb56a3bfdc3b6181118075e297",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "094d05cd55842c5b3c11814310dcc48e84eeeb9a3c91a9f79f81a4450f5f9078",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-10-25T10:24:20.582Z",
+        "report": {
+          "entityId": "LLD-47e2b81827433589-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-f85306c175315831146586bdd663f38a"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:30:49.706Z"
+      }
+    },
+    "rangeBase": "781eef2610064433864e907962813da012d06683"
+  },
+  "body": {
+    "summary": {
+      "prose": "Adherence and functional-coverage reviews will inspect source in read-only reviewer sessions instead of judging implementation from symbol summaries alone. Both single-call and divided reviews will distinguish a source-demonstrated breach from an inability to verify behavior, retaining real defects while downgrading evidence gaps to LOW observations.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix approved ISSUE-47e2b81827433589: source-ground adherence and functional-coverage judges in single and divided review paths; missing evidence must be LOW unverified observation, proven omissions remain findings. Include regression tests and re-review b7a68147dcf72034 s4."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "modelDimensionAdapter",
+          "signature": "modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars?: number, path?: ReviewPath): ReviewAdapter<DimensionResult>",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "ModelDimensionSpec<O>",
+              "purpose": "Dimension-owned opt-in to read-only source inspection; existing other specs keep structured execution.",
+              "optional": false
+            },
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Approved contract, changed-file scope and repo cwd.",
+              "optional": false
+            },
+            {
+              "name": "snapshot",
+              "type": "ReviewMaterialSnapshot",
+              "purpose": "Prepared grounding snapshot; summaries remain navigation context.",
+              "optional": false
+            },
+            {
+              "name": "limitChars",
+              "type": "number",
+              "purpose": "Existing chunk limit.",
+              "optional": true
+            },
+            {
+              "name": "path",
+              "type": "ReviewPath",
+              "purpose": "Existing daemon/controller behavior.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ReviewAdapter<DimensionResult>",
+            "meaning": "Adherence/functional coverage use reviewer-session execution for every model call including judge, chunk, obligation gather, relation and reduction, preserving serial driver and existing limits."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Reviewer session unavailable or invocation/validation fails: existing pipeline failure/retry, never fabricated pass."
+            }
+          ],
+          "preconditions": [
+            "Existing subject and snapshot contracts hold."
+          ],
+          "postconditions": [
+            "Source-read instructions permit Read/Grep/Glob and read-only commands such as rg and sed for Codex; no writes or test execution.",
+            "Single/chunk/gather prompts explicitly identify summaries and NO_EVIDENCE as incomplete navigation evidence, never proof of absence.",
+            "Proven breaches require actual source location and explanation after checking relevant helpers; missing/unreadable/deleted/inadequate evidence is confidence observation and severity LOW.",
+            "Other review dimensions preserve existing execution.",
+            "Shared chunk and gather builders must opt out of their current summary-only and notes-are-whole-evidence instructions for these dimensions, including obligation, relation and reduction prompts; preserve citations and uncertainty during reduction."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ModelDimensionSpec",
+        "change": "field-add",
+        "details": "Add optional source-inspection opt-in consumed only by the adapter; absent preserves compatibility. One spec owns many calls (1:N); adapter passes chosen execution to chunk and gather, each call routes through existing driver to exactly one read-only session. No persistence or public IPC schema changes. Explicitly update src/workflow/review-pipeline/adapters/code-review-chunk.ts and src/workflow/review-pipeline/adapters/code-review-gather.ts: opt-in-aware chunk, obligation, relation and reduction prompts must remove summary-only and closed-evidence assumptions, permit read-only source inspection, and preserve source citations and uncertainty through reductions. Other dimensions retain existing prompt behavior.",
+        "callSites": [
+          "src/workflow/review-pipeline/code-review.ts",
+          "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
+          "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+        ]
+      },
+      {
+        "entity": "Adherence and functional-coverage findings",
+        "change": "invariant-change",
+        "details": "Require explicit confidence breach|observation in new model outputs. toResult normalizes observations to LOW; legacy missing confidence is conservatively LOW observation. Breach means source was inspected and demonstrated the specific omission/departure; message cites concrete source and limitation. This does not demote genuine partial implementations proven in source. Chunk notes retain source locations and uncertainty; gather rechecks source rather than converting an empty notes set to a breach. Existing changed-file and known-FR filters remain.",
+        "callSites": [
+          "src/workflow/code-review/dimensions/adherence.ts",
+          "src/workflow/code-review/dimensions/functional-coverage.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Source unavailable, deleted or insufficient to establish the clause",
+          "detection": "Reviewer attempts source inspection and records missing/read-denied evidence or unresolved helper/context; absent chunk notes alone never establish absence.",
+          "response": "LOW observation identifying what could not be verified, not unimplemented expectation.",
+          "userImpact": "Review exposes evidence gap without false blocking defect.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Session missing, timeout, invalid schema or provider failure",
+          "detection": "Existing driver detects unavailable runReviewSession, thrown invocation or failed output validation.",
+          "response": "Existing bounded retry and not-judged/failure behavior; never manufacture pass or implementation absence.",
+          "userImpact": "Explicit review failure or incomplete evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Source differs during review",
+          "detection": "Reviewer sees inconsistent source versus supplied summary or file change while tracing the clause.",
+          "response": "Identify inspected version and uncertainty; unresolved behavior is LOW observation, do not assert missing implementation from stale summaries.",
+          "userImpact": "User can rerun on stable tree.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Behavior present in helper but absent from symbol summary",
+          "expected": "Inspect caller/helper; no unimplemented finding when source establishes behavior."
+        },
+        {
+          "input": "Genuine missing or partial implementation demonstrated by source",
+          "expected": "Retain appropriate HIGH/MED breach at real changed code location with approved expectation ref."
+        },
+        {
+          "input": "No chunk records an obligation",
+          "expected": "Gather inspects source before concluding; if still unverified, LOW observation."
+        },
+        {
+          "input": "Legacy finding with absent confidence or observation labeled HIGH",
+          "expected": "Normalize to LOW observation; explicit source-demonstrated breach retains severity."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Existing changed-file filters, FR reference filters, chunk/gather ordering and serial provider calls remain, as found by s1 adapter exploration.",
+          "source": "c1"
+        },
+        {
+          "text": "No provider REST access or edit permissions; reuse existing provider/driver interface only.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Both dimensions require source inspection, emit explicit confidence, normalize evidence gaps LOW while retaining genuine HIGH/MED breaches and filters.",
+          "subjects": [
+            "adherence prompt/schema/result tests",
+            "functional-coverage prompt/schema/result tests"
+          ],
+          "fixturesNeeded": [
+            "Implemented behavior omitted from summaries",
+            "Actual source-proven omission",
+            "Unreadable source and missing confidence"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise real pipeline with recording fake read-only session provider and force single/divided paths; verify all execution roles, missing notes, source-read instructions, retries and unchanged other dimensions.",
+          "subjects": [
+            "modelDimensionAdapter",
+            "codeReviewGather",
+            "runReviewJob"
+          ],
+          "fixturesNeeded": [
+            "Temporary repo with helper-implemented clause",
+            "Provider records actual prompts/execution and reads fixture source without writes",
+            "Missing-note obligation and proven omission"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "After build, re-review b7a68147dcf72034 s4 with updated runtime; provide source-backed dispositions and assert the four round-2 summary-induced false HIGH findings do not recur. Unavailable verification is outstanding acceptance evidence, not a passing result.",
+          "subjects": [
+            "Story s4 prior four HIGH findings",
+            "Mandatory post-build code review for this Story"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Both judges single/divided calls use read-only sessions with source-read guidance."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Implemented fixture omitted from summaries passes; evidence gaps and missing-note cases LOW; actual omitted behavior remains HIGH breach for both dimensions."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Re-review b7a68147dcf72034 s4 using updated code: source-backed dispositions demonstrate that none of the four round-2 summary-induced false HIGH findings recur. Unavailable live verification leaves ac3 outstanding, never passing.",
+            "Affected suite and TypeScript build pass."
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict, executed with tsx; existing *.test.ts convention"
+    },
+    "migration": {
+      "stateBefore": "s1 analyze adapter exploration and source inspection show structured completion calls on symbol summaries; adherence and functional-coverage gather infer unimplemented behavior from missing notes.",
+      "stateAfter": "Two dimensions opt into read-only source-inspecting reviewer sessions, source-proven breaches retain severity and evidence gaps become LOW observations on both pipeline paths.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add optional dimension source-inspection selection and propagate existing reviewer execution/limits through all generated calls.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Update both dimensions' single and divided prompts, confidence schemas and conservative observation normalization; add regressions.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Build and validate; run mandatory Story review and targeted s4 re-review on updated runtime. Do not silently restart or deploy an installed daemon; if the connected runtime is stale, use isolated temporary-home runtime or document the exact blocked live verification.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public IPC, DB or provider interface changes. Other dimensions retain structured execution. Existing CR records remain historical; no rewrite or automatic approval. Legacy missing-confidence output is normalized LOW observation when processed by revised dimensions.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Read-only reviewer sessions with explicit evidence outcomes",
+        "oneLineSummary": "Reuse existing reviewer-session execution for the two dimensions and require source checks.",
+        "approach": "Opt adherence and functional coverage into existing read-only reviewer-session execution for single, chunk and gather calls. Prompts require inspecting changed source with platform-appropriate read commands, recording source-grounded evidence versus unverified observations, and never inferring absence from summaries. Gather may read source to resolve gaps. Preserve existing chunk orchestration.",
+        "pros": [
+          "Reuses existing CLI/Ollama reviewer capability and driver",
+          "No raw file dumps or context-size expansion",
+          "Checks helpers and tests when source alone needs context"
+        ],
+        "cons": [
+          "Live session readings must be explicitly prompted and regression tested",
+          "Longer model calls; source can change during a review, which must be reported if detected"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Frozen source evidence atoms",
+        "oneLineSummary": "Snapshot changed files and feed line-numbered source through chunked material.",
+        "approach": "Extend grounding with exact line-numbered changed source, provenance and unavailable status; prepare source snapshots and divide into bounded source atoms while retaining summaries as context. Judge and gather consume source evidence rather than live reads.",
+        "pros": [
+          "Reproducible source snapshot",
+          "Usable without tool-reading model sessions"
+        ],
+        "cons": [
+          "Substantial changes to material atoms and chunk sizing",
+          "Raw source payload conflicts with structured-context project rule unless carefully excerpted",
+          "Cross-file helper context still needs expansion"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Larger atom and grounding redesign with source-dump tension; no need to introduce it for this defect."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]",
+      "quotedText": "Review adapter depends on material, chunk, gather and obligation adapters; graph incomplete, direct source corroborated."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts:153"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/functional-coverage.ts:148"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-47e2b81827433589"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/driver.ts:78"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-chunk.ts:139"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-gather.ts:157"
+    }
+  ]
+}

@@ -26,11 +26,13 @@
  * correction always fits beside the call (s1 leaves out one that would not).
  */
 
+import { SOURCE_INSPECTION_RULES } from '../../code-review/source-inspection.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { ExecutionMode, ReviewCall, ReviewChunk, ReviewMaterial, StageAnswer } from '../types.js';
 
 /** What a dimension supplies for its chunk calls. */
 export interface ChunkSpec {
+	readonly sourceInspection?: boolean | undefined;
 	readonly kind:       'notes' | 'coverage' | 'quality';
 	/** The dimension's framing: what it judges, in today's words. */
 	readonly framing:    string;
@@ -139,7 +141,9 @@ const OUTPUT: Record<ChunkSpec['kind'], string> = {
 export function chunkCall(spec: ChunkSpec, chunk: ReviewChunk, material: ReviewMaterial, execution: ExecutionMode): { readonly messages: LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode } {
 	const system = [
 		spec.framing, DIVIDED, ...RULES[spec.kind],
-		'Use only the keys listed and only the entityIds of the symbols in this chunk. Reason only over the structured symbol summaries provided.',
+		'Use only the keys listed and only the entityIds of the symbols in this chunk.',
+		spec.sourceInspection ? SOURCE_INSPECTION_RULES : 'Reason only over the structured symbol summaries provided.',
+		...(spec.sourceInspection ? ['In each note preserve inspected source file:line citations, what was checked, and any uncertainty. Summaries only identify where to start reading.'] : []),
 	].join('\n');
 	const user = [
 		...(material.obligations.length > 0

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -137,3 +137,39 @@ Run at 2026-10-25T20:16:58.847Z on commit `1658a515d`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/tier-resolution.test.ts` | 0 | 3 | 0.8 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.3 s |  |
+
+## t4
+
+Run at 2026-10-25T20:25:26.517Z on commit `0fc29d4df`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: role-router-global-tiers.test.ts: a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | role-router-global-tiers.test.ts: a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps | `src/analyze/context/__tests__/role-router-global-tiers.test.ts` |
+
+**unit: role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; workflow-rpc and workflow-review-rpc labels unchanged for a CLI and an Ollama tier**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; workflow-rpc and workflow-review-rpc labels unchanged for a CLI and an Ollama tier | `src/analyze/context/__tests__/role-router-global-tiers.test.ts` |
+
+**unit: role-router-global-tiers.test.ts: no source references readRepoOverride or resolveRepoShaper***
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | role-router-global-tiers.test.ts: no source references readRepoOverride or resolveRepoShaper* | `src/analyze/context/__tests__/role-router-global-tiers.test.ts` |
+
+**unit: session-source-inventory suite passes after t4**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/role-router-global-tiers.test.ts` | 0 | 3 | 0.9 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.1 s |  |

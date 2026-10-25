@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792924474105-y1kwuu",
+    "runId": "wf-1792934729806-6vtgnn",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-25T10:38:48.546Z",
+    "createdAt": "2026-10-25T13:31:20.075Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 253654,
+    "elapsedMs": 348615,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-10-23T08:45:36.624Z",
@@ -37,12 +37,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
+    "revision": 10,
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "e79a0e16e1a96f8367c4a9c4b0aa8a6425660308f411d435e4a803df605cc022",
+        "number": 10,
+        "contentHash": "c6ceba4a38dc59ceff68a28b19ae351d53bc76e001b13f97c28e660e9e59bb28",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -51,33 +51,23 @@
         }
       },
       "signoffs": [],
-      "review": {
-        "revision": 3,
-        "reviewer": {
-          "id": "insrc:daemon",
-          "kind": "agent",
+      "approval": {
+        "revision": 10,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
           "properties": {}
         },
-        "party": "daemon",
-        "verdict": "block",
-        "counts": {
-          "high": 5,
-          "med": 1,
-          "low": 5
-        },
-        "at": "2026-10-25T10:41:11.845Z",
-        "report": {
-          "entityId": "LLD-b7a68147dcf72034-s5",
-          "type": "change-log-entry",
-          "relation": "reviews",
-          "fragment": "review-245e313fe1c041c281b44bc729916716"
+        "at": "2026-10-25T13:31:30.246Z",
+        "override": {
+          "reason": "User-directed override (2026-10-25). LLD-s5 went through ten revisions and nine daemon review rounds; every finding through round 9 was fixed or decided by the user (extraArgs kept, gist content replacement and codespace cp --expand accepted as exclusions). Revision 10 fixes the last three round-9 findings (release download selector, codespace notice in the gate preview, one failure precedence) but was not re-reviewed. The user explicitly asked to fix the issues and approve with override; the input-inventory, real-CLI parser and prompt-sweep tests and the post-build code review remain as checks."
         }
       }
     }
   },
   "body": {
     "summary": {
-      "prose": "Every operation the installed gh offers that a program can run without a person is reachable through a named, typed tool, and nothing is a raw passthrough. The 46 existing gh tools keep their ids and meaning and gain typebox input and output schemas, a per-input approval class (closing, merging and deleting are destructive) and failure kinds. Each gh job has its own time limit from one table, never shorter than the tool has today, and a command that outlives it ends with a timed-out message naming the command and the limit. The operations gh has and the registry lacks are added as 22 family tools with an op input, the pattern git_branch and git_tag use, and a per-operation table gives each operation its inputs, output, command, approval class and limit, with a coverage table for the operations the user chose to leave out.",
+      "prose": "Every operation the installed gh offers that a program can run without a person is reachable through a named, typed tool, and nothing new is a raw passthrough (the one existing raw input, gh_repo_clone.extraArgs, is kept for compatibility and makes the call destructive). The 46 existing gh tools keep their ids and meaning and gain typebox input and output schemas, a per-input approval class (closing, merging, deleting, every rename including a release's newTag, every visibility change, every overwrite flag and a clone with extra git arguments are destructive) and failure kinds. Each gh job has its own time limit from one table, never shorter than the tool has today, and a command that outlives it ends with a timed-out message naming the command and the limit; a change that began and did not finish cleanly is reported as having an unknown outcome. The operations gh has and the registry lacks are added as 22 family tools with an op input, the pattern git_branch and git_tag use, and a per-operation table gives each operation its exact inputs, requiredness (every selector gh needs to run without a prompt is required, and codespace create always passes --default-permissions so it never prompts), output and discriminator, approval class and limit, with an input inventory, a real-CLI parser check and a coverage table for what the user chose to leave out.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -87,44 +77,65 @@
         {
           "id": "sc2",
           "name": "Tool output schema and typed call",
+          "purpose": "Lets a tool declare its result shape, has the executor check it when declared, and gives callers a result typed from the tool definition they pass.",
+          "interfaceSketch": "interface OutputSchemaField<O> { outputSchema?: JsonSchema; readonly outputType?: O }\ntype ToolOutput<T> = T extends OutputSchemaField<infer O> ? O : unknown\ninterface TypedToolResult<O> { success: boolean; data?: O; error?: ToolFailure }\ncallTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps: ToolDeps): Promise<TypedToolResult<ToolOutput<T>>>\n  // + outputSchema is a typebox TSchema; TypedTool; callTool signature: outputSchema?: TSchema (typebox); TypedTool = Tool & { inputSchema: TSchema; outputSchema: TSchema }; callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>;  // Refines the sc2 sketch as approved in the s2 LLD (requirement R2): typebox instead of JsonSchema plus a phantom type, and a typed input. (amend:AMD-b7a68147dcf72034-6)",
           "ownedByStory": "s2",
           "consumedByStories": [
             "s4",
             "s5",
             "s6",
             "s7"
+          ],
+          "assumptions": [
+            "c2",
+            "c3"
           ]
         },
         {
           "id": "sc3",
           "name": "Text conversion with cross-check",
+          "purpose": "Turns text-only CLI output into the declared shape using the cheap model, cross-checks the key values against the raw text, and escalates once to a higher-tier model; conversions run serially.",
+          "interfaceSketch": "interface ConversionRequest<O> { toolId: string; rawText: string; schema: JsonSchema; keyValues: (value: O) => string[] }\ninterface ConversionResult<O> { ok: boolean; value?: O; tier: 'cheap' | 'escalated'; failure?: ConversionFailure }\ninterface ConversionFailure { kind: 'shape-mismatch' | 'value-not-in-text' | 'retries-exhausted'; detail: string }\nconvertText<O>(req: ConversionRequest<O>): Promise<ConversionResult<O>>\n  // + convertText takes ToolDeps; keyValues required: convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>; ConversionRequest.keyValues is required;  // Refines the sc3 sketch as approved in the s2 LLD (requirement R2): deps supplies repoPath, signal and the optional conversion setting. (amend:AMD-b7a68147dcf72034-7)",
           "ownedByStory": "s2",
           "consumedByStories": [
             "s4",
             "s5",
             "s6"
+          ],
+          "assumptions": [
+            "c2"
           ]
         },
         {
           "id": "sc4",
           "name": "Approval class and approval exchange",
+          "purpose": "Defines the one field that gives a tool or call its approval class, the global setting that governs the common class, the request the executor sends to the attached client, the answer, the timeout and the denial reasons, so that every client implements the same exchange.",
+          "interfaceSketch": "type ApprovalClass = 'none' | 'common' | 'destructive'\ninterface ApprovalField<I> { approval?: ApprovalClass | ((input: I) => ApprovalClass) }\ntype CommonApprovalMode = 'auto' | 'ask'\ninterface ApprovalRequest { requestId: string; toolId: string; approvalClass: 'common' | 'destructive'; inputSummary: string; reason: string; expiresAt: string }\ninterface ApprovalAnswer { requestId: string; decision: 'approve' | 'decline' }\ntype ApprovalDenial = 'declined' | 'timed-out' | 'no-client'\ninterface ApprovalGate { ask(req: ApprovalRequest): Promise<ApprovalAnswer | ApprovalDenial> }\n// IPC methods: approval.request (daemon to client), approval.answer (client to daemon)\n  // + ApprovalRequest repoPath, arguments, preview; CommonApprovalMode; approval.subscribe: ApprovalRequest gains repoPath: string, arguments: Record<string, unknown> and preview?: { title: string; content: string }; CommonApprovalMode = 'manual' | 'edit-auto' | 'auto'; ApprovalDenial gains 'cancelled'; IPC method approval.request (daemon to client) is realised as approval.subscribe (a client-opened stream carrying 'gate' frames) plus approval.answer;  // The request must name the repository and the exact arguments (DEF S003 FR001), the chat has three modes, and the daemon can push only over a stream the client opened. Additive refinements of a contract only s3 owns. (amend:AMD-b7a68147dcf72034-4)",
           "ownedByStory": "s3",
           "consumedByStories": [
             "s4",
             "s5",
             "s6",
             "s7"
+          ],
+          "assumptions": [
+            "c4"
           ]
         },
         {
           "id": "sc5",
           "name": "CLI failure kinds",
+          "purpose": "One set of failure kinds returned by every git, gh and acli tool so callers tell a missing CLI, a missing sign-in, a time-out and a rejection apart.",
+          "interfaceSketch": "type ToolFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'timed-out' | 'rejected' | 'conversion-failed' | 'schema-mismatch' | 'denied'\ninterface ToolFailure { kind: ToolFailureKind; message: string; denial?: ApprovalDenial }\n  // + ToolResult.failure, ToolFailure.original and ToolDenialReason?: ToolResult.failure?: ToolFailure; ToolFailure.original?: string (the tool's raw output, truncated, kept for diagnosis); type ToolDenialReason = 'declined' | 'timed-out' | 'no-client', which ToolFailure.denial uses in place of the ApprovalDenial type from sc4;  // The Story's second functional requirement says a conversion that fails the check is reported as the tool's failure with the original output available for diagnosis, and the executor has to carry a typed failure on the ToolResult that agents and code both receive. sc5's sketch types denial with ApprovalDenial, owned by s3 (sc4), but s2 has no dependency on s3 in the Epic graph and so cannot compile against it; declaring the three-value union in sc5 removes the dependency, and s3 reuses it. All three additions are optional or additive; a caller that ignores them sees today's success, output and error fields. (amend:AMD-b7a68147dcf72034-3)\n  // + ToolDenialReason 'cancelled': type ToolDenialReason = 'declined' | 'timed-out' | 'no-client' | 'cancelled' (an approval aborted by the caller's signal);  // An aborted approval needs a reason distinct from a decline or a timeout; s2 owns the type and s3 raises the value. (amend:AMD-b7a68147dcf72034-5)",
           "ownedByStory": "s2",
           "consumedByStories": [
             "s4",
             "s5",
             "s6",
             "s7"
+          ],
+          "assumptions": [
+            "c3"
           ]
         }
       ],
@@ -144,7 +155,9 @@
           "storyId": "s1",
           "owns": [
             "sc1"
-          ]
+          ],
+          "depends": [],
+          "internal": "The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step."
         },
         {
           "storyId": "s2",
@@ -152,32 +165,65 @@
             "sc2",
             "sc3",
             "sc5"
-          ]
+          ],
+          "depends": [],
+          "internal": "The optional output-schema field and the check at step 4 of the pipeline, the typed call helper that takes a tool definition, the serial conversion queue, the key-value cross-check and the one-time escalation, and the shared failure kinds. It includes the choice of schema language and the way an input-to-tool mismatch is reported. It does not declare or read the approval class."
         },
         {
           "storyId": "s3",
           "owns": [
             "sc4"
-          ]
+          ],
+          "depends": [],
+          "internal": "The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own."
         },
         {
           "storyId": "s4",
-          "owns": []
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning."
         },
         {
           "storyId": "s6",
-          "owns": []
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported."
         },
         {
           "storyId": "s7",
-          "owns": []
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before."
         },
         {
           "storyId": "s8",
-          "owns": []
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s8: Reach the rest of git through named, typed tools"
         }
       ],
-      "rolloutPhase": "Phase B — tool families"
+      "rolloutPhase": "Phase B — tool families",
+      "nonFunctional": {
+        "performance": "gh commands time out after 120 seconds (decided with the user; the daemon is expected to become multi-threaded so a slow gh will not block it). The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+        "security": "No argument, setting, environment variable or caller identity can skip the approval for a destructive call; with no client attached the call is denied. Common calls follow one global setting. Approval requests travel only over the daemon's Unix socket. No credentials are read or stored: gh, git and acli use the user's own CLI sessions. A tool that declares an output schema and returns a result that does not match it fails and its result is not passed on. Today the executor runs every tool flagged requiresApproval as approved (11 git tools, 5 more by predicate, 27 gh operations and other families), so nothing asks; this Epic makes destructive calls ask every time and puts the rest under the global setting.",
+        "observability": "The executor logs each stage per call with the tool id, the caller, the approval class and decision and its reason, the schema check result, and each hook outcome. Hook failures, denials and conversion escalations are returned to the caller as part of the result, not only logged.",
+        "durability": "Pending approval requests are held in memory by the daemon and are lost on restart; a request left open at restart is treated as denied. Hooks are registered in code at start-up, not stored. The global approval setting is stored in the daemon's config. The cutover leaves artifacts, commits and tracker records unchanged."
+      }
     },
     "contractDetails": {
       "surfaceLevel": "internal-shared",
@@ -210,7 +256,7 @@
         },
         {
           "name": "ghExec",
-          "signature": "ghExec(argv: string[], opts: { key: GhLimitKey; cwd?: string; input?: string; maxBytes?: number; cutIsAnswer?: boolean; signal?: AbortSignal }): Promise<GhOutcome>",
+          "signature": "ghExec(argv: string[], opts: { key: GhLimitKey; cwd?: string; input?: string; maxBytes?: number; cutIsAnswer?: boolean; hostname?: string; signal?: AbortSignal }): Promise<GhOutcome>",
           "parameters": [
             {
               "name": "argv",
@@ -220,28 +266,29 @@
             },
             {
               "name": "opts",
-              "type": "{ key, cwd?, input?, maxBytes?, cutIsAnswer?, signal? }",
-              "purpose": "The limit key, directory, optional standard input, the capture cap, and whether a cut capture is the tool's documented truncated answer; no timeoutMs",
+              "type": "{ key, cwd?, input?, maxBytes?, cutIsAnswer?, hostname?, signal? }",
+              "purpose": "The limit key, directory, optional standard input, the capture cap, whether a cut capture is the tool's documented truncated answer, the host the sign-in probe is scoped to, and the abort signal; no timeoutMs",
               "optional": false
             }
           ],
           "returns": {
             "type": "Promise<GhOutcome>",
-            "meaning": "A normalised outcome: text stdout and stderr, code, signal, spawnError, timedOut, stdoutTruncated, stderrOverflow, stdinError, aborted, the limit applied, the command text and, when the failure text was ambiguous, the exit code of one gh auth status probe made here"
+            "meaning": "One normalised outcome: text stdout and stderr, code (null for a child ended by a signal), signal, spawnError, timedOut, stdoutTruncated, stderrOverflow, stdinError, aborted, the limit applied, the command text and, when the failure text was ambiguous, the exit code and output of one gh auth status --hostname probe made here"
           },
           "errors": [
             {
               "type": "none thrown",
-              "condition": "A spawn failure, a time-out, a stdin failure and a non-zero exit are fields of the outcome"
+              "condition": "A spawn failure, a time-out, a stdin write error, a signal and a non-zero exit are fields of the outcome"
             }
           ],
           "preconditions": [
             "argv[0] is 'gh'"
           ],
           "postconditions": [
-            "Without input it runs through runShell; with input it runs through runShellBytes and a byte-to-text adapter decodes stdout as UTF-8, so the outcome has one shape either way",
+            "It always runs through runShellBytes, with or without input, because runShell reports neither stderrOverflow nor aborted; a byte-to-text adapter decodes stdout and keeps every runShellBytes field, and shell-helper.ts is not changed",
             "No caller passes its own limit; the limit comes only from ghTimeoutMs",
-            "The input text never appears in argv"
+            "The input text never appears in argv",
+            "Standard-input delivery is known only as far as runShellBytes reports it: a stdin write error is stdinError, and gh's exit status carries the rest; a successful pipe write is not proof that gh read the value, and a failed one is not proof that gh did not act"
           ]
         },
         {
@@ -251,24 +298,24 @@
             {
               "name": "outcome",
               "type": "GhOutcome",
-              "purpose": "What ghExec returned, including its auth probe",
+              "purpose": "What ghExec returned, including its probe",
               "optional": false
             },
             {
               "name": "opts",
               "type": "{ mutating: boolean }",
-              "purpose": "Whether the call changes something, which adds the unknown-outcome sentence to a time-out",
+              "purpose": "Whether the call changes something, which decides whether a failure after execution began carries the unknown-outcome sentence",
               "optional": false
             }
           ],
           "returns": {
             "type": "ToolFailure | undefined",
-            "meaning": "undefined for a clean outcome. Otherwise: missing-tool for a spawn error; timed-out with 'gh <command> timed out after <limit> s'; missing-signin when the failure text says gh is not logged in or the token was rejected, or the probe exited non-zero; unreachable for a network error; rejected for any other non-zero exit, for a stdin write error, a stderr overflow, an abort or a cut capture the tool did not mark as its answer, even when the exit code is 0"
+            "meaning": "undefined for a clean outcome. Otherwise the first matching row of this one precedence, whatever other flags are also set: (1) spawnError: missing-tool (execution never began); (2) timedOut: timed-out with 'gh <command> timed out after <limit> s'; (3) aborted: rejected; (4) signal set with no exit code (code null and signal set): rejected, naming the signal, even when stdinError or stderrOverflow is also set; (5) stdinError: rejected, even at exit 0; (6) stderrOverflow: rejected; (7) an unmarked cut capture (stdoutTruncated while cutIsAnswer is false): rejected; (8) non-zero exit: missing-signin only with authentication-specific evidence in the failing command's own text or in the probe's output (not logged in, authentication failed, bad credentials, token invalid or expired), unreachable for network text in either, otherwise rejected carrying gh's own error text; a probe that failed without authentication evidence stays rejected. For a mutating call, rows (2) to (6) happen after execution began and add the sentence 'the outcome is unknown; check the current state before retrying'; no message says that nothing changed or that a value was not set, and a plain non-zero exit (8) carries no claim about state. The probe's output is kept in failure.original"
           },
           "errors": [
             {
               "type": "none thrown",
-              "condition": "synchronous and total over every outcome; the only subprocess it needs, the sign-in probe, was run by ghExec"
+              "condition": "synchronous and total over every outcome, with the precedence above; the only subprocess it needs, the probe, was run by ghExec"
             }
           ],
           "preconditions": [],
@@ -315,13 +362,13 @@
             {
               "name": "input",
               "type": "Record<string, unknown>",
-              "purpose": "The call's input; for a family tool its op and, for repo sync, force",
+              "purpose": "The call's input; for a family tool its op and the fields that change the class (force, clobber, visibility, newName, newTag, extraArgs)",
               "optional": false
             }
           ],
           "returns": {
             "type": "ApprovalClass",
-            "meaning": "none for a read, common for a change that can be undone, destructive for a close, merge, delete, transfer, rename, logout, visibility change or forced overwrite of a remote object"
+            "meaning": "none for a read; common for a change that can be undone and for an op whose purpose is create-or-update; destructive for a close, merge, delete, transfer, any rename (a newName on an edit, a newTag on gh_release_edit), logout, any visibility change, any flag whose only purpose is to overwrite existing data (force, clobber), and a non-empty extraArgs on gh_repo_clone"
           },
           "errors": [
             {
@@ -349,8 +396,25 @@
           ]
         },
         {
+          "name": "GH_INPUTS",
+          "signature": "const GH_INPUTS: readonly { command: string; kind: 'flag' | 'positional' | 'synthetic'; name: string; field?: string; excluded?: string }[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly rows",
+            "meaning": "One row per input of each covered gh command, of three kinds: a flag (name is the gh flag, read from the FLAGS section of `gh <command> --help`), a positional argument (name is the placeholder in the USAGE line, for example oldFilename in `gh gist rename {<id> | <url>} <oldFilename> <newFilename>`) and a synthetic field (a field the tool adds that is not a gh argument: op, cwd, repo where it is passed as -R, and any flag the tool always passes itself, such as --default-permissions on codespace create and --yes where gh has it). Each row names the input field that carries it, or the reason it is not offered (excluded)"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A test reads the flags from the FLAGS section and the positionals from the USAGE line of each covered command and fails when a flag or positional has no row; it fails when a row names a field that the op's input schema lacks; and it fails when a field of the op's input schema is accounted for by no row of any of the three kinds. op and cwd are synthetic rows of every op",
+            "A flag that is offered as a field in one op and excluded in another is checked per command, not globally",
+            "A safe real-CLI parser check builds each op's argv from a sample input whose value-taking flags carry representative values (the first enum member, the integer 1, the fixed --json field list, a placeholder string), appends --help as its own final token so no flag can consume it, and runs the installed gh with an empty temporary HOME and GH_CONFIG_DIR, no token and HTTPS_PROXY and HTTP_PROXY pointing at a closed local port; it asserts exit 0 and a USAGE section in the output, and fails on 'unknown flag' or any parse error, so a flag the installed gh does not know (including any flag the tool adds itself, such as --format) cannot pass. A command that executed instead of printing help would fail visibly and could not reach GitHub, and a canary case (gh issue delete 1 --help under the same conditions) must print help and make no request, which shows --help returns before the command body for the mutating ops too. The check proves flag validity only; constraints gh enforces when the command runs, such as release download needing a tag, a pattern or an archive, are carried by the schema's requiredness and tested by schema-rejection and argv tests",
+            "A prompt sweep fails when any op of the table can reach a gh prompt: an optional positional, or an optional selector flag, whose absence makes gh ask a person; each such input is required in the schema (the one choice between two forms, codespace delete's codespace or all, is exactly-one-of), codespace create always passes --default-permissions, and the integration test runs every op under a fake gh that exits with a failure if it sees a terminal prompt request; each prompt case in the table comes from the installed gh's help, not from the fake"
+          ]
+        },
+        {
           "name": "gh_issue_manage, gh_pr_manage, gh_release_asset, gh_repo_manage, gh_run_manage, gh_workflow_manage, gh_project_manage, gh_label, gh_gist, gh_secret, gh_variable, gh_cache, gh_search, gh_ssh_key, gh_gpg_key, gh_ruleset, gh_org, gh_auth, gh_status, gh_codespace, gh_config, gh_extension",
-          "signature": "TypedTool with inputSchema { op: enum; cwd?: string; repo?: string; ...per-op fields } and outputSchema discriminated by op",
+          "signature": "TypedTool with inputSchema { op: enum; cwd?: string; ...the op's own fields } and outputSchema discriminated by the literal property op",
           "parameters": [
             {
               "name": "op",
@@ -361,19 +425,20 @@
           ],
           "returns": {
             "type": "TypedToolResult",
-            "meaning": "The per-op output in GhOpContracts: {count, items} for a list, the object for a view, {ok, target, message} for a mutation, {text} for a raw read"
+            "meaning": "The per-op output in GhOpContracts, always carrying op as a literal property equal to the input op: {op, count, items} or {op, count, rows} for a list, the object with op for a view, {op, ok, target, message} for a mutation, {op, text} for a raw read"
           },
           "errors": [
             {
               "type": "rejectInput",
-              "condition": "an op the family does not offer, a missing required field, or a field the op does not take"
+              "condition": "an op the family does not offer, a missing required field, two fields of an exclusive pair, or a field the op's gh command does not accept"
             }
           ],
           "preconditions": [
             "gh is signed in"
           ],
           "postconditions": [
-            "delete, remove, transfer, rename, close, logout, visibility change and forced sync are destructive"
+            "delete, remove, transfer, any rename, close, logout, any visibility change, any overwrite flag and forced sync are destructive",
+            "None of the 22 new tools takes a raw argument list; the only raw input in the family is the existing gh_repo_clone.extraArgs"
           ]
         },
         {
@@ -389,7 +454,7 @@
           ],
           "returns": {
             "type": "TypedToolResult",
-            "meaning": "The diff with its file list, and the run's log with its steps, each from convertText with a key-value cross-check against the raw text; a cut at the tool's own cap is a success with data.truncated, as today"
+            "meaning": "The diff with its file list, and the run's log with its steps, each from convertText with a key-value cross-check against the raw text; a cut at the tool's own cap is a success: gh_pr_diff keeps data {number, diffBytes, truncated}, gh_run_view keeps data {runId, jobs} and gains truncated as an additive field"
           },
           "errors": [
             {
@@ -403,7 +468,8 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "A tool whose output comes from gh --json makes no model call"
+            "A tool whose output comes from gh --json makes no model call",
+            "A capture cut at the cap now keeps the prefix up to the cap (runShellBytes) instead of dropping the whole chunk that crosses it (runShell), so the text and diffBytes of a cut answer can differ from the legacy answer by up to one chunk"
           ]
         }
       ]
@@ -412,7 +478,7 @@
       {
         "entity": "GhToolOutputs",
         "change": "new",
-        "details": "A typebox output schema for each of the 46 existing tools and each op of the new tools. Existing list tools keep the data they return today and the schema describes it in place: repo list {count, repos}, run list {count, runs}, workflow list {count, workflows}, the others as found when the tool is converted. gh_pr_diff and gh_run_view keep data.truncated and the fields they return. New tools follow GhOpContracts.",
+        "details": "A typebox output schema for each of the 46 existing tools and each op of the new tools. Existing list tools keep the data they return today and the schema describes it in place: repo list {count, repos}, run list {count, runs}, workflow list {count, workflows}, gh_pr_diff {number, diffBytes, truncated}, gh_run_view {runId, jobs} (with truncated added), the others as found when the tool is converted. New tools follow GhOpContracts, where every output carries the literal op.",
         "callSites": [
           "src/daemon/tools/builtins/gh/index.ts",
           "src/daemon/tools/builtins/gh/pr.ts:143-149",
@@ -422,29 +488,44 @@
       {
         "entity": "GhOpContracts",
         "change": "new",
-        "details": "Every new op: inputs (all ops also take cwd and repo, passed as -R), command, output, approval class, limit in seconds. Reads that gh gives with --json return {count, items} with the fields named; text reads are parsed by a tab-column parser when gh prints tab-separated text off a terminal, else returned as {text} or converted through sc3 with the key values named. Mutations return {ok, target, message} where message is the trimmed stdout (a created object's URL). gh_issue_manage: status [none 30] cmd issue status --json assignees,author,labels,number,state,title,updatedAt,url, output {groups:{createdBy,assigned,mentioned}}; delete [destructive 30] number required, cmd issue delete N --yes; develop [common 60] number required, optional name, branch-repo, base, checkout; lock [common 30] number required, optional reason; unlock/pin/unpin [common 30] number required; transfer [destructive 60] number and destinationRepo required. gh_pr_manage: status [none 30] pr status --json number,title,state,headRefName,reviewDecision,url, output as issue status; checkout [common 60] target required (number, url or branch), optional branch, detach, force, recurseSubmodules; lock [common 30] number, optional reason; unlock [common 30] number; reopen [common 30] target, optional comment. gh_release_asset: download [common 300] optional tag, pattern list, dir, clobber, skipExisting, output {files}; upload [common 300] tag and files required, optional clobber; delete-asset [destructive 30] tag and asset required, cmd --yes. gh_repo_manage: archive/unarchive [common 30] optional repository, --yes; edit [common 30, destructive when visibility is set] optional description, homepage, defaultBranch, enableIssues/Wiki/Projects/Discussions, allowForking, deleteBranchOnMerge, addTopic, removeTopic, visibility with the accept flag; rename [destructive 60] newName, --yes; set-default [common 30] repository, optional unset; sync [common 120, destructive with force] optional destination, source, branch, force; deploy-key-list [none 30] --json createdAt,id,key,readOnly,title; deploy-key-add [common 30] keyFile required, optional title, allowWrite; deploy-key-delete [destructive 30] keyId. gh_run_manage: delete [destructive 30] runId; download [common 300] optional runId, name list, pattern list, dir, output {files}. gh_workflow_manage: view [none 30] optional workflow, ref, yaml, output {text}; enable/disable [common 30] workflow. gh_project_manage (all take owner and format json): copy/create [common 60] title (and number for copy), optional target and source owner, drafts; edit [common 30] number, optional title, description, readme, visibility; close [destructive 30] number, optional undo; delete [destructive 30] number; link/unlink [common 30] number and one of repo or team; mark-template [common 30] number, optional undo; item-create [common 30] number and title, optional body; field-create [common 30] number, name, dataType, optional singleSelectOptions; field-delete [destructive 30] id. gh_label: list [none 30] --json color,createdAt,description,id,isDefault,name,updatedAt,url, optional search, sort, order, limit; create [common 30] name, optional color, description, force; edit [common 30] name, optional newName, color, description; clone [common 30] sourceRepository, optional force; delete [destructive 30] name, --yes. gh_gist: list [none 30] tab parser, columns id,description,files,visibility,updated, optional public, secret, limit; view [none 30] optional id, filename, raw, output {text}; create [common 60] files or content, optional description, public, filename; edit [common 60] id, optional add, remove, filename, description; rename [common 60] id, oldFilename, newFilename; clone [common 60] gist, optional directory; delete [destructive 30] id. gh_secret: list [none 30] --json name,numSelectedRepos,selectedReposURL,updatedAt,visibility, scope one of org, env, user or app; set [common 30] name and secretValue required, secretValue goes to stdin, optional visibility, repos, scope; delete [destructive 30] name, optional scope. gh_variable: list [none 30] --json name,numSelectedRepos,selectedReposURL,updatedAt,value,visibility; set [common 30] name and value, optional visibility, repos, scope; delete [destructive 30] name, optional scope. gh_cache: list [none 30] --json createdAt,id,key,lastAccessedAt,ref,sizeInBytes,version, optional key, ref, sort, order, limit; delete [destructive 30] one of id, key or all. gh_search: code/commits/issues/prs/repos [none 60] query required, optional limit and the group's filters, --json with the fields gh offers for that group (code: path,repository,sha,url,textMatches; commits: author,commit,committer,id,parents,repository,sha,url; issues and prs: assignees,author,body,closedAt,commentsCount,createdAt,id,isLocked,labels,number,repository,state,title,updatedAt,url, prs add isDraft; repos: fullName,description,language,stargazersCount,forksCount,isPrivate,pushedAt,url,visibility and the rest gh lists). gh_ssh_key and gh_gpg_key: list [none 30] tab parser (id,title,key,added), add [common 30] keyFile or key text on stdin, optional title (and type for ssh), delete [destructive 30] id, --yes. gh_ruleset: list [none 30] optional org, parents, limit, output through sc3 with key values the ruleset ids and names; view [none 30] optional rulesetId, org, parents, output {text}; check [none 30] optional branch, default, output {text}. gh_org: list [none 30] optional limit, tab parser, column name. gh_auth: status [none 30] optional hostname, output {hosts} converted through sc3 with key values host and login, never the token (show-token is not offered); switch [common 30] optional hostname, user; logout [destructive 30] hostname required, optional user. gh_status: status [none 60] optional exclude, org, output converted through sc3 with key values the repositories named. gh_codespace: list [none 30] --json displayName,gitStatus,lastUsedAt,name,owner,repository,state; view [none 30] codespace, --json the view fields; logs [none 60] codespace, output {text} with a 128 KiB display cap and data.truncated; ports [none 30] codespace, --json browseUrl,label,sourcePort,visibility; create [common 600] repo, optional branch, machine, displayName, idleTimeout, retentionPeriod, location, devcontainerPath; edit [common 30] codespace, optional displayName, machine; stop [common 60] codespace; rebuild [common 600] codespace, optional full; delete [destructive 60] codespace or all with days; cp [common 300] sources, dest, codespace, optional recursive, expand; ports-visibility [common 30] codespace and port:visibility pairs. gh_config: get [none 30] key, optional host, output {key, value}; list [none 30] optional host, output {entries} as key and value lines. gh_extension: list [none 30] tab parser, columns name,repository,version; search [none 60] optional query, owner, license, limit, --json the repository fields. The alias 'co' is gh_pr_manage checkout. EXISTING IDS keep these classes and limits: reads none 30 s: gh_issue_list, gh_issue_view, gh_pr_list, gh_pr_view, gh_pr_checks, gh_pr_files, gh_run_list, gh_workflow_list, gh_release_list, gh_release_view, gh_repo_view, gh_repo_list, gh_project_list, gh_project_view, gh:project:item-list, gh:project:field-list; gh_pr_diff and gh_run_view none 60 s. Common: gh_issue_create 60 s; gh_issue_comment, gh_issue_edit, gh_issue_reopen, gh_issue_link, gh_pr_edit, gh_pr_comment, gh_pr_review, gh_pr_ready, gh_run_rerun, gh_run_cancel, gh_release_edit, gh_release_publish, gh:project:item-add, gh:project:item-update, gh:project:item-archive 30 s; gh_pr_create 90 s; gh_workflow_run 60 s; gh_release_create 180 s; gh_repo_create and gh_repo_fork 120 s; gh_repo_clone 600 s. Destructive: gh_issue_close, gh_pr_close, gh_release_delete, gh_repo_delete, gh:project:item-delete 30 s; gh_pr_merge 180 s.",
+        "details": "NOTATION. Format: tool.op [class limit-seconds] inputs => output. Inputs: a bare name is required; name? is optional; a|b means exactly one of the two is given; a/b means not both; every op also takes cwd? and every -R op also takes repo? (OWNER/NAME, default from the working directory); ops marked (no -R) take no repo field. NO PROMPTS AND NO UNRUNNABLE INPUT: an input whose absence makes gh ask a person to choose, or makes gh refuse to run, is required, and a flag that suppresses a prompt is always passed by the tool, so no op can reach a prompt. TYPES: a field that carries a value-less gh flag is boolean; a repeatable flag or a list is string[]; limit, days, port, count and ids that gh documents as exact numbers are integers; a search qualifier that gh documents as a number, a size or a date accepts comparisons and ranges (for example >100, 10..50, >=2024-01-01) and is a string holding that expression; every other field is a string, and a field documented as {a|b|c} is that enum. OUTPUTS: every output has the literal property op equal to the input op (the discriminator of the output union). A list read with --json returns {op, count, items} where items have exactly the --json fields named. A list read from tab-separated text returns {op, count, rows} where rows is string[][] (the tab-split lines, no named columns), except gist list, whose columns id, description, files, visibility, updated were verified and which returns items with those five string properties. A text read returns {op, text}. A mutation returns {op, ok, target, message} (target the object or URL gh printed or the input identifier, message the trimmed stdout). A tool never passes --web, --follow, --show-token or --expand, never passes --json, --jq or --template except to set its own fixed --json fields, and never prompts: confirmation prompts are answered by the tool's own --yes where gh has one, which is a synthetic row. The tool adds only flags that the installed gh accepts for that command, and the parser check proves it. OVERWRITE RULE: an op whose purpose is create-or-update is common; a flag whose only purpose is to overwrite existing data (force, clobber) makes the call destructive; every rename (including label edit with newName and release edit with newTag), delete, transfer, close, logout and visibility change is destructive. gh_issue_manage (-R): status [none 30] => {op, createdBy, assigned, mentioned}, each an array of items with assignees,author,labels,number,state,title,updatedAt,url; delete [destructive 30] number; develop [common 60] number, name?, branchRepo?, base?, checkout?; develop-list [none 30] number => {op, count, rows}; lock [common 30] number, reason? ({off_topic|resolved|spam|too_heated}); unlock, pin, unpin [common 30] number; transfer [destructive 60] number, destinationRepo. gh_pr_manage (-R): status [none 30] conflictStatus? => {op, currentBranch, createdBy, needsReview} with items number,title,state,headRefName,reviewDecision,url; checkout [common 60, destructive with force] target (number, URL or branch), branch?, detach?, force?, recurseSubmodules?; lock [common 30] number, reason?; unlock [common 30] number; reopen [common 30] target, comment?. The alias 'co' is gh_pr_manage checkout. gh_release_asset (-R): download [common 300, destructive with clobber] tag | pattern | archive (at least one of a tag, a non-empty pattern list or an archive, because without a tag gh requires --pattern or --archive; the schema rejects an input with none of them), tag?, pattern? (string[]), archive? ({zip|tar.gz}), dir?, output? (a file path, never '-'; not with dir), clobber?, skipExisting? (not with clobber); upload [common 300, destructive with clobber] tag, files (string[], at least one), clobber?; delete-asset [destructive 30] tag, asset. gh_repo_manage: archive, unarchive [common 30] repository (no -R); edit [common 30, destructive when visibility is set] repository (no -R), description?, homepage?, defaultBranch?, enableIssues?, enableWiki?, enableProjects?, enableDiscussions?, enableMergeCommit?, enableSquashMerge?, enableRebaseMerge?, enableAutoMerge?, allowForking?, allowUpdateBranch?, deleteBranchOnMerge?, template?, addTopic? (string[]), removeTopic? (string[]), visibility? ({public|private|internal}; gh 2.46.0 has no confirmation flag for it, so --visibility is passed alone), at least one of the optional fields; rename [destructive 60] newName (-R); set-default [common 30] repository | view | unset (no -R; exactly one of the three, so gh never prompts; view is a read of the current default and returns {op, ok, target, message}); sync [common 120, destructive with force] destination?, source?, branch?, force? (no -R); deploy-key-list [none 30] (-R) => {op, count, items} with createdAt,id,key,readOnly,title; deploy-key-add [common 30] (-R) keyFile, title?, allowWrite?; deploy-key-delete [destructive 30] (-R) keyId. gh_run_manage (-R): delete [destructive 30] runId; download [common 300] runId, name? (string[]), pattern? (string[]), dir?. gh_workflow_manage (-R): view [none 30] workflow, ref?, yaml? => {op, text}; enable, disable [common 30] workflow. gh_project_manage (no -R): the tool passes --format json only to copy, create, edit, close, delete, mark-template, item-create, field-create and field-delete, which accept it; link and unlink have no --format and return text; every project op returns {op, ok, target, message} with message the trimmed stdout. copy [common 60] number, title, sourceOwner?, targetOwner?, drafts?; create [common 60] title, owner?; edit [common 30, destructive when visibility is set] number, owner?, title?, description?, readme?, visibility? ({PUBLIC|PRIVATE}); close [destructive 30] number, owner?, undo?; delete [destructive 30] number, owner?; link, unlink [common 30] number, owner?, targetRepo/team (exactly one); mark-template [common 30] number, owner?, undo?; item-create [common 30] number, owner?, title, body?; field-create [common 30] number, owner?, name, dataType ({TEXT|SINGLE_SELECT|DATE|NUMBER}), singleSelectOptions? (string[], only with SINGLE_SELECT); field-delete [destructive 30] id. gh_label (-R): list [none 30] search?, sort? ({created|name}), order? ({asc|desc}), limit? => {op, count, items} with color,createdAt,description,id,isDefault,name,updatedAt,url; create [common 30, destructive with force] name, color?, description?, force?; edit [common 30, destructive with newName] name, newName?, color?, description?; clone [common 30, destructive with force] sourceRepository, force?; delete [destructive 30] name. gh_gist (no -R): list [none 30] public/secret (not both), limit? => {op, count, items} with id,description,files,visibility,updated; view [none 30] id, filename?, files?, raw? => {op, text}; create [common 60] files (string[]) | content (stdin text), description?, filename? (with content), public?; edit [common 60] id, add? (a local file path), remove? (a gist file name), desc?, at least one of add, remove, desc (replacing the content of an existing file needs an editor and is excluded, as the user accepted; the filename selector is an excluded input); rename [destructive 60] id, oldFilename, newFilename (three positionals, no flags); clone [common 60] gist, directory?; delete [destructive 30] id. gh_secret (-R): list [none 30] app? ({actions|codespaces|dependabot}), env?, org?, user? (at most one of env, org, user) => {op, count, items} with name,numSelectedRepos,selectedReposURL,updatedAt,visibility; set [common 30, destructive when visibility is set] name | envFile (exactly one; envFile is a local dotenv file gh reads, never echoed), secretValue? (sent on standard input, only with name and required with name), app?, env?, org?, user? (at most one of env, org, user), repos? (string[], only with org or user), visibility? ({all|private|selected}, only with org), noStore?; delete [destructive 30] name, app?, env?, org?, user?. gh_variable (-R): list [none 30] env?, org? (not both) => {op, count, items} with name,numSelectedRepos,selectedReposURL,updatedAt,value,visibility; set [common 30, destructive when visibility is set] name | envFile (exactly one), value? (required with name, sent on standard input like secretValue, never in argv), env?, org? (not both), repos? (string[], only with org), visibility? ({all|private|selected}, only with org); delete [destructive 30] name, env?, org?. gh_cache (-R): list [none 30] key?, ref?, sort? ({created_at|last_accessed_at|size_in_bytes}), order? ({asc|desc}), limit? => {op, count, items} with createdAt,id,key,lastAccessedAt,ref,sizeInBytes,version; delete [destructive 30] id | key | all (exactly one; all is boolean). gh_search (no -R; repo is a filter; the tool sets its own --json field list per group; query is a required string; limit is an integer; qualifier expressions are strings): code [none 60] query, extension?, filename?, language?, limit?, match? (string[] of {file|path}), owner? (string[]), repo? (string[]), size? => items path,repository,sha,textMatches,url; commits [none 60] query, author?, authorDate?, authorEmail?, authorName?, committer?, committerDate?, committerEmail?, committerName?, hash?, limit?, merge?, order? ({asc|desc}), owner? (string[]), parent?, repo? (string[]), sort? ({author-date|committer-date}), tree?, visibility? (string[] of {public|private|internal}) => items author,commit,committer,id,parents,repository,sha,url; issues [none 60] query, app?, archived?, assignee?, author?, closed?, commenter?, comments?, created?, includePrs?, interactions?, involves?, label? (string[]), language?, limit?, locked?, match? (string[] of {title|body|comments}), mentions?, milestone?, noAssignee?, noLabel?, noMilestone?, noProject?, order?, owner? (string[]), project?, reactions?, repo? (string[]), sort? ({comments|created|interactions|reactions|reactions-+1|reactions--1|reactions-heart|reactions-smile|reactions-tada|reactions-thinking_face|updated}), state? ({open|closed}), teamMentions?, updated?, visibility? (string[]) => items assignees,author,authorAssociation,body,closedAt,commentsCount,createdAt,id,isLocked,isPullRequest,labels,number,repository,state,title,updatedAt,url; prs [none 60] query, the issues fields except includePrs, plus base?, checks? ({pending|success|failure}), draft?, head?, merged?, mergedAt?, review? ({none|required|approved|changes_requested}), reviewRequested?, reviewedBy?, and its own sort enum ({comments|reactions|reactions-+1|reactions--1|reactions-smile|reactions-thinking_face|reactions-heart|reactions-tada|interactions|created|updated}) => items as issues plus isDraft; repos [none 60] query, archived?, created?, followers?, forks?, goodFirstIssues?, helpWantedIssues?, includeForks? ({false|true|only}), language?, license? (string[]), limit?, match? (string[] of {name|description|readme}), numberTopics?, order?, owner? (string[]), size?, sort? ({forks|help-wanted-issues|stars|updated}), stars?, topic? (string[]), updated?, visibility? (string[]) => items createdAt,defaultBranch,description,forksCount,fullName,hasDownloads,hasIssues,hasPages,hasProjects,hasWiki,homepage,id,isArchived,isDisabled,isFork,isPrivate,language,license,name,openIssuesCount,owner,pushedAt,size,stargazersCount,updatedAt,url,visibility,watchersCount; every search op returns {op, count, items}. gh_ssh_key (no -R): list [none 30] => {op, count, rows}; add [common 30] keyFile | key (exactly one; key is public-key text sent on standard input), title?, type? ({authentication|signing}); delete [destructive 30] id. gh_gpg_key (no -R): list [none 30] => {op, count, rows}; add [common 30] keyFile | key (exactly one; text on standard input), title?; delete [destructive 30] keyId. The key text of the two add ops is a public key, not a secret: approval-policy.ts does not mask a field named key, and the approval request shows it up to the existing display limit of 2000 characters (a longer string is shown as its first 2000 characters followed by its length; keyFile shows only the path), which the approval test asserts exactly. gh_ruleset (-R): list [none 30] org?, parents?, limit? => {op, count, items} with items {id: string, name: string}, through sc3 with key values the ids and names; view [none 30] rulesetId, org?, parents? => {op, text}; check [none 30] branch?, default? => {op, text}. gh_org (no -R): list [none 30] limit? => {op, count, items} with the single property name. gh_auth (no -R): status [none 30] hostname? => {op, hosts} where hosts is an array of {host: string, login: string, active: boolean, state: 'logged-in' | 'failed'}, through sc3 with key values host and login; switch [common 30] hostname, user (both required); logout [destructive 30] hostname, user (both required). gh_status (no -R): status [none 60] exclude? (string[]), org? => {op, text} through sc3 with key values the repositories named. gh_codespace (no -R): list [none 30] limit?, org?, repo?, user? => {op, count, items} with createdAt,displayName,gitStatus,lastUsedAt,machineName,name,owner,repository,state,vscsTarget; view [none 30] codespace => {op, item} with billableOwner,createdAt,devcontainerPath,displayName,environmentId,gitStatus,idleTimeoutMinutes,lastUsedAt,location,machineDisplayName,machineName,name,owner,prebuild,recentFolders,repository,retentionExpiresAt,retentionPeriodDays,state,vscsTarget; logs [none 60] codespace => {op, text, truncated} with a 128 KiB display cap; ports [none 30] codespace => {op, count, items} with browseUrl,label,sourcePort,visibility; create [common 600] repo, branch?, machine?, displayName?, idleTimeout?, retentionPeriod?, location?, devcontainerPath?, status?, and the tool always passes --default-permissions (a synthetic row, not an input field), because without it gh asks the user to accept additional permissions the codespace requests; accepting them is therefore part of the call, and the notice that the permissions the devcontainer requests are accepted without a further question is carried in the preview content the tool supplies through buildApprovalGate (the request reason is built by approval-policy.ts and is not changed); edit [common 30] codespace, displayName?, machine?; stop [common 60] codespace, org?, user?; rebuild [common 600] codespace, full?; delete [destructive 60] codespace | all (exactly one), days? (only with all), force?, org?, user?; cp [common 300] sources (string[], at least one), dest, codespace, recursive?, profile? (expand is not offered, as the user accepted: it evaluates remote names as a Bash expression); ports-visibility [destructive 30] ports (string[] of port:visibility pairs, at least one), codespace. For the codespace ops that take a codespace name, repo and repoOwner are not offered because they only narrow an interactive pick. gh_config (no -R): get [none 30] key, host? => {op, key, value}; list [none 30] host? => {op, entries} where entries is an array of {key: string, value: string} parsed deterministically from gh's key=value lines with no model call. gh_extension (no -R): list [none 30] => {op, count, rows}; search [none 60] query?, owner? (string[]), license?, sort?, order?, limit? => {op, count, items} with the extension search --json fields createdAt,defaultBranch,description,forksCount,fullName,hasDownloads,hasIssues,hasPages,hasProjects,hasWiki,homepage,id,isArchived,isDisabled,isFork,isPrivate,language,license,name,openIssuesCount,owner,pushedAt,size,stargazersCount,updatedAt,url,visibility,watchersCount. EXISTING IDS keep these classes and limits: reads none 30 s: gh_issue_list, gh_issue_view, gh_pr_list, gh_pr_view, gh_pr_checks, gh_pr_files, gh_run_list, gh_workflow_list, gh_release_list, gh_release_view, gh_repo_view, gh_repo_list, gh_project_list, gh_project_view, gh:project:item-list, gh:project:field-list; gh_pr_diff and gh_run_view none 60 s. Common: gh_issue_create 60 s; gh_issue_comment, gh_issue_edit, gh_issue_reopen, gh_issue_link, gh_pr_edit, gh_pr_comment, gh_pr_review, gh_pr_ready, gh_run_rerun, gh_run_cancel, gh_release_publish, gh:project:item-add, gh:project:item-update, gh:project:item-archive 30 s; gh_release_edit 30 s, destructive when newTag is set (it renames the release's tag); gh_pr_create 90 s; gh_workflow_run 60 s; gh_release_create 180 s; gh_repo_create and gh_repo_fork 120 s; gh_repo_clone 600 s, destructive when extraArgs is non-empty (the existing string[] input forwarded after -- to git clone, where a flag such as --upload-pack can run a command; it stays for compatibility as a listed exception to the no-raw-argument rule and the user's accepted decision of 2026-10-25). Destructive: gh_issue_close, gh_pr_close, gh_release_delete, gh_repo_delete, gh:project:item-delete 30 s; gh_pr_merge 180 s. The input inventory test (GH_INPUTS) and the parser check are the build-time checks that these field lists and the flags the tools add match the installed gh.",
         "callSites": [
           "src/daemon/tools/builtins/gh/index.ts",
           "src/daemon/tools/builtins/gh/pr.ts:303",
           "src/daemon/tools/builtins/gh/pr.ts:519",
+          "src/daemon/tools/builtins/gh/repo.ts:251",
+          "src/daemon/tools/builtins/gh/repo.ts:274",
           "src/daemon/tools/builtins/gh/repo.ts:278",
-          "src/daemon/tools/builtins/gh/release.ts:173"
+          "src/daemon/tools/builtins/gh/release.ts:173",
+          "src/daemon/tools/builtins/gh/release.ts:188",
+          "src/daemon/tools/builtins/gh/release.ts:220"
+        ]
+      },
+      {
+        "entity": "GhInputInventory",
+        "change": "new",
+        "details": "GH_INPUTS lists, for every input of every covered gh command, one row of one of three kinds: flag, positional or synthetic. Not offered, with their reason: --web (opens a browser), --follow (streams until stopped), --show-token (prints a credential), --expand (evaluates remote file names as a Bash expression: a remote-execution path), gist edit --filename and the content of an existing gist file (need an editor), --json, --jq and --template (the tools set their own output form), --yes (the tool answers the prompt itself), and prompts. Always passed by the tool as a synthetic row: --default-permissions on codespace create, --yes where gh has it. The flags of each command are read from `gh <command> --help` and the positionals from its USAGE line by the inventory test, which compares them with the op's input schema fields and with the rows, so an input that is neither a field nor listed fails, as does a field that no row accounts for. op, cwd and repo are synthetic rows. The existing gh_repo_clone.extraArgs is the one recorded exception to the no-raw-argument rule; the no-passthrough test exempts exactly that field.",
+        "callSites": [
+          "src/daemon/tools/builtins/gh/index.ts",
+          "src/daemon/tools/builtins/gh/repo.ts:251"
         ]
       },
       {
         "entity": "GhApprovalClassMapping",
         "change": "invariant-change",
-        "details": "The mutating tools already declare approval 'common' as a fixed field (27 of them, set by s3). This Story replaces the field with ghApprovalClass where a class depends on the input and raises every close, merge, delete, transfer, rename, logout and visibility change to destructive, among the existing tools gh_issue_close, gh_pr_close, gh_pr_merge, gh_release_delete, gh_repo_delete and gh:project:item-delete. approval-class-mapping.test.ts keeps its historical 228-row snapshot untouched; the s5 changes and the new tools go in an addedByS5 list beside addedByS4, with the test extended to read it.",
+        "details": "The mutating tools already declare approval 'common' as a fixed field (27 of them, set by s3). This Story replaces the field with ghApprovalClass where a class depends on the input and raises every close, merge, delete, transfer, rename, logout, visibility change and overwrite flag to destructive, among the existing tools gh_issue_close, gh_pr_close, gh_pr_merge, gh_release_delete, gh_repo_delete and gh:project:item-delete, and makes gh_release_edit (newTag) and gh_repo_clone (extraArgs) destructive per input. approval-class-mapping.test.ts changes too: its loop asserts tool.approval === 'common' for every former requiresApproval-true tool except an explicit PER_INPUT_SINCE_S4 set, so those eight join a new explicit PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set whose members must resolve to common or destructive and never none; the 228-row snapshot is not edited; the s5 tools and classes go in an addedByS5 list read beside addedByS4; the converted typebox input schemas are written so their JSON equals the snapshot's, as s4 did for git, and any unavoidable difference is listed in an explicit S5 schema exception list in the test, never by rewriting the snapshot; old-input compatibility is tested separately in gh-compat.test.ts from schema serialisation identity.",
         "callSites": [
           "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
           "src/daemon/tools/__tests__/fixtures/approval-snapshot.json",
-          "src/daemon/tools/builtins/gh/index.ts"
+          "src/daemon/tools/builtins/gh/index.ts",
+          "src/daemon/tools/builtins/gh/release.ts:220",
+          "src/daemon/tools/builtins/gh/repo.ts:274"
         ]
       },
       {
         "entity": "GhCoverageRow",
         "change": "new",
-        "details": "{ command, owner: covered | excluded, toolIds?, op?, reason? }. The excluded rows are the list the user accepted in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'): browse; auth login, refresh, setup-git and token; codespace ssh, code, jupyter and ports forward; run watch; api (a raw passthrough); completion; all of alias; config set and clear-cache; extension browse, install, remove, upgrade, create and exec. They need a person, a browser or a terminal, run or fetch code, change gh itself or print a credential. auth logout, auth switch, codespace cp, logs and ports were added at the user's request.",
+        "details": "{ command, owner: covered | excluded, toolIds?, op?, reason? }. The excluded rows are the list the user accepted in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'): browse; auth login, refresh, setup-git and token; codespace ssh, code, jupyter and ports forward; run watch; api (a raw passthrough); completion; all of alias; config set and clear-cache; extension browse, install, remove, upgrade, create and exec. They need a person, a browser or a terminal, run or fetch code, change gh itself or print a credential. auth logout, auth switch, codespace cp, logs and ports were added at the user's request. The user also accepted, in the second set of decisions on 2026-10-25, the exclusion of replacing the content of an existing gist file (gh gist edit needs an editor) and of codespace cp --expand (a remote shell evaluation).",
         "callSites": [
           "src/daemon/tools/builtins/gh/index.ts",
           "docs/plans/tool-registry.md"
@@ -475,12 +556,12 @@
       {
         "contractId": "sc3",
         "role": "consumes",
-        "howDetails": "gh pr diff, gh run view --log and the free-text reads of gh_auth status, gh_status and gh_ruleset go through convertText with keyValues cross-checked against the raw text; tab-separated reads use a deterministic column parser and make no model call."
+        "howDetails": "gh pr diff, gh run view --log and the free-text reads of gh_auth status, gh_status and gh_ruleset list go through convertText with keyValues cross-checked against the raw text; tab-separated reads and gh_config list use a deterministic parser and make no model call."
       },
       {
         "contractId": "sc4",
         "role": "consumes",
-        "howDetails": "Each gh tool sets the approval field to ghApprovalClass or a fixed class; destructive calls ask every time. The field of a secret value is named secretValue, so the existing key mask in approval-policy.ts hides it."
+        "howDetails": "Each gh tool sets the approval field to ghApprovalClass or a fixed class; destructive calls ask every time. The field of a secret value is named secretValue, so the existing key mask in approval-policy.ts hides it. The key text of gh_ssh_key and gh_gpg_key add is a public key: a field named key is not masked by that policy and is shown in the approval request up to the existing 2000-character display limit (a longer string shows its first 2000 characters and its length). A tool-specific notice, such as the one for codespace create, goes in the preview title and content the tool supplies through buildApprovalGate, because the request reason is built by approval-policy.ts. The mask, the limit and the reason text are not changed here because sc4 is owned by s3."
       },
       {
         "contractId": "sc5",
@@ -491,265 +572,278 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "gh is not installed or not on PATH",
-          "detection": "ghExec returns a GhOutcome whose spawnError is true; ghFailureOf classifies it",
-          "response": "failure.kind missing-tool and a message that gh was not found",
-          "userImpact": "The caller learns gh is missing, not that the operation was rejected",
+          "scenario": "gh is not installed or cannot be spawned",
+          "detection": "ghExec gets a spawnError from runShellBytes and sets it on the outcome; ghFailureOf maps it first",
+          "response": "failure.kind missing-tool; error text names gh; execution never began, so this is the one failure that may say nothing changed",
+          "userImpact": "The call fails at once with a message to install gh",
           "recoverable": true
         },
         {
-          "scenario": "gh is installed but not signed in, or its token was rejected",
-          "detection": "A non-zero exit whose stderr says it is not logged in, needs authentication or rejected the token; when that text is ambiguous ghExec itself runs gh auth status once and stores its exit code in the GhOutcome, and a non-zero probe exit makes ghFailureOf return missing-signin",
-          "response": "failure.kind missing-signin and a message that names gh auth login as the user's step; the daemon reads and stores no credential",
-          "userImpact": "The user signs in with their own gh session and retries",
+          "scenario": "gh is not signed in or the token is expired",
+          "detection": "The failing command's stderr, or the output of the one gh auth status --hostname probe ghExec ran, holds authentication-specific text (not logged in, authentication failed, bad credentials, token invalid or expired)",
+          "response": "failure.kind missing-signin with the probe output kept in failure.original",
+          "userImpact": "The user is told to run gh auth login outside the registry",
           "recoverable": true
         },
         {
-          "scenario": "A gh command outlives its job's limit",
-          "detection": "outcome.timedOut is true, with limitMs from ghTimeoutMs for that tool and op",
-          "response": "failure.kind timed-out and the message 'gh <command> timed out after <limit> s'; for a mutating call it adds that the outcome is unknown",
-          "userImpact": "The caller can retry a read, or check the remote before repeating a mutation; a long transfer is not cut by a limit meant for a status read",
+          "scenario": "The network is unreachable or the host cannot be resolved",
+          "detection": "stderr or probe output matches network text (could not resolve host, connection refused, timeout dialing)",
+          "response": "failure.kind unreachable",
+          "userImpact": "The call fails; a retry later can succeed, after a mutating call's state is checked",
           "recoverable": true
         },
         {
-          "scenario": "A call passes its own time limit instead of using the table",
-          "detection": "ghExec has no timeoutMs option, so the compiler rejects it; a source scan test also fails on any ghExec call whose options carry a timeout",
-          "response": "The build and the test fail and name the file",
-          "userImpact": "The limit of a job cannot drift from the table",
+          "scenario": "A command outlives its per-job limit",
+          "detection": "runShellBytes reports timedOut; the outcome carries the limit applied from ghTimeoutMs",
+          "response": "failure.kind timed-out, text 'gh <command> timed out after <limit> s'; for a mutating call the text adds that the outcome is unknown and the state must be checked before retrying",
+          "userImpact": "The user learns which command and limit, and for a mutation must check the state before retrying",
           "recoverable": true
         },
         {
-          "scenario": "The network or GitHub is unreachable",
-          "detection": "stderr matches could not resolve host, connection refused, timed out or an HTTP 5xx",
-          "response": "failure.kind unreachable with gh's message",
-          "userImpact": "The caller waits and retries",
+          "scenario": "A mutating call fails after execution began: an abort, a child ended by a signal (code null and signal set, whatever other flags are set), a stdin write error (secret, variable, key adds) or a stderr overflow",
+          "detection": "runShellBytes reports aborted, a signal with a null code, stdinError or stderrOverflow; the one precedence is timedOut, aborted, signal, stdinError, stderrOverflow, so a signal together with a stdin error is reported as the signal and a stdin error together with an overflow as the stdin error; none of them shows what the remote service did before the local failure",
+          "response": "failure.kind rejected with the sentence 'the outcome is unknown; check the current state before retrying'; the message never says the value was not set or that nothing changed; the secret value is never placed in argv or in the error text",
+          "userImpact": "The caller verifies the secret, variable or key with the matching list op before retrying; the value is not leaked",
           "recoverable": true
         },
         {
-          "scenario": "gh rejects the request (not found, no permission, validation, a rate limit)",
-          "detection": "A non-zero exit with none of the cases above",
-          "response": "failure.kind rejected; output, format, success and error keep what the tool returned before",
-          "userImpact": "Existing callers that read error see the same text",
+          "scenario": "A mutating call exits with a plain non-zero status and gh's own error text",
+          "detection": "runShellBytes reports a non-zero code with no timeout, abort, signal or stdin error",
+          "response": "failure.kind rejected carrying gh's error text and no claim about state",
+          "userImpact": "The caller reads gh's reason",
           "recoverable": true
         },
         {
-          "scenario": "gh exits 0 but the secret on standard input was not delivered",
-          "detection": "The runShellBytes result carries stdinError, which the byte-to-text adapter copies into the GhOutcome",
-          "response": "ghFailureOf returns a rejected failure naming the stdin write error although the exit code is 0; the tool does not report success",
-          "userImpact": "A secret that was never stored is not reported as set",
+          "scenario": "A call carries a field the op's gh command does not accept, a missing required field (including any selector whose absence would make gh prompt or refuse to run, such as none of tag, pattern and archive on a release download), two fields of an exclusive pair, a field outside its enum, or an op the family does not offer",
+          "detection": "The op's input schema in GhOpContracts rejects it before any process starts",
+          "response": "rejectInput with the field named",
+          "userImpact": "The caller corrects the input; nothing ran and no prompt can appear",
           "recoverable": true
         },
         {
-          "scenario": "gh's error output overflows its cap, or the call is aborted",
-          "detection": "stderrOverflow or aborted is true in the outcome",
-          "response": "A rejected failure that says the error output overflowed, or that the call was cancelled",
-          "userImpact": "A killed command is not mistaken for a finished one",
+          "scenario": "A caller asks for codespace cp with expand, a gist file's content to be replaced, a codespace create with its own permissions choice, or any other input that is not offered (web, follow, show-token)",
+          "detection": "The input schema has no such field, so the check rejects it before any process starts",
+          "response": "rejectInput naming the field",
+          "userImpact": "No remote shell evaluation, no editor session and no permission prompt is reachable through the tool",
           "recoverable": true
         },
         {
-          "scenario": "gh output is cut by the capture cap and the cut is not the tool's answer",
-          "detection": "outcome.stdoutTruncated is true and the call did not set cutIsAnswer",
-          "response": "A rejected failure that says the output was cut, never a partial list parsed as whole",
-          "userImpact": "No partial answer is passed on as whole",
+          "scenario": "A tool would pass a flag the installed gh does not know (a version change, or a flag the tool adds itself such as --format or --default-permissions)",
+          "detection": "The real-CLI parser check builds the argv with representative values, appends --help as its own final token, and the installed gh reports an unknown flag or a parse error",
+          "response": "The test fails, naming the op and the flag",
+          "userImpact": "The defect is found at build time, not by a failed call",
           "recoverable": true
         },
         {
-          "scenario": "A read that is the tool's answer fails (for example gh run view's log command)",
-          "detection": "The secondary ghExec call returns a non-zero exit, spawnError, timedOut or an uncut-allowed truncation",
-          "response": "The tool fails with the log call's kind and its stderr in error; it no longer returns success with stderr as the log body",
-          "userImpact": "A caller no longer mistakes an error message for a log",
+          "scenario": "A capture is cut at the cap for a tool that does not treat a cut as its answer",
+          "detection": "runShellBytes reports stdoutTruncated or stderrOverflow while cutIsAnswer is false",
+          "response": "failure.kind rejected rather than a silently partial success",
+          "userImpact": "The caller is told the output was incomplete",
           "recoverable": true
         },
         {
-          "scenario": "gh --json output does not parse, or the parsed data does not match the output schema",
-          "detection": "parseJson returns undefined for non-empty output inside the tool, or the executor's output schema check fails",
-          "response": "failure.kind schema-mismatch. For a parse failure inside the tool, failure.original is the raw gh stdout up to the capture cap; for an executor schema failure it is the executor's rendered output cut to 4000 characters",
-          "userImpact": "No wrong-shaped data reaches the caller, and the diagnostic is what the code actually keeps",
-          "recoverable": true
-        },
-        {
-          "scenario": "The converted text of a text-only read fails the cross-check",
-          "detection": "convertText returns ok false after the one escalation",
+          "scenario": "sc3 conversion fails the key-value cross-check after one escalation",
+          "detection": "convertText returns a value whose key values are missing from the raw text",
           "response": "failure.kind conversion-failed with the raw text in failure.original",
-          "userImpact": "The caller still has the original text",
+          "userImpact": "The caller still has the raw text",
           "recoverable": true
         },
         {
-          "scenario": "A tab-separated read has a row with the wrong number of columns",
-          "detection": "The deterministic column parser counts the columns of every row against the op's column list",
-          "response": "schema-mismatch with the raw stdout in failure.original; no model is asked to repair it",
-          "userImpact": "A format change in gh is reported, not guessed around",
+          "scenario": "An exception is thrown inside a tool's execute",
+          "detection": "withGhFailureNet catches it",
+          "response": "A failure result with failure.kind, never a throw",
+          "userImpact": "The caller always gets a typed result",
           "recoverable": true
         },
         {
-          "scenario": "A family tool is called with an op it does not offer, a missing required field, or a field the op does not take",
-          "detection": "The typebox input schema rejects it before the process starts",
-          "response": "rejectInput names the field; nothing runs",
-          "userImpact": "A clear message instead of a gh usage error",
-          "recoverable": true
-        },
-        {
-          "scenario": "A destructive op is called (close, merge, delete, transfer, rename, logout, visibility change, forced sync)",
-          "detection": "ghApprovalClass returns destructive for the tool and input",
-          "response": "The executor asks the attached client every time and runs nothing on a decline, a time-out or no client",
-          "userImpact": "No remote object or sign-in is closed, merged, deleted or ended without the user's yes",
-          "recoverable": true
-        },
-        {
-          "scenario": "gh_secret set carries a value",
-          "detection": "The input field is secretValue, which the approval policy's key mask hides; ghExec receives it as input, not in argv",
-          "response": "The value is written to gh on standard input through runShellBytes and shows in neither the process list, the approval content nor the logs",
-          "userImpact": "A secret value is not exposed",
-          "recoverable": true
-        },
-        {
-          "scenario": "The installed gh lists a command that GH_COVERAGE has no row for",
-          "detection": "The coverage test reads gh's own group and subcommand lists",
-          "response": "The test fails and names the command",
-          "userImpact": "A new gh release cannot silently open a gap",
+          "scenario": "The user declines the approval for a destructive call",
+          "detection": "The sc4 approval exchange returns a decline",
+          "response": "The call does not run",
+          "userImpact": "Nothing changes",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "gh_pr_create called with the same input as before the change",
-          "expected": "The same id, arguments and text output as today (90 s limit kept), plus a data payload that fits the output schema (ac6)"
+          "input": "gh_pr_diff or gh_run_view output larger than the tool's display cap",
+          "expected": "A cut at the cap is a success with truncated true; the kept prefix runs to the cap, which can differ from the legacy runShell answer by up to one chunk"
         },
         {
-          "input": "gh_pr_diff larger than its maxBytes (default 256 KiB)",
-          "expected": "Still a success with data.truncated true and the same text, because the tool passes its own cap as the capture cap and sets cutIsAnswer"
+          "input": "A secret set with envFile and also with name",
+          "expected": "Rejected: exactly one of name and envFile is given"
         },
         {
-          "input": "gh_run_view logs larger than maxLogBytes (default 128 KiB)",
-          "expected": "Still a success with data.truncated true, as today"
+          "input": "gh_release_asset download with none of tag, pattern and archive",
+          "expected": "Rejected by the schema, because without a tag gh requires --pattern or --archive; with only a tag, only a non-empty pattern list or only an archive it is accepted"
         },
         {
-          "input": "gh:project:item-add and the other colon ids",
-          "expected": "Registered under the same ids with the same meaning (ac6)"
+          "input": "gh_repo_manage set-default with none of repository, view, unset, or with two of them",
+          "expected": "Rejected: exactly one is required, so gh never prompts"
         },
         {
-          "input": "gh_repo_list, gh_run_list or gh_workflow_list",
-          "expected": "Keep returning {count, repos}, {count, runs} and {count, workflows}; the schema describes them in place"
+          "input": "gh_auth logout or switch with only hostname or only user",
+          "expected": "Rejected: both are required, so gh never selects by prompt"
         },
         {
-          "input": "A list read that returns no rows",
-          "expected": "success with count 0 and an empty list, not a failure"
+          "input": "gh_codespace create for a repository whose devcontainer requests additional permissions",
+          "expected": "The generated argv always contains --default-permissions, so gh does not ask; the preview content the tool supplies states that the requested permissions are accepted; the fake gh fails the create if the flag is missing"
         },
         {
-          "input": "gh_project_manage close",
-          "expected": "Classed destructive like every close; with undo true it reopens the project and is common"
+          "input": "gh_codespace delete with codespace, or with all, or with both or neither",
+          "expected": "Exactly one of codespace and all is accepted; the prompt sweep treats this pair as the one allowed alternative, not as an optional selector"
         },
         {
-          "input": "gh_repo_manage edit that sets visibility",
-          "expected": "Classed destructive and passes the accept flag gh requires; without visibility it is common"
+          "input": "gh_repo_manage edit with visibility set",
+          "expected": "Class is destructive; without visibility it is common; the generated argv contains --visibility and no confirmation flag"
         },
         {
-          "input": "gh_repo_manage sync with force true",
-          "expected": "Classed destructive and asks; without force it is common"
+          "input": "gh_project_manage link or unlink",
+          "expected": "The generated argv has no --format; the ops that accept --format get it; the result is {op, ok, target, message}"
         },
         {
-          "input": "gh_auth logout for a host the user is not signed in to",
-          "expected": "A rejected failure from gh; it still asks first because the class does not depend on the outcome"
+          "input": "gh_search with reactions set to '>100', comments to '5..20', created to '>=2024-01-01'",
+          "expected": "Accepted as expression strings and passed through unchanged as the qualifier value; an integer-only schema would have rejected them"
         },
         {
-          "input": "gh_auth status when gh is signed in to several hosts",
-          "expected": "One item per host with its login and state; the token is never requested or returned"
+          "input": "release upload or download with clobber true",
+          "expected": "Class destructive; without clobber it is common"
         },
         {
-          "input": "gh_release_asset upload of a large file",
-          "expected": "300 s; timed-out names the command and the limit and the caller checks the release before repeating"
+          "input": "label create or clone with force, pr checkout with force, repo sync with force, codespace delete with force",
+          "expected": "Class destructive"
         },
         {
-          "input": "gh_codespace create or rebuild",
-          "expected": "600 s; a slower call ends timed-out with the unknown-outcome sentence"
+          "input": "gh_gist rename, gh_repo_manage rename, gh_label edit with newName, or the existing gh_release_edit with newTag",
+          "expected": "Each resolves to destructive, since every rename is destructive; label edit without newName and release edit without newTag are common; the test pins each resolved class"
         },
         {
-          "input": "A tool called from a directory that is not a repository with no repo given",
-          "expected": "A rejected failure from gh saying it could not determine the repository, with gh's wording unchanged"
+          "input": "the existing gh_repo_clone with a non-empty extraArgs, for example --upload-pack=cmd",
+          "expected": "Class destructive, so the user sees the arguments before git runs; with no extraArgs it is common; extraArgs stays in the schema and is the one recorded exception to the no-raw-argument rule"
+        },
+        {
+          "input": "gh_ssh_key or gh_gpg_key add with key text longer than 2000 characters",
+          "expected": "The approval request shows the first 2000 characters followed by the length, as approval-policy.ts does for every long string; key text up to 2000 characters is shown whole; keyFile shows only the path; a secretValue in the same request is masked"
+        },
+        {
+          "input": "gh_gist edit with no add, remove or desc",
+          "expected": "Rejected: at least one is required"
+        },
+        {
+          "input": "An op string the family does not offer, or an unknown op reaching ghApprovalClass",
+          "expected": "Rejected by the schema; ghApprovalClass returns destructive so it would ask"
+        },
+        {
+          "input": "A gh version that lists a command, flag or positional with no GH_COVERAGE or GH_INPUTS row",
+          "expected": "The coverage tests fail, naming the command or input"
+        },
+        {
+          "input": "gist rename, which has three positionals and no flags",
+          "expected": "GH_INPUTS has three positional rows, and op and cwd synthetic rows; the inventory test accounts for every schema field"
+        },
+        {
+          "input": "A tool id or op missing from the time-limit table",
+          "expected": "ghTimeoutMs gives the class default (read 30 s, write 60 s), never unbounded"
+        },
+        {
+          "input": "gh list command that prints tab text off a terminal",
+          "expected": "The deterministic tab parser returns rows as string arrays, or the verified gist columns; no model call"
+        },
+        {
+          "input": "Output containing non-UTF-8 bytes",
+          "expected": "The byte-to-text adapter decodes stdout with replacement; the fixture for a cut crossing a multibyte character must still yield valid text"
+        },
+        {
+          "input": "release download with output set to '-'",
+          "expected": "Rejected: output to standard output would be captured as the answer"
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "All 46 existing gh tool ids, including the colon ids of the project family, keep their ids and inputs, and no existing tool gets a shorter time limit than it has today.",
+          "text": "Existing gh tool ids, meanings and result data keep their shape; types, approval classes and failure kinds are added beside them",
           "source": "c1"
         },
         {
-          "text": "Existing list tools keep the data fields they return today ({count, repos}, {count, runs}, {count, workflows}); a schema describes them and adds none that replaces them.",
+          "text": "No gh tool shortens the time limit it has today",
           "source": "c1"
         },
         {
-          "text": "gh_pr_diff and gh_run_view stay successes with data.truncated when output passes their own display cap.",
+          "text": "A secret value is never placed in argv, logs or error text",
           "source": "c1"
         },
         {
-          "text": "The gh tools never read or store credentials: they run the user's own gh session, and auth token and show-token are not offered.",
-          "source": "c2"
-        },
-        {
-          "text": "No gh call has a raw passthrough: there is no tool that takes an arbitrary argument list, and gh api is excluded.",
-          "source": "c2"
-        },
-        {
-          "text": "A failed gh call keeps its output, format, success and error fields as before, apart from gh_run_view's failed log call, which becomes a real failure; failure.kind is added beside them.",
+          "text": "Legacy failure texts stay in output and error",
           "source": "c1"
-        },
-        {
-          "text": "The mutating tools keep approval 'common' as the minimum; none becomes less strict than it is, and the historical 228-row approval snapshot is not rewritten.",
-          "source": "c3"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test with assert/strict, run with npx tsx --test (the pattern of src/daemon/tools/builtins/git/__tests__ and src/daemon/tools/__tests__)",
+      "testFramework": "node:test run through tsx (npx tsx --test), assertions from node:assert/strict",
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Classification, limits, schemas, parsers and the approval mapping without a process",
+          "purpose": "Prove the pure pieces: the limit table, the approval class function, the failure mapping and its precedence, the tab parser, the config parser, the byte-to-text adapter, the sample-input builder of the parser check and each op's input schema (requiredness, exclusive pairs, at-least-one groups, enums, expression strings)",
           "subjects": [
-            "ghFailureOf classifies a GhOutcome into missing-tool, missing-signin (from text, and from a non-zero probe), timed-out, unreachable and rejected, and returns rejected for stdinError, stderrOverflow, aborted and an unmarked cut capture even when the exit code is 0",
-            "ghTimeoutMs returns for every row of GhOpContracts the limit in the table, never below the limit the existing tool has today, and a default class limit for an unknown key",
-            "ghApprovalClass equals GhOpContracts for every existing tool and every op of every family tool, including project close with and without undo, repo edit with visibility, repo sync with and without force",
-            "input schemas reject an unknown op, a missing required field and a field an op does not take",
-            "the tab-column parser accepts rows with the op's column count and rejects others",
-            "a source scan fails when any ghExec call passes a timeout option or when ghExec accepts one",
-            "the compile-time check in call-tool.type-test.ts shows withGhFailureNet keeps the concrete schema types so callTool infers input and result"
+            "ghTimeoutMs",
+            "ghApprovalClass",
+            "ghFailureOf",
+            "tab-column parser",
+            "gh config list parser",
+            "byte-to-text adapter",
+            "per-op input schemas in GhOpContracts"
+          ],
+          "fixturesNeeded": [
+            "GhOutcome fixtures for spawn error, time-out, abort, signal-only termination (code null, signal set, all other flags false), stdin error, stderr overflow, plain non-zero exit, cut capture, auth text, network text, and paired-flag combinations that pin the one precedence (signal with stdin error, stdin error with stderr overflow, time-out with abort)",
+            "tab-separated gh list output including the verified gist columns",
+            "key=value config output",
+            "stdout crossing the cap inside a multibyte UTF-8 character"
           ]
         },
         {
           "level": "integration",
-          "purpose": "Each tool through executeTool against a fake gh on PATH that answers from fixture files and records its argv and standard input",
+          "purpose": "Run each tool end to end against a fake gh binary placed first on PATH that records argv, standard input and the environment and fails if it is asked to prompt, so flags, positionals, -R handling, stdin delivery, limits, results and the absence of prompts are checked without a network",
           "subjects": [
-            "every existing gh id returns the same output, format and error text as the recorded legacy answer plus data that fits its output schema, with repo list, run list and workflow list keeping {count, repos}, {count, runs} and {count, workflows}",
-            "gh_pr_diff and gh_run_view stay successes with data.truncated when the output passes their default caps (256 KiB and 128 KiB) and at a maxBytes the caller sets",
-            "each op of each new family tool builds the expected argv and parses the fixture output into its declared shape, including the --json reads, the tab-separated reads and the text reads converted with a stub model",
-            "a fake gh that outlives a scaled limit ends with timed-out naming the command and that op's limit, with the unknown-outcome sentence for a mutating op; one that is absent gives missing-tool; one that prints 'not logged in' gives missing-signin, and an ambiguous failure with a failing fake gh auth status gives missing-signin",
-            "gh_run_view with a failing log command fails with the log call's kind and does not return stderr as a log",
-            "gh_secret set puts secretValue on standard input, not in argv, and the approval content hides it; a fake gh that exits 0 without reading standard input gives a rejected failure",
-            "a destructive call is not run when the approval is declined, times out or has no client",
-            "gh pr diff and gh run view --log convert through the sc3 conversion with a stub model, pass the cross-check, and fail it with the raw text kept",
-            "a gh --json output that does not parse gives schema-mismatch with the raw stdout in failure.original, and an executor schema failure carries the executor's rendered output cut to 4000 characters"
+            "the 22 family tools and every op in GhOpContracts",
+            "the 46 existing tools through typed callTool",
+            "gh_pr_diff and gh_run_view cut at the cap",
+            "secret and variable set with stdin and envFile",
+            "codespace create with and without --default-permissions",
+            "withGhFailureNet",
+            "approval exchange for destructive ops",
+            "output union discriminated by the literal op"
           ],
           "fixturesNeeded": [
-            "a fake gh executable on PATH driven by environment variables (answer files, exit code, sleep, recorded argv and stdin, a mode that exits 0 without reading stdin)",
-            "recorded gh --json and tab-separated outputs for each list and view",
-            "a stub provider for the conversion"
+            "fake gh script with per-command canned stdout, stderr, exit code and delay",
+            "fake gh that closes its stdin early",
+            "fake gh that exits non-zero with a prompt error when it would have asked a person, including codespace create without --default-permissions and release download with no tag, pattern or archive",
+            "temporary working directory"
           ]
         },
         {
           "level": "contract",
-          "purpose": "Coverage, the approval snapshot and the time-limit table stay complete and checkable",
+          "purpose": "Keep the registry honest against the installed gh, which is the independent oracle, and against the earlier stories' contracts",
           "subjects": [
-            "GH_COVERAGE has a row for every group and subcommand of the installed gh read from its own help, every covered row names a registered tool and op, and every excluded row has the reason the user accepted on 2026-10-25",
-            "a registry listing contains every one of the 46 existing ids and no tool that takes an arbitrary argument list",
-            "approval-class-mapping.test.ts reads an addedByS5 list beside addedByS4 and leaves the 228-row historical snapshot unchanged"
+            "GH_COVERAGE against gh --help command listing",
+            "GH_INPUTS (flags from FLAGS, positionals from USAGE, synthetic fields) against each op's schema fields",
+            "real-CLI parser check: each op's argv built from representative values (first enum member, integer 1, the fixed --json field list, a placeholder string) with --help appended as its own final token, run against the installed gh under an empty temporary HOME and GH_CONFIG_DIR, no token and a closed-port proxy, asserting exit 0 and a USAGE section (covers the flags the tools add themselves, such as --format, --visibility and --default-permissions), plus a canary case for a mutating command; it proves flag validity only",
+            "prompt sweep: the prompt cases are read from the installed gh's help text (commands whose help says an interactive prompt is used when an argument is absent, or that a flag avoids a prompt), and each such argument is required in the schema or always passed",
+            "approval-class-mapping.test.ts with the PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set and addedByS5 list",
+            "schema JSON equality with the 228-row snapshot for the existing tools",
+            "no ghExec call outside the table passes its own timeout"
+          ],
+          "fixturesNeeded": [
+            "installed gh 2.46.0 (skips cleanly when gh is absent)",
+            "approval-snapshot.json unchanged"
           ]
         },
         {
           "level": "live",
-          "purpose": "The tools work against the real gh, gated by INSRC_LIVE_TESTS=1 and a signed-in session",
+          "purpose": "Read-only calls against the user's real gh session; gated by INSRC_LIVE_TESTS=1 and skipped otherwise",
           "subjects": [
-            "gh_auth status, gh_repo_view and gh_issue_list on a public repository return data that fits their schemas",
-            "gh_auth status with a HOME that has no hosts file returns missing-signin"
+            "gh_auth status",
+            "gh_config list",
+            "gh_search repos with limit 1",
+            "gh_gist list columns",
+            "missing-signin text with a bad token in the environment"
           ]
         }
       ],
@@ -757,85 +851,138 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "gh-coverage.test.ts: GH_COVERAGE has a row for every command of the installed gh and every covered row names a registered tool and op",
-            "gh-coverage.test.ts: the registry lists all 46 existing ids and no raw passthrough tool",
-            "gh-tools-integration.test.ts: each op of each family tool runs through executeTool against the fake gh"
+            "gh-coverage.test.ts: every command of the installed gh has a GH_COVERAGE row",
+            "gh-coverage.test.ts: every covered row names a registered tool and op",
+            "gh-coverage.test.ts: every excluded row has a reason",
+            "gh-inputs.test.ts: every flag of every covered command is a field or an excluded row",
+            "gh-inputs.test.ts: every positional of the USAGE line is a field row",
+            "gh-inputs.test.ts: op, cwd and repo are synthetic rows, and every schema field is accounted for by a row of one of the three kinds",
+            "gh-inputs.test.ts: gist rename's three positionals are rows and its schema has exactly those fields plus op and cwd",
+            "gh-inputs.test.ts: codespace cp has no expand field, gist edit has no content or filename field, and codespace create has no defaultPermissions field, and the schema rejects them",
+            "gh-inputs.test.ts: prompt sweep: set-default needs exactly one of repository, view, unset; auth logout and switch need hostname and user; every codespace op other than list and create needs codespace, except delete which needs exactly one of codespace and all; codespace create always passes --default-permissions; run download needs runId; ruleset view needs rulesetId",
+            "gh-inputs.test.ts: release download requires at least one of tag, a non-empty pattern list and archive: an input with none is rejected by the schema, and each of the three alone is accepted and builds the argv gh expects",
+            "gh-parser.test.ts: every op's argv built from representative values with --help as its own final token parses against the installed gh (exit 0 and a USAGE section; no unknown flag; project link and unlink carry no --format; repo edit carries no confirmation flag; codespace create carries --default-permissions)",
+            "gh-parser.test.ts: the canary mutating command (gh issue delete 1 --help) under the empty HOME, no token and closed-port proxy prints help and makes no request",
+            "gh-family-tools.test.ts: each op builds the argv gh expects for its fields",
+            "gh-family-tools.test.ts: no op under the fake gh reaches a prompt, and codespace create fails under the fake gh when --default-permissions is absent",
+            "gh-family-tools.test.ts: no registered gh tool takes a raw argv or passthrough field, except exactly gh_repo_clone.extraArgs"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "gh-tools-integration.test.ts: every gh tool's result data fits its output schema, and a result that does not fit fails with schema-mismatch",
-            "gh-tools-integration.test.ts: gh pr diff and gh run view --log pass and fail the cross-check with a stub model",
-            "call-tool.type-test.ts: callTool over a withGhFailureNet definition infers its input and result types"
+            "gh-output-schemas.test.ts: every gh tool declares an inputSchema and an outputSchema",
+            "gh-output-schemas.test.ts: every output of a family tool carries the literal op equal to the input op",
+            "gh-output-schemas.test.ts: each tool result validates against its outputSchema for success and failure",
+            "gh-output-schemas.test.ts: auth status hosts, config list entries and ruleset list items have the nested shapes in GhOpContracts",
+            "gh-output-schemas.test.ts: every project op returns {op, ok, target, message}",
+            "gh-typed-call.test.ts: callTool over withGhFailureNet keeps the concrete result type",
+            "call-tool.type-test.ts: gh tool input and result types",
+            "gh-convert-text.test.ts: gh_pr_diff and gh_run_view conversions cross-check against the raw text",
+            "gh-convert-text.test.ts: auth status and ruleset list keyValues (host and login; ids and names) are checked against the raw text",
+            "gh-convert-text.test.ts: a failed cross-check gives conversion-failed with the raw text in failure.original",
+            "gh-capture.test.ts: a cut at the cap is a success with truncated true and valid text across a multibyte character",
+            "gh-search-inputs.test.ts: comparison and range expressions for comments, interactions, reactions, followers, forks, stars, size and the date qualifiers are accepted and passed through unchanged"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "gh-approval.test.ts: ghApprovalClass equals GhOpContracts for every tool and op; issue close, pr close, pr merge, project close, release delete, repo delete, item-delete, every delete, remove, transfer and rename op, auth logout, visibility change and forced sync are destructive",
-            "gh-tools-integration.test.ts: a destructive call is not run when declined, timed out or with no client"
+            "approval-class-mapping.test.ts: PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 members (the six destructive existing tools plus gh_release_edit and gh_repo_clone) resolve to common or destructive and never none",
+            "gh-approval.test.ts: close, merge, delete, transfer, logout and delete-asset are destructive",
+            "gh-approval.test.ts: every rename is destructive: gist rename, repo rename, label edit with newName and the existing gh_release_edit with newTag each resolve to destructive, and without the rename input the class is common",
+            "gh-approval.test.ts: the existing gh_repo_clone is destructive with a non-empty extraArgs and common without",
+            "gh-approval.test.ts: visibility set and the overwrite flags (clobber, force) make a call destructive, and without them it is common",
+            "gh-approval.test.ts: gh_issue_close, gh_pr_close, gh_pr_merge, gh_release_delete, gh_repo_delete and gh:project:item-delete are destructive",
+            "gh-approval.test.ts: an unknown op is destructive",
+            "gh-approval.test.ts: a destructive call asks every time and a declined call does not run gh",
+            "gh-approval.test.ts: secretValue is masked in the approval request; ssh-key and gpg-key add key text up to 2000 characters is shown whole, a longer key shows exactly its first 2000 characters and the length, and keyFile shows only the path",
+            "gh-approval.test.ts: the gate preview content the tool supplies for codespace create states that the permissions the codespace requests are accepted, while the request reason stays the one approval-policy.ts builds"
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
-            "gh-failures.test.ts: absent gh gives missing-tool, 'not logged in' gives missing-signin and the message names which; an ambiguous failure is confirmed by the probe",
-            "gh-live.test.ts: gh signed out gives missing-signin (live)"
+            "gh-failures.test.ts: spawn error gives missing-tool naming gh",
+            "gh-failures.test.ts: authentication text in the command's stderr gives missing-signin",
+            "gh-failures.test.ts: authentication text only in the probe output gives missing-signin with the probe in failure.original",
+            "gh-failures.test.ts: ambiguous failure with a clean probe stays rejected, not missing-signin",
+            "gh-failures.test.ts: network text gives unreachable",
+            "gh-failures.test.ts: no call sets or reads a token of its own; the user's gh session is used",
+            "gh-live.test.ts: bad token in the environment gives missing-signin (live, gated)"
           ]
         },
         {
           "criterionId": "ac5",
           "provingTests": [
-            "gh-failures.test.ts: a fake gh that outlives the scaled limit of its job ends with failure.kind timed-out and a message naming the command and that limit; a mutating call adds the unknown-outcome sentence",
-            "gh-limits.test.ts: ghTimeoutMs matches GhOpContracts, is never below an existing tool's current limit, and no ghExec call passes its own timeout"
+            "gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out and a message naming the command and the limit",
+            "gh-timeouts.test.ts: a mutating call's time-out adds that the outcome is unknown",
+            "gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default",
+            "gh-timeouts.test.ts: no existing tool's limit is below its limit today",
+            "gh-timeouts.test.ts: no ghExec call outside the table passes its own timeout",
+            "gh-failures.test.ts: the one precedence timedOut, aborted, signal, stdinError, stderrOverflow, unmarked cut, non-zero exit, pinned by paired-flag fixtures: time-out with abort gives the time-out, abort with signal gives the abort, signal with stdin error gives the signal, stdin error with stderr overflow gives the stdin error",
+            "gh-failures.test.ts: a signal-only termination (code null, signal set, every other flag false) is rejected for a read, and for a mutating call also carries the unknown-outcome sentence",
+            "gh-failures.test.ts: for a mutating call a stdin write error, an abort, a stderr overflow and a signal each report an unknown outcome and never say the value was not set; a plain non-zero exit carries gh's own text and no state claim; a read call's failure carries no such sentence",
+            "gh-failures.test.ts: a fake gh that closes its stdin early gives a stdin error that is a failure even at exit 0, without claiming to detect an unread secret"
           ]
         },
         {
           "criterionId": "ac6",
           "provingTests": [
-            "gh-compat.test.ts: each of the 46 existing ids, including gh_pr_create, gh_issue_comment, gh_release_delete and gh:project:item-add, called with its old input returns the same output, format and error text as the recorded legacy answer (apart from the gh_run_view failed log call), and the registered id list equals the recorded list",
-            "gh-compat.test.ts: gh_pr_diff and gh_run_view keep data.truncated at their default caps"
+            "gh-compat.test.ts: the 46 existing tool ids are all still registered",
+            "gh-compat.test.ts: each existing tool's input schema serialises identically to the snapshot, apart from the listed S5 exceptions",
+            "gh-compat.test.ts: gh_pr_create, gh_issue_comment, gh_release_delete and gh:project:item-add accept their old inputs and run the same gh argv",
+            "gh-compat.test.ts: gh_repo_clone keeps extraArgs and forwards it after --, and gh_release_edit keeps newTag, unchanged apart from their approval class",
+            "gh-compat.test.ts: existing result data (count, repos, runs, workflows, number, diffBytes, truncated, runId, jobs) keep their shape, with only truncated added to gh_run_view",
+            "gh-compat.test.ts: legacy failure texts stay in output and error",
+            "approval-class-mapping.test.ts: the 228-row snapshot is not edited and addedByS5 lists the new tools"
           ]
         }
       ]
     },
     "migration": {
-      "stateBefore": "46 gh tools in src/daemon/tools/builtins/gh run gh through ghExec with a 30 s default and ten calls that pass their own limit (60, 60, 60, 60, 90, 180, 120, 120, 600 and 180 s). 27 mutating tools already declare approval 'common' as a fixed field and none is destructive. They declare no output schema or typebox input, return text failures with no kind (shellFail drops the spawn, time-out and truncation flags), gh_run_view returns success with stderr as the log when its log command fails, gh_pr_diff and gh_run_view pass their own display cap as the capture cap and return a truncated success, and about 113 of gh's 159 operations have no tool (bundles c1 and c2).",
-      "stateAfter": "The same 46 ids with typebox schemas, per-input approval, failure kinds classified at the ghExec boundary and a limit per job from one table; the two display-cap tools still return a truncated success; 22 family tools with an op input cover every operation not on the user's exclusion list, each op with its inputs, output, command, class and limit in GhOpContracts; a coverage table accounts for every gh command and a test keeps it in step with the installed gh.",
+      "stateBefore": "46 gh tools in seven files under src/daemon/tools/builtins/gh/. ghExec in helpers.ts has a 30 s default and a 4 MiB capture cap; 47 calls, ten pass their own limit (60 s to 600 s). 27 mutating tools declare approval 'common' as a fixed field and none is destructive; gh_release_edit renames a tag through newTag and gh_repo_clone forwards a raw extraArgs list to git clone, both under common. No tool declares typebox input or an outputSchema. shellFail keeps only stderr text and drops the spawn, time-out and truncation flags. gh_pr_diff returns data {number, diffBytes, truncated}; gh_run_view returns {runId, jobs} and succeeds with stderr as the log body when the log command fails. Many gh operations (secrets, variables, labels, gists, codespaces, search, auth and the rest) have no tool.",
+      "stateAfter": "The 46 existing tools keep their ids, input meaning and result data, and gain typebox input and output schemas, per-input approval classes (close, merge, delete, transfer, every rename including a release's newTag, logout, visibility changes, overwrite flags and a clone with extraArgs destructive), failure kinds and a per-job time limit from one table that is never below today's. 22 family tools with an op input cover the rest of gh, each output carrying the literal op, no op able to reach a gh prompt or accept an input gh cannot run (codespace create always passes --default-permissions; release download needs a tag, a pattern or an archive), and every flag a tool adds checked against the installed gh by a parser check that runs --help with representative values. GH_COVERAGE and GH_INPUTS record every command and every flag, positional and synthetic input as covered or excluded with a reason, and tests check them against the installed gh. A mutating call that fails after execution began reports an unknown outcome under one precedence. gh_run_view gains the additive field truncated and now fails when its log command fails.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Record the legacy answers (output, format, error, data.truncated) of every existing gh tool for a set of inputs against the fake gh, before any tool is converted.",
+          "action": "Add the shared pieces: the limit table and ghTimeoutMs, the byte-to-text adapter over runShellBytes, ghExec with the key option and the one sign-in probe, GhOutcome, ghFailureOf (with its one precedence and the unknown-outcome rule for mutating calls), withGhFailureNet and ghApprovalClass. Existing tools are not touched yet.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Change ghExec to take a limit key, standard input and a cut-is-answer flag and to return the normalised outcome, with the sign-in probe made there; add ghTimeoutMs with the limit table, the synchronous ghFailureOf and withGhFailureNet, and replace the ten per-call limits by table rows equal to today's values.",
-          "rollbackable": true
+          "action": "Convert the existing tools file by file (issue, pr, repo, release, actions, project): typebox input written to serialise identically to the snapshot, output schema describing today's data, limit passed through the key instead of a number, fixed approval replaced by ghApprovalClass where the class depends on input, the six destructive tools raised, and gh_release_edit (newTag) and gh_repo_clone (extraArgs) made destructive per input. Update approval-class-mapping.test.ts with the PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set and addedByS5 list; the snapshot is not edited.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1 merged"
+          ]
         },
         {
           "order": 3,
-          "action": "Convert the 46 existing tools in place to typebox input and output schemas with ghApprovalClass, one file at a time, keeping each tool's current data fields and truncation behavior and running the compatibility test after each file; make gh_run_view's failed log call a failure.",
-          "rollbackable": true
+          "action": "Change gh_pr_diff and gh_run_view to the cut-is-answer capture and the sc3 conversion; add truncated to gh_run_view and make a failed log command fail the call. This is the one visible behaviour change besides the stricter approval and is covered by fixtures that cross the cap and a multibyte character.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2 merged"
+          ]
         },
         {
           "order": 4,
-          "action": "Add the 22 family tools and register them behind the failure net, with the stdin path for gh_secret set and the tab-column parser for the text lists.",
-          "rollbackable": true
+          "action": "Add the 22 family tools with their op tables, the tab and config parsers and the stdin delivery for secret, variable and key adds, the codespace create preview notice, and register them in index.ts.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1 merged"
+          ]
         },
         {
           "order": 5,
-          "action": "Add GH_COVERAGE with the user's accepted exclusions and its test against the installed gh, and the limit and approval inventory tests.",
-          "rollbackable": true
-        },
-        {
-          "order": 6,
-          "action": "Add an addedByS5 list to the approval snapshot and extend approval-class-mapping.test.ts to read it, leaving the historical 228-row snapshot unchanged.",
-          "rollbackable": true
+          "action": "Add GH_COVERAGE and GH_INPUTS and the coverage, input, prompt-sweep, real-CLI parser, timeout, approval, failure and compatibility tests, with the fake gh binary fixture; record the performance amendment and update docs/plans/tool-registry.md.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "steps 2 and 4 merged"
+          ]
         }
       ],
-      "backwardCompat": "All 46 gh ids, inputs, output text, format and error text are unchanged, and no existing tool gets a shorter time limit; the data payload and failure.kind are additive fields; gh_pr_diff and gh_run_view keep their truncated successes and data.truncated at their default caps and at a caller's cap. Visible changes: calls that ran past the old 30 s default now succeed up to their job's limit; gh_run_view returns a failure, not a success carrying stderr, when its log command fails; and a capture cut at the 4 MiB cap fails for tools that do not set their own display cap. Callers outside src/daemon/tools (src/workflow/gates.ts, tracker-auto.ts, bugfix/tracker.ts and the github.ts wrappers) are not touched by this Story; s7 moves them.",
+      "backwardCompat": "Existing tool ids, input fields and result data are unchanged; the schemas serialise identically to the 228-row snapshot apart from any listed S5 exception, and gh_repo_clone.extraArgs and gh_release_edit.newTag stay. Approval is stricter for eight tools (close, merge and delete now destructive and ask every time; a release edit that sets newTag and a clone that sets extraArgs ask too), so a caller that relied on the common class now sees a prompt. Limits only grow or stay. gh_run_view gains the additive truncated field and now fails when its log command fails; a cut capture keeps the prefix up to the cap, so text and diffBytes at the cap can differ from today by up to one chunk. Failure text stays in output and error with failure.kind added beside it.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -849,7 +996,7 @@
       {
         "id": "a2",
         "name": "Existing tools in place, new operations grouped by family with an op input",
-        "oneLineSummary": "Convert the 46 tools in place and cover the other operations with 22 family tools whose op input names the operation, with a per-op contract table giving each op its inputs, output, command, class and time limit."
+        "oneLineSummary": "Convert the 46 tools in place and cover the other operations with 22 family tools whose op input names the operation, with a per-op contract table giving each op its exact flags, positionals, output, command, class and time limit, and input and parser checks against the installed gh."
       },
       {
         "id": "a3",
@@ -860,10 +1007,11 @@
     ],
     "chosenAlternative": "a2",
     "openQuestions": [
-      "The per-job limit table departs from the HLD's single 120 s performance line; the user decided it in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions', commit a3d4990ea), and the nonFunctional.retarget proposal in the contract step still has to be filed as an amendment artifact.",
+      "The per-job limit table departs from the HLD's single 120 s performance line; the user decided it in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'). The nonFunctional.retarget proposal made in the contract step still has to be filed as an amendment artifact.",
       "gh_run_view's failed log call becomes a real failure instead of a success carrying stderr (the rule used for git_show's diff); confirm.",
-      "The exact typebox field names of each op follow GhOpContracts and are fixed in the plan.",
-      "No insrc_analyze_step bundle was run for this LLD; the bundles come from direct reads of the gh tool files, the installed gh 2.46.0 help and the tools folder (audit item ep3 was partial)."
+      "gpg-key list and ssh-key list return untyped rows because gh does not document their columns and the sign-in here lacks the scopes to list them; a later change can name the columns once they are verified.",
+      "codespace create always accepts the permissions the devcontainer requests (--default-permissions), and the notice is in the approval preview content; confirm this is acceptable, since the alternative would be to refuse codespaces that request extra permissions.",
+      "No insrc_analyze_step bundle was run for this LLD; the bundles come from direct reads of the gh tool files, the installed gh 2.46.0 help and --json listings, and the tools folder."
     ]
   },
   "citations": [

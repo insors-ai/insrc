@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T18:23:06.887Z",
+    "updatedAt": "2026-10-25T18:45:25.724Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -626,6 +626,113 @@
               },
               {
                 "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "2f975f568",
+        "ranAt": "2026-10-25T18:45:25.724Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-COLLISION: canonical managed/unmanaged adopted/unadopted save races in both orders",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-NAMESPACE: actual alias/relative/trailing-slash upsert refusal and preexisting distinct-target isolation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1893,
+            "titles": [
+              {
+                "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
                 "result": "pass"
               }
             ],

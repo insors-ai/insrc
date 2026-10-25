@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 64 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -279,3 +279,19 @@ Run at 2026-10-25T20:30:25.887Z on commit `47507bad6`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-file-resources.test.ts` | 0 | 1 | 2.1 s |  |
+
+## t13
+
+Run at 2026-10-25T20:43:00.361Z on commit `b0f4ecf01`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-COMPAT: prepareTemporary edit/new draft source and compiled probe cancellation, zero commit writes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits | `src/daemon/db/__tests__/session-probe.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 1 | 4 s |  |

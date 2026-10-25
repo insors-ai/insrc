@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T20:30:25.887Z",
+    "updatedAt": "2026-10-25T20:43:00.361Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -975,6 +975,42 @@
             "titles": [
               {
                 "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "b0f4ecf01",
+        "ranAt": "2026-10-25T20:43:00.361Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-COMPAT: prepareTemporary edit/new draft source and compiled probe cancellation, zero commit writes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4026,
+            "titles": [
+              {
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
                 "result": "pass"
               }
             ],

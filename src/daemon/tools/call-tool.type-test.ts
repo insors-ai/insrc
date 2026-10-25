@@ -12,6 +12,7 @@
 
 import { Type } from '@sinclair/typebox';
 import { callTool } from './call-tool.js';
+import { withGhFailureNet } from './builtins/gh/helpers.js';
 import type { ToolDeps, ToolResult } from './types.js';
 
 const withSchemas = {
@@ -53,4 +54,19 @@ async function _typeChecks(deps: ToolDeps): Promise<void> {
 	// @ts-expect-error missing outputSchema
 	await callTool(withoutOutputSchema, { name: 'a' }, deps);
 }
+
+// withGhFailureNet keeps the concrete schema types (s5/t2): the wrapped definition is called exactly as the original.
+const wrappedWithSchemas = withGhFailureNet(withSchemas);
+async function _ghNetTypeChecks(deps: ToolDeps): Promise<void> {
+	const ok = await callTool(wrappedWithSchemas, { name: 'a' }, deps);
+	if (ok.success) {
+		const count: number = ok.data.count;
+		void count;
+		// @ts-expect-error the output schema has no 'missing' field
+		void ok.data.missing;
+	}
+	// @ts-expect-error name must be a string
+	await callTool(wrappedWithSchemas, { name: 5 }, deps);
+}
+void _ghNetTypeChecks;
 void _typeChecks;

@@ -137,7 +137,8 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   try {
     const create = await textOf({ op: 'create', fromProject: probe.source, key, name: `insrc probe ${key}`, leadEmail: probe.lead });
     made = create.r.success; // the cleanup below must run even if recording fails
-    record('create', create.text);
+    // a refusal is recorded beside the fixtures, never over the success text the reader tests read
+    record(create.r.success ? 'create' : 'create-refused', create.text);
     // a refusal (a site or plan that does not allow it) is recorded and the later steps are not run
     assert.equal(create.r.success, true, `project create was refused; the text is recorded: ${create.text}`);
     for (const input of [{ op: 'update', projectKey: key, description: 'insrc probe' }, { op: 'archive', key }, { op: 'restore', key }]) {

@@ -19,6 +19,7 @@ import { createConnectionResolver } from '../../../daemon/db/pool-cache.js';
 import { ConnectionOutsideScopeError } from '../../context/invariants.js';
 import type { ResolvedScope } from '../../context/scope.js';
 import { resolveTaskScope } from '../shared/task-scope.js';
+import { requireConnectionExecution } from '../../../shared/step-context.js';
 
 /** Where a data task opens its connection pool, and the one connection it is
  *  held to when its scope is a connection. */
@@ -43,6 +44,8 @@ export async function resolveDataScope(
 	args:          TemplateExecuteArgs,
 	templateLabel: string,
 ): Promise<DataScope> {
+	// Reject a supplied but unadmitted tuple before scope/registry or result access.
+	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
 	return dataScopeOf(await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel));
 }
 

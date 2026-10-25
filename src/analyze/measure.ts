@@ -27,6 +27,7 @@
  * that is not determined.
  */
 
+import { requireConnectionExecution } from '../shared/step-context.js';
 import { resolve } from 'node:path';
 import { createConnectionResolver } from '../daemon/db/pool-cache.js';
 import { analysisConnectionContext } from './connection-access.js';
@@ -337,6 +338,7 @@ export async function measureRequestScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (options?.connectionExecution !== undefined) requireConnectionExecution(options.connectionExecution);
 	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scopeRef.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
@@ -372,6 +374,7 @@ export async function measureResolvedScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (options?.connectionExecution !== undefined) requireConnectionExecution(options.connectionExecution);
 	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scope.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
@@ -514,6 +517,7 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
  * connections file and closes the drivers of connections removed from it.
  */
 export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
+	if (options?.connectionExecution !== undefined) requireConnectionExecution(options.connectionExecution);
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
 	if (isCancelled(options)) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
@@ -671,7 +675,7 @@ async function measureConnection(
 		const sizeHint = undefined;
 		try {
 			const resolver = createConnectionResolver({ poolSource: async () => pool });
-			return await resolver.withConnection(analysisConnectionContext(poolPath), id, async driver => {
+			return await resolver.withConnection(analysisConnectionContext(poolPath, options?.connectionExecution), id, async driver => {
 
 				try {
 					switch (driver.family) {

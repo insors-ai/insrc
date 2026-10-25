@@ -69,7 +69,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';
 
-		const access = analysisConnectionContext(repoPath);
+		const access = analysisConnectionContext(repoPath, args.connectionExecution);
 		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
 

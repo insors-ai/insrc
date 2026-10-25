@@ -12,7 +12,7 @@ const digest = (value: string | Buffer): string => createHash('sha256').update(v
 
 test('CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline', () => {
 	const baseline = JSON.parse(readFileSync(new URL('./fixtures/session-source-inventory.json', import.meta.url), 'utf8')) as {
-		files: Record<string, { classification: string; rationale: string; siteCount: number; sitesDigest: string; sourceDigest: string }>;
+		files: Record<string, { classification: string; rationale: string; sites: [string, string][]; siteCount: number; sitesDigest: string; sourceDigest: string }>;
 		designSources: Record<string, string>;
 	};
 	const actual = sessionSourceInventory(root);
@@ -23,6 +23,7 @@ test('CM-S3-INVENTORY: production boundaries have explicit reviewed classificati
 		const sites = actual.filter(s => s.file === file);
 		assert.ok(entry.classification && entry.rationale.length > 40, file);
 		assert.equal(sites.length, entry.siteCount, `${file}: site count changed`);
+		assert.deepEqual(sites.map(s => [s.boundary, s.expression]), entry.sites, `${file}: changed site classification`);
 		assert.equal(digest(JSON.stringify(sites)), entry.sitesDigest, `${file}: reclassify changed boundaries`);
 		assert.equal(digest(readFileSync(join(root, file))), entry.sourceDigest, `${file}: source changed; inspect before refreshing inventory`);
 	}
@@ -38,6 +39,8 @@ test('CM-S3-INVENTORY: production boundaries have explicit reviewed classificati
 	const gate = JSON.parse(readFileSync(join(root, 'src/assets/connection-management-gates.json'), 'utf8')) as { ready: boolean; scopes: string[] };
 	assert.equal(gate.ready, false);
 	assert.ok(!gate.scopes.includes('temporary'));
+	assert.equal(actual.filter(s => s.file === 'src/agent/providers/onnx-embedder.ts' && s.expression === 'pipe' && s.boundary === 'provider-use').length, 3,
+		'all three ONNX tensor pipeline submissions must be identified, not merely their enclosing file');
 });
 
 test('CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered', () => {

@@ -24,6 +24,7 @@
  * responsibility to emit a valid topological ordering).
  */
 
+import { requireConnectionExecution } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -145,6 +146,7 @@ export interface ExecutePlanArgs {
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
+	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
 	const start = Date.now();
 	const results: ExecutedExploration[] = [];
 	const outputsById = new Map<string, ExplorationOutput>();
@@ -462,6 +464,7 @@ export async function stepPlan(
 		readonly resumeState?: StepPlanResumeState;
 	},
 ): Promise<StepPlanResult> {
+	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
 	const runStart = Date.now();
 	const outputsById = new Map<string, ExplorationOutput>();
 	const results: ExecutedExploration[] = [];

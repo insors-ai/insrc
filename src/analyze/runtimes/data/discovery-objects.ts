@@ -86,7 +86,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 		const connectionId = connectionWithinScope(scope, requireStringParam(args, 'connectionId', TEMPLATE_ID), TEMPLATE_ID);
 		const kindFilter   = optionalStringParam(args, 'kind', TEMPLATE_ID);
 
-		const access = analysisConnectionContext(repoPath);
+		const access = analysisConnectionContext(repoPath, args.connectionExecution);
 		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
 

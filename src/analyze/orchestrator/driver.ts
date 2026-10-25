@@ -27,6 +27,7 @@
  *     the RPC layer is one wrapper call away)
  */
 
+import { requireConnectionExecution } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { classify } from '../classifier/index.js';
@@ -105,6 +106,7 @@ export async function runAnalyze(
 	args: RunAnalyzeArgs,
 	opts: RunAnalyzeOpts = {},
 ): Promise<RunAnalyzeResult> {
+	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
 	const start = Date.now();
 	const runId = args.runId;
 

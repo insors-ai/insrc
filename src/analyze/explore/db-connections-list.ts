@@ -46,7 +46,7 @@ export async function runDbConnectionsList(
 	// and the executor reports it as failed. "No connections" is said only when
 	// the registry was read and holds none.
 	const resolver = createConnectionResolver({ poolSource: acquire });
-	const list = await resolver.list(analysisConnectionContext(ctx.repoPath));
+	const list = await resolver.list(analysisConnectionContext(ctx.repoPath, ctx.connectionExecution));
 	const connections: DbConnectionSummary[] = list.map(c => {
 		const fam = c.family;
 		return {

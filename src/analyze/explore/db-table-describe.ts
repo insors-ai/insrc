@@ -65,7 +65,7 @@ export async function runDbTableDescribe(
 	// describe call fails: the lookup could not run. Each throws, and the
 	// executor reports the lookup as failed.
 	const resolver = createConnectionResolver({ poolSource: acquire });
-	return resolver.withConnection(analysisConnectionContext(ctx.repoPath), params.connectionId, async driver => {
+	return resolver.withConnection(analysisConnectionContext(ctx.repoPath, ctx.connectionExecution), params.connectionId, async driver => {
 
 		const family = driver.family;
 		let columns: DbColumnSummary[] = [];

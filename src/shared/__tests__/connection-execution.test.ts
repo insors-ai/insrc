@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ConnectionExecutionError, requireConnectionExecution, savedConnectionExecution } from '../step-context.js';
 import type { ConnectionExecutionContext } from '../step-context.js';
+import { analysisConnectionContext, savedAnalysisExecution } from '../../analyze/connection-access.js';
 
 test('CM-S3-INVENTORY: missing or forged execution never defaults to saved', () => {
 	for (const value of [undefined, {}, { mode: 'saved' }, { mode: 'session-memory', bindingId: 'forged' }]) {
@@ -33,4 +34,45 @@ test('CM-S3-INVENTORY: explicit saved tuple is immutable, nonserializable and ca
 	assert.deepEqual(messages, ['saved-marker']);
 	controller.abort();
 	assert.throws(() => requireConnectionExecution(execution), /session-expired/);
+});
+
+test('CM-S3-INVENTORY: production analysis entry installs saved authority and rejects forged policy before source access', async () => {
+	const saved = savedAnalysisExecution('/repo');
+	assert.equal(requireConnectionExecution(saved), saved);
+	assert.deepEqual(analysisConnectionContext('/repo'), { lookupRoot: '/repo', daemonEpoch: 'saved-analysis' });
+	assert.equal(analysisConnectionContext('/repo', saved), saved.connectionAccess);
+	assert.throws(() => analysisConnectionContext('/other', saved), /session-expired/);
+	const { dataDiscoveryConnectionsRuntime } = await import('../../analyze/runtimes/data/discovery-connections.js');
+	const { dataConnectionResolver } = await import('../../analyze/runtimes/data/_shared.js');
+	const previous = dataConnectionResolver.list;
+	let reads = 0;
+	dataConnectionResolver.list = async () => { reads++; return []; };
+	try {
+		await assert.rejects(() => dataDiscoveryConnectionsRuntime.execute({
+			connectionExecution: { mode: 'session-memory', bindingId: 'forged' }, task: { params: {} },
+		} as unknown as import('../../analyze/executor/types.js').TemplateExecuteArgs), /session-expired/);
+		assert.equal(reads, 0);
+	} finally { dataConnectionResolver.list = previous; }
+});
+
+test('CM-S3-INVENTORY: staged production executors refuse supplied unadmitted policy before loading state', async () => {
+	const { executePlan, stepPlan } = await import('../../analyze/explore/executor.js');
+	const { runShaper, runShaperToolLoop } = await import('../../analyze/context/driver.js');
+	const { runExecutor } = await import('../../analyze/executor/walker.js');
+	const { runAnalyze } = await import('../../analyze/orchestrator/driver.js');
+	const { measureRequestScope, measureResolvedScope, measureDataSource } = await import('../../analyze/measure.js');
+	const connectionExecution = { mode: 'session-memory', bindingId: 'forged' } as ConnectionExecutionContext;
+	const entry = { connectionExecution };
+	const calls = [
+		() => executePlan(entry as Parameters<typeof executePlan>[0]),
+		() => stepPlan(entry as Parameters<typeof stepPlan>[0]),
+		() => runShaper(entry as Parameters<typeof runShaper>[0]),
+		() => runShaperToolLoop(entry as Parameters<typeof runShaperToolLoop>[0]),
+		() => runExecutor(entry as Parameters<typeof runExecutor>[0]),
+		() => runAnalyze(entry as Parameters<typeof runAnalyze>[0]),
+		() => measureRequestScope({ kind: 'repo', value: '/not-read' }, 'code', undefined, entry),
+		() => measureResolvedScope({} as Parameters<typeof measureResolvedScope>[0], 'code', undefined, entry),
+		() => measureDataSource({ poolPath: '/not-read' }, undefined, entry),
+	];
+	for (const call of calls) await assert.rejects(call, (error: unknown) => error instanceof ConnectionExecutionError && error.code === 'session-expired');
 });

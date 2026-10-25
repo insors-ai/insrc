@@ -117,6 +117,10 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 					if (named(awaited, connectionNames)) boundaries.add('connection-factory');
 				}
 				if (/\/src\/agent\/providers\//.test(declarationFile)) boundaries.add('provider-adapter');
+				// ONNX's awaited pipeline is explicitly cast to a callable tensor port,
+				// not LLMProvider. Resolve its function-type declaration, including aliases.
+				if (file === 'src/agent/providers/onnx-embedder.ts' && declaration && ts.isFunctionTypeNode(declaration)) boundaries.add('provider-use');
+				if (/\/node_modules\/(?:ollama\/|@huggingface\/transformers\/|onnxruntime)/.test(declarationFile)) boundaries.add('provider-backend');
 				if (/\/(?:node_modules\/pino|src\/shared\/logger)/.test(declarationFile)
 					|| /^(?:console\.|process\.(?:stdout|stderr)\.)/.test(expression)) boundaries.add('diagnostic');
 				if (ownerName === 'JSON' && declaredName === 'stringify' || /(?:serialize|checkpoint|persist|trace)/i.test(declaredName)) boundaries.add('serialization');

@@ -43,6 +43,7 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
+import { requireConnectionExecution } from '../../shared/step-context.js';
 import { isCompletenessRecord } from '../completeness.js';
 import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.js';
 import { getLogger } from '../../shared/logger.js';
@@ -79,6 +80,7 @@ interface WalkOpts {
 // ---------------------------------------------------------------------------
 
 export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult> {
+	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
 	return executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
 	});

@@ -66,7 +66,7 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 		const scope    = await resolveDataScope(args, TEMPLATE_ID);
 		const repoPath = explicit ?? scope.poolPath;
 
-		const configs = (await dataConnectionResolver.list(analysisConnectionContext(repoPath))).filter(c => scope.connectionId === undefined || c.key.id === scope.connectionId);
+		const configs = (await dataConnectionResolver.list(analysisConnectionContext(repoPath, args.connectionExecution))).filter(c => scope.connectionId === undefined || c.key.id === scope.connectionId);
 
 		const connections: ConnectionRecord[] = configs.map(c => ({
 			id:       c.key.id,

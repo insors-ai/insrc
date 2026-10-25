@@ -13,6 +13,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -150,4 +151,48 @@ test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are regis
 	const fetchRefs = live.get('git_fetch_refs')!;
 	assert.equal(resolveApprovalClass(fetchRefs, { refspecs: ['+refs/heads/a:refs/remotes/o/a'] }), 'none');
 	assert.equal(resolveApprovalClass(fetchRefs, { refspecs: ['+refs/heads/a:refs/heads/a'] }), 'destructive');
+});
+
+/** The snapshot as Story s4 left it; Story s5 does not edit it. */
+const SNAPSHOT_SHA256 = '558bdaa725e3309cd5bbf9552395e53f2ad66da280d0fb768658b6c50e3fdc6c';
+
+test('approval-class-mapping.test.ts: PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 members resolve to common or destructive and never none, and the snapshot is not edited', () => {
+	assert.deepEqual([...PER_INPUT_OR_DESTRUCTIVE_SINCE_S5].sort(), [
+		'gh:project:item-delete', 'gh_issue_close', 'gh_pr_close', 'gh_pr_merge', 'gh_release_delete', 'gh_release_edit', 'gh_repo_clone', 'gh_repo_delete',
+	]);
+	const expected: Record<string, [common: Record<string, unknown>, destructive: Record<string, unknown> | undefined]> = {
+		gh_issue_close: [{}, undefined], gh_pr_close: [{}, undefined], gh_pr_merge: [{}, undefined],
+		gh_release_delete: [{}, undefined], gh_repo_delete: [{}, undefined], 'gh:project:item-delete': [{}, undefined],
+		gh_release_edit: [{ tag: 'v1', title: 't' }, { tag: 'v1', newTag: 'v2' }],
+		gh_repo_clone: [{ repo: 'o/r' }, { repo: 'o/r', extraArgs: ['--upload-pack=x'] }],
+	};
+	for (const id of PER_INPUT_OR_DESTRUCTIVE_SINCE_S5) {
+		const tool = live.get(id);
+		assert.ok(tool, `${id} is registered`);
+		const was = snapshot.find(t => t.id === id);
+		assert.equal(was?.requiresApproval, 'true', `${id} asked before`);
+		const [plain, raised] = expected[id]!;
+		const cls = resolveApprovalClass(tool, plain);
+		assert.notEqual(cls, 'none', id);
+		if (raised === undefined) { assert.equal(cls, 'destructive', id); }
+		else { assert.equal(cls, 'common', id); assert.equal(resolveApprovalClass(tool, raised), 'destructive', id); }
+	}
+	// the snapshot file is byte-identical to the one s4 left, and still holds the 228 rows
+	const bytes = readFileSync(join(HERE, 'fixtures', 'approval-snapshot.json'));
+	assert.equal(createHash('sha256').update(bytes).digest('hex'), SNAPSHOT_SHA256);
+	assert.equal(snapshot.length, 228);
+});
+
+test('approval-class-mapping.test.ts: the 228-row snapshot is not edited and addedByS5 lists the new tools', () => {
+	const file = JSON.parse(readFileSync(join(HERE, 'fixtures', 'added-by-s5.json'), 'utf8')) as { tools: { id: string; inputSchema: unknown; approval: string }[] };
+	assert.equal(snapshot.length, 228);
+	assert.equal('addedByS5' in snapshotFile, false, 'the new tools are recorded beside the snapshot, not in it');
+	const ids = new Set(snapshot.map(t => t.id));
+	for (const rec of file.tools) {
+		const tool = live.get(rec.id);
+		assert.ok(tool, `${rec.id} is registered`);
+		assert.equal(ids.has(rec.id), false, `${rec.id} is new: it is not in the snapshot of the 228`);
+		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), rec.inputSchema, `${rec.id} input schema`);
+		assert.equal(typeof tool.approval === 'function' ? 'per-input' : tool.approval ?? 'none', rec.approval, `${rec.id} approval`);
+	}
 });

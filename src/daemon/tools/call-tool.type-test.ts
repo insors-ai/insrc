@@ -13,6 +13,9 @@
 import { Type } from '@sinclair/typebox';
 import { callTool } from './call-tool.js';
 import { withGhFailureNet } from './builtins/gh/helpers.js';
+import { ghRunViewTool } from './builtins/gh/actions.js';
+import { ghPrDiffTool, ghPrListTool } from './builtins/gh/pr.js';
+import { ghRepoCloneTool } from './builtins/gh/repo.js';
 import type { ToolDeps, ToolResult } from './types.js';
 
 const withSchemas = {
@@ -69,4 +72,25 @@ async function _ghNetTypeChecks(deps: ToolDeps): Promise<void> {
 	await callTool(wrappedWithSchemas, { name: 5 }, deps);
 }
 void _ghNetTypeChecks;
+
+// the existing gh tools keep their concrete input and result types through callTool (s5/t6)
+async function _ghToolTypeChecks(deps: ToolDeps): Promise<void> {
+	const diff = await callTool(ghPrDiffTool, { number: 3 }, deps);
+	if (diff.success) {
+		const truncated: boolean = diff.data.truncated;
+		const bytes: number = diff.data.diffBytes;
+		void truncated; void bytes;
+		// @ts-expect-error the diff result has no 'files' field
+		void diff.data.files;
+	}
+	// @ts-expect-error number is required
+	await callTool(ghPrDiffTool, {}, deps);
+	const run = await callTool(ghRunViewTool, { runId: 9 }, deps);
+	if (run.success) { const truncated: boolean = run.data.truncated; void truncated; }
+	const list = await callTool(ghPrListTool, {}, deps);
+	if (list.success) { const count: number = list.data.count; void count; }
+	// @ts-expect-error extraArgs is a list of strings
+	await callTool(ghRepoCloneTool, { repo: 'o/r', extraArgs: '--depth=1' }, deps);
+}
+void _ghToolTypeChecks;
 void _typeChecks;

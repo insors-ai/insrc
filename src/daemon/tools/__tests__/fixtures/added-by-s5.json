@@ -1,0 +1,4 @@
+{
+  "note": "Tools Story s5 adds to the registry, with their input schemas and approval classes ('none', 'common', 'destructive' or 'per-input'). Read beside the addedByS4 list in approval-snapshot.json, which is not edited.",
+  "tools": []
+}

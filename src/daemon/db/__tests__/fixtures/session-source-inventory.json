@@ -1806,6 +1806,16 @@
         "diagnostic"
       ]
     },
+    "src/daemon/model-registry.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Per-thread model registry over the shipped definitions file and the per-user approved-model store. Read-only process infrastructure, no session admission; its diagnostic logs carry only model ids, family ids and the store path, never temporary or session payloads.",
+      "siteCount": 7,
+      "sitesDigest": "262747c717729c8f37339af22bc149206101d046c1b4d0882b232b7e679ad64f",
+      "sourceDigest": "6e7b5acdd62508c1bdca2aa9ba2a86b28bfac81f9467017eef0040872d2bf275",
+      "boundaries": [
+        "diagnostic"
+      ]
+    },
     "src/daemon/prune-timer.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",

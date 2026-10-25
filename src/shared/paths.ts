@@ -7,6 +7,9 @@ const LOG_DIR   = join('/tmp', '.insrc');
 export const PATHS = {
   insrc:       INSRC_DIR,
   config:      join(INSRC_DIR, 'config.json'),
+  // Per-user approved-model store (Epic ce99b720 sc2): { version: 1, profiles: ApprovedProfile[] }.
+  // Read by the per-thread ModelRegistry; written only by the model check/approval flow (s4).
+  approvedModels: join(INSRC_DIR, 'approved-models.json'),
   duckdb:      join(INSRC_DIR, 'duckdb.db'),    // legacy: file-backed DuckDB consolidation (cleaned up on boot)
   lmdb:        join(INSRC_DIR, 'graph.lmdb'),   // LMDB: graph + repo + plans + conversations + todos + config
   graph:       join(INSRC_DIR, 'graph'),        // legacy: Kuzu DB directory (cleaned up on boot)

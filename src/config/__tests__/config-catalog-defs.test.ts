@@ -18,18 +18,20 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { buildConfigCatalog, CONFIG_CATALOG, RETIRED_PATHS, type ConfigOption } from '../config-catalog.js';
 import { deriveModelDefaults, SHIPPED_MODEL_DEFAULTS } from '../model-defaults.js';
-import { loadBuiltCatalog } from '../config-catalog-loader.js';
 import { DEFAULT_TIERS, TIER_EFFORTS } from '../analyze.js';
 import type { ModelDefinitionsFile } from '../../daemon/model-catalog.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = resolve(HERE, '..', '..');
+const ROOT = resolve(SRC, '..');
 
 /** Definitions whose default family, tier defaults, efforts and tool-loop model all differ from the shipped file. */
 function fixture(): ModelDefinitionsFile {
@@ -56,7 +58,7 @@ function fixture(): ModelDefinitionsFile {
 
 const row = (catalog: readonly ConfigOption[], path: string): ConfigOption | undefined => catalog.find(r => r.path === path);
 
-test('config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog', async () => {
+test('config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog', () => {
 	const catalog = buildConfigCatalog(fixture());
 	const expected = {
 		core:  { model: 'gpt-x', effort: 'turbo' },
@@ -92,10 +94,32 @@ test('config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/mode
 	}
 	assert.deepEqual([...TIER_EFFORTS], [...SHIPPED_MODEL_DEFAULTS.efforts]);
 
-	// The updater's loader accepts the catalog module, JSON import included.
-	const loaded = await loadBuiltCatalog(join(SRC, 'config', 'config-catalog.ts'));
-	assert.ok(loaded !== null, 'loadBuiltCatalog loads the catalog module');
-	assert.deepEqual(loaded, CONFIG_CATALOG);
+	// The updater's loader accepts the COMPILED catalog: tsc emits config-catalog.js and the
+	// shipped JSON into a temp outDir, and a plain node process (no tsx) loads it through the
+	// compiled loader, JSON module import included.
+	const out = mkdtempSync(join(tmpdir(), 'built-catalog-'));
+	try {
+		const tsc = spawnSync(process.execPath, [
+			join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc'),
+			'--module', 'nodenext', '--moduleResolution', 'nodenext', '--target', 'es2022', '--resolveJsonModule',
+			'--verbatimModuleSyntax', '--strict', '--skipLibCheck', '--types', 'node',
+			'--rootDir', SRC, '--outDir', out,
+			join(SRC, 'config', 'config-catalog.ts'), join(SRC, 'config', 'config-catalog-loader.ts'),
+		], { cwd: ROOT, encoding: 'utf8', timeout: 120_000 });
+		assert.equal(tsc.status, 0, `${tsc.stdout}${tsc.stderr}`);
+		assert.ok(existsSync(join(out, 'assets', 'models', 'cloud-model-catalog.json')), 'tsc emits the shipped JSON beside the built catalog');
+		const builtCatalog = join(out, 'config', 'config-catalog.js');
+		const loaderUrl = pathToFileURL(join(out, 'config', 'config-catalog-loader.js')).href;
+		const run = spawnSync(process.execPath, ['--input-type=module', '-e',
+			`const { loadBuiltCatalog } = await import(${JSON.stringify(loaderUrl)}); process.stdout.write(JSON.stringify(await loadBuiltCatalog(${JSON.stringify(builtCatalog)})));`,
+		], { cwd: out, encoding: 'utf8', timeout: 60_000, env: { ...process.env, NODE_OPTIONS: '' } });
+		assert.equal(run.status, 0, run.stderr);
+		const loaded = JSON.parse(run.stdout) as unknown;
+		assert.ok(loaded !== null, 'loadBuiltCatalog loads the built catalog module');
+		assert.deepEqual(loaded, JSON.parse(JSON.stringify(CONFIG_CATALOG)));
+	} finally {
+		rmSync(out, { recursive: true, force: true });
+	}
 });
 
 /** The runtime (non-type) import specifiers of a source file. */

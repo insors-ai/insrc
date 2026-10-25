@@ -96,6 +96,13 @@
         "status": "ignored",
         "rationale": "Documentation traceability only; the review passed without it. Not worth a design cycle.",
         "resolvedAt": "2026-10-25T19:29:28.574Z"
+      },
+      "qad416046": {
+        "question": "The exact success text of project create, update, restore, archive and delete is unknown until the gated disposable-project probe records it; the readers accept the success mark only until then. The probe needs a company-managed source project key, a scratch project key and a lead email from the user.",
+        "status": "resolved",
+        "choice": "Split planning from verification",
+        "rationale": "User has a personal Jira site: source project IN (classic), scratch key and lead email to be confirmed before the probe runs. Readers start on the success mark; the probe records the real text during the build.",
+        "resolvedAt": "2026-10-25T19:29:44.454Z"
       }
     }
   },

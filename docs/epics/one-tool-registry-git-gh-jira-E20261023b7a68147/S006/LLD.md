@@ -653,6 +653,8 @@ Each operation is a Tool with its own typebox input (with its own maximum and ma
   - **resolved**: File sc2 with this LLD — Filed as AMD-b7a68147dcf72034-10 and approved by the user on 2026-10-25. _(2026-10-25T19:29:02.747Z)_
 - `q80654a57` — ep3: the invariants cite the schema's c<number> ids; the supporting s1 analyze bundles (approval, op builder and helpers) are not named in the field itself.
   - **ignored**: left to implementer judgment — Documentation traceability only; the review passed without it. Not worth a design cycle. _(2026-10-25T19:29:28.574Z)_
+- `qad416046` — The exact success text of project create, update, restore, archive and delete is unknown until the gated disposable-project probe records it; the readers accept the success mark only until then. The probe needs a company-managed source project key, a scratch project key and a lead email from the user.
+  - **resolved**: Split planning from verification — User has a personal Jira site: source project IN (classic), scratch key and lead email to be confirmed before the probe runs. Readers start on the success mark; the probe records the real text during the build. _(2026-10-25T19:29:44.454Z)_
 
 ## Citations
 

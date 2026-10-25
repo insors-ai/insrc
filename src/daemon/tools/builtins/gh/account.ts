@@ -110,7 +110,7 @@ const searchOps: OpDef[] = [
   },
 ];
 
-export const ghSearchTool = defineGhFamily({ id: 'gh_search', description: 'Search GitHub: code, commits, issues, pull requests and repositories. Number, size and date qualifiers accept comparisons and ranges (>100, 10..50, >=2024-01-01).', ops: searchOps });
+export const ghSearchTool = defineGhFamily({ id: 'gh_search', dashSafe: true, description: 'Search GitHub: code, commits, issues, pull requests and repositories. Number, size and date qualifiers accept comparisons and ranges (>100, 10..50, >=2024-01-01).', ops: searchOps });
 
 // ---------------------------------------------------------------------------
 // gh_ruleset, gh_org, gh_auth, gh_status
@@ -131,7 +131,7 @@ async function buildRulesetList(c: BuildContext) {
 }
 
 export const ghRulesetTool = defineGhFamily({
-  id: 'gh_ruleset', description: 'Repository and organization rulesets: list, view one, check the rules that apply to a branch.',
+  id: 'gh_ruleset', dashSafe: true, description: 'Repository and organization rulesets: list, view one, check the rules that apply to a branch.',
   ops: [
     {
       name: 'list', command: ['ruleset', 'list'], cls: 'none', limitS: 30, repo: true,
@@ -153,7 +153,7 @@ export const ghRulesetTool = defineGhFamily({
 });
 
 export const ghOrgTool = defineGhFamily({
-  id: 'gh_org', description: 'Organizations you belong to.',
+  id: 'gh_org', dashSafe: true, description: 'Organizations you belong to.',
   ops: [{ name: 'list', command: ['org', 'list'], cls: 'none', limitS: 30, fields: { limit: field.int('Maximum number of organizations.') }, args: [val('-L', 'limit')], out: { kind: 'lines', property: 'name' } }],
 });
 
@@ -168,7 +168,7 @@ async function buildAuthStatus(c: BuildContext) {
 const hostUser = { hostname: field.str('Host name of the GitHub instance.'), user: field.str('The account.') } as const;
 
 export const ghAuthTool = defineGhFamily({
-  id: 'gh_auth', description: 'Authentication state: status of the signed-in hosts and accounts, switch the active account, log an account out.',
+  id: 'gh_auth', dashSafe: true, description: 'Authentication state: status of the signed-in hosts and accounts, switch the active account, log an account out.',
   ops: [
     {
       name: 'status', command: ['auth', 'status'], cls: 'none', limitS: 30, fields: { hostname: hostUser.hostname }, args: [val('-h', 'hostname')],
@@ -187,7 +187,7 @@ async function buildStatus(c: BuildContext) {
 }
 
 export const ghStatusTool = defineGhFamily({
-  id: 'gh_status', description: 'Your GitHub status: assigned issues and pull requests, mentions, review requests and repository activity.',
+  id: 'gh_status', dashSafe: true, description: 'Your GitHub status: assigned issues and pull requests, mentions, review requests and repository activity.',
   ops: [{
     name: 'status', command: ['status'], cls: 'none', limitS: 60, fields: { exclude: field.strs('Repositories (OWNER/NAME) to leave out.'), org: field.str('Report within this organization.') },
     args: [csv('-e', 'exclude'), val('-o', 'org')], out: { kind: 'custom', shape: { text: Type.String() }, build: buildStatus },
@@ -267,14 +267,14 @@ const codespaceOps: OpDef[] = [
   },
 ];
 
-export const ghCodespaceTool = defineGhFamily({ id: 'gh_codespace', description: 'Codespaces: list, view, logs, ports, create, edit, stop, rebuild, delete, copy files and change port visibility.', ops: codespaceOps });
+export const ghCodespaceTool = defineGhFamily({ id: 'gh_codespace', dashSafe: true, description: 'Codespaces: list, view, logs, ports, create, edit, stop, rebuild, delete, copy files and change port visibility.', ops: codespaceOps });
 
 // ---------------------------------------------------------------------------
 // gh_config and gh_extension
 // ---------------------------------------------------------------------------
 
 export const ghConfigTool = defineGhFamily({
-  id: 'gh_config', description: 'Read the gh configuration: one key, or the whole list.',
+  id: 'gh_config', dashSafe: true, description: 'Read the gh configuration: one key, or the whole list.',
   ops: [
     {
       name: 'get', command: ['config', 'get'], cls: 'none', limitS: 30, fields: { key: field.str('Configuration key.'), host: field.str('Get the per-host setting.') }, required: ['key'], args: [pos('key'), val('-h', 'host')],
@@ -288,7 +288,7 @@ export const ghConfigTool = defineGhFamily({
 });
 
 export const ghExtensionTool = defineGhFamily({
-  id: 'gh_extension', description: 'gh extensions: list the installed ones, search the available ones.',
+  id: 'gh_extension', dashSafe: true, description: 'gh extensions: list the installed ones, search the available ones.',
   ops: [
     { name: 'list', command: ['extension', 'list'], cls: 'none', limitS: 30, args: [], out: { kind: 'rows' } },
     {

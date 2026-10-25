@@ -180,7 +180,7 @@ export function given(input: ToolInput, name: string): boolean {
 }
 
 /** The reason an input is refused for its op, or undefined when it is acceptable. */
-export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
+export function refuseInput(def: OpDef, input: ToolInput, opts: { dashSafe?: boolean } = {}): string | undefined {
   const allowed = new Set<string>(['op', 'cwd', ...(def.repo === true ? ['repo'] : []), ...Object.keys(def.fields ?? {})]);
   for (const [k, v] of Object.entries(input)) {
     if (v !== undefined && v !== null && !allowed.has(k)) { return `op ${def.name} does not accept the field ${k}`; }
@@ -190,7 +190,7 @@ export function refuseInput(def: OpDef, input: ToolInput): string | undefined {
     if (v === undefined || v === null) { return `op ${def.name} needs the field ${k}`; }
   }
   // a positional that starts with '-' would be read by gh as a flag
-  for (const a of def.args) {
+  for (const a of opts.dashSafe === true ? def.args : []) {
     const name = 'pos' in a ? a.pos : 'spread' in a ? a.spread : undefined;
     if (name === undefined) { continue; }
     const v = input[name];
@@ -401,7 +401,7 @@ async function shape(id: string, def: OpDef, input: ToolInput, stdout: string, s
  * Define a family tool from its ops. The ops' classes and limits are registered under `id.op`, so
  * ghApprovalClass and ghTimeoutMs know them, and the tool is wrapped in the failure net.
  */
-export function defineGhFamily(spec: { id: string; description: string; ops: readonly OpDef[] }): GhFamilyTool {
+export function defineGhFamily(spec: { id: string; description: string; ops: readonly OpDef[]; dashSafe?: boolean }): GhFamilyTool {
   const { id, ops } = spec;
   const byName = new Map(ops.map(o => [o.name, o] as const));
   registerGhApproval(Object.fromEntries(ops.map(o => [`${id}.${o.name}`, o.cls])));
@@ -421,7 +421,7 @@ export function defineGhFamily(spec: { id: string; description: string; ops: rea
     async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
       const def = byName.get(String(input['op']));
       if (def === undefined) { return rejectInput(id, `unknown op ${JSON.stringify(input['op'])}; the ops are ${ops.map(o => o.name).join(', ')}`); }
-      const refusal = refuseInput(def, input);
+      const refusal = refuseInput(def, input, { dashSafe: spec.dashSafe === true });
       if (refusal !== undefined) { return rejectInput(id, refusal); }
       const argv = buildArgv(def, input);
       const stdin = def.stdin?.(input);

@@ -192,6 +192,36 @@
             "default": "http://localhost:11434",
             "markdownDescription": "Ollama server URL (daemon-wide)",
             "scope": "machine"
+          },
+          "insrc.daemon.threads.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "serve admin and indexing work on their own worker threads (Epic 86197ac6); false runs the daemon on one thread",
+            "scope": "machine"
+          },
+          "insrc.daemon.maintenance.idleMs": {
+            "type": "number",
+            "default": 1800000,
+            "markdownDescription": "ms with no non-admin request and both indexing lanes idle before idle maintenance (graph compaction) is considered",
+            "scope": "machine"
+          },
+          "insrc.daemon.maintenance.minReclaimablePct": {
+            "type": "number",
+            "default": 25,
+            "markdownDescription": "idle maintenance compacts only when at least this % of the graph file is reclaimable",
+            "scope": "machine"
+          },
+          "insrc.daemon.maintenance.minReclaimableMb": {
+            "type": "number",
+            "default": 256,
+            "markdownDescription": "idle maintenance compacts only when at least this many MiB of the graph file are reclaimable",
+            "scope": "machine"
+          },
+          "insrc.daemon.maintenance.pauseLimitMs": {
+            "type": "number",
+            "default": 600000,
+            "markdownDescription": "ms maintenance waits for running requests to finish before it gives up for this time",
+            "scope": "machine"
           }
         }
       },
@@ -258,20 +288,26 @@
           },
           "insrc.designReview.timeLimitMs.issue": {
             "type": "number",
-            "default": 240000,
-            "markdownDescription": "time limit (ms) for the whole review of a design that answers an ISSUE; capped at 10 minutes",
+            "default": 720000,
+            "markdownDescription": "time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes",
             "scope": "machine"
           },
           "insrc.designReview.timeLimitMs.feature": {
             "type": "number",
-            "default": 360000,
-            "markdownDescription": "time limit (ms) for the whole review of a standalone feature design; capped at 10 minutes",
+            "default": 1080000,
+            "markdownDescription": "time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes",
             "scope": "machine"
           },
           "insrc.designReview.timeLimitMs.epic": {
             "type": "number",
-            "default": 480000,
-            "markdownDescription": "time limit (ms) for the whole review of a design under an Epic; capped at 10 minutes",
+            "default": 1440000,
+            "markdownDescription": "time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes",
+            "scope": "machine"
+          },
+          "insrc.review.chunkTokens": {
+            "type": "number",
+            "default": 128000,
+            "markdownDescription": "most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks",
             "scope": "machine"
           }
         }
@@ -290,6 +326,12 @@
             "default": false,
             "markdownDescription": "implicit memory capture during retrieval (backstop)",
             "scope": "machine"
+          },
+          "insrc.analyzer.dataSourceListingTimeoutMs": {
+            "type": "number",
+            "default": 120000,
+            "markdownDescription": "max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined",
+            "scope": "machine"
           }
         }
       },
@@ -299,72 +341,96 @@
           "insrc.models.tiers.core.runner": {
             "type": "string",
             "default": "cli-claude",
-            "markdownDescription": "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
+            "markdownDescription": "core-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
             "scope": "machine",
             "enum": [
-              "ollama",
               "cli-claude",
-              "cli-codex"
+              "cli-codex",
+              "ollama"
             ]
           },
           "insrc.models.tiers.core.model": {
             "type": "string",
-            "default": "",
-            "markdownDescription": "core-tier model id (empty \u21d2 CLI default, e.g. opus)",
+            "default": "opus",
+            "markdownDescription": "core-tier model id or alias (default from the model definitions)",
             "scope": "machine"
           },
           "insrc.models.tiers.core.effort": {
             "type": "string",
             "default": "",
-            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "enum": [
+              "",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ],
             "markdownDescription": "core-tier reasoning effort passed to the CLI ('' = the CLI's default)",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.runner": {
             "type": "string",
             "default": "cli-claude",
-            "markdownDescription": "mid-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
+            "markdownDescription": "mid-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
             "scope": "machine",
             "enum": [
-              "ollama",
               "cli-claude",
-              "cli-codex"
+              "cli-codex",
+              "ollama"
             ]
           },
           "insrc.models.tiers.mid.model": {
             "type": "string",
             "default": "sonnet",
-            "markdownDescription": "mid-tier model id (e.g. sonnet)",
+            "markdownDescription": "mid-tier model id or alias (default from the model definitions)",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.effort": {
             "type": "string",
             "default": "",
-            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "enum": [
+              "",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ],
             "markdownDescription": "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
             "default": "cli-claude",
-            "markdownDescription": "cheap-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
+            "markdownDescription": "cheap-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
             "scope": "machine",
             "enum": [
-              "ollama",
               "cli-claude",
-              "cli-codex"
+              "cli-codex",
+              "ollama"
             ]
           },
           "insrc.models.tiers.cheap.model": {
             "type": "string",
             "default": "haiku",
-            "markdownDescription": "cheap-tier model id (e.g. haiku)",
+            "markdownDescription": "cheap-tier model id or alias (default from the model definitions)",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.effort": {
             "type": "string",
             "default": "",
-            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "enum": [
+              "",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ],
             "markdownDescription": "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)",
             "scope": "machine"
           },
@@ -394,12 +460,6 @@
             "type": "number",
             "default": 3,
             "markdownDescription": "structured-output retry count",
-            "scope": "machine"
-          },
-          "insrc.models.shaper.ollamaNumCtx": {
-            "type": "number",
-            "default": 32768,
-            "markdownDescription": "shaper Ollama context window",
             "scope": "machine"
           },
           "insrc.models.shaper.ollamaNumPredict": {
@@ -870,7 +930,8 @@
   "scripts": {
     "sync-assets": "cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md",
     "bundle": "npm run sync-assets && node esbuild.mjs",
-    "build": "npm run sync-assets && tsc -p tsconfig.json",
+    "sync-manifest": "tsx scripts/sync-manifest-catalog.mjs",
+    "build": "npm run sync-assets && tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json",
     "test": "tsx --test 'src/**/__tests__/*.test.ts'",
     "vscode:prepublish": "tsc -p tsconfig.json && npm run bundle",
     "package": "npx --yes @vscode/vsce@3.2.1 package",

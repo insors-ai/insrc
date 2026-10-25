@@ -6,8 +6,9 @@
 /**
  * Contract test for the shipped model definitions file (Epic ce99b72065d03b1b,
  * Story s1 · t1): it validates, ships via copy-assets, lists every model and
- * alias today's defaults use, and its tier defaults and summariser models equal
- * DEFAULT_TIERS, the installer's Codex block and SUMMARISER_CLI_FALLBACK.
+ * alias today's defaults use, and its tier defaults equal DEFAULT_TIERS. Since
+ * s3 the installer reads its defaults from this file and the summariser comes
+ * from each family's summariserModel.
  *
  * Run: npx tsx --test src/daemon/__tests__/model-catalog-asset.test.ts
  */
@@ -18,7 +19,9 @@ import { readFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_TIERS } from '../../config/analyze.js';
+import { assembleConfig, DEFAULT_TIERS } from '../../config/analyze.js';
+import { buildSummariserProvider } from '../../analyze/context/shaper-provider.js';
+import { buildModelRegistry } from '../model-registry.js';
 import {
 	MODEL_CATALOG_DIR,
 	validateModelCatalog,
@@ -36,7 +39,7 @@ function family(id: string): FamilyDefinition {
 	return f;
 }
 
-test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today\'s models and aliases, and its tier defaults and summariser models equal DEFAULT_TIERS, the installer Codex block and SUMMARISER_CLI_FALLBACK', () => {
+test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today\'s models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel', () => {
 	// Validates (no override, no env seam -> the shipped asset).
 	assert.equal(process.env['INSRC_MODEL_CATALOG_DIR'], undefined);
 	const file = validateModelCatalog();
@@ -68,19 +71,20 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 		assert.equal(DEFAULT_TIERS[tier].runner, 'cli-claude');
 		assert.deepEqual(claude.tierDefaults?.[tier], { model: DEFAULT_TIERS[tier].model });
 	}
+	// The installer reads the tier defaults and the tool-loop model from this file (installer-defs.test.ts runs it).
 	const installer = readFileSync(join(repoRoot, 'scripts', 'insrc-daemon-install.sh'), 'utf8');
+	assert.match(installer, /src\/assets\/models\/cloud-model-catalog\.json/);
 	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		const m = new RegExp(`"${tier}":\\s*\\{\\s*"runner":\\s*"cli-codex",\\s*"model":\\s*"([^"]+)"`).exec(installer);
-		assert.ok(m, `installer Codex block has ${tier}`);
-		assert.deepEqual(codex.tierDefaults?.[tier], { model: m[1] });
+		assert.equal(installer.includes(`"${codex.tierDefaults![tier].model}"`), false, `no ${tier} Codex literal in the installer`);
 	}
 
-	// The summariser models the former SUMMARISER_CLI_FALLBACK named; the provider
-	// factory now takes them from the file (Epic ce99b720 s3, provider-from-registry.test.ts).
-	assert.equal(claude.summariserModel, 'haiku');
-	assert.equal(codex.summariserModel, 'gpt-6-luna');
-	const shaper = readFileSync(join(repoRoot, 'src', 'analyze', 'context', 'shaper-provider.ts'), 'utf8');
-	assert.doesNotMatch(shaper, /SUMMARISER_CLI_FALLBACK/);
+	// The summariser: a CLI family's summariser model is the file's summariserModel.
+	const registry = buildModelRegistry(validateModelCatalog(), []);
+	assert.equal(registry.summariserModel('cli-claude').id, claude.models.find(m => m.id === claude.summariserModel || (m.aliases ?? []).includes(claude.summariserModel!))!.id);
+	assert.equal(registry.summariserModel('cli-codex').id, codex.summariserModel);
+	const cfg = assembleConfig({ tiers: { cheap: { runner: 'cli-codex', model: 'not-a-codex-model' } } }, { maxToolTurns: 1, structuredOutputRetries: 1, ollamaNumPredict: 1 }, { XS: 1, S: 1, M: 1, L: 1, XL: 1 }, registry);
+	const summariser = buildSummariserProvider({ ...cfg, summariserProvider: 'cli-codex', summariserModel: 'not-a-codex-model' }, { registry }) as unknown as { defaultModel?: string };
+	assert.equal(summariser.defaultModel, codex.summariserModel);
 });
 
 test('model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit', () => {

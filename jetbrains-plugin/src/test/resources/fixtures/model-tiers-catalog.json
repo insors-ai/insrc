@@ -1,0 +1,177 @@
+{
+  "definitions": {
+    "version": 1,
+    "defaultFamily": "cli-codex",
+    "families": [
+      {
+        "id": "cli-claude",
+        "cliKind": "claude",
+        "displayName": "Claude",
+        "models": [
+          {
+            "id": "claude-q",
+            "efforts": [
+              "low"
+            ]
+          }
+        ],
+        "tierDefaults": {
+          "core": {
+            "model": "claude-q"
+          },
+          "mid": {
+            "model": "claude-q"
+          },
+          "cheap": {
+            "model": "claude-q"
+          }
+        },
+        "summariserModel": "claude-q"
+      },
+      {
+        "id": "cli-codex",
+        "cliKind": "codex",
+        "displayName": "Codex",
+        "models": [
+          {
+            "id": "gpt-q",
+            "efforts": [
+              "low",
+              "high"
+            ]
+          },
+          {
+            "id": "gpt-r",
+            "efforts": [
+              "low"
+            ]
+          }
+        ],
+        "tierDefaults": {
+          "core": {
+            "model": "gpt-q",
+            "effort": "high"
+          },
+          "mid": {
+            "model": "gpt-r",
+            "effort": "low"
+          },
+          "cheap": {
+            "model": "gpt-r"
+          }
+        },
+        "summariserModel": "gpt-r"
+      },
+      {
+        "id": "ollama",
+        "displayName": "Ollama",
+        "models": [
+          {
+            "id": "llama:q",
+            "efforts": [],
+            "inputLimit": {
+              "unit": "tokens",
+              "max": 4096
+            }
+          }
+        ],
+        "toolLoopModel": "llama:q"
+      }
+    ]
+  },
+  "options": [
+    {
+      "path": "models.tiers.core.runner",
+      "type": "enum",
+      "default": "cli-codex",
+      "desc": "core-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
+      "enumValues": [
+        "cli-claude",
+        "cli-codex",
+        "ollama"
+      ],
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.core.model",
+      "type": "string",
+      "default": "gpt-q",
+      "desc": "core-tier model id or alias (default from the model definitions)",
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.mid.runner",
+      "type": "enum",
+      "default": "cli-codex",
+      "desc": "mid-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
+      "enumValues": [
+        "cli-claude",
+        "cli-codex",
+        "ollama"
+      ],
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.mid.model",
+      "type": "string",
+      "default": "gpt-r",
+      "desc": "mid-tier model id or alias (default from the model definitions)",
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.cheap.runner",
+      "type": "enum",
+      "default": "cli-codex",
+      "desc": "cheap-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
+      "enumValues": [
+        "cli-claude",
+        "cli-codex",
+        "ollama"
+      ],
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.cheap.model",
+      "type": "string",
+      "default": "gpt-r",
+      "desc": "cheap-tier model id or alias (default from the model definitions)",
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.core.effort",
+      "type": "enum",
+      "default": "high",
+      "desc": "core-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+      "enumValues": [
+        "",
+        "low",
+        "high"
+      ],
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.mid.effort",
+      "type": "enum",
+      "default": "low",
+      "desc": "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+      "enumValues": [
+        "",
+        "low",
+        "high"
+      ],
+      "group": "Models — tiers"
+    },
+    {
+      "path": "models.tiers.cheap.effort",
+      "type": "enum",
+      "default": "",
+      "desc": "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+      "enumValues": [
+        "",
+        "low",
+        "high"
+      ],
+      "group": "Models — tiers"
+    }
+  ]
+}

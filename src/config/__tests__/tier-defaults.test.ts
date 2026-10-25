@@ -54,15 +54,10 @@ test('src/config/__tests__/tier-defaults.test.ts: the summariser follows the che
   assert.ok(buildSummariserProvider(local) instanceof OllamaProvider);
 });
 
-test('src/config/__tests__/tier-defaults.test.ts: the installer\'s claude choice writes cheap cli-claude haiku and its codex choice writes gpt-6-astra, gpt-6.1-sol and gpt-6-luna', () => {
+test('src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)', () => {
   const script = read('scripts/insrc-daemon-install.sh');
-  const claude = script.slice(script.indexOf('else\n\tok "CLI: claude'), script.indexOf('fi\n\nif [ "$RESOLVED_EMBEDDER"'));
-  assert.match(claude, /"cheap": \{ "runner": "cli-claude", "model": "haiku" \}/);
-  assert.match(claude, /"core":  \{ "runner": "cli-claude", "model": "opus" \}/);
-  const codex = script.slice(script.indexOf('if [ "$CLI_CHOICE" = "codex" ]'), script.indexOf('else\n\tok "CLI: claude'));
-  assert.match(codex, /"core":  \{ "runner": "cli-codex", "model": "gpt-6-astra" \}/);
-  assert.match(codex, /"mid":   \{ "runner": "cli-codex", "model": "gpt-6\.1-sol" \}/);
-  assert.match(codex, /"cheap": \{ "runner": "cli-codex", "model": "gpt-6-luna" \}/);
+  assert.match(script, /MODEL_DEFS="\$DAEMON_SRC\/src\/assets\/models\/cloud-model-catalog\.json"/);
+  assert.match(script, /ANALYZE_TIERS_JSON="\$\(model_defs "\$CLI_CHOICE" tiers\)"/);
   assert.equal(script.includes('gpt-5.5'), false, 'no stale Codex model is left in the installer');
 });
 

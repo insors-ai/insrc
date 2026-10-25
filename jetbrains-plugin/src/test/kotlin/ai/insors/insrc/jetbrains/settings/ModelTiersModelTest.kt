@@ -260,4 +260,32 @@ class ModelTiersModelTest {
         assertTrue(section.contains("if (efforts.isNotEmpty()) controls.add(effortCombo)"), "hidden when the catalog declares no effort")
         assertTrue(section.contains("model.selectEffort(tier, sel)"), "a pick goes to the model")
     }
+
+    // --- unset tiers from a definitions-derived catalog (Epic ce99b72065d03b1b, s3) ---
+
+    @Test
+    fun `an unset tier shows the default family runner, model and effort of a catalog built by buildConfigCatalog`() {
+        // The fixture is buildConfigCatalog over definitions whose default family is cli-codex
+        // (jetbrains-catalog-fixture.test.ts keeps it equal to the TS builder).
+        val json = javaClass.getResource("/fixtures/model-tiers-catalog.json")!!.readText()
+        @Suppress("UNCHECKED_CAST")
+        val root = com.google.gson.Gson().fromJson(json, Map::class.java) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val options = (root["options"] as List<Map<String, Any?>>).map { o ->
+            ConfigOptionDto(
+                path = o["path"] as String, type = o["type"] as String, default = o["default"], desc = o["desc"] as String,
+                enumValues = (o["enumValues"] as? List<*>)?.map { it.toString() }, group = o["group"] as String,
+                currentValue = null, isSet = false,
+            )
+        }
+        val m = ModelTiersModel(catalog(*options.toTypedArray()), emptyMap())
+        assertEquals("cli-codex", m.currentRunner("core"))
+        assertEquals("gpt-q", m.currentModel("core"))
+        assertEquals("high", m.currentEffort("core"))
+        assertEquals("gpt-r", m.currentModel("mid"))
+        assertEquals("low", m.currentEffort("mid"))
+        assertEquals("", m.currentEffort("cheap"))
+        assertTrue(m.effortOptions("core").containsAll(listOf("", "low", "high")))
+        assertFalse(m.isModified())
+    }
 }

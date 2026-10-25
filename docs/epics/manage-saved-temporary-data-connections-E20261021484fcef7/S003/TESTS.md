@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -28,3 +28,29 @@ Run at 2026-10-25T16:39:17.098Z on commit `fe5850574`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.9 s |  |
 | `src/shared/__tests__/connection-execution.test.ts` | 0 | 5 | 1.1 s |  |
+
+## t2
+
+Run at 2026-10-25T16:58:45.664Z on commit `9a4b23b89`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S3-AUTH: monotonic exact-deadline control lifecycle and session quota**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**integration: CM-S3-RECONNECT: real socket generation rollover preserves overlays**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 6 | 0.7 s |  |

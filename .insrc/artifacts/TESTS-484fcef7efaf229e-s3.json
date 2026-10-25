@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T16:39:17.098Z",
+    "updatedAt": "2026-10-25T16:58:45.664Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -102,6 +102,95 @@
               },
               {
                 "title": "CM-S3-INVENTORY: lost carrier in a bound call cannot become saved or enter a provider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "9a4b23b89",
+        "ranAt": "2026-10-25T16:58:45.664Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-AUTH: monotonic exact-deadline control lifecycle and session quota",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-RECONNECT: real socket generation rollover preserves overlays",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 693,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
                 "result": "pass"
               }
             ],

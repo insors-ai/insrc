@@ -9,7 +9,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
@@ -59,15 +59,24 @@ test('jira-live.test.ts: read ops view, search, count, list, types, status and v
   const groups = await ok(jiraCommentTool, { op: 'visibility', group: true });
   assert.ok(groups['groups'].length >= 1);
   assert.ok((await ok(jiraCommentTool, { op: 'visibility', role: true, project: key }))['roles'].length >= 1);
-  // the reads that need a work item run on one in the scratch project when there is one, else on the first search hit
-  const items = search['items'] as { key: string }[];
-  const probeKey = items[0]?.key;
-  if (probeKey !== undefined) {
-    assert.equal((await ok(jiraWorkitemTool, { op: 'view', key: probeKey }))['item'].key, probeKey);
-    await ok(jiraWorkitemTool, { op: 'attachment-list', key: probeKey });
-    await ok(jiraWorkitemTool, { op: 'watcher-list', key: probeKey });
-    await ok(jiraCommentTool, { op: 'list', key: probeKey, limit: 5 });
-    await ok(jiraLinkTool, { op: 'list', key: probeKey });
+  // the reads that need a work item run on the first work item found in any project; failing that, on a temporary one in the scratch project
+  let itemKey: string | undefined;
+  for (const p of projects['projects'] as { key: string }[]) {
+    const found = await ok(jiraWorkitemTool, { op: 'search', jql: `project = "${p.key}"`, limit: 1 });
+    itemKey = (found['items'] as { key: string }[])[0]?.key;
+    if (itemKey !== undefined) { break; }
+  }
+  let temp: string | undefined;
+  try {
+    if (itemKey === undefined && scratch !== undefined) { temp = (await ok(jiraWorkitemTool, { op: 'create', project: scratch, type: 'Task', summary: 'insrc live read test (safe to delete)' }))['target']; itemKey = temp; }
+    if (itemKey === undefined) { assert.fail('no work item to read: the site has none and INSRC_JIRA_SCRATCH_PROJECT is not set'); }
+    assert.equal((await ok(jiraWorkitemTool, { op: 'view', key: itemKey }))['item'].key, itemKey);
+    await ok(jiraWorkitemTool, { op: 'attachment-list', key: itemKey });
+    await ok(jiraWorkitemTool, { op: 'watcher-list', key: itemKey });
+    await ok(jiraCommentTool, { op: 'list', key: itemKey, limit: 5 });
+    await ok(jiraLinkTool, { op: 'list', key: itemKey });
+  } finally {
+    if (temp !== undefined) { await call(jiraWorkitemTool, { op: 'delete', keys: [temp] }); }
   }
   // a missing work item is a rejected failure with Jira's text
   const missing = await call(jiraWorkitemTool, { op: 'view', key: 'ZZNOPE-999999' });
@@ -119,16 +128,17 @@ async function textOf(input: Record<string, unknown>): Promise<{ r: ToolResult; 
 
 test('jira-live.test.ts: the disposable-project probe records the real success text of each project mutation', { skip: skipProbe }, async () => {
   const dir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'live');
+  mkdirSync(dir, { recursive: true });
   const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim()}\n`);
   const key = probe.key as string;
   let made = false;
   let archived = false;
   try {
     const create = await textOf({ op: 'create', fromProject: probe.source, key, name: `insrc probe ${key}`, leadEmail: probe.lead });
+    made = create.r.success; // the cleanup below must run even if recording fails
     record('create', create.text);
     // a refusal (a site or plan that does not allow it) is recorded and the later steps are not run
     assert.equal(create.r.success, true, `project create was refused; the text is recorded: ${create.text}`);
-    made = true;
     for (const input of [{ op: 'update', projectKey: key, description: 'insrc probe' }, { op: 'archive', key }, { op: 'restore', key }]) {
       const step = await textOf(input);
       record(String(input.op), step.text);

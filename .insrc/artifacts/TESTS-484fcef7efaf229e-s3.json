@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T18:01:05.712Z",
+    "updatedAt": "2026-10-25T18:10:21.974Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -466,6 +466,86 @@
               },
               {
                 "title": "CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "ea3dba90b",
+        "ranAt": "2026-10-25T18:10:21.974Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-MEMORY: effective keep/replace/clear config, safe projection and exact saved/keychain snapshots",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-REPLAY: entry/config quota refusal leaves no partial state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S3-REPLAY: cumulative config quota refuses create and update without partial state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-entries.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2288,
+            "titles": [
+              {
+                "title": "CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: cumulative config quota refuses create and update without partial state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
                 "result": "pass"
               }
             ],

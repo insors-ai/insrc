@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -122,3 +122,28 @@ Run at 2026-10-25T18:01:05.712Z on commit `65cbe88a9`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/stream-lifetime.test.ts` | 0 | 10 | 1.8 s |  |
+
+## t6
+
+Run at 2026-10-25T18:10:21.974Z on commit `ea3dba90b`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-MEMORY: effective keep/replace/clear config, safe projection and exact saved/keychain snapshots**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state | `src/daemon/db/__tests__/session-entries.test.ts` |
+
+**unit: CM-S3-REPLAY: entry/config quota refusal leaves no partial state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S3-REPLAY: cumulative config quota refuses create and update without partial state | `src/daemon/db/__tests__/session-entries.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 5 | 2.3 s |  |

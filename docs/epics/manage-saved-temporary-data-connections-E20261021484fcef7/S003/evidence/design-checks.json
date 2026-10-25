@@ -13,7 +13,7 @@
       "sourceInspected": true,
       "renderingVerified": false,
       "limitation": "Browser rendering unavailable; do not claim visual verification",
-      "sha256": "92b65821454dc7e688a7dbce2bd036721871c7b3ecb1329e56644878c58c82f4"
+      "sha256": "45c17aabb8fd8543e818ec08c181b107cc20ee185d1f4d35b39c651ed3d96eca"
     },
     {
       "file": "sequence-diagram.html",
@@ -69,13 +69,20 @@
   },
   "reviewCycle2": {
     "authorizedBy": "user",
-    "status": "corrections ready for review",
+    "status": "round2 corrections ready for independent review",
     "changes": [
       "root-bound connection scope checks and all discovered callers",
       "holdingForward holds maintenance through handler settlement AND drains",
       "runStages/completeRun/outer repair and recursive planner explicit propagation",
       "provider factory/direct/injected admission and per-attempt guard, no model downgrade",
       "separate control vs data delegation authority"
+    ],
+    "round1RecoveredResult": "Block: independent adherence record cache, direct embedding closure, ER inverse cardinality and S005 lifetime-copy proving test",
+    "round2Corrections": [
+      "adherence cache denied before record access for session topic route",
+      "direct query embeddings and hybrid retrieval/lineage routes explicitly refused before SDK/ONNX submission",
+      "delegation owns zero-to-many data transports, separate control attachment",
+      "explicit CM-S5-LIFETIME-COPY pending external release dependency"
     ]
   }
 }

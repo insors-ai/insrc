@@ -17,6 +17,81 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { ConnectionAccessContext, ConnectionScope } from './connection-management.js';
+
+/** Internal, explicit execution tuple. Never accepted from JSON or serialized into a run. */
+export interface ConnectionExecutionLifetime {
+	readonly signal: AbortSignal;
+	readonly registerDrain: (work: PromiseLike<unknown>) => void;
+}
+export interface ConnectionExecutionRevision {
+	readonly id: string;
+	readonly scope: ConnectionScope;
+	readonly revision: string;
+}
+export interface ConnectionExecutionDiagnostics {
+	/** Lazy: a quiet sink must never evaluate source-bearing formatting. */
+	readonly emit: (level: 'trace' | 'debug' | 'info' | 'warn' | 'error', format: () => unknown) => void;
+}
+interface ConnectionExecutionBase {
+	readonly connectionAccess: Readonly<ConnectionAccessContext>;
+	readonly lifetime: ConnectionExecutionLifetime;
+	readonly revisions: readonly ConnectionExecutionRevision[];
+	readonly diagnostics: ConnectionExecutionDiagnostics;
+	/** Revalidate authority after awaits, before reuse and before every provider attempt. */
+	readonly assertActive: () => void;
+}
+export interface SavedConnectionExecution extends ConnectionExecutionBase {
+	readonly mode: 'saved';
+	readonly provider: { readonly mode: 'saved-default' };
+}
+export interface SessionConnectionExecution extends ConnectionExecutionBase {
+	readonly mode: 'session-memory';
+	readonly bindingId: string;
+	readonly audience: 'workbench-ui' | 'mcp-unverified';
+	readonly controlGeneration: number;
+	readonly provider: { readonly mode: 'verified-local'; readonly modelId: string; readonly evidenceDigest: string }
+		| { readonly mode: 'unsupported' };
+}
+export type ConnectionExecutionContext = SavedConnectionExecution | SessionConnectionExecution;
+
+export class ConnectionExecutionError extends Error {
+	constructor(readonly code: 'session-expired' | 'upgrade-required') {
+		super(code);
+		this.name = 'ConnectionExecutionError';
+	}
+}
+
+const savedExecutions = new WeakSet<object>();
+
+/** Only trusted unattached entry points may explicitly choose saved execution. */
+export function savedConnectionExecution(
+	access: ConnectionAccessContext,
+	lifetime: ConnectionExecutionLifetime,
+	diagnostics: ConnectionExecutionDiagnostics,
+): SavedConnectionExecution {
+	if (access.sessionHandle !== undefined || !access.lookupRoot || !access.daemonEpoch) {
+		throw new ConnectionExecutionError('session-expired');
+	}
+	const signal = lifetime.signal;
+	const execution: SavedConnectionExecution = {
+		mode: 'saved', connectionAccess: Object.freeze({ ...access }),
+		lifetime: Object.freeze({ signal: lifetime.signal, registerDrain: lifetime.registerDrain }),
+		revisions: Object.freeze([]), diagnostics: Object.freeze({ emit: diagnostics.emit }),
+		provider: Object.freeze({ mode: 'saved-default' }),
+		assertActive: () => { if (signal.aborted) throw new ConnectionExecutionError('session-expired'); },
+	};
+	Object.defineProperty(execution, 'toJSON', { value: () => { throw new ConnectionExecutionError('upgrade-required'); } });
+	savedExecutions.add(execution);
+	return Object.freeze(execution);
+}
+
+/** No missing-policy fallback. Session minting/admission is installed by later owner tasks. */
+export function requireConnectionExecution(value: ConnectionExecutionContext | undefined): ConnectionExecutionContext {
+	if (value === undefined || !savedExecutions.has(value)) throw new ConnectionExecutionError('session-expired');
+	value.assertActive();
+	return value;
+}
 
 /** The calling client in its one form. The one-shot analyze converts it to
  *  'cli-claude' | 'cli-codex' for runWithClientProviderContext. */
@@ -26,6 +101,8 @@ export interface StepCallContext {
 	readonly cwd:      string;
 	readonly envRepo?: string | undefined;
 	readonly client?:  StepClient | undefined;
+	/** Out-of-band trusted carrier; the host must never read this from caller JSON. */
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 }
 
 const storage = new AsyncLocalStorage<StepCallContext>();

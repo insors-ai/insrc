@@ -41,6 +41,8 @@ export type RunStage =
 // ---------------------------------------------------------------------------
 
 export interface RunAnalyzeArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId: string;
 	readonly userPrompt: string;
 	/** Starting scope ref -- usually workspace; the classifier may

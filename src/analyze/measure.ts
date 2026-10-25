@@ -266,6 +266,8 @@ export interface MeasureDeps {
 
 /** What a caller may pass to the measuring pass. */
 export interface MeasureOptions {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/** The request's cancellation signal: once it fires, the pass stops and the measure is not determined. */
 	readonly signal?:          AbortSignal | undefined;
 	/**

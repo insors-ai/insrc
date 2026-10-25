@@ -127,6 +127,8 @@ const NON_CACHEABLE: ReadonlySet<ExplorationType> = new Set([
 // ---------------------------------------------------------------------------
 
 export interface ExecutePlanArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId:            string;
 	readonly repoPath:         string;
 	readonly closureRepos:     readonly string[];

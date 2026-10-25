@@ -73,6 +73,8 @@ export interface UpstreamOutput {
  * upstream output set). A name with no output is not in the map.
  */
 export interface TemplateExecuteArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly task:            PlannedTask;
 	readonly intent:          ClassifiedIntent;
 	readonly upstreamOutputs: ReadonlyMap<string, readonly UpstreamOutput[]>;
@@ -107,6 +109,8 @@ export interface TemplateRuntime {
 // ---------------------------------------------------------------------------
 
 export interface RunExecutorArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly tree:   PlanTreeNode;
 	readonly intent: ClassifiedIntent;
 	readonly runId:  string;

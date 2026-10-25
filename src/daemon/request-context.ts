@@ -1,7 +1,9 @@
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
 /** Server-owned transport metadata; never deserialized from request params or client labels. */
 export interface TrustedRpcContext {
 	readonly connectionIdentity: string;
 	readonly daemonEpoch: string;
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	/** Local-only lifecycle. Never projected onto a worker-thread channel. */
 	readonly signal?: AbortSignal | undefined;
 	readonly registerDrain?: ((work: PromiseLike<unknown>) => void) | undefined;

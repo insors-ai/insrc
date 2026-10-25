@@ -126,6 +126,8 @@ const BUNDLE_LAYERS: readonly BundleLayerName[] = Object.freeze([
 // ---------------------------------------------------------------------------
 
 export interface RunShaperArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly promptPath:     string;
 	readonly invocationMode: ShaperMode;
 	readonly shaperId:       ShaperId;
@@ -794,6 +796,8 @@ export interface ShaperToolLoopResult {
 }
 
 export interface RunShaperToolLoopArgs {
+	/** Staged trusted carrier; no session execution is admitted without it. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;

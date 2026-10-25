@@ -36,6 +36,7 @@ for (const dimension of ['adherence', 'functional-coverage'] as const) {
 			{ severity: 'HIGH', confidence: 'breach', location: 'outside.ts:2', message: 'Outside subject.', expectationRef: 'FR1' },
 		];
 		// Direct mapping also handles legacy records conservatively, though new model output requires confidence.
+		if (dimension === 'functional-coverage') findings.push({ severity: 'HIGH', confidence: 'breach', location: 'entry.ts:2', message: 'Unknown FR.', expectationRef: 'FR9' });
 		const result = spec.toResult({ findings } as never, { symbols: [] }, 'full');
 		assert.deepEqual(result.findings.map(f => [f.severity, f.confidence]), [['HIGH', 'breach'], ['MED', 'breach'], ['LOW', 'observation'], ['LOW', 'observation']]);
 		const schema = spec.schema as { properties: { findings: { items: { required: string[] } } } };
@@ -54,6 +55,7 @@ for (const dimension of ['adherence', 'functional-coverage'] as const) {
 				const snapshot = codeReviewSnapshot(s, g);
 				const adapter = modelDimensionAdapter(makeSpec(s), s, snapshot, divided ? 20_000 : 100_000);
 				let reads = 0, chunks = 0, noNotes = false;
+				const answer = (schema: object, findings: object[]) => enveloped(schema, { findings: [...findings, { severity: 'HIGH', confidence: 'breach', location: 'outside.ts:7', message: 'Outside changed set.', expectationRef: 'FR1' }, ...(dimension === 'functional-coverage' ? [{ severity: 'HIGH', confidence: 'breach', location: 'entry.ts:2', message: 'Unknown FR.', expectationRef: 'FR9' }] : [])] });
 				const provider = {
 					completeStructured: async () => { throw new Error('source inspection must use a session'); },
 					runReviewSession: async (prompt: string, schema: object, opts: { cwd: string }) => {
@@ -65,8 +67,8 @@ for (const dimension of ['adherence', 'functional-coverage'] as const) {
 						readFileSync(join(opts.cwd, 'entry.ts'), 'utf8'); reads++;
 						let source: string;
 						try { source = readFileSync(join(opts.cwd, 'helper.ts'), 'utf8'); }
-						catch { return enveloped(schema, { findings: [{ severity: 'HIGH', confidence: 'observation', location: 'entry.ts:2', message: 'Could not verify: helper.ts could not be read.', expectationRef: 'FR1' }] }); }
-						return enveloped(schema, { findings: source.includes('"protected"') ? [] : [{ severity: 'HIGH', confidence: 'breach', location: 'entry.ts:2', message: 'entry.ts:2 calls helper.ts:1, which returns unchecked without protection.', expectationRef: 'FR1' }] });
+						catch { return answer(schema, [{ severity: 'HIGH', confidence: 'observation', location: 'entry.ts:2', message: 'Could not verify: helper.ts could not be read.', expectationRef: 'FR1' }]); }
+						return answer(schema, source.includes('"protected"') ? [] : [{ severity: 'HIGH', confidence: 'breach', location: 'entry.ts:2', message: 'entry.ts:2 calls helper.ts:1, which returns unchecked without protection.', expectationRef: 'FR1' }]);
 					},
 				} as unknown as LLMProvider;
 				const result = await runReviewJob(createReviewJob(adapter, 'daemon', snapshot, divided ? 20_000 : 100_000), adapter, provider) as DimensionResult;

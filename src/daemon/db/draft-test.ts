@@ -1,6 +1,6 @@
 /** One operation owns preparation, one child, and reaping until true drain. */
 import {fork} from 'node:child_process';
-import type {ChildProcess} from 'node:child_process';
+import type {ChildProcess,ForkOptions} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
@@ -30,6 +30,7 @@ export function probeWorkerEnvironment():NodeJS.ProcessEnv {
 export class DraftTestSupervisor {
  readonly #active=new Map<string,Active>();
  #stopping=false;
+ constructor(private readonly spawnWorker:(entry:string,options:ForkOptions)=>ChildProcess=(entry,options)=>fork(entry,[],options)){}
  get activeCount():number{return this.#active.size;}
  run(input:unknown,context:TrustedRpcContext,prepare:DraftPreparation):Promise<DraftTestResult>{
   const began=performance.now();
@@ -70,11 +71,11 @@ export class DraftTestSupervisor {
     const source=compiled.replace(/\.js$/,'.ts'),entry=existsSync(compiled)?compiled:source;
     let received:ProbeWorkerResult|undefined,invalid=false;
     await new Promise<void>(resolve=>{
-     child=fork(entry,[],{env:probeWorkerEnvironment(),execArgv:[...(entry.endsWith('.ts')?['--import','tsx']:[]),'--max-old-space-size=384'],stdio:['ignore','ignore','ignore','ipc']});
+     child=this.spawnWorker(entry,{env:probeWorkerEnvironment(),execArgv:[...(entry.endsWith('.ts')?['--import','tsx']:[]),'--no-warnings','--max-old-space-size=384'],stdio:['ignore','ignore','ignore','ipc']});
      child.on('message',(message:unknown)=>{
-      try{if(received)throw new Error();received=parseProbeWorkerResult(message,start);}catch{invalid=true;stopChild();}
+      try{if(received)throw new Error();received=parseProbeWorkerResult(message,start);}catch{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();}
      });
-     child.once('error',()=>{invalid=true;});
+     child.once('error',()=>{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();});
      child.once('close',(code,signal)=>{
       if(!terminal){
        const outcome=!invalid&&code===0&&signal===null?received?.code:undefined;
@@ -82,7 +83,7 @@ export class DraftTestSupervisor {
       }
       resolve();
      });
-     try{child.send(start,error=>{if(error){invalid=true;stopChild();}});}catch{invalid=true;stopChild();}
+     try{child.send(start,error=>{if(error){invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();}});}catch{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();}
     });
    }catch{finish('failed',DRAFT_TEST_MESSAGES.failed);}
    finally{

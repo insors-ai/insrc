@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -219,3 +219,54 @@ Run at 2026-10-25T20:41:44.108Z on commit `b0b37ecbe`. Tests check: **passed**. 
 | `src/analyze/context/__tests__/provider-from-registry.test.ts` | 0 | 3 | 0.8 s |  |
 | `src/analyze/context/__tests__/summariser-provider.test.ts` | 0 | 4 | 0.5 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.9 s |  |
+
+## t6
+
+Run at 2026-10-25T21:04:58.907Z on commit `6abec29e1`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: client-family.test.ts: step host and one-shot analyze map client 'claude'/'codex' to the family with that cliKind; an injected clientDefault wins; MCP client detection imports no registry or model-defaults**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | client-family.test.ts: step host and one-shot analyze map client 'claude'/'codex' to the family with that cliKind; an injected clientDefault wins; MCP client detection imports no registry or model-defaults | `src/daemon/__tests__/client-family.test.ts` |
+
+**unit: attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families | `src/workflow/__tests__/attribution.test.ts` |
+
+**unit: list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error | `src/daemon/__tests__/list-models.test.ts` |
+
+**unit: claude-models.test.ts: claude.models lists the Claude-kind family in its shape with no network call even with ANTHROPIC_API_KEY set; no @anthropic-ai/sdk import in handler-runtime.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | claude-models.test.ts: claude.models lists the Claude-kind family in its shape with no network call even with ANTHROPIC_API_KEY set; no @anthropic-ai/sdk import in handler-runtime.ts | `src/daemon/__tests__/claude-models.test.ts` |
+
+**unit: client-family.test.ts: src/mcp/** and src/cli/** do not import getModelRegistry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | client-family.test.ts: src/mcp/** and src/cli/** do not import getModelRegistry | `src/daemon/__tests__/client-family.test.ts` |
+
+**unit: session-source-inventory suite passes after t6**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/claude-models.test.ts` | 0 | 1 | 1 s |  |
+| `src/daemon/__tests__/client-family.test.ts` | 0 | 2 | 0.8 s |  |
+| `src/daemon/__tests__/list-models.test.ts` | 0 | 8 | 0.7 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.9 s |  |
+| `src/workflow/__tests__/attribution.test.ts` | 0 | 12 | 0.5 s |  |

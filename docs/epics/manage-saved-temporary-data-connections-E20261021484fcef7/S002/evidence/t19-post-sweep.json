@@ -125,7 +125,7 @@
   "S002CodeReview": "WARN after round 2: 0 high, 1 medium coverage warning for failed/unverified full sweep; no adherence, conventions or quality findings",
   "releaseReady": false,
   "shippedGateReady": false,
-  "buildApproval": "Pending explicit user approval of BUILD; MSSQL deferral accepted, final full-sweep warning remains",
+  "buildApproval": "Approved explicitly by user on 2026-10-25 with recorded MSSQL deferral and full-sweep warning",
   "currentSourceChangedAfterSweep": true,
   "codeReviewPath": "../CR.md",
   "taskGates": {
@@ -153,5 +153,6 @@
       "connection disposal and fixture removal"
     ],
     "details": "../LIVE_DATABASE_FIXTURES.md"
-  }
+  },
+  "approvedAt": "2026-10-25T08:51:02.850Z"
 }

@@ -38,8 +38,8 @@ export class DraftTestSupervisor {
   if(!context.connectionIdentity||!context.daemonEpoch||!context.registerDrain)throw new DraftTestAdmissionError('session-expired');
   if(this.#stopping||this.#active.has(context.connectionIdentity)||this.#active.size>=PROBE_CAPACITY)throw new DraftTestAdmissionError('busy');
   const controller=new AbortController();let child:ChildProcess|undefined,grace:ReturnType<typeof setTimeout>|undefined;
-  let resolveResult!:(value:DraftTestResult)=>void,resolveDrain!:()=>void,terminal=false;
-  const response=new Promise<DraftTestResult>(resolve=>{resolveResult=resolve;}),drained=new Promise<void>(resolve=>{resolveDrain=resolve;});
+  let resolveResult!:(value:DraftTestResult)=>void,rejectResult!:(reason:unknown)=>void,resolveDrain!:()=>void,terminal=false;
+  const response=new Promise<DraftTestResult>((resolve,reject)=>{resolveResult=resolve;rejectResult=reject;}),drained=new Promise<void>(resolve=>{resolveDrain=resolve;});
   // Registration and reservation happen synchronously before any preparation await.
   context.registerDrain(drained);
   const finish=(status:DraftTestResult['status'],message?:string):void=>{
@@ -61,7 +61,9 @@ export class DraftTestSupervisor {
   void (async()=>{
    try{
     controller.signal.throwIfAborted();
-    const effective=await prepare(controller.signal);controller.signal.throwIfAborted();
+    let effective:EffectiveDraft;
+    try{effective=await prepare(controller.signal);}catch(error){if(!terminal){terminal=true;rejectResult(error);}return;}
+    controller.signal.throwIfAborted();
     const config=workerConfig(effective.config);
     const runtimeAuth=config.kind==='dynamodb'?await prepareDynamoAuth(config,controller.signal):undefined;
     controller.signal.throwIfAborted();

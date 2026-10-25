@@ -259,6 +259,7 @@ export async function testConnectionRpc(params: {readonly repoRoot?: unknown; re
  if(!repoRoot)return {error:'repoRoot is required'};
  const parsed=parseSaveInput(params.config);if(typeof parsed==='string')return {error:'Invalid connection request.'};
  let family:DriverFamily=parsed.family??familyOf(parsed.kind)??'rdbms';
+ const began=performance.now();
  try {
   const result=await connectionTestSupervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot,scope:'saved',id:parsed.id},publicPatch:{},credentials:{}},context,async signal=>{
    signal.throwIfAborted();let cfg:SaveConnectionInput=parsed;
@@ -272,7 +273,7 @@ export async function testConnectionRpc(params: {readonly repoRoot?: unknown; re
    return {config,credentialActions:{}};
   });
   return {ok:result.status==='reachable',kind:parsed.kind,family,tookMs:result.tookMs,...(result.safeMessage?{error:result.safeMessage}:{})};
- }catch{return {ok:false,kind:parsed.kind,family,tookMs:0,error:'Connection test failed.'};}
+ }catch{return {ok:false,kind:parsed.kind,family,tookMs:Math.max(0,performance.now()-began),error:'Connection test failed.'};}
 }
 
 function mergePersisted(input: SaveConnectionInput, persisted: ConnectionConfig): SaveConnectionInput {

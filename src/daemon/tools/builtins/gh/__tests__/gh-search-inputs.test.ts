@@ -22,16 +22,16 @@ test('gh-search-inputs.test.ts: comparison and range expressions pass through un
 		};
 		// issues and prs: comments, interactions, reactions and the dates
 		assert.equal(await run({ op: 'issues', query: 'crash', comments: '>100', interactions: '5..20', reactions: '>=5', created: '>=2024-01-01', updated: '2024-01-01..2024-02-01', closed: '<2025-06-30' }),
-			'search issues --closed <2025-06-30 --comments >100 --created >=2024-01-01 --interactions 5..20 --reactions >=5 --updated 2024-01-01..2024-02-01 --json ' + op('issues').out.jsonFields!.join(',') + ' -- crash');
-		assert.match(await run({ op: 'prs', query: 'fix', mergedAt: '2024-03-01..*', comments: '<10' }), /--comments <10 .*--merged-at 2024-03-01\.\.\* .*-- fix$/);
+			'search issues --closed <2025-06-30 --comments >100 --created >=2024-01-01 --interactions 5..20 --reactions >=5 --updated 2024-01-01..2024-02-01 --json ' + op('issues').out.jsonFields!.join(',') + ' crash');
+		assert.match(await run({ op: 'prs', query: 'fix', mergedAt: '2024-03-01..*', comments: '<10' }), /--comments <10 .*--merged-at 2024-03-01\.\.\* .*fix$/);
 		// repos: followers, forks, stars, size and the dates
 		assert.match(await run({ op: 'repos', query: 'cli', followers: '>1000', forks: '10..50', stars: '>=100', size: '<500', created: '*..2020-01-01', updated: '>2025-01-01' }),
-			/--created \*\.\.2020-01-01 --followers >1000 --forks 10\.\.50 .*--size <500 --stars >=100 --updated >2025-01-01 .*-- cli$/);
+			/--created \*\.\.2020-01-01 --followers >1000 --forks 10\.\.50 .*--size <500 --stars >=100 --updated >2025-01-01 .*cli$/);
 		// commits: the two dates; code: size
-		assert.match(await run({ op: 'commits', query: 'fix', authorDate: '>=2024-01-01', committerDate: '2024-01-01..2024-12-31' }), /--author-date >=2024-01-01 --committer-date 2024-01-01\.\.2024-12-31 .*-- fix$/);
-		assert.match(await run({ op: 'code', query: 'TODO', size: '10..500' }), /--size 10\.\.500 --json .* -- TODO$/);
+		assert.match(await run({ op: 'commits', query: 'fix', authorDate: '>=2024-01-01', committerDate: '2024-01-01..2024-12-31' }), /--author-date >=2024-01-01 --committer-date 2024-01-01\.\.2024-12-31 .*fix$/);
+		assert.match(await run({ op: 'code', query: 'TODO', size: '10..500' }), /--size 10\.\.500 --json .* TODO$/);
 		// a query that starts with '-' (an exclusion) goes after --, so gh does not read it as a flag
-		assert.match(await run({ op: 'issues', query: '-label:bug' }), /-- -label:bug$/);
+		assert.match(await run({ op: 'issues', query: '-label:bug' }), / -- -label:bug$/);
 		// array filters repeat the flag; a boolean qualifier can be switched off
 		assert.match(await run({ op: 'issues', query: 'x', label: ['a', 'b'], owner: ['o1'], archived: false, noLabel: true }), /--archived=false --label a --label b .*--no-label .*--owner o1 /);
 	} finally { gh.restore(); }

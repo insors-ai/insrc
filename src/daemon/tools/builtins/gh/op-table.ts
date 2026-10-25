@@ -77,7 +77,7 @@ export type Arg =
 
 /** A positional taken from a field when it is given. */
 export const pos = (name: string): Arg => ({ pos: name });
-/** A positional after `--`, at the very end, so it may start with '-' (a search query such as -label:bug). */
+/** A positional at the very end; a value that starts with '-' (a search query such as -label:bug) goes after `--`. */
 export const last = (name: string): Arg => ({ last: name });
 /** Every member of a list field as its own positional. */
 export const spread = (name: string): Arg => ({ spread: name });
@@ -237,7 +237,8 @@ export function buildArgv(def: OpDef, input: ToolInput): string[] {
       if (Array.isArray(v)) { argv.push(...v.map(String)); }
     } else if ('last' in a) {
       const v = input[a.last];
-      if (v !== undefined && v !== null) { tail.push('--', String(v)); }
+      // only a value that starts with '-' needs `--`, so the usual argv ends with the query and a check can append --help
+      if (v !== undefined && v !== null) { tail.push(...(String(v).startsWith('-') ? ['--'] : []), String(v)); }
     } else if ('flag' in a) {
       const v = input[a.field];
       if (a.as === 'bool3') { if (v === true) { argv.push(a.flag); } else if (v === false) { argv.push(`${a.flag}=false`); } continue; }

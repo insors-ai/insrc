@@ -1,0 +1,66 @@
+{
+  "baselineCommit": "f6b3b573e",
+  "scope": "30 files that failed the initial completed full sweep",
+  "baselineIsolated": {
+    "tests": 309,
+    "pass": 285,
+    "fail": 24
+  },
+  "baselineWithWorkspaceCwd": {
+    "tests": 309,
+    "pass": 262,
+    "fail": 47
+  },
+  "currentRecheckSummary": [
+    "\u2139 tests 309",
+    "\u2139 pass 267",
+    "\u2139 fail 42",
+    "\u2139 skipped 0",
+    "\u2139 duration_ms 33389.218021"
+  ],
+  "currentOnlyFailures": [
+    "Approving amendment marks existing LLD stale via effective-hash mismatch",
+    "Bad amendment proposal is dropped; the LLD still synthesizes",
+    "LLD s4 amendment proposal lands as pending AmendmentRecord",
+    "a validate turn records its round in the Task's own log, and a Task with no head writes the BUILD record only and has no round",
+    "ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)",
+    "ac6: corrupt CR record (non-BUILD) \u2192 no-review fail-open, approved",
+    "ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)",
+    "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+    "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+    "design.epic: synthesize with a Define that carries no creation time fails with missing-anchor and writes nothing",
+    "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+    "implement: unapproved plan returns next=refused with reason plan-unapproved",
+    "one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in, not the environment's",
+    "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+    "plan: refuses when the Story LLD is unapproved (gate)",
+    "plan: synthesize with a Define that carries no creation time fails with no Epic anchor and writes no PLAN",
+    "review-step drives the full loop and records the review with model=client",
+    "the first headless validate call writes TESTS first, a failing judge leaves the evidence, and a retry on a later day files BUILD in the same folder"
+  ],
+  "baselineOnlyFailures": [
+    "':' opens the command bar and runs a typed command",
+    "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+    "Daemon pane renders the down state when the daemon is unreachable",
+    "Daemon pane shows running status + uptime",
+    "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+    "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+    "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+    "Repos pane: `t` with no repos registered is a no-op",
+    "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+    "Repos pane: the tracker modal dismisses on any key back to the list",
+    "Setup pane renders system + recommendation without crashing",
+    "TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort",
+    "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+    "Workflows pane lists epics and opens the chain detail",
+    "Workflows pane: a approves the focused item through the async approve service, toasts the result, and toasts a refusal",
+    "bottom box: Setup model-pull streams ollama progress into the message box",
+    "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+    "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+    "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+    "bottom box: ui.toast (r refresh) lands in the message box",
+    "number keys switch panes (Daemon \u2192 Repos)",
+    "pressing '6' opens the Debug pane and hides the previously active pane",
+    "the tab bar renders a 6th 6:Debug peer tab"
+  ]
+}

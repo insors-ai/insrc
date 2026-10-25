@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s3",
+    "createdAt": "2026-10-25T19:57:09.103Z",
+    "updatedAt": "2026-10-25T20:01:03.859Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "59060e68a",
+        "ranAt": "2026-10-25T20:01:03.859Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-defs.test.ts",
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the real CONFIG_CATALOG has 47 rows (models.shaper.ollamaNumCtx retired; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-defs.test.ts",
+                "title": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/check-model-definitions.test.ts",
+                "title": "check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-source-inventory suite passes after t1",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/check-model-definitions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1052,
+            "titles": [
+              {
+                "title": "check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 405,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 47 rows (models.shaper.ollamaNumCtx retired; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults",
+                "result": "pass"
+              },
+              {
+                "title": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (47 rows)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/config-catalog-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1073,
+            "titles": [
+              {
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 613,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases, and its tier defaults and summariser models equal DEFAULT_TIERS, the installer Codex block and SUMMARISER_CLI_FALLBACK",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13152,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

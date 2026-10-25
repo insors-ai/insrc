@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T17:14:45.564Z",
+    "updatedAt": "2026-10-25T17:52:22.586Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -295,6 +295,60 @@
               },
               {
                 "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "6e61c679a",
+        "ranAt": "2026-10-25T17:52:22.586Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-AUTH: bounded strict RPC/unknown method decoding and main-daemon routing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+                "title": "CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+                "title": "CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+                "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 802,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
                 "result": "pass"
               }
             ],

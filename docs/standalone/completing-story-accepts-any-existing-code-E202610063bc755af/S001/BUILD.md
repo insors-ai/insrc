@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story s1
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-24T13:16:45.643Z  ·  **Updated:** 2026-10-24T13:24:05.341Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-24T13:16:45.643Z  ·  **Updated:** 2026-10-24T14:37:26.796Z
 
-**Commit:** 86fb49d2
+**Commit:** 620fe6278
 
 ## Scope
 
@@ -16,7 +16,7 @@ Existing tracked small bugfix, approved by user; direct issue-to-build route.
 
 ## Summary
 
-Bound new code reviews to BUILD content and validation time; legacy records must postdate the build and cover its change log. Both direct approval and lifecycle completion reject stale/incomplete reviews independently of advisory verdict enforcement, while explicit overrides remain available. Completion bookkeeping preserves the build clock. TypeScript passed; affected suites: 184 pass, 1 skip, 0 failures.
+Require matching BUILD fingerprints and file coverage for completion; reject malformed or unbound reviews, retain explicit overrides and existing non-BUILD approval behavior.
 
 ## Tasks validated
 
@@ -26,15 +26,15 @@ Bound new code reviews to BUILD content and validation time; legacy records must
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-3bc755af91d494a8.json` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `.insrc/artifacts/ISSUE-3bc755af91d494a8.log.jsonl` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/__tests__/approve-build-freshness.test.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/__tests__/approve-build-record-completion.test.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/__tests__/helpers/other-party-review.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/code-review/__tests__/runner.test.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/code-review/build-freshness.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/code-review/gate.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/code-review/runner.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/code-review/types.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/gates.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
-- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-24T13:24:05.341Z)
+- `.insrc/artifacts/ISSUE-3bc755af91d494a8.json` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `.insrc/artifacts/ISSUE-3bc755af91d494a8.log.jsonl` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/__tests__/approve-build-freshness.test.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/__tests__/approve-build-record-completion.test.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/__tests__/helpers/other-party-review.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/code-review/__tests__/runner.test.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/code-review/build-freshness.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/code-review/gate.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/code-review/runner.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/code-review/types.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)
+- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-24T14:37:26.796Z)

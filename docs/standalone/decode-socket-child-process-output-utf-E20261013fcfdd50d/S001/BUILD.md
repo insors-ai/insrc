@@ -2,7 +2,7 @@
 
 # Build (standalone trivial) — Story s1
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-24T13:25:59.688Z  ·  **Updated:** 2026-10-24T13:36:22.973Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-24T13:25:59.688Z  ·  **Updated:** 2026-10-24T14:37:30.630Z
 
 **Commit:** 3251877d3
 
@@ -26,23 +26,23 @@ Added a shared StringDecoder-based reader preserving raw byte counts and applied
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-fcfdd50de84fb31a.json` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `.insrc/artifacts/ISSUE-fcfdd50de84fb31a.log.jsonl` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/__tests__/server-utf8.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/server.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/builtins/cloud/aws/logs.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/builtins/k8s/index.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/builtins/shell/exec-detached.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/builtins/ssh/index.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/builtins/test/index.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/daemon/tools/shell-helper.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/docgen/render/fallback.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/mcp/__tests__/daemon-stream-utf8.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/mcp/daemon-stream.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/shared/__tests__/ipc-client-timeout.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/shared/__tests__/ipc-client.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/shared/__tests__/utf8-stream.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/shared/ipc-client.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `src/shared/utf8-stream.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
-- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-24T13:36:22.973Z)
+- `.insrc/artifacts/ISSUE-fcfdd50de84fb31a.json` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `.insrc/artifacts/ISSUE-fcfdd50de84fb31a.log.jsonl` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/__tests__/server-utf8.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/server.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/builtins/cloud/aws/logs.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/builtins/k8s/index.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/builtins/shell/exec-detached.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/builtins/ssh/index.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/builtins/test/index.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/daemon/tools/shell-helper.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/docgen/render/fallback.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/mcp/__tests__/daemon-stream-utf8.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/mcp/daemon-stream.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/shared/__tests__/ipc-client-timeout.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/shared/__tests__/ipc-client.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/shared/__tests__/utf8-stream.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/shared/ipc-client.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `src/shared/utf8-stream.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `vscode-plugin/src/chat/__tests__/cli-adapter-utf8.test.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)
+- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-24T14:37:30.630Z)

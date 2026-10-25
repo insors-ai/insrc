@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## s1
 
-Run at 2026-10-24T13:24:05.341Z on commit `86fb49d2`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-24T14:32:29.075Z on commit `620fe6278`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **src/workflow/__tests__/approve-build-freshness.test.ts**
 
@@ -16,7 +16,7 @@ Run by file: the build commit touched this test file.
 
 | Result | File | Titles |
 | :--- | :--- | :--- |
-| pass | `src/workflow/__tests__/approve-build-freshness.test.ts` | 5 |
+| pass | `src/workflow/__tests__/approve-build-freshness.test.ts` | 9 |
 
 **src/workflow/__tests__/approve-build-record-completion.test.ts**
 
@@ -38,6 +38,6 @@ Run by file: the build commit touched this test file.
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/__tests__/approve-build-freshness.test.ts` | 0 | 5 | 0.5 s |  |
-| `src/workflow/__tests__/approve-build-record-completion.test.ts` | 0 | 2 | 0.6 s |  |
-| `src/workflow/code-review/__tests__/runner.test.ts` | 0 | 20 | 0.6 s |  |
+| `src/workflow/__tests__/approve-build-freshness.test.ts` | 0 | 9 | 0.5 s |  |
+| `src/workflow/__tests__/approve-build-record-completion.test.ts` | 0 | 2 | 0.4 s |  |
+| `src/workflow/code-review/__tests__/runner.test.ts` | 0 | 20 | 0.5 s |  |

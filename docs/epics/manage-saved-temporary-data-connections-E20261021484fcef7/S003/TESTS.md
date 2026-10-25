@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -200,3 +200,30 @@ Run at 2026-10-25T18:45:25.724Z on commit `2f975f568`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 1.9 s |  |
+
+## t9
+
+Run at 2026-10-25T19:19:58.845Z on commit `ae630e99d`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-LEASE: full multi-call callback, busy update, delayed/failed construction**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes | `src/daemon/db/__tests__/session-resources.test.ts` |
+
+**integration: CM-S3-ISOLATION: private owner/root/revision drivers with distinct credentials/rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions | `src/daemon/db/__tests__/session-resources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 7 | 1.7 s |  |

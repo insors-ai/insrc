@@ -1,0 +1,11 @@
+{
+  "results": [
+    {
+      "status": "SUCCESS",
+      "message": "Comment on work item IN-1 has been successfully added",
+      "id": "IN-1"
+    }
+  ],
+  "totalCount": 1,
+  "successCount": 1
+}

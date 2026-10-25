@@ -21,7 +21,6 @@ This Story turns the shipped curated catalog into the model definitions file for
 7. [Migration](#7-migration)
 8. [Alternatives considered](#8-alternatives-considered)
 9. [References](#9-references)
-10. [Open questions](#10-open-questions)
 
 ## 1. HLD context
 
@@ -51,14 +50,14 @@ validateModelCatalog(): ModelDefinitionsFile
 **Returns:** `ModelDefinitionsFile` — The frozen, validated definitions file, cached for this thread; later calls in the same thread return the same cached object without reading the file again.
 
 **Errors:**
-- `ModelCatalogValidationError` when The file is missing or unreadable, is not JSON, or breaks a validation rule; path and reason name the faulty entry (for example `families[1] (cli-codex): tierDefaults.mid.model 'gpt-9' is not a model or alias of cli-codex`).
+- `ModelCatalogValidationError` when Thrown synchronously when the file is missing or unreadable, is not JSON, or breaks a validation rule; path and reason name the faulty entry (for example `families[1] (cli-codex): tierDefaults.mid.model 'gpt-9' is not a model or alias of cli-codex`).
 
 **Preconditions:**
-- modelCatalogDir() points at the asset directory (out/assets/models when built, src/assets/models under tsx, or the test override).
+- modelCatalogDir() points at the asset directory (out/assets/models when built, src/assets/models under tsx, the in-process test override, or the test-only INSRC_MODEL_CATALOG_DIR environment value).
 
 **Postconditions:**
-- Reads the file synchronously (so worker start and synchronous consumers can call it); the boot hook keeps its `await`, which is harmless on a synchronous call.
-- On success the parse is cached per thread and logged with version and per-family model counts; on failure nothing is cached.
+- Replaces today's async Promise<void> export: it is the one synchronous loader, used by the boot hook (which keeps its `await`, harmless on a synchronous call), by getModelRegistry and so by worker start; there is no second loader function.
+- On success the parse is cached per thread and logged with version and per-family model counts; on failure nothing is cached and the error propagates synchronously.
 
 ### 2.2 `getCuratedCatalog`
 
@@ -90,10 +89,11 @@ getModelRegistry(): ModelRegistry  // ModelRegistry as in HLD sc2: families(), d
 
 **Postconditions:**
 - The store is read once per thread from PATHS.approvedModels; a missing store is empty; an unreadable or malformed store, or an entry that is not a valid ApprovedProfile, is logged with its path and reason and ignored (the whole store when it is not parseable).
-- An approved profile for a model the file already lists is ignored with a log (the shipped definition wins).
-- models(family) = listed models (source 'shipped') followed by approved profiles (source 'user-approved', efforts = the approved efforts); rejected(family) = ids of rejected profiles; find() matches an id or alias case-sensitively within the family.
-- tierDefault(family, tier) returns that CLI family's entry; summariserModel(family) resolves its summariser id or alias; toolLoopModel() resolves the ollama family's toolLoopModel; cliKind returns the family's cliKind (undefined for ollama); effortLevels() is the de-duplicated union of every listed model's efforts in file order.
-- resolveTier(tier, setting): finds setting.model in setting.runner's family; if found, keeps setting.effort when the model accepts it, otherwise drops it into droppedEffort; if not found, returns the fallback model with fallback.reason 'rejected-model' when a rejected profile has that id, else 'unlisted-model', and fallback.requested = setting.model. The fallback is the tier's default of setting.runner's family, or of defaultFamily() when setting.runner is 'ollama'; its effort is the default's effort. resolveTier logs nothing; s3 logs.
+- Effective profiles: for each (family, modelId) only the profile with the latest decidedAt counts; an approved profile for a model the file already lists is shadowed (ignored with a log; the shipped definition wins).
+- models(family) = listed models (source 'shipped', file order) followed by effective approved profiles (source 'user-approved', efforts = the approved efforts, in decidedAt order); rejected(family) = ids of effective rejected profiles; find() matches an id or alias case-sensitively within the family, over listed models and effective approved profiles.
+- tierDefault(family, tier) returns that CLI family's entry; summariserModel(family) resolves its summariser id or alias; toolLoopModel() resolves the ollama family's toolLoopModel; cliKind returns the family's cliKind (undefined for ollama).
+- effortLevels() = the de-duplicated union of the efforts of every model models() returns across all families (shipped and effective approved, never rejected or shadowed profiles), ordered by first appearance: families in file order, within a family listed models in file order then approved profiles in decidedAt order.
+- resolveTier(tier, setting): finds setting.model in setting.runner's family (listed or effective approved); if found, keeps setting.effort when that model accepts it, otherwise drops it into droppedEffort; if not found, returns the fallback model with fallback.reason 'rejected-model' when an effective rejected profile has that id, else 'unlisted-model', and fallback.requested = setting.model. The fallback is the tier's default of setting.runner's family, or of defaultFamily() when setting.runner is 'ollama'; its effort is the default's effort. resolveTier logs nothing; s3 logs.
 
 ### 2.4 `startDaemonWorker`
 
@@ -158,7 +158,7 @@ The validateModelCatalog call moves from after worker start (:381-382) to just b
 | Contract | Role | How |
 | :--- | :--- | :--- |
 | `sc1` | implements | Owns the file format, its contents and validateModelCatalog's rules; extends CloudModelCatalogFile and validateShape in src/daemon/model-catalog.ts in place. |
-| `sc2` | implements | Owns ModelRegistry (new src/daemon/model-registry.ts), the ApprovedProfile shape and the store reader; s2, s3 and s4 consume getModelRegistry(). |
+| `sc2` | implements | Owns ModelRegistry (new src/daemon/model-registry.ts), the ApprovedProfile shape and the store reader; s2, s3 and s4 consume getModelRegistry(). effortLevels() follows sc2's 'union over all models' over listed and effective approved models. |
 
 ## 5. Error paths
 
@@ -177,7 +177,7 @@ The validateModelCatalog call moves from after worker start (:381-382) to just b
   - Response: ModelCatalogValidationError whose reason names the entry path and the rule, for example `families[2] (ollama): model 'x' has no token inputLimit`; fatal at boot.
   - User impact: The daemon does not start; the maintainer sees exactly which entry to fix (ac3).
 - **The file becomes invalid on disk after boot and a worker then starts (a supervisor replacement).** (terminal)
-  - Detection: startDaemonWorker calls getModelRegistry(), which validates the file in that worker thread and throws.
+  - Detection: startDaemonWorker calls getModelRegistry(), which calls validateModelCatalog in that worker thread and throws.
   - Response: The worker's start fails with the validation error; the supervisor handles it like any other failed start (retries, then its existing restart limit shuts the daemon down).
   - User impact: A broken file never runs in a worker; the log names the entry.
 - **The approved-model store is unreadable, not JSON, or not { version, profiles[] }.** (recoverable)
@@ -195,8 +195,9 @@ The validateModelCatalog call moves from after worker start (:381-382) to just b
 | :--- | :--- |
 | A family lists `models: []`. | Valid only for a family with no tier defaults to resolve (none of the shipped families); for a CLI family it fails because its tier defaults and summariser cannot name a model of the family. |
 | A model with `efforts: []`. | Valid; resolveTier drops any effort the setting asks for into droppedEffort. |
-| An approved profile for a model the file already lists. | Ignored with a log; the shipped definition is used (HLD durability). |
-| A rejected profile and an approved profile for the same model id. | The later decidedAt wins; the other is ignored with a log. |
+| An approved profile for a model the file already lists. | Shadowed: ignored with a log; the shipped definition is used and its efforts alone feed effortLevels() (HLD durability). |
+| A rejected profile and an approved profile for the same model id. | The later decidedAt is the effective profile; the other is ignored with a log. If the effective one is rejected, its efforts never reach models() or effortLevels(). |
+| An effective approved profile with an effort no shipped model lists. | The effort appears in effortLevels() after the shipped efforts of its family, and resolveTier keeps it for that model. |
 | A tier setting whose model is an alias (`haiku`). | find() resolves it to the canonical model (claude-haiku-5-5); resolveTier returns that model with no fallback. |
 | A tier setting with runner 'ollama' and an unlisted model. | Fallback to defaultFamily()'s default for that tier, reason 'unlisted-model'. |
 | The same id used in two different families. | Valid; ids and aliases are unique only within a family. |
@@ -215,8 +216,8 @@ The validateModelCatalog call moves from after worker start (:381-382) to just b
 **Test levels**
 
 - **unit** — Validator rules, registry lookups and resolution, store reading, and the kept accessor.
-  - Subjects: `validateModelCatalog / validateShape in src/daemon/model-catalog.ts (src/daemon/__tests__/model-catalog.test.ts, rewritten for the families shape)`, `getModelRegistry and every ModelRegistry method in src/daemon/model-registry.ts (new src/daemon/__tests__/model-registry.test.ts)`, `getCuratedCatalog().modelsFor over the new shape`, `providers.listModels through the kept accessor (src/daemon/__tests__/list-models.test.ts)`
-  - Fixtures: `A valid minimal fixture with all three families`, `One fixture per refusal reason: missing file, malformed JSON, unknown family, missing family (no ollama; no non-default CLI family), repeated family, CLI family without cliKind / tierDefaults / summariserModel, model without efforts, duplicate id, duplicate alias, tier default not in family, summariser not in family, toolLoopModel not listed, Ollama model without token inputLimit, defaultFamily 'ollama', non-numeric version`, `Approved-model store fixtures: absent, malformed JSON, wrong shape, one bad entry among good ones, an approved profile shadowing a listed model, approved and rejected for the same id`
+  - Subjects: `validateModelCatalog / validateShape in src/daemon/model-catalog.ts (src/daemon/__tests__/model-catalog.test.ts, rewritten for the families shape; refusals asserted with assert.throws on the synchronous call instead of assert.rejects)`, `getModelRegistry and every ModelRegistry method in src/daemon/model-registry.ts (new src/daemon/__tests__/model-registry.test.ts)`, `effortLevels() over shipped and effective approved models: an approved effort absent from every shipped model is included after its family's shipped efforts; a rejected or shadowed profile's efforts are not`, `getCuratedCatalog().modelsFor over the new shape`, `providers.listModels through the kept accessor (src/daemon/__tests__/list-models.test.ts)`
+  - Fixtures: `A valid minimal fixture with all three families`, `One fixture per refusal reason: missing file, malformed JSON, unknown family, missing family (no ollama; no non-default CLI family), repeated family, CLI family without cliKind / tierDefaults / summariserModel, model without efforts, duplicate id, duplicate alias, tier default not in family, summariser not in family, toolLoopModel not listed, Ollama model without token inputLimit, defaultFamily 'ollama', non-numeric version`, `Approved-model store fixtures: absent, malformed JSON, wrong shape, one bad entry among good ones, an approved profile shadowing a listed model, approved and rejected for the same id, an approved profile with an effort no shipped model lists`, `An ac2 fixture: the baseline fixture plus one added model with an alias and an effort level ('turbo') that no baseline model lists`
 - **integration** — Boot order and worker-start validation with real threads and a temp insrc home.
   - Subjects: `Daemon boot (src/daemon/index.ts) with a corrupted definitions file: exits with ModelCatalogValidationError naming the entry, creates no config.json in a fresh temp home and never opens the socket`, `A worker started through startDaemonWorker (src/daemon/threads/worker-entry.ts) after the asset was corrupted fails its start with the validation error`, `A worker started after the asset or the store changed on disk builds its registry from the new contents while the main thread's cached registry keeps the old ones`
   - Fixtures: `A temp copy of the asset directory pointed to by a test-only INSRC_MODEL_CATALOG_DIR environment seam that modelCatalogDir() honours (workers do not see the in-process override)`, `A temp INSRC home for PATHS`
@@ -228,35 +229,35 @@ The validateModelCatalog call moves from after worker start (:381-382) to just b
 | Criterion | Proving tests |
 | :--- | :--- |
 | `ac1` | `integration: boot validates the definitions before reconcile, before any worker starts and before listen (corrupted file -> no config.json, no socket)`, `unit: getModelRegistry() called repeatedly in one thread returns the same registry even after the file changes on disk`, `integration: a worker started after an on-disk change uses the new contents while the main thread keeps its own until restart`, `contract: the shipped file describes all three families with models, tier defaults, summariser, efforts and limits` |
-| `ac2` | `unit: a model and alias added only to a fixture file are returned by models(), find() and getCuratedCatalog().modelsFor() after reloading (the test-reset seam standing in for a restart), with no code change` |
-| `ac3` | `unit: one fixture per refusal reason throws ModelCatalogValidationError whose reason names the entry and rule`, `integration: daemon boot with a corrupted file exits with the error before reconcile, workers and listen`, `integration: a worker start fails with the error when the file is bad` |
+| `ac2` | `unit: with the ac2 fixture loaded after the test-reset seam (standing in for a restart), the added model and alias are returned by models() and find() with its efforts exactly as written, including 'turbo'; effortLevels() includes 'turbo'; resolveTier for a tier set to the new model's alias with effort 'turbo' returns that model with the effort kept and no fallback or droppedEffort; and getCuratedCatalog().modelsFor() lists the new model; no code changes between the baseline and ac2 runs` |
+| `ac3` | `unit: one fixture per refusal reason makes validateModelCatalog throw ModelCatalogValidationError synchronously, its reason naming the entry and rule`, `integration: daemon boot with a corrupted file exits with the error before reconcile, workers and listen`, `integration: a worker start fails with the error when the file is bad` |
 
 ## 7. Migration
 
-**State before:** The curated catalog lists only Claude and Codex model ids and display names under `providers` (src/assets/models/cloud-model-catalog.json; CloudModelCatalogFile, src/daemon/model-catalog.ts:48). It is validated asynchronously once on the main thread after the settings reconcile and worker start (src/daemon/index.ts:154, :283, :381), cached in a module variable, and read only by providers.listModels through getCuratedCatalog (src/daemon/list-models.ts:127). Workers load no model data (src/daemon/threads/worker-entry.ts:52). There is no approved-model store.
+**State before:** The curated catalog lists only Claude and Codex model ids and display names under `providers` (src/assets/models/cloud-model-catalog.json; CloudModelCatalogFile, src/daemon/model-catalog.ts:48). It is validated by an async validateModelCatalog once on the main thread after the settings reconcile and worker start (src/daemon/index.ts:154, :283, :381), cached in a module variable, and read only by providers.listModels through getCuratedCatalog (src/daemon/list-models.ts:127). Workers load no model data (src/daemon/threads/worker-entry.ts:53). There is no approved-model store.
 
-**State after:** The same file holds `defaultFamily` and `families` for cli-claude, cli-codex and ollama with models, aliases, efforts, limits, tier defaults, summariser and tool-loop model. validateModelCatalog reads it synchronously, applies the full rules and caches it per thread; the boot hook runs before the settings reconcile; every worker loads and validates it at start through getModelRegistry(); the registry also reads ~/.insrc/approved-models.json when present. getCuratedCatalog keeps answering providers.listModels with the same Claude and Codex lists (the stale Haiku id refreshed) until s2. No consumer of tiers, efforts or limits changes yet; s3 moves them.
+**State after:** The same file holds `defaultFamily` and `families` for cli-claude, cli-codex and ollama with models, aliases, efforts, limits, tier defaults, summariser and tool-loop model. validateModelCatalog is the one synchronous loader: it reads, applies the full rules, caches per thread and returns the file; the boot hook runs it before the settings reconcile; every worker loads and validates it at start through getModelRegistry(); the registry also reads ~/.insrc/approved-models.json when present. getCuratedCatalog keeps answering providers.listModels with the same Claude and Codex lists (the stale Haiku id refreshed) until s2. No consumer of tiers, efforts or limits changes yet; s3 moves them.
 
 **Zero downtime:** no — **Data rewrite:** no
 
 **Steps**
 
 1. Rewrite the shipped asset to the families shape, carrying today's models, the aliases opus, sonnet and haiku, today's tier defaults, the Codex installer defaults, the summariser fallbacks, the Claude and Codex effort lists from the probes, qwen3.6:27b with today's 32768-token context window as the Ollama model and tool-loop default, and the refreshed Haiku id. — ↩ rollbackable
-2. Extend the catalog types and validator in place and make validateModelCatalog synchronous and per-thread cached; keep the error type, asset location and test seams; add the test-only asset-directory environment seam. — ↩ rollbackable
+2. Extend the catalog types and validator in place and turn validateModelCatalog into the synchronous, per-thread cached loader that returns the file; keep the error type, asset location and test seams; add the test-only asset-directory environment seam. — ↩ rollbackable
 3. Re-implement getCuratedCatalog().modelsFor as a projection of the CLI families' listed models, keeping its signature for providers.listModels. — ↩ rollbackable
-4. Add PATHS.approvedModels and the registry module with the store reader; add getModelRegistry() to worker start. — ↩ rollbackable
+4. Add PATHS.approvedModels and the registry module with the store reader and effective-profile rules; add getModelRegistry() to worker start. — ↩ rollbackable
 5. Move the boot validation call ahead of the settings reconcile. — ↩ rollbackable
-6. Rewrite the catalog, asset and list-models tests for the new shape and add the registry and boot/worker integration tests. — ↩ rollbackable
+6. Rewrite the catalog, asset and list-models tests for the new shape (refusals asserted with assert.throws) and add the registry, ac2 and boot/worker integration tests. — ↩ rollbackable
 
-**Backward compat:** providers.listModels keeps its request and result shape and returns the same Claude and Codex model lists, with claude-haiku-4-5-20251001 replaced by claude-haiku-5-5 (the model the haiku alias runs today) and the newer Codex models from the CLI's own list added. Nothing that resolves tiers, efforts or limits reads the new fields yet, so what runs is unchanged. A daemon built before this Story cannot read the new asset, but the asset ships with the code, so the two never meet. The approved-model store is new and absent until s4 writes it.
+**Backward compat:** providers.listModels keeps its request and result shape and returns the same Claude and Codex model lists, with claude-haiku-4-5-20251001 replaced by claude-haiku-5-5 (the model the haiku alias runs today) and the newer Codex models from the CLI's own list added. validateModelCatalog changes from a rejecting promise to a synchronous throw; its only production caller, the boot hook, keeps working because awaiting a synchronous call that throws still propagates the error to the fatal handler. Nothing that resolves tiers, efforts or limits reads the new fields yet, so what runs is unchanged. A daemon built before this Story cannot read the new asset, but the asset ships with the code, so the two never meet. The approved-model store is new and absent until s4 writes it.
 
 ## 8. Alternatives considered
 
 ### 8.1 a1: Extend model-catalog.ts in place with a synchronous per-thread loader and a registry module — **CHOSEN**
 
-Keep src/daemon/model-catalog.ts as the file's loader and validator, make the read synchronous and cached per thread, add a small registry module over it, and load it at boot and at worker start.
+Keep src/daemon/model-catalog.ts as the file's loader and validator, make validateModelCatalog the one synchronous, per-thread cached loader, add a small registry module over it, and load it at boot and at worker start.
 
-model-catalog.ts keeps its asset location, error type and test seams; its types become the sc1 shape and validateShape becomes the full validator. A synchronous loadModelDefinitions() reads, parses, validates and caches the frozen file once per thread; the async validateModelCatalog() stays as the boot entry, now called before the settings reconcile, and delegates to it. getCuratedCatalog() stays as the stopgap accessor, projecting each CLI family's models to {id, displayName}. A new src/daemon/model-registry.ts builds the sc2 ModelRegistry from the loaded file plus the approved-model store (read synchronously from a new PATHS entry; malformed or missing is logged and treated as empty) and caches it per thread. startDaemonWorker loads the registry when a worker starts, so a bad file fails that worker's start.
+model-catalog.ts keeps its asset location, error type and test seams; its types become the sc1 shape and validateShape becomes the full validator. validateModelCatalog becomes synchronous: it reads, parses, validates and caches the frozen file once per thread and returns it; it is the one entry point the boot hook (which keeps its await), getModelRegistry and worker start use. getCuratedCatalog() stays as the stopgap accessor, projecting each CLI family's models to {id, displayName}. A new src/daemon/model-registry.ts builds the sc2 ModelRegistry from the loaded file plus the approved-model store (read synchronously from a new PATHS entry; malformed or missing is logged and treated as empty) and caches it per thread. startDaemonWorker loads the registry when a worker starts, so a bad file fails that worker's start.
 
 The asset is rewritten to the families shape with today's models, aliases, efforts, limits and defaults.
 
@@ -294,7 +295,4 @@ No worker reads the file.
 - **[[c10]]** `code` `src/daemon/list-models.ts:127` — "const models = deps.catalog().modelsFor(provider).map(toModelInfo);"
 - **[[c11]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md` — "gpt-6.1-sol, gpt-6-astra, gpt-6-sol, gpt-5.6-sol and gpt-5.6-terra list low/medium/high/xhigh/max/ultra. gpt-6-luna and gpt-5.6-luna list low/medium/high/xhigh/max (no `ultra`)."
 - **[[c12]]** `stakeholder` `user 2026-10-25` — "approve with override and continue"
-
-## 10. Open questions
-
-- alt2 (partial): alternatives were scored against ac1-ac3 and sc1/sc2; Epic constraints k1-k7 were not scored separately (k4 and k7 are covered through ac1-ac3).
+- **[[c13]]** `prior-artifact` `LLD-ce99b72065d03b1b-s1` — "Review round 1 (2026-10-25): effortLevels() must cover effective approved models; one synchronous validateModelCatalog contract; ac2 test must prove a novel effort survives."

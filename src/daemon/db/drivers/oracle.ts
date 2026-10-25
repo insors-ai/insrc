@@ -16,7 +16,6 @@ import { allDriverWork } from '../driver-work.js';
 
 import oracledb from 'oracledb';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -71,7 +70,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-oracle');
 
 function clampOracleListLimit(n: number | undefined): number {
 	if (typeof n !== 'number' || !Number.isFinite(n)) return 500;
@@ -147,7 +145,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
@@ -178,7 +176,7 @@ export class OracleDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildSampleSql(queryAst.target, opts, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
@@ -201,7 +199,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
@@ -220,7 +218,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {

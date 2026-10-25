@@ -14,7 +14,6 @@ import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 
 import { Redis } from 'ioredis';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -36,7 +35,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-redis');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class RedisDriver implements KvDriver {
@@ -57,13 +55,14 @@ export class RedisDriver implements KvDriver {
 		this.kind = kind;
 		this.client = new Redis(url, {
 			lazyConnect: true,
+			...(this.#runtimeLog.quiet ? { enableReadyCheck: false } : {}),
 			maxRetriesPerRequest: 1,
 			enableOfflineQueue: false,
 			connectTimeout: SCAN_TIMEOUT_MS,
 			commandTimeout: SCAN_TIMEOUT_MS,
 		});
 		this.client.on('error', (err: Error) => {
-			log.warn({ id, err: err.message }, 'redis client error');
+			this.#runtimeLog.emit('warn', () => ({ fields: { id, err: err.message }, message: 'redis client error' }));
 		});
 	}
 

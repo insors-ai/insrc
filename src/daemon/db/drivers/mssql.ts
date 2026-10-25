@@ -22,7 +22,6 @@ interface ColumnValue {
 	readonly value: unknown;
 }
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -78,7 +77,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-mssql');
 
 function clampMssqlListLimit(n: number | undefined): number {
 	if (typeof n !== 'number' || !Number.isFinite(n)) return 500;
@@ -187,7 +185,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 		const rows = await withTimeout(
 			this.run(text, values),
 			SAMPLE_TIMEOUT_MS,
@@ -209,7 +207,7 @@ export class MssqlDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildSampleSql(queryAst.target, opts, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		// MSSQL EXPLAIN equivalent: SHOWPLAN_TEXT ON makes the next
 		// SELECT return the plan as text rows instead of executing.
 		// Run as a session-scoped pair so the SELECT doesn't pollute
@@ -227,7 +225,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const rows = await withTimeout(
 			this.run(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -239,7 +237,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const [countRows, valueRows] = await allDriverWork([
 			withTimeout(this.run(compiled.distinctCountSql, []), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.run(compiled.topValuesSql,    []), SAMPLE_TIMEOUT_MS),

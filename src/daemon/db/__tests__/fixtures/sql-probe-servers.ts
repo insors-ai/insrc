@@ -27,7 +27,7 @@ export async function pgProbeServer(expectedPassword='ok') {
   });
  });
  await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const addr=server.address();if(!addr||typeof addr==='string')throw new Error();
- return {port:addr.port,queries,close:async()=>{for(const socket of sockets)socket.destroy();await new Promise<void>(r=>server.close(()=>r()));}};
+ return {port:addr.port,queries,idleError:(message:string)=>{for(const socket of sockets)socket.write(packet('E',Buffer.from('SERROR\0CXX000\0M'+message+'\0\0')));},close:async()=>{for(const socket of sockets)socket.destroy();await new Promise<void>(r=>server.close(()=>r()));}};
 }
 export async function mysqlProbeServer() {
  const queries:string[]=[],sockets=new Set<Socket>();

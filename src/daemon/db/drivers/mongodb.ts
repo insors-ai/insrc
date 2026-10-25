@@ -61,6 +61,10 @@ export class MongoDriver implements KvDriver {
 	) {
 		this.#runtimeLog = driverResourceLog('db-mongodb', context);
 		this.client = new MongoClient(url, {
+			...(this.#runtimeLog.quiet ? {
+				mongodbLogComponentSeverities: { default: 'off', command: 'off', topology: 'off', serverSelection: 'off', connection: 'off', client: 'off' } as const,
+				mongodbLogPath: { write() {} },
+			} : {}),
 			serverSelectionTimeoutMS: SCAN_TIMEOUT_MS,
 			connectTimeoutMS: SCAN_TIMEOUT_MS,
 		});

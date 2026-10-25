@@ -31,7 +31,7 @@ import {
 	ListTablesCommand,
 	ScanCommand,
 } from '@aws-sdk/client-dynamodb';
-import { getLogger, getLogMode } from '../../../shared/logger.js';
+import { getLogMode } from '../../../shared/logger.js';
 import { dynamoIdentityProvider, dynamoSnapshotIdentity } from '../dynamo-identity.js';
 import type { DynamoRuntimeAuth } from '../draft-probe.js';
 import type {
@@ -54,7 +54,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-dynamodb');
 
 const TABLE_NAME_RE = /^[A-Za-z0-9_.-]{3,255}$/;
 
@@ -85,6 +84,7 @@ export class DynamoDriver implements KvDriver {
 		if (getLogMode() === 'probe-worker' && runtimeAuth === undefined) throw new Error('Connection credentials are unavailable.');
 		const source = runtimeAuth ? async () => dynamoSnapshotIdentity(runtimeAuth) : dynamoIdentityProvider({ ...config, options: { ...config.options, ...(profile !== undefined ? {profile} : {}) } });
 		this.client = new DynamoDBClient({
+			...(this.#runtimeLog.quiet ? { logger: { trace() {}, debug() {}, info() {}, warn() {}, error() {} } } : {}),
 			region,
 			credentials: async () => {
 				const value = await source();
@@ -244,7 +244,7 @@ export class DynamoDriver implements KvDriver {
 			? { partitionKey: partition, sortKey: sort }
 			: { partitionKey: partition };
 		this.tableMetaCache.set(table, meta);
-		log.debug({ id: this.id, table, meta }, 'cached table meta');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, table, meta }, message: 'cached table meta' }));
 		return meta;
 	}
 }

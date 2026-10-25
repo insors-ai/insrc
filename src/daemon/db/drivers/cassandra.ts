@@ -85,7 +85,8 @@ export class CassandraDriver implements KvDriver {
 		context?: DriverFactoryContext,
 	) {
 		this.#runtimeLog = driverResourceLog('db-cassandra', context);
-		this.client = new Client(clientOpts);
+		const options = this.#runtimeLog.quiet ? { ...clientOpts, logEmitter: () => {} } : clientOpts;
+		this.client = new Client(options);
 		const ksOpt = (config.options ?? {})['keyspace'];
 		this.defaultKs = typeof ksOpt === 'string' ? ksOpt : undefined;
 	}

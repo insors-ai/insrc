@@ -13,7 +13,6 @@ import { allDriverWork } from '../driver-work.js';
 import { createPool } from 'mysql2/promise';
 import type { Pool, PoolOptions } from 'mysql2/promise';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -70,7 +69,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-mysql');
 
 const POOL_MAX = 3;
 
@@ -96,6 +94,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const opts = parseUrlToPoolOptions(url);
 		this.pool = createPool({
 			...opts,
+			...(this.#runtimeLog.quiet ? { debug: false, trace: false } : {}),
 			connectionLimit: POOL_MAX,
 			connectTimeout: SAMPLE_TIMEOUT_MS,
 		});
@@ -138,7 +137,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const [rows, fields] = await withTimeout(
 			this.pool.query(text, values as unknown[]),
@@ -162,7 +161,7 @@ export class MysqlDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const [rows] = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -174,7 +173,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const [rows] = await withTimeout(
 			this.pool.query(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -186,7 +185,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const [[countRows], [valueRows]] = await allDriverWork([
 			withTimeout(
 				this.pool.query(compiled.distinctCountSql),

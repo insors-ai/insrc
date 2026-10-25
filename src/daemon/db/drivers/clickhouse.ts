@@ -18,7 +18,6 @@ import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { createClient, ClickHouseLogLevel } from '@clickhouse/client';
 import type { ClickHouseClient } from '@clickhouse/client';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -43,7 +42,6 @@ import {
 } from './rdbms-common.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-clickhouse');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class ClickHouseDriver implements RdbmsDriver {
@@ -61,7 +59,7 @@ export class ClickHouseDriver implements RdbmsDriver {
 		const u = new URL(url);
 		this.defaultDatabase = u.pathname === '' || u.pathname === '/' ? 'default' : u.pathname.slice(1);
 		this.client = createClient({
-			...(process.env['INSRC_MODE'] === 'probe-worker' ? { log: { level: ClickHouseLogLevel.OFF } } : {}),
+			...(this.#runtimeLog.quiet || process.env['INSRC_MODE'] === 'probe-worker' ? { log: { level: ClickHouseLogLevel.OFF } } : {}),
 			url: `${u.protocol}//${u.host}`,
 			...(u.username !== '' ? { username: decodeURIComponent(u.username) } : {}),
 			...(u.password !== '' ? { password: decodeURIComponent(u.password) } : {}),
@@ -105,7 +103,7 @@ export class ClickHouseDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, CLICKHOUSE_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const rows = await withTimeout(this.runRows(text, values), SAMPLE_TIMEOUT_MS);
 		const limit = Math.min(opts.limit, 50);

@@ -1,7 +1,6 @@
 import pino from 'pino';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { PATHS } from './paths.js';
 
 // ---------------------------------------------------------------------------
@@ -31,7 +30,7 @@ const VALID_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
 function resolveLevel(): pino.Level {
   // 1. Check config.json (highest priority)
   try {
-    const configPath = join(homedir(), '.insrc', 'config.json');
+    const configPath = PATHS.config;
     const raw = readFileSync(configPath, 'utf-8');
     const config = JSON.parse(raw) as Record<string, unknown>;
     const configLevel = config['logLevel'] as string | undefined;

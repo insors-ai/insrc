@@ -37,7 +37,6 @@ import { listValue } from '@duckdb/node-api';
 import { readdir } from 'node:fs/promises';
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, sep, resolve } from 'node:path';
-import { getLogger } from '../../../shared/logger.js';
 import type { AggregateRequest, AggregateResult, ColumnDescription, ConnectionConfig, DriverFactoryContext, CorrelationMatrixRequest, CorrelationMatrixResult, DistinctRequest, DistinctResult, FileDriver, HistogramRequest, HistogramResult, OutlierRequest, OutlierResult, SampleOpts, SampleResult, ScanOpts, SchemaDescription, ShapeReport, TemporalTrendRequest, TemporalTrendResult, } from '../../../shared/db-driver.js';
 import { registerDriver } from '../registry.js';
 import { MemoryFileExecution, savedFileExecution } from '../file-execution.js';
@@ -55,7 +54,6 @@ import { fixedWidthConverter } from './converters/fixed-width.js';
 import { xlsxConverter } from './converters/xlsx.js';
 import { walkSourceTree } from './converters/shared.js';
 import type { FileConverter } from './converters/types.js';
-const log = getLogger('db-duckdb-file');
 /**
  * DuckDB's Node binding returns BIGINT / HUGEINT columns as JS `bigint`.
  * BigInt is opaque to `JSON.stringify` (which throws) and not safely
@@ -310,7 +308,7 @@ class DuckDBFileDriver implements FileDriver {
 		const readPath = await this.readerPath(target);
 		const expr = this.readerExpr();
 		const sql = `DESCRIBE SELECT * FROM ${expr}`;
-		log.debug({ id: this.id, sql }, 'describe');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'describe' }));
 		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, [readPath]);
 			return reader.getRowObjects();
@@ -349,7 +347,7 @@ class DuckDBFileDriver implements FileDriver {
 		const where = compileWhere(opts.where ?? [], cols, POSTGRES_DIALECT, 2);
 		const whereText = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT * FROM ${expr}${whereText} LIMIT ${limit}`;
-		log.debug({ id: this.id, sql }, 'sample');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'sample' }));
 		const params = [readPath, ...where.values];
 		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
@@ -394,7 +392,7 @@ class DuckDBFileDriver implements FileDriver {
 		const where = compileWhere(request.where ?? [], cols, POSTGRES_DIALECT, whereStart);
 		const whereClause = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT ${aggExprs.exprs.join(', ')} FROM ${expr}${whereClause}`;
-		log.debug({ id: this.id, sql }, 'aggregate');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'aggregate' }));
 		const params = [readPath, ...aggExprs.values, ...where.values];
 		const row = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
@@ -411,7 +409,7 @@ class DuckDBFileDriver implements FileDriver {
 		// `asTableExpr` so compileDistinct doesn't quote-target the
 		// connection path (which isn't a SQL identifier).
 		const compiled = compileDistinct(target ?? this.displayTarget(), request, cols, POSTGRES_DIALECT, { asTableExpr: this.readerExpr() });
-		log.debug({ id: this.id }, 'distinct');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct' }));
 		const [countRow, valueRows] = await this.execution.withConnection(async (conn) => {
 			const cReader = await conn.runAndReadAll(compiled.distinctCountSql, [readPath]);
 			const vReader = await conn.runAndReadAll(compiled.topValuesSql, [readPath]);

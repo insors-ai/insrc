@@ -6066,7 +6066,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "cfb7ffbb796ab0a0de2e22ae5bc58b9bec6cf089b3da1e267ee6ead5c302ced9",
-      "sourceDigest": "93815ea752287c1fa6dad29cb81973f897e234853af7480a12f21d64914b80ff",
+      "sourceDigest": "edced95390d07ed5849338cccf054360d8895f2f60b67e84fb7587dda6025ed9",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -6191,7 +6191,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "e6c4836e97c9cc20d2c65fc3158111a37be5df1a213c0d08c7837887a8022ba8",
-      "sourceDigest": "c052549306e8d23d5b608e5afea9921106d43e448aaf7f7371db6763e011787a",
+      "sourceDigest": "92c8c45f62e9ae801b3115e2e4ae2103e40f64a869ae00ffd23b7db3b6b0abec",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -7818,7 +7818,7 @@
     },
     "src/daemon/db/driver-log-policy.ts": {
       "classification": "resource-local-log-authority",
-      "rationale": "Owner-only opaque tokens mint immutable exact-root revision contexts. Registered factory identity and branded config/context checks precede plaintext handoff. A resource-local quiet sink never evaluates lazy diagnostics, including after expiry; saved diagnostics remain enabled. Concrete SDK log-site closure is t11 and release remains disabled.",
+      "rationale": "Owner-only opaque tokens mint immutable exact-root revision contexts. Registered factory identity and branded config/context checks precede plaintext handoff. A resource-local quiet sink never evaluates lazy diagnostics, including after expiry; saved diagnostics remain enabled. Concrete driver diagnostics use lazy resource sinks. ClickHouse/Mongo/Cassandra/Dynamo/Memjs receive client-local controls; Redis disables the unsafe ready-check console path. Ambient tracing and the installed NATS/etcd stacks refuse before SDK construction. Source/compiled normal-daemon canary evidence is t11; release remains disabled.",
       "sites": [
         [
           "acquisition:symbol:DriverFactory",
@@ -7875,7 +7875,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "73936dbff97b3d0e1ea3edee71af928d8e79bfdc0cb925af0f3c0ec49d170352",
-      "sourceDigest": "8957e1bb317dc2af8943e521ec3c0ac83ceddf7f9e859f0a3a00ca836a6da5b5",
+      "sourceDigest": "9c6616ec02dc032fc21434520cbb0eefdf4310e50d492f863eb6e2e77b2b7890",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:DriverFactory",
@@ -7970,7 +7970,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "9f15bde3e570c726a2e447f3e86a8895cc2cb3ed5ea2ea3d39af1495af396158",
-      "sourceDigest": "3afe8950f0821086c6c6e82bd4aab36011d6eccdf914773acb82340f85b4c327",
+      "sourceDigest": "1080f50ff90ef930c9e34460396f538fd1bddcdfbc1bae04f84dedb9b4bfc7bd",
       "boundaries": [
         "serialization"
       ]
@@ -7988,23 +7988,18 @@
           "decodeURIComponent"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "7ccb85536eb8b4c2dc91173a742ae69aba442ac96277ea5d147c8ec2a3527571",
-      "sourceDigest": "38946fa32c7d452f37e2c40196e138dc421c896235de75ac2c6f5674c8889e50",
+      "siteCount": 4,
+      "sitesDigest": "814c3637d818d8951a7bd17ea6d53d539f68d4b56e071e93053ff9bbda017c08",
+      "sourceDigest": "5e9c6d9071fb1635b2ae29db30171f24fe0de5f75ea6d1e9f9f9ff5bc09253ab",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -8456,32 +8451,12 @@
           "cReader.getRowObjects"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.stringify"
         ],
         [
           "storage-call",
           "listValue"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
         ],
         [
           "filesystem-read",
@@ -8512,15 +8487,30 @@
           "statSync"
         ],
         [
+          "serialization",
+          "this.#runtimeLog.emit"
+        ],
+        [
+          "serialization",
+          "this.#runtimeLog.emit"
+        ],
+        [
+          "serialization",
+          "this.#runtimeLog.emit"
+        ],
+        [
+          "serialization",
+          "this.#runtimeLog.emit"
+        ],
+        [
           "storage-call",
           "vReader.getRowObjects"
         ]
       ],
-      "siteCount": 25,
-      "sitesDigest": "a91d3db4ccc87cf9dec134c9f031d724ba34823d0b31ef2f4f4ccd5ff482a84c",
-      "sourceDigest": "3934cc404177d493b17fd689eb12d2e82c1d70318ea085745bc65152d567c66d",
+      "siteCount": 24,
+      "sitesDigest": "ef7db7997129f4acb2806705c7f516d715c04b8e842c397fb9d511ad7bb93a03",
+      "sourceDigest": "5332a5ade609611a5f5a9c6ec181176d21041d068bc4612ab4eb3c97f0fa5ef2",
       "boundaries": [
-        "diagnostic",
         "filesystem-read",
         "serialization",
         "storage-call"
@@ -8530,10 +8520,6 @@
       "classification": "owned-driver-foundation",
       "rationale": "Concrete SDK/converter boundary. Temporary runtime requires per-resource quiet construction and existing sc8 no-spill/cache policy; S001 conversion is consumed rather than redesigned.",
       "sites": [
-        [
-          "diagnostic",
-          "getLogger"
-        ],
         [
           "diagnostic",
           "getLogMode"
@@ -8547,8 +8533,8 @@
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
           "serialization",
@@ -8583,9 +8569,9 @@
           "this.client.send"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "fd55f8e02459cbbaa53fae58b1aac7a3b3c7cdbaa77b5fff8ae06bb2dea7e7a3",
-      "sourceDigest": "b51f25d7941f60bd0d352e270e2ae1d9357e217fbb0a392168694be8f3a8c9c8",
+      "siteCount": 12,
+      "sitesDigest": "902520bbf5872938eb2465e0d8a74e8303cb6d3679f62a649f792178ce0fec39",
+      "sourceDigest": "19e94420eafc49b8a4b5f1b5c3c48d301819b59e848366fb549d9583e99c082a",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -8656,27 +8642,22 @@
           "Buffer.alloc"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.parse"
         ],
         [
-          "diagnostic",
-          "log.warn"
+          "serialization",
+          "packet.writeUInt32BE"
         ],
         [
           "serialization",
-          "packet.writeUInt32BE"
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "ffdd50aa84b334fb3b67254b3e6db8bda8b898b434bba23d6e26bcd862213af4",
-      "sourceDigest": "faf929c644fba613de536ab17141a9a108ca9f4b30000526b4c838f1e694603e",
+      "siteCount": 5,
+      "sitesDigest": "f3eb9468c957f463b0e753be76c5086d94fa23be0d66993b00c82e38c078c485",
+      "sourceDigest": "a00515115e3ddd8f064931066d4e05529e1a49f2f0504a190477ce1cedd8db28",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -8835,7 +8816,7 @@
       ],
       "siteCount": 37,
       "sitesDigest": "f72265d03be38494674f79feb0b28e289091eb3a53bc592842e128d7a9b25431",
-      "sourceDigest": "5fb157858cb10b8b1ac68347fa32ad62b9f712705f591e95b5a023b54ff94fbf",
+      "sourceDigest": "853ac3a759a357a88aa831ed3291ff83d3ec9596cf3d088bc48a28e38ca61631",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -8854,40 +8835,35 @@
           "decodeURIComponent"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "unresolved-call",
           "import"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
           "acquisition:acquire-call",
           "this.pool.acquire()"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "7375986515f63840368b141a4c5eb523b75ae79deb86a3156c8af95dba097321",
-      "sourceDigest": "7d2c1bd2621b600f6d4b1b879d9da3bcaa8c54d6a72870f52b967caead2c1925",
+      "siteCount": 8,
+      "sitesDigest": "979a50527eea3c333ddc2585d26ca518bd4a5ef3dea0b4301562b34c81ac9bc3",
+      "sourceDigest": "7051d9926290e6220366fa9dbbbfff8eb5eb2b934753924666d4b62b22499306",
       "boundaries": [
         "acquisition:acquire-call",
-        "diagnostic",
         "serialization",
         "unresolved-call"
       ]
@@ -8905,35 +8881,30 @@
           "decodeURIComponent"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "144e734c48d2e8f972d590b25526d7c6050c3a29c3020fc546764a7d3db31d56",
-      "sourceDigest": "b5d85ec158128f04794978640a2d87e19915756a59e7a36f72fbe2054630ca90",
+      "siteCount": 7,
+      "sitesDigest": "0017dc8b6a03fe92a71a7555e47f7117529f0a7557157b469861fbbf0dc5b693",
+      "sourceDigest": "3b50a322dae6142b80218519593304c22cd666c3c4ee50e4db0d7a0d8da9741f",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -9006,31 +8977,26 @@
           "decodeURIComponent"
         ],
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "5336dcedb40cf66d3a5a368ed2c9bd9316e8d64d221fa9c2b129f7b2b6a4a064",
-      "sourceDigest": "5bfdcb9b290bb3298b091bbb1a0933a8fc574a3789b69b1976c65b9d6a36404e",
+      "siteCount": 6,
+      "sitesDigest": "a95c8f6fbc5fe92232525f16b59509faedcb2db44b005403e7abe01d7873bd6e",
+      "sourceDigest": "8d7c312b756e04dcc72580d45c8b529744105ceb78ddae68de2815833d6ddbb1",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -9043,35 +9009,30 @@
           "decodeURIComponent"
         ],
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "64af03162ada456efe6bf1f9e026a66d85a3c6c771379e07a10adb21b402a235",
-      "sourceDigest": "39984412cc8cba1e4c5702575dcd78e39b15954afb97b5cd7d8a57d242f231f3",
+      "siteCount": 6,
+      "sitesDigest": "7bb44d6b9b97ae8433d03066b53afe36705c844e9be8eb6b0e2ebf49d0d7c68f",
+      "sourceDigest": "76560b7c7a506f487ff406c19743c151c1f1575cb032f8aa6cb7c7fc8ec74ba2",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -9116,10 +9077,6 @@
       "rationale": "Concrete SDK/converter boundary. Temporary runtime requires per-resource quiet construction and existing sc8 no-spill/cache policy; S001 conversion is consumed rather than redesigned.",
       "sites": [
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.parse"
         ],
@@ -9132,15 +9089,14 @@
           "JSON.parse"
         ],
         [
-          "diagnostic",
-          "log.warn"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "80089a67b81c911e81f814a571cda4ea710265c8c4636442cc8314df763ad630",
-      "sourceDigest": "93df571c1ebd07dde8d0871a5c1df1a8ba995841525d049ebc4d8925416bec38",
+      "siteCount": 4,
+      "sitesDigest": "d0a3694cb3c889b341a304cc176d73dad28aca56547a6fe8e04e981a4f55157b",
+      "sourceDigest": "5fc3c23856d64fb7a5c3457e2d5b676060ece6e92078c0458ad23ad6ce3279dc",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -9153,35 +9109,30 @@
           "Buffer.from"
         ],
         [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
           "serialization",
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ],
         [
-          "diagnostic",
-          "log.debug"
+          "serialization",
+          "this.#runtimeLog.emit"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "4feb98e4c090b87d8e37eaaafad970c551ec54933c4c3a41858b1038b9da9494",
-      "sourceDigest": "4d7303c8000182ce5c2b603644807831b19241dbdaacbb39cbe5a59288e1a0a3",
+      "siteCount": 6,
+      "sitesDigest": "491ce2742c503f1e6c02f90e2780edabd5d3978f9f150df5383b382048f20b13",
+      "sourceDigest": "343b358cf3d3136b5607f974679cdf4d24625919ec749d046636210358deed51",
       "boundaries": [
-        "diagnostic",
         "serialization"
       ]
     },
@@ -11627,7 +11578,7 @@
     },
     "src/daemon/db/session-resources.ts": {
       "classification": "session-private-sdk-resources",
-      "rationale": "Private session/root/revision driver construction consumes immutable in-memory config and existing sc8 file policy, never a saved pool or secret lookup. Late construction remains cleanup-owned after admission closes; failed close retains closed handles and blocks new SDK admission. Owner-local errors are fixed; factory context authority is installed; concrete SDK diagnostic closure proof is still t11 and release remains disabled.",
+      "rationale": "Private session/root/revision driver construction consumes immutable in-memory config and existing sc8 file policy, never a saved pool or secret lookup. Late construction remains cleanup-owned after admission closes; failed close retains closed handles and blocks new SDK admission. Owner-local errors are fixed; factory context authority and concrete diagnostic controls are installed, with unsupported ambient/SDK paths refusing before construction and release remains disabled.",
       "sites": [
         [
           "connection-factory",
@@ -29660,7 +29611,7 @@
       ],
       "siteCount": 18,
       "sitesDigest": "9f2975e08b900a2244c0da4cb0fdb2a2fe5da4326c52a38f8c6b1d64180a59fd",
-      "sourceDigest": "03ecc89cd2265e7e17371f352a494fb5612a4f2be4cb2c089ca029dfc051f2cb",
+      "sourceDigest": "4d37ca182c80dbec718286e3eb32c500997697df566d9fff1936a854ca8ce5e5",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

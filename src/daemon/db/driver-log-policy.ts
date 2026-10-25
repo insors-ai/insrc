@@ -68,7 +68,14 @@ export function invokeTemporaryFactory(factory: DriverFactory, config: Connectio
 export function supportsTemporaryDriverContext(factory: DriverFactory): boolean { return factories.has(factory); }
 /** No normal logger is resolved or created on the quiet resource path. */
 export function driverResourceLog(module: string, context?: DriverFactoryContext): DriverResourceLog {
- if (hasPolicy(context)) { validate(context!); return quiet; }
+ if (hasPolicy(context)) {
+  validate(context!);
+  // These installed SDK paths expose ambient diagnostics without a resource-local sink.
+  // Refuse before SDK construction rather than altering process-wide logging.
+  if (module === 'db-nats' || module === 'db-etcd' ||
+   ['DEBUG', 'NODE_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL'].some(key => !!process.env[key])) throw denied();
+  return quiet;
+ }
  return Object.freeze({ quiet: false, emit: (level: Level, format: Parameters<DriverResourceLog['emit']>[1]) => {
   const { fields, message } = format(); getLogger(module)[level](fields ?? {}, message);
  } });

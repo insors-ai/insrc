@@ -13,7 +13,6 @@ import { allDriverWork } from '../driver-work.js';
 
 import pgMod from 'pg';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -73,7 +72,6 @@ import { prismaSchemaDescription } from './rdbms-prisma.js';
 
 const { Pool } = pgMod;
 
-const log = getLogger('db-pg');
 
 const POOL_MAX = 3;
 
@@ -117,7 +115,7 @@ export class PostgresDriver implements RdbmsDriver {
 			connectionTimeoutMillis: SAMPLE_TIMEOUT_MS,
 		});
 		this.pool.on('error', (err) => {
-			log.warn({ id, err: err.message }, 'pool error');
+			this.#runtimeLog.emit('warn', () => ({ fields: { id, err: err.message }, message: 'pool error' }));
 		});
 	}
 
@@ -172,7 +170,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, POSTGRES_DIALECT);
 
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 		const res = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -192,7 +190,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const res = await withTimeout(
 			this.pool.query(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -205,7 +203,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, distinctCountSql: compiled.distinctCountSql, topValuesSql: compiled.topValuesSql }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, distinctCountSql: compiled.distinctCountSql, topValuesSql: compiled.topValuesSql }, message: 'distinct query' }));
 		const [countRes, valuesRes] = await allDriverWork([
 			withTimeout(this.pool.query(compiled.distinctCountSql), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.pool.query(compiled.topValuesSql), SAMPLE_TIMEOUT_MS),
@@ -364,7 +362,7 @@ export class PostgresDriver implements RdbmsDriver {
 			? { limit: SAMPLE_LIMIT, where: queryAst.where }
 			: { limit: SAMPLE_LIMIT };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const res = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,

@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T20:07:53.406Z",
+    "updatedAt": "2026-10-25T20:16:58.847Z",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
   },
@@ -515,6 +515,111 @@
             "titles": [
               {
                 "title": "embedder-lazy.test.ts: importing embedder.ts calls no settings loader; the first getter does; lifecycle.ts and reembed use the getters",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1658a515d",
+        "ranAt": "2026-10-25T20:16:58.847Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tier-resolution.test.ts",
+                "title": "tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tier-resolution.test.ts",
+                "title": "tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tier-resolution.test.ts",
+                "title": "tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-source-inventory suite passes after t3",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/tier-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12337,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
                 "result": "pass"
               }
             ],

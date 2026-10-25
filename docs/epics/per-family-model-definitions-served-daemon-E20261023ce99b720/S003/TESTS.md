@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -101,3 +101,39 @@ Run at 2026-10-25T20:07:53.406Z on commit `2968540e2`. Tests check: **passed**. 
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 15.1 s |  |
 | `src/indexer/__tests__/embedder-keepalive.test.ts` | 0 | 2 | 0.8 s |  |
 | `src/indexer/__tests__/embedder-lazy.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t3
+
+Run at 2026-10-25T20:16:58.847Z on commit `1658a515d`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids | `src/config/__tests__/tier-resolution.test.ts` |
+
+**unit: tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort | `src/config/__tests__/tier-resolution.test.ts` |
+
+**unit: tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions | `src/config/__tests__/tier-resolution.test.ts` |
+
+**unit: session-source-inventory suite passes after t3**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/tier-resolution.test.ts` | 0 | 3 | 0.8 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.3 s |  |

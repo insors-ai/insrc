@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T20:07:53.406Z",
+    "updatedAt": "2026-10-25T20:16:58.847Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "The daemon reconciles config.json with buildConfigCatalog(validateModelCatalog()) and warns per removed per-repo tier (tasks and coreFloor kept, ollamaNumCtx pruned); main() drops the local and analyze settings caches right after the boot reconcile through the new production resets; the embedder's model, dim, keep-alive and Ollama client are read on first use, with lifecycle.ts and IndexerService.reembed on the getters.",
+    "summary": "loadAnalyzeConfig/resolveTier resolve each global tier through an injectable registry (default getModelRegistry()): an unset or '' tier takes the default family's tier default with its effort, aliases become canonical ids, an unaccepted effort is dropped and a rejected or unlisted model falls back (decision A), each logged with a warning; AnalyzeConfig.tierResolutions keeps each tier's resolution. TierEffort is EffortLevel, runners are FamilyId, per-repo entries keep only tasks and coreFloor. A '' model stays an unset tier (as before), so shaperProviderExplicit keeps its client auto-pick behaviour for configs whose core model is ''.",
     "testRecord": {
       "md": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/TESTS.md"
     },
@@ -30,198 +34,233 @@
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "scripts/check-model-definitions.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/assets/models/cloud-model-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/model-tiers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/analyze-tiering.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/check-model-definitions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-defs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/legacy-config.baseline.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/analyze.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/config-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/local.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/model-defaults.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "tsconfig.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "vscode-plugin/tsconfig.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/reconcile-defs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/settings-cache-reset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/config/reconcile.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/boot-cold-import.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/config-boot-reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/daemon/lifecycle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/embedder-keepalive.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/embedder-lazy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T20:07:53.406Z"
+        "timestamp": "2026-10-25T20:16:58.847Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T20:16:58.847Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T20:16:58.847Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/tier-defaults.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T20:16:58.847Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/tier-resolution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T20:16:58.847Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T20:16:58.847Z"
       }
     ],
-    "commit": "2968540e2"
+    "commit": "1658a515d"
   }
 }

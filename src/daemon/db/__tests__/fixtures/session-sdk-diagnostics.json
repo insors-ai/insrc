@@ -36,7 +36,7 @@
       "package": "tedious",
       "version": "19.2.2",
       "temporary": "resource-local-controls",
-      "rationale": "Connection config exposes no debug fields; Tedious debug events have no diagnostic subscriber. Application query sites use the lazy sink. Actual SQLServer Linux x64 coverage remains pending as approved.",
+      "rationale": "Every concrete Tedious connection installs a resource-local lazy error listener before connect, including errors after disposal. Connection config exposes no debug fields; Tedious debug events have no diagnostic subscriber. Actual SDK object idle/late error emissions are exercised without a live SQLServer. Application query sites use the lazy sink. Actual SQLServer Linux x64 coverage remains pending as approved.",
       "files": [
         "tedious/lib/connection.js",
         "tedious/lib/debug.js"

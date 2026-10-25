@@ -136,6 +136,7 @@ export class MssqlDriver implements RdbmsDriver {
 		this.pool = new Pool<Connection>({
 			create: () => new Promise((resolveConn, rejectConn) => {
 				const conn = new Connection(cfg);
+				conn.on('error', err => this.#runtimeLog.emit('warn', () => ({ fields: { id: this.id, err: err.message }, message: 'connection error' })));
 				conn.on('connect', (err) => {
 					if (err !== undefined && err !== null) { rejectConn(err); return; }
 					resolveConn(conn);

@@ -88,14 +88,26 @@ try {
  const mysql = await make({ id: id + '-mysql', kind: 'mysql', url: 'mysql://u:p@127.0.0.1:1/fixture?debug=true' });
  const mysqlPool = (mysql as unknown as { pool: { pool: { config: { connectionConfig: { debug: boolean } } } } }).pool;
  assert.equal(mysqlPool.pool.config.connectionConfig.debug, false);
+ // Real Tedious connection object; replace only network establishment so SQLServer is not required.
+ const tedious = await import('tedious');
+ const originalConnect = tedious.Connection.prototype.connect;
+ const tediousConnections: InstanceType<typeof tedious.Connection>[] = [];
+ tedious.Connection.prototype.connect = function () { tediousConnections.push(this); queueMicrotask(() => this.emit('connect')); return this; };
+ let mssqlConnection: InstanceType<typeof tedious.Connection>;
+ try {
+  const mssql = await make({ id: id + '-mssql', kind: 'mssql', url: 'mssql://u:p@127.0.0.1:1/fixture' });
+  const mssqlPool = (mssql as unknown as { pool: import('tarn').Pool<InstanceType<typeof tedious.Connection>> }).pool;
+  mssqlConnection = await mssqlPool.acquire().promise; assert.ok(tediousConnections.includes(mssqlConnection));
+  await delay(1); mssqlConnection.emit('error', unread); mssqlPool.release(mssqlConnection);
+ } finally { tedious.Connection.prototype.connect = originalConnect; }
  const click = await make({ id: id + '-click', kind: 'clickhouse', url: 'http://127.0.0.1:1/CM_TEMP_PRIVATE_DATABASE_CANARY' });
  await assert.rejects((click as Driver & { probeReachability(): Promise<void> }).probeReachability());
  for (const kind of ['nats', 'etcd']) await assert.rejects(make({ id: id + kind, kind, options: { servers: ['127.0.0.1:1'], bucket: 'fixture', hosts: ['127.0.0.1:1'] } }), { code: 'unsupported-temporary' });
  now = 90000; owner.sweepExpired();
  // Source-bearing getters cannot execute on late idle/error/disposal callbacks.
- await delay(5); pool.emit('error', unread); rawRedis.emit('error', unread); memClient.options.logger.log(unread);
+ await delay(5); pool.emit('error', unread); rawRedis.emit('error', unread); mssqlConnection.emit('error', unread); memClient.options.logger.log(unread);
  for (const driver of drivers) await driver.close();
- pool.emit('error', unread); rawRedis.emit('error', unread); assert.equal(reads, 0);
+ pool.emit('error', unread); rawRedis.emit('error', unread); mssqlConnection.emit('error', unread); assert.equal(reads, 0);
  savedPool.emit('error', new Error('CM_SAVED_AFTER_EXPIRY_MARKER')); await saved.close();
  getLogger('saved-concurrent-control').info('CM_SAVED_LOG_POSITIVE_MARKER');
  await delay(500);

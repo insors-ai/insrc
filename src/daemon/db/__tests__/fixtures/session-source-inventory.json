@@ -8855,13 +8855,17 @@
           "this.#runtimeLog.emit"
         ],
         [
+          "serialization",
+          "this.#runtimeLog.emit"
+        ],
+        [
           "acquisition:acquire-call",
           "this.pool.acquire()"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "979a50527eea3c333ddc2585d26ca518bd4a5ef3dea0b4301562b34c81ac9bc3",
-      "sourceDigest": "7051d9926290e6220366fa9dbbbfff8eb5eb2b934753924666d4b62b22499306",
+      "siteCount": 9,
+      "sitesDigest": "057ba98ebdbc1e3d69191fb029fb2934b63190f32268edbcbc0ee1097be65d09",
+      "sourceDigest": "59acb8ec72c5dbecc07d198fbfe2988ef29d76ec9e6d514fcdb2fa34ade0673d",
       "boundaries": [
         "acquisition:acquire-call",
         "serialization",

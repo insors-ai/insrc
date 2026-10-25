@@ -2365,7 +2365,7 @@
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
     "src/daemon/db/drivers/memcached.ts": "a00515115e3ddd8f064931066d4e05529e1a49f2f0504a190477ce1cedd8db28",
     "src/daemon/db/drivers/mongodb.ts": "853ac3a759a357a88aa831ed3291ff83d3ec9596cf3d088bc48a28e38ca61631",
-    "src/daemon/db/drivers/mssql.ts": "7051d9926290e6220366fa9dbbbfff8eb5eb2b934753924666d4b62b22499306",
+    "src/daemon/db/drivers/mssql.ts": "59acb8ec72c5dbecc07d198fbfe2988ef29d76ec9e6d514fcdb2fa34ade0673d",
     "src/daemon/db/drivers/mysql.ts": "3b50a322dae6142b80218519593304c22cd666c3c4ee50e4db0d7a0d8da9741f",
     "src/daemon/db/drivers/nats.ts": "976872f6516971caab3c3b5d48685f8ab86cdd16de75f047b954f0aea74bb50e",
     "src/daemon/db/drivers/oracle.ts": "8d7c312b756e04dcc72580d45c8b529744105ceb78ddae68de2815833d6ddbb1",

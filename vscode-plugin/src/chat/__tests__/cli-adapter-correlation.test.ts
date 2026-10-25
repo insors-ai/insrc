@@ -4,7 +4,7 @@ import { appendFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSessionOutput } from '../session-output.js';
-import { createProviderRegistry } from '../cli-adapter.js';
+import { createProviderRegistry, nodeSpawner } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { makeFakeSpawner } from './fixtures.js';
 
@@ -21,7 +21,7 @@ test('queued results cannot truncate the actual user reply', async () => {
     JSON.stringify({ type: 'result', result: '', num_turns: 0, queued_turn_count: 0 }),
     text('Actual reply'),
     JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', result: 'Actual reply' }),
-  ], rawResults: true });
+  ] });
   const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('claude');
   const events = await collect(adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' }));
   assert.deepEqual(events.filter(e => e.kind === 'assistant-delta').map(e => e.text), ['Actual reply']);
@@ -31,7 +31,7 @@ test('queued results cannot truncate the actual user reply', async () => {
 test('only singular or merged request UUID results complete, including empty and failed own results', async () => {
   for (const correlation of [{ user_message_uuid: '__REQUEST_UUID__' }, { user_message_uuids: ['another', '__REQUEST_UUID__'] }]) {
     for (const failed of [false, true]) {
-      const spawner = makeFakeSpawner({ rawResults: true, hangUntilKilled: true, lines: [
+      const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [
         JSON.stringify({ type: 'result', is_error: true, result: 'older failure', user_message_uuid: 'other' }),
         JSON.stringify({ type: 'result', user_message_uuids: [123, '__REQUEST_UUID__'] }),
         text('retained'),
@@ -54,7 +54,7 @@ test('only singular or merged request UUID results complete, including empty and
 
 test('stream input preserves exact prompt and options, and missing correlation cannot synthesize success', async () => {
   const prompt = '--resume not an option\nα🙂';
-  const spawner = makeFakeSpawner({ rawResults: true, lines: [text('partial'), JSON.stringify({ type: 'result', result: '' })] });
+  const spawner = makeFakeSpawner({ lines: [text('partial'), JSON.stringify({ type: 'result', result: '' })] });
   const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('claude');
   const events = await collect(adapter.run({ provider: 'claude', cwd: '/tmp', prompt, resume: {provider:'claude',nativeSessionId:'native'}, permissionMode:'manual', readDirs:['/read dir'], allowedTools:['Read'] }));
   const request = JSON.parse(spawner.procs[0]!.writes()[0]!);
@@ -102,11 +102,46 @@ test('correlated resume reconstructs identity after acknowledgement and checkpoi
 
 test('correlated EOF retains partial output and reports native nonzero exit or missing result', async () => {
   for(const code of [0,9]) {
-    const spawner=makeFakeSpawner({rawResults:true,lines:[text('partial'),JSON.stringify({type:'result',user_message_uuid:'other'})],exit:{code,signal:null},stderr:code?'native failure':''});
+    const spawner=makeFakeSpawner({lines:[text('partial'),JSON.stringify({type:'result',user_message_uuid:'other'})],exit:{code,signal:null},stderr:code?'native failure':''});
     const adapter=createProviderRegistry({spawn:spawner.spawn,isInstalled:()=>true}).get('claude');
     const events=await collect(adapter.run({provider:'claude',cwd:'/tmp',prompt:'hi'}));
     assert.equal(events[0]?.kind,'assistant-delta');
     assert.equal(events.at(-1)?.kind,'error');
     assert.match((events.at(-1) as {message:string}).message,code?/exited with code 9: native failure/:/without a result for this request/);
+  }
+});
+
+test('live pipe and retained output preserve tools and final reply after a queued result', async () => {
+  for (const filed of [false, true]) {
+    const root = mkdtempSync(join(tmpdir(), 'issue83-live-'));
+    const sessionOutput = createSessionOutput({ root: join(root, 'output'), pollMs: 5 });
+    const script = `let input='';process.stdin.on('data',chunk=>{input+=chunk;const end=input.indexOf('\\n');if(end<0)return;const req=JSON.parse(input.slice(0,end));process.stdin.pause();const frames=[
+      {type:'result',num_turns:0,queued_turn_count:0,result:''},
+      {type:'assistant',message:{content:[{type:'tool_use',id:'tool-1',name:'Bash',input:{command:'echo retained'}}]}},
+      {type:'user',message:{content:[{type:'tool_result',tool_use_id:'tool-1',content:'retained tool output'}]}},
+      {type:'assistant',message:{content:[{type:'text',text:'Final reply'}]}},
+      {type:'result',user_message_uuid:req.uuid,result:'Final reply'}
+    ];for(const frame of frames)process.stdout.write(JSON.stringify(frame)+'\\n');setTimeout(()=>process.exit(0),10000);});`;
+    // String.raw is unnecessary here: the child needs a literal JS newline escape.
+    const childScript = script.replaceAll('\\\\n', '\\n');
+    let proc: import('../cli-adapter.js').TurnProcess | undefined;
+    const adapter = createProviderRegistry({
+      spawn: (_command, _args, opts) => nodeSpawner(process.execPath, ['-e', childScript], opts),
+      isInstalled: () => true, sessionOutput,
+    }).get('claude');
+    try {
+      const events = await collect(adapter.run({ provider: 'claude', cwd: root, prompt: 'hi' }, {
+        ...(filed ? { sessionId: 'session' } : {}), onSpawn: p => { proc = p; },
+      }));
+      assert.deepEqual(events.map(e => e.kind), ['tool-call', 'tool-result', 'assistant-delta', 'done']);
+      assert.equal((events[1] as {output:string}).output, 'retained tool output');
+      assert.equal((events[2] as {text:string}).text, 'Final reply');
+      assert.equal((events[3] as {ok:boolean}).ok, true);
+      assert.ok(proc);
+      let exited = false;
+      void proc.exit.then(() => { exited = true; });
+      await new Promise(r => setTimeout(r, 5));
+      assert.equal(exited, false, 'own completion precedes background process exit');
+    } finally { await proc?.stop(); }
   }
 });

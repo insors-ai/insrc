@@ -212,7 +212,7 @@ test('error path 5: an unparseable stream line is skipped+warned, not fatal', as
     JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
     'this is not json {',
     JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'ok' }] } }),
-    JSON.stringify({ type: 'result', is_error: false }),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false }),
   ];
   const { deps, warns } = depsFor({ lines });
   const reg = createProviderRegistry(deps);
@@ -717,7 +717,7 @@ test('Claude requires writable stdin for correlated input and reports its absenc
   const noWriteSpawn: SpawnFn = () => {
     const proc: SpawnedProcess = {
       async *lines() {
-        yield JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 's' });
+        yield JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, session_id: 's' });
       },
       stderr: () => '',
       exit: Promise.resolve({ code: 0, signal: null }),
@@ -827,7 +827,7 @@ test('S001 (bugfix): claude system/permission_denied surfaces as an approval car
     tool_use_id: 'toolu_01UHvbWBFrXzLr2gaSHJi8cy',
     message: "Claude requested permissions to write to /repo/hello.txt, but you haven't granted it yet.",
   });
-  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
   const apprs = events.filter((e) => e.kind === 'approval-request');
   assert.equal(apprs.length, 1, 'the denial surfaces as exactly one approval card (was: nothing)');
@@ -864,7 +864,7 @@ test('S001 (bugfix): permission_denied with a top-level command sets event.comma
     message: 'Bash needs your permission',
     command: 'npm run build',
   });
-  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.ok(ev, 'an approval-request was emitted');
   assert.equal(ev!.command, 'npm run build', 'the top-level command is harvested');
@@ -884,7 +884,7 @@ test('S001 (bugfix): permission_denied with a nested input.command sets event.co
     message: 'Bash needs your permission',
     input: { command: 'git status', extra: 1 },
   });
-  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.ok(ev, 'an approval-request was emitted');
   assert.equal(ev!.command, 'git status', 'the nested input.command is harvested');
@@ -901,7 +901,7 @@ test('S001 (bugfix): a top-level command takes precedence over input.command', a
     command: 'TOP',
     input: { command: 'NESTED' },
   });
-  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.equal(ev!.command, 'TOP', 'top-level command wins');
 });
@@ -914,7 +914,7 @@ test('S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identica
     tool_use_id: 'toolu_nocmd',
     message: 'Write needs your permission',
   });
-  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.ok(ev, 'an approval-request was emitted');
   assert.equal(ev!.command, undefined, 'no command field when the line carries none');
@@ -931,7 +931,7 @@ test('S001 (bugfix): an EMPTY-string command is treated as absent (top-level and
     message: 'needs perm',
     command: '',
   });
-  const { deps: d1 } = depsFor({ lines: [deniedTop, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps: d1 } = depsFor({ lines: [deniedTop, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev1 = apprOf(await collect(createProviderRegistry(d1).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.equal(ev1!.command, undefined, 'an empty top-level command is absent');
 
@@ -943,7 +943,7 @@ test('S001 (bugfix): an EMPTY-string command is treated as absent (top-level and
     message: 'needs perm',
     input: { command: '' },
   });
-  const { deps: d2 } = depsFor({ lines: [deniedNested, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps: d2 } = depsFor({ lines: [deniedNested, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const ev2 = apprOf(await collect(createProviderRegistry(d2).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.equal(ev2!.command, undefined, 'an empty nested command is absent');
 });
@@ -1009,7 +1009,7 @@ test('S004 t5: an idless permission line yields no approval-request (normalizer 
 });
 
 test('S004 t5: an unparseable line is skipped+logged, never thrown (as today)', async () => {
-  const { deps, warns } = depsFor({ lines: ['{ not json', JSON.stringify({ type: 'result', is_error: false })], exit: { code: 0, signal: null } });
+  const { deps, warns } = depsFor({ lines: ['{ not json', JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })], exit: { code: 0, signal: null } });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
   assert.equal(events.at(-1)?.kind, 'done');
   assert.ok(warns.some((w) => /unparseable/.test(w)), 'the bad line was skipped with a warning');
@@ -1070,7 +1070,7 @@ const SEL_JSON = JSON.stringify({ prompt: 'Pick one', options: [{ id: 'a', label
 const SEL_MARKER = '```insrc:select\n' + SEL_JSON + '\n```';
 const claudeText = (text: string): string => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } });
 const claudeInit = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-sel' });
-const claudeResult = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-sel' });
+const claudeResult = JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, session_id: 'sess-sel' });
 
 test('claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta', async () => {
   const lines = [claudeInit, claudeText('Here you go:\n' + SEL_MARKER), claudeResult];
@@ -1244,7 +1244,7 @@ test("the real spawner appends the CLI's stdout to the session file inside its t
 
 test('marker lines reaching a mapper produce no events', async () => {
   // A marker that also looks like a claude result line: without the marker check it would map to done.
-  const marker = JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 'x', type: 'result', subtype: 'success', is_error: false });
+  const marker = JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 'x', type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false });
   const { deps } = depsFor({ lines: [CLAUDE_TEXT_TURN[0]!, marker, ...CLAUDE_TEXT_TURN.slice(1)] });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
   assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the marker produced nothing');
@@ -1440,7 +1440,7 @@ test('65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verb
 
 test("claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'", async () => {
   const denied = JSON.stringify({ type: 'system', subtype: 'permission_denied', tool_name: 'Write', tool_use_id: 'toolu_res_1', message: 'Write needs your permission' });
-  const { deps: d1 } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const { deps: d1 } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false })] });
   const turnEnded = apprOf(await collect(createProviderRegistry(d1).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.equal(turnEnded?.resolution, 'turn-ended', 'claude refused and ended the turn');
 
@@ -1596,7 +1596,7 @@ test("claude adapter: the result of an Edit or Write call carries editPath, and 
     result('b1', 'exit 1', true),
     use('b2', 'Bash', { command: 'true' }),
     result('b2', ''),
-    JSON.stringify({ type: 'result', is_error: false }),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false }),
   ];
   const { deps } = depsFor({ lines });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
@@ -1639,7 +1639,7 @@ test("codex adapter: a file_change item emits one applied file-edit event per ch
   // A claude edit's event is emitted when the call is made: never applied.
   const claude = [
     JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'e1', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' } }] } }),
-    JSON.stringify({ type: 'result', is_error: false }),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: false }),
   ];
   assert.deepEqual(await edits('claude', claude), [['/repo/a.ts', undefined]]);
 });
@@ -1649,7 +1649,7 @@ test('a claude result with is_error carries its text on done ok:false, a codex e
   // claude, live: the result text of an is_error result.
   const claudeFail = [
     JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-f' }),
-    JSON.stringify({ type: 'result', subtype: 'success', is_error: true, result: 'API Error: 529 {"type":"overloaded_error"}', session_id: 'sess-f' }),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: true, result: 'API Error: 529 {"type":"overloaded_error"}', session_id: 'sess-f' }),
   ];
   const c = await collect(createProviderRegistry(depsFor({ lines: claudeFail }).deps).get('claude').run(REQ({ provider: 'claude' })));
   const cd = c.at(-1) as { kind: string; ok: boolean; message?: string; sessionId?: string };
@@ -1667,7 +1667,7 @@ test('a claude result with is_error carries its text on done ok:false, a codex e
   for (const [lineObj, want] of [
     [{ type: 'turn.completed', error: { message: 'rate limit exceeded' } }, 'rate limit exceeded'],
     [{ type: 'turn.completed', error: 'upstream overloaded' }, 'upstream overloaded'],
-    [{ type: 'result', is_error: true, result: 'connection closed mid-response' }, 'connection closed mid-response'],
+    [{ type: 'result', user_message_uuid: '__REQUEST_UUID__', is_error: true, result: 'connection closed mid-response' }, 'connection closed mid-response'],
   ] as const) {
     const ev = await collect(createProviderRegistry(depsFor({ lines: [JSON.stringify(lineObj)] }).deps).get('codex').run(REQ({ provider: 'codex' })));
     const d = ev.at(-1) as { kind: string; ok: boolean; message?: string };

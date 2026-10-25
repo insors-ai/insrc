@@ -11,8 +11,6 @@ import type { SpawnFn, SpawnedProcess } from '../cli-adapter.js';
 /** A scripted process outcome: the stdout lines it emits, its exit, optional stderr, optional spawn error. */
 export interface FakeProcScript {
   readonly lines: readonly string[];
-  /** Exact native result metadata; only __REQUEST_UUID__ placeholders are substituted. */
-  readonly rawResults?: boolean;
   readonly exit?: { code: number | null; signal: string | null };
   readonly stderr?: string;
   readonly spawnErrorCode?: string;
@@ -122,14 +120,14 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
   const spawn: SpawnFn = (command, args, opts) => {
     calls.push({ command, args: [...args], cwd: opts.cwd, ...(opts.closeInput !== undefined ? { closeInput: opts.closeInput } : {}) });
     const s = single ?? scripts![Math.min(idx++, scripts!.length - 1)]!;
-    const { proc, handle } = makeFakeProc(s, command === 'claude' && args.includes('--input-format=stream-json'));
+    const { proc, handle } = makeFakeProc(s);
     procs.push(handle);
     return proc;
   };
   return { spawn, calls, procs };
 }
 
-function makeFakeProc(s: FakeProcScript, correlated = false): { proc: SpawnedProcess; handle: FakeProcHandle } {
+function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakeProcHandle } {
   let killed = false;
   const writes: string[] = [];
   // Created eagerly so kill() can always resolve it, with no race against the
@@ -164,17 +162,10 @@ function makeFakeProc(s: FakeProcScript, correlated = false): { proc: SpawnedPro
       if (s.throwAfter !== undefined && emitted >= s.throwAfter) {
         throw Object.assign(new Error('EPIPE: stdout stream error'), { code: 'EPIPE' });
       }
-      // Existing single-turn scripts designate their result as the submitted request's.
-      // Queued/malformed protocol regressions use rawResults and mark only their own result.
+      // Only an explicit own-result placeholder is correlated. Unmarked and foreign
+      // results retain their exact metadata, including malformed/absent correlation.
       const request = writes.map(w => { try { return JSON.parse(w); } catch { return undefined; } }).find(w => w?.type === 'user');
-      let native = line.replaceAll('__REQUEST_UUID__', request?.uuid ?? 'baseline-no-request-uuid');
-      if (correlated && !s.rawResults) {
-        try {
-          const frame = JSON.parse(native);
-          if (frame.type === 'result' && frame.user_message_uuid === undefined && frame.user_message_uuids === undefined) native = JSON.stringify({ ...frame, user_message_uuid: request?.uuid });
-        } catch { /* retain malformed-line fixtures */ }
-      }
-      yield native;
+      yield line.replaceAll('__REQUEST_UUID__', request?.uuid ?? 'baseline-no-request-uuid');
       emitted++;
     }
     if (s.throwAfter !== undefined && emitted >= s.throwAfter) {
@@ -223,7 +214,7 @@ export const CLAUDE_TEXT_TURN: readonly string[] = [
   JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-claude-1', tools: [] }),
   JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'Hello ' }] }, session_id: 'sess-claude-1' }),
   JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'world' }] }, session_id: 'sess-claude-1' }),
-  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'Hello world', session_id: 'sess-claude-1' }),
+  JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, result: 'Hello world', session_id: 'sess-claude-1' }),
 ];
 
 export const CLAUDE_TOOL_TURN: readonly string[] = [
@@ -238,12 +229,12 @@ export const CLAUDE_TOOL_TURN: readonly string[] = [
     message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b\nc' } }] },
     session_id: 'sess-claude-2',
   }),
-  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-claude-2' }),
+  JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, session_id: 'sess-claude-2' }),
 ];
 
 export const CLAUDE_ERROR_TURN: readonly string[] = [
   JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-claude-3' }),
-  JSON.stringify({ type: 'result', subtype: 'error_max_turns', is_error: true, session_id: 'sess-claude-3' }),
+  JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'error_max_turns', is_error: true, session_id: 'sess-claude-3' }),
 ];
 
 // S004: a claude host-answered permission prompt (--permission-prompts host). The
@@ -255,7 +246,7 @@ export const CLAUDE_PERMISSION_TURN: readonly string[] = [
     type: 'control_request',
     request: { subtype: 'can_use_tool', request_id: 'perm-claude-1', tool_name: 'Bash', command: 'rm -rf build' },
   }),
-  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-claude-perm' }),
+  JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, session_id: 'sess-claude-perm' }),
 ];
 
 // S004: a claude permission line with NO resolvable request id -> normalizer returns
@@ -263,7 +254,7 @@ export const CLAUDE_PERMISSION_TURN: readonly string[] = [
 export const CLAUDE_PERMISSION_IDLESS: readonly string[] = [
   JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-claude-idless' }),
   JSON.stringify({ type: 'control_request', request: { subtype: 'can_use_tool', tool_name: 'Bash' } }),
-  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-claude-idless' }),
+  JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'success', is_error: false, session_id: 'sess-claude-idless' }),
 ];
 
 // ---- codex fixtures ---------------------------------------------------------

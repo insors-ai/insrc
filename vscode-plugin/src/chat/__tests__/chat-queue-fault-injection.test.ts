@@ -16,7 +16,7 @@ import { createChatQueueWorker } from '../chat-queue-worker.js';
 import { RETRY_DELAYS_MS } from '../chat-failure.js';
 import { CLAUDE_TEXT_TURN, makeFakeSpawner, waitFor, type FakeProcScript } from './fixtures.js';
 
-const overload = JSON.stringify({ type: 'result', subtype: 'error_during_execution', is_error: true, result: 'API Error: 529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}', session_id: 'sess-x' });
+const overload = JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', subtype: 'error_during_execution', is_error: true, result: 'API Error: 529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}', session_id: 'sess-x' });
 const init = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-x' });
 const edit = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' } }] }, session_id: 'sess-x' });
 

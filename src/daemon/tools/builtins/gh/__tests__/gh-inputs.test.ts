@@ -128,7 +128,8 @@ test('gh-inputs.test.ts: auth logout and switch need hostname and user; codespac
 		await refused(ghCodespaceTool, { op: 'ports-visibility', ports: ['80:public'] }, /needs the field codespace/);
 		for (const op of ['list', 'create']) { assert.equal(ghCodespaceTool.ops.find(o => o.name === op)!.required?.includes('codespace') ?? false, false, op); }
 		await refused(ghCodespaceTool, { op: 'create' }, /needs the field repo/);
-		// delete: exactly one of codespace and all; days only with all
+		// delete is the one op that may go without a codespace name: the LLD gives it as `codespace | all`, exactly one, and the
+		// plan's test text says 'delete needs exactly one of codespace and all'; days only with all
 		await refused(ghCodespaceTool, { op: 'delete' }, /exactly one of codespace, all/);
 		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', all: true }, /exactly one of codespace, all/);
 		await refused(ghCodespaceTool, { op: 'delete', codespace: 'c', days: 3 }, /days only together with all/);

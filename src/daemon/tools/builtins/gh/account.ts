@@ -251,6 +251,8 @@ const codespaceOps: OpDef[] = [
   {
     name: 'delete', command: ['codespace', 'delete'], cls: 'destructive', limitS: 60,
     fields: { ...codespace, all: field.bool('Delete all codespaces.'), days: field.int('Delete codespaces older than this many days.', 0), force: field.bool('Skip confirmation for codespaces with unsaved changes.'), ...scope },
+    // the one op that does not always name a codespace: the LLD gives delete as `codespace | all`, exactly one, and the plan's
+    // test says the same, so `all` stands in for the name (gh asks nothing when one of the two is given)
     oneOf: [['codespace', 'all']], with: { days: ['all'] },
     args: [val('-c', 'codespace'), on('--all', 'all'), val('--days', 'days'), on('-f', 'force'), val('-o', 'org'), val('-u', 'user')], out: { kind: 'mutation' }, target: i => String(i['codespace'] ?? 'all'),
   },

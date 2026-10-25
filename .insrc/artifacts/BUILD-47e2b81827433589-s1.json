@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "30108081e61f398e22876459542998449528c638df431c8d547913584885a2e6",
+        "at": "2026-10-25T10:52:29.572Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-456c0964-814e-4824-b99f-ed0abf19a4c1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:44:06.181Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-10-25T10:51:47.757Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "give-code-review-adherence-functional-coverage"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Both judges use source-inspecting sessions and conservative evidence outcomes. Extended the daemon-mapped regression file to inject out-of-scope and unknown-FR findings through both single and divided paths.",
+    "testRecord": {
+      "md": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-47e2b81827433589-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-47e2b81827433589-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-47e2b81827433589-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/source-inspection.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/call-progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/adherence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/adherence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/enveloped.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T10:51:47.757Z"
+      }
+    ],
+    "commit": "d3e2891aa"
+  },
+  "citations": []
+}

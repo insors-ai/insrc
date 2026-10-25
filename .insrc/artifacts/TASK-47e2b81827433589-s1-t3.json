@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a102b39-dc48-4396-b124-d0e84d155f8b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:40:43.170Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate regression on the affected Story and record build evidence",
+      "parent": {
+        "entityId": "STORY-47e2b81827433589-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-47e2b81827433589-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-47e2b81827433589-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-47e2b81827433589-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "18bd9165a62f5c24663f983973f0a4f8802a4c1df6b0ac7d8a8d1f20eefcb814",
+        "at": "2026-10-25T10:40:43.171Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:40:43.171Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate regression on the affected Story and record build evidence",
+    "summary": "Run affected pipeline/dimension tests and build; use updated code for source-backed re-review of b7a68147dcf72034 s4, assert the four false HIGH findings do not recur. Preserve original historical review; record commands, results and source dispositions. Complete mandatory code review for this Story.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Affected suites and npm run build pass; results recorded with commands and test counts.",
+      "Updated-code s4 re-review provides source-backed dispositions for all four prior false HIGH findings and none recur; unavailable live verification leaves acceptance outstanding.",
+      "This Story has build validation and independent code review; present resulting records for approval without auto-approval."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Affected review-pipeline and dimension suites plus npm run build pass."
+      },
+      {
+        "level": "live",
+        "name": "Updated-code b7a68147dcf72034 s4 re-review: all four prior false HIGH findings absent, with source-backed dispositions."
+      },
+      {
+        "level": "live",
+        "name": "Independent mandatory code review completes Story s1 BUILD."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

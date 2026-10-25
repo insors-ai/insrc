@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35f54b47-904c-40b3-9421-3c4addc0d611",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:40:43.169Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ground both dimension verdicts in source evidence",
+      "parent": {
+        "entityId": "STORY-47e2b81827433589-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-47e2b81827433589-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-47e2b81827433589-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d4b389b0d9e352528c7761be5b0b73ce9ade4d05ec56b35cdf46689c3c6c535c",
+        "at": "2026-10-25T10:40:43.169Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:40:43.170Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ground both dimension verdicts in source evidence",
+    "summary": "Opt adherence and functional coverage into source inspection; revise single/divided guidance, require confidence and normalize unverified or legacy confidence gaps LOW. Preserve source-proven omissions, scope/FR filters and no-contract behavior. Extend fixtures to read-only sessions.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Both dimensions check relevant source/helpers before breach; summaries and absent notes never prove missing implementation.",
+      "HIGH/MED observations and legacy missing confidence normalize to LOW observation; explicit source-proven full or partial breaches retain appropriate severity and real code location.",
+      "Tests for both dimensions and both paths distinguish helper-implemented behavior absent from summaries, genuinely omitted behavior, missing notes, unreadable source, out-of-scope locations and invalid FR ids."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Both dimension prompts/schema/results distinguish proven breach, LOW observation and legacy missing confidence while preserving filters."
+      },
+      {
+        "level": "integration",
+        "name": "Both dimensions in single/divided pipeline: helper implementation missing from summaries passes, genuine omission remains HIGH, missing notes/unreadable source remain LOW."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

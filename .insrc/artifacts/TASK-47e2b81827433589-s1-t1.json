@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b372f64a-053d-483e-a3da-480fca1ad40e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T10:40:43.167Z",
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add opt-in source-inspecting execution and divided prompts",
+      "parent": {
+        "entityId": "STORY-47e2b81827433589-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-47e2b81827433589-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7794fb02f014f9aa9cdc0a644dad42bccf0150761a0610ad3d9a6515b86a6008",
+        "at": "2026-10-25T10:40:43.167Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T10:40:43.168Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add opt-in source-inspecting execution and divided prompts",
+    "summary": "Extend ModelDimensionSpec with source-inspection opt-in; use existing reviewer-session execution with code-review timeout/silence limits. Update shared chunk and gather builders for opt-in-aware source inspection in chunk, obligation, relation and reduction calls, preserving citations/uncertainty and other dimensions.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Opted-in single/chunk/gather/relation/reduction calls select reviewer-session mode, repo cwd and existing deadlines; no summary-only or closed-evidence instruction remains on those calls.",
+      "Shared prompts allow read-only Read/Grep/Glob and Codex commands, prohibit writes/test execution, preserve source citations and uncertainty; absent opt-in retains current behavior.",
+      "Regression tests cover execution roles, retry/deadline propagation and missing-session failure without fabricated pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Source-inspection opt-in reaches single, chunk, obligation, relation and reduction calls with bounded read-only sessions; unchanged dimensions retain structured mode."
+      },
+      {
+        "level": "unit",
+        "name": "Shared prompts preserve source citations and uncertainty; no summary-only/closed-evidence assumptions for opted-in calls."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

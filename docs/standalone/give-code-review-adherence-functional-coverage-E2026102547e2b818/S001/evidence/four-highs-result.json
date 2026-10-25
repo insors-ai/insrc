@@ -1,0 +1,74 @@
+{
+  "startedAt": "2026-10-25T10:54:26.527Z",
+  "finishedAt": "2026-10-25T10:55:39.555Z",
+  "scope": "Targeted adherence re-review of the four previously false HIGH findings; original approved clauses selected verbatim; original full CR preserved.",
+  "model": "codex:gpt-6.1-sol",
+  "effort": "high",
+  "sourceHashes": {
+    "src/workflow/code-review/dimensions/adherence.ts": "33c1a72b9b4c2665f995ab7136cf470d47ef0db4eec4295e905559aec7482012",
+    "src/workflow/code-review/source-inspection.ts": "8510991c90541c2f39b18ac2b28bf87df14972553b325ece729a30b76ea4d46b",
+    "src/workflow/review-pipeline/code-review.ts": "7c54fb6b37509e0bf8b0b421ada290b28059761163b813e9d44ea7644c1ee3c3"
+  },
+  "originalHighs": [
+    {
+      "dimension": "adherence",
+      "severity": "HIGH",
+      "location": "src/daemon/tools/builtins/git/push.ts:1",
+      "message": "The evidence shows no implementation of destructive refspec detection for '+main' or ':dev', mandatory approval in every mode, or refusal of protected-ref deletion unless forceToMain is true. This required safeguard is unimplemented on the supplied evidence, leaving remote deletion or force overwrite without the required user approval.",
+      "expectationRef": "LLD error case 10: A push refspec expresses a delete or a force without a flag (':dev', '+main')"
+    },
+    {
+      "dimension": "adherence",
+      "severity": "HIGH",
+      "location": "src/daemon/tools/builtins/git/push.ts:1",
+      "message": "Unimplemented expectation: no evidence shows that git_push with ref ':dev' and no force flag is classified as destructive and asks for approval in every mode.",
+      "expectationRef": "LLD edge case 14: git_push with ref ':dev' and no force flag"
+    },
+    {
+      "dimension": "adherence",
+      "severity": "HIGH",
+      "location": "src/daemon/tools/builtins/git/push.ts:1",
+      "message": "The required destructive classification for git_push with ref '+main:main' is unimplemented in the supplied evidence. This force-push refspec must be classified as destructive.",
+      "expectationRef": "LLD edge case 15: git_push with ref '+main:main'"
+    },
+    {
+      "dimension": "adherence",
+      "severity": "HIGH",
+      "location": "src/daemon/tools/builtins/git/index.ts:1",
+      "message": "No evidence note shows implementation of the required state: preserving the 22 existing tool contracts with TypeBox inputs, output schemas, typed failures and per-input destructive approvals; adding eleven read tools and checked shared parsers; accounting for all 169 git commands; and testing each tool against a real temporary repository. This code-requiring expectation is unimplemented on the supplied evidence.",
+      "expectationRef": "LLD state after the change"
+    }
+  ],
+  "reviewedClauses": {
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A push refspec expresses a delete or a force without a flag (':dev', '+main')",
+          "detection": "approval(input) parses `ref`: a leading '+', or an empty source before ':', is destructive; the push tool refuses a delete refspec to a protected ref unless forceToMain is true",
+          "response": "The call asks in every mode before it runs",
+          "userImpact": "A remote branch cannot be deleted or force-overwritten through the registry without the user's yes",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "git_push with ref ':dev' and no force flag",
+          "expected": "Class destructive; it asks in every mode"
+        },
+        {
+          "input": "git_push with ref '+main:main'",
+          "expected": "Class destructive"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "migration": {
+      "stateAfter": "The 22 existing tools keep their ids and inputs, now written as typebox schemas that serialise to the same JSON, and declare an outputSchema, a typed failure and a per-input approval function with the destructive operations marked. Eleven new read tools replace the git reads the repository's own code runs, parsers in one module turn structured git output into checked records, a coverage table accounts for all 169 git commands as covered here, assigned to s8 or excluded, and each tool is tested against a real temporary repository."
+    }
+  },
+  "result": {
+    "dimension": "adherence",
+    "findings": []
+  },
+  "highFindings": []
+}

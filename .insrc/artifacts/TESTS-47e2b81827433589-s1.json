@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "7cd109b55c1f310ad56157a42c38a2a4d280afb875edafb285751433b8d5856c",
+        "at": "2026-10-25T10:51:47.817Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "47e2b81827433589",
+    "storyId": "s1",
+    "createdAt": "2026-10-25T10:44:06.181Z",
+    "updatedAt": "2026-10-25T10:51:47.757Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-25T10:08:06.461Z",
+    "epicSlug": "give-code-review-adherence-functional-coverage",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "573349c71",
+        "ranAt": "2026-10-25T10:44:06.181Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Source-inspection opt-in reaches single, chunk, obligation, relation and reduction calls with bounded read-only sessions; unchanged dimensions retain structured mode.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source inspection routes every review role through bounded read-only sessions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspection driver propagates deadlines and retries sessions without structured fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspection missing session fails rather than fabricating a pass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Shared prompts preserve source citations and uncertainty; no summary-only/closed-evidence assumptions for opted-in calls.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+                "title": "source-inspecting divided prompts preserve citations and uncertainty instead of closing evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 591,
+            "titles": [
+              {
+                "title": "source inspection routes every review role through bounded read-only sessions",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspecting divided prompts preserve citations and uncertainty instead of closing evidence",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspection driver propagates deadlines and retries sessions without structured fallback",
+                "result": "pass"
+              },
+              {
+                "title": "source-inspection missing session fails rather than fabricating a pass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "d3e2891aa",
+        "ranAt": "2026-10-25T10:51:47.757Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Both dimension prompts/schema/results distinguish proven breach, LOW observation and legacy missing confidence while preserving filters.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Both dimensions in single/divided pipeline: helper implementation missing from summaries passes, genuine omission remains HIGH, missing notes/unreadable source remain LOW.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "adherence divided source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+                "title": "functional-coverage divided source evidence: unreadable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 587,
+            "titles": [
+              {
+                "title": "adherence requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "adherence single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "adherence divided source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage requires source inspection and preserves proven breaches while lowering unverified observations",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage single source evidence: unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: implemented",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: omitted",
+                "result": "pass"
+              },
+              {
+                "title": "functional-coverage divided source evidence: unreadable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

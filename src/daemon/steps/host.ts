@@ -19,8 +19,8 @@
 
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
-import { runInStepContext } from '../../shared/step-context.js';
-import type { StepCallContext, StepClient, StepToolName } from '../../shared/step-context.js';
+import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
+import type { StepCallContext, StepClient, StepToolName, ConnectionExecutionContext } from '../../shared/step-context.js';
 import { familyForClient, getModelRegistry } from '../model-registry.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
@@ -46,7 +46,7 @@ export interface StepEnvelope {
 }
 
 /** `progress`: report progress, sent as a 'progress' frame before the reply. */
-export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void) => Promise<StepEnvelope>;
+export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void, execution?: ConnectionExecutionContext) => Promise<StepEnvelope>;
 
 export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
@@ -98,16 +98,23 @@ function contextOf(raw: unknown): StepCallContext | string {
 
 /** The `step.call` stream handler over `table`. */
 export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable()): StreamHandler {
-	return async (params, send, signal) => {
-		const fail = (code: 'step-unknown-tool' | 'step-failed', error: string): void => {
+	return async (params, send, signal, trusted) => {
+        const execution = trusted?.connectionExecution;
+        const bound = trusted?.connectionSession !== undefined || execution?.mode === 'session-memory';
+		const fail = (code: 'step-unknown-tool' | 'step-failed' | 'session-expired' | 'upgrade-required', error: string): void => {
 			send({ id: 0, stream: 'error', data: { code, error, recoverable: false } });
 		};
+        if (bound) {
+         try { requireConnectionExecution(execution); } catch { fail('session-expired', 'Connection session is unavailable.'); return; }
+         if (execution?.mode !== 'session-memory' || execution.audience !== 'workbench-ui') { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
+        }
 		const p = (typeof params === 'object' && params !== null ? params : {}) as { tool?: unknown; args?: unknown; context?: unknown };
 		if (typeof p.tool !== 'string' || !Object.hasOwn(table, p.tool)) {
 			fail('step-unknown-tool', `step.call: this daemon has no tool '${String(p.tool)}'. Update the daemon and restart it.`);
 			return;
 		}
-		const ctx = contextOf(p.context);
+        if (bound && !['insrc_analyze', 'insrc_analyze_step'].includes(String(p.tool))) { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
+		const ctx = bound && execution ? { cwd: execution.connectionAccess.lookupRoot, envRepo: execution.connectionAccess.lookupRoot, connectionExecution: execution } : contextOf(p.context);
 		if (typeof ctx === 'string') {
 			fail('step-failed', `step.call: ${ctx}`);
 			return;
@@ -118,23 +125,25 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 		let answered = false;
 		const progress = (data: unknown): void => {
 			if (answered) return;
+            if (execution) { try { execution.assertActive(); } catch { return; } }
 			try {
 				send({ id: 0, stream: 'progress', data });
 			} catch (err) {
-				log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
+				if (!bound) log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
 			}
 		};
 		let envelope: StepEnvelope;
 		try {
-			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress));
+			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress, execution));
 		} catch (err) {
 			answered = true;
-			const message = err instanceof Error ? err.message : String(err);
-			log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
+			const message = bound ? 'Connection session operation failed.' : err instanceof Error ? err.message : String(err);
+			if (!bound) log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
 			fail('step-failed', message);
 			return;
 		}
 		answered = true;
+        if (execution) { try { execution.assertActive(); } catch { fail('session-expired', 'Connection session is unavailable.'); return; } }
 		send({ id: 0, stream: 'done', data: envelope });
 	};
 }

@@ -63,6 +63,7 @@ export class ConnectionExecutionError extends Error {
 }
 
 const savedExecutions = new WeakSet<object>();
+const sessionExecutions = new WeakSet<object>();
 
 /** Only trusted unattached entry points may explicitly choose saved execution. */
 export function savedConnectionExecution(
@@ -88,9 +89,25 @@ export function savedConnectionExecution(
 	return Object.freeze(execution);
 }
 
-/** No missing-policy fallback. Session minting/admission is installed by later owner tasks. */
+/** Called only by the authenticated daemon owner; caller JSON is never a construction input. */
+export function sessionConnectionExecution(access: Readonly<ConnectionAccessContext>, authority: {
+ readonly bindingId: string; readonly audience: SessionConnectionExecution['audience']; readonly controlGeneration: number;
+ readonly lifetime: ConnectionExecutionLifetime; readonly assertActive: () => void;
+}): SessionConnectionExecution {
+ if (currentStepContext()?.connectionExecution || !Object.isFrozen(access) || !access.sessionHandle || !access.lookupRoot || !access.daemonEpoch) throw new ConnectionExecutionError('session-expired');
+ const signal = authority.lifetime.signal, assertOwner = authority.assertActive;
+ const assertActive = () => { if (signal.aborted) throw new ConnectionExecutionError('session-expired'); try { assertOwner(); } catch { throw new ConnectionExecutionError('session-expired'); } };
+ assertActive();
+ const execution: SessionConnectionExecution = { mode: 'session-memory', connectionAccess: access, bindingId: authority.bindingId, audience: authority.audience,
+  controlGeneration: authority.controlGeneration, lifetime: Object.freeze({ ...authority.lifetime }), revisions: Object.freeze([]), diagnostics: Object.freeze({ emit: () => {} }),
+  provider: Object.freeze({ mode: 'unsupported' }), assertActive };
+ Object.defineProperty(execution, 'toJSON', { value: () => { throw new ConnectionExecutionError('upgrade-required'); } });
+ sessionExecutions.add(execution); return Object.freeze(execution);
+}
+
+/** No missing-policy fallback. Only exact daemon-minted execution objects are admitted. */
 export function requireConnectionExecution(value: ConnectionExecutionContext | undefined): ConnectionExecutionContext {
-	if (value === undefined || !savedExecutions.has(value)) throw new ConnectionExecutionError('session-expired');
+	if (value === undefined || (!savedExecutions.has(value) && !sessionExecutions.has(value))) throw new ConnectionExecutionError('session-expired');
 	value.assertActive();
 	return value;
 }

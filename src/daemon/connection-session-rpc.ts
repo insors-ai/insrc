@@ -1,4 +1,5 @@
 /** sc5 control protocol and transport admission. No caller JSON grants authority. */
+import { sessionConnectionExecution } from '../shared/step-context.js';
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest } from '../shared/connection-management-wire.js';
@@ -129,7 +130,8 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		if (!claim || !this.#owner) throw fail('session-expired');
 		let root = selectedRoot ?? claim.root;
 		if (selectedRoot === undefined) {
-			if (request.method === 'db.connections.v2.capabilities' && request.params !== undefined && request.params !== null && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
+			if (request.method === 'step.call') { /* Root authority comes only from the attached transport. */ }
+			else if (request.method === 'db.connections.v2.capabilities' && request.params !== undefined && request.params !== null && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
 			else parseSessionEmpty(request.params);
 		}
 		if (claim.kind === 'data') {
@@ -200,7 +202,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
   const owned = await this.probeOwner(context, request.key.repoRoot);
   const signal = AbortSignal.any([owned.binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
   return Object.freeze({ ...context, signal, assertRequestActive: () => { owned.assertActive(); if (request.expectedRevision !== undefined && owned.overlay.read(request.key.id).revision !== request.expectedRevision) throw new ManagementServiceError('conflict'); }, registerDrain: (work: PromiseLike<unknown>) => {
-   owned.assertActive(); if (!context.registerDrain) throw fail('session-expired'); context.registerDrain(work); owned.overlay.retainProbe(work);
+   owned.assertActive(); if (!context.registerDrain) throw fail('session-expired'); context.registerDrain(work); owned.overlay.retainWork(work);
   } });
  }
  async prepareTemporary(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft> {
@@ -233,6 +235,12 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		});
 		assertActive(); return access;
 	}
+ async executionFor(context: TrustedRpcContext, root: string) {
+  const access = await this.accessFor(context, root), owned = await this.probeOwner(context, root);
+  if (!context.registerDrain) throw fail('session-expired');
+  return sessionConnectionExecution(access, { bindingId: context.connectionIdentity, audience: owned.binding.audience, controlGeneration: owned.binding.controlGeneration,
+   lifetime: { signal: AbortSignal.any([owned.binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]), registerDrain: context.registerDrain }, assertActive: owned.assertActive });
+ }
 	/** Failed/pending attachment stays sticky: never retry that connection as saved-only.
 	 * Only audited metadata and temporary management methods are currently admitted.
 	 * Analysis and other data consumers refuse until their concrete integrations exist.
@@ -259,13 +267,21 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 					return next(request, deliver);
 				} catch (error) { reject(error); return () => {}; }
 			}
-			if ((!SAFE_METADATA.has(request.method) && !TEMPORARY_MANAGEMENT_METHODS.has(request.method) && !PROBE_METHODS.has(request.method)) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
+			const step = request.method === 'step.call';
+			if ((step && !request.stream) || (!step && !SAFE_METADATA.has(request.method) && !TEMPORARY_MANAGEMENT_METHODS.has(request.method) && !PROBE_METHODS.has(request.method)) || (request.stream && !step)) { reject(fail('upgrade-required')); return () => {}; }
 			let cancelled = false, cancel: (() => void) | undefined;
-			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : request.method === 'db.connections.v2.test' ? this.#binding(request, parseDraftTestRequest(request.params).key.repoRoot) : this.#binding(request)).then(binding => {
+			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : request.method === 'db.connections.v2.test' ? this.#binding(request, parseDraftTestRequest(request.params).key.repoRoot) : this.#binding(request)).then(async binding => {
 				if (cancelled || request.lifetime?.signal.aborted) { request.lifetime?.complete(); return; }
 				binding.assertActive();
-				if ((TEMPORARY_MANAGEMENT_METHODS.has(request.method) || PROBE_METHODS.has(request.method)) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
-				const authenticated: LocalRequestEnvelope = { ...request, trustedContext: Object.freeze({ ...context!, connectionSession: binding }) };
+				if ((step || TEMPORARY_MANAGEMENT_METHODS.has(request.method) || PROBE_METHODS.has(request.method)) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
+				let execution;
+                if (step) {
+                 const lifetime = request.lifetime; if (!lifetime) throw fail('session-expired');
+                 execution = await this.executionFor({ ...context!, signal: lifetime.signal, registerDrain: lifetime.registerDrain, assertRequestActive: lifetime.assertActive }, binding.access.lookupRoot);
+                 const owned = await this.probeOwner(context!, binding.access.lookupRoot); owned.overlay.retainWork(lifetime.drained);
+                }
+                binding.assertActive();
+                const authenticated: LocalRequestEnvelope = { ...request, trustedContext: Object.freeze({ ...context!, connectionSession: binding, ...(execution ? { connectionExecution: execution } : {}) }) };
 				const checked: DeliverEnvelope = envelope => { try { binding.assertActive(); deliver(envelope); } catch (error) { reject(error); } };
 				cancel = next(authenticated, checked);
 			}).catch(error => { if (!cancelled) reject(error); else request.lifetime?.complete(); });

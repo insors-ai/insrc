@@ -5357,6 +5357,10 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "diagnostic",
           "log.error"
         ],
@@ -5365,9 +5369,9 @@
           "setLogMode"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "bf3c7ab7d6f525ebcf9353f37a1ff19c619a651f52ac2b88e2c02f9cb12d4a6f",
-      "sourceDigest": "45ead9f50cf4e8e00fd0a6ea8a5347f5d0e327b39e913a9a55c376b096e10302",
+      "siteCount": 5,
+      "sitesDigest": "c991cdb7053b936820d6ca172b88e9468139eaed9e2e2b432c12143c6dedabc8",
+      "sourceDigest": "de46d3551f706df33c3c02b716e4174dd54c549dc20fb5011718fc0843e342ad",
       "boundaries": [
         "diagnostic",
         "unresolved-call"
@@ -7314,7 +7318,7 @@
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
-      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Audited metadata, temporary management and owner-bound probes are admitted; other data consumers refuse until concrete integrations are installed; fixed rejections and terminal stream errors carry no capability.",
+      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Audited metadata, temporary management, owner-bound probes and workbench-ui step transport are admitted; unverified reasoning refuses before runner dispatch; other data consumers refuse until concrete integrations are installed; fixed rejections and terminal stream errors carry no capability.",
       "sites": [
         [
           "connection-factory",
@@ -7431,7 +7435,7 @@
       ],
       "siteCount": 28,
       "sitesDigest": "7361f037222b47316c113cc37873720870d7277099083d9578cff7ff216c4dad",
-      "sourceDigest": "364b389d9c2eeb29c2e4994913ca38ce1655db5b32438a8a1dd921ad01060d6d",
+      "sourceDigest": "467121fa1756202886e67c65139a5580cfe230e95e90f3588f58e4ecd784a64c",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -9823,7 +9827,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "2207775169ef81ede9a270e9e9f5be5450eb1e556953abc60715979e839f55c5",
+      "sourceDigest": "f26104d270ff4b192b7d5a63b0ec3b6cecd7e4611051e5435d513ef28140eff7",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -11203,7 +11207,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e7af791139404a5e3b98583a239777d13ca0cd13e304a89b2e757cb69a3aa28d",
-      "sourceDigest": "a08e2b1156fc4eb02ad0d6d0e787b400f85c25375a396e26f198b22838abcb15",
+      "sourceDigest": "890af21a1c79cee01b506febe79931cb6a8f3139213feca848b5352498169ace",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:ConnectionResolver",
@@ -13927,7 +13931,7 @@
     },
     "src/daemon/steps/host.ts": {
       "classification": "trusted-step-host",
-      "rationale": "Only server context can install owner authority; never deserialize it from caller fields. Session allowlist and audience refusal occur before any persistence-capable runner dispatch.",
+      "rationale": "Only server context can install owner authority as the fourth runner argument; normalized root and frozen execution tuple ignore caller context fields. Never deserialize authority from caller JSON. Session allowlist and audience refusal occur before any persistence-capable runner dispatch.",
       "sites": [
         [
           "diagnostic",
@@ -13956,7 +13960,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "e18bbae6eb9f58e20fdfafaed305bcadf8c05c153984eac339e7b1d101f1a330",
-      "sourceDigest": "795374648fbdac205ed7d2c2385e009b8c18f18be1eb7452cfd95038390182f9",
+      "sourceDigest": "18b7c88ba9bc7d5ad9781e612d4ff88e82311afbc0cc64fda10492e550b09ce3",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -29399,17 +29403,25 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "diagnostic",
           "log.warn"
         ],
         [
           "serialization",
           "socket.write"
+        ],
+        [
+          "serialization",
+          "socket.write"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "16b8dc893c6fa935f687716b4cdfa03c494319ea6c5bb8782ae456aa779ad60b",
-      "sourceDigest": "66f22bbb230e5f2852a8f5d432c7fae30d2d04c4df1a7ab924ab2555b83eb239",
+      "siteCount": 8,
+      "sitesDigest": "e0cc3517c7a04cf149c5b91914b89b9a0e5da5738a884c868ad994cb8c97c6b6",
+      "sourceDigest": "b3b796231b57a7ee7b50fcb422936b9b5cb76a4c6aef9eb2ce2699b002105029",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -29502,6 +29514,22 @@
       "sourceDigest": "75e5c60102596ed6630ab579c5eef15f361a6b35c484894b30f770c6f537c549",
       "boundaries": [
         "diagnostic",
+        "serialization"
+      ]
+    },
+    "src/mcp/session-bootstrap.ts": {
+      "classification": "private-mcp-bootstrap",
+      "rationale": "Required inherited pipe holds only root-bound data delegation in process memory. Bounded strict frames refresh the token and abort prior snapshots; malformed/closed pipe stays required and never downgrades to saved execution. Every forwarder attaches a fresh socket and validates epoch/root/mcp-unverified audience before sending step.call; no token enters args/environment/settings or diagnostic formatting.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "5bf562bb09d5a9ac85dcb2378f233f6ab54b3524977e74c8bf82df4dab8fc602",
+      "sourceDigest": "62e536b3749dfd41753d2323e98c36d15ebf2897373281ff303c4290ad56bd34",
+      "boundaries": [
         "serialization"
       ]
     },
@@ -29770,7 +29798,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "f5463792f7442de1b6667602cae5523983ee3eaac5853d02b5079c5c61c9b9e0",
-      "sourceDigest": "6fa58dc9c11e55f62aa85da1ebc7440ec6af25633a6c7db47a03d8ff8f3a20cc",
+      "sourceDigest": "d1fd410e96b7fe150120a45b280ce50ccd23dd97bb5316361628b656d957507b",
       "boundaries": [
         "unresolved-call"
       ]

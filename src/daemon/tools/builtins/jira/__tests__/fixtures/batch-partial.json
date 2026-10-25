@@ -1,0 +1,8 @@
+{
+  "results": [
+    { "status": "SUCCESS", "message": "Work item IN-1 has been successfully edited", "id": "IN-1" },
+    { "status": "FAILURE", "message": "Issue does not exist or you do not have permission to see it.", "id": "IN-999" }
+  ],
+  "totalCount": 2,
+  "successCount": 1
+}

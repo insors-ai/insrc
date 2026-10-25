@@ -1,0 +1,11 @@
+{
+  "results": [
+    {
+      "status": "FAILURE",
+      "message": "No allowed transitions found for given status",
+      "id": "IN-1"
+    }
+  ],
+  "totalCount": 1,
+  "successCount": 0
+}

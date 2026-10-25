@@ -1,0 +1,5 @@
+✓ Available Roles:
+- Administrators
+- atlassian-addons-project-access
+- jira-guest-member
+

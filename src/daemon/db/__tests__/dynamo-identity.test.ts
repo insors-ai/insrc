@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {fork} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -74,6 +75,9 @@ test('CM-S2-A9: parent AWS identity reaches actual isolated workers for environm
    assert.equal(seen.at(-1),seen.at(-2),'activation and private-worker signing identity agree');
    assert.equal(Object.keys(probeWorkerEnvironment()).some(key=>key.startsWith('AWS_')),false);
   }
+  let spawns=0;const supervisor=new DraftTestSupervisor((entry,options)=>{spawns++;return fork(entry,[],options);}),lifetime=new RequestLifetime(),before=seen.length;
+  const denied=await supervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot:root,scope:'temporary',id:'fixture'},publicPatch:{},credentials:{}},{connectionIdentity:'missing-profile',daemonEpoch:'epoch',signal:lifetime.signal,registerDrain:lifetime.registerDrain},async()=>({config:{id:'fixture',kind:'dynamodb',options:{region:'us-east-1',profile:'missing-profile',endpoint:'http://127.0.0.1:'+address.port}},credentialActions:{}}));
+  lifetime.complete();await lifetime.drained;assert.equal(denied.status,'failed');assert.equal(denied.safeMessage,'Connection test failed.');assert.equal(spawns,0);assert.equal(seen.length,before);await supervisor.shutdown();
   assert.match(seen[0]!,/ENVKEY.*environment-token-canary/);assert.match(seen[2]!,/CHOSENKEY/);assert.match(seen[4]!,/NAMEDKEY.*named-token-canary/);
  }finally{for(const[name,value]of previous)if(value===undefined)delete process.env[name];else process.env[name]=value;await new Promise<void>(r=>server.close(()=>r()));await rm(root,{recursive:true,force:true});}
 });

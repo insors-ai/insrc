@@ -33,7 +33,7 @@ import { judgeCoverage } from '../../../../workflow/code-review/dimensions/cover
 import { runCodeReview, type JudgeSlot } from '../../../../workflow/code-review/runner.js';
 import type { CodeReviewArtifact, CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../code-review-rpc.js';
-import { enveloped, unenveloped } from '../../../../workflow/review-pipeline/__tests__/enveloped.js';
+import { enveloped, unenveloped, sessionMessages } from '../../../../workflow/review-pipeline/__tests__/enveloped.js';
 import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
@@ -113,7 +113,7 @@ test('on both the controller and daemon paths a lowered graph-gap finding is LOW
 
 test('the daemon diff path reaches the coverage judge as degraded, also with an empty grounding', async () => {
 	const calls: (readonly LLMMessage[])[] = [];
-	const provider = { completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { calls.push(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
+	const provider = { runReviewSession: async (prompt: string, schema: unknown) => { calls.push(sessionMessages(prompt)); return enveloped(schema, { findings: [] }); }, completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { calls.push(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
 	const writes: string[] = [];
 	const rpcDeps: CodeReviewRunDeps = {
 		resolveSubject: async () => ({ ok: true, subject: subject() }),

@@ -1,0 +1,1193 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792918270874-eo27nk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T08:59:51.842Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 520952,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicHash": "484fcef7efaf229e",
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1792569414548-dvzndd",
+    "hldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 covers the upstream temporary-connection isolation and lifetime requirements while leaving lifetime explanation and manager UI to S005.",
+          "evidence": "DEF S003/ac1 requires memory-only configuration, visible-scope collision rejection and session isolation; ac2 requires retention across panel/repository changes and expiry on workbench end or daemon restart. The LLD designs these behaviors, and HLD §6.3 assigns session ownership and propagation to S003 while §6.5 assigns client UI to S005. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "Retain this division of responsibility and the S005 integration prerequisite.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current resolver has an optional fail-closed overlay hook, while normal analyzer contexts remain saved-only and the shipped management gate is disabled.",
+          "evidence": "createConnectionResolver returns no overlay when sessionHandle is absent and throws SessionAccessError when a handle is supplied without sessionOverlay. analysisConnectionContext returns only '{ lookupRoot, daemonEpoch: \"saved-analysis\" }'. The shipped gate contains '\"ready\": false' and '\"scopes\": []'. The current RPC method inventory contains no session lifecycle methods. [files: src/daemon/db/pool-cache.ts, src/analyze/connection-access.ts, src/daemon/connection-management-rpc.ts, src/assets/connection-management-gates.json]",
+          "action": "Preserve the explicit distinction between existing hooks and proposed session ownership.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed owner can reuse the stated resolver, draft-preparation, materialization and root-serialization extension points.",
+          "evidence": "ResolverPorts.sessionOverlay accepts ConnectionAccessContext and returns Promise<ConnectionResolver>; ConnectionResolver includes list, lease and withConnection. ConnectionTestPorts.prepareTemporary has the exact request/context/signal signature shown in the LLD. materializeDraft accepts an owner-supplied readSecret callback, and withSavedRootGate serializes callbacks per root. [files: src/daemon/db/pool-cache.ts, src/shared/connection-management.ts, src/daemon/connection-management-rpc.ts, src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db/pool.ts]",
+          "action": "Keep temporary credentials behind the owner-supplied preparation path; do not reuse DriverPool.registerEphemeral as the session store.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing sc8 production file policy supplies a fixed 64 MiB resource budget.",
+          "evidence": "LLD §§2.1 and 5 call 64 MiB the existing sc8 policy. Production fileExecutionPolicy returns 'memoryBudgetBytes: 256 * 1024 * 1024'. S001's LLD likewise states 'Budget defaults to 256 MiB'. The owned-file test helper explicitly overrides that production value to 64 MiB, so its fixture does not establish a 64 MiB production default. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md, src/daemon/db/file-policy.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
+          "action": "Align with the 256 MiB foundation, or explicitly design and test a session-specific 64 MiB override. Do not describe the test override as existing production policy.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The LLD supplies the complete consumer migration inventory required by the HLD, including how trusted context reaches MCP streaming execution.",
+          "evidence": "HLD §3 explicitly requires production paths 'with old-to-new owner and regression test for each'. The LLD provides representative file lists and promises a future inventory test instead. Important concrete paths remain unmapped: forwardStep creates a fresh socket for every call; StreamHandler accepts only params/send/signal; directDispatch's streaming branch does not pass trustedContext; createStepCallHandler derives its context from serialized params. The current source-inventory utility detects pool/resolver boundaries but does not inventory serializers, transport attachment or these trusted-context transitions. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, src/mcp/forward-step.ts, src/daemon/server.ts, src/daemon/steps/host.ts, src/daemon/threads/router.ts, src/daemon/threads/method-class.ts, src/daemon/db/__tests__/connection-source-inventory.ts]",
+          "action": "Add a per-site migration table covering resolver factories and consumers, MCP socket attachment on each connection, trusted streaming context and drains, step dispatch/continuations, routing exceptions, shutdown and serializers. Specify changed signatures and a regression test for each path rather than deferring discovery to BUILD.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Explicit resolver context propagation and the specified serialization exclusions are sufficient to preserve session isolation and prevent persistence of temporary analysis data.",
+          "evidence": "Both executePlan and stepPlan consult getCachedExploration before invoking the data runner and then call putCachedExploration with its output. The LMDB cache key contains only repo ID, lastIndexedAt and exploration type/params; its stored value includes the entire output. Thus identical connection IDs/params can reuse another session's schema/listing without reaching the context-bound resolver, and temporary-derived output is persisted. The one-shot context cache and task-output cache also write JSON to disk. The LLD prohibits temporary data persistence but defines no cache bypass, session-owned memory cache or authorization check before cache hits. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, src/analyze/explore/executor.ts, src/db/exploration-cache.ts, src/analyze/context/driver.ts, src/analyze/context/cache.ts, src/analyze/executor/cache.ts]",
+          "action": "Design explicit cache-read and cache-write rules for session-bound work and dependent outputs. Bypass shared persistent caches or use owner-bound memory caches invalidated by revision and expiry; validate authority before serving hits. Cover exploration, bundle and task caches, and add warm-cache tests across two sessions, saved/temporary same-ID sources, updates and expiry.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An isolated memory owner can be added without migrating saved records or changing scope-local saved lookup semantics.",
+          "evidence": "ConnectionAccessContext already separates lookupRoot from managementRepoRoot and optionally carries sessionHandle. dataScopeOf preserves scope.value for non-connection scopes, and the saved resolver opens the pool at context.lookupRoot. ConnectionsFile preserves additional fields, while safeConnection preserves declared pinned-family metadata. The proposed overlay requires no addition to these persisted saved shapes. [files: src/shared/connection-management.ts, src/shared/db-driver.ts, src/analyze/runtimes/data/_shared.ts, src/daemon/db/pool-cache.ts, src/daemon/db/driver-profiles.ts, src/daemon/db/config.ts]",
+          "action": "Retain the nested/unregistered-directory and pinned-family regression gates when adding session-aware resolution.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed ownership model respects Story boundaries and adequately documents its new relationships.",
+          "evidence": "HLD §6 assigns sc5 to S003, sc8 implementation to S001, removal coordination to S004 and manager UI to S005. The LLD retains these owners. Its prose and ER source identify session-to-overlay and session-to-attachment one-to-many ownership, overlay-to-entry/receipt ownership, exact canonical-root membership, separate saved pools and optional owned runtime resources. No S003 UX mock is necessary for this daemon-only scope. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
+          "action": "Preserve these ownership boundaries when correcting the cache and policy integration details.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked ER and sequence companions render correctly and remain visually consistent with the design.",
+          "evidence": "Both generated HTML files and their embedded Mermaid sources were inspected. They contain the proposed ownership and lifecycle flows. Opening the ER companion failed with 'Browser is not available: iab', and browser discovery returned an empty list. Neither rendered layout, diagram parsing nor visual consistency could be verified. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
+          "action": "Render both companions in an available browser and inspect them; have the author regenerate any broken or inconsistent output.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Temporary draft expiry and cancellation can reuse S002's response-independent drain and child-reaping mechanism.",
+          "evidence": "RequestLifetime separates completed from drained work. DraftTestSupervisor calls 'context.registerDrain(drained)', listens to context.signal, aborts preparation, terminates/reaps its child and retains the drain until the child close path settles. The prepareTemporary adapter checks abortion after its await. These mechanisms support the LLD's proposed owner cancellation without changing the child IPC protocol. [files: src/daemon/request-context.ts, src/daemon/db/draft-test.ts, src/daemon/connection-management-rpc.ts]",
+          "action": "Wire session expiry into the admitted probe's signal and retain its drain; verify this with the planned real-child expiry races.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both upstream S003 acceptance criteria have explicit planned test coverage using relevant existing regression seams.",
+          "evidence": "The acceptance table maps ac1 to memory, isolation, collision, leases, replay, context and file-policy tests, and ac2 to expiry, reconnect, lost-context and final regression tests. Existing connection-leases tests exercise injected overlays and callback lifetimes; connection-consumers tests exercise runtime/exploration aliases; owned-file tests exercise private resources and filesystem snapshots. The design correctly states that S003 tests have not run. Lifetime explanation belongs to the separately identified S005 client coverage. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, src/daemon/db/__tests__/connection-leases.test.ts, src/analyze/__tests__/connection-consumers.test.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
+          "action": "Keep these mappings and add explicit cache-hit/isolation/no-persistence regressions required by the data-compatibility finding. Record actual results during BUILD.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 2,
+        "low": 8,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-25T09:00:10.536Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    },
+    "updatedAt": "2026-10-25T09:10:21.230Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Temporary connections belong to a workbench session and a selected repository, so one-off files and other sources can be analyzed without saving connection configuration or credentials. Closing the panel or switching repositories preserves them; ending the workbench, losing its 90-second lease or restarting the daemon expires them. This story supplies the daemon session protocol and execution isolation; S005 supplies the lifetime explanation and manager UI."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "Workbench session registration and ephemeral overlay",
+          "purpose": "Memory-only temporary state independent from panels and chat sessions.",
+          "interfaceSketch": "interface OpenConnectionSessionResult { sessionHandle: string; capability: string; daemonEpoch: string; heartbeatMs: 30000; leaseMs: 90000 } interface SessionResume { sessionHandle: string; capability: string; daemonEpoch: string } interface TemporaryConnectionStore { register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; end(sessionHandle: string): Promise<void> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Connection management protocol and driver descriptors",
+          "purpose": "One safe wire contract and compatibility boundary for all consumers.",
+          "interfaceSketch": "type ConnectionScope = 'saved' | 'temporary'; interface ConnectionKey { repoRoot: string; scope: ConnectionScope; id: string } interface SafeConnection { key: ConnectionKey; revision: string; kind: string; family: 'rdbms'|'kv'|'file'; label?: string | undefined; publicConfig: Readonly<Record<string, unknown>>; declaredFamily?: string | undefined; registeredFamily?: string | undefined; effectiveFamily: string; compatibilityWarning?: string | undefined; credentialPresence: Readonly<Record<string, boolean>> } type CredentialPatch = { action: 'keep' } | { action: 'replace'; value: string } | { action: 'clear' }; interface DriverDescriptor { kind: string; family: 'rdbms'|'kv'|'file'; publicInputSchema: Readonly<Record<string, unknown>>; secretSlots: readonly string[] } interface ManagementCapabilities { version: 2; daemonEpoch: string; features: readonly string[]; receiptRetentionDays: 30 }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Revision-checked mutation and recovery outcomes",
+          "purpose": "Make persistence and retries truthful across registry and credential boundaries.",
+          "interfaceSketch": "interface OperationTicket { operationId: string; lookupRoot: string; scope: ConnectionScope; connectionId: string; mode: \"create\"|\"update\"|\"remove\"; issuedAt: string; expiresAt: string; signature: string } interface OperationStatusRequest { ticket: OperationTicket } interface MutationRequest { ticket: OperationTicket; operationId: string; key: ConnectionKey; mode: 'create'|'update'|'remove'; expectedRevision?: string | undefined; publicPatch?: Readonly<Record<string, unknown>> | undefined; credentials?: Readonly<Record<string, CredentialPatch>> | undefined } type ManagementErrorCode = 'invalid-input'|'duplicate-id'|'conflict'|'not-found'|'busy'|'registry-unreadable'|'secret-unavailable'|'recovery-required'|'session-expired'|'upgrade-required'|'operation-mismatch'|'reconciliation-required'; interface CommittedOutcome { operationId: string; revision: string; registration: 'persisted'|'session-added'|'removed'; activation: 'active'|'pending'|'failed'|'not-applicable'; credentialCleanup: 'complete'|'pending' } type MutationOutcome = { status: 'committed'; value: CommittedOutcome } | { status: 'rejected'; code: ManagementErrorCode; message: string }; type OperationStatus = { status:'committed'; value:CommittedOutcome } | { status:'pending'|'not-seen'|'reconciliation-required' }; interface ActivationRetry { key: ConnectionKey; committedRevision: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Validated connection access context and driver leases",
+          "purpose": "A foundational extension point for session isolation and busy-use correctness across dependency branches.",
+          "interfaceSketch": "interface ConnectionAccessContext { lookupRoot: string; managementRepoRoot?: string | undefined; daemonEpoch: string; sessionHandle?: string | undefined } interface ConnectionLease { key: ConnectionKey; revision: string; release(): Promise<void> } interface ConnectionResolver { list(context: ConnectionAccessContext): Promise<readonly SafeConnection[]>; lease(context: ConnectionAccessContext, id: string): Promise<ConnectionLease> } interface ManagementRequestContext { connectionIdentity: string; access: ConnectionAccessContext }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc8",
+          "name": "Memory-only file execution and conversion policy",
+          "purpose": "A shared file-driver foundation for transient tests and temporary sessions without reversing branch dependencies.",
+          "interfaceSketch": "interface FileExecutionIdentity { lookupRoot: string; ownerId: string; connectionId: string; revision: string; sourceIdentity: string; converterOptionsDigest: string } interface FileExecutionPolicy { identity: FileExecutionIdentity; persistence: 'saved-cache'|'memory-only'; memoryBudgetBytes: number; allowSpill: false } interface FileExecutionResource { close(): Promise<void> } interface FileExecutionFactory { open(policy: FileExecutionPolicy): Promise<FileExecutionResource> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc8"
+        ],
+        "internal": "Session open/resume/heartbeat/end, memory-only temporary overlays and receipts, trusted execution-context propagation through analyzer/tool/MCP call paths, expiry and saved/temporary collision rules. Bind the S001-owned sc8 file execution policy to session identity and expiry; S001 owns conversion, cache-policy isolation and private DuckDB lifecycle. Every native/converted kind uses that foundation rather than a branch-local converter."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [],
+          "internal": "Safe saved-config read/patch, canonical repo validation, driver profiles, registry metadata/receipts and crash recovery, immutable secret generation staging, compatibility adapters and lease accounting foundation. Does not own temporary storage or rich manager layout. Preserve saved-only scope-local lookup and legacy pinned-family values; signed operation tickets make expiry/replay decidable after receipt pruning. Own the shared memory-only conversion/probe driver foundation, converter-cache policy/identity changes and private DuckDB lifecycle (sc8), completed before the S002/S003 branches."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "internal": "Transient process probe transport, deadline/cancellation and sanitization. Uses foundational context slots without depending on s3’s session implementation."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "Removal coordination for both scopes, busy/revision enforcement, confirmation state, postcommit credential cleanup retry and operation-status recovery. Never invokes source data deletion."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Settings contributions and shared command routing, themed editor/forms, filters, dirty guards, stale-test suppression and truthful feedback in extension and external IDE. HLD has inspected the external pane, actions, service, mirrored types and Settings registrations; S005 implements the recorded plan and validates its mirrored contract before integration acceptance."
+        }
+      ],
+      "rolloutPhase": "B — tests and temporary scope",
+      "nonFunctional": {
+        "performance": "Draft tests have a 10-second parent-enforced deadline, with forced child reap if graceful termination fails. Workbench heartbeat is 30 seconds and expiry 90 seconds after last valid heartbeat. Mutations serialize per repo; list/filter work does not perform driver probes. LLD load tests must verify no leaked children, leases or session entries after cancellation/expiry.",
+        "security": "Daemon owns every saved/temporary config and credential decision; client labels/PIDs are not authorization. Registered-root eligibility gates management and temporary operations; saved-only analysis preserves canonical scope-local lookup without gaining mutation rights. Safe read responses return a profile allowlist and presence booleans only. Secrets, capabilities and full requests never enter logs, receipts, prompts, artifacts, telemetry or checkpoints. Temporary inputs never reach disk or keychain. A test worker receives config via private IPC and may not emit raw driver errors. Temporary file conversion, query spill and metadata/logging are part of the no-persistence boundary, including test workers.",
+        "observability": "Use getLogger with operation ID, safe code, repo ID, scope, revision and phase only; timing and counters for commit, activation, recovery, timeout, busy refusal and session expiry. No raw exceptions or endpoint/options. Operation status exposes committed truth even when response delivery or activation failed. Recovery-required and cleanup-pending are visible and actionable.",
+        "durability": "Saved JSON remains authoritative. Same-directory atomic rename/fsync commits registry, revisions and receipts together; immutable keychain generations preserve previous effective credentials until commit. Recover preparation records before enabling mutation. Issue signed 30-day operation tickets; preserve receipts through ticket expiry and pending cleanup, and distinguish expired-unreceipted from valid-not-seen after restart. Temporary state and receipts expire on explicit session end, 90-second lease loss or daemon epoch change."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TemporaryConnectionStore",
+          "signature": "interface TemporaryConnectionStore { open(context: TrustedRpcContext, request: { repoRoot: string }): Promise<OpenConnectionSessionResult>; resume(context: TrustedRpcContext, request: SessionResume): Promise<OpenConnectionSessionResult>; heartbeat(context: TrustedRpcContext): Promise<{ status: 'active'; leaseMs: 90000 }>; register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; end(sessionHandle: string): Promise<void>; }",
+          "parameters": [
+            {
+              "name": "context",
+              "type": "TrustedRpcContext | ConnectionAccessContext",
+              "purpose": "Daemon-minted transport identity or derived validated access, never client-deserialized authority.",
+              "optional": false
+            },
+            {
+              "name": "request",
+              "type": "{ repoRoot: string } | SessionResume | MutationRequest",
+              "purpose": "Strict session bootstrap/resume or existing revision-checked mutation input; capability accepted only on dedicated session control/attach endpoint.",
+              "optional": true
+            },
+            {
+              "name": "sessionHandle",
+              "type": "string",
+              "purpose": "Internal owner lifecycle identifier; wire end first validates transport attachment and can end only its bound session.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<OpenConnectionSessionResult | MutationOutcome | { status: 'active'; leaseMs: 90000 } | void>",
+            "meaning": "Session handle and capability returned only at authenticated bootstrap/resume; temporary mutation uses session-added commit truth and separate activation outcome."
+          },
+          "errors": [
+            {
+              "type": "session-expired",
+              "condition": "Wrong epoch, missing/invalid capability, unattached execution context or ended/expired session."
+            },
+            {
+              "type": "invalid-input",
+              "condition": "Malformed/excess-size input or noncanonical/unregistered management root."
+            },
+            {
+              "type": "duplicate-id | conflict | busy | operation-mismatch | reconciliation-required",
+              "condition": "Existing contract rules for collisions, revisions, active use, nonidentical retries and expired/unverifiable tickets."
+            }
+          ],
+          "preconditions": [
+            "sc5 methods are proposed additions, not existing support. Use a fixed private RPC family db.connections.v2.session.open/resume/attach/heartbeat/end. End by handle is an internal function; public end accepts no arbitrary handle and derives it from the authenticated transport.",
+            "Open creates a random256-bit handle, separate random256-bit bearer capability and random session-memory HMAC key; only capability digest is retained for constant-time verification. Dedicated control transport attachment survives transient reconnect through resume; data/MCP transports use attach and cannot renew the lease.",
+            "Canonical registered-root eligibility is required for each temporary management operation and overlay. One session may own overlays for multiple eligible roots; panel/repo switch never ends it. No authorization from PID/client label/chat ID.",
+            "Session methods and all session-bound data work route to main daemon, not worker-thread stores. A daemon-owned immutable access context is bound to request lifetime and validated again after awaits."
+          ],
+          "postconditions": [
+            "Open/resume returns heartbeatMs30000/leaseMs90000. Heartbeat is accepted only on current control generation; resume atomically increments generation and detaches the old control transport. An exactly-at-deadline request expires before authorization; only a valid pre-deadline heartbeat extends the monotonic deadline.",
+            "Temporary create/update/status/ticket/read/list/activation bind existing sc1/sc2 keys and schema; ticket signature binds session via its private memory key, request HMAC covers full canonical payload, and receipts contain only safe outcomes. Same-ID changed-payload replay rejects. Session expiry invalidates all tickets/receipts regardless of wall clock.",
+            "register resolves Keep only from selected immutable in-memory generation; Replace/Clear update private data only. Never call resolveConfigSecrets/keychain/list/load/adoption or any registry writer for temporary state. Paths use existing prepareRuntimeConfig. New ID/kind/family immutable per existing profile rules.",
+            "Create/update commits memory entry + revision + receipt atomically under the same root gate as saved ID reservation. Activation is afterward; failure does not erase committed truth. Existing active leases refuse update; no user remove workflow in S003.",
+            "End/lease expiry first closes admission and detaches every transport; cancels owned runs/probes/conversion and synchronously prevents further resolution; drops capabilities/receipts/config secret references, then awaits active operations and owned close. Failures leave a closed cleanup record with only owned runtime handles and safe counters; no success reported while a child/resource remains. Daemon shutdown awaits drains; process restart has no recoverable temporary state.",
+            "Limit64 live sessions,64 connections/session,8MiB cumulative serialized config/session and16384 receipts/session; return existing busy on quota before committing, never evict live receipts silently. Per temporary file resource uses existing sc8 memoryBudgetBytes256MiB/allowSpillfalse; file source/data/config/capability material never goes to temp/cache/logs. Budgets are fixed internal limits, not a UI option. JS garbage collection limits mean logical erasure rather than guaranteed physical zeroization."
+          ]
+        },
+        {
+          "name": "createConnectionResolver",
+          "signature": "createConnectionResolver(ports?: ResolverPorts): ConnectionResolver",
+          "parameters": [
+            {
+              "name": "ports",
+              "type": "ResolverPorts",
+              "purpose": "Install the sc5 memory owner as existing sessionOverlay provider while retaining saved pool source.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ConnectionResolver",
+            "meaning": "Saved-only resolution when context has no session; otherwise saved plus only the validated session overlay matching exact canonical lookupRoot."
+          },
+          "errors": [
+            {
+              "type": "session-expired",
+              "condition": "Presented session context is stale/wrong-owner/wrong-root; do not retry through saved-only fallback."
+            },
+            {
+              "type": "duplicate-id",
+              "condition": "Any unexpected overlap between saved and visible temporary entries; resolution must not silently shadow."
+            }
+          ],
+          "preconditions": [
+            "Consume sc3 without redefining leases or saved root semantics. Context comes from validated transport/execution carrier, never serialized analyzer focus/plan/tool args.",
+            "Saved reservation must reject an ID held in any active overlay at that root, including another workbench; temporary create rejects saved IDs but same temporary ID may exist in different isolated sessions. One root-serialized coordinator performs both checks and commit while holding the shared root gate.",
+            "Unattached CLI/MCP and scope-local unregistered/nested saved lookup remain saved-only exactly as before; temporary lookup requires matching eligible root. Context with a session but incompatible root must reject session-expired, never attach a nearby root."
+          ],
+          "postconditions": [
+            "Session overlay returns safe projection only; credentials and HMAC/capability never leave owner. Every list/lease/withConnection revalidates state; no global current session or ambient AsyncLocalStorage persisted state.",
+            "All current data consumers receive explicit immutable access context via ToolDeps and analyzer runtime/exploration/measure context. Request/run registry holds owner/run IDs and cancellation only in daemon memory. Wire thread projection has no capability; session work stays main-daemon and no handle/capability enters checkpoint/telemetry/prompt/artifact serialization.",
+            "MCP child initial capability arrives on a private inherited control pipe, never argv/settings/config/log; child attaches its RPC data transport then discards raw bootstrap buffer and clears environment fallback. Unattached MCP remains saved-only. Reconnect requires explicit resume; an old run with lost temporary context rejects session-expired instead of saved fallback.",
+            "Session lifetime cancellation is registered through S002 RequestLifetime drains and propagated through full analyzer/tool driver callback lifetime. Existing callback leases prevent premature release; do not reconstruct lease counters in consumers."
+          ]
+        },
+        {
+          "name": "ConnectionTestPorts",
+          "signature": "interface ConnectionTestPorts { readonly prepareTemporary?: ((request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal) => Promise<EffectiveDraft>) | undefined; }",
+          "parameters": [
+            {
+              "name": "prepareTemporary",
+              "type": "(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal) => Promise<EffectiveDraft>",
+              "purpose": "Install readonly temporary edit preparation using selected session-memory config/revision and owned credential generation.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<EffectiveDraft>",
+            "meaning": "Same immutable effective config as register/update would use, with zero writes and abort checks."
+          },
+          "errors": [
+            {
+              "type": "session-expired | not-found | conflict | invalid-input",
+              "condition": "Owner/context expiry, missing ID, stale revision or malformed patch before any probe spawn."
+            }
+          ],
+          "preconditions": [
+            "Consume S002 worker supervisor and current injectable port; do not alter private IPC or child cancellation protocol.",
+            "Temporary new-draft tests require registered root and may remain sessionless per S002; editing existing temporary rows requires authenticated live owner."
+          ],
+          "postconditions": [
+            "Abort/expiry after any await prevents late secret use/spawn; end cancels admitted temporary probes and retains drain until child close.",
+            "No draft test creates a session entry, memory receipt, keychain entry or saved registry change. Existing draft-test sanitization remains authoritative."
+          ]
+        },
+        {
+          "name": "StreamHandler",
+          "signature": "type StreamHandler = (params: unknown, send: (msg: IpcStreamMessage) => void, signal: AbortSignal, context?: TrustedRpcContext | undefined) => Promise<void>;",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing untrusted wire input; kept unknown until a bounded strict per-method decoder validates it.",
+              "optional": false
+            },
+            {
+              "name": "send",
+              "type": "(msg: IpcStreamMessage) => void",
+              "purpose": "Existing response stream emitter; delivery errors cannot strand internal completion/drain.",
+              "optional": false
+            },
+            {
+              "name": "signal",
+              "type": "AbortSignal",
+              "purpose": "Combined transport/request and session-lifetime cancellation.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "TrustedRpcContext",
+              "purpose": "New optional fourth argument minted by server; includes owner-validated out-of-band carrier and registerDrain.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Existing stream result shape; full admitted work may remain tracked by drain after terminal response."
+          },
+          "errors": [
+            {
+              "type": "session-expired",
+              "condition": "Lost, expired or wrong-owner binding detected before dispatch or cache/continuation reuse."
+            }
+          ],
+          "preconditions": [
+            "Additive optional fourth argument preserves old three-argument streaming handlers. directDispatch supplies frozen trusted context on both unary and stream paths, not caller params.",
+            "Session-bound stream uses RequestLifetime completion/seal/drain in finally even on send failure. Router activity/maintenance hold lasts through stream completion AND owned drain. Owner abort affects only bound work."
+          ],
+          "postconditions": [
+            "createStepCallHandler accepts the new fourth context, derives caller cwd/envRepo/client separately, and merges validated carrier only from server context. StepToolRunner gains an optional fourth internal context argument; StepCallContext gains readonly connectionAccess/executionPolicy fields set by the host.",
+            "forwardStep attaches EVERY fresh socket before step.call. No bootstrap capability in rawArgs, serialized caller context or environment. Attach acknowledgement must match current daemon epoch; failure rejects instead of dispatching saved-only.",
+            "Session-authenticated routing is decided before worker selection for stream/unary traffic. Only session management/safe metadata, draft probes, read-only db tools and analyze calls are admitted in session-memory mode. Session-bound workflow/build/review/tracker or other unclassified persistence-capable methods return upgrade-required before executing; they are not silently downgraded.",
+            "Any session-bound persisted run/status/continuation lookup validates owner BEFORE loading outputs. Owner-derived memory policy remains sticky through one-shot, multi-turn, nested task and provider calls; missing policy/binding fails closed."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WorkbenchConnectionSession",
+        "change": "new",
+        "details": "Proposed daemon-memory aggregate: random handle, capability digest, epoch, monotonic leaseDeadline, current control identity/generation, authenticated data attachments, per-root overlays, memory signing key and owned run cancellations. Direction/cardinality: session owns0..many repo overlays and transport attachments; overlay belongs exactly1 session and1 canonical root; session owns no saved pool. Logical ACTIVE→CLOSING→CLOSED state is irreversible. Reconnect can rebind while active, never revive expired session. Unfinished cleanup retains only closed resource handles, not retrievable configs/credentials. No session data is stored in DB/JSON/keychain.",
+        "callSites": [
+          "src/daemon/server.ts",
+          "src/daemon/request-context.ts",
+          "src/daemon/threads/channel.ts",
+          "src/daemon/connection-management-rpc.ts"
+        ]
+      },
+      {
+        "entity": "TemporaryOverlayEntry",
+        "change": "new",
+        "details": "Each (session,canonical root,id) owns one current immutable config/credential generation and revision plus active callback leases, construction/close promise and memory-only file execution resource. Different sessions may reuse IDs without sharing drivers/tables. Shared root mutation gate excludes saved-vs-temporary ID races; saved creates query all active reservations. Existing saved registry generation and unknown fields untouched. Config/read responses go through driver-profile safe allowlist; parent memory-only runtime construction bypasses keychain. Dynamic logs never contain source/options/URL/secrets; SDK logging policy must also be quiet for temporary operations.",
+        "callSites": [
+          "src/daemon/db/pool-cache.ts",
+          "src/daemon/db/pool.ts",
+          "src/daemon/db/__tests__/connection-leases.test.ts",
+          "src/daemon/db/__tests__/owned-file-driver.test.ts"
+        ]
+      },
+      {
+        "entity": "TemporaryOperationReceipt",
+        "change": "new",
+        "details": "Session+repo+operation ID indexes canonical keyed request HMAC and sc2 safe committed outcome; no plaintext patch or credentials. Receipt belongs exactly1 session and1 overlay/root; multiple receipts may refer to an entry revision. TicketexpiresAt=min(now+90000ms,current signed lease expiry); heartbeat extends session life but not previously issued tickets. Committed receipt remains queryable for entire session, even expired ticket; expired ticket with no receipt returns reconciliation-required; epoch/session loss always session-expired. Concurrent same-ID calls share in-flight result. Capacity refuses new ticket/commit before state change rather than discarding live history.",
+        "callSites": [
+          "src/shared/connection-management.ts",
+          "src/daemon/connection-management-rpc.ts"
+        ]
+      },
+      {
+        "entity": "ConnectionAccessContext",
+        "change": "invariant-change",
+        "details": "No sc3 wire shape change: optional sessionHandle is only a daemon-validated authority reference. Add an out-of-band execution-context carrier to ToolDeps, analyzer runtime/exploration/measure and MCP handler lifetimes. No raw capability/session metadata in prompt/tool args/analyze opaque state/checkpoint/artifacts. Maintain daemon-memory continuation binding so a temporary run whose process/context is lost fails explicitly rather than reconstructing saved-only authority. Saved-only consumers still use their exact own-directory lookupRoot; attach never grants management eligibility.",
+        "callSites": [
+          "src/analyze/connection-access.ts",
+          "src/analyze/runtimes/data/_shared.ts",
+          "src/analyze/measure.ts",
+          "src/analyze/explore/db-tables-list.ts",
+          "src/analyze/explore/db-table-describe.ts",
+          "src/daemon/tools/builtins/db/index.ts",
+          "src/daemon/tools/builtins/data/schema-drift.ts"
+        ]
+      },
+      {
+        "entity": "SessionExecutionPolicyAndMigrationInventory",
+        "change": "invariant-change",
+        "details": "Review correction: all session-attached execution is conservatively session-memory, including saved-only steps within that execution and every dependent plan/report/error result. This is a daemon-derived sticky policy, never an input flag. Validate active owner/root and every previously used connection revision before executing, serving prior state or consulting any memory result. First admission forbids all shared/persistent cache reads AND writes; there is no cross-call memory result cache in this design. Existing opaque continuation results remain only in session-owned memory and are invalidated on any used revision change, session end or epoch loss. A revision change returns conflict/restart guidance rather than reusing stale outputs. Scope selection is validated before any cache optimization. [[c12]]\n\nNo getCachedExploration/putCachedExploration for either executePlan or stepPlan, including narrow resume, parameter substitution and dependency outputs. No readBundle/writeBundle, shaper tool-result dump, planner attempt/feedback/final plan, task record, orchestrator run record, analyze trace, chat/tool history, artifact/checkpoint, LMDB/Lance or telemetry output containing session-derived input/output is read/written by a session-memory run. There is no output persistence followed by cleanup: writes are prevented before the sink. Existing saved-only calls retain existing caching. A future caller that cannot propagate the sticky policy must reject before executing a temporary operation; a persisted record may contain no reusable session authority or output. [[c12]]\n\nS003 also routes session-derived provider requests only through a provider mode whose local history/cache/trace behavior has been proven nonpersistent; a provider/CLI path that cannot meet this boundary returns unsupported-temporary before sending source data. No cloud SDK or direct REST provider is added. Configs/secrets/capabilities never enter prompts regardless of provider. Normal saved runs retain their behavior. Resource budget is the production sc8 default256MiB, not the test helper's64MiB override. [[c13]]\n\nProposed additive internal carrier (not a wire schema): readonly connectionAccess?: ConnectionAccessContext; readonly executionPolicy?: { readonly mode: 'saved' | 'session-memory'; readonly bindingId: string }; bindingId is an opaque daemon-memory owner/run lookup, never trusted from params and never persisted. ShapeOpts/RunShaperArgs, ExecutePlanArgs, ExplorationRunnerContext, TemplateExecuteArgs, RunExecutorArgs, ToolDeps and StepCallContext inherit the same carrier. Any session-memory call without a live binding fails session-expired. Main-daemon owner records hold cancellation/drain and used-revision vector; callbacks pass the carrier explicitly, not a global mutable current session.\n\nConcrete migration inventory (proposed changes; existing behavior established by supplemental analyzer plus direct reads and the current TypeScript-resolved source inventory). Rows grouping files require the named proving test to exercise EACH listed site and every runtime branch, not just a helper. [[c12]] [[c14]]\n\n| Production site | Current owner/behavior | Proposed owner/change | Required regression |\n| --- | --- | --- | --- |\n| src/daemon/server.ts | StreamHandler currently receives params/send/signal only; directDispatch stream branch makes separate controller. | Add optional fourth TrustedRpcContext, built from server-minted identity + request/session lifetime; complete streams in finally and retain registered drains after response/disconnect. | CM-S3-STREAM |\n| src/daemon/request-context.ts | RequestLifetime and unary trusted authority exist. | Owner installs immutable validated connectionAccess on local context; combined request+session abort and synchronous drain admission. | CM-S3-STREAM |\n| src/daemon/threads/router.ts; src/daemon/threads/method-class.ts; src/daemon/threads/channel.ts | Router may select a session worker and channel projects only connectionIdentity/epoch. | Force every authenticated session-bound request and session bootstrap/attach/heartbeat/end to main before worker selection, including step.call/analyze.run.start/tools; detach/disconnect completes same lifetime. Never clone capability/signal/drain. | CM-S3-STREAM |\n| src/mcp/forward-step.ts | Fresh socket per forwardStep; caller context serialized as cwd/envRepo/client. | For every new socket, send private session.attach and await success before step.call on that SAME socket; bootstrap is read from inherited pipe and held only in forwarder memory, never rawArgs/context/env. Attach failure aborts without dispatch; no retry as unattached. Leave saved-only forwarding unchanged. | CM-S3-MCP |\n| src/daemon/steps/host.ts; src/shared/step-context.ts | createStepCallHandler builds StepCallContext solely from p.context; StepToolRunner accepts args/signal/progress. | Accept trusted fourth stream context; sanitize caller cwd/envRepo/client separately, then supply out-of-band validated connectionAccess + executionPolicy + drain through StepCallContext and optional fourth StepToolRunner argument. Reject forged context fields. AsyncLocalStorage remains per-call plumbing, not a global session. | CM-S3-MCP |\n| src/daemon/steps/analyze-oneshot.ts; src/daemon/steps/analyze-step/handler.ts; src/daemon/steps/analyze-step/phases/start.ts; src/daemon/steps/analyze-step/phases/plan.ts; src/daemon/steps/analyze-step/phases/narrow.ts; src/daemon/steps/analyze-step/phases/bundle.ts | One-shot/step dispatch currently derives options from inputs; step trace may append full input/output. | Take validated access/policy from host and pass explicitly to every context/measure/explore execution. Disable trace for the entire session-bound call. No input field can downgrade policy or change owner. | CM-S3-CONTEXT |\n| src/daemon/steps/analyze-step/state.ts; src/daemon/steps/analyze-step/state-store.ts; src/daemon/threads/step-state.ts | Opaque token references server-memory continuation; token alone is not session authority. | Keep owner/root/revision-vector/policy binding in daemon-only state; validate authenticated attachment and session/revision BEFORE loading/serving prior outputs or advancing token. Expiry removes tokens/outputs; loss returns session-expired; tokens may not be replayed across sessions. | CM-S3-CACHE |\n| src/daemon/handler-runtime.ts; src/daemon/analyze-rpc.ts | analyze.run.start wrapper discards trusted context; run/status/resume use durable run records. | Forward trusted fourth context and policy through runStart and run registry; session runs use owner-bound memory records/results/status only. Status/cancel/resume require same authenticated owner. Add no durable run.json or worker-store mirror for session run. | CM-S3-CONTEXT |\n| src/analyze/connection-access.ts | analysisConnectionContext creates synthetic saved-analysis context. | Add optional validated ConnectionAccessContext argument; exact lookupRoot must match; preserve original saved-only default only for unattached policy. Missing authority under session-memory policy throws session-expired. | CM-S3-COMPAT |\n| src/analyze/explore/types.ts; src/analyze/explore/executor.ts | ExplorationRunnerContext/ExecutePlanArgs lack owner policy; executePlan/stepPlan read cache before runner. | Add optional validated access/policy to args and runner context. Under session-memory policy bypass every getCachedExploration/putCachedExploration branch, including narrow results and dependent outputs; authorize before previous-state output reuse. | CM-S3-CACHE |\n| src/db/exploration-cache.ts | Repo/index/params key; entire output persisted to LMDB. | Saved-only implementation remains; execute paths never call it for session-memory work. Optional internal policy guard refuses session writes if a future caller bypasses dispatch. Do not add a session key to persistent LMDB as a fix. | CM-S3-CACHE |\n| src/analyze/context/driver.ts; src/analyze/context/cache.ts | runShaper reads/writes bundle cache and may write shaper tool-result files. | RunShaperArgs gains inherited immutable execution policy; session-memory bypasses readBundle/writeBundle and tool-result dumps on success/error/retry paths. No context cache read even for pure-code substeps of the same run. | CM-S3-CACHE |\n| src/analyze/planner/driver.ts; src/analyze/planner/cache.ts | Planner attempts/feedback/final plan use disk. | Pass policy through recursive planner calls; session-memory keeps attempts, feedback and plans only in bounded owner-memory run records and never reads prior persisted plans. | CM-S3-CACHE |\n| src/analyze/executor/types.ts; src/analyze/executor/walker.ts; src/analyze/executor/cache.ts; src/analyze/orchestrator/persistence.ts | Task records and orchestrator run records persist full outputs/run metadata. | TemplateExecuteArgs/RunExecutorArgs gain optional validated access/policy propagated to child plans; skip every task/run disk read/write. Whole run memory-only is sticky across dependencies, failed results, reports and retries; no per-task downgrade. | CM-S3-CACHE |\n| src/analyze/runtimes/data/_shared.ts | Injected acquireDataPool and createConnectionResolver have no sessionOverlay. | Install owner overlay provider; acquireDataPool remains saved-only implementation/test seam. dataScopeOf retains exact own-directory lookup. Bound context and selected connection flow to all data callbacks. | CM-S3-ISOLATION |\n| src/analyze/runtimes/data/discovery-connections.ts; src/analyze/runtimes/data/discovery-objects.ts; src/analyze/runtimes/data/schema-table.ts | Data resolver consumers build saved analysis access. | Use inherited context, list and complete callback leases; pin selected ID/revision across multistep use and reject wrong root. | CM-S3-ISOLATION |\n| src/analyze/explore/db-connections-list.ts; src/analyze/explore/db-tables-list.ts; src/analyze/explore/db-table-describe.ts | Each has injected pool alias/createConnectionResolver. | Retain injected saved pool ports and add sessionOverlay + validated context; never fall back to raw acquire; authorization precedes cache hits in executor. | CM-S3-ISOLATION |\n| src/analyze/measure.ts | acquireDataPool alias and resolver used in connection size measurement. | Use validated execution access and callback lifetime during measurement as well as main runner; suppress persistent measurements for session run. | CM-S3-ISOLATION |\n| src/daemon/tools/types.ts; src/daemon/tools/executor.ts | ToolDeps has chat sessionId, repoPath and optional signal, not workbench access. | Add readonly connectionAccess and executionPolicy optional internal fields; fill from daemon execution owner only, not tool JSON. Inherit session abort+drain through nested tools; chat sessionId never authorizes. | CM-S3-CONTEXT |\n| src/daemon/tools/builtins/db/index.ts; src/daemon/tools/builtins/data/schema-drift.ts | Direct savedConnectionResolver sites for discovery, config validation, pin and full callback. | Replace each production site with installed context-bound resolver and ToolDeps-derived access; pin remains full-use. Data/config results inherit session-memory policy and cannot be persisted by tool-result history. | CM-S3-ISOLATION |\n| src/daemon/connection-management-rpc.ts | Existing v2 method catalog/saved resolver and S002 prepareTemporary edit hook. | Add strict sc5 session methods and temporary ticket/status/mutate/read/activate adapters. New temporary draft tests keep S002 sessionless-create semantics; existing-row edits use session owner through prepareTemporary. Reject removal; S004 owns it. | CM-S3-AUTH |\n| src/daemon/db/management.ts; src/daemon/db/management-startup.ts; src/daemon/db/management-adoption.ts | withSavedRootGate, saved owner/pool acquisition and maintenance lock. | Consume existing withSavedRootGate for temporary commit/reservation; inject active-overlay ID check into saved create under the SAME gate. Saved startup/adoption stay saved-only and never enumerate temporary credentials/resources. | CM-S3-COLLISION |\n| src/daemon/db/pool-cache.ts; src/daemon/db/pool.ts | Saved cache, createConnectionResolver/sessionOverlay port, repo registerEphemeral/build. | Install owner overlay in context-aware resolver only; shared saved pool and legacy registerEphemeral remain excluded from user temporary registration. Add collision check before choosing session vs saved; keep saved root compatibility. | CM-S3-ISOLATION |\n| src/daemon/db/registry.ts; src/daemon/db/index.ts; src/shared/db-driver.ts; src/shared/connection-management.ts | Factory/type exports and shared resolver/lease/file policy contracts. | No factory redesign: overlay consumes getFactory/materializeDraft/lease-gate; temporary construction passes explicit memory-only authority and never resolveConfigSecrets. Shared protocol additions only, no public BaseDriver change. | CM-S3-LEASE |\n| src/bin/insrc-connection-test.ts; src/daemon/db/draft-test.ts | S002 probe worker factory and drain owner. | Excluded from S003 redesign; owner cancellation uses existing S002 supervisor and readonly prepareTemporary. Keep child private IPC/10s/250ms reap unchanged. | CM-S3-EXPIRY |\n| src/daemon/db/drivers/mssql.ts; src/db/store-guard.ts; src/shared/locks/lock-manager.ts | Inventory acquire-call matches are SDK pool or storage/lock primitives. | Classified exclusions: not management DriverPool consumers. MSSQL SDK lifetime remains enclosed by outer callback lease; storage/lock APIs never receive session connection authority. | CM-S3-INVENTORY |\n| src/daemon/index.ts; src/daemon/db/management-enablement.ts | Daemon shutdown and source/compiled capability gate. | Stop sc5 admission before shutdown; abort/drain owner runs and owned resources before stores close. Require complete consumer+serializer inventory evidence for temporary advertisement; keep existing disabled prerequisites intact. | CM-S3-GATE |\n| src/daemon/db/__tests__/connection-source-inventory.ts; src/analyze/__tests__/connection-consumers.test.ts | Current inventory resolves driver/resolver aliases, not transport or persistence APIs. | Extend inventories with explicit stream host/forwarder/state/cache/planner/task/run/trace sink families and exported aliases. Compare current production site set to this table; unknown new site blocks enablement. This table is present design discovery, not discovery deferred to BUILD. | CM-S3-INVENTORY |",
+        "callSites": [
+          "src/analyze/explore/executor.ts",
+          "src/db/exploration-cache.ts",
+          "src/analyze/context/driver.ts",
+          "src/analyze/context/cache.ts",
+          "src/analyze/executor/cache.ts",
+          "src/analyze/executor/walker.ts",
+          "src/analyze/planner/cache.ts",
+          "src/analyze/orchestrator/persistence.ts",
+          "src/mcp/forward-step.ts",
+          "src/daemon/steps/host.ts",
+          "src/daemon/server.ts",
+          "src/shared/step-context.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Implement the chosen memory owner, authenticated control/data attachment lifecycle, heartbeat/expiry, overlay+receipt identity, cancellation/drain and explicit sc5 integration ports consumed by S004/S005."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Strict additive session RPC methods; use existing connection key/scope/schema, safe descriptor/projection and error codes. Capabilities advertise session support only after existing release gate and session propagation evidence; no v2 method silently changes legacy return shapes."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reuse MutationRequest, signed OperationTicket shape, safe MutationOutcome and canonical request HMAC primitives with session-local ephemeral key/receipts. Existing saved coordinator gains only an active-ID reservation callback under its root gate; no saved commit/recovery redesign."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Use sessionOverlay and callback lease contract; propagate trusted context additively to all inventoried consumers, and invalidate on owner expiry. Export an internal drain/lease port to S004 without implementing removal UI/coordination."
+      },
+      {
+        "contractId": "sc8",
+        "role": "consumes",
+        "howDetails": "Use existing memory-only execution/conversion at root/session/id/revision identity,256MiB/resource,allowSpillfalse. All native and converted readers use shared implementation; if absent/overbudget reject explicitly before persistent writes. No converter redesign."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Forged/stale capability, epoch or attachment",
+          "detection": "Strict bounded decoder rejects extra fields; constant-time digest comparison, current control generation, daemon epoch and monotonic active-state checks fail before lookup or credential access.",
+          "response": "Fixed session-expired; zero driver creation/registry/keychain access; never fallback to saved or log the rejected token.",
+          "userImpact": "Reconnect with still-live private capability or re-add temporary connections after expiry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Root is unregistered, canonical mismatch or overlay belongs to another lookupRoot",
+          "detection": "realpath+registered-root eligibility check and exact overlay root comparison run at admission and after awaits.",
+          "response": "invalid-input for malformed/unregistered management root; session-expired for unauthorized attachment/root context. Saved-only scope-local reads remain unchanged.",
+          "userImpact": "Select the intended registered repository; saved sources can still be read through the legacy lane.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Saved/temporary creation races or update during full-use lease",
+          "detection": "Inside existing root mutation coordinator check saved IDs and all live overlay reservations atomically with commit; verify expected revision and foundational active/barrier counts.",
+          "response": "duplicate-id, conflict or busy with no partial memory commit or persistent changes.",
+          "userImpact": "Choose another ID or retry after current use; never silently replace/shadow a source.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Lost response or changed payload reuses operation ID",
+          "detection": "Session-memory ticket signature/epoch/root/key/mode/expiry checks and canonical payload HMAC compare against in-flight/receipt entry.",
+          "response": "Identical replay/status returns same committed result; changed body operation-mismatch. Expired ticket with no receipt reconciliation-required. Missing session always session-expired, not not-seen.",
+          "userImpact": "Client can distinguish committed addition from a retry that must not happen.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Expiry/end races with preparation, construction, activation, callback or temporary draft probe",
+          "detection": "Registry marks CLOSING synchronously, invalidates attachments/entry generation, aborts run signals, and checks generation after every awaited operation before publication.",
+          "response": "Reject new work session-expired; late built resources immediately enter owned close; no late entry resurrection. Preserve safe already-committed receipt only while session remains active. End acknowledges only after drain; transport lifetime retains cleanup even if response disappears.",
+          "userImpact": "Current temporary operation is canceled; re-add in a new session when needed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Temporary runtime, conversion or disposal fails",
+          "detection": "Owned construction/probe/close promises reject; sc8 reports unsupported-temporary/resource-limit before persistence, and parent counters detect non-drained resources.",
+          "response": "Safe fixed activation failed/pending outcome after memory commit; no false rollback or source deletion. CLOSING remains inaccessible and retains retryable cleanup handles/counters; close failure is not swallowed. Reuse S002 force-reap only for its own probe children, never arbitrary PIDs.",
+          "userImpact": "Row may be session-added but activation failed; safe guidance permits revision-scoped activation retry. End may report pending cleanup without reviving the row.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Quota exhaustion or attempt to persist temporary authority/config",
+          "detection": "Admission compares fixed memory/session/receipt limits before commit; production serialization inventory and allowlists reject sessionHandle/capability/effective config in durable request/run artifacts and telemetry.",
+          "response": "busy without evicting live state; deny persistence path and return fixed safe failure. Drop raw SDK errors and suppress credential/source-bearing logs.",
+          "userImpact": "User can end unused sessions or use saved scope deliberately; no automatic save/cache fallback.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Persistent cache hit or continuation attempts to bypass owner resolution",
+          "detection": "At run admission and before any prior-output reuse, validate live daemon binding and used-revision vector. Sticky session-memory policy prevents every shared cache read/write, including error/retry branches; spy tests check sink calls, not only final files.",
+          "response": "No persistent read/write; recompute under current owner. Revision change yields conflict; owner loss yields session-expired. Never trust a cached same-ID saved result. Reject unsupported persistence-capable methods/providers before executing.",
+          "userImpact": "Temporary results stay isolated; caller restarts stale work instead of seeing another session data.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Same temporary ID in sessions A and B at the same root",
+          "expected": "Allowed; separate immutable generations, credentials, resources, receipts and leases. Saved create with that ID is blocked until both reservations are gone."
+        },
+        {
+          "input": "Panel close or repository A→B→A switch",
+          "expected": "No lifecycle event; same session retains both root overlays. Only current exact-root access resolves each overlay; control heartbeats continue independently."
+        },
+        {
+          "input": "Control disconnect followed by resume within90seconds",
+          "expected": "Data remains in memory; resume with same capability/epoch transfers control generation. Old control heartbeat/end cannot affect new generation. A disconnected data request cancels only its owned work, not the whole session."
+        },
+        {
+          "input": "Heartbeat arrives exactly at deadline or wall clock moves",
+          "expected": "Expire before authenticating at >=monotonic deadline. Wall-clock ticket time remains bounded by signed issued expiry; it never authorizes an expired monotonic session."
+        },
+        {
+          "input": "Unattached CLI/MCP or legacy directory-scoped saved analysis",
+          "expected": "Saved-only lookup with exact original scope root, including unregistered/nested saved registries. No implicit management eligibility or auto-created session."
+        },
+        {
+          "input": "An analysis continuation/checkpoint survives daemon epoch change",
+          "expected": "Continuation with temporary-use marker requires a live daemon-memory binding; if absent reject session-expired with re-add guidance. Never reconstruct temporary authority from checkpoint or reuse same-named saved source."
+        },
+        {
+          "input": "Header-only file or unavailable Arrow/Feather reader",
+          "expected": "Retain sc8 truth: valid empty input may succeed; missing local reader reports unsupported-temporary before any INSTALL/temp/cache write. S003 does not silently enable absent readers."
+        },
+        {
+          "input": "Capability-gated release still disabled or mixed-version client",
+          "expected": "No temporary features advertised and no session mutation admitted. Existing saved reads remain available; return upgrade-required for unsupported session methods."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "sc1/sc3 safe keys/access and callback leases remain authoritative; discovery bundle symbol.locate and manual pool-cache read establish current signatures.",
+          "source": "c1"
+        },
+        {
+          "text": "Legacy repo-pool registerEphemeral must not become a user session store; usage.example graph was incomplete and manual inventory confirms the existing definition only.",
+          "source": "c3"
+        },
+        {
+          "text": "Server-minted identity/epoch and main-daemon request lifetime remain unforgeable; consume S002 prepareTemporary and private worker lifecycle rather than redesign it.",
+          "source": "c4"
+        },
+        {
+          "text": "Existing resolver/owned-file/context tests stay regression gates; session work extends them with actual production wiring and zero-persistence evidence.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pure protocol bounds, state transitions, signed ticket/HMAC and fixed capacity checks with deterministic monotonic clock; not a substitute for production lifecycle wiring.",
+          "subjects": [
+            "CM-S3-AUTH: real IPC sessions reject forged tokens epochs roots and stale control generations; data attachments cannot heartbeat or end another session.",
+            "CM-S3-REPLAY: identical concurrent mutations and lost replies reconcile once; changed payloads expired tickets quotas and expired sessions never fabricate not-seen or partial commits."
+          ],
+          "fixturesNeeded": [
+            "Fake monotonic clock and wall clock with forward/backward jumps; deterministic scheduler; fake credentials only."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise actual socket handlers, root coordinator, memory owner, production resolver/leases, SDK-backed local protocol fixtures and process cancellation; assertions use exact canary snapshots and positive controls.",
+          "subjects": [
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-ISOLATION: real SQL KV and native/converted file callbacks resolve only their session and exact root; identical IDs never share credentials resources or rows.",
+            "CM-S3-COLLISION: concurrent saved and temporary creation shares the real root gate and permits one winner; duplicates across visible scopes reject without shadowing.",
+            "CM-S3-LEASE: revision pin spans the full multi-call callback and failed construction; concurrent update returns busy and resources close only after use drains.",
+            "CM-S3-EXPIRY: end heartbeat loss exact deadline and restart forbid new resolution, abort real operations and probes, await late construction/close and leave zero session entries children leases and resource counters.",
+            "CM-S3-RECONNECT: control reconnect within90seconds preserves overlays while panel close and root switches do not end session; old control generation cannot renew or end resumed session.",
+            "CM-S3-CONTEXT: production analyzer runtime exploration measurement db tools schema-drift and MCP consume only validated out-of-band access; missing or lost binding never falls back from temporary to saved.",
+            "CM-S3-FILES: every native and converted temporary reader uses existing memory-only sc8 policy with session/root/revision identity; unsupported and overbudget inputs fail before writes or INSTALL.",
+            "CM-S3-COMPAT: unattached and nested/unregistered saved scope lookup pinned families strict legacy results and S002 draft probe cancellation remain unchanged.",
+            "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
+            "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+          ],
+          "fixturesNeeded": [
+            "Two workbench control sockets plus data sockets, two roots and a nested unregistered saved directory; exact fake keychain and saved metadata bytes.",
+            "Existing PostgreSQL and Dynamo local protocol servers with distinct credentials/rows per session; actual source and compiled S002 probe workers.",
+            "Valid native csv/tsv/json/jsonl/ndjson/parquet and converted avro/bson/fixed-width/xlsx; Arrow/Feather explicitly unsupported when reader absent, never a green skip.",
+            "Delayed real driver use/build/close, captured child/stdout/stderr and normal daemon logs; recursive isolated HOME/TMP/cache watches and positive auth/row controls.",
+            "Private inherited MCP bootstrap pipe and actual MCP↔daemon request lifecycle, nested analysis sessions and overlapping jobs; no real cloud/LLM providers needed.",
+            "Prewarm real saved exploration LMDB/bundle/planner/task caches with source canaries; run session A then B with identical IDs/params, update revisions and expire bindings. Assert actual cache getters/setters not called for session work and recursive file/LMDB/Lance/history/trace snapshots unchanged. Use positive controls proving saved cache hits still work.",
+            "Actual fresh-socket MCP forwarder attaches on every invocation; real StreamHandler fourth trusted context and request drain under Router/maintenance owner; replay continuation token across sessions before any output load."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove trusted-context/serialization closure and mixed-version gating in production, supplementing incomplete graph with TypeScript-resolved full source inventory.",
+          "subjects": [
+            "CM-S3-INVENTORY: type-resolved production source inventory classifies every alias injected resolver factory driver-use and serializer path; no unclassified consumer or authority persistence remains.",
+            "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites."
+          ],
+          "fixturesNeeded": [
+            "Extend existing connection-source-inventory and connection-consumers tests to resolve aliases/injected methods; explicit allow/exclusion rationale per production site.",
+            "Real analyzer continuation and checkpoint/telemetry serializers with config/capability canaries, daemon-memory temporary-use marker and absent-binding negative.",
+            "Source and compiled release-evidence manifests; actual client-shaped requests reject unsupported methods and malformed bounded JSON."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Final regression evidence after implementation; focused tests per task, full suite only after every S003 implementation task.",
+          "subjects": [
+            "CM-S3-SWEEP: after all implementation tasks run final build and one full regression sweep; record actual failures skips and timeouts and keep release disabled for unresolved prerequisites."
+          ],
+          "fixturesNeeded": [
+            "Node22 native ABI, npm run build, node --import tsx --test suites; live LLM suites disabled and skips/timeouts reported explicitly.",
+            "No user daemon restart, real registry adoption, real credential migration or enabling release; MSSQL actual-service coverage remains separately pending Linux x64 CI."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "CM-S3-AUTH: real IPC sessions reject forged tokens epochs roots and stale control generations; data attachments cannot heartbeat or end another session.",
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-ISOLATION: real SQL KV and native/converted file callbacks resolve only their session and exact root; identical IDs never share credentials resources or rows.",
+            "CM-S3-COLLISION: concurrent saved and temporary creation shares the real root gate and permits one winner; duplicates across visible scopes reject without shadowing.",
+            "CM-S3-LEASE: revision pin spans the full multi-call callback and failed construction; concurrent update returns busy and resources close only after use drains.",
+            "CM-S3-REPLAY: identical concurrent mutations and lost replies reconcile once; changed payloads expired tickets quotas and expired sessions never fabricate not-seen or partial commits.",
+            "CM-S3-CONTEXT: production analyzer runtime exploration measurement db tools schema-drift and MCP consume only validated out-of-band access; missing or lost binding never falls back from temporary to saved.",
+            "CM-S3-INVENTORY: type-resolved production source inventory classifies every alias injected resolver factory driver-use and serializer path; no unclassified consumer or authority persistence remains.",
+            "CM-S3-FILES: every native and converted temporary reader uses existing memory-only sc8 policy with session/root/revision identity; unsupported and overbudget inputs fail before writes or INSTALL.",
+            "CM-S3-COMPAT: unattached and nested/unregistered saved scope lookup pinned families strict legacy results and S002 draft probe cancellation remain unchanged.",
+            "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites.",
+            "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
+            "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "CM-S3-EXPIRY: end heartbeat loss exact deadline and restart forbid new resolution, abort real operations and probes, await late construction/close and leave zero session entries children leases and resource counters.",
+            "CM-S3-RECONNECT: control reconnect within90seconds preserves overlays while panel close and root switches do not end session; old control generation cannot renew or end resumed session.",
+            "CM-S3-CONTEXT: production analyzer runtime exploration measurement db tools schema-drift and MCP consume only validated out-of-band access; missing or lost binding never falls back from temporary to saved.",
+            "CM-S3-MEMORY: production temporary create update list activation and replay keep exact registry/keychain/filesystem/log snapshots unchanged while safe results omit config and credential canaries.",
+            "CM-S3-GATE: temporary capability fails closed for missing stale source/compiled evidence or incomplete inventory and never enables deferred foundation or SQL Server prerequisites.",
+            "CM-S3-SWEEP: after all implementation tasks run final build and one full regression sweep; record actual failures skips and timeouts and keep release disabled for unresolved prerequisites.",
+            "CM-S3-CACHE: real executePlan stepPlan context planner task and run paths bypass all persistent reads/writes under session authority; warm saved and sessionA caches never satisfy sessionB, revisions or expired bindings.",
+            "CM-S3-STREAM: real unary and streaming directDispatch plus Router propagate server-minted access and drains; forged params cannot attach authority and disconnect/send failure retain cleanup and maintenance exclusion.",
+            "CM-S3-MCP: each fresh forwardStep socket attaches before step.call; trusted host context and owner-bound continuations survive valid reconnect while wrong-session replay and lost bootstrap fail closed."
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test + node:assert/strict TypeScript tests executed with Node22 and tsx, as located in src/daemon/db/__tests__/connection-leases.test.ts, src/daemon/__tests__/connection-request-context.test.ts, src/analyze/__tests__/connection-consumers.test.ts and src/daemon/db/__tests__/owned-file-driver.test.ts. Fake/isolated local service fixtures; relevant suites per task and final full sweep after all implementation tasks. No claim that S003 tests have run during design."
+    },
+    "migration": {
+      "stateBefore": "S1 bundles symbol.locate and search.text plus manual src/daemon/db/pool-cache.ts reads establish a saved resolver with fail-closed optional sessionOverlay; src/analyze/connection-access.ts and toolAccess in src/daemon/tools/builtins/db/index.ts currently construct saved-only contexts. The repo pool has registerEphemeral but no demonstrated workbench session owner. S002 BUILD is approved with MSSQL actual-service coverage pending and one full-sweep warning; S001 review is deferred, and the shipped gate is disabled.",
+      "stateAfter": "Proposed: sc5 memory owner and strict session lifecycle methods supply isolated per-session/per-root temporary entries, receipts and resources through existing sc3 resolver hooks. Every inventoried analyzer/tool/MCP consumer carries daemon-validated context out of band; legacy/unattached saved-only paths keep their current lookup rules. No JSON/keychain/graph/vector migration, saved registry rewrite or existing connection adoption.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add additive bounded session protocol and daemon-memory owner behind disabled existing capability gate; keep saved APIs and all persisted formats unchanged. Add root coordinator reservation hook as a consumer of saved coordinator; no automatic registry adoption.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "existing connection management gate remains disabled"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Install owner lifecycle and overlay resolver hooks with memory-only credentials/resources. Add attach/control generation and shutdown drain, leaving user remove and UI to S004/S005. Build isolated real-IPC tests before any capability advertisement.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Propagate explicit trusted context through the complete analyzer/tool/MCP inventory and private bootstrap pipe. Keep session-bound calls main-daemon; attach no capability to serialized state and reject lost temporary continuations. Regenerate inventory as callers move; no production site left unclassified.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run each task's relevant suite, then final build/full sweep after all tasks. Review source/compiled gate evidence and exact no-persistence/cancellation tests. Keep feature disabled until foundation review, session inventory and both client integration prerequisites are independently verified; do not treat pending SQL Server coverage as green.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "independent S001 review and foundation gates",
+            "zero-unclassified session consumer/serializer inventory",
+            "S003 isolation/expiry/no-persistence checks",
+            "S005 client integration evidence before user release"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "On deliberate rollback disable session advertisement/admission first, expire and drain only owned temporary sessions/resources, then remove overlay/context wiring. Communicate temporary session loss as the documented ephemeral lifetime; saved registrations and keychain data are untouched. No live restart is part of design validation.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "All session protocol changes are additive; legacy list/save/test return shapes and S001 safe-read/profiles remain. Missing session context means saved-only only for a genuinely unattached new request. A request/continuation known to have used temporary state rejects if its binding is absent, with no same-name saved fallback. Exact nested/unregistered directory saved lookups and pinned legacy families are regression gates. Rollback intentionally loses ephemeral sessions, not saved data; old daemon/client combinations get upgrade-required rather than a fake empty list.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Session registry with owned in-memory entries",
+        "oneLineSummary": "One daemon session registry owns separate per-repository overlays of immutable temporary entries.",
+        "approach": "Smallest complete sc5 shape: daemon issues workbench handle/capability and keeps a memory-only session record with repo overlays, credentials and receipts. Each overlay implements the existing ConnectionResolver callback contract using the foundational lease gate, driver factories, materializeDraft and sc8 memory-only resource policy; it never registers into the saved pool. Trusted transport attachment and an explicit execution-context carrier provide access without changing wire MutationRequest/ConnectionKey semantics. Saved ID reservation and temporary commit share the existing per-root mutation coordinator. S004 consumes an internal lifecycle/removal port and S005 consumes the session protocol; no UI, converter or saved persistence redesign.",
+        "pros": [
+          "Strong ownership and exact memory-only boundary with no saved loader/keychain paths in temporary construction.",
+          "Fits existing sessionOverlay resolver injection and S002 prepareTemporary hook.",
+          "Minimum new state: session, repo overlay, entry, receipt and active-use records."
+        ],
+        "cons": [
+          "Must implement temporary entry lifecycle over existing lease primitives rather than reusing every DriverPool internal.",
+          "Requires complete consumer/context propagation inventory; incomplete graph alone is insufficient."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "One injected DriverPool per session and repository",
+        "oneLineSummary": "Each overlay delegates runtime entries to a pool whose configuration and secret providers are entirely in memory.",
+        "approach": "Keep the same sc5 session/capability protocol and sc1/sc2/sc3/sc8 contracts, but add explicit configuration-source and credential-source ports to DriverPool; instantiate one isolated temporary pool per session/repository. The saved default providers retain existing behavior, while the temporary providers have no disk/keychain capability. Memory-only policy identity uses session/repo/revision and session end closes the owned pool. Registry/tickets/receipts remain in the sc5 memory owner. This is an additive integration at the S001 pool port, requiring owner compatibility review rather than redesign of saved contracts.",
+        "pros": [
+          "Reuses current pool construction/idle-close and callback lease mechanics.",
+          "Single familiar runtime abstraction for saved and temporary drivers."
+        ],
+        "cons": [
+          "Broader changes to S001-owned pool internals and stronger proof against accidental reload/secret fallback required.",
+          "Current pool build calls saved secret resolution and reload paths, so injecting only a factory would be insufficient."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Protocol is compatible, but memory-only and lifecycle safety depend on broader changes to saved-pool internals; not the smallest complete integration."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "s003-session-ownership",
+      "narrative": "Shows the proposed in-memory ownership boundary. Sessions own repository overlays and receipts; overlays own entries and resources. Saved pools remain separate and only meet the overlay at the validated resolver.",
+      "classes": {
+        "WorkbenchConnectionSession": {
+          "description": "One daemon-epoch workbench lifetime; capability digest and signing key remain in memory.",
+          "attributes": {
+            "handle": {
+              "description": "Opaque random session identifier, never persisted.",
+              "range": "string",
+              "identifier": true
+            },
+            "overlays": {
+              "description": "Zero or more repository overlays exclusively owned by this session.",
+              "range": "RepositoryOverlay",
+              "multivalued": true,
+              "minimum_cardinality": 0
+            },
+            "attachments": {
+              "description": "Control and data transports authenticated to this session.",
+              "range": "TransportAttachment",
+              "multivalued": true,
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "RepositoryOverlay": {
+          "description": "Exactly one session and one canonical registered root; no saved registry ownership.",
+          "attributes": {
+            "entries": {
+              "description": "Temporary connection generations owned by this session/root.",
+              "range": "TemporaryEntry",
+              "multivalued": true,
+              "minimum_cardinality": 0
+            },
+            "receipts": {
+              "description": "Safe memory-only mutation outcomes retained through session lifetime.",
+              "range": "TemporaryReceipt",
+              "multivalued": true,
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "TemporaryEntry": {
+          "description": "One isolated temporary ID/revision and private credentials; owns runtime resource.",
+          "attributes": {
+            "resource": {
+              "description": "At most one constructed owned driver/private file resource for current generation.",
+              "range": "RuntimeResource",
+              "maximum_cardinality": 1
+            }
+          }
+        },
+        "TemporaryReceipt": {
+          "description": "One session/root operation result and request HMAC; never contains plaintext credentials.",
+          "attributes": {}
+        },
+        "TransportAttachment": {
+          "description": "Validated current control generation or data attachment; no authority from client labels.",
+          "attributes": {}
+        },
+        "RuntimeResource": {
+          "description": "Private driver/lease boundary; never shared with saved pool or another session.",
+          "attributes": {}
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "s003-session-lifecycle",
+      "narrative": "Proposed ordering across trusted control/data transports, session ownership, root mutation arbitration and leased resources. The admission barrier precedes cancellation and drain so expiry cannot publish late resources or silently resolve saved sources.",
+      "participants": [
+        {
+          "id": "control",
+          "label": "Workbench control channel",
+          "description": "Private in-memory capability holder, independent of panels and chat IDs."
+        },
+        {
+          "id": "owner",
+          "label": "Daemon session owner",
+          "description": "Validates capability/epoch/generation and monotonic lease; owns memory-only overlays."
+        },
+        {
+          "id": "gate",
+          "label": "Shared root coordinator",
+          "description": "Serializes saved/temporary reservations and revision changes."
+        },
+        {
+          "id": "data",
+          "label": "Attached analyzer/tool/MCP request",
+          "description": "Carries daemon-validated access out of band; never stores capability in request artifacts."
+        },
+        {
+          "id": "resolver",
+          "label": "Context-bound resolver",
+          "description": "Combines exact-root saved read with this session overlay after validation."
+        },
+        {
+          "id": "resource",
+          "label": "Owned driver/sc8 resource",
+          "description": "Callback leases cover full use; file resource is private and memory-only."
+        }
+      ],
+      "messages": [
+        {
+          "from": "control",
+          "to": "owner",
+          "label": "Open at registered canonical root",
+          "description": "Daemon mints session handle, capability and ephemeral signing key."
+        },
+        {
+          "from": "owner",
+          "to": "control",
+          "label": "Private bootstrap: epoch, handle, capability; heartbeat30s/lease90s",
+          "kind": "return",
+          "description": "Only private control channel receives credentials; no persistence/logging."
+        },
+        {
+          "from": "data",
+          "to": "owner",
+          "label": "Attach with private bootstrap capability",
+          "description": "Authenticate data transport to session without granting control heartbeat/end rights."
+        },
+        {
+          "from": "owner",
+          "to": "data",
+          "label": "Install sticky session-memory execution policy",
+          "description": "Before cache lookup, disable persistent exploration/bundle/planner/task/run/history/trace reads and writes for the whole session-bound run."
+        },
+        {
+          "from": "control",
+          "to": "owner",
+          "label": "Create/update temporary draft with signed ticket",
+          "description": "Strict sc1/sc2 request materializes owned memory credentials."
+        },
+        {
+          "from": "owner",
+          "to": "gate",
+          "label": "Check saved IDs, live reservations, expected revision and busy use",
+          "description": "Same root gate used by saved create; collision cannot race."
+        },
+        {
+          "from": "gate",
+          "to": "owner",
+          "label": "Commit memory entry/revision/receipt atomically",
+          "kind": "return",
+          "description": "No JSON/keychain/journal write; activation remains separate."
+        },
+        {
+          "from": "data",
+          "to": "resolver",
+          "label": "Resolve exact lookupRoot with validated session context",
+          "description": "Missing/stale temporary binding fails, never falls back to a same-named saved source."
+        },
+        {
+          "from": "data",
+          "to": "owner",
+          "label": "Validate active binding and prior revision vector",
+          "description": "Before any continuation result reuse, reject expired/wrong-owner/stale revision; never return a warm saved or other-session cache hit."
+        },
+        {
+          "from": "resolver",
+          "to": "resource",
+          "label": "Run full callback under revision lease",
+          "description": "Reuse sc3 lease accounting and sc8 session/root/id/revision resource identity."
+        },
+        {
+          "from": "control",
+          "to": "owner",
+          "label": "Explicit end, or owner detects90s heartbeat loss",
+          "description": "At deadline owner first marks CLOSING and rejects admission; panel close/root switch does not send end."
+        },
+        {
+          "from": "owner",
+          "to": "data",
+          "label": "Invalidate attachments and abort owned runs/probes",
+          "description": "Retain request drain until actual process and callback cleanup finish."
+        },
+        {
+          "from": "owner",
+          "to": "resolver",
+          "label": "Reject all new session resolution",
+          "description": "Root reservations remain until required in-flight construction/use is no longer publishable."
+        },
+        {
+          "from": "resolver",
+          "to": "resource",
+          "label": "Drain callback, cancel conversion and close owned resources",
+          "description": "No source file deletion or unrelated PID signaling."
+        },
+        {
+          "from": "resource",
+          "to": "owner",
+          "label": "Owned close/reap completes or safe cleanup-pending",
+          "kind": "return",
+          "description": "Only successful drain permits completed end acknowledgement; failures keep inaccessible cleanup state."
+        },
+        {
+          "from": "owner",
+          "to": "control",
+          "label": "End complete after drain; memory references removed",
+          "kind": "return",
+          "description": "No temporary state survives daemon epoch restart; logical erasure does not promise physical JS heap zeroization."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-er",
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "S003 context.assemble: symbol.locate e1 and manual src/shared/connection-management.ts; src/daemon/db/pool-cache.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "S003 context.assemble: data-model.trace e2; src/shared/db-driver.ts and manual src/daemon/db/pool.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "S003 context.assemble: usage.example e3/e7 and manual src/daemon/db/__tests__/connection-source-inventory.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "S003 context.assemble: search.text e4 and manual src/daemon/server.ts; src/daemon/request-context.ts; src/daemon/threads/channel.ts; src/daemon/connection-management-rpc.ts; src/analyze/connection-access.ts; src/daemon/tools/builtins/db/index.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "S003 context.assemble: test.locate e5/e6 and manual src/daemon/db/__tests__/connection-leases.test.ts; src/daemon/db/__tests__/owned-file-driver.test.ts; src/analyze/__tests__/connection-consumers.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md#63-e20261021484fcef7s003--use-temporary-connections-within-a-workbench-session"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/BUILD.md"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LIVE_DATABASE_FIXTURES.md"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "S003 design.story s2 alternatives.enumerate and s3 alternatives.judge (a1 winner)"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "S003 design.story s4 contract.detail, s5 error.paths, s6 test.strategy, s7 migration.write and s8 checklist.verify"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "S003 supplemental context: cache/stream symbol.locate and usage.example; direct reads of src/analyze/explore/executor.ts, src/db/exploration-cache.ts, src/analyze/context/driver.ts, src/analyze/context/cache.ts, src/analyze/executor/walker.ts, src/analyze/executor/cache.ts, src/analyze/planner/cache.ts, src/analyze/orchestrator/persistence.ts, src/daemon/steps/host.ts, src/daemon/server.ts and src/mcp/forward-step.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/db/file-policy.ts:17",
+      "quotedText": "memoryBudgetBytes: 256 * 1024 * 1024"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/daemon/db/__tests__/connection-source-inventory.ts:16"
+    }
+  ]
+}

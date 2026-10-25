@@ -1,0 +1,27 @@
+{
+  "stage": "design, not implementation",
+  "sourceInventory": "evidence/consumer-sites-before.json",
+  "reviewCorrections": [
+    "Entire session-bound execution bypasses persistent exploration/bundle/planner/task/run/history/trace caches and validates owner before memory continuation reuse",
+    "Production file budget corrected to 256 MiB",
+    "Concrete per-site context/transport/cache/serializer migration map and proving tests"
+  ],
+  "companions": [
+    {
+      "file": "er-model.html",
+      "exists": true,
+      "sourceInspected": true,
+      "renderingVerified": false,
+      "limitation": "Browser rendering unavailable; do not claim visual verification",
+      "sha256": "31a2a2e645836f18eb4b747c9d9bf8fa14f93404abe8904a65797cfc0c3af02b"
+    },
+    {
+      "file": "sequence-diagram.html",
+      "exists": true,
+      "sourceInspected": true,
+      "renderingVerified": false,
+      "limitation": "Browser rendering unavailable; do not claim visual verification",
+      "sha256": "9ce88b914bc57f622a8094f590c6251585780d3a7717649d28e7912c6010bb09"
+    }
+  ]
+}

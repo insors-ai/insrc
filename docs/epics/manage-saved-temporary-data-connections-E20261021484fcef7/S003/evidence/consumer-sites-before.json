@@ -1,0 +1,122 @@
+{
+  "src/analyze/explore/db-connections-list.ts": [
+    "symbol:acquirePool",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "resolver-member"
+  ],
+  "src/analyze/explore/db-table-describe.ts": [
+    "symbol:acquirePool",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "resolver-member"
+  ],
+  "src/analyze/explore/db-tables-list.ts": [
+    "symbol:acquirePool",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "resolver-member"
+  ],
+  "src/analyze/measure.ts": [
+    "symbol:acquireDataPool",
+    "pool-port-call",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "pool-member",
+    "resolver-member"
+  ],
+  "src/analyze/runtimes/data/_shared.ts": [
+    "symbol:acquireDataPool",
+    "symbol:acquirePool",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "symbol:dataConnectionResolver",
+    "pool-port-call"
+  ],
+  "src/analyze/runtimes/data/discovery-connections.ts": [
+    "resolver-member",
+    "symbol:dataConnectionResolver"
+  ],
+  "src/analyze/runtimes/data/discovery-objects.ts": [
+    "resolver-member",
+    "symbol:dataConnectionResolver"
+  ],
+  "src/analyze/runtimes/data/schema-table.ts": [
+    "resolver-member",
+    "symbol:dataConnectionResolver"
+  ],
+  "src/bin/insrc-connection-test.ts": [
+    "driver-port-call"
+  ],
+  "src/daemon/connection-management-rpc.ts": [
+    "resolver-member",
+    "symbol:savedConnectionResolver"
+  ],
+  "src/daemon/db/drivers/mssql.ts": [
+    "acquire-call"
+  ],
+  "src/daemon/db/index.ts": [
+    "symbol:acquirePool",
+    "symbol:DriverFactory",
+    "symbol:DriverPool",
+    "symbol:getFactory"
+  ],
+  "src/daemon/db/management-adoption.ts": [
+    "acquire-call"
+  ],
+  "src/daemon/db/management-startup.ts": [
+    "pool-port-call",
+    "symbol:acquirePool",
+    "symbol:DriverPool",
+    "acquire-call",
+    "pool-member"
+  ],
+  "src/daemon/db/management.ts": [
+    "symbol:DriverPool",
+    "pool-member"
+  ],
+  "src/daemon/db/pool-cache.ts": [
+    "pool-member",
+    "pool-port-call",
+    "symbol:acquirePool",
+    "symbol:ConnectionResolver",
+    "symbol:createConnectionResolver",
+    "resolver-port-call",
+    "symbol:DriverPool",
+    "symbol:savedConnectionResolver",
+    "resolver-member"
+  ],
+  "src/daemon/db/pool.ts": [
+    "symbol:DriverFactory",
+    "symbol:DriverPool",
+    "driver-port-call",
+    "symbol:getFactory",
+    "symbol:registerEphemeral",
+    "pool-member"
+  ],
+  "src/daemon/db/registry.ts": [
+    "symbol:DriverFactory",
+    "symbol:getFactory"
+  ],
+  "src/daemon/tools/builtins/data/schema-drift.ts": [
+    "resolver-member",
+    "symbol:savedConnectionResolver"
+  ],
+  "src/daemon/tools/builtins/db/index.ts": [
+    "resolver-member",
+    "symbol:savedConnectionResolver",
+    "symbol:withDriver"
+  ],
+  "src/db/store-guard.ts": [
+    "acquire-call"
+  ],
+  "src/shared/connection-management.ts": [
+    "symbol:ConnectionResolver"
+  ],
+  "src/shared/db-driver.ts": [
+    "symbol:DriverFactory"
+  ],
+  "src/shared/locks/lock-manager.ts": [
+    "acquire-call"
+  ]
+}

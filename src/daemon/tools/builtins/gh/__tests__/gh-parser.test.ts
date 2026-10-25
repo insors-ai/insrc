@@ -68,7 +68,14 @@ test('gh-parser.test.ts: every op\'s argv with --help as its own final token par
 		const canary = help(['issue', 'delete', '1', '--help'], watched);
 		assert.equal(canary.status, 0, canary.stderr);
 		assert.match(canary.stdout, /USAGE/);
+		await new Promise(resolve => setTimeout(resolve, 300)); // the proxy server lives in this process: let it see any connection
 		assert.equal(connections, 0, 'the canary made no request');
+		// the detector works: a call that does make a request reaches the proxy
+		const control = spawnSync('gh', ['api', 'rate_limit'], { env: { ...env(watched), GH_TOKEN: 'x' }, encoding: 'utf8', timeout: 20_000 });
+		void control;
+		await new Promise(resolve => setTimeout(resolve, 300));
+		assert.ok(connections > 0, 'a real request is seen by the proxy');
+		connections = 0;
 
 		let checked = 0;
 		const bad: string[] = [];
@@ -76,9 +83,8 @@ test('gh-parser.test.ts: every op\'s argv with --help as its own final token par
 			for (const def of tool.ops) {
 				for (const input of inputsOf(def)) {
 					const argv = buildArgv(def, input).slice(1);
-					// --help is its own final token: a query after `--` is only a positional, so the check argv stops before the `--`
-					const dashes = argv.indexOf('--');
-					const withHelp = [...(dashes >= 0 ? argv.slice(0, dashes) : argv), '--help'];
+					// --help is its own final token (a search query is a plain positional unless it starts with '-')
+					const withHelp = [...argv, '--help'];
 					const r = help(withHelp, dead);
 					checked += 1;
 					if (r.status !== 0 || !/USAGE/.test(r.stdout) || /unknown flag|unknown command|accepts at most|requires at least/.test(`${r.stderr}${r.stdout}`)) {

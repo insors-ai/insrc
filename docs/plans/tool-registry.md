@@ -276,3 +276,31 @@ s4 added and changed no failing test: the git, tools, executor and approval suit
 
 - `gh_repo_clone.extraArgs` stays as a listed schema exception (existing public input); a non-empty `extraArgs` makes the call destructive because `git clone` flags after `--` (for example `--upload-pack`) can run commands.
 - Accepted exclusions: replacing the content of an existing gist file (needs an editor) and `gh codespace cp --expand` (remote shell evaluation).
+
+## s5 outcome (2026-10-25)
+
+Built in twelve tasks (t1 to t12); every task passed the build gate. 68 gh tools are registered: the 46 existing ones (ids, inputs and result data unchanged, with two visible changes below) and 22 new family tools, each one tool with an `op`, a typebox input and an output union whose members carry the literal `op`.
+
+- **Shared pieces** (`src/daemon/tools/builtins/gh/helpers.ts`): the per-job limit table and `ghTimeoutMs`; `ghExec` over `runShellBytes` (4 MiB cap, cut-is-answer option, one sign-in probe for an ambiguous failure); `ghFailureOf` (one precedence; every failure of a changing call after the process starts says the outcome is unknown); `withGhFailureNet`; `ghApprovalClass` (none / common / destructive per tool and op; force, clobber, visibility, newName, newTag and a non-empty extraArgs make a call destructive).
+- **Op table** (`op-table.ts`): fields, rules between them (required, exactly-one-of, at-least-one, at-most-one, only-with), the argv, class, limit and answer of each op; `manage.ts` (issue, pr, release asset, repo, run, workflow, project), `resources.ts` (label, gist, secret, variable, cache, ssh-key, gpg-key), `account.ts` (search, ruleset, org, auth, status, codespace, config, extension). A secret or variable value, and public-key text, go to gh on standard input, never in argv, and are replaced in any failure text.
+- **Checks against the installed gh 2.46.0:** `coverage.ts` (163 commands, the accepted exclusions with reasons), `inputs.ts` (1151 rows: every flag and positional of every covered command, every schema field accounted for), the prompt sweep, and a parser check that runs every op's argv with `--help` last under an empty HOME and a closed-port proxy (394 argvs, a canary that makes no request). The live test (`INSRC_LIVE_TESTS=1`) passed against the real gh.
+- **Visible changes:** `gh_pr_diff` and `gh_run_view` treat a cut at the display cap as the answer (`truncated`, valid text across a multibyte character), and a failed `gh run view` log command now fails the call (the git_show rule); every gh tool's approval is stricter (see the classes above).
+
+### Deviations from the LLD, and why
+
+- `gh_codespace delete` takes `codespace` only; delete-all (`all`, `days`) was dropped at the user's decision of 2026-10-25, and the plan's test name was changed to match ("delete needs codespace and offers no all").
+- `gh_gist view` names its `--files` flag `listFiles`, because `files` is already the list of files on `create`.
+- A mutation's `message` falls back to stderr when stdout is empty (gh prints most confirmations to stderr).
+- `gh_pr_diff` and `gh_run_view` convert their text through `convertText` only when `deps.conversion` is set (nothing sets it in the daemon yet); without it they return the raw text. `gh_auth status` and `gh_ruleset list` need the conversion and fail with `conversion-failed` without it. `gh_status` returns its text either way.
+- A field two ops of one tool share may differ in its enum values (`match`, `sort` of `gh_search`): the schema takes the union and each op checks its own.
+- A search query is a plain positional; only one that starts with `-` goes after `--`.
+- The leading-dash positional check (`dashSafe`) is an option of a family and is on for the account families (t9) only; it is not yet on for the repository and resource families.
+
+### Known gaps found, left unchanged
+
+- The existing project tools `gh:project:item-archive` and `gh:project:item-delete` pass `--project-id`, and `gh:project:item-update` passes `--owner`; the installed gh 2.46.0 has neither flag on those commands (GH_INPUTS records them). They fail on this gh.
+- `gh-typed-call.test.ts` leaves a handle open: without `--test-force-exit` it takes about 60 s to exit. The cause was not found.
+
+### HLD amendment
+
+The per-job limit table departs from the HLD's single 120 s performance line. The `nonFunctional.retarget` amendment is filed as the pending artifact `AMD-b7a68147dcf72034-9` (`.insrc/artifacts/`) for the user to approve; approving it records the decision of 2026-10-25 in the HLD.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { ghTimeoutMs } from '../helpers.js';
+import { ghTimeoutMs, registerGhLimits } from '../helpers.js';
 
 /** What each existing tool had before the table: its own limit, else the 30 s default of ghExec. */
 const TODAY_S: Record<string, number> = {
@@ -17,9 +17,15 @@ const TODAY_S: Record<string, number> = {
 };
 
 test('gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default', () => {
-	assert.equal(ghTimeoutMs({ toolId: 'gh_repo_clone' }), 600_000);
-	assert.equal(ghTimeoutMs({ toolId: 'gh_pr_merge' }), 180_000);
+	const table: Record<string, number> = {
+		gh_issue_create: 60, gh_pr_create: 90, gh_pr_merge: 180, gh_pr_diff: 60, gh_run_view: 60, gh_workflow_run: 60,
+		gh_repo_create: 120, gh_repo_fork: 120, gh_repo_clone: 600, gh_release_create: 180,
+	};
+	for (const [toolId, seconds] of Object.entries(table)) { assert.equal(ghTimeoutMs({ toolId }), seconds * 1000, toolId); }
 	assert.equal(ghTimeoutMs({ toolId: 'gh_pr_list' }), 30_000);
+	registerGhLimits({ 'gh_probe.zap': 7 });
+	assert.equal(ghTimeoutMs({ toolId: 'gh_probe', op: 'zap' }), 7_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_probe', op: 'other' }), 30_000);
 	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool' }), 30_000);
 	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool', mutating: true }), 60_000);
 	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool', op: 'zap', mutating: false }), 30_000);

@@ -99,8 +99,6 @@ export interface GhExecOptions {
   /** The host the sign-in probe is scoped to. */
   hostname?: string | undefined;
   signal?: AbortSignal | undefined;
-  /** Legacy: a call that has not moved to `key` yet. Removed when the last such call converts. */
-  timeoutMs?: number | undefined;
 }
 
 /**
@@ -127,7 +125,7 @@ export function bytesToText(bytes: Uint8Array, truncated: boolean): string {
  * signal and a non-zero exit are fields of the outcome.
  */
 export async function ghExec(argv: string[], opts: GhExecOptions = {}): Promise<GhOutcome> {
-  const limitMs = opts.key !== undefined ? ghTimeoutMs(opts.key) : opts.timeoutMs ?? READ_LIMIT_S * 1000;
+  const limitMs = ghTimeoutMs(opts.key ?? { toolId: '' });
   const r = await runShellBytes(argv, {
     cwd: opts.cwd, timeoutMs: limitMs, maxBytes: opts.maxBytes ?? 4 * 1024 * 1024, signal: opts.signal,
     ...(opts.input !== undefined ? { stdin: opts.input } : {}),

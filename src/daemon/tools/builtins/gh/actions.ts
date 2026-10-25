@@ -116,7 +116,7 @@ export const ghRunViewTool: Tool = {
     if (logFailedOnly) { logsArgv.push('--log-failed'); }
     else               { logsArgv.push('--log'); }
     logsArgv.push(...repoFlag);
-    const logs = await ghExec(logsArgv, { cwd: str(input, 'cwd'), maxBytes: maxLogBytes, timeoutMs: 60_000 });
+    const logs = await ghExec(logsArgv, { cwd: str(input, 'cwd'), maxBytes: maxLogBytes, key: { toolId: 'gh_run_view' } });
     const logBody = logs.code === 0 ? logs.stdout : logs.stderr;
     const truncated = logBody.length >= maxLogBytes;
 
@@ -327,7 +327,7 @@ export const ghWorkflowRunTool: Tool = {
       argv.push('-f', `${k}=${v}`);
     }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 60_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_workflow_run' } });
     if (r.code !== 0) { return shellFail('gh_workflow_run', r); }
     return { output: `Dispatched \`${wf}\`.`, format: 'markdown', success: true, data: { workflow: wf } };
   },

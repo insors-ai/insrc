@@ -174,7 +174,7 @@ export const ghIssueCreateTool: Tool = {
     if (assignees)               { argv.push('-a', assignees); }
     if (str(input, 'milestone')) { argv.push('-m', str(input, 'milestone')!); }
     if (str(input, 'project'))   { argv.push('-p', str(input, 'project')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 60_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_create' } });
     if (r.code !== 0) { return shellFail('gh_issue_create', r); }
     const url = r.stdout.trim();
     return { output: `Created issue: ${url}`, format: 'markdown', success: true, data: { url } };

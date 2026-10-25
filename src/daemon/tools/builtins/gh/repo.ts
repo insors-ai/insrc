@@ -148,7 +148,7 @@ export const ghRepoCreateTool: Tool = {
     if (str(input, 'gitignore'))   { argv.push('-g', str(input, 'gitignore')!); }
     if (str(input, 'team'))        { argv.push('-t', str(input, 'team')!); }
     if (input['clone'] === true)   { argv.push('--clone'); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 120_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_create' } });
     if (r.code !== 0) { return shellFail('gh_repo_create', r); }
     return { output: `Created repo: ${r.stdout.trim()}`, format: 'markdown', success: true, data: { name, url: r.stdout.trim() } };
   },
@@ -193,7 +193,7 @@ export const ghRepoForkTool: Tool = {
     if (str(input, 'org'))                    { argv.push('--org', str(input, 'org')!); }
     if (input['clone']              === true) { argv.push('--clone'); }
     if (input['defaultBranchOnly']  === true) { argv.push('--default-branch-only'); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 120_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_fork' } });
     if (r.code !== 0) { return shellFail('gh_repo_fork', r); }
     return { output: `Forked \`${repo}\`.\n\n\`\`\`\n${r.stdout.trim() || r.stderr.trim()}\n\`\`\``, format: 'markdown', success: true, data: { source: repo } };
   },
@@ -275,7 +275,7 @@ export const ghRepoCloneTool: Tool = {
     if (extra.length > 0) {
       argv.push('--', ...extra);
     }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 600_000, maxBytes: 2 * 1024 * 1024 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_repo_clone' }, maxBytes: 2 * 1024 * 1024 });
     if (r.code !== 0) { return shellFail('gh_repo_clone', r); }
     return { output: `Cloned \`${repo}\`.\n\n\`\`\`\n${r.stdout.trim() || r.stderr.trim()}\n\`\`\``, format: 'markdown', success: true, data: { repo, dir: str(input, 'dir') } };
   },

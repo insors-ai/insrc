@@ -170,7 +170,7 @@ export const ghReleaseCreateTool: Tool = {
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
     const assets = Array.isArray(input['assets']) ? (input['assets'] as unknown[]).map(String) : [];
     argv.push(...assets);
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 180_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_release_create' } });
     if (r.code !== 0) { return shellFail('gh_release_create', r); }
     return { output: `Created release \`${tag}\`.\n${r.stdout.trim()}`, format: 'markdown', success: true, data: { tag, url: r.stdout.trim() } };
   },

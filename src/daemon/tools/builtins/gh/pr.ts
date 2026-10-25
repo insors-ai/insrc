@@ -143,7 +143,7 @@ export const ghPrDiffTool: Tool = {
     const maxBytes = num(input, 'maxBytes') ?? 256 * 1024;
     const argv = ['gh', 'pr', 'diff', String(n)];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), maxBytes, timeoutMs: 60_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), maxBytes, key: { toolId: 'gh_pr_diff' } });
     if (r.code !== 0) { return shellFail('gh_pr_diff', r); }
     const truncated = r.stdout.length >= maxBytes;
     const body = (truncated ? r.stdout.slice(0, maxBytes) : r.stdout).replace(/\n+$/, '');
@@ -300,7 +300,7 @@ export const ghPrCreateTool: Tool = {
     const reviewers = joinCsv(strArr(input, 'reviewers'));
     if (reviewers) { argv.push('-r', reviewers); }
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 90_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_pr_create' } });
     if (r.code !== 0) { return shellFail('gh_pr_create', r); }
     const url = r.stdout.trim();
     return { output: `Opened PR: ${url}`, format: 'markdown', success: true, data: { url } };
@@ -516,7 +516,7 @@ export const ghPrMergeTool: Tool = {
     if (str(input, 'title')) { argv.push('-t', str(input, 'title')!); }
     if (str(input, 'body'))  { argv.push('-b', str(input, 'body')!); }
     if (str(input, 'repo'))  { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd'), timeoutMs: 180_000 });
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_pr_merge' } });
     if (r.code !== 0) { return shellFail('gh_pr_merge', r); }
     return { output: `Merged PR #${n} (${method}).\n\n\`\`\`\n${r.stdout.trim() || r.stderr.trim()}\n\`\`\``, format: 'markdown', success: true, data: { number: n, method } };
   },

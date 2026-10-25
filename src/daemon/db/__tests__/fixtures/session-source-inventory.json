@@ -1801,7 +1801,7 @@
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "siteCount": 2,
       "sitesDigest": "fe3c8f6903985fd7b161fe5fe7a40327a62e0a9fe0db54f75dbf170486625958",
-      "sourceDigest": "f2a6e504b30accf434a1d48691e786b54dbde937bd720eb513e50d14523d910e",
+      "sourceDigest": "4ba0423ba2593feefc3720cffe5e86b5f7e7ee6dab351348f60331bada7c3377",
       "boundaries": [
         "diagnostic"
       ]

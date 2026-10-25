@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design addresses both upstream S003 acceptance criteria and explicitly assigns the lifetime explanation to S005 with a release dependency.",
-          "evidence": "DEF.md S003/ac1 requires memory-only configuration, duplicate rejection and session isolation; ac2 requires retention across panel/repository changes, expiry and pre-add lifetime explanation. The design specifies each backend behavior and maps the explanation to CM-S5-LIFETIME-COPY without claiming it has passed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
-          "action": "Retain the explicit pending S005 acceptance and release dependency.",
+          "premise": "The design covers S003's temporary isolation and lifetime requirements, with the pre-add lifetime explanation explicitly assigned to S005 release acceptance.",
+          "evidence": "DEF §6.3 requires memory-only configuration/credentials, session-local analysis, retention across panel closure/repository switching, expiry at session end/restart, and explanation before adding. HLD specifies 30-second heartbeats and 90-second expiry. The design addresses these requirements and explicitly keeps CM-S5-LIFETIME-COPY pending until both clients provide evidence. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "Retain the distinction between backend completion and complete ac2/release acceptance.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,9 +48,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Streaming dispatch currently lacks trusted context and can release maintenance exclusion before handler settlement.",
-          "evidence": "StreamHandler has three arguments; directDispatch invokes `streamHandler(request.params, send, abortController.signal)`. IpcServer creates no RequestLifetime for streams. holdingForward resolves on a done/error frame and calls `release()` on stream cancellation, matching the design's diagnosis. [files: src/daemon/server.ts, src/daemon/request-context.ts, src/daemon/threads/maintenance-entry.ts]",
-          "action": "Preserve the proposed completion-and-drain regression cases.",
+          "premise": "Streaming dispatch currently lacks the trusted context and request-lifetime completion supplied on unary dispatch.",
+          "evidence": "StreamHandler takes params/send/signal, and directDispatch invokes it with a separate AbortController. IpcServer creates a RequestLifetime only when request.stream is not true. Unary dispatch supplies frozen trusted context and completes the lifetime despite delivery failure. holdingForward releases streaming holds on terminal frames and cancellation, matching the design's identified correction sites. [files: src/daemon/server.ts, src/daemon/request-context.ts, src/daemon/threads/maintenance-entry.ts]",
+          "action": "Implement the proposed stream lifetime changes together across server and maintenance entry.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,9 +60,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Existing connection-scope resolution searches saved declarations across registered repositories.",
-          "evidence": "connectionIsRegistered iterates `deps.listRepos()` and loads each repository's connections. resolveConnection collects every declaring root and rejects zero or multiple declarations. analysisConnectionContext currently returns `{ lookupRoot, daemonEpoch: 'saved-analysis' }`. [files: src/analyze/context/scope.ts, src/analyze/connection-access.ts]",
-          "action": "Keep the proposed attached-root checker separate from the existing unattached ambiguity behavior.",
+          "premise": "Legacy saved creation has an independent unmanaged persistence branch that is not covered by the managed mutation service.",
+          "evidence": "saveConnectionRpc delegates to managed.legacyUpsert when a service exists. Otherwise it independently enters withSavedRootGate, loads and guards the registry, calls extractUrlPassword, saveConnections and reloadAll. MAIN_DAEMON_CONNECTION_METHODS currently contains only the legacy test and v2 test/cancel methods. The design correctly identifies both the writer and routing gaps. [files: src/daemon/db-rpc.ts, src/daemon/db/management.ts, src/daemon/threads/method-class.ts]",
+          "action": "Retain the reservation hook in both branches and main-daemon routing for unattached saved writers.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -72,9 +72,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The resolver overlay, temporary draft-preparation hook and memory-only file policy are existing reusable foundations; the workbench session owner is additional functionality.",
-          "evidence": "ResolverPorts exposes `sessionOverlay(context): Promise<ConnectionResolver>` and rejects a session handle when no overlay is installed. ConnectionTestPorts already exposes prepareTemporary for existing-row tests. fileExecutionPolicy supplies `256 * 1024 * 1024` and `allowSpill: false`. registerEphemeral instead modifies the shared repository pool and its build path resolves saved secrets. [files: src/daemon/db/pool-cache.ts, src/daemon/connection-management-rpc.ts, src/daemon/db/file-policy.ts, src/daemon/db/pool.ts]",
-          "action": "Use these extension points while keeping temporary registration outside DriverPool.registerEphemeral.",
+          "premise": "The proposed owner can reuse the existing resolver overlay port, materialization, lease foundation and file policy without making the saved pool the temporary store.",
+          "evidence": "ResolverPorts already exposes sessionOverlay(context): Promise<ConnectionResolver>, and a session context without that port throws SessionAccessError. ConnectionResolver includes list, lease and withConnection. materializeDraft accepts a selected current config/revision and a read-only readSecret port, with no persistence operation. RevisionLeaseGate tracks revision, active callbacks and mutation barriers. fileExecutionPolicy supplies 256 MiB and allowSpill:false. [files: src/daemon/db/pool-cache.ts, src/shared/connection-management.ts, src/daemon/db/driver-profiles.ts, src/daemon/db/lease-gate.ts, src/daemon/db/file-policy.ts]",
+          "action": "Keep temporary ownership separate and adapt reused lease results to temporary keys.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -83,22 +83,10 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The saved-writer correction covers both legacy save branches and the process-local routing boundary.",
-          "evidence": "saveConnectionRpc delegates adopted roots to legacyUpsert, but its unmanaged branch independently calls extractUrlPassword and saveConnections inside withSavedRootGate. The gate uses a module-local Map. MAIN_DAEMON_CONNECTION_METHODS currently contains only test/cancel methods. The design explicitly adds both reservation checks, canonical gate identity and main-daemon routing for unattached writers. [files: src/daemon/db-rpc.ts, src/daemon/db/management.ts, src/daemon/threads/method-class.ts, src/daemon/threads/router.ts]",
-          "action": "Retain the real worker-routing and adopted/unadopted race matrix.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
           "severity": "HIGH",
-          "premise": "The provider integration inventory closes every LLM-analysis path for session-derived data.",
-          "evidence": "handlePlan and handleNarrow return `next: 'emit_bundle'` with `userTurn: prepared.userTurn` for the outer client's LLM. prepareSynthesize calls buildMessages, which embeds `JSON.stringify(r.output, null, 2)` for exploration results; handleBundle explicitly stamps `modelId: 'client'`. This path invokes no daemon LLMProvider. The proposed phase changes propagate authority and disable persistence but do not prevent data-bearing reasoning prompts from bypassing the verified-local-provider boundary. [files: src/daemon/steps/analyze-step/phases/plan.ts, src/daemon/steps/analyze-step/phases/narrow.ts, src/daemon/steps/analyze-step/phases/bundle.ts, src/daemon/steps/analyze-step/answer-turn.ts, src/analyze/context/synthesizer.ts, src/mcp/forward-step.ts]",
-          "action": "Specify an enforceable session-memory policy for multi-turn reasoning: reject unsupported client-authored reasoning before returning data-bearing prompts, or route those turns through an admitted daemon provider. Add a real forwardStep→plan/narrow regression proving that unverified clients receive no session-derived reasoning prompt.",
+          "premise": "The completed propagation inventory includes every production relay into the legacy freeform tool loop.",
+          "evidence": "The inventory omits src/analyze/explore/freeform-probe.ts. executePlan registers 'freeform.probe': runFreeformProbe, and the context driver also creates this fallback. runFreeformProbe calls `await loop({ runId, shaperId, invocationMode: 'run', inputs, scope, promptPath })`, reconstructing arguments without execution authority or lifetime. Its measureOwnRequest likewise calls measureResolvedScope/measureRequestScope without options. The receiving RunShaperToolLoopArgs is a separate interface, and the loop defaults to `args.provider ?? buildProvider(...)`. Updating the listed executor/context types alone leaves this supported relay able to lose session policy and enter saved-default provider/tool behavior. [files: src/analyze/explore/freeform-probe.ts, src/analyze/explore/executor.ts, src/analyze/context/driver.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "Add the freeform runner, measureOwnRequest and RunShaperToolLoopArgs explicitly to the inventory. Forward the same authority, policy, cancellation and drain through both measurement and loop calls. Add a production forced-freeform regression proving that policy cannot disappear before provider/tool admission or persistence guards.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -108,9 +96,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Keeping temporary aggregates outside saved persistence permits the proposed change without rewriting existing saved records or changing own-directory lookup.",
-          "evidence": "loadConnections returns the original document as `file: doc`, preserves pinned family values and reports mismatches. dataScopeOf uses `scope.value` for directory scopes, while createConnectionResolver opens the saved pool at context.lookupRoot. The design preserves these paths and introduces only daemon-memory temporary records. [files: src/daemon/db/config.ts, src/analyze/runtimes/data/_shared.ts, src/daemon/db/pool-cache.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts]",
-          "action": "Keep pinned-family, unknown-field and nested/unregistered lookup cases as compatibility gates.",
+          "premise": "Temporary ownership can be added without rewriting saved records or changing genuinely unattached scope-local resolution.",
+          "evidence": "ConnectionAccessContext already has optional sessionHandle, while ConnectionKey already distinguishes saved/temporary. createConnectionResolver obtains saved pools using exactly context.lookupRoot and selects no overlay when sessionHandle is absent. dataScopeOf preserves a directory scope's own value. Safe projections preserve declared legacy families, and the existing source tests exercise scope-local lookups and callback leases. The proposed memory aggregate requires no saved-record migration. [files: src/shared/connection-management.ts, src/daemon/db/pool-cache.ts, src/analyze/runtimes/data/_shared.ts, src/daemon/db/driver-profiles.ts, src/analyze/__tests__/connection-consumers.test.ts]",
+          "action": "Preserve these defaults while adding the explicit lost-binding rejection for known session work.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,9 +108,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed ownership split respects the HLD's S001, S002, S004 and S005 boundaries.",
-          "evidence": "HLD §6 assigns session overlays, propagation and expiry to S003; conversion/private DuckDB to S001; transient probe transport to S002; removal to S004; manager UI to S005. The design consumes the existing prepareTemporary hook and file policy, adds the reservation integration, and explicitly excludes removal and UI implementation. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/connection-management-rpc.ts, src/daemon/db/file-policy.ts]",
-          "action": "Maintain these exclusions during implementation.",
+          "premise": "The design preserves the HLD ownership boundaries for file execution, draft probes, removal and client integration.",
+          "evidence": "HLD §6 assigns sc8 to S001, probe transport to S002, removal to S004 and manager integration to S005. The design consumes the existing file policy and prepareTemporary hook, excludes probe IPC redesign and user removal, and assigns workbench/client lifetime integration to S005. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/connection-management-rpc.ts, src/daemon/db/file-policy.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "Keep those exclusions explicit during implementation.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +120,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The relationship documentation identifies the essential ownership endpoints and cardinalities.",
-          "evidence": "The ER source includes session→overlay, overlay→entry/receipt, entry→resource and delegation→data-attachment relationships with cardinalities. The prose supplies canonical-root ownership, control/data audiences, generation revocation and saved-state compatibility. The sequence source covers delegation, attachment, root coordination, provider admission and expiry/drain. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
-          "action": "Keep the companions synchronized with corrections to execution and provider boundaries.",
+          "premise": "The relationship documentation identifies ownership, direction and cardinality adequately for the proposed memory model.",
+          "evidence": "The generated ER source includes session-to-overlay and session-to-delegation one-to-many ownership, zero-or-one control attachment, overlay-owned entries/receipts, optional entry resource, and delegation-owned data attachments. Its descriptions state one canonical root per overlay/delegation and exactly one delegation per data transport. The sequence source covers delegation, restricted MCP refusal, root-gated commit and expiry/drain. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
+          "action": "Retain these generated companions alongside the authoritative relationship prose.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +132,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The linked ER and sequence companions render correctly and remain visually consistent with the design.",
-          "evidence": "Both generated HTML files and their embedded Mermaid sources were inspected. Opening the ER file failed with `Browser is not available: iab`; browser inventory returned no available browsers. Neither rendered diagram could be inspected. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
-          "action": "Render and inspect both existing companions before claiming visual verification; correct or regenerate any rendering defects.",
+          "premise": "The linked companions render correctly and remain visually consistent with the design.",
+          "evidence": "Inspected both HTML files, their embedded Mermaid definitions, descriptions and rendering bootstrap. Opening the ER companion failed because the in-app browser was unavailable; browser inventory returned no available browsers. Actual SVG rendering, clipping, labels and layout could not be inspected. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html]",
+          "action": "Render both existing companions and inspect their visual consistency before claiming visual verification; regenerate any broken companion.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -155,22 +143,10 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed lease-expiry and disconnect handling can reuse existing distinct completion, drain and revision-lease mechanisms.",
-          "evidence": "RequestLifetime separately exposes completed and drained, retains registered promises through rejection, and seals drain admission on completion. RevisionLeaseGate tracks active use and mutation barriers. Existing lease tests exercise delayed work, callback errors and shutdown. The design adds owner cancellation and forbids premature publication or cleanup success rather than assuming response delivery means resource completion. [files: src/daemon/request-context.ts, src/daemon/db/lease-gate.ts, src/daemon/db/__tests__/connection-leases.test.ts]",
-          "action": "Implement the specified stream and session integration tests; existing primitive tests alone are insufficient.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
           "severity": "HIGH",
-          "premise": "The specified failure handling and sink inventory close raw driver-error logging for temporary runtime resources.",
-          "evidence": "PostgresDriver installs `pool.on('error', ...)` that calls `log.warn({ id, err: err.message }, 'pool error')`; RedisDriver similarly logs raw client error messages. These asynchronous listeners bypass outer RPC/tool error mapping. getLogger returns cached module loggers backed by persistent pino-roll output; only the separate probe-worker mode is silent. The design reuses these factories in the main daemon but specifies no owner-scoped logging mechanism or migration for these listeners. [files: src/daemon/db/drivers/pg.ts, src/daemon/db/drivers/redis.ts, src/daemon/db/registry.ts, src/shared/logger.ts]",
-          "action": "Add concrete runtime-driver logging change sites and a per-resource safe logging policy covering asynchronous events through disposal. Do not silence the shared logger globally. Test PG/Redis event errors containing endpoint/data canaries, including events outside callbacks and during drain, against the actual daemon log sink.",
+          "premise": "The specified driver/provider quiet sinks close the temporary execution logging boundary.",
+          "evidence": "Independent consumer logs remain outside those sinks. dataSchemaTableRuntime logs `{ connectionId, table, err: (err as Error).message }` when listIndexes fails and logs `table` on successful extraction. measureConnection's late callback logs `err: reasonOf(err)` after a waiter abandons work. executeTool logs raw `errMsg`, and executePlan logs errorMessage(err). The inventory rows for these consumers specify authority/lease/cache propagation, but do not specify consumer-local diagnostic changes. A quiet driver cannot suppress a caller's success log containing a temporary table name or its formatting of a rejected SDK error. [files: src/analyze/runtimes/data/schema-table.ts, src/analyze/measure.ts, src/analyze/explore/executor.ts, src/analyze/executor/walker.ts, src/daemon/tools/executor.ts, src/shared/logger.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "Extend the diagnostic design and inventory to analyzer runtimes, measurement, exploration/task execution and tool wrappers. Branch before formatting source-bearing fields/errors using immutable execution-local policy, including late callbacks. Test successful metadata logs and rejected/late driver calls through the normal daemon sink with concurrent saved logging controls.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -180,9 +156,9 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each upstream acceptance criterion has explicit proposed proving tests, with external and live evidence distinguished from backend mock coverage.",
-          "evidence": "The acceptance table maps ac1 to memory/isolation/collision/lease/context tests and ac2 to expiry/reconnect plus CM-S5-LIFETIME-COPY. Existing connection-consumer, lease, request-context and owned-file tests provide relevant fixture foundations. The design explicitly requires pending actual-service provider privacy evidence and both-client lifetime-copy evidence rather than treating mocks or skipped services as passing. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/analyze/__tests__/connection-consumers.test.ts, src/daemon/db/__tests__/connection-leases.test.ts, src/daemon/__tests__/connection-request-context.test.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
-          "action": "Extend the mapped obligations with the client-reasoning and asynchronous driver-log regressions identified above. No tests were executed for this design review.",
+          "premise": "Both upstream acceptance criteria have explicit planned proving tests, with external lifetime-copy evidence correctly distinguished from current passing tests.",
+          "evidence": "Compared DEF §6.3 with the acceptance mapping: ac1 maps isolation, memory-only state, collisions, context and leases; ac2 maps expiry, reconnect and lifecycle behavior. CM-S5-LIFETIME-COPY explicitly covers explanation before submission in both clients and remains pending. Existing node:test suites exercise actual resolver callback leases and late driver work, supporting the proposed fixture approach. No S003 test execution is claimed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md, src/daemon/db/__tests__/connection-leases.test.ts, src/analyze/__tests__/connection-consumers.test.ts]",
+          "action": "Retain the mapping and pending external gate; extend the production-path cases for the freeform and consumer-logging omissions identified above.",
           "fixability": "manual",
           "outcome": "holds"
         }
@@ -190,15 +166,15 @@
       "counts": {
         "high": 2,
         "med": 0,
-        "low": 11,
+        "low": 9,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-25T09:51:42.484Z",
+      "reviewedAt": "2026-10-25T10:29:26.307Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     },
-    "updatedAt": "2026-10-25T10:27:39.732Z"
+    "updatedAt": "2026-10-25T10:44:44.367Z"
   },
   "body": {
     "summary": {
@@ -685,6 +661,23 @@
           "src/daemon/db/drivers/clickhouse.ts",
           "src/shared/logger.ts"
         ]
+      },
+      {
+        "entity": "FreeformAndConsumerDiagnosticClosure",
+        "change": "invariant-change",
+        "details": "### Freeform relay closes over the normalized execution tuple\n\nrunFreeformProbe is a production relay, not just an executor implementation detail. Its distinct RunShaperToolLoopArgs and measureOwnRequest calls must carry authority and lifecycle explicitly. The trusted front door normalizes an execution once: saved-default for genuinely unattached work, or session-memory with owner binding/access, combined AbortSignal, registerDrain and quiet diagnostics. That immutable normalized tuple is required on internal ExplorationRunnerContext and RunShaperToolLoopArgs; existing internal saved callers/tests are migrated to pass an explicit saved tuple. These are internal API changes only, not new client parameters or a changed sc1 wire shape. Missing tuple at the receiving legacy loop is an error before prompt construction, not permission to use saved defaults. If the tuple says session-memory but lacks live owner/access/drain, reject session-expired. Mode is never reconstructed from RunShapeInput, scopeRef, purpose, a client label or args.provider. [[c23]]\n\nBoth decomposition's explicit freeform.probe recipe and context driver's forced fallback construct the same runner context. runFreeformProbe passes that SAME tuple object to measureOwnRequest and runShaperToolLoop; both the ctx.scope→measureResolvedScope path and bare-root→measureRequestScope path forward it alongside signal/drain. A supplied requestSize does not bypass owner validation. The receiving loop validates/admit provider BEFORE buildMessages, passes the tuple to buildToolDeps, runReadOnlyToolLoop, every tool call and final structured emit, and registers real work for drain. A direct/task-mode legacy caller carries the same tuple explicitly. No fresh object literal may omit authority/policy while retaining only runId/scope. Context fallback must rethrow policy/authority denial without converting it to an ordinary decomposer failure, choosing a default provider or spawning another freeform attempt.\n\nCM-S3-FREEFORM forces the actual executePlan→runFreeformProbe→measureOwnRequest→runShaperToolLoop chain with requestSize absent and present, resolved connection scope and bare-root measurement, explicit freeform plan and context forced fallback, direct/task-mode loop call, and factory/injected providers. Assert the same owner tuple reaches each real helper, provider guard, tool deps, lease and final emit; stale/missing tuple rejects BEFORE default provider construction or source access. Use two owners/same connection ID, expiry during measurement/tool/retry/final output, and late delayed work to prove drain. Missing provider admission or policy must never be repaired by a saved-only fallback. Capture actual sink/cache calls as well as function args; preserve ordinary explicit saved tuple as compatibility control.\n\n### Execution-local diagnostics for every consumer\n\nResource and provider sinks are only part of privacy closure. Every admitted session-memory invocation captures a frozen quiet diagnostic sink at entry and forwards it with the normalized execution tuple, through measurements, scopes, runtimes, wrappers, retries, callbacks and RPC delivery. Proposed helper src/analyze/connection-diagnostics.ts is internal and consumes getLogger only for the saved branch; its quiet branch has NO persistent/stdout/stderr transport. Saved payload formatting is lazy: a session path returns before evaluating table/query/source/focus/ID fields, reasonOf(err), errorMessage(err), String(err), JSON dumps or validation/output excerpts for diagnostics. Do not merely pass already-formatted payload to a no-op pino child logger. The immutable sink is captured before awaits; a late callback never asks the now-missing session/currentStepContext for a logger and falls back to saved. No global logging mode/cache/console/env switch. Coarse process startup events may remain only if they contain static non-request metadata. [[c24]]\n\nThe same rule applies to success and failure diagnostics: successful table/schema extraction can itself expose temporary identifiers. dataSchemaTableRuntime's listIndexes warning and extraction success log become execution-local; discover/aggregate/adherence success summaries follow the same policy. measureConnection's late/abandoned callback captures quiet mode at launch and never evaluates reasonOf on a source error in that mode, including after timeout/expiry/caller abandonment. Every wrapper (executePlan/stepPlan, task walker, executeTool, read-only loop, root orchestrator and RPC error mapping) creates fixed safe failure codes/messages for session errors before logging/record/ToolResult/progress construction; raw SDK transport/query errors must not enter error strings passed to the next model or UI. Preserve known typed policy/revision/busy codes. Successful source data still flows only to the owner-memory/admitted daemon/UI path and is never treated as a diagnostic payload.\n\nWhole-run quiet diagnostics includes classifier, planner recursion/validation, decomposition/synthesis, exploration runners, all reached code/docs/infra/data runtime tasks and scope/filter/cache helpers. Session cache/embedding refusals must happen before their own fallback warnings can include raw requests. Any cached shared helper is data-only or wrapped per execution; it cannot reuse a saved invocation's diagnostic closure for a temporary invocation. Normal saved diagnostics retain current behavior. Unverified MCP denial precedes trace/state/prompt/result access as already specified, and malformed/throwing/delivery paths still use the fixed quiet session envelope. There is no global process uncaught-error handler redesign: owned async promises/listeners must be consumed, sanitized and drained within these boundaries so raw temporary errors do not escape to such handlers.\n\nCurrent concrete diagnostic candidates are captured in evidence/consumer-diagnostic-sites-before.json from a full production source logger scan, with aliases/direct console and raw formatter calls added to the typed inventory. Each reached file is classified under the rows below; process-bootstrap/background exceptions are explicit. Future source additions that bypass the execution-local helper, or an unknown consumer diagnostic/persistence/provider sink, block enablement. A plain grep result is discovery evidence, not a proof that a site's payload is safe.\n\nCM-S3-CONSUMER-LOGS runs actual admitted UI daemon analysis/data paths under the ordinary trace-level pino-roll sink. Cover successful schema/table extraction with source-name canaries, optional listIndexes rejection with endpoint/credential canaries, delayed measurement rejection after waiter timeout/expiry, exploration/task/tool/outer catch failures, malformed result/schema and failed stream delivery. Capture actual daemon files/stdout/stderr through handler completion AND delayed drain/flush/settle; no temporary canary may appear. Assert lazy raw-payload/err-message formatters were never evaluated for quiet diagnostics, and errors/results contain only whitelisted safe failure fields. A concurrent saved resource/run positive-control marker must remain visible before/during/after these paths. No mock-only logger proof or global suppression qualifies.\n\n| Production site | Current owner/behavior | Proposed owner/change | Required regression |\n| --- | --- | --- | --- |\n| src/analyze/explore/freeform-probe.ts | runFreeformProbe/measureOwnRequest rebuild loop/measure arguments and log purpose or exhausted results. | ExplorationRunnerContext gains required normalized execution; runFreeformProbe forwards SAME reference, signal/drain, access/policy and admitted candidate to loop. measureOwnRequest forwards execution/lifecycle in BOTH measureResolvedScope and measureRequestScope calls; supplied requestSize branch still validates authority before loop. | CM-S3-FREEFORM |\n| src/analyze/context/driver.ts; src/analyze/explore/executor.ts; src/analyze/explore/types.ts; src/agent/read-only-tool-loop.ts | Context pipeline creates forced fallback; RunShaperToolLoopArgs is separate and defaults to buildProvider; loop/tool/final answer args are rebuilt. | Require normalized execution in RunShaperToolLoopArgs and internal runner context; every fallback/direct/task-mode call normalizes at trusted entry then forwards it, never infers saved mode from missing args. Receiving loop rejects missing carrier before messages/provider/toolDeps; all provider/tool/retry/final emit paths use same admitted mode and quiet diagnostics. Policy/authority denial is nonretryable and cannot trigger freeform/provider fallback. | CM-S3-FREEFORM |\n| src/analyze/runtimes/data/schema-table.ts; src/analyze/runtimes/data/discovery-objects.ts; src/analyze/runtimes/data/discovery-connections.ts; src/analyze/runtimes/shared/adherence.ts; src/analyze/runtimes/shared/aggregator.ts; src/analyze/runtimes/shared/adherence-topic-constraints.ts | Leaf runtimes log source/table/query/focus and caught errors independent of driver logger. | Choose execution-local sink before evaluation of source-bearing values; suppress session diagnostics on success, optional-index failure, schema/sample extraction, adherence and aggregation. Error/completeness outputs use safe fixed codes/messages, not raw SDK reason strings; valid data results remain only owner-memory/admitted UI route. | CM-S3-CONSUMER-LOGS |\n| src/analyze/measure.ts | measureConnection late() logs reasonOf(err) after waiter abandonment; other count paths format raw errors into notes. | Capture immutable quiet diagnostics and safe-error policy when measure starts; forward through resolve/count/reachAndList and every async/late callback. Do not call reasonOf/String(err) for session notes or logs; output safe fixed undetermined/refused codes. Expiry never selects default logger; drain includes actual listing/driver work, not just waiting caller. | CM-S3-CONSUMER-LOGS |\n| src/analyze/explore/executor.ts; src/analyze/executor/walker.ts; src/daemon/tools/executor.ts; src/agent/read-only-tool-loop.ts | Exploration, task and tool wrappers log/return errorMessage(err), errMsg, failures and source-bearing reasons. | Normalize error once to fixed safe session failure before log/result/record/progress mapping; no raw err.message or result dumps in quiet mode. Preserve typed session-expired/unsupported-temporary/conflict/busy. Success logs and denied tool names are also execution-local; saved diagnostics/results stay unchanged. | CM-S3-CONSUMER-LOGS |\n| src/analyze/orchestrator/driver.ts; src/analyze/orchestrator/persistence.ts; src/analyze/orchestrator/live-runs.ts; src/analyze/classifier/driver.ts; src/analyze/planner/driver.ts; src/analyze/planner/recursive.ts | Root stage, child scope/retry/plan validation and outer repair paths create their own diagnostics. | Carry normalized execution and sink through every entry/rebuild, completeRun, outer catch and recursive/error path. Session operations emit no per-run diagnostic payload to persistent sinks; memory-only counters and fixed failures remain. No serialized run record or raw fallback log on persistence refusal. | CM-S3-CONSUMER-LOGS |\n| src/analyze/context/driver.ts; src/analyze/context/decomposer.ts; src/analyze/context/synthesizer.ts; src/analyze/context/scope.ts; src/analyze/context/invariants.ts; src/analyze/context/cache.ts; src/analyze/context/repo-ignore-filter.ts; src/analyze/planner/cache.ts; src/analyze/executor/cache.ts; src/analyze/docs-retrieval.ts | Context/scope/filter/cache helpers have module loggers and raw fallback diagnostics. | Forward immutable execution to reached helpers; session cache/embedding paths still refuse before access, and rejection must be quiet/safe. No shared cached helper may retain a saved-default log closure used by session requests; create an execution-bound wrapper or refuse. Static template reads/bootstrap metadata alone do not carry session payload. | CM-S3-CONSUMER-LOGS |\n| src/daemon/analyze-rpc.ts; src/daemon/steps/analyze-oneshot.ts; src/daemon/steps/host.ts; src/daemon/steps/analyze-step/handler.ts; src/daemon/server.ts; src/daemon/threads/router.ts; src/daemon/threads/maintenance-entry.ts; src/daemon/handler-runtime.ts | RPC/host/cancellation/send/maintenance failure adapters can format caught exceptions before outer mapping. | Select quiet execution diagnostics from trusted transport BEFORE parameter-error logging or handler invocation. Session failureMessage/progress/error/terminal mappings use fixed safe code, not raw Error or StepErrorData. onTrace and stream callbacks go only to permitted in-memory UI channel, never durable telemetry/log, and never unverified MCP. Capture policy until completed+drained. | CM-S3-CONSUMER-LOGS |\n| src/analyze/explore/search-text.ts; src/analyze/explore/doc-constraint-enumerate.ts; src/analyze/explore/manifests-locate.ts; src/analyze/explore/capability-reuse-check.ts; src/analyze/explore/data-model-trace.ts; src/analyze/explore/module-profile.ts; src/analyze/explore/symbol-locate.ts; src/analyze/explore/doc-mention.ts; src/analyze/explore/class-hierarchy.ts; src/analyze/explore/doc-decision-trace.ts; src/analyze/explore/usage-example.ts; src/analyze/explore/freeform-probe.ts; src/analyze/explore/db-connections-list.ts; src/analyze/explore/test-locate.ts; src/analyze/explore/db-table-describe.ts; src/analyze/explore/db-tables-list.ts; src/analyze/explore/executor.ts; src/analyze/explore/convention-detect.ts; src/analyze/explore/config-trace.ts; src/analyze/explore/concept-resolve.ts; src/analyze/explore/import-graph.ts; src/analyze/runtimes/infra/inventory-ci.ts; src/analyze/runtimes/infra/inventory-helm.ts; src/analyze/runtimes/infra/inventory-docker.ts; src/analyze/runtimes/infra/inventory-kubernetes.ts; src/analyze/runtimes/infra/discovery-families.ts; src/analyze/runtimes/code/discovery-entrypoints.ts; src/analyze/runtimes/code/discovery-modules.ts; src/analyze/runtimes/infra/inventory-terraform.ts; src/analyze/runtimes/code/surface-functional.ts; src/analyze/runtimes/code/structure-module-tree.ts; src/analyze/runtimes/docs/discovery-inventory.ts; src/analyze/runtimes/docs/family-summarise.ts | Additional source discovery/scope/lookup logs are enumerated in evidence/consumer-diagnostic-sites-before.json. | Every actual per-invocation logger/formatter in the exact evidence list requires execution-local quiet/safe mapping if reachable in session-memory mode. Denied embedding/doc probes refuse before logging query; mixed tasks inherit same policy. Typed symbol/alias sink inventory classifies concrete files, not only these directory labels. | CM-S3-CONSUMER-LOGS; CM-S3-INVENTORY |\n| src/analyze/executor/registry.ts; src/analyze/planner/templates/registry.ts; src/analyze/planner/templates/bootstrap.ts; src/analyze/runtimes/bootstrap.ts; src/analyze/context/boot-validator.ts; src/analyze/summariser/driver.ts | Some logger matches are process registration/template validation or separately gated background summarization. | Classified exceptions only for static startup kind/template IDs with no request/source/error payload; never use them as per-request logging channel. Session-derived background summarizer stays denied before enqueue/provider/store. New invocation diagnostics in these modules require the same policy. | CM-S3-INVENTORY |\n| src/shared/logger.ts; proposed src/analyze/connection-diagnostics.ts | Shared getLogger returns persistent cached loggers; async callbacks can outlive authority. | Consume shared logger only for saved-default/static safe branches. New execution-local helper supplies frozen no-sink quiet logger and lazy saved-only payload builder; mode selected from immutable execution, NOT current live session/ALS lookup. No global logger/cache/env/console mutation; no raw Error accepted into session diagnostics. | CM-S3-CONSUMER-LOGS |",
+        "callSites": [
+          "src/analyze/explore/freeform-probe.ts",
+          "src/analyze/explore/executor.ts",
+          "src/analyze/explore/types.ts",
+          "src/analyze/context/driver.ts",
+          "src/analyze/measure.ts",
+          "src/analyze/executor/walker.ts",
+          "src/analyze/runtimes/data/schema-table.ts",
+          "src/daemon/tools/executor.ts",
+          "src/daemon/analyze-rpc.ts",
+          "src/agent/read-only-tool-loop.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -813,6 +806,13 @@
           "response": "Consume events without raw payload emission; preserve safe failure/cleanup state only. Saved logging is unchanged and no process-global logger switch occurs.",
           "userImpact": "Temporary runtime failures remain private through drain; unsupported quiet factories refuse before construction.",
           "recoverable": true
+        },
+        {
+          "scenario": "Freeform or a consumer callback drops session execution/logging policy",
+          "detection": "Internal freeform/loop args require normalized execution; receiving loop validates before prompt/provider/tool construction. Invocation logger is captured from immutable policy before awaits; typed source inventory tracks every logger/formatter caller and late callback.",
+          "response": "Missing/stale session authority fails closed with safe fixed code; no implicit saved default, source-bearing formatter or raw error/result log. Retain owned drain through late work.",
+          "userImpact": "No cross-session fallback or persistent source metadata from exceptional execution; user may retry under a live supported session.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -907,7 +907,9 @@
             "CM-S3-ADHERENCE-CACHE: actual data/mixed adherence topic path denies before filesystem constraint-record read/write or nested document enumeration; explicit memory constraints avoid the cache and preserve owner/provider policy.",
             "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
             "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
-            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible.",
+            "CM-S3-FREEFORM: actual explicit and forced freeform relay forwards one normalized authority policy lifetime and diagnostic tuple through both measurement branches legacy loop tools provider admission and final emit; missing or expired policy never defaults to saved.",
+            "CM-S3-CONSUMER-LOGS: normal daemon sink remains free of successful source metadata and raw rejected/late driver errors across runtime measurement exploration task tool and RPC wrappers; immutable quiet diagnostics outlive expiry while saved logging control remains visible."
           ],
           "fixturesNeeded": [
             "Two workbench control sockets plus data sockets, two roots and a nested unregistered saved directory; exact fake keychain and saved metadata bytes.",
@@ -926,7 +928,9 @@
             "Actual session-bound docs/vector/lineage/graph routes under Ollama, ONNX, disabled and injected backend controls; assert zero SDK/backend calls, zero requests, no query logging and no false lexical/empty-vector success. Ordinary saved hybrid retrieval is a positive compatibility control.",
             "Actual saveConnectionRpc socket requests with adopted/unadopted registered-root fixtures and session-worker routing enabled; canonical+symlink identity; installed shared reservation owner, deterministic race barriers and exact fake keychain/registry/reload spies. No real adoption/migration.",
             "Actual forwardStep fresh-socket bootstrap/attach/step.call for restricted mcp-unverified audience: all start/plan/narrow/bundle/one-shot and partial/error paths; spy before continuation/output load and capture response/progress/error/trace with data canaries. Separate UI and saved-only MCP positive controls.",
-            "Actual normal pino-roll daemon child with trace logging and concurrent saved logging marker; real factory PG/Redis async error injection outside callback, idle/reconnect/delayed-close/expiry and late error. Capture files/stdout/stderr through flush and settle; no global quiet mode or console mock. Audit SDK sinks and every built-in kind alias."
+            "Actual normal pino-roll daemon child with trace logging and concurrent saved logging marker; real factory PG/Redis async error injection outside callback, idle/reconnect/delayed-close/expiry and late error. Capture files/stdout/stderr through flush and settle; no global quiet mode or console mock. Audit SDK sinks and every built-in kind alias.",
+            "Actual explicit and forced freeform fallback with requestSize absent/present and resolved/bare-root scopes; direct/task-mode legacy loop plus injected/default provider controls. Spy SAME normalized execution tuple at measure helpers, loop args, tool deps, provider guard, final structured emit and actual drain.",
+            "Normal trace-level daemon sink with table/query/endpoint/error canaries across successful schema extraction, optional-index failure, delayed measure rejection after abandonment, exploration/task/tool/outer error paths. Lazy formatter spies must remain zero for quiet diagnostics; saved concurrent log markers stay visible."
           ]
         },
         {
@@ -988,7 +992,9 @@
             "CM-S3-ADHERENCE-CACHE: actual data/mixed adherence topic path denies before filesystem constraint-record read/write or nested document enumeration; explicit memory constraints avoid the cache and preserve owner/provider policy.",
             "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
             "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
-            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible.",
+            "CM-S3-FREEFORM: actual explicit and forced freeform relay forwards one normalized authority policy lifetime and diagnostic tuple through both measurement branches legacy loop tools provider admission and final emit; missing or expired policy never defaults to saved.",
+            "CM-S3-CONSUMER-LOGS: normal daemon sink remains free of successful source metadata and raw rejected/late driver errors across runtime measurement exploration task tool and RPC wrappers; immutable quiet diagnostics outlive expiry while saved logging control remains visible."
           ]
         },
         {
@@ -1010,7 +1016,9 @@
             "CM-S3-EMBED-DENY: real document probes docs_retrieve graph search lineage and embedding RPC paths refuse session data before direct SDK ONNX injected-vector or global embedQuery calls; typed denial never becomes empty-vector fallback.",
             "CM-S5-LIFETIME-COPY: both clients show accurate temporary lifetime explanation before add submission, including retain-on-panel/root-switch and expiry-on-workbench-end lease-loss or daemon-restart; external S005 release evidence pending.",
             "CM-S3-CLIENT-EGRESS: actual forwardStep host and every analyze-step phase deny session-bound unverified MCP before state/results/prompts/provider work; no terminal progress or error data escapes, saved-only MCP and admitted UI daemon controls still work.",
-            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible."
+            "CM-S3-DRIVER-LOGS: actual per-resource factory/SDK paths remain quiet through PG/Redis asynchronous errors and disposal in the normal daemon sink; temporary canaries absent while concurrent saved logging control remains visible.",
+            "CM-S3-FREEFORM: actual explicit and forced freeform relay forwards one normalized authority policy lifetime and diagnostic tuple through both measurement branches legacy loop tools provider admission and final emit; missing or expired policy never defaults to saved.",
+            "CM-S3-CONSUMER-LOGS: normal daemon sink remains free of successful source metadata and raw rejected/late driver errors across runtime measurement exploration task tool and RPC wrappers; immutable quiet diagnostics outlive expiry while saved logging control remains visible."
           ]
         }
       ],
@@ -1294,7 +1302,7 @@
           "from": "owner",
           "to": "data",
           "label": "Install sticky session-memory execution policy",
-          "description": "Before cache lookup, disable persistent exploration/bundle/planner/task/run/history/trace reads and writes for the whole session-bound run."
+          "description": "Before cache lookup, disable persistent exploration/bundle/planner/task/run/history/trace reads and writes for the whole session-bound run. Capture immutable quiet execution diagnostics and normalized authority/lifetime tuple; all freeform/measurement/tool relays must forward it without defaulting."
         },
         {
           "from": "control",
@@ -1516,6 +1524,16 @@
       "id": "c22",
       "kind": "code",
       "ref": "src/agent/providers/structured-output.ts:228"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle3 round2 freeform discovery: src/analyze/explore/freeform-probe.ts:99, src/analyze/context/driver.ts:795, src/analyze/explore/executor.ts and usage.example for runShaperToolLoop"
+    },
+    {
+      "id": "c24",
+      "kind": "analyze-bundle",
+      "ref": "S003 cycle3 round2 consumer sink discovery: src/analyze/runtimes/data/schema-table.ts:90, src/analyze/measure.ts:637, src/analyze/executor/walker.ts:248, src/daemon/tools/executor.ts:50, source logger inventory in docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/consumer-diagnostic-sites-before.json"
     }
   ]
 }

@@ -71,6 +71,13 @@
         "choice": "Amend the HLD",
         "rationale": "Records the user's 2026-10-25 per-job limit decision; the amendment is filed as a task of the plan.",
         "resolvedAt": "2026-10-25T13:46:57.210Z"
+      },
+      "qf61cc94b": {
+        "question": "gh_run_view's failed log call becomes a real failure instead of a success carrying stderr (the rule used for git_show's diff); confirm.",
+        "status": "resolved",
+        "choice": "Fail on failed log call",
+        "rationale": "Same rule the user accepted for git_show's diff.",
+        "resolvedAt": "2026-10-25T13:47:51.906Z"
       }
     }
   },

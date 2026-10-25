@@ -462,6 +462,8 @@ Type and classify only the 46 existing gh tools here and assign every other oper
 
 - `qb765d77f` — The per-job limit table departs from the HLD's single 120 s performance line; the user decided it in chat on 2026-10-25 (docs/plans/tool-registry.md, 's5 decisions'). The nonFunctional.retarget proposal made in the contract step still has to be filed as an amendment artifact.
   - **resolved**: Amend the HLD — Records the user's 2026-10-25 per-job limit decision; the amendment is filed as a task of the plan. _(2026-10-25T13:46:57.210Z)_
+- `qf61cc94b` — gh_run_view's failed log call becomes a real failure instead of a success carrying stderr (the rule used for git_show's diff); confirm.
+  - **resolved**: Fail on failed log call — Same rule the user accepted for git_show's diff. _(2026-10-25T13:47:51.906Z)_
 
 ## Citations
 

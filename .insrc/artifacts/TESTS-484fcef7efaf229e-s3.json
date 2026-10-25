@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T20:43:00.361Z",
+    "updatedAt": "2026-10-25T21:04:02.362Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1011,6 +1011,60 @@
             "titles": [
               {
                 "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "1caf36b1d",
+        "ranAt": "2026-10-25T21:04:02.362Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-MCP: private pipe bootstrap, every fresh socket attach, trusted fourth host argument and epoch/root mismatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+                "title": "CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+                "title": "CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+                "title": "CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2154,
+            "titles": [
+              {
+                "title": "CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume",
                 "result": "pass"
               }
             ],

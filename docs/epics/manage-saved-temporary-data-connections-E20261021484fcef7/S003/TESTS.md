@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 64 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 67 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -295,3 +295,21 @@ Run at 2026-10-25T20:43:00.361Z on commit `b0f4ecf01`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 1 | 4 s |  |
+
+## t14
+
+Run at 2026-10-25T21:04:02.362Z on commit `1caf36b1d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-MCP: private pipe bootstrap, every fresh socket attach, trusted fourth host argument and epoch/root mismatch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it | `src/daemon/steps/__tests__/session-host-bootstrap.test.ts` |
+| pass | CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap | `src/daemon/steps/__tests__/session-host-bootstrap.test.ts` |
+| pass | CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume | `src/daemon/steps/__tests__/session-host-bootstrap.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/session-host-bootstrap.test.ts` | 0 | 3 | 2.2 s |  |

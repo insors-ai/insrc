@@ -298,3 +298,23 @@ No worker reads the file.
 - **[[c11]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md` — "gpt-6.1-sol, gpt-6-astra, gpt-6-sol, gpt-5.6-sol and gpt-5.6-terra list low/medium/high/xhigh/max/ultra. gpt-6-luna and gpt-5.6-luna list low/medium/high/xhigh/max (no `ultra`)."
 - **[[c12]]** `stakeholder` `user 2026-10-25` — "approve with override and continue"
 - **[[c13]]** `prior-artifact` `LLD-ce99b72065d03b1b-s1` — "Review rounds 1-2 (2026-10-25): effortLevels() over effective approved models; one synchronous validateModelCatalog; ac2 novel-effort test; tier-default efforts must be accepted by their model."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 12 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T14:07:12.918Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The HLD ER companion renders correctly. | Read the generated HTML's narrative, Mermaid ER source and entity tables. Attempting to open it reported 'Browser is not available: iab'; browser inventory was empty. Diagram rendering, clipping and interactive controls could not be visually checked. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render the existing companion in a browser and verify its diagram and tables before claiming visual verification. |

@@ -24,7 +24,180 @@
     "hldBaseRunId": "wf-1792924917927-2y1e5h",
     "hldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers S001's upstream acceptance criteria and required registry behavior.",
+          "evidence": "DEF §6.1 requires loading the three families, adding models without code changes, and rejecting invalid definitions. HLD §6.1 additionally requires per-thread caching, worker reload behavior, alias/effort/limit lookups and tier fallback. LLD §§2, 5 and 6 address these requirements, including novel-effort and alias fixtures. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing catalog is asynchronously validated on the main thread after reconcile and indexing-worker startup.",
+          "evidence": "model-catalog.ts exports 'async function validateModelCatalog(): Promise<void>', reads the asset, validates it and assigns its module cache. index.ts calls reconcileConfigFile(), then startIndexingWorkers(), and later awaits validateModelCatalog(). getCuratedCatalog serves the cached providers arrays; listModels consumes that accessor. [files: src/daemon/model-catalog.ts, src/daemon/index.ts, src/daemon/list-models.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed shipped defaults preserve today's tier, summariser and local-model choices, with the documented catalog refresh.",
+          "evidence": "DEFAULT_TIERS uses opus/sonnet/haiku without default efforts. The installer uses gpt-6-astra/gpt-6.1-sol/gpt-6-luna. SUMMARISER_CLI_FALLBACK uses haiku and gpt-6-luna; local defaults use qwen3.6:27b and the settings catalog sets ollamaNumCtx to 32768. The repository's probe report supports the added Codex inventory, effort lists and Haiku refresh. [files: src/config/analyze.ts, src/config/local.ts, src/config/config-catalog.ts, src/analyze/context/shaper-provider.ts, scripts/insrc-daemon-install.sh, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md]",
+          "action": "None; this verifies consistency with the recorded probes, not a fresh CLI capability run.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reusing the catalog loader/accessor while adding a registry fills a real capability gap.",
+          "evidence": "The existing validator handles only version and cloud-provider model arrays; its accessor exposes modelsFor(provider). Existing resolveTier merges settings over DEFAULT_TIERS without catalog aliases, approved profiles, model-specific effort validation or rejected-model fallback. Analyzer results and repository searches found no existing ModelRegistry/ApprovedProfile implementation. [files: src/daemon/model-catalog.ts, src/config/analyze.ts, src/daemon/list-models.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The synchronous loader change accounts for its production caller and existing test consumers.",
+          "evidence": "Repository search confirms index.ts is the sole production validateModelCatalog caller and already awaits it inside main(), whose rejection reaches main().catch(). The affected tests use doesNotReject/assert.rejects and providers-shaped fixtures; the design explicitly rewrites those tests and preserves the listModels accessor signature. [files: src/daemon/index.ts, src/daemon/model-catalog.ts, src/daemon/__tests__/model-catalog.test.ts, src/daemon/__tests__/model-catalog-asset.test.ts, src/daemon/__tests__/list-models.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "startDaemonWorker is a common initialization hook that runs before production workers serve work.",
+          "evidence": "The admin, indexing and summary worker entry modules all call startDaemonWorker(init) before serving requests or jobs and before posting 'worker-ready'. Its signature is currently 'startDaemonWorker(init: DaemonWorkerInit): HubClient', so adding synchronous registry initialization requires no caller-signature changes. [files: src/daemon/threads/worker-entry.ts, src/daemon/threads/admin-worker.ts, src/daemon/threads/indexing-worker.ts, src/daemon/threads/summary-worker.ts, src/daemon/threads/workers.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The format transition preserves the existing model-list contract and separates user decisions from shipped definitions.",
+          "evidence": "listModels reads only modelsFor(provider) entries containing id/displayName and returns available:true for cloud families; the proposed projection preserves that shape. copy-assets.mjs copies the entire assets tree. PATHS currently has no approved-model store, and the proposed path follows its homedir/.insrc convention. The design defines missing-store behavior, invalid-entry handling, latest-decision precedence and shipped-profile precedence. [files: src/daemon/list-models.ts, src/shared/paths.ts, copy-assets.mjs, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The relationship documentation sufficiently explains ownership and references for this change.",
+          "evidence": "HLD sc1/sc2 and the ER companion's inspected source describe one file containing three families, family-owned models and tier defaults, defaults referencing models within their family, and multiple user decisions referring to a CLI family. The LLD adds effective-profile precedence and compatibility behavior. No UX change requires a mockup. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md]",
+          "action": "Optional: depict InputLimit as its structured unit/max value in the ER companion; its current string shorthand is less precise than the authoritative HLD interface.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD ER companion renders correctly.",
+          "evidence": "Read the generated HTML's narrative, Mermaid ER source and entity tables. Attempting to open it reported 'Browser is not available: iab'; browser inventory was empty. Diagram rendering, clipping and interactive controls could not be visually checked. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
+          "action": "Render the existing companion in a browser and verify its diagram and tables before claiming visual verification.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design stays within S001's ownership of sc1/sc2 and preserves later-story responsibilities.",
+          "evidence": "HLD §6 assigns the file, validator, registry, store reader and boot ordering to s1. The LLD implements those surfaces and retains the catalog accessor. It leaves definitions IPC to s2, runtime/settings consumers to s3, approval checks and store writes to s4, and client changes to s5–s7, matching the approved boundaries. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Catalog failures can remain fatal while moving validation ahead of reconcile.",
+          "evidence": "The existing loader wraps read, JSON and structural failures in ModelCatalogValidationError with path/reason and a copy-assets fix. main().catch logs fatal and exits. Placing the validation call outside and before reconcile's nonfatal try/catch preserves fatal propagation; the design also states that unsuccessful validation populates no cache. [files: src/daemon/model-catalog.ts, src/daemon/index.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A replacement worker that fails catalog validation follows the existing retry-and-shutdown path.",
+          "evidence": "startWorker records worker errors and rejects startup after exit and resource reclamation. Supervisor.replace catches a rejected start and recursively retries; its restart-window check invokes shutdown after the configured limit. This supports the design's replacement-worker failure handling without redesigning supervision. [files: src/daemon/threads/workers.ts, src/daemon/threads/supervisor.ts, src/daemon/threads/worker-entry.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each S001 acceptance criterion maps to concrete proposed tests using relevant existing seams.",
+          "evidence": "LLD §6 maps ac1 to boot ordering, cache identity, worker reload and shipped-asset tests; ac2 to a new model/alias with a novel 'turbo' effort exercised through registry resolution and the retained accessor; ac3 to synchronous refusal fixtures and daemon/worker startup failures. Existing tests already provide catalog-directory/reset seams, real accessor integration and worker-supervisor fixtures. The design explicitly adds the environment seam needed across threads. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/LLD.md, src/daemon/__tests__/model-catalog.test.ts, src/daemon/__tests__/model-catalog-asset.test.ts, src/daemon/__tests__/list-models.test.ts, src/daemon/threads/__tests__/supervisor.test.ts]",
+          "action": "Implement the mapped tests alongside the change; this review inspected test feasibility and coverage, not execution of the proposed implementation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-25T14:07:12.918Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

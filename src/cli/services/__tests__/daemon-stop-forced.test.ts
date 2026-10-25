@@ -244,3 +244,16 @@ test('Clean stop has one completion boundary and never cleans a later publicatio
   assert.equal(readFileSync(PATHS.pidFile, 'utf8'), 'later owner'); assert.equal(readFileSync(PATHS.sockFile, 'utf8'), 'later socket');
  } finally { await captured.target.handle.close(); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
 });
+
+test('Fresh HOME capture and stop create the missing guard parent and report no original target', async () => {
+ const { captureDaemon, cleanupStoppedDaemon, waitForStop } = await import('../lifecycle.js');
+ rmSync(PATHS.insrc, { recursive: true, force: true });
+ assert.equal(existsSync(PATHS.insrc), false);
+ const captured = await captureDaemon();
+ assert.equal(captured.target, undefined); assert.equal(captured.pidFile, undefined); assert.equal(captured.socketFile, undefined);
+ assert.equal(existsSync(PATHS.insrc), true); assert.equal(existsSync(PATHS.daemonRunGuard), false);
+ cleanupStoppedDaemon(captured);
+ rmSync(PATHS.insrc, { recursive: true, force: true });
+ assert.equal(await waitForStop(0), true);
+ assert.equal(existsSync(PATHS.daemonRunGuard), false); assert.equal(existsSync(PATHS.pidFile), false); assert.equal(existsSync(PATHS.sockFile), false);
+});

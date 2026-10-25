@@ -12,7 +12,7 @@
  * the pid is alive (covers ONNX cold-boot, which can take ~30 s+).
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 
 import { PATHS } from '../../shared/paths.js';
 import { captureStopTarget } from '../../shared/daemon-process-client.js';
@@ -54,6 +54,7 @@ function matches(path: string, expected: RunFileIdentity | undefined): void {
 }
 /** Capture before RPC under the same guard used by publishers; never reacquire a PID later. */
 export async function captureDaemon(): Promise<CapturedDaemon> {
+ mkdirSync(PATHS.insrc, { recursive: true });
  const guard = acquireRunFileGuard(PATHS.daemonRunGuard);
  let target: StopTarget | undefined;
  try {

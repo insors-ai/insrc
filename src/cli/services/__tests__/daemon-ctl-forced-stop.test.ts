@@ -106,3 +106,18 @@ test('Shell bridge with injected same-PID reincarnation refuses restart and miss
  const invalid = ctl(missing, 'restart'); assert.notEqual(invalid.status, 0); assert.match(invalid.output, /invalid PID/); assert.doesNotMatch(invalid.output, /spawning daemon/);
  assert.equal(readFileSync(missing.pid, 'utf8'), 'unverifiable-owner');
 });
+
+test('Fresh HOME shell stop and start work without a pre-existing insrc directory', { timeout: 10000 }, async () => {
+ const f = fixture();
+ rmSync(join(f.home, '.insrc'), { recursive: true, force: true });
+ const stopped = ctl(f, 'stop'); assert.equal(stopped.status, 0, stopped.output); assert.match(stopped.output, /no live original process/);
+ assert.equal(existsSync(f.guard), false); assert.equal(existsSync(f.pid), false);
+ rmSync(join(f.home, '.insrc'), { recursive: true, force: true });
+ writeFileSync(join(f.root, 'out/daemon/index.js'), source(f, 'clean'));
+ const started = ctl(f, 'start');
+ const target = existsSync(f.pid) ? await captureStopTarget(Number(readFileSync(f.pid, 'utf8'))) : undefined;
+ if (target) targets.push(target);
+ assert.equal(started.status, 0, started.output); assert.match(started.output, /daemon running/); assert.ok(target); assert.equal(await target.handle.hasExited(), false);
+ const final = ctl(f, 'stop'); assert.equal(final.status, 0, final.output);
+ assert.equal(existsSync(f.pid), false); assert.equal(existsSync(f.sock), false); assert.equal(existsSync(f.guard), false);
+});

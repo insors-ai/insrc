@@ -137,6 +137,15 @@ async function main(): Promise<void> {
 	mkdirSync(PATHS.conventions, { recursive: true });
 	mkdirSync(PATHS.logDir, { recursive: true });
 
+	// 2a. Validate the model definitions file (Epic ce99b720 s1) BEFORE the
+	//     settings reconcile, any worker or the listener: a missing, malformed or
+	//     rule-breaking file is a fail-fast startup refusal
+	//     (ModelCatalogValidationError re-raises to the top-level fatal handler),
+	//     so the daemon never reconciles settings, starts a worker or listens
+	//     with a bad file.
+	const { validateModelCatalog } = await import('./model-catalog.js');
+	await validateModelCatalog();
+
 	// 2b. Reconcile config.json against the catalog — the AUTHORITATIVE
 	//     reconcile point. UNCONDITIONAL (no existsSync short-circuit): reads
 	//     the current config, carries every value it can, and fills/repairs the
@@ -372,14 +381,6 @@ async function main(): Promise<void> {
 	//       rather than a silent skip of UX-model validation at review time.
 	const { validateAdaptiveCardsAsset } = await import('../workflow/artifacts/companion/adaptive-cards.js');
 	await validateAdaptiveCardsAsset();
-
-	// 6d″. Validate the curated cloud model catalog (cli-claude/cli-codex model
-	//      list, Epic ba132c185fe45860, S001). Mirrors the docgen validator: a
-	//      missing/malformed catalog asset is a fail-fast startup refusal
-	//      (ModelCatalogValidationError re-raises to the top-level fatal handler)
-	//      rather than a silent empty cloud model list at first list-models use.
-	const { validateModelCatalog } = await import('./model-catalog.js');
-	await validateModelCatalog();
 
 	// 6e. Register the analyze framework's task-template catalog
 	//     (design/analyze-plan-builder.md "Param resolution from

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c98c01c-ae66-4493-b655-140b9ec7ebb9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:21:59.367Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Correlate Claude requests and native completion",
+      "parent": {
+        "entityId": "STORY-83c85f38afad7843-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-83c85f38afad7843-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-83c85f38afad7843-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5951052463eca28c83a6ea0a811b079b326a2607556e0770ccf0078f993d51b",
+        "at": "2026-10-25T17:21:59.367Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:21:59.367Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Correlate Claude requests and native completion",
+    "summary": "Generate claude-request-UUID turn identity and stream-json user input over existing writable stdin; preserve launch options and permission control input. Classify new-turn Claude result completion by exact singular/list UUID correlation for live and resume, never by result order or heuristics. Preserve own result failures/empty completion and process-scoped lease/stop behavior, checkpoint handled terminal lines, and report missing trustworthy completion or input errors without duplicate retry. Adapt existing fixtures to dynamic request IDs and add failing-before/passing-after queued-result regressions.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Multiple earlier results including zero queued count and prior failures cannot truncate real assistant/tool/final reply in live pipe/file and correlated resume.",
+      "Own singular or merged-list result, including empty/failed/zero-turn result, completes once while process remains alive without killing it.",
+      "Prompt JSON preserves leading dashes, Unicode/newlines and resume/permission/read-dir/allowed-tool options; stdin decision relay remains usable.",
+      "Missing/throwing stdin, malformed/missing correlation and clean/nonzero exit produce clear failures rather than false success or duplicated submissions.",
+      "Identity survives midstream reload; ignored/terminal cursor progress is correct.",
+      "Dynamic UUID fixture marks only designated own results, leaving earlier/malformed/uncorrelated results intact; original adapter demonstrably fails the premature-result regression."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "only designated request UUID singular/list result ends new Claude turn"
+      },
+      {
+        "level": "unit",
+        "name": "earlier empty/failed/uncorrelated results retain real assistant/tool reply"
+      },
+      {
+        "level": "unit",
+        "name": "own empty/error result returns before process exit without kill"
+      },
+      {
+        "level": "unit",
+        "name": "stream input preserves prompt/options and permission relay; input/EOF failures"
+      },
+      {
+        "level": "integration",
+        "name": "file/pipe live and midstream correlated reattach checkpoint handling"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

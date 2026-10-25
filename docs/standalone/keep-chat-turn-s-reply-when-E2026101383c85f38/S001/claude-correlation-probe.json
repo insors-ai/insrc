@@ -1,0 +1,61 @@
+{
+  "exitCode": 0,
+  "requestUuid": "f437433a-4730-4d58-8179-8630c8c21146",
+  "events": [
+    {
+      "type": "command_lifecycle",
+      "uuid": "f0b7c4b2-100d-4e91-8a79-ae06c4598915",
+      "state": "queued"
+    },
+    {
+      "type": "command_lifecycle",
+      "uuid": "b69fb317-bc15-43e9-b825-a1321076f6c1",
+      "state": "started"
+    },
+    {
+      "type": "system",
+      "subtype": "init",
+      "uuid": "24eb4c49-3732-4a48-a869-1c48f18bf5e4",
+      "user_message_uuids": [
+        "f437433a-4730-4d58-8179-8630c8c21146"
+      ]
+    },
+    {
+      "type": "user",
+      "uuid": "f437433a-4730-4d58-8179-8630c8c21146",
+      "isReplay": true
+    },
+    {
+      "type": "assistant",
+      "uuid": "3238e0fb-8614-482b-bed8-f9bc9404b5ed",
+      "user_message_uuid": "f437433a-4730-4d58-8179-8630c8c21146",
+      "user_message_uuids": [
+        "f437433a-4730-4d58-8179-8630c8c21146"
+      ]
+    },
+    {
+      "type": "rate_limit_event",
+      "uuid": "ee5f8928-c6be-4d45-b3d0-2778398b9ed9"
+    },
+    {
+      "type": "result",
+      "subtype": "success",
+      "uuid": "78b4f3ab-f572-4e68-94d2-98d71156a85e",
+      "user_message_uuid": "f437433a-4730-4d58-8179-8630c8c21146",
+      "user_message_uuids": [
+        "f437433a-4730-4d58-8179-8630c8c21146"
+      ],
+      "queued_turn_count": 0,
+      "result_index": 0,
+      "num_turns": 1,
+      "is_error": false,
+      "result": "ACK"
+    },
+    {
+      "type": "command_lifecycle",
+      "uuid": "5f8026ce-c4d6-45f3-8aa3-db2b7f8dcef1",
+      "state": "completed"
+    }
+  ],
+  "stderrTail": ""
+}

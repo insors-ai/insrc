@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d3500576-821b-4bff-bdb9-8e7f4df0c66b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:21:59.368Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Preserve legacy replay state and validate provider compatibility",
+      "parent": {
+        "entityId": "STORY-83c85f38afad7843-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-83c85f38afad7843-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-83c85f38afad7843-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-83c85f38afad7843-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e872a765e8194818db6bbb9906622ae57c21a5a7615b370f9c722ffe1415a909",
+        "at": "2026-10-25T17:21:59.368Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:21:59.369Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Preserve legacy replay state and validate provider compatibility",
+    "summary": "Use bounded prefix reconstruction on every legacy Claude attachment to recover the latest native result without replaying visible content. Follow remaining output through actual segment/process end and preserve the last native failure. Complete regressions for repeated reload, queue/panel/lifecycle/UTF8/stop behavior and independent Codex completion; record serial installed-Claude new/resumed smoke plus Codex protocol evidence, plugin tests and type checks. Maintain relevant design/evidence if implementation details change.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Two legacy reloads after a checkpointed failed result preserve its native failure text at EOF without duplicate assistant/tool output.",
+      "Legacy multiple results retain later reply and last result outcome; missing prefix surfaces retention limit and never invents success.",
+      "Existing cancellation, abort, PID reuse, permission relay, queue and lifecycle behavior remain covered.",
+      "Codex item completion remains nonterminal and native turn completion remains immediate; documented protocol inspection/smoke evidence supports provider-specific handling.",
+      "Affected chat and full plugin suites plus plugin TypeScript checks are recorded with any baseline failures separated; serial installed-Claude new/resumed adapter smoke confirms native correlation.",
+      "Native checks use bounded timeouts and cleanup, run providers serially, and report unavailable auth/protocol evidence honestly; unrelated baseline failures are recorded without unrelated edits."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "legacy failed result survives two reloads without repeated visible content"
+      },
+      {
+        "level": "integration",
+        "name": "legacy multiple-result EOF, abort, retention, stop and PID reuse"
+      },
+      {
+        "level": "integration",
+        "name": "Codex item versus turn completion and existing queue/panel/lifecycle/UTF8 suites"
+      },
+      {
+        "level": "smoke",
+        "name": "plugin noEmit TypeScript and full plugin test suite with baseline accounting"
+      },
+      {
+        "level": "live",
+        "name": "serial bounded installed-Claude new/resumed adapter smoke and Codex protocol verification"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

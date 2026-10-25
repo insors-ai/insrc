@@ -1,0 +1,302 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792948022246-33rikr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:08:58.966Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 114407,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "epicSlug": "keep-chat-turn-s-reply-when",
+    "storyId": "s1",
+    "lldRunId": "wf-1792946090099-c25hob",
+    "lldEffectiveHash": "0e559c7e6f25d6c77dfc8a2383a7f575b0c8e525745b2761a403d4f7af038688",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad368ff09eeb36e85ad4e1b49d8004ae4d3d807802396f4dd4e35763ceecbcaf",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:21:53.932Z"
+      }
+    },
+    "rangeBase": "9312893fa68081bd14397bb136faa87f46b81282"
+  },
+  "body": {
+    "summary": {
+      "prose": "Fix premature chat completion by linking each new Claude request to its own native result, preserving replies after queued work finishes first. Extend retained-output replay so older turns also keep their outcome across repeated reloads, then validate live, resumed and background-process behavior with provider-specific tests.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add bounded replay of retained turn prefixes",
+        "summary": "Extend SessionOutput.tail with additive fromTurnStart/beforeOffset options using the matching turn marker in the recorded generation. Read only complete lines before the saved offset, without polling or crossing segment boundaries; retain default tail behavior. Add temporary-file regressions for multiple turns, rollover, byte boundaries, abort and SegmentGone.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Prefix scan starts at the requested turn marker, stops before saved offset and never yields other turns or incomplete boundary lines.",
+          "Prefix scan does not wait for live writer; abort and missing/rolled segment behavior remain explicit.",
+          "Existing SessionOutput default-tail tests pass; cursor/marker schemas unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bounded prefix selects only requested turn and complete pre-checkpoint lines"
+          },
+          {
+            "level": "integration",
+            "name": "bounded prefix terminates while writer lives; abort, rotated generation and missing marker"
+          },
+          {
+            "level": "integration",
+            "name": "existing default session-output tail behavior"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Correlate Claude requests and native completion",
+        "summary": "Generate claude-request-UUID turn identity and stream-json user input over existing writable stdin; preserve launch options and permission control input. Classify new-turn Claude result completion by exact singular/list UUID correlation for live and resume, never by result order or heuristics. Preserve own result failures/empty completion and process-scoped lease/stop behavior, checkpoint handled terminal lines, and report missing trustworthy completion or input errors without duplicate retry. Adapt existing fixtures to dynamic request IDs and add failing-before/passing-after queued-result regressions.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Multiple earlier results including zero queued count and prior failures cannot truncate real assistant/tool/final reply in live pipe/file and correlated resume.",
+          "Own singular or merged-list result, including empty/failed/zero-turn result, completes once while process remains alive without killing it.",
+          "Prompt JSON preserves leading dashes, Unicode/newlines and resume/permission/read-dir/allowed-tool options; stdin decision relay remains usable.",
+          "Missing/throwing stdin, malformed/missing correlation and clean/nonzero exit produce clear failures rather than false success or duplicated submissions.",
+          "Identity survives midstream reload; ignored/terminal cursor progress is correct.",
+          "Dynamic UUID fixture marks only designated own results, leaving earlier/malformed/uncorrelated results intact; original adapter demonstrably fails the premature-result regression."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "only designated request UUID singular/list result ends new Claude turn"
+          },
+          {
+            "level": "unit",
+            "name": "earlier empty/failed/uncorrelated results retain real assistant/tool reply"
+          },
+          {
+            "level": "unit",
+            "name": "own empty/error result returns before process exit without kill"
+          },
+          {
+            "level": "unit",
+            "name": "stream input preserves prompt/options and permission relay; input/EOF failures"
+          },
+          {
+            "level": "integration",
+            "name": "file/pipe live and midstream correlated reattach checkpoint handling"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Preserve legacy replay state and validate provider compatibility",
+        "summary": "Use bounded prefix reconstruction on every legacy Claude attachment to recover the latest native result without replaying visible content. Follow remaining output through actual segment/process end and preserve the last native failure. Complete regressions for repeated reload, queue/panel/lifecycle/UTF8/stop behavior and independent Codex completion; record serial installed-Claude new/resumed smoke plus Codex protocol evidence, plugin tests and type checks. Maintain relevant design/evidence if implementation details change.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Two legacy reloads after a checkpointed failed result preserve its native failure text at EOF without duplicate assistant/tool output.",
+          "Legacy multiple results retain later reply and last result outcome; missing prefix surfaces retention limit and never invents success.",
+          "Existing cancellation, abort, PID reuse, permission relay, queue and lifecycle behavior remain covered.",
+          "Codex item completion remains nonterminal and native turn completion remains immediate; documented protocol inspection/smoke evidence supports provider-specific handling.",
+          "Affected chat and full plugin suites plus plugin TypeScript checks are recorded with any baseline failures separated; serial installed-Claude new/resumed adapter smoke confirms native correlation.",
+          "Native checks use bounded timeouts and cleanup, run providers serially, and report unavailable auth/protocol evidence honestly; unrelated baseline failures are recorded without unrelated edits."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "legacy failed result survives two reloads without repeated visible content"
+          },
+          {
+            "level": "integration",
+            "name": "legacy multiple-result EOF, abort, retention, stop and PID reuse"
+          },
+          {
+            "level": "integration",
+            "name": "Codex item versus turn completion and existing queue/panel/lifecycle/UTF8 suites"
+          },
+          {
+            "level": "smoke",
+            "name": "plugin noEmit TypeScript and full plugin test suite with baseline accounting"
+          },
+          {
+            "level": "live",
+            "name": "serial bounded installed-Claude new/resumed adapter smoke and Codex protocol verification"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Claude args, exact UUID user envelope and prompt escaping; resume/permission modes/readDirs/allowedTools unchanged.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Multiple prior results (including queue_count=0, zero-turn, placeholder, error), interleaved assistant/tools and delayed own result.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Singular/list correlation, malformed/missing metadata, own empty/error, duplicate terminals, missing result at clean/nonzero EOF.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Writable stdin absent/throws; no duplicate retry or orphan; control decision relay still writable.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Live file-backed output and pipe fallback preserve full user reply.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Resume from before early result and from after acknowledgement/assistant with UUID turnId; exactly one own terminal.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Terminal and ignored-result cursor checkpoints; legacy identity reads all results to real segment end and preserves last failure.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Abort/stop/PID reuse/SegmentGone/lease behavior plus queue-runner, turn-lifecycle and panel terminal consumption.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Two legacy reloads: checkpoint a failed result, detach before exit, attach again after its offset, then end process; native failure text must survive. Prefix scan must not duplicate visible assistant/tool content. Cover multiple turns in one generation, rolled generation, saved offset boundary and abort.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Codex item.completed is nonterminal; turn.completed is terminal even if process remains alive; other current native result/failure fixtures remain valid.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "npx tsc -p vscode-plugin/tsconfig.json --noEmit and affected chat test suites, then full plugin suite if affected tests pass.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing ACK-only probe already confirms UUID echo/result membership.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "After implementation opt-in Claude new/resumed turn smoke through actual adapter, with tools/MCP disabled and time-bounded process cleanup.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Inspect Codex installed help/protocol fixture or serial no-tool smoke for exec one-prompt completion; do not infer Claude queue bug applies to Codex.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/S001/LLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/S001/claude-correlation-probe.json"
+    }
+  ]
+}

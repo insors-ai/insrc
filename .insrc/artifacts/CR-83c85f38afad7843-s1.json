@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "129f9c806268f7dce061d5c3c0337c6207415aad1643cdf5b3a2f3b3a7d72a0e",
+        "at": "2026-10-25T17:43:45.189Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:47:24.578Z"
+      }
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792950148760-xwp5j1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:42:28.761Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 76427,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "epicSlug": "keep-chat-turn-s-reply-when",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/session-output.test.ts",
+        "vscode-plugin/src/chat/session-output.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+      ],
+      "buildFingerprint": "743b3c42c90303f79c1a58a4e2cd768fc177d5645e54f2cb75a451cbb1261247",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/ISSUE-83c85f38afad7843.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

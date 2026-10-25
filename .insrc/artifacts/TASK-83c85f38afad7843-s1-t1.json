@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0fba5660-9607-4c12-8fc6-c68342ece197",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:21:59.365Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add bounded replay of retained turn prefixes",
+      "parent": {
+        "entityId": "STORY-83c85f38afad7843-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-83c85f38afad7843-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9f3964141b515fddac64fddd20f29811c84defa86b915b7583abe471ec76864",
+        "at": "2026-10-25T17:21:59.365Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:21:59.366Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add bounded replay of retained turn prefixes",
+    "summary": "Extend SessionOutput.tail with additive fromTurnStart/beforeOffset options using the matching turn marker in the recorded generation. Read only complete lines before the saved offset, without polling or crossing segment boundaries; retain default tail behavior. Add temporary-file regressions for multiple turns, rollover, byte boundaries, abort and SegmentGone.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Prefix scan starts at the requested turn marker, stops before saved offset and never yields other turns or incomplete boundary lines.",
+      "Prefix scan does not wait for live writer; abort and missing/rolled segment behavior remain explicit.",
+      "Existing SessionOutput default-tail tests pass; cursor/marker schemas unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bounded prefix selects only requested turn and complete pre-checkpoint lines"
+      },
+      {
+        "level": "integration",
+        "name": "bounded prefix terminates while writer lives; abort, rotated generation and missing marker"
+      },
+      {
+        "level": "integration",
+        "name": "existing default session-output tail behavior"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

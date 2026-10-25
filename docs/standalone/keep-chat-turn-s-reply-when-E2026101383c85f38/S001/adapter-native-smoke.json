@@ -1,0 +1,137 @@
+{
+  "timeoutMs": 60000,
+  "sequential": true,
+  "cwd": "/tmp/insrc-issue83-native-aBq3Q4",
+  "results": [
+    {
+      "expected": "ACK",
+      "startedAt": "2026-10-25T17:40:16.236Z",
+      "timeoutMs": 60000,
+      "reply": "ACK",
+      "ok": true,
+      "turnId": "claude-request-88691ae1-5c9e-43da-9287-19a89b7f533b",
+      "nativeSessionId": "abcd28e8-4ce0-43c9-bd7e-627d7e226e30",
+      "eventKinds": [
+        "status",
+        "assistant-delta",
+        "done"
+      ],
+      "completedAt": "2026-10-25T17:40:19.434Z",
+      "cleanup": {
+        "confirmedExit": true,
+        "exit": {
+          "code": 143,
+          "signal": null
+        },
+        "signals": [
+          "SIGTERM"
+        ],
+        "at": "2026-10-25T17:40:20.334Z"
+      }
+    },
+    {
+      "expected": "ACK2",
+      "startedAt": "2026-10-25T17:40:20.335Z",
+      "timeoutMs": 60000,
+      "reply": "ACK2",
+      "ok": true,
+      "turnId": "claude-request-756d0fc5-d18e-4a2b-bd9a-95d99f3ba293",
+      "nativeSessionId": "abcd28e8-4ce0-43c9-bd7e-627d7e226e30",
+      "eventKinds": [
+        "status",
+        "assistant-delta",
+        "done"
+      ],
+      "completedAt": "2026-10-25T17:40:23.173Z",
+      "cleanup": {
+        "confirmedExit": true,
+        "exit": {
+          "code": 143,
+          "signal": null
+        },
+        "signals": [
+          "SIGTERM"
+        ],
+        "at": "2026-10-25T17:40:24.118Z"
+      }
+    }
+  ],
+  "native": [
+    {
+      "type": "command_lifecycle"
+    },
+    {
+      "type": "command_lifecycle"
+    },
+    {
+      "type": "system",
+      "subtype": "init",
+      "user_message_uuids": [
+        "88691ae1-5c9e-43da-9287-19a89b7f533b"
+      ]
+    },
+    {
+      "type": "user"
+    },
+    {
+      "type": "assistant",
+      "user_message_uuid": "88691ae1-5c9e-43da-9287-19a89b7f533b",
+      "user_message_uuids": [
+        "88691ae1-5c9e-43da-9287-19a89b7f533b"
+      ]
+    },
+    {
+      "type": "rate_limit_event"
+    },
+    {
+      "type": "result",
+      "subtype": "success",
+      "user_message_uuid": "88691ae1-5c9e-43da-9287-19a89b7f533b",
+      "user_message_uuids": [
+        "88691ae1-5c9e-43da-9287-19a89b7f533b"
+      ],
+      "is_error": false
+    },
+    {
+      "type": "command_lifecycle"
+    },
+    {
+      "type": "command_lifecycle"
+    },
+    {
+      "type": "command_lifecycle"
+    },
+    {
+      "type": "system",
+      "subtype": "init",
+      "user_message_uuids": [
+        "756d0fc5-d18e-4a2b-bd9a-95d99f3ba293"
+      ]
+    },
+    {
+      "type": "user"
+    },
+    {
+      "type": "assistant",
+      "user_message_uuid": "756d0fc5-d18e-4a2b-bd9a-95d99f3ba293",
+      "user_message_uuids": [
+        "756d0fc5-d18e-4a2b-bd9a-95d99f3ba293"
+      ]
+    },
+    {
+      "type": "rate_limit_event"
+    },
+    {
+      "type": "result",
+      "subtype": "success",
+      "user_message_uuid": "756d0fc5-d18e-4a2b-bd9a-95d99f3ba293",
+      "user_message_uuids": [
+        "756d0fc5-d18e-4a2b-bd9a-95d99f3ba293"
+      ],
+      "is_error": false
+    },
+    {
+      "type": "command_lifecycle"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "affected": {
+    "tests": 150,
+    "pass": 150,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "fullPlugin": {
+    "tests": 1445,
+    "pass": 1430,
+    "fail": 7,
+    "cancelled": 0,
+    "skipped": 8
+  },
+  "baselineFailedFiles": {
+    "tests": 234,
+    "pass": 223,
+    "fail": 7,
+    "cancelled": 0,
+    "skipped": 4
+  },
+  "baselineCommit": "3752402643a200109864ca67b5281f7d3c7ce613",
+  "unchangedFailures": [
+    "approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer",
+    "approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart",
+    "approval-subscribe.test.ts: a long call keeps its length in the text, the details hold the whole call, and a late answer is reported",
+    "t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY",
+    "t4: EVERY one of the four real records renders UNTRUNCATED \u2014 the bound never fires on authored content",
+    "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+    "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'"
+  ],
+  "nativeClaude": {
+    "version": "2.1.310",
+    "newAndResume": "pass",
+    "evidence": "adapter-native-smoke.json"
+  },
+  "codex": {
+    "version": "0.164.0",
+    "inspection": "Installed codex exec --help accepts one prompt (or stdin prompt text); the adapter uses exec --json with closed stdin. Existing native JSON fixtures and the new hanging-process regression distinguish item.completed from turn.completed. Claude stream-input correlation is not imposed on Codex. No live Codex model call was needed."
+  },
+  "typecheck": "npx tsc -p vscode-plugin/tsconfig.json --noEmit passed after the full suite completed",
+  "beforeFix": "Queued-result regression failed with [] assistant text instead of Actual reply; /tmp/issue83-t2-before.log"
+}

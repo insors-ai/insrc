@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "2caf2ef10b7dec1f3e87bfafcb80d14667e594a4b66368e1a524e22d55b04faa",
+        "at": "2026-10-25T17:47:03.879Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:47:05.100Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1763baf9-f295-453c-ad90-5e81f11700bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:24:18.514Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-10-25T17:41:14.810Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "keep-chat-turn-s-reply-when"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Preserved chat replies after queued native results and across repeated reloads using request UUIDs and bounded retained-prefix recovery. Verified new/resumed installed-Claude turns, provider completion behavior and baseline-accounted plugin regressions.",
+    "testRecord": {
+      "md": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:47:00.211Z"
+      }
+    ],
+    "commit": "b4ed4ea1f"
+  },
+  "citations": []
+}

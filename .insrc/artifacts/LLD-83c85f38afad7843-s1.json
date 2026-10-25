@@ -1,0 +1,519 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792946090099-c25hob",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T16:44:48.901Z",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 596364,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "83c85f38afad7843",
+    "epicSlug": "keep-chat-turn-s-reply-when",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792946090099-c25hob",
+    "hldEffectiveHash": "0e559c7e6f25d6c77dfc8a2383a7f575b0c8e525745b2761a403d4f7af038688",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [
+        {
+          "type": "ISSUE",
+          "entityId": "ISSUE-83c85f38afad7843",
+          "relation": "derived-from"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "9278f0ec34f800baaf8acdf49a1795f96d5d91e6c11a45b4117aa24f2171ad21",
+        "at": "2026-10-25T16:48:49.293Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-10-25T17:06:54.601Z",
+        "report": {
+          "entityId": "LLD-83c85f38afad7843-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-43b5cf5a8d4bf6bf1f2fd2df66b9713c"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:06:54.604Z"
+      }
+    },
+    "rangeBase": "154d8b5e15a24a5018399dba040bc813ea4d79ca"
+  },
+  "body": {
+    "summary": {
+      "prose": "Keep the user’s actual reply visible when Claude first finishes older queued work. Newly submitted turns carry a request UUID, and both live and reattached readers finish only on the result naming that UUID. Existing recordings without request identity remain readable through process exit, with an explicit legacy limitation.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix approved ISSUE-83c85f38afad7843: preserve the user's actual reply when Claude emits results for queued/background items first. Cover live and reattached sessions, cursor replay, provider-specific completion and prompt/process correlation; retain prompt completion without waiting for lingering background processes. Check Codex similarly using existing adapter seams and real protocol evidence."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "makeStreamAdapter",
+          "signature": "function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAdapter",
+          "parameters": [
+            {
+              "name": "mapper",
+              "type": "ProviderMapper",
+              "purpose": "Own provider input framing, completion classification and permission responses.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "AdapterDeps",
+              "purpose": "Existing process/output seams.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StreamAdapter",
+            "meaning": "Existing run/resume/cancel/decide surface; no public signature change."
+          },
+          "errors": [
+            {
+              "type": "TurnEvent(error)",
+              "condition": "Spawn/input unavailable, process failure or stream missing a trustworthy own result."
+            }
+          ],
+          "preconditions": [
+            "Claude structured input requires writable stdin and a UUID-tagged user envelope; permission control responses share that stream.",
+            "Session output remains owned by the existing lease/process lifecycle."
+          ],
+          "postconditions": [
+            "Exactly one terminal event per reader, only after own matching result or actual EOF/error.",
+            "Assistant/tool events after earlier queued results remain visible.",
+            "Returning on own result neither kills process nor releases its lease prematurely.",
+            "Codex keeps its independent native completion rule pending protocol verification; no Claude fields are assumed for Codex."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TurnCursor / host turnId",
+        "change": "invariant-change",
+        "details": "For newly submitted Claude turns mint cryptographically random UUID and form a version-discriminated host turnId claude-request-<UUID>. The adapter alone creates/parses this exact prefix and canonical UUID. TurnCursor.turnId already persists it through segment markers, process handles, progress and reload; no cursor fields or file format change. One host turn owns one native request UUID; one UUID relates to many native frames and exactly one accepted terminal. Old claude-date-seq and arbitrary old turnIds are legacy, never interpreted as native UUIDs. Codex identity remains unchanged.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts",
+          "vscode-plugin/src/chat/session-output.ts"
+        ]
+      },
+      {
+        "entity": "ProviderMapper / TurnState",
+        "change": "field-add",
+        "details": "Private provider input framing takes the generated request UUID and emits one stream-json user envelope via existing SpawnedProcess.write after spawn readiness, before reading output/onSpawn consumer activity. Claude args enable input-format stream-json and replay-user-messages, retain output/verbose/resume/permission/read-dir/allowed-tool semantics, and remove positional prompt. Envelope has type=user, uuid, session_id='', parent_tool_use_id=null, message.role=user, message.content=unchanged prompt. stdin stays open for permission decisions. State derives expected UUID directly from turnId for both run and resume, independent of prior output offsets.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts"
+        ]
+      },
+      {
+        "entity": "Claude completion classification",
+        "change": "invariant-change",
+        "details": "Inspect a result's user_message_uuid and validated string-array user_message_uuids; accept if either names expected UUID. A result explicitly naming other requests is nonterminal, even if is_error or queue count is zero. Uncorrelated results on new UUID turns are nonterminal; retain diagnostic state and fail clearly at EOF if no own result is ever observed. Do not derive completion from queue count, num_turns, empty result text, result_index, wall-clock delay or first assistant frame. Preserve native result failure message on matching own result, including legitimate empty/zero-turn replies. Existing assistant/tool mapping remains in order. Generic uncorrelated provider error/spawn/auth events remain fatal; scoped result failures for other requests do not end this turn.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts"
+        ]
+      },
+      {
+        "entity": "Legacy Claude replay and EOF outcome",
+        "change": "invariant-change",
+        "details": "Legacy cursor identities cannot prove which result belongs to user: keep forwarding content and retain the latest result outcome, but defer terminal until segment/process ends. At EOF emit last outcome only if a result exists, otherwise existing failure behavior. New correlated turns missing matching result emit explicit failure after exit rather than synthesize success. Cancellation, abort, SegmentGone, PID reuse checks and session lease ownership retain existing semantics. Persist progress after every handled line including ignored results; ensure accepted terminal line cursor is checkpointed before yielding terminal so reload cannot replay it. Before following a saved legacy cursor, reconstruct the latest native result outcome from complete lines in the SAME retained turn segment preceding that saved byte offset, without re-emitting content or advancing progress. Extend SessionOutput.tail options additively with fromTurnStart and beforeOffset for this bounded read: anchor using the existing turn-start lookup in the recorded generation, never offset zero, never a different turn; stop at the saved offset, segment boundary or abort without waiting for new bytes. Normal tail defaults remain unchanged. Reconstruct on EVERY legacy attachment, including repeated reloads after the last result. If the needed prefix has rolled away, report SegmentGone rather than inventing success. No new cursor fields are required.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts",
+          "vscode-plugin/src/chat/session-output.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "CLI cannot accept correlated input",
+          "detection": "Missing/throwing write seam, native unknown-option/input error, or EOF without matching result.",
+          "response": "Emit actionable error; stop a newly spawned process on input setup failure so no orphan waits for input. Preserve already mapped reply text. Do not silently fall back to first-result completion. Unsupported CLI must be updated; no positional retry that could duplicate submitted work.",
+          "userImpact": "Visible failure rather than false successful empty turn.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Own native result fails",
+          "detection": "Result correlation contains expected UUID and is_error is true.",
+          "response": "Emit failed done once with native result message; stop reader, keep process lifecycle handling unchanged.",
+          "userImpact": "User sees own failure; earlier queued failure cannot hide later reply.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Nonzero exit/auth/signal before own result",
+          "detection": "Actual process exit status and existing stderr/auth detection; expected UUID was never completed.",
+          "response": "Preserve existing informative process/auth error, or report missing correlated completion if exit was otherwise clean; never synthesize successful done.",
+          "userImpact": "Incomplete response remains visible with clear failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Reattached segment gone or follow aborted",
+          "detection": "Existing SegmentGone or abort signal.",
+          "response": "Preserve existing behavior: warning/stop following, no process kill or invented success.",
+          "userImpact": "Existing retention/reattach limits remain.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Earlier notification or placeholder produces empty result with queue count zero, then user assistant/tool/reply frames.",
+          "expected": "Earlier result never ends new turn; all subsequent content reaches consumer until own UUID result."
+        },
+        {
+          "input": "Own UUID appears only in user_message_uuids merged list, or only singular; own result empty or zero-turn.",
+          "expected": "Both field forms accepted; empty/zero-turn own result completes normally without waiting for process exit."
+        },
+        {
+          "input": "Reload saved cursor lies after acknowledgement and first assistant.",
+          "expected": "Identity reconstructed from cursor.turnId, not earlier native lines; matching result completes and progress includes consumed terminal."
+        },
+        {
+          "input": "Malformed correlation, unrelated errors/results, duplicate matching result and extra lines.",
+          "expected": "Malformed/nonmatching result does not end new turn; first matching result yields one terminal, later lines drained; generic provider fatal errors retain existing handling."
+        },
+        {
+          "input": "Legacy cursor follows an alive process with multiple results.",
+          "expected": "Forward all content and defer completion through actual segment/process end; no guessed early done. Last native result outcome preserved, including failure."
+        },
+        {
+          "input": "Leading-dash, newline/Unicode prompt, permission decision and resume handle.",
+          "expected": "Exact prompt transmitted as JSON content, options retain semantics, control replies can still use stdin and resume flag is unchanged."
+        },
+        {
+          "input": "Codex emits item completions then turn.completed while process remains alive.",
+          "expected": "Item output is preserved and own native turn completion remains prompt; do not apply Claude UUID requirements."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Own completion returns while CLI remains alive; cancellation/PID identity, permission routing and lease ownership remain process-scoped.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing UTF8, live/reattached adapter consumer behavior and saved cursor semantics remain covered by adapter/lifecycle tests.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prevent premature terminal and verify provider wire boundary.",
+          "subjects": [
+            "Claude args, exact UUID user envelope and prompt escaping; resume/permission modes/readDirs/allowedTools unchanged.",
+            "Multiple prior results (including queue_count=0, zero-turn, placeholder, error), interleaved assistant/tools and delayed own result.",
+            "Singular/list correlation, malformed/missing metadata, own empty/error, duplicate terminals, missing result at clean/nonzero EOF.",
+            "Writable stdin absent/throws; no duplicate retry or orphan; control decision relay still writable."
+          ],
+          "fixturesNeeded": [
+            "Sanitized retained early-result shape; dynamic request UUID taken from fake stdin, never hard-coded host-generated IDs.",
+            "Fake process remaining alive after own result; assert reader settles before exit and no kill signal."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove identity survives durable output and consumer reload.",
+          "subjects": [
+            "Live file-backed output and pipe fallback preserve full user reply.",
+            "Resume from before early result and from after acknowledgement/assistant with UUID turnId; exactly one own terminal.",
+            "Terminal and ignored-result cursor checkpoints; legacy identity reads all results to real segment end and preserves last failure.",
+            "Abort/stop/PID reuse/SegmentGone/lease behavior plus queue-runner, turn-lifecycle and panel terminal consumption.",
+            "Two legacy reloads: checkpoint a failed result, detach before exit, attach again after its offset, then end process; native failure text must survive. Prefix scan must not duplicate visible assistant/tool content. Cover multiple turns in one generation, rolled generation, saved offset boundary and abort."
+          ],
+          "fixturesNeeded": [
+            "Existing createSessionOutput temp dirs and fake-spawner/liveness seams."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Protect independent Codex semantics and strict TypeScript compatibility.",
+          "subjects": [
+            "Codex item.completed is nonterminal; turn.completed is terminal even if process remains alive; other current native result/failure fixtures remain valid.",
+            "npx tsc -p vscode-plugin/tsconfig.json --noEmit and affected chat test suites, then full plugin suite if affected tests pass."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Confirm actual installed CLI accepts framed request and permission-compatible input; never run providers concurrently.",
+          "subjects": [
+            "Existing ACK-only probe already confirms UUID echo/result membership.",
+            "After implementation opt-in Claude new/resumed turn smoke through actual adapter, with tools/MCP disabled and time-bounded process cleanup.",
+            "Inspect Codex installed help/protocol fixture or serial no-tool smoke for exec one-prompt completion; do not infer Claude queue bug applies to Codex."
+          ],
+          "fixturesNeeded": [
+            "No direct cloud REST or SDK dependency; use installed OAuth CLI."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Multiple earlier results cannot hide assistant/tool/final user reply in live pipe/file modes."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Own result settles reader before hangUntilKilled process exits; zero-turn and failed own results included."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Persisted UUID turnId reattach at midstream cursor, legacy EOF handling, terminal checkpoint and existing stop/lease tests."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Independent Codex item/turn terminal regressions; CLI protocol evidence recorded."
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test and node:assert/strict executed with tsx; fake spawner, real temporary session-output files and existing tick/waitFor seams. Baseline adapter suite 88/88 passed; new regression must fail against original behavior before fix."
+    },
+    "migration": {
+      "stateBefore": "c1: Claude positional prompt and first-result terminal handling in live and resumed readers; c3: retained early zero-queue result precedes real reply. c2: existing background completion and cursor tests pass but omit this scenario.",
+      "stateAfter": "New Claude turns use UUID-tagged stream input and persisted turnId correlation; only matching result completes promptly. Legacy cursor turns preserve output through exit. Codex retains verified provider-specific semantics.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Record sanitized reproduction/protocol evidence, add failing new-turn and replay regressions, then update private adapter framing/completion and fixture generation together. Keep output/cursor schema unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Validate affected/full plugin tests, TypeScript and serial installed CLI smoke. Review code independently and record BUILD/TESTS evidence before asking for completion approval.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "After normal extension build/install, newly started turns use UUID identity. Existing running processes retain their original launch; reload readers recognize legacy turn IDs and wait for actual end. Do not restart daemon or deploy extension as part of source-only fix.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Public adapter signatures, SegmentCursor fields and marker format remain unchanged. turnId is an opaque string to consumers; new prefix carries request identity. Old turns remain readable, but safe early completion cannot be guaranteed without UUID: they wait for process/segment end, and can still be stopped using existing controls. Old CLI versions rejecting structured input or omitting correlation fail visibly rather than retrying a prompt or reporting false success. Rolling back restores old first-result behavior and its known loss risk; retained transcripts are not rewritten. SessionOutput.tail gains optional bounded prefix-read options; default callers are unchanged. Legacy attachments reconstruct result state from the matching retained segment before the checkpoint, so repeated reloads preserve the last result failure.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Request-correlated Claude stream input",
+        "oneLineSummary": "Stamp each new native request and complete only its result; retain existing adapter and cursor seams.",
+        "approach": "Use Claude stream-json input with a host UUID and provider-local correlation. Encode the UUID in the existing host turnId so SegmentCursor persists identity without a storage format change. Match singular/list result correlation for new turns in live and resume. Older recorded turns without this identity consume through actual exit, retaining all output rather than guessing an early terminal. Codex retains its provider-specific completion unless protocol evidence establishes the same ambiguity.",
+        "pros": [
+          "Directly identifies the requested user turn, including queued notifications and merged messages.",
+          "Existing persisted turnId provides reload identity without new cursor fields.",
+          "Own correlated result completes immediately while process remains alive."
+        ],
+        "cons": [
+          "Claude launch/input contract changes and requires compatibility coverage for permission relay and unsupported CLIs.",
+          "Legacy uncorrelated reattachment cannot promise early completion before process exit."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Complete every stream only on process exit",
+        "oneLineSummary": "Treat all provider result frames as intermediate and close on process exit.",
+        "approach": "Keep positional prompt input and existing cursor shape. Forward assistant/tool frames and retain the last native result until stdout closes and the process exits. Apply the same rule to live and replay paths without correlation metadata.",
+        "pros": [
+          "No new native input protocol.",
+          "Retains later output after an early result."
+        ],
+        "cons": [
+          "Violates the required prompt completion behavior when a CLI outlives its answer due to background work.",
+          "Cannot distinguish user result from queued work before exit."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Always waiting for exit reproduces hung completion for background processes."
+      },
+      {
+        "id": "a3",
+        "name": "Persist a separate native request UUID in cursor metadata",
+        "oneLineSummary": "Use request correlation with an additive cursor and output-marker identity field.",
+        "approach": "Send the same UUID-stamped stream input as a1, but persist a dedicated requestUuid in SegmentCursor and turn markers and carry it through all cursor producers/consumers. Retain legacy EOF behavior for cursors without identity.",
+        "pros": [
+          "Separates host event identity and native request identity explicitly.",
+          "Supports future providers with different request identifier shapes."
+        ],
+        "cons": [
+          "Wider persistence and consumer changes with no additional correctness for this issue.",
+          "Requires migration validation for every cursor serialization path."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Equivalent correctness with unnecessary cursor/marker migration."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "New request identity distinguishes queued work from the user's reply and survives a reader reload. Process lifetime remains separate from reply completion.",
+      "participants": [
+        {
+          "id": "host",
+          "label": "Chat adapter",
+          "description": "Owns request UUID, events and process handle."
+        },
+        {
+          "id": "cli",
+          "label": "Claude CLI",
+          "description": "Accepts framed user input; can emit results for other queued work."
+        },
+        {
+          "id": "out",
+          "label": "Retained output",
+          "description": "Existing segment cursor persists host turnId and native frames."
+        },
+        {
+          "id": "reader",
+          "label": "Live / reattached reader",
+          "description": "Reconstructs expected UUID from host turnId and classifies completion."
+        }
+      ],
+      "messages": [
+        {
+          "from": "host",
+          "to": "out",
+          "label": "Begin segment: claude-request-UUID",
+          "description": "One host turn owns one native UUID; no cursor schema change."
+        },
+        {
+          "from": "host",
+          "to": "cli",
+          "label": "Stream user envelope with UUID",
+          "description": "Same prompt and permissions; stdin remains usable for control replies."
+        },
+        {
+          "from": "cli",
+          "to": "out",
+          "label": "Earlier result for another request",
+          "description": "May be empty and queue count zero; not proof of user completion."
+        },
+        {
+          "from": "out",
+          "to": "reader",
+          "label": "Read earlier result; continue",
+          "description": "No terminal event or discarded subsequent reply."
+        },
+        {
+          "from": "cli",
+          "to": "out",
+          "label": "User assistant/tool frames; result naming UUID",
+          "description": "Singular UUID or merged list membership identifies own result."
+        },
+        {
+          "from": "out",
+          "to": "reader",
+          "label": "Forward content; checkpoint terminal; finish reader",
+          "description": "Reload identity does not depend on having seen earlier acknowledgements."
+        },
+        {
+          "from": "reader",
+          "to": "host",
+          "label": "One terminal event; process can remain alive",
+          "kind": "return",
+          "description": "Process lease/stop ownership remains with actual process lifecycle."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:881-1160"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/S001/claude-correlation-probe.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "https://raw.githubusercontent.com/anthropics/claude-agent-sdk-typescript/main/CHANGELOG.md"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-83c85f38afad7843.json"
+    }
+  ]
+}

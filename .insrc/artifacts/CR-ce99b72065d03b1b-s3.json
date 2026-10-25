@@ -1,0 +1,375 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792969083150-fm3ftf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T22:58:03.863Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 1811489,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 124827,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt",
+        "jetbrains-plugin/src/test/resources/fixtures/model-tiers-catalog.json",
+        "package.json",
+        "scripts/check-model-definitions.mjs",
+        "scripts/insrc-daemon-install.sh",
+        "src/agent/providers/__tests__/input-budget.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/analyze/context/__tests__/provider-bypass-audit.test.ts",
+        "src/analyze/context/__tests__/provider-from-registry.test.ts",
+        "src/analyze/context/__tests__/role-router-global-tiers.test.ts",
+        "src/analyze/context/__tests__/role-router.test.ts",
+        "src/analyze/context/__tests__/shaper-provider.test.ts",
+        "src/analyze/context/__tests__/summariser-provider.test.ts",
+        "src/analyze/context/__tests__/tier-effort-routing.test.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/role-router.ts",
+        "src/analyze/context/shaper-provider.ts",
+        "src/assets/models/cloud-model-catalog.json",
+        "src/cli/__tests__/model-tiers.test.ts",
+        "src/cli/__tests__/tui-shipped-registry.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/panes/model-tiers.ts",
+        "src/cli/services/workflow.ts",
+        "src/cli/shipped-model-registry.ts",
+        "src/config/__tests__/analyze-tiering.test.ts",
+        "src/config/__tests__/check-model-definitions.test.ts",
+        "src/config/__tests__/config-catalog-contract.test.ts",
+        "src/config/__tests__/config-catalog-defs.test.ts",
+        "src/config/__tests__/config-reconcile.test.ts",
+        "src/config/__tests__/fixtures/PROVENANCE.md",
+        "src/config/__tests__/fixtures/legacy-config.baseline.json",
+        "src/config/__tests__/installer-defs.test.ts",
+        "src/config/__tests__/jetbrains-catalog-fixture.test.ts",
+        "src/config/__tests__/reconcile-defs.test.ts",
+        "src/config/__tests__/repo-shaper-override.test.ts",
+        "src/config/__tests__/settings-cache-reset.test.ts",
+        "src/config/__tests__/tier-defaults.test.ts",
+        "src/config/__tests__/tier-resolution.test.ts",
+        "src/config/analyze.ts",
+        "src/config/config-catalog.ts",
+        "src/config/local.ts",
+        "src/config/model-defaults.ts",
+        "src/config/reconcile.ts",
+        "src/daemon/__tests__/boot-cold-import.test.ts",
+        "src/daemon/__tests__/claude-models.test.ts",
+        "src/daemon/__tests__/client-family.test.ts",
+        "src/daemon/__tests__/config-boot-reconcile.test.ts",
+        "src/daemon/__tests__/config-write-models.test.ts",
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/__tests__/list-models.test.ts",
+        "src/daemon/__tests__/model-catalog-asset.test.ts",
+        "src/daemon/__tests__/model-literal-scan.test.ts",
+        "src/daemon/__tests__/models-daemon-s3.test.ts",
+        "src/daemon/__tests__/models-resolve-role.test.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/config-write.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/index.ts",
+        "src/daemon/lifecycle.ts",
+        "src/daemon/list-models.ts",
+        "src/daemon/model-definitions.ts",
+        "src/daemon/model-registry.ts",
+        "src/daemon/steps/__tests__/step-context.test.ts",
+        "src/daemon/steps/analyze-oneshot.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/threads/method-class.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/indexer/__tests__/embedder-keepalive.test.ts",
+        "src/indexer/__tests__/embedder-lazy.test.ts",
+        "src/indexer/embedder.ts",
+        "src/indexer/index.ts",
+        "src/mcp/server.ts",
+        "src/shared/step-context.ts",
+        "src/workflow/__tests__/attribution.test.ts",
+        "src/workflow/attribution.ts",
+        "src/workflow/types.ts",
+        "tsconfig.json",
+        "vscode-plugin/assets/insrc-daemon-install.sh",
+        "vscode-plugin/package.json",
+        "vscode-plugin/scripts/sync-manifest-catalog.mjs",
+        "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+        "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+        "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+        "vscode-plugin/tsconfig.json"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/steps/analyze-oneshot.ts",
+        "src/daemon/steps/host.ts",
+        "src/shared/step-context.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/config-write.ts:37",
+            "message": "Including models.local.host makes a host-only write return restartRequired:true even when all five restart-sensitive settings listed in the approved contract are unchanged. This extends the contract despite its requirement that other paths retain their existing behavior.",
+            "expectationRef": "LLD contract 1: config.write"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/model-definitions.ts:193",
+            "message": "Validation rejects empty role or repoPath strings, narrowing the approved contract, which specifies invalid-params only for missing or non-string values. Remove the empty-string checks so supplied strings reach role resolution.",
+            "expectationRef": "LLD contract 2: models.resolveRole"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/config/reconcile.ts:350",
+            "message": "The evidence establishes reconciliation defaults from the shipped CONFIG_CATALOG, but shows no daemon wiring to buildConfigCatalog(validateModelCatalog()) after main() validates. That required runtime integration remains unimplemented; daemon reconciliation must use the validated registry rather than the shipped display defaults.",
+            "expectationRef": "LLD contract 7: CONFIG_CATALOG"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/steps/host.ts:88",
+            "message": "The evidence explicitly says the host only validates client identity and delegates family conversion to consumers. This departs from the approved requirement that the host use the daemon-owned familyForClient helper.",
+            "expectationRef": "LLD data-model change 4: Runner → CLI-kind and client → runner mappings"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:184",
+            "message": "No supplied evidence note shows the required validation-provider implementation: reuse the router's CLI provider, or resolve the default family's build tier through the registry and construct it through the same factory, logging the substitution. This required portion is unimplemented on the stipulated evidence.",
+            "expectationRef": "LLD data-model change 4: Runner → CLI-kind and client → runner mappings"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/handler-runtime.ts:1226",
+            "message": "No supplied evidence note shows claude.models switching to the registry's Claude-kind served models with the specified response shape, or removal of the Anthropic SDK import and direct REST call. This required portion is unimplemented on the stipulated evidence.",
+            "expectationRef": "LLD data-model change 4: Runner → CLI-kind and client → runner mappings"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "scripts/insrc-daemon-install.sh:289",
+            "message": "Malformed JSON throws an uncaught SyntaxError without naming the definitions file, departing from the required filename-bearing error response. Wrap the reader failure with a diagnostic containing MODEL_DEFS in both installer copies.",
+            "expectationRef": "LLD error case 6: The installer cannot read the definitions file (missing or not JSON) in step 4b."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/attribution.ts:45",
+            "message": "The family-prefix branch strips `ollama:` from the historical label, producing model `qwen3.6:35b-a3b`. The approved edge case requires runner `ollama` with the raw model label `ollama:qwen3.6:35b-a3b` preserved.",
+            "expectationRef": "LLD edge case 15: An artifact attributed with a historical label 'codex', 'codex:gpt-6-astra' or 'ollama:qwen3.6:35b-a3b' (no longer listed)."
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 3,
+          "obligation": 73,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "scripts/check-model-definitions.mjs:34",
+            "message": "The build gate reports success with console.log, violating the documented requirement to use getLogger. No script exception is established by the evidence.",
+            "expectationRef": "logger-not-console",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/agent/providers/__tests__/input-budget.test.ts:43",
+            "message": "The family lookup and models[0] use non-null assertions without checking either result, bypassing the documented requirement to handle undefined indexed values. Assert that the family and model exist before dereferencing them.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/role-router-global-tiers.test.ts:84",
+            "message": "The test shape declares `defaultModel?: string` without the explicitly required `| undefined`. Use `defaultModel?: string | undefined`; the same declaration appears in summariser-provider.test.ts.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/config/__tests__/installer-defs.test.ts:80",
+            "message": "Fixture cast shapes declare tierDefaults and toolLoopModel as optional without explicit `| undefined`; check-model-definitions.test.ts:43 does the same for tierDefaults. Add `| undefined` to follow the documented optional-property convention.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/config/__tests__/config-catalog-defs.test.ts:69",
+            "message": "Catalog lookups use non-null assertions and immediately dereference potentially missing rows. Assert that each row exists before accessing its properties so undefined is explicitly handled.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/config-write-models.test.ts:114",
+            "message": "The result type declares reason/detail as optional properties without the required explicit `| undefined`. The noted aliases, toolLoopModel and defaultModel declarations repeat this documented convention violation.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/claude-models.test.ts:73",
+            "message": "The handler lookup uses a non-null assertion without checking that the indexed handler exists. Assert its presence before invoking it to satisfy the documented requirement to handle undefined index results.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/scripts/sync-manifest-catalog.mjs:23",
+            "message": "The dynamic project import explicitly targets config-catalog.ts, violating the documented requirement to use .js extensions even for TypeScript sources.",
+            "expectationRef": "import-js-ext",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/scripts/sync-manifest-catalog.mjs:65",
+            "message": "The script uses console.log for status output here and at line 71 instead of the required getLogger logger.",
+            "expectationRef": "logger-not-console",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts:37",
+            "message": "Non-null assertions on the fixture section lookups and indexed property suppress possible undefined values without handling them. Assert that the sections and property exist before dereferencing them.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 35,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/shaper-provider.ts:237",
+            "message": "Correctness: when the effective family is local but the requested model belongs to a CLI family, registry.find returns undefined and this branch still forwards the incompatible requested ID to Ollama. For example, an unset configuration with clientDefault='ollama' can send the default CLI core model to Ollama. Use a listed local fallback when the requested model belongs to another family.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/model-literal-scan.test.ts:66",
+            "message": "Complexity: the comment-stripping regex does not distinguish comments from string contents. Valid strings containing /* and */ can cause intervening executable code to disappear from the scan, allowing forbidden literals to pass. A token-based scan would avoid this ambiguity.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:1102",
+            "message": "Duplication: local provider construction repeats the shared factory's host lookup, context-window selection and constructor call. The two paths already express different missing-limit fallbacks, increasing the maintenance needed to keep local provider behavior consistent.",
+            "counterpartRef": "diff:src/analyze/context/shaper-provider.ts",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "scripts/insrc-daemon-install.sh:292",
+            "message": "Error handling: family lookup can return undefined when no family runs the selected CLI, a configuration explicitly exercised by the supplied fixtures where both CLI families run Codex. Noninteractive installation still selects Claude, then dereferences fam.tierDefaults and aborts with a TypeError. Select an available CLI or reject the choice with an actionable error.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/assets/insrc-daemon-install.sh:293",
+            "message": "Error handling: the installer always offers claude and codex, but the definitions can lack a family for either CLI. In that case, fam is undefined and reading tierDefaults throws during installation. Validate the selected CLI's family before generating settings and report an actionable error.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:258",
+            "message": "Duplication: both RPC modules repeat the same provider-resolution and model-label logic. A shared helper would prevent attribution labels from diverging when resolution rules change.",
+            "counterpartRef": "diff:src/daemon/workflow-rpc.ts",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "scripts/insrc-daemon-install.sh:286",
+            "message": "Both installers duplicate the catalog loading, default-family selection, tier serialization, and local-model selection logic verbatim. Future fixes must be maintained twice and can drift; keep one canonical installer and generate the packaged copy.",
+            "counterpartRef": "vscode-plugin/assets/insrc-daemon-install.sh#vscode-plugin/assets/insrc-daemon-install.sh",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/workflow-rpc.ts:630",
+            "message": "modelLabelFor independently reconstructs the model-selection decision in buildShaperProvider, and the implementations have diverged: an explicit model outside the selected CLI family is reported here even though provider construction rejects it and uses the CLI default. Share a resolved provider/model descriptor between construction and labeling so meta.model reflects the actual selection.",
+            "counterpartRef": "src/analyze/context/shaper-provider.ts#src/analyze/context/shaper-provider.ts",
+            "confidence": "breach"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 0,
+          "relation": 10,
+          "merge": 0
+        }
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 10,
+      "low": 16
+    }
+  }
+}

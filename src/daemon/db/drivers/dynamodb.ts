@@ -46,6 +46,7 @@ import type {
 import { registerDriver } from '../registry.js';
 import {
 	assertNamespaceAllowed,
+	SCAN_TIMEOUT_MS,
 	clampSampleShapeLimit,
 	clampScanLimit,
 } from './kv-common.js';
@@ -86,6 +87,10 @@ export class DynamoDriver implements KvDriver {
 			},
 			...(endpoint !== undefined ? { endpoint } : {}),
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.client.send(new ListTablesCommand({ Limit: 1 }), { abortSignal: AbortSignal.timeout(SCAN_TIMEOUT_MS) });
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {

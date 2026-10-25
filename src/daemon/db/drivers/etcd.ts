@@ -52,6 +52,10 @@ export class EtcdDriver implements KvDriver {
 		this.client = new Etcd3(etcdOpts);
 	}
 
+	async probeReachability(): Promise<void> {
+		await this.client.kv.range({ key: Buffer.from([0]), range_end: Buffer.from([0]), limit: '1', keys_only: true }, { deadline: Date.now() + SCAN_TIMEOUT_MS });
+	}
+
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
 		const limit = clampScanLimit(opts.limit);

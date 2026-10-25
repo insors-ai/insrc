@@ -87,6 +87,11 @@ export class CassandraDriver implements KvDriver {
 		this.defaultKs = typeof ksOpt === 'string' ? ksOpt : undefined;
 	}
 
+	async probeReachability(): Promise<void> {
+		await this.client.connect();
+		await this.client.execute('SELECT release_version FROM system.local');
+	}
+
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
 		const limit = clampScanLimit(opts.limit);

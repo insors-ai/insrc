@@ -38,6 +38,9 @@ const log = getLogger('db-memcached');
 
 interface MemcachedClient {
 	get(key: string, cb?: (err: Error | null, value: Buffer | null) => void): unknown;
+	incrSeq(): void;
+	readonly seq: number;
+	perform(key: string, request: Buffer, seq: number, callback: (error: Error | null, response: {header: {status:number;opcode:number}} | null) => void, retries: number): void;
 	close(): void;
 }
 
@@ -63,6 +66,18 @@ class MemcachedDriver implements KvDriver {
 			...(auth.password !== undefined ? { password: auth.password } : {}),
 			timeout: SCAN_TIMEOUT_MS / 1000,
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		// memjs exposes no VERSION convenience method; use its authenticated binary operation path.
+		this.client.incrSeq();
+		const sequence = this.client.seq, packet = Buffer.alloc(24);
+		packet[0] = 0x80; packet[1] = 0x0b; packet.writeUInt32BE(sequence, 12);
+		await new Promise<void>((resolve, reject) => this.client.perform('', packet, sequence, (error, response) => {
+			if (error) reject(error);
+			else if (!response || response.header.status !== 0 || response.header.opcode !== 0x0b) reject(new Error('Memcached probe failed.'));
+			else resolve();
+		}, 1));
 	}
 
 	async scan(_opts: ScanOpts): Promise<KeyList> {

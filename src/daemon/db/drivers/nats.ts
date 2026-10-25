@@ -49,6 +49,16 @@ export class NatsKvDriver implements KvDriver {
 		private readonly config: ConnectionConfig,
 	) { }
 
+	async probeReachability(): Promise<void> {
+		const nc = await this.nc();
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		try {
+			await Promise.race([nc.flush(), new Promise<never>((_, reject) => {
+				timer = setTimeout(() => { void nc.close(); reject(new Error('NATS probe timed out')); }, SCAN_TIMEOUT_MS);
+			})]);
+		} finally { if (timer) clearTimeout(timer); }
+	}
+
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
 		const limit = clampScanLimit(opts.limit);
@@ -151,8 +161,14 @@ export class NatsKvDriver implements KvDriver {
 	private nc(): Promise<NatsConnection> {
 		let p = this.ncPromise;
 		if (p === null) {
+			const urls = this.servers.map(server => new URL(server.includes('://') ? server : 'nats://' + server));
+			const user = decodeURIComponent(urls[0]!.username), pass = decodeURIComponent(urls[0]!.password);
+			if (urls.some(url => decodeURIComponent(url.username) !== user || decodeURIComponent(url.password) !== pass))
+				throw new Error('Inconsistent NATS server identities');
+			for (const url of urls) { url.username = ''; url.password = ''; }
 			p = connect({
-				servers: [...this.servers],
+				servers: urls.map(url => url.toString()),
+				...(user ? { user, pass } : {}),
 				timeout: SCAN_TIMEOUT_MS,
 			});
 			this.ncPromise = p;

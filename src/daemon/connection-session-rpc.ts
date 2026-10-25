@@ -2,6 +2,8 @@
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
+import { createTemporaryOverlay } from './db/session-entries.js';
+import type { TemporaryConnectionOverlay } from './db/session-entries.js';
 import { ConnectionSessionOwner } from './db/session-owner.js';
 import type { SessionOwnerPorts } from './db/session-owner.js';
 import { ManagementServiceError, managementRejection } from './db/management.js';
@@ -50,7 +52,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		if (!this.#owner) {
 			this.#epoch = context.daemonEpoch;
 			this.#owner = new ConnectionSessionOwner({ daemonEpoch: context.daemonEpoch, isRegistered: this.#ports.isRegistered,
-				createOverlay: this.#ports.createOverlay, ...(this.#ports.monotonicNow ? { monotonicNow: this.#ports.monotonicNow } : {}) });
+				createOverlay: this.#ports.createOverlay, ...(this.#ports.dropOverlay ? { dropOverlay: this.#ports.dropOverlay } : {}), ...(this.#ports.monotonicNow ? { monotonicNow: this.#ports.monotonicNow } : {}) });
 		}
 		return this.#owner;
 	}
@@ -169,8 +171,9 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 	async close(): Promise<void> { this.stopAdmission(); this.#claims.clear(); this.#intents.clear(); }
 }
 
-export const connectionSessionRuntime = new ConnectionSessionRpc({
+export const connectionSessionRuntime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({
 	enabled: async () => (await connectionManagementEnablement(undefined, ['sc5'])).ready,
 	isRegistered: async root => await lookupRepoId(root) !== undefined,
-	createOverlay: () => new Map<string, never>(),
+	createOverlay: createTemporaryOverlay,
+	dropOverlay: overlay => overlay.close(),
 });

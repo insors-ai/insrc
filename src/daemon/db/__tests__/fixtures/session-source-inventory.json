@@ -7403,7 +7403,7 @@
       ],
       "siteCount": 17,
       "sitesDigest": "37452ec14c94fc017ec99f45fd3f4113904cde250762e4a43028bde090601951",
-      "sourceDigest": "a0d9ac07fbe54ab8b6892d803b7b8225b6ff95c87f91fc24f42ea0d59a815273",
+      "sourceDigest": "ef4c86782a57e35810ec298fa40985740408403cfc62567a90408db5f4751015",
       "boundaries": [
         "connection-factory",
         "connection-use",
@@ -9755,7 +9755,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "fe4bb4c584460e3546731dd1601e06882aa29a1a6255721d025067249a3bef2c",
+      "sourceDigest": "6451be630ead7517be0b8f4e51def7f06d0f1af7648a50c9c7ba58b28154332c",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -11127,6 +11127,22 @@
         "serialization"
       ]
     },
+    "src/daemon/db/session-entries.ts": {
+      "classification": "session-private-generations",
+      "rationale": "S003 memory-only owner/root config generations. Materialization uses only selected private prior generation and a deny-only secret-read port; readonly runtime path preparation and safe profile projections do not persist. Fixed session-wide counters are shared only by sibling overlays; opaque staged tokens commit by identity after live/cancel/quota rechecks. Runtime callbacks remain private and gain full leases in t9.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "d7fbc7435a5e936a49cf173489e1062fb4fc71778e51100c993c184e9613a4df",
+      "sourceDigest": "648756cfe7da4723f0a1e1ea576057c853acfa18311f83e8ce41ca6b4761333f",
+      "boundaries": [
+        "serialization"
+      ]
+    },
     "src/daemon/db/session-owner.ts": {
       "classification": "session-owner",
       "rationale": "S003 private memory authority: control digest and epoch/generation checks, monotonic lease/quota and root-owned overlays. Bootstrap tokens only reach authenticated control; no persistent ports or saved credential fallback.",
@@ -11281,6 +11297,10 @@
         ],
         [
           "connection-use",
+          "this.#ports.dropOverlay"
+        ],
+        [
+          "connection-use",
           "this.#result"
         ],
         [
@@ -11294,6 +11314,18 @@
         [
           "connection-use",
           "this.#revokeData"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
         ],
         [
           "connection-use",
@@ -11360,9 +11392,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 57,
-      "sitesDigest": "407458daa28f2a13707bae6d5000361c71c8fd6b42500ee2b722f0c80bc9b15c",
-      "sourceDigest": "d07da0570eb5e1a11be4a7b080f94202f0891eb2dae1d3aa77a9ebb602557e3a",
+      "siteCount": 61,
+      "sitesDigest": "98c017ae0e0facbfcffd8a2bc7a9f22d1693ff706123c20ce2336d236cf70504",
+      "sourceDigest": "8391ad3028b39de7bda4167e62e29099a6f7c6e858f72e996503dbd96af6e4a1",
       "boundaries": [
         "connection-use",
         "serialization"

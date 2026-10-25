@@ -1,4 +1,4 @@
-/** Daemon-memory workbench owner. No installed singleton or public RPC until t4. */
+/** Daemon-memory workbench owner. Authority and overlays never persist. */
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import type { TrustedRpcContext, TrustedConnectionSession } from '../request-context.js';
@@ -33,11 +33,16 @@ interface Session<Overlay> {
 	controlIdentity: string | undefined;
 	controlController: AbortController;
 }
+export interface SessionOverlayContext<Overlay> {
+	readonly existingOverlays: readonly Overlay[];
+	readonly assertActive: () => void;
+}
 export interface SessionOwnerPorts<Overlay> {
 	readonly daemonEpoch: string;
 	readonly isRegistered: (root: string) => Promise<boolean>;
 	/** Creates an empty owned memory aggregate, never a saved pool. */
-	readonly createOverlay: (root: string, sessionHandle: string) => Overlay;
+	readonly createOverlay: (root: string, sessionHandle: string, context: SessionOverlayContext<Overlay>) => Overlay;
+	readonly dropOverlay?: ((overlay: Overlay) => void) | undefined;
 	readonly monotonicNow?: (() => number) | undefined;
 }
 const token = (): string => randomBytes(32).toString('base64url');
@@ -101,6 +106,7 @@ export class ConnectionSessionOwner<Overlay> {
 		session.signingKey.fill(0);
 		this.#revokeData(session);
 		session.controlController.abort();
+		for (const overlay of session.overlays.values()) this.#ports.dropOverlay?.(overlay);
 		session.overlays.clear();
 	}
 	#revokeData(session: Session<Overlay>): void {
@@ -139,7 +145,7 @@ export class ConnectionSessionOwner<Overlay> {
 			deadline: this.#now() + CONNECTION_SESSION_LEASE_MS, generation: 1, controlIdentity: context.connectionIdentity,
 			controlController: new AbortController(), overlays: new Map(), delegations: new Map() };
 		try {
-			session.overlays.set(root, this.#ports.createOverlay(root, handle));
+			session.overlays.set(root, this.#ports.createOverlay(root, handle, Object.freeze({ existingOverlays: Object.freeze([]), assertActive: () => { this.#session(handle); } })));
 			this.#context(context);
 			session.deadline = this.#now() + CONNECTION_SESSION_LEASE_MS;
 		} catch {
@@ -246,7 +252,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (current.signal !== binding.signal || current.controlGeneration !== binding.controlGeneration) throw expired();
 		if (!session.overlays.has(root)) {
 			let overlay: Overlay;
-			try { overlay = this.#ports.createOverlay(root, session.handle); } catch { throw expired(); }
+			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
 			if (this.dataBinding(context, root).signal !== binding.signal) throw expired();
 			session.overlays.set(root, overlay);
 		}
@@ -270,7 +276,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (this.#control(context) !== session || session.generation !== generation) throw expired();
 		if (!session.overlays.has(root)) {
 			let overlay: Overlay;
-			try { overlay = this.#ports.createOverlay(root, session.handle); } catch { throw expired(); }
+			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
 			if (this.#control(context) !== session || session.generation !== generation) throw expired();
 			session.overlays.set(root, overlay);
 		}

@@ -354,7 +354,7 @@ Run at 2026-10-25T07:23:32.021Z on commit `7910b8088`. Tests check: **passed**. 
 
 ## t19
 
-Run at 2026-10-25T07:31:53.959Z on commit `a26c1b89b`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-25T08:29:29.792Z on commit `d63ce2686`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 no test files to run; reported as failed by the builder: CM-S2-SWEEP: after all S002 tasks are built run final build and full test sweep; record actual failures skips and timeouts and keep release disabled for unmet prerequisites.
 

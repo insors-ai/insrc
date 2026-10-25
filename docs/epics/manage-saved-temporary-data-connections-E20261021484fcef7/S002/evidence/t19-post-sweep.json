@@ -117,7 +117,7 @@
     }
   ],
   "coverageLimits": [
-    "SQL Server actual service test awaits explicit Microsoft container EULA authorization",
+    "SQL Server actual-service coverage pending Linux x64 CI or remote host; deferral explicitly accepted by user on 2026-10-25; no CI run or local EULA acceptance",
     "Arrow/Feather local reader unavailable: valid inputs fail unsupported-temporary; no automatic INSTALL",
     "Full sweep retains 132 skips and 3 TODOs; live LLM services disabled"
   ],
@@ -125,17 +125,33 @@
   "S002CodeReview": "WARN after round 2: 0 high, 1 medium coverage warning for failed/unverified full sweep; no adherence, conventions or quality findings",
   "releaseReady": false,
   "shippedGateReady": false,
-  "buildApproval": "Pending; no BUILD approval requested while required checks remain unresolved",
+  "buildApproval": "Pending explicit user approval of BUILD; MSSQL deferral accepted, final full-sweep warning remains",
   "currentSourceChangedAfterSweep": true,
   "codeReviewPath": "../CR.md",
   "taskGates": {
     "passed": 17,
     "total": 19,
     "pending": {
-      "t7": "Actual MSSQL service evidence requires explicit Microsoft container EULA authorization",
+      "t7": "MSSQL actual-service coverage pending Linux x64 CI/remote verification; user-approved deferral, not a passing test",
       "t19": "Original full sweep failed; final source has focused follow-ups, not a passing final full sweep"
     }
   },
   "additionalEvidence": "t19-clickhouse-followup.json",
-  "task16Scope": "Passed after executing and recording legacy compatibility coverage; additive attribution correction preserves history"
+  "task16Scope": "Passed after executing and recording legacy compatibility coverage; additive attribution correction preserves history",
+  "SQLServerDeferral": {
+    "status": "pending",
+    "acceptedBy": "user",
+    "acceptedOn": "2026-10-25",
+    "target": "Linux x64 CI runner or remote x64 Linux host",
+    "ciProvisioned": false,
+    "actualServiceVerified": false,
+    "localEulaAccepted": false,
+    "evidenceRequired": [
+      "authenticated SELECT 1",
+      "bad authentication rejection",
+      "unavailable service rejection",
+      "connection disposal and fixture removal"
+    ],
+    "details": "../LIVE_DATABASE_FIXTURES.md"
+  }
 }

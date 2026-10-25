@@ -20,10 +20,11 @@
  *     buildShaperProvider/buildSummariserProvider, memoized per (role,repoPath)).
  *   resolveProviderForRole is their composition; consumers see only the router.
  *
- * Precedence (ac3): byRepo role tier → global role tier → taxonomy defaultTier;
- * then the tier's model comes from byRepo.tiers → global tiers → the legacy
- * shaperProvider/shaperModel fallback (so an unset config resolves EXACTLY as
- * the shipped single-provider path — k3/k4, byte-for-byte unchanged).
+ * Precedence (ac3): byRepo role tier → global role tier → taxonomy defaultTier,
+ * clamped by the core floor (byRepo → global); the tier's runner, model and
+ * effort then come ONLY from the global tier as the model registry resolved it
+ * (Epic ce99b72065d03b1b s3) — a repo picks a tier for a role, never the model
+ * behind it.
  *
  * Scope: S003 reroutes only the run-wide workflow seam (prepareWorkflowRun); the
  * ~11 per-operation analyze buildShaperProvider sites are S005. Per-output model
@@ -32,7 +33,7 @@
  */
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort, TierName, TierModel } from '../../config/analyze.js';
-import { DEFAULT_TIERS } from '../../config/analyze.js';
+import type { FallbackReason, ModelRegistry } from '../../daemon/model-registry.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
@@ -55,10 +56,13 @@ export interface RoleResolution {
 	readonly tier:           TierName;
 	readonly runner:         AnalyzeShaperProviderKind;
 	readonly model:          string;
-	/** The reasoning effort of the GLOBAL tier the role resolves to, also when a
-	 *  byRepo tier supplies its runner and model; absent: the CLI's default. */
+	/** The reasoning effort of the global tier the role resolves to; absent:
+	 *  the CLI's default. */
 	readonly effort?:        TierEffort | undefined;
 	readonly clampedByFloor: boolean;
+	/** Set when the tier's configured model was rejected or unlisted and the
+	 *  tier default ran instead (decision A). */
+	readonly fallback?:      { readonly reason: FallbackReason; readonly requested: string } | undefined;
 }
 
 /** The RoleRouter return shape (sc3): a constructed provider + its resolution. */
@@ -67,13 +71,14 @@ export interface ResolvedProvider {
 	readonly resolution: RoleResolution;
 }
 
-/** Construction deps carried by a RoleRouter instance (per the run): the fresh
- *  legacy per-repo override, the per-run client default, and the CLI timeout.
- *  These feed the resolveShaperKind fallback chain BELOW any tier assignment. */
+/** Construction deps carried by a RoleRouter instance (per the run): the
+ *  per-run client default and the CLI timeout (which feed the resolveShaperKind
+ *  fallback chain BELOW any tier assignment), and the registry the providers
+ *  are built from (default: the daemon thread's getModelRegistry()). */
 export interface RoleRouterDeps {
-	readonly repoOverride?:  AnalyzeShaperProviderKind | undefined;
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 	readonly cliTimeoutMs?:  number | undefined;
+	readonly registry?:      ModelRegistry | undefined;
 }
 
 /** The sc3 public surface. */
@@ -127,33 +132,27 @@ function resolveRoleInternal(
 		clampedByFloor = outcome.clamped;
 	}
 
-	// 3. Tier model, in precedence order:
-	//    byRepo.tiers[tier] → global tiers[tier] → explicit legacy shaperProvider
-	//    → built-in DEFAULT_TIERS[tier]. The legacy shaperProvider knob (or a
-	//    per-repo/per-run CLI default) still wins over the built-in defaults so an
-	//    operator who pinned one backend keeps it; only a truly unconfigured run
-	//    falls to the built-in tier defaults (critical→high CLI, peripheral→cheapest CLI).
+	// 3. Tier model: the global tier as loadAnalyzeConfig resolved it through
+	//    the registry (always present on a loaded config; the legacy chain below
+	//    covers a hand-built config without tiers).
 	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
-	const legacyExplicit = globalExplicit !== undefined || deps.repoOverride !== undefined || deps.clientDefault !== undefined;
-	const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];
-	const tierModel: TierModel | undefined = configuredTier ?? (legacyExplicit ? undefined : DEFAULT_TIERS[tier]);
+	const tierModel: TierModel | undefined = cfg.tiering.tiers?.[tier];
 
 	// Effective runner: the tier's runner (top priority via resolveShaperKind's
 	// roleResolved) or, absent a tier model, the legacy chain. This is the SAME
 	// admission point materialize's buildShaperProvider will use, so the record
 	// and the constructed provider agree on the runner (k1 centralized).
 	const runner = resolveShaperKind({
-		repoOverride:   deps.repoOverride,
 		globalExplicit,
 		clientDefault:  deps.clientDefault,
 		roleResolved:   tierModel?.runner,
 	});
 	const model = tierModel?.model ?? cfg.shaperModel;
-	// The effort is a property of the global tier only; per-repo config picks the tier.
-	const effort = cfg.tiering.tiers?.[tier]?.effort;
+	const effort = tierModel?.effort;
+	const fallback = cfg.tierResolutions?.[tier]?.fallback;
 
 	return {
-		resolution: { role, tier, runner, model, ...(effort !== undefined ? { effort } : {}), clampedByFloor },
+		resolution: { role, tier, runner, model, ...(effort !== undefined ? { effort } : {}), clampedByFloor, ...(fallback !== undefined ? { fallback } : {}) },
 		...(tierModel !== undefined ? { roleRunner: tierModel.runner, roleModel: tierModel.model } : {}),
 	};
 }
@@ -177,8 +176,8 @@ export function resolveRole(
  *  express; the legacy precedence inside buildShaperProvider is untouched. */
 function materialize(internal: InternalResolution, cfg: AnalyzeConfig, deps: RoleRouterDeps): ResolvedProvider {
 	const provider = buildShaperProvider(cfg, {
-		...(deps.repoOverride  !== undefined ? { repoOverride:  deps.repoOverride  } : {}),
 		...(deps.clientDefault !== undefined ? { clientDefault: deps.clientDefault } : {}),
+		...(deps.registry      !== undefined ? { registry:      deps.registry      } : {}),
 		...(deps.cliTimeoutMs  !== undefined ? { cliTimeoutMs:  deps.cliTimeoutMs  } : {}),
 		...(internal.roleRunner !== undefined ? { roleRunner: internal.roleRunner } : {}),
 		...(internal.roleModel  !== undefined ? { roleModel:  internal.roleModel  } : {}),
@@ -207,7 +206,8 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 			// Delegate to the summariser factory so the summariser's own provider
 			// rule (it follows the cheap tier) is wrapped, not re-implemented; stamp a resolution so
 			// summariser access is attributed like every other role.
-			const provider = buildSummariserProvider(cfg);
+			const provider = buildSummariserProvider(cfg, deps.registry !== undefined ? { registry: deps.registry } : undefined);
+			const fallback = cfg.tierResolutions?.cheap?.fallback;
 			const resolution: RoleResolution = {
 				role:           SUMMARISER_ROLE,
 				tier:           'cheap',
@@ -215,6 +215,7 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 				model:          cfg.summariserModel,
 				...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}),
 				clampedByFloor: false,
+				...(fallback !== undefined ? { fallback } : {}),
 			};
 			return { provider, resolution };
 		},

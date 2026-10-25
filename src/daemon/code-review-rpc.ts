@@ -31,7 +31,6 @@ import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.j
 import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
 import {
 	loadAnalyzeConfig,
-	resolveRepoShaperProvider,
 	type AnalyzeConfig,
 	type AnalyzeShaperProviderKind,
 } from '../config/analyze.js';
@@ -187,14 +186,13 @@ export async function codeReviewRunStart(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultProvider(repoPath: string, client: 'claude' | 'codex' | undefined): { provider: LLMProvider; modelLabel: string } {
+function defaultProvider(_repoPath: string, client: 'claude' | 'codex' | undefined): { provider: LLMProvider; modelLabel: string } {
 	const cfg = loadAnalyzeConfig();
 	const clientDefault: AnalyzeShaperProviderKind | undefined =
 		client === 'claude' ? 'cli-claude' : client === 'codex' ? 'cli-codex' : undefined;
-	const repoOverride = resolveRepoShaperProvider(repoPath);
 	return {
-		provider:   buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: CODE_REVIEW_CLI_TIMEOUT_MS }),
-		modelLabel: modelLabelFor(cfg, repoOverride, clientDefault),
+		provider:   buildShaperProvider(cfg, { clientDefault, cliTimeoutMs: CODE_REVIEW_CLI_TIMEOUT_MS }),
+		modelLabel: modelLabelFor(cfg, clientDefault),
 	};
 }
 
@@ -251,15 +249,12 @@ function parseFallbackReason(raw: unknown): CodeReviewFallbackReason {
 }
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the
- *  chosen provider along the chain: per-repo override > explicit config >
- *  invoking CLI > Ollama. Mirrors workflow-rpc's `modelLabelFor`. */
+ *  chosen provider along the chain: explicit config > invoking CLI > Ollama. Mirrors workflow-rpc's `modelLabelFor`. */
 function modelLabelFor(
 	cfg:           AnalyzeConfig,
-	repoOverride:  AnalyzeShaperProviderKind | undefined,
 	clientDefault: AnalyzeShaperProviderKind | undefined,
 ): string {
 	const effective = resolveShaperKind({
-		repoOverride,
 		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
 		clientDefault,
 	});

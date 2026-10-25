@@ -152,46 +152,27 @@ test('ambient runWithClientProviderContext supplies the default', async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Resolution chain: per-repo override > global config > per-run caller > ollama
+// Resolution chain: global config > per-run caller > ollama
 // ---------------------------------------------------------------------------
-
-test('resolveShaperKind: per-repo override wins over everything below it', () => {
-	assert.equal(
-		resolveShaperKind({ repoOverride: 'cli-codex', globalExplicit: 'cli-claude', clientDefault: 'cli-claude' }),
-		'cli-codex',
-	);
-});
 
 test('resolveShaperKind: explicit global wins over the per-run caller', () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: 'ollama', clientDefault: 'cli-claude' }),
+		resolveShaperKind({ globalExplicit: 'ollama', clientDefault: 'cli-claude' }),
 		'ollama',
 	);
 });
 
-test('resolveShaperKind: per-run caller used when repo + global are unset', () => {
+test('resolveShaperKind: per-run caller used when the global is unset', () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: 'cli-codex' }),
+		resolveShaperKind({ globalExplicit: undefined, clientDefault: 'cli-codex' }),
 		'cli-codex',
 	);
 });
 
 test('resolveShaperKind: ollama when all signals are unset', () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: undefined }),
+		resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined }),
 		'ollama',
 	);
-});
-
-test('repoOverride beats an explicit global config in buildShaperProvider', () => {
-	// Global pins ollama, but the repo pins cli-claude → CliProvider.
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: true });
-	assert.ok(buildShaperProvider(cfg, { repoOverride: 'cli-claude' }) instanceof CliProvider);
-});
-
-test('repoOverride beats the clientDefault in buildShaperProvider', () => {
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
-	// repo pins ollama; a Claude Code invocation must still resolve to Ollama.
-	assert.ok(buildShaperProvider(cfg, { repoOverride: 'ollama', clientDefault: 'cli-claude' }) instanceof OllamaProvider);
 });
 

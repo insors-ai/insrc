@@ -69,14 +69,14 @@ test('the role router takes the effort of the global tier the role resolves to, 
 	assert.equal('effort' in cheap.provider, false);
 });
 
-test("buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also when a repo override sets the runner; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort", () => {
+test("buildShaperProvider without roleEffort uses cfg.shaperEffort (code-review-rpc, workflow-rpc and docgen callers), also with a client default; buildSummariserProvider and resolveSummariser use cfg.summariserEffort; resolveValidateProvider passes the build tier's effort", () => {
 	const cfg = config({ tiers: {
 		core:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'high' },
 		cheap: { runner: 'cli-claude', model: 'haiku', effort: 'low' },
 	} });
 	// The non-router callers: no overrides (docgen), a repo override and a client default (code-review-rpc, workflow-rpc).
 	assert.equal(effortOf(buildShaperProvider(cfg)), 'high');
-	assert.equal(effortOf(buildShaperProvider(cfg, { repoOverride: 'cli-claude', clientDefault: 'cli-codex', cliTimeoutMs: 1000 })), 'high');
+	assert.equal(effortOf(buildShaperProvider(cfg, { clientDefault: 'cli-claude', cliTimeoutMs: 1000 })), 'high');
 	// The summariser follows the cheap tier, and its stamped resolution says so.
 	assert.equal(effortOf(buildSummariserProvider(cfg)), 'low');
 	const summariser = createRoleRouter({}).resolveSummariser(cfg);

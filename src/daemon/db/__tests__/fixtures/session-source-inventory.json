@@ -1737,7 +1737,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "247186affb54184145cc25b91fa049ce19b8906bbf8942029c0e95e8b812587d",
-      "sourceDigest": "bbb0a377ca753017d0a0d0e32bab2de204a2b5d08711045383b40dde54f499e6",
+      "sourceDigest": "587195284514d5fbac86d4fe6dd8de4215521e46a9ed519deac7f55e73de449a",
       "boundaries": [
         "provider-factory"
       ]
@@ -1894,7 +1894,7 @@
       ],
       "siteCount": 22,
       "sitesDigest": "597af10a7e39a3a367c6e4fea91ae3ee3f8d799dc57a5ba7e9693ce6117caf5d",
-      "sourceDigest": "f0281392f836f21579916b584ff3eb480e11603b7ec121b2d6f2a315f720198c",
+      "sourceDigest": "26185e41b9869a53ff01885755883d63b5c4221932c57b976c2e914842c231da",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -6016,10 +6016,6 @@
           "JSON.parse"
         ],
         [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
           "diagnostic",
           "log.warn"
         ],
@@ -6050,14 +6046,6 @@
         [
           "diagnostic",
           "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
         ],
         [
           "filesystem-read",
@@ -6068,9 +6056,9 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "4ca538a5daac30b6ad08de58674f85385a4cc8a0fa26cf0eb3b956b0921d43c3",
-      "sourceDigest": "47e1147cbfaf50e9d7840269270a96535e7fb941949f522e4898291fbf8a6b33",
+      "siteCount": 13,
+      "sitesDigest": "7c65897d5b5f5ea8444ccacfafb3e7ef6c35e3fa4eabbbed9bfea6a2272a0ea6",
+      "sourceDigest": "441f7f7a45617d7d039c354875b64365d9ba898961bb97944f909d5fd054892b",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -7280,7 +7268,7 @@
       ],
       "siteCount": 20,
       "sitesDigest": "adbbb31091a5d08d7bfd0be0fc33489c5bae8a6d71fefa6d56f1ee2aae7005b4",
-      "sourceDigest": "a1622ae5f45319181a915385949bedce390844554550a297724f60a6216d11bf",
+      "sourceDigest": "3a90877000adf8b51c3120fd51a3d451adba8facae999cc9a08b7d90a236aa00",
       "boundaries": [
         "diagnostic",
         "provider-factory",
@@ -17940,7 +17928,7 @@
       ],
       "siteCount": 25,
       "sitesDigest": "871d1654b4fe43d7e441a23ecf39ea31b6bc1341925c1449eab4e184f35a84ca",
-      "sourceDigest": "0e69db336fb3c7f5eb03470702a301108be9b4e2f89041018787e2260cda0989",
+      "sourceDigest": "0ffb0573d3c6e0596dc82f7ea8576edee39d897651f3b15b20b707d7832d1857",
       "boundaries": [
         "diagnostic",
         "provider-factory",

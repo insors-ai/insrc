@@ -28,8 +28,9 @@ elsewhere in the codebase, not an invented shape:
 - `models.analyze.roleTiers.<roleId>` — role ids drawn from the real
   `reasoningRoleTaxonomy()` (src/config/role-taxonomy.ts); values are the real
   tier names `core` / `mid` / `cheap`.
-- `models.analyze.byRepo.<absPath>.*` — the real per-repo override shape read
-  by `resolveRepoShaperProvider` (src/config/analyze.ts). The absolute-path
+- `models.analyze.byRepo.<absPath>.*` — the real per-repo override shape
+  (its legacy shaper pin folds into `tiers.core`, which the reconcile then
+  removes: tiers are global only). The absolute-path
   key is **redacted** to `/Users/redacted/work/projects/example/repo`
   (structure-preserving: still an absolute path string key).
 - `models.agents.implementation.*` — the real `models.agents` namespace shape.

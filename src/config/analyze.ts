@@ -158,20 +158,6 @@ export interface AnalyzeTiering extends TieringOverride {
 	readonly byRepo?: Readonly<Record<string, TieringOverride>> | undefined;
 }
 
-/**
- * Per-repo shaper override, DERIVED from `models.byRepo[repoPath].tiers.core`
- * in `~/.insrc/config.json` — a repo pins its own core-tier runner (and
- * optionally model) and this is the HIGHEST-priority signal in the resolution
- * chain (per-repo > global config > per-run caller > ollama). Read FRESH per
- * lookup (see `resolveRepoShaperProvider`) rather than folded into the cached
- * `AnalyzeConfig`, so a per-repo edit is picked up without poisoning — or being
- * poisoned by — the global cache.
- */
-export interface RepoShaperOverride {
-	readonly shaperProvider?: AnalyzeShaperProviderKind | undefined;
-	readonly shaperModel?:    string | undefined;
-}
-
 export interface AnalyzeConfig {
 	/** Interactive shaper backend. DERIVED from `models.tiers.core.runner`. */
 	readonly shaperProvider: AnalyzeShaperProviderKind;
@@ -463,9 +449,8 @@ function parseTieringOverride(src: Record<string, unknown>, where: string): Tier
 }
 
 /** Parse the full flat models.* tiering shape: the global override (tiers /
- *  tasks / coreFloor) plus per-repo `models.byRepo` overrides. Returns {} when
- *  no tiering keys are set. The per-repo shaper-backend override is derived
- *  separately from `byRepo[repo].tiers.core` by readRepoOverride. */
+ *  tasks / coreFloor) plus per-repo `models.byRepo` overrides (tasks and
+ *  coreFloor only). Returns {} when no tiering keys are set. */
 export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 	const global = parseTieringOverride(models, 'global');
 	let byRepo: Record<string, TieringOverride> | undefined;
@@ -479,72 +464,6 @@ export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}
 	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}) };
-}
-
-/**
- * Read the `models.byRepo[repoPath]` override entry FRESH from disk and derive
- * the per-repo shaper backend from its `tiers.core` (the flattened surface's
- * equivalent of the old byRepo shaperProvider/shaperModel pins).
- *
- * Deliberately NOT cached (and NOT routed through `loadAnalyzeConfig`'s cache):
- * per-repo overrides are consulted at run-resolve time and must reflect the
- * current on-disk config, and reading them must not populate / read the global
- * cache. Tolerates a missing file / missing section (returns `undefined`).
- *
- * `configPath` defaults to the global `~/.insrc/config.json`; it exists as a
- * test seam so a case can point at a temp config without touching the real
- * user config.
- */
-function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverride | undefined {
-	if (!existsSync(configPath)) return undefined;
-	try {
-		const raw    = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
-		const models = isObject(raw['models'])    ? (raw['models'] as Record<string, unknown>)    : {};
-		const byRepo = isObject(models['byRepo']) ? (models['byRepo'] as Record<string, unknown>) : {};
-		const entry  = byRepo[repoPath];
-		if (!isObject(entry)) return undefined;
-		const tiers = isObject(entry['tiers']) ? (entry['tiers'] as Record<string, unknown>) : {};
-		const core  = isObject(tiers['core'])  ? (tiers['core'] as Record<string, unknown>)  : undefined;
-		const provider = core?.['runner'];
-		const model    = core?.['model'];
-		return {
-			...(provider === 'ollama' || provider === 'cli-claude' || provider === 'cli-codex'
-				? { shaperProvider: provider }
-				: {}),
-			...(typeof model === 'string' && model.length > 0 ? { shaperModel: model } : {}),
-		};
-	} catch (err) {
-		log.warn(
-			{ err: (err as Error).message, repoPath },
-			'failed to read models.byRepo; ignoring per-repo override',
-		);
-		return undefined;
-	}
-}
-
-/**
- * Resolve a repo-scoped `shaperProvider` override (highest priority in the
- * client/shaper resolution chain). Returns the pinned kind for `repoPath`, or
- * `undefined` when the repo has no override / the config / section is absent.
- * Reads the config file FRESH (never the cached global).
- */
-export function resolveRepoShaperProvider(
-	repoPath:   string,
-	configPath: string = PATHS.config,
-): AnalyzeShaperProviderKind | undefined {
-	return readRepoOverride(repoPath, configPath)?.shaperProvider;
-}
-
-/**
- * Symmetric to `resolveRepoShaperProvider`: a repo may also pin a model
- * (`models.byRepo[repoPath].tiers.core.model`). Returns it fresh from disk,
- * or `undefined` when unset. Read FRESH (never the cached global).
- */
-export function resolveRepoShaperModel(
-	repoPath:   string,
-	configPath: string = PATHS.config,
-): string | undefined {
-	return readRepoOverride(repoPath, configPath)?.shaperModel;
 }
 
 /** Drop the cached config so the next read sees config.json as it is now.

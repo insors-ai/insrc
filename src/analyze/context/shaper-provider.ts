@@ -34,6 +34,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
+import type { ModelRegistry } from '../../daemon/model-registry.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
@@ -48,16 +49,11 @@ const log = getLogger('analyze:context:shaper-provider');
  * Optional per-request overrides of the configured provider.
  */
 export interface ShaperProviderOverrides {
-	/** Highest-priority signal: a repo-scoped provider pinned via
-	 *  `models.byRepo[repoPath].shaperProvider` (resolved by the caller
-	 *  through `resolveRepoShaperProvider`). Wins over the global config default
-	 *  and the per-run `clientDefault`. */
-	readonly repoOverride?: AnalyzeShaperProviderKind | undefined;
-	/** Provider to use when NEITHER a per-repo override NOR an explicit global
-	 *  `cfg.shaperProvider` is set — the per-run caller, set by the MCP server
-	 *  from the invoking client (Claude Code → 'cli-claude', Codex →
-	 *  'cli-codex'). Falls back to the ambient client-provider context (below).
-	 *  A per-repo override or an explicit `cfg.shaperProvider` always wins. */
+	/** Provider to use when no explicit global `cfg.shaperProvider` is set —
+	 *  the per-run caller, set by the MCP server from the invoking client
+	 *  (Claude Code → 'cli-claude', Codex → 'cli-codex'). Falls back to the
+	 *  ambient client-provider context (below). An explicit
+	 *  `cfg.shaperProvider` always wins. */
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 	/** Override the CLI subprocess timeout (ms) when the resolved provider is
 	 *  `cli-claude`/`cli-codex`. The default (120 s) is fine for analyze's
@@ -79,6 +75,9 @@ export interface ShaperProviderOverrides {
 	 *  call: a value, or null when the role's tier has none. Absent for callers
 	 *  outside the router, which run at the core tier's effort (cfg.shaperEffort). */
 	readonly roleEffort?: TierEffort | null | undefined;
+	/** The registry provider settings come from (default: the daemon thread's
+	 *  getModelRegistry()); the TUI passes its shipped-only registry. */
+	readonly registry?: ModelRegistry | undefined;
 }
 
 /**
@@ -166,7 +165,7 @@ export function resolveRoleProvider(
 /**
  * Pure resolution of the effective shaper KIND, in strict priority order:
  *
- *   per-repo override > explicit global config > per-run caller > 'ollama'
+ *   tier runner (router) > explicit global config > per-run caller > 'ollama'
  *
  * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
  * set `models.tiers.core.runner` (i.e. `cfg.shaperProviderExplicit`);
@@ -175,7 +174,6 @@ export function resolveRoleProvider(
  * in isolation from provider construction.
  */
 export function resolveShaperKind(inputs: {
-	readonly repoOverride:   AnalyzeShaperProviderKind | undefined;
 	readonly globalExplicit: AnalyzeShaperProviderKind | undefined;
 	readonly clientDefault:  AnalyzeShaperProviderKind | undefined;
 	/** Optional HIGHEST-priority signal (S003 RoleRouter): the tier-resolved
@@ -185,7 +183,7 @@ export function resolveShaperKind(inputs: {
 	readonly roleResolved?:  AnalyzeShaperProviderKind | undefined;
 }): AnalyzeShaperProviderKind {
 	const roleResolved = isShaperKind(inputs.roleResolved) ? inputs.roleResolved : undefined;
-	return roleResolved ?? inputs.repoOverride ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
+	return roleResolved ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
 }
 
 /** Type-guard the CLI/Ollama union — the structural gate that keeps a hand-edited
@@ -209,7 +207,7 @@ export function isOllamaModelId(model: string): boolean {
  * should use for its structured-output calls.
  *
  * The effective KIND via `resolveShaperKind`:
- *        per-repo override > explicit global config > per-run caller > 'ollama'
+ *        tier runner (router) > explicit global config > per-run caller > 'ollama'
  *      cli-claude / cli-codex -> `CliProvider`; 'ollama' -> `OllamaProvider`.
  *
  * Cheap; call per invocation rather than caching because config
@@ -219,14 +217,13 @@ export function buildShaperProvider(
 	cfg:       AnalyzeConfig,
 	overrides?: ShaperProviderOverrides,
 ): LLMProvider {
-	// Effective provider: per-repo override > explicit global
-	// config > per-run caller (arg or ambient client-provider context) >
-	// 'ollama'. See resolveShaperKind.
+	// Effective provider: tier runner (router) > explicit global config >
+	// per-run caller (arg or ambient client-provider context) > 'ollama'.
+	// See resolveShaperKind.
 	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
-	const repoOverride  = overrides?.repoOverride;
 	const roleRunner    = overrides?.roleRunner;
 	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
-	const effective = resolveShaperKind({ repoOverride, globalExplicit, clientDefault, roleResolved: roleRunner });
+	const effective = resolveShaperKind({ globalExplicit, clientDefault, roleResolved: roleRunner });
 
 	// A RoleRouter-resolved tier model (S003) is preferred over cfg.shaperModel.
 	const roleModel = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : undefined;
@@ -243,7 +240,7 @@ export function buildShaperProvider(
 		// `shaperProvider: cli-claude` paired with an Ollama `shaperModel` — must
 		// degrade to the CLI's own default here, not to a broken subprocess.
 		const model = candidate !== undefined && !isOllamaModelId(candidate) ? candidate : undefined;
-		const source = roleRunner !== undefined ? 'role' : repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
+		const source = roleRunner !== undefined ? 'role' : globalExplicit !== undefined ? 'config' : 'client';
 		const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
 		log.info(
 			{ kind, model: model ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
@@ -283,7 +280,7 @@ const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-lun
  * summariser costs one serial subprocess per doc, so it always pins the cheap
  * tier's model and never runs on the CLI's own default model.
  */
-export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
+export function buildSummariserProvider(cfg: AnalyzeConfig, _overrides?: Pick<ShaperProviderOverrides, 'registry'>): LLMProvider {
 	const kind = cfg.summariserProvider;
 	if (kind === 'cli-claude' || kind === 'cli-codex') {
 		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';

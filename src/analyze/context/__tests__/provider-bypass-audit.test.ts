@@ -26,7 +26,7 @@ const SRC = fileURLToPath(new URL('../../../', import.meta.url)); // → src/
  *  - role-router.ts:        materialize (the sanctioned per-role construction primitive).
  *  - workflow-rpc.ts:       prepareWorkflowRun's driver-role scalar (S003 back-compat).
  *  - code-review-rpc.ts:    daemon code-review RPC entry point — resolves the review
- *                           provider with CLI opts (repoOverride / clientDefault /
+ *                           provider with CLI opts (clientDefault /
  *                           cliTimeoutMs), analogous to workflow-rpc.ts. Not an ambient
  *                           analyze site; it builds the top-of-request provider directly.
  *  - narrative-generator.ts: docgen's cached top-of-run provider (Ollama-local default,

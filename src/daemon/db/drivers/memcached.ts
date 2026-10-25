@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Memcached driver (kind: `memcached`).
  *
@@ -46,6 +48,7 @@ interface MemcachedClient {
 }
 
 class MemcachedDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'memcached';
 
@@ -55,7 +58,9 @@ class MemcachedDriver implements KvDriver {
 		readonly id: string,
 		serverString: string,
 		auth: { user?: string; password?: string },
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-memcached', context);
 		// memjs's signature: Client.create(serverString, options).
 		// We type it loosely because @types/memjs models the legacy
 		// callback shape that doesn't expose modern options cleanly.
@@ -154,7 +159,7 @@ class MemcachedDriver implements KvDriver {
 registerDriver({
 	kind: 'memcached',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const servers = Array.isArray(opts['servers'])
 			? opts['servers'].filter((x): x is string => typeof x === 'string')
@@ -167,6 +172,6 @@ registerDriver({
 		const auth: { user?: string; password?: string } = {};
 		if (typeof opts['user'] === 'string')     { auth.user = opts['user']; }
 		if (typeof opts['password'] === 'string') { auth.password = opts['password']; }
-		return new MemcachedDriver(config.id, servers.join(','), auth);
+		return new MemcachedDriver(config.id, servers.join(','), auth, context);
 	},
-});
+}, 'resource-context');

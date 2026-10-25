@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * Postgres driver (kind: `postgres`).
@@ -87,6 +89,7 @@ const IDLE_TIMEOUT_MS = 30_000;
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class PostgresDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'postgres';
 
@@ -97,7 +100,8 @@ export class PostgresDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-pg', context);
 		this.prismaPath = prismaPath;
 		// pg turns an empty URL password into null, then reads ~/.pgpass.
 		// Keep a cleared password explicit in activation and isolated probes.
@@ -466,16 +470,16 @@ function splitTarget(target: string): { schema: string | null; table: string } {
 // in db:list_connections + db:list_driver_kinds, but factory +
 // behaviour are identical.
 function postgresFactory(connKind: 'postgres' | 'cockroachdb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${connKind} connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma'
 			? config.schemaSource.path
 			: undefined;
-		return new PostgresDriver(config.id, config.url, prismaPath);
+		return new PostgresDriver(config.id, config.url, prismaPath, context);
 	};
 }
 
-registerDriver({ kind: 'postgres',    family: 'rdbms', factory: postgresFactory('postgres') });
-registerDriver({ kind: 'cockroachdb', family: 'rdbms', factory: postgresFactory('cockroachdb') });
+registerDriver({ kind: 'postgres',    family: 'rdbms', factory: postgresFactory('postgres') }, 'resource-context');
+registerDriver({ kind: 'cockroachdb', family: 'rdbms', factory: postgresFactory('cockroachdb') }, 'resource-context');

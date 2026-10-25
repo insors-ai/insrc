@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Redis driver (kind: `redis`).
  *
@@ -38,6 +40,7 @@ const log = getLogger('db-redis');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class RedisDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind: string;
 
@@ -48,7 +51,9 @@ export class RedisDriver implements KvDriver {
 		kind: 'redis' | 'valkey' | 'keydb',
 		url: string,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-redis', context);
 		this.kind = kind;
 		this.client = new Redis(url, {
 			lazyConnect: true,
@@ -224,14 +229,14 @@ function classifyValue(key: string, raw: string | null): KvValue {
 // ---------------------------------------------------------------------------
 
 function makeFactory(kind: 'redis' | 'valkey' | 'keydb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${kind} connection '${config.id}' missing url`);
 		}
-		return new RedisDriver(config.id, kind, config.url, config);
+		return new RedisDriver(config.id, kind, config.url, config, context);
 	};
 }
 
-registerDriver({ kind: 'redis',  family: 'kv', factory: makeFactory('redis') });
-registerDriver({ kind: 'valkey', family: 'kv', factory: makeFactory('valkey') });
-registerDriver({ kind: 'keydb',  family: 'kv', factory: makeFactory('keydb') });
+registerDriver({ kind: 'redis',  family: 'kv', factory: makeFactory('redis') }, 'resource-context');
+registerDriver({ kind: 'valkey', family: 'kv', factory: makeFactory('valkey') }, 'resource-context');
+registerDriver({ kind: 'keydb',  family: 'kv', factory: makeFactory('keydb') }, 'resource-context');

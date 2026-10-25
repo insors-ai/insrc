@@ -1,3 +1,4 @@
+import { DriverLogPolicyError } from './driver-log-policy.js';
 import { assertSavedIdAvailable } from './connection-reservations.js';
 /** Serialized saved-connection application service. Routes remain disabled until maintenance gates install it. */
 import { randomUUID, timingSafeEqual } from 'node:crypto';
@@ -60,7 +61,7 @@ export class ManagementServiceError extends Error {
 export function managementRejection(error: unknown): Extract<MutationOutcome, {
 	status: 'rejected';
 }> {
-	const code = error instanceof ManagementServiceError || error instanceof ManagedStoreError || error instanceof ConnectionUseError || error instanceof TicketError || error instanceof ProfileError || error instanceof ManagementInputError ? error.code : 'recovery-required';
+	const code = error instanceof DriverLogPolicyError || error instanceof ManagementServiceError || error instanceof ManagedStoreError || error instanceof ConnectionUseError || error instanceof TicketError || error instanceof ProfileError || error instanceof ManagementInputError ? error.code : 'recovery-required';
 	const safe = new ManagementServiceError(code === 'unsupported-filesystem' ? 'recovery-required' : code);
 	return { status: 'rejected', code: safe.code, message: safe.message };
 }

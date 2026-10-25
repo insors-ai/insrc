@@ -8,6 +8,7 @@ import { connectionManagementHandlers } from '../../connection-management-rpc.js
 import { IpcServer, directDispatch } from '../../server.js';
 import { TemporaryConnectionOverlay, createTemporaryOverlay } from '../session-entries.js';
 import { createConnectionResolver } from '../pool-cache.js';
+import { contextualDriverFactory } from '../driver-log-policy.js';
 import { DriverPool } from '../pool.js';
 import { connectionsPath } from '../config.js';
 import { environment } from './fixtures/saved-management-fixture.js';
@@ -24,7 +25,7 @@ async function fixture(ports: TemporaryResourcePorts = {}) {
  const env = await environment(), a = join(env.directory, 'a'), b = join(env.directory, 'b');
  for (const root of [a, b]) { await mkdir(root); await mkdir(dirname(connectionsPath(root)), { recursive: true }); await writeFile(connectionsPath(root), '{"connections":[]}'); }
  const runtime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({ enabled: async () => true, isRegistered: async root => root === a || root === b,
-  createOverlay: (root, handle, context) => createTemporaryOverlay(root, handle, context, ports), dropOverlay: overlay => overlay.close() });
+  createOverlay: (root, handle, context) => createTemporaryOverlay(root, handle, context, ports.factory ? { factory: kind => { const selected = ports.factory!(kind); return selected ? contextualDriverFactory(selected) : undefined; } } : ports), dropOverlay: overlay => overlay.close() });
  const queued: { entered: ReturnType<typeof deferred<TrustedRpcContext>>; release: ReturnType<typeof deferred> }[] = [];
  const held: { response: Promise<unknown>; release: ReturnType<typeof deferred> }[] = [];
  const clients: Awaited<ReturnType<typeof sessionRpcClient>>[] = [], pools = new Map<string, DriverPool>(); let lookups = 0;

@@ -11,7 +11,7 @@ export const CONNECTION_FOUNDATION_GATE_FILES = [
 	'daemon/db/management-state', 'daemon/db/management-adoption', 'daemon/db/management-startup',
 	'daemon/db/managed-store', 'daemon/db/management-tickets', 'daemon/db/management', 'daemon/db/driver-profiles',
 	'daemon/db/secrets', 'daemon/db/driver-guard', 'daemon/db/pool', 'daemon/db/pool-cache', 'daemon/db/driver-work',
-	'daemon/db/file-policy', 'daemon/db/file-execution', 'daemon/db/converter-cache', 'daemon/db/drivers/duckdb-file',
+	'daemon/db/driver-log-policy', 'shared/db-driver', 'daemon/db/file-policy', 'daemon/db/file-execution', 'daemon/db/converter-cache', 'daemon/db/drivers/duckdb-file',
 	'shared/connection-management', 'shared/connection-management-wire',
 ] as const;
 export const CONNECTION_TEST_GATE_FILES = [

@@ -7816,6 +7816,73 @@
         "serialization"
       ]
     },
+    "src/daemon/db/driver-log-policy.ts": {
+      "classification": "resource-local-log-authority",
+      "rationale": "Owner-only opaque tokens mint immutable exact-root revision contexts. Registered factory identity and branded config/context checks precede plaintext handoff. A resource-local quiet sink never evaluates lazy diagnostics, including after expiry; saved diagnostics remain enabled. Concrete SDK log-site closure is t11 and release remains disabled.",
+      "sites": [
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "acquisition:symbol:DriverFactory",
+          "DriverFactory"
+        ],
+        [
+          "connection-factory",
+          "factory"
+        ],
+        [
+          "connection-factory",
+          "factory"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "factory(config, context)"
+        ],
+        [
+          "acquisition:driver-port-call",
+          "factory(config, context)"
+        ],
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "getLogger(module)[level]"
+        ]
+      ],
+      "siteCount": 13,
+      "sitesDigest": "73936dbff97b3d0e1ea3edee71af928d8e79bfdc0cb925af0f3c0ec49d170352",
+      "sourceDigest": "8957e1bb317dc2af8943e521ec3c0ac83ceddf7f9e859f0a3a00ca836a6da5b5",
+      "boundaries": [
+        "acquisition:driver-port-call",
+        "acquisition:symbol:DriverFactory",
+        "connection-factory",
+        "diagnostic"
+      ]
+    },
     "src/daemon/db/driver-profiles.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S001/S002 saved or probe foundation. Session path may use only documented readonly/profile/preparation ports; saved storage is forbidden for temporary data and writes require shared reservation guard.",
@@ -7903,7 +7970,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "9f15bde3e570c726a2e447f3e86a8895cc2cb3ed5ea2ea3d39af1495af396158",
-      "sourceDigest": "76b4bd3afc790d95caa14f87e9d8579c97b017d70ae0c5c2c3db5d80efbca5b4",
+      "sourceDigest": "3afe8950f0821086c6c6e82bd4aab36011d6eccdf914773acb82340f85b4c327",
       "boundaries": [
         "serialization"
       ]
@@ -7935,7 +8002,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "7ccb85536eb8b4c2dc91173a742ae69aba442ac96277ea5d147c8ec2a3527571",
-      "sourceDigest": "0fa839d7f6c34235d3a62aeac0cc150d191c060eaa39a0ea61cf6ebdca1684fc",
+      "sourceDigest": "38946fa32c7d452f37e2c40196e138dc421c896235de75ac2c6f5674c8889e50",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -8451,7 +8518,7 @@
       ],
       "siteCount": 25,
       "sitesDigest": "a91d3db4ccc87cf9dec134c9f031d724ba34823d0b31ef2f4f4ccd5ff482a84c",
-      "sourceDigest": "9c546ae5aae5562ca5cab4beab12ef664c23eef949fd6097aaa15932b9446f1e",
+      "sourceDigest": "3934cc404177d493b17fd689eb12d2e82c1d70318ea085745bc65152d567c66d",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -8518,7 +8585,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "fd55f8e02459cbbaa53fae58b1aac7a3b3c7cdbaa77b5fff8ae06bb2dea7e7a3",
-      "sourceDigest": "f83c66e87f0e097a926802820c0bc0776d70ba88ed5f3b8b6c2a8116824c7831",
+      "sourceDigest": "b51f25d7941f60bd0d352e270e2ae1d9357e217fbb0a392168694be8f3a8c9c8",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -8551,7 +8618,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "973647f49d9c0db35502523d9d83fc32699319f97fa363d75d64c6afe466046f",
-      "sourceDigest": "ea7d35cbcc1af5bb63f342d3c98de0812a38b3dfe34926dea0f4a92ac0fc2f69",
+      "sourceDigest": "e144c039dffcc036d48eb42bc03db0394fdceb2fca19fe86dc91edcca6f18fbe",
       "boundaries": [
         "serialization"
       ]
@@ -8607,7 +8674,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "ffdd50aa84b334fb3b67254b3e6db8bda8b898b434bba23d6e26bcd862213af4",
-      "sourceDigest": "1c95376b71d3ff0d6bd1a2e59bc9c3433df045f43d9e658ff2935185aef05c15",
+      "sourceDigest": "faf929c644fba613de536ab17141a9a108ca9f4b30000526b4c838f1e694603e",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -8768,7 +8835,7 @@
       ],
       "siteCount": 37,
       "sitesDigest": "f72265d03be38494674f79feb0b28e289091eb3a53bc592842e128d7a9b25431",
-      "sourceDigest": "96662a6ac18bbe5e85be1dbb4c0d5f913aa185ec37c551fd94aa39b50a5a95f9",
+      "sourceDigest": "5fb157858cb10b8b1ac68347fa32ad62b9f712705f591e95b5a023b54ff94fbf",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -8817,7 +8884,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "7375986515f63840368b141a4c5eb523b75ae79deb86a3156c8af95dba097321",
-      "sourceDigest": "1b5299a6db0a0f318c4eb237df12be2311f3975fe3c0761edee541ababe705a6",
+      "sourceDigest": "7d2c1bd2621b600f6d4b1b879d9da3bcaa8c54d6a72870f52b967caead2c1925",
       "boundaries": [
         "acquisition:acquire-call",
         "diagnostic",
@@ -8864,7 +8931,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "144e734c48d2e8f972d590b25526d7c6050c3a29c3020fc546764a7d3db31d56",
-      "sourceDigest": "b2838dad87c722889dc63a48cc3aa779d6d9bd86fcc7d35e8d48c14fadf305e4",
+      "sourceDigest": "b5d85ec158128f04794978640a2d87e19915756a59e7a36f72fbe2054630ca90",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -8921,7 +8988,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "30731465bc91d13cb237495dd554dfd1c5bc10b4d0f07a17f9923d43a8767c10",
-      "sourceDigest": "01a2846b403bbe5338b863b52dd331a6c680bfc47d73f44ad6e739be45ddbcdb",
+      "sourceDigest": "976872f6516971caab3c3b5d48685f8ab86cdd16de75f047b954f0aea74bb50e",
       "boundaries": [
         "serialization"
       ]
@@ -8961,7 +9028,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "5336dcedb40cf66d3a5a368ed2c9bd9316e8d64d221fa9c2b129f7b2b6a4a064",
-      "sourceDigest": "1e0cf8f36fdf5bcd9b62fb027162fb30c2badb30c174b368b9874b28d9dbd20f",
+      "sourceDigest": "5bfdcb9b290bb3298b091bbb1a0933a8fc574a3789b69b1976c65b9d6a36404e",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -9002,7 +9069,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "64af03162ada456efe6bf1f9e026a66d85a3c6c771379e07a10adb21b402a235",
-      "sourceDigest": "5c7ea5758562d98ca8df728afceaae8c2dfe8b92fe86022f72262f7c9e55f15b",
+      "sourceDigest": "39984412cc8cba1e4c5702575dcd78e39b15954afb97b5cd7d8a57d242f231f3",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -9071,7 +9138,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "80089a67b81c911e81f814a571cda4ea710265c8c4636442cc8314df763ad630",
-      "sourceDigest": "5e24c0a73db3c9a1ba86c61f659f961a9103535d6641f38d0ea125867f1247af",
+      "sourceDigest": "93df571c1ebd07dde8d0871a5c1df1a8ba995841525d049ebc4d8925416bec38",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -9112,7 +9179,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "4feb98e4c090b87d8e37eaaafad970c551ec54933c4c3a41858b1038b9da9494",
-      "sourceDigest": "49beb00b78b6ff403270ffe2a7f95b097ac49b1ab86956ba1bf6c553783e1497",
+      "sourceDigest": "4d7303c8000182ce5c2b603644807831b19241dbdaacbb39cbe5a59288e1a0a3",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -9813,7 +9880,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "7db21ceeaf8139542d8c2c5b26de28ac85ff7afc2f4303dc3c6877bb1d00debb",
+      "sourceDigest": "2207775169ef81ede9a270e9e9f5be5450eb1e556953abc60715979e839f55c5",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -10281,7 +10348,7 @@
       ],
       "siteCount": 27,
       "sitesDigest": "c0156fe15f04e159a75a0a354c223a6f26a82e1ceef8bed01ea9849617e231c3",
-      "sourceDigest": "745c807e88ec8b2a8b7b46a7e89188f7638ecc2e155d8883011fafd32e46a842",
+      "sourceDigest": "45ed592215c20cbe92adcfbe98739d869591d004c8c65e87657e62508566a708",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:symbol:DriverPool",
@@ -11059,6 +11126,10 @@
       "rationale": "Shared connection/resource seam; private owner overlays and leases must not fall back to saved credentials or caches. Preserve ordinary saved semantics and existing sc8 resource implementation.",
       "sites": [
         [
+          "connection-factory",
+          "contextualDriverFactory"
+        ],
+        [
           "acquisition:symbol:DriverFactory",
           "DriverFactory"
         ],
@@ -11083,12 +11154,13 @@
           "log.warn"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "618aa258d9e3635b9a796cab899ff2b4839b82d50d02a411eb7e98fdfd0d2016",
-      "sourceDigest": "894575b33851d8fe637fb754ce40a2371e924c2dabe9bdffdf603fbc33700af5",
+      "siteCount": 7,
+      "sitesDigest": "02b407b91129e65cdfee1d4bb1ceb75707087dfc3dfc6cb3c22414d953e6bcc8",
+      "sourceDigest": "d096a5887575a9dbcc52a6835af976b4c649f620f9d5dfb5ec341a20ba754d3b",
       "boundaries": [
         "acquisition:symbol:DriverFactory",
         "acquisition:symbol:getFactory",
+        "connection-factory",
         "diagnostic"
       ]
     },
@@ -11188,7 +11260,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e7af791139404a5e3b98583a239777d13ca0cd13e304a89b2e757cb69a3aa28d",
-      "sourceDigest": "921fdb4b70ce95c946b2bc7a7b7002ca013dfac4e686abe0c65449d852ea0e5f",
+      "sourceDigest": "a9224eca94a0afa6ab6ce34e1a6842adb7883d3c6660804f0043f611bcb407b6",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:ConnectionResolver",
@@ -11482,6 +11554,18 @@
         ],
         [
           "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
           "this.close"
         ],
         [
@@ -11533,9 +11617,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 69,
-      "sitesDigest": "d427225ca93a488e1c5b32e9dc9ceb089443c3cac690c6fb9361b4209e5eebfe",
-      "sourceDigest": "3e2eb3e552748fece3da9a959166f250afe6a3b355609973d82cfe101bd5d9fb",
+      "siteCount": 72,
+      "sitesDigest": "27dcfe7e47989d455b09dfa466e9329f10cefdc78c0753b0f79ee621b322edea",
+      "sourceDigest": "edb62a1a5d1b85b52393112c3cd0a390cbd3e9006802502cf0576dd863e7a26a",
       "boundaries": [
         "connection-use",
         "serialization"
@@ -11543,7 +11627,7 @@
     },
     "src/daemon/db/session-resources.ts": {
       "classification": "session-private-sdk-resources",
-      "rationale": "Private session/root/revision driver construction consumes immutable in-memory config and existing sc8 file policy, never a saved pool or secret lookup. Late construction remains cleanup-owned after admission closes; failed close retains closed handles and blocks new SDK admission. Owner-local errors are fixed; concrete SDK diagnostic quiet authority/proof is still t10/t11 and release remains disabled.",
+      "rationale": "Private session/root/revision driver construction consumes immutable in-memory config and existing sc8 file policy, never a saved pool or secret lookup. Late construction remains cleanup-owned after admission closes; failed close retains closed handles and blocks new SDK admission. Owner-local errors are fixed; factory context authority is installed; concrete SDK diagnostic closure proof is still t11 and release remains disabled.",
       "sites": [
         [
           "connection-factory",
@@ -11558,20 +11642,20 @@
           "DriverFactory"
         ],
         [
+          "acquisition:symbol:getFactory",
+          "getFactory"
+        ],
+        [
+          "acquisition:symbol:getFactory",
+          "getFactory"
+        ],
+        [
           "connection-factory",
-          "factory"
+          "invokeTemporaryFactory"
         ],
         [
           "acquisition:driver-port-call",
-          "factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) })"
-        ],
-        [
-          "acquisition:symbol:getFactory",
-          "getFactory"
-        ],
-        [
-          "acquisition:symbol:getFactory",
-          "getFactory"
+          "invokeTemporaryFactory(factory, config, context)"
         ],
         [
           "connection-factory",
@@ -11579,15 +11663,15 @@
         ],
         [
           "connection-factory",
-          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally"
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally"
         ],
         [
           "acquisition:driver-port-call",
-          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })"
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })"
         ],
         [
           "acquisition:driver-port-call",
-          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })"
+          "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })"
         ],
         [
           "connection-factory",
@@ -11599,8 +11683,8 @@
         ]
       ],
       "siteCount": 13,
-      "sitesDigest": "306272ce1f9753656f445f7c5df6e8aee0f0a088c8aec3a3ef4cad53ffb540bf",
-      "sourceDigest": "e5ea4a050abecb1f5547c139f62003fca2428e4cd5c3c1cc14261098378e8f99",
+      "sitesDigest": "247e88ac186994aded8ff3dede4e259f4f8d634ac6eae0b82427186239118ae4",
+      "sourceDigest": "33195e5748d8b8107d36eb8ca44fd87b4686b5bbf43bbd2a1a05fbb7daf4b8c0",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:DriverFactory",
@@ -29397,7 +29481,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "2a16263ae35f30fd9879ff994ea9a506163762ed615da5578f3beb1a5ad6b935",
-      "sourceDigest": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
+      "sourceDigest": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e",
       "boundaries": [
         "acquisition:symbol:DriverFactory"
       ]

@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * MySQL / MariaDB driver (kind: `mysql`, `mariadb`).
@@ -79,6 +81,7 @@ function clampListLimit(n: number | undefined): number {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class MysqlDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind: string;
 
@@ -86,7 +89,8 @@ export class MysqlDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, kind: 'mysql' | 'mariadb', url: string, prismaPath?: string) {
+	constructor(readonly id: string, kind: 'mysql' | 'mariadb', url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-mysql', context);
 		this.kind = kind;
 		this.prismaPath = prismaPath;
 		const opts = parseUrlToPoolOptions(url);
@@ -448,14 +452,14 @@ function parseUrlToPoolOptions(url: string): PoolOptions {
 // ---------------------------------------------------------------------------
 
 function makeFactory(kind: 'mysql' | 'mariadb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${kind} connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new MysqlDriver(config.id, kind, config.url, prismaPath);
+		return new MysqlDriver(config.id, kind, config.url, prismaPath, context);
 	};
 }
 
-registerDriver({ kind: 'mysql',   family: 'rdbms', factory: makeFactory('mysql') });
-registerDriver({ kind: 'mariadb', family: 'rdbms', factory: makeFactory('mariadb') });
+registerDriver({ kind: 'mysql',   family: 'rdbms', factory: makeFactory('mysql') }, 'resource-context');
+registerDriver({ kind: 'mariadb', family: 'rdbms', factory: makeFactory('mariadb') }, 'resource-context');

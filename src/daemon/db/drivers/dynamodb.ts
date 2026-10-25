@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * DynamoDB driver (kind: `dynamodb`).
  *
@@ -63,6 +65,7 @@ interface TableMeta {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class DynamoDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'dynamodb';
 
@@ -76,7 +79,9 @@ export class DynamoDriver implements KvDriver {
 		endpoint: string | undefined,
 		private readonly config: ConnectionConfig,
 		runtimeAuth?: DynamoRuntimeAuth,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-dynamodb', context);
 		if (getLogMode() === 'probe-worker' && runtimeAuth === undefined) throw new Error('Connection credentials are unavailable.');
 		const source = runtimeAuth ? async () => dynamoSnapshotIdentity(runtimeAuth) : dynamoIdentityProvider({ ...config, options: { ...config.options, ...(profile !== undefined ? {profile} : {}) } });
 		this.client = new DynamoDBClient({
@@ -304,7 +309,7 @@ function requireTableName(opts: ScanOpts): string {
 registerDriver({
 	kind: 'dynamodb',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const region = typeof opts['region'] === 'string' ? opts['region'] : undefined;
 		if (region === undefined) {
@@ -314,6 +319,6 @@ registerDriver({
 		}
 		const profile = typeof opts['profile'] === 'string' ? opts['profile'] : undefined;
 		const endpoint = typeof opts['endpoint'] === 'string' ? opts['endpoint'] : undefined;
-		return new DynamoDriver(config.id, region, profile, endpoint, config);
+		return new DynamoDriver(config.id, region, profile, endpoint, config, undefined, context);
 	},
-});
+}, 'resource-context');

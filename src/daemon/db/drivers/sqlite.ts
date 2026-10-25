@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * SQLite driver (kind: `sqlite`).
  *
@@ -71,6 +73,7 @@ const log = getLogger('db-sqlite');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class SqliteDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'sqlite';
 
@@ -78,7 +81,8 @@ export class SqliteDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, filename: string, prismaPath?: string) {
+	constructor(readonly id: string, filename: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-sqlite', context);
 		// readOnly opens with SQLITE_OPEN_READONLY, which also refuses a
 		// missing file rather than creating one.
 		this.db = new DatabaseSync(filename, { readOnly: true });
@@ -409,8 +413,8 @@ function pathOf(config: ConnectionConfig): string {
 registerDriver({
 	kind: 'sqlite',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new SqliteDriver(config.id, pathOf(config), prismaPath);
+		return new SqliteDriver(config.id, pathOf(config), prismaPath, context);
 	},
-});
+}, 'resource-context');

@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Cassandra driver (kind: `cassandra`).
  *
@@ -67,6 +69,7 @@ function parseTarget(raw: string, defaultKs: string | undefined): Target {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class CassandraDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'cassandra';
 
@@ -79,7 +82,9 @@ export class CassandraDriver implements KvDriver {
 		readonly id: string,
 		clientOpts: ClientOptions,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-cassandra', context);
 		this.client = new Client(clientOpts);
 		const ksOpt = (config.options ?? {})['keyspace'];
 		this.defaultKs = typeof ksOpt === 'string' ? ksOpt : undefined;
@@ -260,7 +265,7 @@ function requireTargetFromOpts(opts: ScanOpts): string {
 registerDriver({
 	kind: 'cassandra',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const contactPoints = Array.isArray(opts['contactPoints'])
 			? opts['contactPoints'].filter((x): x is string => typeof x === 'string')
@@ -282,6 +287,6 @@ registerDriver({
 		if (typeof opts['keyspace'] === 'string') {
 			clientOpts.keyspace = opts['keyspace'];
 		}
-		return new CassandraDriver(config.id, clientOpts, config);
+		return new CassandraDriver(config.id, clientOpts, config, context);
 	},
-});
+}, 'resource-context');

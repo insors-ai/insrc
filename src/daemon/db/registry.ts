@@ -1,3 +1,4 @@
+import { contextualDriverFactory } from './driver-log-policy.js';
 /**
  * Driver registry for the data driver.
  *
@@ -20,14 +21,14 @@ const log = getLogger('db-registry');
 
 const REGISTRY = new Map<string, DriverRegistration>();
 
-export function registerDriver(reg: DriverRegistration): void {
+export function registerDriver(reg: DriverRegistration, runtimeContext?: 'resource-context'): void {
 	const existing = REGISTRY.get(reg.kind);
 	if (existing !== undefined) {
 		// Re-registration overwrites; useful for tests that swap a real
 		// driver for a stub. Log once so real bugs don't hide.
 		log.warn({ kind: reg.kind }, 'driver kind re-registered -- replacing');
 	}
-	REGISTRY.set(reg.kind, reg);
+	REGISTRY.set(reg.kind, runtimeContext === 'resource-context' ? { ...reg, factory: contextualDriverFactory(reg.factory) } : reg);
 	log.debug({ kind: reg.kind, family: reg.family }, 'driver registered');
 }
 

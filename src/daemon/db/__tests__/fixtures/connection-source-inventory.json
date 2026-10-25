@@ -42,8 +42,8 @@
       "rationale": "t9/t23: barrel exports cannot preserve an unaudited bypass"
     },
     "src/daemon/db/pool-cache.ts": {
-      "classification": "pool-owner",
-      "rationale": "t9: canonical-root cache, active lease-aware reload and close"
+      "classification": "explicit-resolver-binding",
+      "rationale": "S003 t9: frozen exact-object session access binds a lazy private resolver through WeakMap identity. Copies and bare handles refuse before saved lookup; unattached saved behavior stays unchanged."
     },
     "src/daemon/db/pool.ts": {
       "classification": "pool-owner",
@@ -96,6 +96,22 @@
     "src/bin/insrc-connection-test.ts": {
       "classification": "bounded-private-probe",
       "rationale": "S002 t14: one-shot private IPC child admits exact kinds, uses memory-only file authority, awaits explicit readonly reachability and close, and exits. No pool registration or live store access."
+    },
+    "src/daemon/db/driver-log-policy.ts": {
+      "classification": "resource-local-authority",
+      "rationale": "S003 t10: immutable owner/root/revision context and tagged factory identity gate plaintext config before construction; lazy per-resource quiet sink does not evaluate diagnostics. Concrete SDK closure remains t11."
+    },
+    "src/daemon/db/session-resources.ts": {
+      "classification": "private-owner-resource",
+      "rationale": "S003 t9/t10: private session/root/revision construction uses branded factory context, retains late SDK cleanup and never acquires a saved pool or credentials."
+    },
+    "src/daemon/db/session-entries.ts": {
+      "classification": "private-revision-lease",
+      "rationale": "S003 t9: private resolver spans full callback and late work with revision leases, guarded views and authority rechecks before result publication."
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "classification": "private-transport-resolver",
+      "rationale": "S003 t9: server-owned transport claims mint exact-object lazy resolver bindings; root/generation/request completion checked before private overlay access. No serialized handle grants authority."
     }
   },
   "sites": [
@@ -410,6 +426,66 @@
       "boundary": "symbol:savedConnectionResolver"
     },
     {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "overlay.resolver(access, { assertActive, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "overlay.resolver(current.access, { assertActive: assertRequest, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "privateResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "factory(config, context)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "factory(config, context)",
+      "boundary": "driver-port-call"
+    },
+    {
       "file": "src/daemon/db/drivers/mssql.ts",
       "expression": "this.pool.acquire()",
       "boundary": "acquire-call"
@@ -521,21 +597,6 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).lease",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).safeList",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).withConnection",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "(ports.poolSource ?? acquirePool)(context.lookupRoot)",
       "boundary": "pool-port-call"
     },
@@ -553,6 +614,16 @@
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "CACHE.get(repoPath)",
       "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
@@ -626,16 +697,6 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "overlay(context)",
-      "boundary": "resolver-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "overlay(context)",
-      "boundary": "resolver-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "pool.closeAll",
       "boundary": "pool-member"
     },
@@ -656,18 +717,33 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "pool(context)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "pool(context)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "ports.sessionOverlay(context)",
       "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "resolve()",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.withConnection",
+      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
@@ -677,16 +753,6 @@
     {
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "session.lease",
-      "boundary": "resolver-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "session.list",
-      "boundary": "resolver-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "session.list",
       "boundary": "resolver-member"
     },
     {
@@ -1123,6 +1189,56 @@
       "file": "src/daemon/db/registry.ts",
       "expression": "getFactory",
       "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "this.#resources.acquire(entry.config, entry.revision)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "invokeTemporaryFactory(factory, config, context)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
+      "boundary": "driver-port-call"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",

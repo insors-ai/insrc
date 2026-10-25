@@ -16,8 +16,6 @@ import { connectionsPath } from '../config.js';
 import { _setKeystoreForTests } from '../secrets.js';
 import { DriverPool } from '../pool.js';
 import { createConnectionResolver, SessionAccessError } from '../pool-cache.js';
-import { getFactory } from '../registry.js';
-import { fileExecutionPolicy } from '../file-policy.js';
 import { environment, deferred } from './fixtures/saved-management-fixture.js';
 import { sessionRpcClient } from './fixtures/session-rpc-client.js';
 import type { OperationTicket, MutationRequest, MutationOutcome, SafeConnection, ConnectionResolver, ConnectionAccessContext, OpenConnectionSessionResult } from '../../../shared/connection-management.js';
@@ -102,9 +100,11 @@ test('CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual sa
  const ui = await sessionRpcClient(join(env.directory, 'namespace.sock')), legacy = await sessionRpcClient(join(env.directory, 'namespace.sock'));
  const pools = new Map<string, DriverPool>(), roots: string[] = []; let expectedHandle = '';
  const poolSource = async (lookupRoot: string) => { roots.push(lookupRoot); let pool = pools.get(lookupRoot); if (!pool) { pool = new DriverPool(lookupRoot); pools.set(lookupRoot, pool); } await pool.reload(); return pool; };
- const privateOverlay: ConnectionResolver = { list: async () => overlay!.list(), lease: async () => { throw new Error('Lease integration belongs to t9'); }, withConnection: async (_ctx, id, use) => {
-  const entry = overlay!.read(id); return overlay!.withGeneration(id, entry.revision, async config => { const driver = await getFactory(config.kind)!(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: root, ownerId: expectedHandle, revision: entry.revision, persistence: 'memory-only' }) }); try { return await use(driver); } finally { await driver.close(); } });
- } };
+ const operationSignal = new AbortController().signal;
+ const privateOverlay: ConnectionResolver = { list: async () => overlay!.list(),
+  lease: async (context, id) => overlay!.resolver(context, { assertActive: () => { overlay!.list(); }, signal: operationSignal }).lease(context, id),
+  withConnection: async (context, id, use) => overlay!.resolver(context, { assertActive: () => { overlay!.list(); }, signal: operationSignal }).withConnection(context, id, use),
+ };
  const resolver = createConnectionResolver({ poolSource, sessionOverlay: async context => { if (context.lookupRoot !== root || context.sessionHandle !== expectedHandle) throw new SessionAccessError(); return privateOverlay; } });
  const savedContext: ConnectionAccessContext = { lookupRoot: alias, daemonEpoch: 'epoch' };
  const rows = (context: ConnectionAccessContext) => resolver.withConnection(context, 'common', async driver => { assert.equal(driver.family, 'rdbms'); if (driver.family !== 'rdbms') throw new Error('Expected SQLite'); return driver.sample('data', { limit: 1 }); });

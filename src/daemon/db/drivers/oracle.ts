@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * Oracle driver (kind: `oracle`).
@@ -95,6 +97,7 @@ function parseUrl(url: string): oracledb.PoolAttributes {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class OracleDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'oracle';
 
@@ -102,7 +105,8 @@ export class OracleDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-oracle', context);
 		this.poolPromise = oracledb.createPool(parseUrl(url));
 		this.prismaPath = prismaPath;
 	}
@@ -504,11 +508,11 @@ function splitTarget(target: string): { owner: string | null; table: string } {
 registerDriver({
 	kind: 'oracle',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: oracle connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new OracleDriver(config.id, config.url, prismaPath);
+		return new OracleDriver(config.id, config.url, prismaPath, context);
 	},
-});
+}, 'resource-context');

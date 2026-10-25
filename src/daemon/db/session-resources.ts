@@ -1,3 +1,4 @@
+import { temporaryDriverContext, invokeTemporaryFactory } from './driver-log-policy.js';
 /** Private session/root/revision driver resources, independent of saved DriverPool storage. */
 import type { ConnectionConfig, Driver, DriverFactory } from '../../shared/db-driver.js';
 import { getFactory } from './registry.js';
@@ -16,8 +17,8 @@ export class TemporaryDriverResources {
  readonly #ports: TemporaryResourcePorts;
  #closed = false;
  #failedClose = false;
- readonly #root: string; readonly #ownerId: string; readonly #assertActive: () => void;
- constructor(root: string, ownerId: string, assertActive: () => void, ports: TemporaryResourcePorts = {}) { this.#root = root; this.#ownerId = ownerId; this.#assertActive = assertActive; this.#ports = Object.freeze({ ...ports }); }
+ readonly #root: string; readonly #ownerId: string; readonly #factoryAuthority: object; readonly #assertActive: () => void;
+ constructor(root: string, ownerId: string, assertActive: () => void, factoryAuthority: object, ports: TemporaryResourcePorts = {}) { this.#root = root; this.#ownerId = ownerId; this.#factoryAuthority = factoryAuthority; this.#assertActive = assertActive; this.#ports = Object.freeze({ ...ports }); }
  async acquire(config: ConnectionConfig, revision: string): Promise<Driver> {
   this.#check();
   let record = this.#records.get(revision);
@@ -29,7 +30,8 @@ export class TemporaryDriverResources {
     this.#check();
     const factory = (this.#ports.factory ?? getFactory)(config.kind);
     if (!factory) throw new ManagementServiceError('unsupported-temporary');
-    const driver = await factory(config, { fileExecutionPolicy: fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }) });
+    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));
+    const driver = await invokeTemporaryFactory(factory, config, context);
     selected.driver = driver; // Private cleanup ownership, never a published callback view.
     return driver;
    }).finally(() => { selected.building = undefined; });

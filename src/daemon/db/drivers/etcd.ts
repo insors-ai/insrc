@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * etcd v3 driver (kind: `etcd`).
  *
@@ -37,6 +39,7 @@ import { inferShape } from './shape-common.js';
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class EtcdDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'etcd';
 
@@ -46,7 +49,9 @@ export class EtcdDriver implements KvDriver {
 		readonly id: string,
 		etcdOpts: Etcd3Options,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-etcd', context);
 		this.client = new Etcd3(etcdOpts);
 	}
 
@@ -160,7 +165,7 @@ export class EtcdDriver implements KvDriver {
 registerDriver({
 	kind: 'etcd',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const hosts = Array.isArray(opts['hosts'])
 			? opts['hosts'].filter((x): x is string => typeof x === 'string')
@@ -177,6 +182,6 @@ registerDriver({
 				password: opts['password'],
 			};
 		}
-		return new EtcdDriver(config.id, etcdOpts, config);
+		return new EtcdDriver(config.id, etcdOpts, config, context);
 	},
-});
+}, 'resource-context');

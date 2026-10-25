@@ -49,14 +49,14 @@ export class TemporaryConnectionOverlay {
  #closing: Promise<void> | undefined;
  readonly #assertActive: () => void;
  #closed = false;
- constructor(root: string, assertActive: () => void, ownerId: string, resourcePorts: TemporaryResourcePorts = {}) {
+ constructor(root: string, assertActive: () => void, ownerId: string, factoryAuthority: object, resourcePorts: TemporaryResourcePorts = {}) {
   this.#root = root; this.#assertActive = assertActive; this.#ownerId = ownerId;
   this.#gate = new RevisionLeaseGate(root); this.#resourcePorts = Object.freeze({ ...resourcePorts });
-  this.#resources = new TemporaryDriverResources(root, ownerId, () => this.#active(), this.#resourcePorts);
+  this.#resources = new TemporaryDriverResources(root, ownerId, () => this.#active(), factoryAuthority, this.#resourcePorts);
  }
  /** Siblings share only counters, never entry maps or credentials. Owned by one session. */
- sibling(root: string, assertActive: () => void): TemporaryConnectionOverlay {
-  this.#active(); const sibling = new TemporaryConnectionOverlay(root, assertActive, this.#ownerId, this.#resourcePorts); sibling.#budget = this.#budget; return sibling;
+ sibling(root: string, assertActive: () => void, factoryAuthority: object): TemporaryConnectionOverlay {
+  this.#active(); const sibling = new TemporaryConnectionOverlay(root, assertActive, this.#ownerId, factoryAuthority, this.#resourcePorts); sibling.#budget = this.#budget; return sibling;
  }
  #active(signal?: AbortSignal): void { if (this.#closed || signal?.aborted) throw reject('session-expired'); this.#assertActive(); }
  #quota(previous: Entry | undefined, next: Entry): void {
@@ -169,5 +169,5 @@ export class TemporaryConnectionOverlay {
 
 /** Owner factory: no shared map survives the owning session. */
 export function createTemporaryOverlay(root: string, handle: string, context: SessionOverlayContext<TemporaryConnectionOverlay>, resourcePorts: TemporaryResourcePorts = {}): TemporaryConnectionOverlay {
- return context.existingOverlays[0]?.sibling(root, context.assertActive) ?? new TemporaryConnectionOverlay(root, context.assertActive, handle, resourcePorts);
+ return context.existingOverlays[0]?.sibling(root, context.assertActive, context.factoryAuthority) ?? new TemporaryConnectionOverlay(root, context.assertActive, handle, context.factoryAuthority, resourcePorts);
 }

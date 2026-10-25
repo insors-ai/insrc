@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * ClickHouse driver (kind: `clickhouse`).
  *
@@ -45,6 +47,7 @@ const log = getLogger('db-clickhouse');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class ClickHouseDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'clickhouse';
 
@@ -53,7 +56,8 @@ export class ClickHouseDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-clickhouse', context);
 		const u = new URL(url);
 		this.defaultDatabase = u.pathname === '' || u.pathname === '/' ? 'default' : u.pathname.slice(1);
 		this.client = createClient({
@@ -267,13 +271,13 @@ function splitTarget(target: string, defaultDb: string): { database: string; tab
 registerDriver({
 	kind: 'clickhouse',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: clickhouse connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma'
 			? config.schemaSource.path
 			: undefined;
-		return new ClickHouseDriver(config.id, config.url, prismaPath);
+		return new ClickHouseDriver(config.id, config.url, prismaPath, context);
 	},
-});
+}, 'resource-context');

@@ -1,3 +1,4 @@
+import { temporaryDriverOwner } from './driver-log-policy.js';
 /** Daemon-memory workbench owner. Authority and overlays never persist. */
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
@@ -37,6 +38,7 @@ interface Session<Overlay> {
 }
 export interface SessionOverlayContext<Overlay> {
 	readonly existingOverlays: readonly Overlay[];
+	readonly factoryAuthority: object;
 	readonly assertActive: () => void;
 }
 export interface SessionOwnerPorts<Overlay> {
@@ -167,7 +169,7 @@ export class ConnectionSessionOwner<Overlay> {
 			deadline: this.#now() + CONNECTION_SESSION_LEASE_MS, generation: 1, controlIdentity: context.connectionIdentity,
 			controlController: new AbortController(), overlays: new Map(), delegations: new Map() };
 		try {
-			session.overlays.set(root, this.#ports.createOverlay(root, handle, Object.freeze({ existingOverlays: Object.freeze([]), assertActive: () => { this.#session(handle); } })));
+			session.overlays.set(root, this.#ports.createOverlay(root, handle, Object.freeze({ existingOverlays: Object.freeze([]), factoryAuthority: temporaryDriverOwner(handle, root, () => { this.#session(handle); }), assertActive: () => { this.#session(handle); } })));
 			this.#context(context);
 			session.deadline = this.#now() + CONNECTION_SESSION_LEASE_MS;
 		} catch {
@@ -274,7 +276,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (current.signal !== binding.signal || current.controlGeneration !== binding.controlGeneration) throw expired();
 		if (!session.overlays.has(root)) {
 			let overlay: Overlay;
-			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
+			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), factoryAuthority: temporaryDriverOwner(session.handle, root, () => { this.#session(session.handle); }), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
 			if (this.dataBinding(context, root).signal !== binding.signal) throw expired();
 			session.overlays.set(root, overlay);
 		}
@@ -306,7 +308,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (this.#control(context) !== session || session.generation !== generation) throw expired();
 		if (!session.overlays.has(root)) {
 			let overlay: Overlay;
-			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
+			try { overlay = this.#ports.createOverlay(root, session.handle, Object.freeze({ existingOverlays: Object.freeze([...session.overlays.values()]), factoryAuthority: temporaryDriverOwner(session.handle, root, () => { this.#session(session.handle); }), assertActive: () => { this.#session(session.handle); } })); } catch { throw expired(); }
 			if (this.#control(context) !== session || session.generation !== generation) throw expired();
 			session.overlays.set(root, overlay);
 		}

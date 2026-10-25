@@ -1,3 +1,4 @@
+import { driverResourceLog } from '../driver-log-policy.js';
 /**
  * DuckDB-backed FileDriver -- one implementation for every file kind
  * DuckDB reads natively (csv / tsv / jsonl / ndjson / json / parquet
@@ -271,6 +272,7 @@ function csvOptionsSql(opts: ResolvedCsvOptions): string {
 // Driver class
 // ---------------------------------------------------------------------------
 class DuckDBFileDriver implements FileDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	async probeReachability(): Promise<void> {
 		if (!(this.execution instanceof MemoryFileExecution))
 			throw new Error('Private file execution required');
@@ -291,7 +293,8 @@ class DuckDBFileDriver implements FileDriver {
 	private memoryReady: Promise<void> | undefined;
 	private closed = false;
 	private readonly cachePins = new Map<string, () => void>();
-	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined) {
+	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-duckdb-file', context);
 		this.kind = kind;
 	}
 	// ---------------------------------------------------------------------------
@@ -635,7 +638,7 @@ function makeFactory(kind: DuckDBFileKind) {
 				? await MemoryFileExecution.open(policy, { nativePaths: isConvertedKind(kind) ? [] : sourcePaths,
 					...((kind === 'arrow' || kind === 'feather') ? { localReaders: ['arrow'] as const } : {}) })
 				: savedFileExecution(policy);
-			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options);
+			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options, context);
 		}
 		catch (error) {
 			if (context?.fileExecutionPolicy?.persistence !== 'memory-only')
@@ -655,10 +658,10 @@ function makeFactory(kind: DuckDBFileKind) {
  *  consolidating onto one SQL surface. */
 export function registerDuckDBFileDriver(): void {
 	for (const kind of NATIVE_KINDS) {
-		registerDriver({ kind, family: 'file', factory: makeFactory(kind) });
+		registerDriver({ kind, family: 'file', factory: makeFactory(kind) }, 'resource-context');
 	}
 	for (const kind of CONVERTED_KINDS) {
-		registerDriver({ kind, family: 'file', factory: makeFactory(kind) });
+		registerDriver({ kind, family: 'file', factory: makeFactory(kind) }, 'resource-context');
 	}
 }
 // Self-register on import (matches the convention every other driver

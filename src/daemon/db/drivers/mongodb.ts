@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * MongoDB driver (kind: `mongodb`).
  *
@@ -45,6 +47,7 @@ function isCollectionRef(k: unknown): k is CollectionRef {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class MongoDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'mongodb';
 
@@ -54,7 +57,9 @@ export class MongoDriver implements KvDriver {
 		readonly id: string,
 		url: string,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-mongodb', context);
 		this.client = new MongoClient(url, {
 			serverSelectionTimeoutMS: SCAN_TIMEOUT_MS,
 			connectTimeoutMS: SCAN_TIMEOUT_MS,
@@ -183,10 +188,10 @@ function requireCollectionTarget(opts: ScanOpts): { db: string; collection: stri
 registerDriver({
 	kind: 'mongodb',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: mongodb connection '${config.id}' missing url`);
 		}
-		return new MongoDriver(config.id, config.url, config);
+		return new MongoDriver(config.id, config.url, config, context);
 	},
-});
+}, 'resource-context');

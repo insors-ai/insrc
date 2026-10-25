@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * NATS JetStream KV driver (kind: `nats`).
  *
@@ -34,6 +36,7 @@ import { inferShape } from './shape-common.js';
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class NatsKvDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'nats';
 
@@ -45,7 +48,10 @@ export class NatsKvDriver implements KvDriver {
 		private readonly servers: readonly string[],
 		private readonly bucket: string,
 		private readonly config: ConnectionConfig,
-	) { }
+		context?: DriverFactoryContext,
+	) {
+		this.#runtimeLog = driverResourceLog('db-nats', context);
+	}
 
 	async probeReachability(): Promise<void> {
 		const nc = await this.nc();
@@ -220,7 +226,7 @@ function classifyBinary(key: string, bytes: Uint8Array): KvValue {
 registerDriver({
 	kind: 'nats',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const servers = Array.isArray(opts['servers'])
 			? opts['servers'].filter((x): x is string => typeof x === 'string')
@@ -236,6 +242,6 @@ registerDriver({
 				`data-driver: nats connection '${config.id}' needs options.bucket: string`,
 			);
 		}
-		return new NatsKvDriver(config.id, servers, bucket, config);
+		return new NatsKvDriver(config.id, servers, bucket, config, context);
 	},
-});
+}, 'resource-context');

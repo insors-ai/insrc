@@ -41,7 +41,7 @@ const RECORDED_RPC = [
 	'db.testConnection', 'docSummary.restoreFromBackup', 'docgen.generate', 'docgen.list', 'entity.closure',
 	'entity.summary', 'entity.unreachable', 'gate.resolve', 'guide.get', 'guide.list', 'handoff.cleanup',
 	'handoff.discard-orphan', 'handoff.list-orphans', 'handoff.mode-a.resolve', 'index.file', 'keys.delete', 'keys.get',
-	'keys.list', 'keys.set', 'locate.inferParents', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
+	'keys.list', 'keys.set', 'locate.inferParents', 'models.definitions', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
 	'plan.next_step', 'plan.reset_stale', 'plan.save', 'plan.step_update', 'plan_get', 'plan_next_step',
 	'plan_step_update', 'prefs.confirm.list', 'prefs.confirm.resolve', 'prefs.discard', 'prefs.edit', 'prefs.list',
 	'providers.check', 'providers.getConfig', 'providers.listModels', 'providers.setConfig', 'providers.testKey',

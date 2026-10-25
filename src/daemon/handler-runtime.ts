@@ -38,6 +38,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
+import { modelDefinitions } from './model-definitions.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -1427,6 +1428,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// IDE gets a slimmer surface in Phase 6 (Ollama + claude/codex
 		// CLI auth status). Until then these return offline so the pane
 		// shows a clean error and the user can switch panes.
+		'models.definitions':   () => modelDefinitions(),          // sc3 (Epic ce99b72065d03b1b, s2): read-only model definitions
 		'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002): revived read-only model-list dispatch
 		'providers.testKey':    offlineRpc('providers.testKey'),
 		'providers.getConfig':  offlineRpc('providers.getConfig'),

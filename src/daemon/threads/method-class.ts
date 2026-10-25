@@ -147,6 +147,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['prefs.list', 'session', false],
 	['providers.check', 'session', false],
 	['providers.getConfig', 'session', false],
+	['models.definitions', 'session', false],
 	['providers.listModels', 'session', false],
 	['providers.setConfig', 'session', false],
 	['providers.testKey', 'session', false],

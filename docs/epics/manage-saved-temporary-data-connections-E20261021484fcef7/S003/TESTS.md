@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -227,3 +227,21 @@ Run at 2026-10-25T19:19:58.845Z on commit `ae630e99d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 7 | 1.7 s |  |
+
+## t10
+
+Run at 2026-10-25T19:44:45.908Z on commit `966f6dd48`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S3-DRIVER-LOGS: immutable owner-only factory quiet authority, alias completeness and constructor refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry | `src/daemon/db/__tests__/driver-log-policy.test.ts` |
+| pass | CM-S3-DRIVER-LOGS: missing forged copied and dropped factory policies refuse before config handoff | `src/daemon/db/__tests__/driver-log-policy.test.ts` |
+| pass | CM-S3-DRIVER-LOGS: all 29 aliases forward context into 14 constructor guards before SDK creation | `src/daemon/db/__tests__/driver-log-policy.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/driver-log-policy.test.ts` | 0 | 3 | 2.8 s |  |

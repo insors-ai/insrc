@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T19:19:58.845Z",
+    "updatedAt": "2026-10-25T19:44:45.908Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -831,6 +831,60 @@
               },
               {
                 "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "966f6dd48",
+        "ranAt": "2026-10-25T19:44:45.908Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-DRIVER-LOGS: immutable owner-only factory quiet authority, alias completeness and constructor refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: missing forged copied and dropped factory policies refuse before config handoff",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: all 29 aliases forward context into 14 constructor guards before SDK creation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2822,
+            "titles": [
+              {
+                "title": "CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: missing forged copied and dropped factory policies refuse before config handoff",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: all 29 aliases forward context into 14 constructor guards before SDK creation",
                 "result": "pass"
               }
             ],

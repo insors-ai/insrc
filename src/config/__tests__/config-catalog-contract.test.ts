@@ -85,8 +85,8 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 48 rows (flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
-	assert.equal(FROM_CONFIG.length, 48);
+test('the real CONFIG_CATALOG has 47 rows (models.shaper.ollamaNumCtx retired; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
+	assert.equal(FROM_CONFIG.length, 47);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
 	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
@@ -94,16 +94,17 @@ test('the real CONFIG_CATALOG has 48 rows (flat models.* surface; shaper*/summar
 		'models.analyze.summariserProvider', 'models.analyze.summariserModel',
 		'models.analyze.tiers.core.runner', 'models.analyze.coreFloor',
 		'models.providers.local.coreModel', 'models.providers.local.host',
+		'models.shaper.ollamaNumCtx',
 	]) {
 		assert.equal(live.has(p), false, `${p} must NOT be a live catalog row (flattened/derived)`);
 	}
 	// the flat surface IS live
-	for (const p of ['models.tiers.core.runner', 'models.coreFloor', 'models.local.coreModel', 'models.shaper.ollamaNumCtx']) {
+	for (const p of ['models.tiers.core.runner', 'models.coreFloor', 'models.local.coreModel', 'models.shaper.ollamaNumPredict']) {
 		assert.equal(live.has(p), true, `${p} must be a live catalog row`);
 	}
 });
 
-test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path', () => {
+test('RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path', () => {
 	assert.deepEqual(
 		RETIRED_PATHS.map(r => ({ path: r.path, prefix: r.prefix ?? false })),
 		[
@@ -113,6 +114,7 @@ test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint
 			{ path: 'models.agents', prefix: true },
 			{ path: 'models.analyze', prefix: true },
 			{ path: 'models.providers', prefix: true },
+			{ path: 'models.shaper.ollamaNumCtx', prefix: false },
 		],
 	);
 	// disjoint: no live catalog path equals or sits under any retired path
@@ -188,11 +190,11 @@ test('the config catalog declares codeReview.daemonReviewCeilingMs and codeRevie
 	assert.deepEqual([row('codeReview.daemonReviewIdleMs')?.type, row('codeReview.daemonReviewIdleMs')?.default], ['number', 1_200_000]);
 });
 
-test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max'] with default '' (48 rows)", () => {
-	assert.equal(FROM_CONFIG.length, 48);
+test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (47 rows)", () => {
+	assert.equal(FROM_CONFIG.length, 47);
 	for (const tier of ['core', 'mid', 'cheap']) {
 		const row = FROM_CONFIG.find(r => r.path === `models.tiers.${tier}.effort`);
 		assert.ok(row, `models.tiers.${tier}.effort is declared`);
-		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max'], 'Models — tiers']);
+		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'], 'Models — tiers']);
 	}
 });

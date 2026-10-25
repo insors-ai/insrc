@@ -13,7 +13,7 @@
     "insrc-migrate-docs": "./out/bin/insrc-migrate-docs.js"
   },
   "scripts": {
-    "build": "tsc && node copy-assets.mjs",
+    "build": "tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs",
     "insrc": "tsx src/cli/index.tsx",
     "test": "tsx --test src/**/__tests__/*.test.ts"
   },

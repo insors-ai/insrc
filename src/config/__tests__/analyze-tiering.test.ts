@@ -92,8 +92,8 @@ test("parseTiering reads effort on the global core/mid/cheap tiers; an effort un
 	}
 });
 
-test('an effort outside low|medium|high|xhigh|max is dropped with a warning while the tier keeps its runner and model', () => {
-	for (const effort of ['hgh', 'ultra', 3, { level: 'high' }, null]) {
+test('an effort that is not a shipped effort level is dropped with a warning while the tier keeps its runner and model', () => {
+	for (const effort of ['hgh', 'turbo', 3, { level: 'high' }, null]) {
 		const t = parseTiering({ tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort } } });
 		assert.deepEqual(t.tiers?.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol' }, `effort ${JSON.stringify(effort)}`);
 		assert.equal(t.efforts, undefined);

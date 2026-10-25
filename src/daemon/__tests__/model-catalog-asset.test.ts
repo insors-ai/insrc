@@ -82,3 +82,11 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	assert.equal(claude.summariserModel, fb[1]);
 	assert.equal(codex.summariserModel, fb[2]);
 });
+
+test('model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit', () => {
+	const codex = family('cli-codex');
+	assert.ok(codex.models.length > 0);
+	for (const m of codex.models) {
+		assert.deepEqual(m.inputLimit, { unit: 'chars', max: 1_048_576 }, m.id);
+	}
+});

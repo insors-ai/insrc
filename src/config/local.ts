@@ -26,6 +26,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
+import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 
 const log = getLogger('config:local');
 
@@ -45,12 +46,13 @@ export interface LocalProviderInfraConfig {
 
 // Defaults mirror what the old `agent/config.ts` ships as DEFAULT_LOCAL_*.
 // qwen3-embedding:0.6b is the v1 default for the LMDB+Lance substrate;
-// users can override via the Model Providers pane (Local tab).
+// users can override via the Model Providers pane (Local tab). coreModel's
+// default is the shipped definitions' ollama tool-loop model.
 const DEFAULTS: LocalProviderInfraConfig = {
 	host:               'http://localhost:11434',
 	embeddingModel:     'qwen3-embedding:0.6b',
 	embeddingDim:       1024,
-	coreModel:          'qwen3.6:27b',
+	coreModel:          SHIPPED_MODEL_DEFAULTS.toolLoopModel,
 	charsPerToken:      3,
 	embeddingKeepAlive: '24h',
 };

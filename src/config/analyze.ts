@@ -27,6 +27,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
+import type { EffortLevel } from '../daemon/model-catalog.js';
+import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 
 const log = getLogger('config:analyze');
 
@@ -111,31 +113,34 @@ export interface TierModel {
 	readonly effort?: TierEffort | undefined;
 }
 
-/** The reasoning efforts both CLIs accept (claude --effort; codex model_reasoning_effort). */
-export const TIER_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type TierEffort = typeof TIER_EFFORTS[number];
+/** The efforts of the shipped model definitions (de-duplicated); whether a model
+ *  accepts one is decided per model by the registry. Temporary export: only
+ *  src/cli may import it (s5 removes it). */
+export const TIER_EFFORTS: readonly string[] = SHIPPED_MODEL_DEFAULTS.efforts;
+/** An effort level name (the definitions file is the authority for level names). */
+export type TierEffort = EffortLevel;
 export function isTierEffort(x: unknown): x is TierEffort {
-	return typeof x === 'string' && (TIER_EFFORTS as readonly string[]).includes(x);
+	return typeof x === 'string' && TIER_EFFORTS.includes(x);
 }
 
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
 export type RoleTierAssignment = Readonly<Record<string, TierName>>;
 
 /**
- * Built-in tier → model defaults (Epic per-role-per-step). Applied by the
- * RoleRouter when a tier is configured NEITHER globally, per-repo, NOR via the
- * legacy `shaperProvider` key — so tiering works out of the box: critical roles
- * (design/review/build/validate) get the high CLI model, mid roles a cheaper CLI
- * model, peripheral roles the cheapest CLI model (haiku), so no machine needs a
- * local model to work. Defaults to CLAUDE (the primary CLI); the installer
- * rewrites `models.tiers` for a Codex user (core `gpt-6-astra` / mid
- * `gpt-6.1-sol` / cheap `gpt-6-luna`), and any config value overrides these.
+ * Built-in tier → model defaults: the shipped definitions' default family and
+ * its tier defaults (Epic ce99b72065d03b1b, s3). Temporary export: only src/cli
+ * may import it (s5 removes it); the daemon resolves tiers through the registry.
  */
 export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
-	core:  { runner: 'cli-claude', model: 'opus' },
-	mid:   { runner: 'cli-claude', model: 'sonnet' },
-	cheap: { runner: 'cli-claude', model: 'haiku' },
+	core:  shippedTier('core'),
+	mid:   shippedTier('mid'),
+	cheap: shippedTier('cheap'),
 };
+
+function shippedTier(tier: TierName): TierModel {
+	const d = SHIPPED_MODEL_DEFAULTS.tiers[tier];
+	return { runner: d.runner as AnalyzeShaperProviderKind, model: d.model, ...(d.effort !== '' ? { effort: d.effort } : {}) };
+}
 
 /** The tiering knobs that may appear globally or under a byRepo entry. */
 export interface TieringOverride {

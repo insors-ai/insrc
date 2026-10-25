@@ -18,6 +18,7 @@
     "skipLibCheck": true,
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "jsx": "react-jsx"
   },
   "include": [

@@ -163,7 +163,7 @@ test("computeEffectiveTiers shows a tier's effort, including tiering.efforts on 
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.tiers.mid.effort, 'medium');
 	assert.equal(eff.tiers.cheap.effort, undefined);
-	// The pane's cycle: CLI default → low → medium → high → xhigh → max → CLI default.
-	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max']);
-	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', '']);
+	// The pane's cycle: CLI default → each shipped effort level → CLI default.
+	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
+	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', 'ultra', '']);
 });

@@ -24,13 +24,13 @@
       "cliKind": "codex",
       "displayName": "Codex CLI",
       "models": [
-        { "id": "gpt-6-astra", "displayName": "GPT-6 Astra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"] },
-        { "id": "gpt-6.1-sol", "displayName": "GPT-6.1 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"] },
-        { "id": "gpt-6-luna", "displayName": "GPT-6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"] },
-        { "id": "gpt-6-sol", "displayName": "GPT-6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"] },
-        { "id": "gpt-5.6-sol", "displayName": "GPT-5.6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"] },
-        { "id": "gpt-5.6-terra", "displayName": "GPT-5.6 Terra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"] },
-        { "id": "gpt-5.6-luna", "displayName": "GPT-5.6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"] }
+        { "id": "gpt-6-astra", "displayName": "GPT-6 Astra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6.1-sol", "displayName": "GPT-6.1 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6-luna", "displayName": "GPT-6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6-sol", "displayName": "GPT-6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-sol", "displayName": "GPT-5.6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-terra", "displayName": "GPT-5.6 Terra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-luna", "displayName": "GPT-5.6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"], "inputLimit": { "unit": "chars", "max": 1048576 } }
       ],
       "tierDefaults": {
         "core":  { "model": "gpt-6-astra" },

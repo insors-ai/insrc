@@ -39,7 +39,6 @@
     },
     "shaper": {
       "maxToolTurns": 40,
-      "ollamaNumCtx": 32768,
       "structuredOutputRetries": 3,
       "ollamaNumPredict": 20480
     },

@@ -37,6 +37,7 @@ import { SCAN_TIMEOUT_MS } from './kv-common.js';
 const log = getLogger('db-memcached');
 
 interface MemcachedClient {
+	readonly servers: {username: string; password: string}[];
 	get(key: string, cb?: (err: Error | null, value: Buffer | null) => void): unknown;
 	incrSeq(): void;
 	readonly seq: number;
@@ -65,7 +66,15 @@ class MemcachedDriver implements KvDriver {
 			...(auth.user !== undefined ? { username: auth.user } : {}),
 			...(auth.password !== undefined ? { password: auth.password } : {}),
 			timeout: SCAN_TIMEOUT_MS / 1000,
+			logger: { log: () => log.warn({ id }, 'memcached operation failed') },
 		});
+		// memjs otherwise fills cleared fields from MEMCACHE_* environment.
+		for (const [index, server] of this.client.servers.entries()) {
+			const pieces = serverString.split(',')[index]!.split('@');
+			const [user, password] = (pieces.at(-2) ?? '').split(':');
+			server.username = user || auth.user || '';
+			server.password = password || auth.password || '';
+		}
 	}
 
 	async probeReachability(): Promise<void> {

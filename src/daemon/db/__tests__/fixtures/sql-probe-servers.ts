@@ -4,7 +4,7 @@ import type {Socket} from 'node:net';
 import mysql from 'mysql2';
 
 function packet(type:string,payload:Buffer):Buffer {const header=Buffer.alloc(5);header.write(type);header.writeInt32BE(payload.length+4,1);return Buffer.concat([header,payload]);}
-export async function pgProbeServer() {
+export async function pgProbeServer(expectedPassword='ok') {
  const queries:string[]=[],sockets=new Set<Socket>();
  const server=createServer(socket=>{
   sockets.add(socket);socket.on('close',()=>sockets.delete(socket));socket.on('error',()=>{});
@@ -17,7 +17,7 @@ export async function pgProbeServer() {
     if(startup){startup=false;const ask=Buffer.alloc(4);ask.writeInt32BE(3);socket.write(packet('R',ask));continue;}
     const type=message.toString('utf8',0,1),body=message.subarray(5);
     if(type==='p') {
-     if(body.toString()!=='ok\0'){socket.end(packet('E',Buffer.from('SERROR\0C28P01\0MAuthentication failed\0\0')));continue;}
+     if(body.toString()!==expectedPassword+'\0'){socket.end(packet('E',Buffer.from('SERROR\0C28P01\0MAuthentication failed\0\0')));continue;}
      socket.write(Buffer.concat([packet('R',Buffer.alloc(4)),packet('Z',Buffer.from('I'))]));
     } else if(type==='Q') {
      const query=body.toString().replace(/\0$/,'');queries.push(query);

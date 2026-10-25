@@ -18,8 +18,9 @@ async function receive(input:unknown):Promise<void>{
  started=true;
  let code:ProbeWorkerCode='failed';
  try {
-  const {parseProbeWorkerStart}=await import('../daemon/db/draft-probe.js');start=parseProbeWorkerStart(input);
-  const {probeModule}=await import('../daemon/db/probe-kinds.js');const module=probeModule(start.config.kind);if(!module)throw new Error();
+  const {parseProbeWorkerStart}=await import('../daemon/db/draft-probe.js');const parsed=parseProbeWorkerStart(input);
+  const {probeModule}=await import('../daemon/db/probe-kinds.js');const module=probeModule(parsed.config.kind);if(!module)process.exit(1);
+  start=parsed;
   const {fileExecutionPolicy}=await import('../daemon/db/file-policy.js');
   const {getFactory,familyOf}=await import('../daemon/db/registry.js');
   await import('../daemon/db/drivers/'+module+'.js');

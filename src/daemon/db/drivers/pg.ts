@@ -99,7 +99,14 @@ export class PostgresDriver implements RdbmsDriver {
 
 	constructor(readonly id: string, url: string, prismaPath?: string) {
 		this.prismaPath = prismaPath;
+		// pg turns an empty URL password into null, then reads ~/.pgpass.
+		// Keep a cleared password explicit in activation and isolated probes.
+		const password = decodeURIComponent(new URL(url).password);
+		class ConfiguredClient extends pgMod.Client {
+			constructor(config?: pgMod.ClientConfig) { super(config); this.password = password; }
+		}
 		this.pool = new Pool({
+			Client: ConfiguredClient,
 			connectionString: url,
 			max: POOL_MAX,
 			idleTimeoutMillis: IDLE_TIMEOUT_MS,

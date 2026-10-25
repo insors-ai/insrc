@@ -72,11 +72,13 @@ export class DraftTestSupervisor {
     let received:ProbeWorkerResult|undefined,invalid=false;
     await new Promise<void>(resolve=>{
      child=this.spawnWorker(entry,{env:probeWorkerEnvironment(),execArgv:[...(entry.endsWith('.ts')?['--import','tsx']:[]),'--no-warnings','--max-old-space-size=384'],stdio:['ignore','ignore','ignore','ipc']});
-     child.on('message',(message:unknown)=>{
-      try{if(received)throw new Error();received=parseProbeWorkerResult(message,start);}catch{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();}
-     });
-     child.once('error',()=>{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();});
+     const onMessage=(message:unknown):void=>{
+      try{if(received)throw new Error();received=parseProbeWorkerResult(message,{requestId:request.requestId,nonce});}catch{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();}
+     };
+     const onError=():void=>{invalid=true;finish('failed',DRAFT_TEST_MESSAGES.failed);controller.abort();stopChild();};
+     child.on('message',onMessage);child.once('error',onError);
      child.once('close',(code,signal)=>{
+      child?.off('message',onMessage);child?.off('error',onError);
       if(!terminal){
        const outcome=!invalid&&code===0&&signal===null?received?.code:undefined;
        finish(outcome==='reachable'?'reachable':'failed',outcome==='reachable'?undefined:DRAFT_TEST_MESSAGES[outcome??'failed']);

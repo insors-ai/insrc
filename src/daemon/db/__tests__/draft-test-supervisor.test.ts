@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {getEventListeners} from 'node:events';
 import {fork} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
@@ -64,12 +65,12 @@ test('CM-S2-C2: shutdown stops admission immediately and retains uncancelable pr
 test('CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace',async()=>{
  for(const mode of ['hang','reply-hang']){
   let child:ReturnType<typeof fork>|undefined,spawned!:()=>void;const started=new Promise<void>(r=>{spawned=r;});let messageSeen!:()=>void;const message=new Promise<void>(r=>{messageSeen=r;});
-  const supervisor=new DraftTestSupervisor((_entry,options)=>{child=fork(fileURLToPath(new URL('./fixtures/probe-lifecycle-child.ts',import.meta.url)),[],{...options,execArgv:['--import','tsx'],env:{...options.env,CM_PROBE_FIXTURE_MODE:mode}});child.once('spawn',spawned);child.once('message',messageSeen);return child;});
+  const supervisor=new DraftTestSupervisor((_entry,options)=>{child=fork(fileURLToPath(new URL('./fixtures/probe-lifecycle-child.ts',import.meta.url)),[],{...options,execArgv:['--import','tsx'],env:{...options.env,CM_PROBE_FIXTURE_MODE:mode}});child.once('spawn',spawned);if(mode==='reply-hang')child.once('message',messageSeen);return child;});
   const lifetime=new RequestLifetime(),began=performance.now();let settled=false;
   const pending=supervisor.run(request('/tmp'),context(lifetime),async()=>({config:{id:'fixture',kind:'postgres',url:'postgres://localhost:1/fixture'},credentialActions:{}})).then(result=>{settled=true;return result;});
   await started;if(mode==='reply-hang'){await message;assert.equal(settled,false,'reachable IPC alone is not success before process exit');}
   const result=await pending,responded=performance.now();assert.equal(result.status,'timeout');assert.ok(responded-began>=9900);assert.equal(supervisor.activeCount,1);assert.equal(child!.signalCode,null);
-  lifetime.complete();await lifetime.drained;assert.equal(child!.signalCode,'SIGKILL');assert.ok(performance.now()-responded>=230,'grace is held before force-kill');assert.ok(performance.now()-responded<2000);assert.equal(supervisor.activeCount,0);await supervisor.shutdown();
+  lifetime.complete();await lifetime.drained;assert.equal(child!.signalCode,'SIGKILL');assert.ok(performance.now()-responded>=230,'grace is held before force-kill');assert.ok(performance.now()-responded<2000);assert.equal(supervisor.activeCount,0);assert.equal(getEventListeners(lifetime.signal,'abort').length,0);assert.equal(child!.listenerCount('message'),0);assert.equal(child!.listenerCount('error'),0);await supervisor.shutdown();
  }
 });
 test('CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains',async()=>{

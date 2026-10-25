@@ -13,7 +13,7 @@
  * RDBMS describe output.
  */
 
-import { createClient } from '@clickhouse/client';
+import { createClient, ClickHouseLogLevel } from '@clickhouse/client';
 import type { ClickHouseClient } from '@clickhouse/client';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -57,6 +57,7 @@ export class ClickHouseDriver implements RdbmsDriver {
 		const u = new URL(url);
 		this.defaultDatabase = u.pathname === '' || u.pathname === '/' ? 'default' : u.pathname.slice(1);
 		this.client = createClient({
+			...(process.env['INSRC_MODE'] === 'probe-worker' ? { log: { level: ClickHouseLogLevel.OFF } } : {}),
 			url: `${u.protocol}//${u.host}`,
 			...(u.username !== '' ? { username: decodeURIComponent(u.username) } : {}),
 			...(u.password !== '' ? { password: decodeURIComponent(u.password) } : {}),

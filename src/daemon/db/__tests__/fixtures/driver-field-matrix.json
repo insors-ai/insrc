@@ -2354,7 +2354,7 @@
   "sourceDigests": {
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "76b4bd3afc790d95caa14f87e9d8579c97b017d70ae0c5c2c3db5d80efbca5b4",
-    "src/daemon/db/drivers/clickhouse.ts": "bc729321fab053f10271251d863ae9c42e73a0ebc319b644e87ca486dc487cc4",
+    "src/daemon/db/drivers/clickhouse.ts": "0fa839d7f6c34235d3a62aeac0cc150d191c060eaa39a0ea61cf6ebdca1684fc",
     "src/daemon/db/drivers/converters/avro.ts": "258bc855222f8a938b4688d5edf4f09ca1e765a9173d0580c148ca914930911e",
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
     "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",

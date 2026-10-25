@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
-import {once} from 'node:events';
 import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {mkdtemp,writeFile,rm} from 'node:fs/promises';
@@ -74,7 +73,13 @@ test('CM-S2-B1: actual owned children enforce init and close deadlines and SIGKI
  }
 });
 test('CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains',async()=>{
- let child:ReturnType<typeof fork>|undefined,ready!:()=>void;const spawned=new Promise<void>(r=>{ready=r;});const supervisor=new DraftTestSupervisor((_entry,options)=>{child=fork(fileURLToPath(new URL('./fixtures/probe-lifecycle-child.ts',import.meta.url)),[],{...options,execArgv:['--import','tsx'],env:{...options.env,CM_PROBE_FIXTURE_MODE:'late'}});child.once('spawn',ready);return child;});
- const lifetime=new RequestLifetime(),pending=supervisor.run(request('/tmp'),context(lifetime),async()=>({config:{id:'fixture',kind:'postgres',url:'postgres://localhost:1/fixture'},credentialActions:{}}));
- await spawned;lifetime.abort();assert.equal((await pending).status,'canceled');lifetime.complete();await lifetime.drained;assert.equal(supervisor.activeCount,0);assert.equal((await pending).status,'canceled');await supervisor.shutdown();
+ const lifetime=new RequestLifetime();let child:ReturnType<typeof fork>|undefined,sawResult=false;
+ const supervisor=new DraftTestSupervisor((_entry,options)=>{
+  child=fork(fileURLToPath(new URL('./fixtures/probe-lifecycle-child.ts',import.meta.url)),[],{...options,execArgv:['--import','tsx'],env:{...options.env,CM_PROBE_FIXTURE_MODE:'late'}});
+  // Cancel synchronously when the real result arrives, before the parent's
+  // result listener. The later valid success and exit must not win this race.
+  child.once('message',()=>{sawResult=true;lifetime.abort();});return child;
+ });
+ const pending=supervisor.run(request('/tmp'),context(lifetime),async()=>({config:{id:'fixture',kind:'postgres',url:'postgres://localhost:1/fixture'},credentialActions:{}}));
+ assert.equal((await pending).status,'canceled');assert.equal(sawResult,true);lifetime.complete();await lifetime.drained;assert.equal(supervisor.activeCount,0);assert.equal(child!.signalCode,null);assert.equal((await pending).status,'canceled');await supervisor.shutdown();
 });

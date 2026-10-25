@@ -6052,6 +6052,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -6064,9 +6068,9 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "cfb7ffbb796ab0a0de2e22ae5bc58b9bec6cf089b3da1e267ee6ead5c302ced9",
-      "sourceDigest": "33008dd4223fe015a23688e677c6f2e7c35caf8db57a82a37eca24025b8c60c0",
+      "siteCount": 16,
+      "sitesDigest": "4ca538a5daac30b6ad08de58674f85385a4cc8a0fa26cf0eb3b956b0921d43c3",
+      "sourceDigest": "47e1147cbfaf50e9d7840269270a96535e7fb941949f522e4898291fbf8a6b33",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

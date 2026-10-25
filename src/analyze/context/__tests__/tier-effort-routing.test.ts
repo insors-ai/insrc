@@ -43,7 +43,7 @@ const CRITICAL = 'design.contract.detail'; // core
 const PERIPH   = 'synthesize';             // mid
 const NARROW   = 'analyze.narrow';         // cheap
 
-test('the role router takes the effort of the global tier the role resolves to, also when a byRepo tier supplies its runner and model, and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it', () => {
+test('the role router takes the effort of the global tier the role resolves to, also for a repo with byRepo tiers (not read: tiers are global), and buildShaperProvider hands it to CliProvider; the Ollama branch ignores it', () => {
 	const cfg = config({
 		tiers: {
 			core: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'high' },
@@ -58,9 +58,9 @@ test('the role router takes the effort of the global tier the role resolves to, 
 	assert.equal(effortOf(core.provider), 'high');
 	assert.equal(effortOf(router.resolveProviderForRole(PERIPH, cfg).provider), 'medium');
 
-	// The byRepo tier supplies runner and model; the effort is still the global core tier's.
+	// A repo's tiers are not read: runner, model and effort are the global core tier's.
 	const repo = router.resolveProviderForRole(CRITICAL, cfg, '/r');
-	assert.deepEqual([repo.resolution.runner, repo.resolution.model, repo.resolution.effort], ['cli-claude', 'opus', 'high']);
+	assert.deepEqual([repo.resolution.runner, repo.resolution.model, repo.resolution.effort], ['cli-codex', 'gpt-6.1-sol', 'high']);
 	assert.equal(effortOf(repo.provider), 'high');
 
 	// The cheap tier runs on Ollama: no effort reaches it.

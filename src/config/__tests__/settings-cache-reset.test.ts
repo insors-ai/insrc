@@ -30,6 +30,8 @@ const { buildConfigCatalog } = await import('../config-catalog.js');
 const { reconcileConfigFile } = await import('../reconcile-io.js');
 const { loadLocalProviderConfig, resetLocalProviderConfigCache } = await import('../local.js');
 const { loadAnalyzeConfig, resetAnalyzeConfigCache } = await import('../analyze.js');
+const { _setModelCatalogDirForTests } = await import('../../daemon/model-catalog.js');
+const { _resetModelRegistryForTests } = await import('../../daemon/model-registry.js');
 
 /** Alternate definitions whose defaults differ from the shipped file. */
 const ALTERNATE: ModelDefinitionsFile = {
@@ -45,20 +47,27 @@ const ALTERNATE: ModelDefinitionsFile = {
 test('settings-cache-reset.test.ts: a local and an analyze config cached before reconcile return the reconciled values after the production resets', () => {
 	try {
 		mkdirSync(dirname(PATHS.config), { recursive: true });
-		writeFileSync(PATHS.config, JSON.stringify({ logLevel: 'info' }));
+		// A core tier with no effort: the reconcile fills the definitions' default effort.
+		writeFileSync(PATHS.config, JSON.stringify({ models: { tiers: { core: { runner: 'cli-codex', model: 'gpt-x' } } } }));
+		// The daemon validated these definitions at boot; tiers resolve through them.
+		const assets = join(home, 'assets');
+		mkdirSync(assets);
+		writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(ALTERNATE));
+		_setModelCatalogDirForTests(assets);
+		_resetModelRegistryForTests();
 
 		// Read (and cached) before the reconcile: the shipped defaults.
 		const before = loadLocalProviderConfig();
 		const analyzeBefore = loadAnalyzeConfig();
 		assert.notEqual(before.coreModel, 'llama:1b');
-		assert.notEqual(analyzeBefore.shaperModel, 'gpt-x');
+		assert.equal(analyzeBefore.shaperEffort, undefined);
 
 		const outcome = reconcileConfigFile({ catalog: buildConfigCatalog(ALTERNATE) });
 		assert.equal(outcome.kind, 'written');
 
 		// Still the cached values until the resets run ...
 		assert.equal(loadLocalProviderConfig().coreModel, before.coreModel);
-		assert.equal(loadAnalyzeConfig().shaperModel, analyzeBefore.shaperModel);
+		assert.equal(loadAnalyzeConfig().shaperEffort, undefined);
 
 		// ... then the reconciled file.
 		resetLocalProviderConfigCache();
@@ -69,6 +78,8 @@ test('settings-cache-reset.test.ts: a local and an analyze config cached before 
 		assert.equal(analyze.shaperModel, 'gpt-x');
 		assert.equal(analyze.shaperEffort, 'low');
 	} finally {
+		_setModelCatalogDirForTests(undefined);
+		_resetModelRegistryForTests();
 		rmSync(home, { recursive: true, force: true });
 	}
 

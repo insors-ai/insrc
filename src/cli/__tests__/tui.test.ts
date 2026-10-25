@@ -466,7 +466,7 @@ test('the TUI tests run with fakeServices carrying the team entry', () => {
 	assert.equal(typeof svc.team.teamRefresh, 'function');
 });
 
-test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort', async () => {
+test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max/ultra and writes models.tiers.<tier>.effort', async () => {
 	const svc = fakeServices();
 	const writes: Array<[string, unknown]> = [];
 	let tiers: Record<string, unknown> = {
@@ -494,7 +494,9 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	stdin.write('e'); await settle();
 	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'max']);
 	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'max wraps to the CLI default');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'ultra'], 'the cycle offers every shipped effort level');
+	stdin.write('e'); await settle();
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'the last level wraps to the CLI default');
 	stdin.write('e'); await settle();
 	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'low']);
 

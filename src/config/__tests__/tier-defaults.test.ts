@@ -45,10 +45,10 @@ test('src/config/__tests__/tier-defaults.test.ts: the config catalog\'s cheap an
 test('src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku', () => {
   const cfg = assembleConfig({}, SHAPER, DEPTH);
   assert.equal(cfg.summariserProvider, 'cli-claude');
-  assert.equal(cfg.summariserModel, 'haiku');
+  assert.equal(cfg.summariserModel, 'claude-haiku-5-5', 'the cheap tier default (haiku) as its canonical id');
   const provider = buildSummariserProvider(cfg);
   assert.ok(provider instanceof CliProvider, 'the default summariser is a CLI provider');
-  assert.equal(pinnedModel(provider), 'haiku', 'the model is pinned, not the CLI default');
+  assert.equal(pinnedModel(provider), 'claude-haiku-5-5', 'the model is pinned, not the CLI default');
   // A cheap tier on ollama keeps the summariser local, as before.
   const local = assembleConfig({ tiers: { core: DEFAULT_TIERS.core, mid: DEFAULT_TIERS.mid, cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }, SHAPER, DEPTH);
   assert.ok(buildSummariserProvider(local) instanceof OllamaProvider);
@@ -75,15 +75,19 @@ test("a global tier dropped for an empty or invalid model keeps its configured e
   const tiering = parseTiering({ tiers: { core: { runner: 'cli-codex', model: '', effort: 'high' }, cheap: { runner: 'bogus', model: 'x', effort: 'low' } } });
   assert.equal(tiering.tiers, undefined, 'both tiers are dropped as before');
   const cfg = assembleConfig(tiering, SHAPER, DEPTH);
-  assert.deepEqual(cfg.tiering.tiers?.core, { ...DEFAULT_TIERS.core, effort: 'high' });
-  assert.deepEqual(cfg.tiering.tiers?.cheap, { ...DEFAULT_TIERS.cheap, effort: 'low' });
+  assert.deepEqual(cfg.tiering.tiers?.core, { runner: 'cli-claude', model: 'claude-opus-5-5', effort: 'high' });
+  assert.deepEqual(cfg.tiering.tiers?.cheap, { runner: 'cli-claude', model: 'claude-haiku-5-5', effort: 'low' });
   assert.equal(cfg.shaperEffort, 'high');
   assert.equal(cfg.summariserEffort, 'low');
   assert.equal(cfg.shaperProviderExplicit, false, 'a fallback is still not explicit');
   assert.equal(cfg.shaperModelExplicit, false);
   // A kept tier carries its own effort; no effort configured gives none.
-  const kept = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b', effort: 'medium' } } }), SHAPER, DEPTH);
+  const kept = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'cli-claude', model: 'haiku', effort: 'medium' } } }), SHAPER, DEPTH);
   assert.equal(kept.summariserEffort, 'medium');
+  // An Ollama model accepts no effort: the registry drops it.
+  const local = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b', effort: 'medium' } } }), SHAPER, DEPTH);
+  assert.equal(local.summariserEffort, undefined);
+  assert.equal(local.tierResolutions.cheap.droppedEffort, 'medium');
   assert.equal(kept.shaperEffort, undefined);
   assert.equal('shaperEffort' in assembleConfig({}, SHAPER, DEPTH), false);
 });

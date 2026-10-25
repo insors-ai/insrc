@@ -27,7 +27,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
-import type { EffortLevel } from '../daemon/model-catalog.js';
+import type { EffortLevel, FamilyId } from '../daemon/model-catalog.js';
+import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
 import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 
 const log = getLogger('config:analyze');
@@ -87,7 +88,7 @@ export interface MaxPlanDepthMap {
  * false`. Those code paths continue to build their own Ollama
  * provider regardless of this setting.
  */
-export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
+export type AnalyzeShaperProviderKind = FamilyId;
 
 // ---------------------------------------------------------------------------
 // Per-role model tiering (Epic per-role-per-step, Story S001 — sc1).
@@ -119,9 +120,6 @@ export interface TierModel {
 export const TIER_EFFORTS: readonly string[] = SHIPPED_MODEL_DEFAULTS.efforts;
 /** An effort level name (the definitions file is the authority for level names). */
 export type TierEffort = EffortLevel;
-export function isTierEffort(x: unknown): x is TierEffort {
-	return typeof x === 'string' && TIER_EFFORTS.includes(x);
-}
 
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
 export type RoleTierAssignment = Readonly<Record<string, TierName>>;
@@ -206,6 +204,10 @@ export interface AnalyzeConfig {
 	 *  override merged over DEFAULT_TIERS) so the RoleRouter resolves a concrete
 	 *  tier for every role. */
 	readonly tiering:        AnalyzeTiering;
+	/** Each global tier's resolution through the model registry, including any
+	 *  fallback (decision A) and dropped effort, for the router and
+	 *  models.resolveRole to report. */
+	readonly tierResolutions: Readonly<Record<TierName, TierResolution>>;
 }
 
 /**
@@ -238,25 +240,46 @@ const DEFAULT_MAX_PLAN_DEPTH: MaxPlanDepthMap = {
 
 let cached: AnalyzeConfig | undefined;
 
-/**
- * Fully-resolved tiers = the parsed override merged over DEFAULT_TIERS. The
- * `tiers` block is the SINGLE place a model is named; every derived field below
- * reads from it. Always returns all three tiers populated, so the RoleRouter
- * resolves a concrete tier for every role (no legacy cross-tier fallback).
- */
-function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
-	return {
-		core:  resolveTier(tiering, 'core'),
-		mid:   resolveTier(tiering, 'mid'),
-		cheap: resolveTier(tiering, 'cheap'),
-	};
+/** The setting the registry resolves for a tier: the configured runner and
+ *  model, else (an unset tier, or one whose model is '') the default family's
+ *  tier default with its effort. A configured effort wins over the default's;
+ *  '' asks for the CLI's own default (no effort). */
+function tierSetting(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierSetting {
+	const configured = tiering.tiers?.[tier];
+	const effort = tiering.efforts?.[tier];
+	if (configured !== undefined) {
+		return { runner: configured.runner, model: configured.model, ...(effort ? { effort } : {}) };
+	}
+	const family = registry.defaultFamily();
+	const def = registry.tierDefault(family, tier);
+	const chosen = effort ?? def.effort;
+	return { runner: family, model: def.model, ...(chosen ? { effort: chosen } : {}) };
 }
 
-/** The configured tier, else DEFAULT_TIERS[tier] at the tier's configured effort
- *  (so an effort set beside an empty or invalid model still applies). */
-export function resolveTier(tiering: TieringOverride, tier: TierName): TierModel {
-	const effort = tiering.efforts?.[tier];
-	return tiering.tiers?.[tier] ?? { ...DEFAULT_TIERS[tier], ...(effort !== undefined ? { effort } : {}) };
+/** Resolve one global tier through the registry, logging a dropped effort and a
+ *  fallback (decision A). */
+export function resolveTierWith(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierResolution {
+	const resolution = registry.resolveTier(tier, tierSetting(tiering, tier, registry));
+	if (resolution.droppedEffort !== undefined) {
+		log.warn({ tier, model: resolution.model.id, effort: resolution.droppedEffort },
+			`models.tiers.${tier}: model ${resolution.model.id} does not accept effort '${resolution.droppedEffort}'; running at the CLI's default effort`);
+	}
+	if (resolution.fallback !== undefined) {
+		log.warn({ tier, requested: resolution.fallback.requested, reason: resolution.fallback.reason, model: resolution.model.id },
+			`models.tiers.${tier}: model '${resolution.fallback.requested}' is ${resolution.fallback.reason === 'rejected-model' ? 'rejected' : 'not listed'} (${resolution.fallback.reason}); using the tier default ${resolution.model.id}`);
+	}
+	return resolution;
+}
+
+function tierModelOf(r: TierResolution): TierModel {
+	return { runner: r.family, model: r.model.id, ...(r.effort !== undefined ? { effort: r.effort } : {}) };
+}
+
+/** The tier as the registry resolves it (canonical model id, accepted effort).
+ *  `registry` defaults to the daemon thread's registry; a client process passes
+ *  its own (the TUI's shipped-only registry). */
+export function resolveTier(tiering: TieringOverride, tier: TierName, registry: ModelRegistry = getModelRegistry()): TierModel {
+	return tierModelOf(resolveTierWith(tiering, tier, registry));
 }
 
 /**
@@ -272,8 +295,18 @@ export function assembleConfig(
 	tiering:      AnalyzeTiering,
 	shaper:       AnalyzeShaperConfig,
 	maxPlanDepth: MaxPlanDepthMap,
+	registry:     ModelRegistry = getModelRegistry(),
 ): AnalyzeConfig {
-	const tiers = resolveTiers(tiering);
+	const tierResolutions: Record<TierName, TierResolution> = {
+		core:  resolveTierWith(tiering, 'core', registry),
+		mid:   resolveTierWith(tiering, 'mid', registry),
+		cheap: resolveTierWith(tiering, 'cheap', registry),
+	};
+	const tiers: Record<TierName, TierModel> = {
+		core:  tierModelOf(tierResolutions.core),
+		mid:   tierModelOf(tierResolutions.mid),
+		cheap: tierModelOf(tierResolutions.cheap),
+	};
 	return {
 		shaperProvider:          tiers.core.runner,
 		shaperProviderExplicit:  tiering.tiers?.core !== undefined,
@@ -286,17 +319,24 @@ export function assembleConfig(
 		shaper,
 		maxPlanDepth,
 		tiering: { ...tiering, tiers },
+		tierResolutions,
 	};
 }
 
-export function loadAnalyzeConfig(): AnalyzeConfig {
-	if (cached !== undefined) {
-		return cached;
-	}
+/**
+ * The analyze config, with every global tier resolved through `registry`
+ * (default: this daemon thread's registry, cached; an explicit registry — the
+ * TUI's shipped-only one — gets a fresh, uncached read).
+ */
+export function loadAnalyzeConfig(registry?: ModelRegistry): AnalyzeConfig {
+	if (registry !== undefined) return readAnalyzeConfig(registry);
+	cached ??= readAnalyzeConfig(getModelRegistry());
+	return cached;
+}
 
+function readAnalyzeConfig(registry: ModelRegistry): AnalyzeConfig {
 	if (!existsSync(PATHS.config)) {
-		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
-		return cached;
+		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 
 	try {
@@ -335,15 +375,13 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			XL: typeof depthObj['XL'] === 'number' ? (depthObj['XL'] as number) : DEFAULT_MAX_PLAN_DEPTH.XL,
 		};
 
-		cached = assembleConfig(parseTiering(models), shaper, maxPlanDepth);
-		return cached;
+		return assembleConfig(parseTiering(models), shaper, maxPlanDepth, registry);
 	} catch (err) {
 		log.warn(
 			{ err: (err as Error).message },
 			'failed to parse config.json; using analyze defaults',
 		);
-		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
-		return cached;
+		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 }
 
@@ -363,44 +401,44 @@ const TIER_NAMES: readonly TierName[] = ['core', 'mid', 'cheap'];
 function isTierName(x: unknown): x is TierName {
 	return typeof x === 'string' && (TIER_NAMES as readonly string[]).includes(x);
 }
+/** A model family id (the shipped definitions' families). */
 function isRunner(x: unknown): x is AnalyzeShaperProviderKind {
-	return x === 'ollama' || x === 'cli-claude' || x === 'cli-codex';
+	return typeof x === 'string' && SHIPPED_MODEL_DEFAULTS.familyIds.includes(x);
 }
 
-/** A tier entry's effort: a valid one on the global tiers; '' or absent is none. An
- *  invalid value, or any effort on a per-repo tier, is dropped with a warning. */
-function effortOf(raw: unknown, where: string, tier: TierName): TierEffort | undefined {
-	if (raw === undefined || raw === '') return undefined;
-	if (where !== 'global') {
-		log.warn({ where, tier, effort: raw }, 'models.byRepo[repo].tiers[tier].effort: effort is set on the global model tiers only; ignored');
-		return undefined;
-	}
-	if (isTierEffort(raw)) return raw;
-	log.warn({ where, tier, effort: raw }, `models.tiers[tier].effort: expected one of ${TIER_EFFORTS.join('|')}; ignored`);
+/** A global tier entry's effort: any level name ('' asks for the CLI's own
+ *  default); absent is none. Whether the tier's model accepts it is decided at
+ *  resolution by the registry. A non-string is dropped with a warning. */
+function effortOf(raw: unknown, tier: TierName): TierEffort | undefined {
+	if (raw === undefined || typeof raw === 'string') return raw;
+	log.warn({ tier, effort: raw }, 'models.tiers[tier].effort: expected an effort level name; ignored');
 	return undefined;
 }
 
-/** Parse one TieringOverride (tiers / tasks / coreFloor) from a config object.
- *  Note: the on-disk key is `tasks`; the internal AnalyzeTiering field is
- *  `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
+/** Parse one TieringOverride from a config object: tiers (global only — a
+ *  repo picks a tier for a role but never sets the model behind it), tasks and
+ *  coreFloor. Note: the on-disk key is `tasks`; the internal AnalyzeTiering
+ *  field is `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
 function parseTieringOverride(src: Record<string, unknown>, where: string): TieringOverride {
 	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName; efforts?: Partial<Record<TierName, TierEffort>> } = {};
 
-	if (isObject(src['tiers'])) {
+	if (where === 'global' && isObject(src['tiers'])) {
 		const tiers: Partial<Record<TierName, TierModel>> = {};
 		const efforts: Partial<Record<TierName, TierEffort>> = {};
 		for (const [tier, val] of Object.entries(src['tiers'])) {
 			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.tiers: unknown tier name; ignored'); continue; }
 			const runner = isObject(val) ? val['runner'] : undefined;
 			const model  = isObject(val) ? val['model']  : undefined;
-			// The effort belongs to the global tiers only; a per-repo tier chooses runner and model.
-			const effort = effortOf(isObject(val) ? val['effort'] : undefined, where, tier);
+			// Kept even when the tier itself is dropped, so the tier default runs at it.
+			const effort = effortOf(isObject(val) ? val['effort'] : undefined, tier);
 			if (effort !== undefined) efforts[tier] = effort;
-			if (!isRunner(runner) || typeof model !== 'string' || model.length === 0) {
-				log.warn({ where, tier }, 'models.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
+			// A '' model leaves the tier unset: it resolves to the tier default.
+			if (model === '') continue;
+			if (!isRunner(runner) || typeof model !== 'string') {
+				log.warn({ where, tier }, `models.tiers[tier]: expected { runner: ${SHIPPED_MODEL_DEFAULTS.familyIds.join('|')}, model: string }; ignored`);
 				continue;
 			}
-			tiers[tier] = { runner, model, ...(effort !== undefined ? { effort } : {}) };
+			tiers[tier] = { runner, model, ...(effort ? { effort } : {}) };
 		}
 		if (Object.keys(tiers).length > 0) out.tiers = tiers;
 		if (Object.keys(efforts).length > 0) out.efforts = efforts;
@@ -436,7 +474,7 @@ export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 		for (const [repoPath, entry] of Object.entries(models['byRepo'])) {
 			if (!isObject(entry)) continue;
 			const ov = parseTieringOverride(entry, `byRepo[${repoPath}]`);
-			if (ov.tiers !== undefined || ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
+			if (ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
 		}
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}

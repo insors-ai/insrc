@@ -68,7 +68,7 @@ test('a byRepo entry with no valid tiering keys is not retained', () => {
 	assert.equal(t.byRepo, undefined);
 });
 
-test("parseTiering reads effort on the global core/mid/cheap tiers; an effort under models.byRepo[repo].tiers is ignored with a warning; '' and absent give no effort", () => {
+test("parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort", () => {
 	const t = parseTiering({
 		tiers: {
 			core:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'high' },
@@ -81,21 +81,22 @@ test("parseTiering reads effort on the global core/mid/cheap tiers; an effort un
 	assert.equal(t.tiers?.mid?.effort, 'medium');
 	assert.equal(t.tiers?.cheap?.effort, 'max');
 	assert.deepEqual(t.efforts, { core: 'high', mid: 'medium', cheap: 'max' });
-	// The byRepo tier keeps its runner and model; its effort is ignored.
-	assert.deepEqual(t.byRepo?.['/r']?.tiers?.core, { runner: 'cli-claude', model: 'opus' });
-	assert.equal(t.byRepo?.['/r']?.efforts, undefined);
+	// A repo picks a tier for a role, never the model behind it: its tiers are not read.
+	assert.equal(t.byRepo, undefined);
 
 	for (const effort of ['', undefined]) {
 		const u = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus', ...(effort !== undefined ? { effort } : {}) } } });
 		assert.deepEqual(u.tiers?.core, { runner: 'cli-claude', model: 'opus' }, `effort ${JSON.stringify(effort)}`);
-		assert.equal(u.efforts, undefined);
+		assert.deepEqual(u.efforts, effort === '' ? { core: '' } : undefined);
 	}
 });
 
-test('an effort that is not a shipped effort level is dropped with a warning while the tier keeps its runner and model', () => {
-	for (const effort of ['hgh', 'turbo', 3, { level: 'high' }, null]) {
+test('a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model)', () => {
+	for (const effort of [3, { level: 'high' }, null]) {
 		const t = parseTiering({ tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort } } });
 		assert.deepEqual(t.tiers?.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol' }, `effort ${JSON.stringify(effort)}`);
 		assert.equal(t.efforts, undefined);
 	}
+	const named = parseTiering({ tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'turbo' } } });
+	assert.deepEqual(named.tiers?.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'turbo' });
 });

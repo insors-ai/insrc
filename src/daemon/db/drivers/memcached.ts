@@ -129,8 +129,7 @@ class MemcachedDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		try { this.client.close(); }
-		catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'memcached close failed'); }
+		this.client.close();
 	}
 
 	async listNamespaces(): Promise<KvNamespaceList> {

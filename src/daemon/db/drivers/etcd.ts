@@ -14,7 +14,6 @@
 import { Etcd3 } from 'etcd3';
 import type { IOptions as Etcd3Options } from 'etcd3';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -35,7 +34,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-etcd');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class EtcdDriver implements KvDriver {
@@ -109,8 +107,7 @@ export class EtcdDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		try { this.client.close(); }
-		catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'etcd close failed'); }
+		this.client.close();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {

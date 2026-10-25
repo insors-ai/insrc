@@ -12,7 +12,6 @@ import type { NatsConnection } from '@nats-io/nats-core';
 import { Kvm } from '@nats-io/kv';
 import type { KV } from '@nats-io/kv';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KeyList,
@@ -32,7 +31,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-nats');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class NatsKvDriver implements KvDriver {
@@ -106,10 +104,11 @@ export class NatsKvDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		if (this.ncPromise !== null) {
-			try { await (await this.ncPromise).close(); }
-			catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'nats close failed'); }
-		}
+		if (this.ncPromise === null) return;
+		let connection: NatsConnection;
+		try { connection = await this.ncPromise; }
+		catch { return; } // Failed initialization produced no owned connection.
+		await connection.close();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {

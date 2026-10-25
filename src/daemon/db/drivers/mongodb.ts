@@ -10,7 +10,6 @@
 
 import { MongoClient } from 'mongodb';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -31,7 +30,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-mongodb');
 
 interface CollectionRef {
 	readonly db: string;
@@ -114,9 +112,7 @@ export class MongoDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		await this.client.close().catch((err: Error) => {
-			log.warn({ id: this.id, err: err.message }, 'mongo close failed');
-		});
+		await this.client.close();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {

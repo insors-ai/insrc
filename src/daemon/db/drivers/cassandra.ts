@@ -14,7 +14,6 @@
 import { Client } from 'cassandra-driver';
 import type { ClientOptions } from 'cassandra-driver';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -35,7 +34,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-cassandra');
 
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -155,9 +153,7 @@ export class CassandraDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		await this.client.shutdown().catch((err: Error) => {
-			log.warn({ id: this.id, err: err.message }, 'cassandra shutdown failed');
-		});
+		await this.client.shutdown();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {

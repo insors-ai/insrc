@@ -5,28 +5,31 @@
 
 /**
  * The sc2 ModelList capability — the read-only daemon list-models dispatch
- * (Epic ba132c185fe45860, S002).
+ * (Epic ba132c185fe45860, S002), drawn since Epic ce99b72065d03b1b s2 from the
+ * same models.definitions projection (src/daemon/model-definitions.ts), so the
+ * two answers always agree.
  *
- * Given a provider, return its available models plus an explicit availability
- * signal: for ollama a live local /api/tags query through the existing
- * OllamaProvider (bounded; any failure/timeout/malformed -> available:false +
- * []), for cli-claude/cli-codex the curated in-repo catalog (S001's sc1
- * getCuratedCatalog, available:true). NO direct cloud REST (k1) — the cloud
- * branch constructs no HTTP/provider client and does NOT reuse the daemon's
- * Anthropic-SDK claude.models path. Strictly read-only: validating a provider,
- * listing ollama, and reading the catalog mutate nothing (ac3).
+ * Given a provider, return its models plus an explicit availability signal: for
+ * a CLI family (cli-claude / cli-codex) the models the definitions serve
+ * (shipped, then user-approved), available:true, with no Ollama call; for
+ * ollama the listed models that are installed, from the existing bounded
+ * listing (any failure/timeout/malformed -> available:false + []). An installed
+ * model the definitions do not list is not returned. NO direct cloud REST (k1);
+ * strictly read-only (ac3).
  *
- * The daemon handler map revives 'providers.listModels' (previously offline-
- * stubbed) by delegating to listModels(params). listModels takes injected deps
- * (default: the real bounded ollama lister + getCuratedCatalog) so every branch
- * is unit-testable with a fake lister + stub catalog, no live daemon/ollama.
+ * listModels takes injected deps (default: the real bounded ollama lister, the
+ * per-thread registry and the definitions file version) so every branch is
+ * unit-testable off a live daemon/ollama.
  */
 
-import { getCuratedCatalog, type CuratedCatalog } from './model-catalog.js';
-import { OllamaProvider } from '../agent/providers/ollama.js';
+import {
+  DEFAULT_MODEL_DEFINITIONS_DEPS,
+  projectDefinitions,
+  type ModelDefinitionsDeps,
+} from './model-definitions.js';
 
 /** The three providers the list capability serves — exactly the reused runner
- *  enum values (k3; the superset of S001's cloud-only CloudProvider + ollama). */
+ *  enum values (k3): the three model families. */
 export type ModelProvider = 'ollama' | 'cli-claude' | 'cli-codex';
 
 /** The sc2 request. */
@@ -57,49 +60,29 @@ export interface ListModelsError {
   readonly recoverable: boolean;
 }
 
-/** Injected dependencies (default to the real bounded ollama lister +
- *  getCuratedCatalog) so listModels is unit-testable off a live daemon/ollama. */
-export interface ListModelsDeps {
-  /** List ollama's installed models; rejects on unreachable/timeout/malformed. */
-  ollamaList(): Promise<readonly ModelInfo[]>;
-  /** The sc1 curated-catalog accessor (S001). */
-  catalog(): CuratedCatalog;
-}
+/** Injected dependencies — the models.definitions seams (default: the real
+ *  bounded ollama lister, getModelRegistry and the definitions file version). */
+export type ListModelsDeps = ModelDefinitionsDeps;
 
 const ALL_PROVIDERS = new Set<ModelProvider>(['ollama', 'cli-claude', 'cli-codex']);
 
-/** Lazily-constructed real ollama provider for the default lister (one vetted
- *  ollama-talking path; the provider resolves the ollama.host config itself).
- *  Constructed on first use (not at module load); the resolved host is cached for
- *  the process lifetime, so an ollama.host config change is picked up on the next
- *  daemon restart — acceptable for a read-only on-demand picker query. */
-let _ollamaProvider: OllamaProvider | undefined;
-function defaultOllamaList(): Promise<readonly ModelInfo[]> {
-  if (_ollamaProvider === undefined) _ollamaProvider = new OllamaProvider();
-  return _ollamaProvider.listLocalModels();
-}
-
-const DEFAULT_DEPS: ListModelsDeps = {
-  ollamaList: defaultOllamaList,
-  catalog:    getCuratedCatalog,
-};
-
-/** Narrow a CatalogModel/LocalModelInfo-shaped value into a frozen ModelInfo
+/** Narrow a definitions model entry into a ModelInfo
  *  (exactOptionalPropertyTypes-correct: never set displayName:undefined). */
-function toModelInfo(m: { readonly id: string; readonly displayName?: string }): ModelInfo {
+function toModelInfo(m: { readonly id: string; readonly displayName?: string | undefined }): ModelInfo {
   return typeof m.displayName === 'string' ? { id: m.id, displayName: m.displayName } : { id: m.id };
 }
 
 /**
- * Dispatch a list-models request. Validates params.provider; cloud providers are
- * served from the curated catalog (available:true), ollama from the bounded live
- * lister (available:false + [] on any failure/timeout/malformed). Pure read;
+ * Dispatch a list-models request. Validates params.provider; CLI families are
+ * served from the definitions projection (available:true), ollama as the listed
+ * models the bounded live lister reports installed (available:false + [] on any
+ * failure/timeout/malformed). Pure read;
  * never throws for a valid provider. An unknown/missing provider returns the
  * invalid-params error result, mutating nothing.
  */
 export async function listModels(
   params: unknown,
-  deps: ListModelsDeps = DEFAULT_DEPS,
+  deps: ListModelsDeps = DEFAULT_MODEL_DEFINITIONS_DEPS,
 ): Promise<ModelListResult | ListModelsError> {
   const provider = extractProvider(params);
   if (provider === undefined) {
@@ -109,23 +92,24 @@ export async function listModels(
     };
   }
 
+  // ollama: one bounded live listing. Any failure/timeout/malformed -> available:false
+  // + [] (ac2/k7), never a fabricated or cached-as-fresh list. A reachable server
+  // with none of the listed models installed returns available:true + [].
+  let installed: readonly string[] | undefined;
   if (provider === 'ollama') {
-    // ollama: a live local query. Any failure/timeout/malformed -> available:false
-    // + [] (ac2/k7), never a fabricated or cached-as-fresh list. A reachable server
-    // with zero installed models returns available:true + [].
     try {
-      const models = (await deps.ollamaList()).map(toModelInfo);
-      return { provider, available: true, models };
+      installed = (await deps.ollamaList()).map(m => m.id);
     } catch {
       return { provider, available: false, models: [] };
     }
   }
 
-  // Cloud (cli-claude | cli-codex): curated catalog only — `provider` is narrowed
-  // to CloudProvider here, so no cast is needed. The catalog is boot-validated, so
-  // the source is always available; models may be an empty array. No cloud REST (ac4).
-  const models = deps.catalog().modelsFor(provider).map(toModelInfo);
-  return { provider, available: true, models };
+  // Every family is answered from the same projection models.definitions returns
+  // (s2/ac2); a CLI family never calls the ollama lister. No cloud REST (ac4).
+  const family = projectDefinitions(deps.registry(), deps.catalogVersion(), installed)
+    .families.find(f => f.id === provider);
+  const served = (family?.models ?? []).filter(m => provider !== 'ollama' || m.installed === true);
+  return { provider, available: true, models: served.map(toModelInfo) };
 }
 
 /** Extract a valid ModelProvider from raw params, or undefined. */

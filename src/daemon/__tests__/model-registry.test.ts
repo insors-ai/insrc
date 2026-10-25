@@ -19,7 +19,8 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { _setModelCatalogDirForTests, getCuratedCatalog } from '../model-catalog.js';
+import { _setModelCatalogDirForTests } from '../model-catalog.js';
+import { projectDefinitions } from '../model-definitions.js';
 import {
 	getModelRegistry,
 	_resetModelRegistryForTests,
@@ -216,7 +217,7 @@ test('model-registry.test.ts: resolveTier keeps an accepted effort, drops an una
 	}
 });
 
-test('model-registry.test.ts: ac2 fixture after reset serves the new model, alias and \'turbo\' through models(), find(), effortLevels(), resolveTier() and getCuratedCatalog()', () => {
+test('model-registry.test.ts: ac2 fixture after reset serves the new model, alias and \'turbo\' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection', () => {
 	const { assetDir } = use(baseline());
 	assert.equal(getModelRegistry().find('cli-codex', 'gpt-c'), undefined);
 	assert.ok(!getModelRegistry().effortLevels().includes('turbo'));
@@ -236,7 +237,7 @@ test('model-registry.test.ts: ac2 fixture after reset serves the new model, alia
 	assert.equal(res.effort, 'turbo');
 	assert.equal(res.droppedEffort, undefined);
 	assert.equal(res.fallback, undefined);
-	assert.ok(getCuratedCatalog().modelsFor('cli-codex').some(m => m.id === 'gpt-c'));
+	assert.ok(projectDefinitions(r, 1, undefined).families.find(f => f.id === 'cli-codex')!.models.some(m => m.id === 'gpt-c' && m.aliases.includes('cee')));
 });
 
 test('model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk', () => {

@@ -22,9 +22,6 @@
  *
  * Read-only: readFileSync + JSON.parse + the rule check only. NO network, NO
  * cloud REST, NO config.json read/write.
- *
- * getCuratedCatalog() is the stopgap accessor providers.listModels reads until
- * s2 re-sources it from the registry.
  */
 
 import { readFileSync } from 'node:fs';
@@ -40,8 +37,6 @@ const log = getLogger('daemon:model-catalog');
 export type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';
 /** The two CLI families — the only ones with tier defaults and a summariser. */
 export type CliFamilyId = 'cli-claude' | 'cli-codex';
-/** The two cloud providers the stopgap curated accessor covers. */
-export type CloudProvider = CliFamilyId;
 /** An effort level name; the file is the authority for level names. */
 export type EffortLevel = string;
 
@@ -82,18 +77,6 @@ export interface ModelDefinitionsFile {
 	readonly defaultFamily: CliFamilyId;
 	/** Exactly one per FamilyId. */
 	readonly families:      readonly FamilyDefinition[];
-}
-
-/** One model as the stopgap curated accessor serves it. */
-export interface CatalogModel {
-	readonly id:           string;
-	readonly displayName?: string;
-}
-
-/** The stopgap accessor providers.listModels consumes until s2. */
-export interface CuratedCatalog {
-	/** The listed models of a CLI family, in file order. */
-	modelsFor(provider: CloudProvider): readonly CatalogModel[];
 }
 
 /** Thrown when the definitions asset is missing / unreadable / malformed /
@@ -330,28 +313,4 @@ export function validateModelCatalog(): ModelDefinitionsFile {
 		'model definitions validated',
 	);
 	return file;
-}
-
-/**
- * Stopgap until s2: the CuratedCatalog accessor providers.listModels reads,
- * projecting each CLI family's listed models to { id, displayName? } in file
- * order. Throws when called before validateModelCatalog succeeded in this
- * thread — a boot-ordering bug, distinct from a bad file.
- */
-export function getCuratedCatalog(): CuratedCatalog {
-	if (cached === undefined) {
-		throw new Error(
-			'model-catalog: getCuratedCatalog() called before validateModelCatalog() ran at boot ' +
-				'(daemon boot-ordering bug).',
-		);
-	}
-	const file = cached;
-	return {
-		modelsFor(provider: CloudProvider): readonly CatalogModel[] {
-			const family = file.families.find(f => f.id === provider);
-			return Object.freeze((family?.models ?? []).map(m => Object.freeze(
-				m.displayName !== undefined ? { id: m.id, displayName: m.displayName } : { id: m.id },
-			)));
-		},
-	};
 }

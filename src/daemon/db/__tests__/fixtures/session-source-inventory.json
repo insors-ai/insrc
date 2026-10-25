@@ -12353,40 +12353,6 @@
         "serialization"
       ]
     },
-    "src/daemon/list-models.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "provider-adapter",
-          "_ollamaProvider.listLocalModels"
-        ],
-        [
-          "provider-use",
-          "_ollamaProvider.listLocalModels"
-        ],
-        [
-          "provider-adapter",
-          "OllamaProvider"
-        ],
-        [
-          "provider-factory",
-          "OllamaProvider"
-        ],
-        [
-          "provider-use",
-          "OllamaProvider"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "099ec91f6cae53463c96ebc00fb89f1c27d1b2f26138f984be9c7138ec809f30",
-      "sourceDigest": "49de715bd01a7a37853c7b0bcb72fa042ddcffc0febe1077faf2c3b9135b714b",
-      "boundaries": [
-        "provider-adapter",
-        "provider-factory",
-        "provider-use"
-      ]
-    },
     "src/daemon/mcp-register.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
@@ -12448,7 +12414,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "b758c6bb5bb9aee16e20cca69a16ff8106e095c2a63c9019494924f0cb833117",
-      "sourceDigest": "4ba0423ba2593feefc3720cffe5e86b5f7e7ee6dab351348f60331bada7c3377",
+      "sourceDigest": "30ab8a283f212c5e3d367edffb56636b7d08d526f349596a243ef3c4eda719b2",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

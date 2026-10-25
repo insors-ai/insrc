@@ -8,9 +8,8 @@
  *
  * The synchronous loader validateModelCatalog is exercised against TEMP asset
  * dirs via _setModelCatalogDirForTests: one refusal per rule (each naming the
- * entry and rule), the per-thread cache, and the stopgap getCuratedCatalog
- * projection providers.listModels reads until s2. The shipped asset's contract
- * lives in model-catalog-asset.test.ts.
+ * entry and rule) and the per-thread cache. The shipped asset's contract lives
+ * in model-catalog-asset.test.ts.
  *
  * Run: npx tsx --test src/daemon/__tests__/model-catalog.test.ts
  */
@@ -24,7 +23,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
 	validateModelCatalog,
-	getCuratedCatalog,
 	ModelCatalogValidationError,
 	MODEL_CATALOG_DIR,
 	modelCatalogDir,
@@ -119,8 +117,9 @@ test('model-catalog.test.ts: one synchronous refusal per fixture reason, each na
 			assert.equal((e.message.match(/Fix:/g) ?? []).length, 1);
 			return true;
 		}, label);
-		// Nothing is cached on failure.
-		assert.throws(() => getCuratedCatalog(), /before validateModelCatalog/, `${label}: nothing cached`);
+		// Nothing is cached on failure: once the file is fixed, the next call loads it.
+		writeFileSync(join(dir, CATALOG_FILE), JSON.stringify(valid()));
+		assert.equal(validateModelCatalog().version, 1, `${label}: nothing cached`);
 		_resetModelCatalogForTests();
 	}
 });
@@ -144,28 +143,6 @@ test('model-catalog.test.ts: validateModelCatalog returns and caches the frozen 
 	// After the reset seam the loader reads again and refuses the missing file.
 	_resetModelCatalogForTests();
 	assert.throws(() => validateModelCatalog(), /file not found/);
-});
-
-test('model-catalog.test.ts: getCuratedCatalog().modelsFor projects each CLI family\'s listed models in file order', () => {
-	useAsset(JSON.stringify(valid()));
-	validateModelCatalog();
-	const cat = getCuratedCatalog();
-	assert.deepEqual(cat.modelsFor('cli-claude'), [
-		{ id: 'claude-big', displayName: 'Claude Big' },
-		{ id: 'claude-small' },
-		{ id: 'claude-plain' },
-	]);
-	assert.deepEqual(cat.modelsFor('cli-codex'), [{ id: 'gpt-a' }, { id: 'gpt-b', displayName: 'GPT B' }]);
-	assert.throws(() => { (cat.modelsFor('cli-codex') as Array<{ id: string }>).push({ id: 'x' }); });
-});
-
-test('getCuratedCatalog before validateModelCatalog populated the cache → throws the boot-ordering Error', () => {
-	assert.throws(() => getCuratedCatalog(), (e: unknown) => {
-		assert.ok(e instanceof Error);
-		assert.ok(!(e instanceof ModelCatalogValidationError), 'a boot-ordering bug, not a bad-catalog error');
-		assert.match((e as Error).message, /before validateModelCatalog/);
-		return true;
-	});
 });
 
 test('modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR', () => {

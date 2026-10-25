@@ -140,11 +140,16 @@ function shippedTier(tier: TierName): TierModel {
 	return { runner: d.runner as AnalyzeShaperProviderKind, model: d.model, ...(d.effort !== '' ? { effort: d.effort } : {}) };
 }
 
-/** The tiering knobs that may appear globally or under a byRepo entry. */
-export interface TieringOverride {
-	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
+/** What a repo may choose (models.byRepo[repo]): the tier for a role and the
+ *  core floor — never the model behind a tier. */
+export interface RepoTiering {
 	readonly roleTiers?: RoleTierAssignment | undefined;
 	readonly coreFloor?: TierName | undefined;
+}
+
+/** The global tiering knobs: the tiers (set globally only) plus what a repo may also choose. */
+export interface TieringOverride extends RepoTiering {
+	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
 	/** Global scope only: each tier entry's valid effort, kept even when the tier
 	 *  itself was dropped (an empty or invalid model), so a DEFAULT_TIERS fallback
 	 *  still runs at the configured effort. */
@@ -155,7 +160,7 @@ export interface TieringOverride {
  *  AnalyzeConfig; empty (all fields absent) when no tiering config is set, in
  *  which case resolution is identical to the legacy single-provider path. */
 export interface AnalyzeTiering extends TieringOverride {
-	readonly byRepo?: Readonly<Record<string, TieringOverride>> | undefined;
+	readonly byRepo?: Readonly<Record<string, RepoTiering>> | undefined;
 }
 
 export interface AnalyzeConfig {
@@ -230,7 +235,8 @@ let cached: AnalyzeConfig | undefined;
  *  '' asks for the CLI's own default (no effort). */
 function tierSetting(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierSetting {
 	const configured = tiering.tiers?.[tier];
-	const effort = tiering.efforts?.[tier];
+	// The efforts entry ('' included) wins; else the tier's own effort.
+	const effort = tiering.efforts?.[tier] ?? configured?.effort;
 	if (configured !== undefined) {
 		return { runner: configured.runner, model: configured.model, ...(effort ? { effort } : {}) };
 	}
@@ -447,13 +453,15 @@ function parseTieringOverride(src: Record<string, unknown>, where: string): Tier
  *  coreFloor only). Returns {} when no tiering keys are set. */
 export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 	const global = parseTieringOverride(models, 'global');
-	let byRepo: Record<string, TieringOverride> | undefined;
+	let byRepo: Record<string, RepoTiering> | undefined;
 	if (isObject(models['byRepo'])) {
-		const acc: Record<string, TieringOverride> = {};
+		const acc: Record<string, RepoTiering> = {};
 		for (const [repoPath, entry] of Object.entries(models['byRepo'])) {
 			if (!isObject(entry)) continue;
 			const ov = parseTieringOverride(entry, `byRepo[${repoPath}]`);
-			if (ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
+			if (ov.roleTiers !== undefined || ov.coreFloor !== undefined) {
+				acc[repoPath] = { ...(ov.roleTiers !== undefined ? { roleTiers: ov.roleTiers } : {}), ...(ov.coreFloor !== undefined ? { coreFloor: ov.coreFloor } : {}) };
+			}
 		}
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}

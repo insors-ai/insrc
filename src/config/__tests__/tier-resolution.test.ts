@@ -165,3 +165,18 @@ test('tier-resolution.test.ts: unlisted and rejected models fall back with a war
 		{ tier: 'cheap', requested: 'qwen:unlisted',  reason: 'unlisted-model', model: 'gpt-y' },
 	]);
 });
+
+test('tier-resolution.test.ts: a tier\'s own effort applies when no separate efforts entry exists; an efforts entry (\'\' included) wins', () => {
+	useFixture();
+	const registry = getModelRegistry();
+	// A tiering built directly (not through parseTiering): only the tier carries the effort.
+	assert.deepEqual(resolveTier({ tiers: { core: { runner: 'cli-codex', model: 'gpt-x', effort: 'turbo' } } }, 'core', registry), { runner: 'cli-codex', model: 'gpt-x', effort: 'turbo' });
+	// An unaccepted effort carried on the tier still reaches the registry and is dropped with a warning.
+	const logged = warnings(() => {
+		const r = assembleConfig({ tiers: { core: { runner: 'cli-codex', model: 'gpt-y', effort: 'turbo' } } }, SHAPER, DEPTH, registry);
+		assert.equal(r.tierResolutions.core.droppedEffort, 'turbo');
+	});
+	assert.ok(logged.some(([f]) => f['effort'] === 'turbo'));
+	// The efforts entry wins, '' asking for the CLI default.
+	assert.deepEqual(resolveTier({ tiers: { core: { runner: 'cli-codex', model: 'gpt-x', effort: 'turbo' } }, efforts: { core: '' } }, 'core', registry), { runner: 'cli-codex', model: 'gpt-x' });
+});

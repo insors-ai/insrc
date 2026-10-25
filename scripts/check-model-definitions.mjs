@@ -14,17 +14,19 @@
  * build — and the installer, which runs it under `set -euo pipefail` — fails
  * before a daemon is configured or started.
  *
- * Validates src/assets/models unless INSRC_MODEL_CATALOG_DIR names another
- * directory. INSRC_MODEL_CATALOG_MODULE overrides the validator module (default:
- * the built out/daemon/model-catalog.js).
+ * Validates src/assets/models with the built out/daemon/model-catalog.js. The
+ * environment cannot redirect it: the build always checks the shipped file.
+ * Tests pass `--dir <dir>` and `--module <validator module>` explicitly.
  */
 
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-process.env.INSRC_MODEL_CATALOG_DIR ??= resolve(root, 'src', 'assets', 'models');
-const modulePath = process.env.INSRC_MODEL_CATALOG_MODULE ?? resolve(root, 'out', 'daemon', 'model-catalog.js');
+const arg = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : undefined; };
+// Set, not defaulted: an inherited INSRC_MODEL_CATALOG_DIR must not redirect the build's check.
+process.env.INSRC_MODEL_CATALOG_DIR = resolve(arg('--dir') ?? resolve(root, 'src', 'assets', 'models'));
+const modulePath = resolve(arg('--module') ?? resolve(root, 'out', 'daemon', 'model-catalog.js'));
 
 const { validateModelCatalog } = await import(pathToFileURL(modulePath).href);
 try {

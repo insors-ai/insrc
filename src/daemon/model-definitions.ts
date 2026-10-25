@@ -32,7 +32,7 @@ import {
 	type InputLimit,
 	type TierDefault,
 } from './model-catalog.js';
-import { getModelRegistry, type FallbackReason, type ModelRegistry } from './model-registry.js';
+import { familyForClient, getModelRegistry, type FallbackReason, type ModelRegistry } from './model-registry.js';
 
 /** One model in the answer. */
 export interface ModelDefinitionEntry {
@@ -155,9 +155,10 @@ export interface ClaudeModelEntry {
  * call (DEF k1). Empty when no family runs the claude CLI.
  */
 export function claudeModels(registry: ModelRegistry = getModelRegistry()): ClaudeModelEntry[] {
-	const family = registry.families().find(f => f.cliKind === 'claude');
+	// The same family a claude client is mapped to.
+	const family = familyForClient('claude', registry);
 	if (family === undefined) return [];
-	return registry.models(family.id).map(m => ({ id: m.id, displayName: m.displayName ?? m.id, createdAt: '' }));
+	return registry.models(family).map(m => ({ id: m.id, displayName: m.displayName ?? m.id, createdAt: '' }));
 }
 
 /** The `models.resolveRole` answer (HLD sc5): the tier, model, effort and

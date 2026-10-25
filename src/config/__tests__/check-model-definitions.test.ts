@@ -26,11 +26,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const SCRIPT = join(ROOT, 'scripts', 'check-model-definitions.mjs');
 const SHIPPED = join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json');
 
-function runGate(catalogDir: string | undefined): { status: number | null; out: string } {
-	const env: NodeJS.ProcessEnv = { ...process.env, INSRC_MODEL_CATALOG_MODULE: join(ROOT, 'src', 'daemon', 'model-catalog.ts') };
-	if (catalogDir === undefined) delete env['INSRC_MODEL_CATALOG_DIR'];
-	else env['INSRC_MODEL_CATALOG_DIR'] = catalogDir;
-	const r = spawnSync(process.execPath, ['--import', 'tsx', SCRIPT], { cwd: ROOT, env, encoding: 'utf8', timeout: 60_000 });
+function runGate(catalogDir: string | undefined, env: NodeJS.ProcessEnv = process.env): { status: number | null; out: string } {
+	const args = ['--import', 'tsx', SCRIPT, '--module', join(ROOT, 'src', 'daemon', 'model-catalog.ts'), ...(catalogDir !== undefined ? ['--dir', catalogDir] : [])];
+	const r = spawnSync(process.execPath, args, { cwd: ROOT, env, encoding: 'utf8', timeout: 60_000 });
 	return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
@@ -48,6 +46,10 @@ test('check-model-definitions.test.ts: the build gate exits non-zero naming the 
 		const failed = runGate(dir);
 		assert.notEqual(failed.status, 0, failed.out);
 		assert.match(failed.out, /\(cli-codex\): tierDefaults\.mid\.model 'not-a-codex-model' is not a model or alias of cli-codex/);
+		// An inherited INSRC_MODEL_CATALOG_DIR cannot redirect the build's check away from the shipped file.
+		const redirected = runGate(undefined, { ...process.env, INSRC_MODEL_CATALOG_DIR: dir });
+		assert.equal(redirected.status, 0, redirected.out);
+		assert.match(redirected.out, /src[\\/]assets[\\/]models/);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

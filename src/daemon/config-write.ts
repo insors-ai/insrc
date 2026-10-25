@@ -33,6 +33,8 @@ const RESTART_SENSITIVE: readonly (readonly string[])[] = [
 	['models', 'coreFloor'],
 	['models', 'byRepo'],
 	['models', 'local', 'coreModel'],
+	// The embedder keeps the Ollama client it first created.
+	['models', 'local', 'host'],
 ];
 
 function at(root: unknown, keys: readonly string[]): unknown {

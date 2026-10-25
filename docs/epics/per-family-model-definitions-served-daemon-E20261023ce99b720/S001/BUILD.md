@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-25T14:58:56.690Z  ·  **Updated:** 2026-10-25T15:11:02.264Z
+**Standalone:** no  ·  **Created:** 2026-10-25T14:58:56.690Z  ·  **Updated:** 2026-10-25T15:55:26.073Z
 
-**Commit:** 5aa9be4be
+**Commit:** 97e46bff5
 
 ## Summary
 
@@ -21,16 +21,19 @@ Moved the daemon's fatal model-definitions validation from after worker start to
 
 ## Changes
 
-- `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/__tests__/model-catalog-asset.test.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/__tests__/model-catalog.test.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/model-catalog.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/__tests__/model-registry.test.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/model-registry.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/shared/paths.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/threads/__tests__/helpers/registry-worker.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/threads/__tests__/worker-model-registry.test.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/threads/worker-entry.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/__tests__/boot-model-catalog.test.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-25T15:11:02.264Z)
+- `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/__tests__/model-catalog-asset.test.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/__tests__/model-catalog.test.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/model-catalog.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/__tests__/model-registry.test.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/model-registry.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/shared/paths.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/threads/__tests__/helpers/registry-worker.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/threads/__tests__/worker-model-registry.test.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/threads/worker-entry.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/__tests__/boot-model-catalog.test.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `.insrc/artifacts/PLAN-ce99b72065d03b1b-s1.json` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `.insrc/artifacts/CR-ce99b72065d03b1b-s1.json` — **insrc-build** (2026-10-25T15:55:26.073Z)
+- `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/CR.md` — **insrc-build** (2026-10-25T15:55:26.073Z)

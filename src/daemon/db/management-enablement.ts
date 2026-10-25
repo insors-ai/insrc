@@ -19,6 +19,10 @@ export const CONNECTION_TEST_GATE_FILES = [
 	'daemon/request-context', 'daemon/server', 'daemon/threads/channel', 'daemon/threads/router',
 	'daemon/threads/maintenance-entry', 'daemon/connection-management-rpc', 'daemon/db-rpc',
 	'daemon/db/runtime-config', 'daemon/db/dynamo-identity', 'shared/logger',
+	'daemon/db/drivers/pg', 'daemon/db/drivers/mysql', 'daemon/db/drivers/sqlite', 'daemon/db/drivers/mssql',
+	'daemon/db/drivers/oracle', 'daemon/db/drivers/clickhouse', 'daemon/db/drivers/redis', 'daemon/db/drivers/mongodb',
+	'daemon/db/drivers/cassandra', 'daemon/db/drivers/nats', 'daemon/db/drivers/dynamodb', 'daemon/db/drivers/etcd',
+	'daemon/db/drivers/memcached', 'daemon/db/drivers/duckdb-file',
 ] as const;
 export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url)): Promise<ManagementEnablement> {
 	try {

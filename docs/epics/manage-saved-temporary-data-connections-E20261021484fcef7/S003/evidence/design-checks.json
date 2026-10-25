@@ -23,5 +23,48 @@
       "limitation": "Browser rendering unavailable; do not claim visual verification",
       "sha256": "9ce88b914bc57f622a8094f590c6251585780d3a7717649d28e7912c6010bb09"
     }
-  ]
+  ],
+  "latestReview": {
+    "verdict": "block",
+    "reviewedAt": "2026-10-25T09:11:01.824Z",
+    "counts": {
+      "high": 3,
+      "med": 1,
+      "low": 8,
+      "unverified": 1
+    },
+    "transportTimedOut": true,
+    "resultRecoveredFromDaemonArtifact": true,
+    "remainingBlockers": [
+      {
+        "item": "change-sites",
+        "severity": "HIGH",
+        "premise": "The claimed complete consumer inventory includes the connection-scope validation and resolution paths needed for temporary-only IDs.",
+        "action": "Add these sites and callers to the inventory. Specify owner/root-bound connection existence and scope resolution using the validated overlay, preserve unattached saved semantics, and test temporary-only IDs plus same-name saved IDs in another root."
+      },
+      {
+        "item": "change-sites",
+        "severity": "HIGH",
+        "premise": "The stream migration inventory covers every component that must retain maintenance exclusion through owned drain.",
+        "action": "Add holdingForward to the concrete migration inventory and make terminal frames/disconnect retain the hold until handler completion and registered drains settle. Exercise the real enabled maintenance lock in CM-S3-STREAM."
+      },
+      {
+        "item": "change-sites",
+        "severity": "HIGH",
+        "premise": "The listed carrier and persistence changes cover the orchestrator and recursive planner callers that must preserve session-memory policy.",
+        "action": "Document RunAnalyzeArgs/Opts and RecursivePlannerArgs/PlanBuilderOpts propagation, owner-memory record access, and success/error/resume handling at these sites. Include completeRun and nested measurement/planning branches in CM-S3-CACHE and CM-S3-CONTEXT."
+      },
+      {
+        "item": "change-sites",
+        "severity": "MED",
+        "premise": "The complete migration inventory specifies the provider admission boundary required by its nonpersistent-provider rule.",
+        "action": "Specify the provider admission API and supported-mode evidence, inventory all factory/direct/injected provider paths, and define refusal before prompt submission. Add tests proving rejection before spawn/send and policy retention through aggregation, retries and injected providers."
+      }
+    ]
+  },
+  "reviewCallsThisCycle": {
+    "startupError": 1,
+    "completed": 2,
+    "additionalCycleRequiresUserConfirmation": true
+  }
 }

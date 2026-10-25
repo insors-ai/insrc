@@ -1,0 +1,21 @@
+Command: npm run build
+Exit code: 0
+npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @insrc/backend@0.2.1 build
+> tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs
+
+[check-model-definitions] model definitions v1 valid (/Users/subhagho/work/projects/insors/insrc/src/assets/models)
+[20:29:57] INFO: [daemon:model-catalog] model definitions validated
+    module: "daemon:model-catalog"
+    dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+    version: 1
+    models: {
+      "cli-claude": 4,
+      "cli-codex": 7,
+      "ollama": 1
+    }
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets

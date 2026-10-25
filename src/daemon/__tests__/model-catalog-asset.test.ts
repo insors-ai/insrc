@@ -75,12 +75,12 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 		assert.deepEqual(codex.tierDefaults?.[tier], { model: m[1] });
 	}
 
-	// Summariser models equal SUMMARISER_CLI_FALLBACK (shaper-provider.ts, not exported).
+	// The summariser models the former SUMMARISER_CLI_FALLBACK named; the provider
+	// factory now takes them from the file (Epic ce99b720 s3, provider-from-registry.test.ts).
+	assert.equal(claude.summariserModel, 'haiku');
+	assert.equal(codex.summariserModel, 'gpt-6-luna');
 	const shaper = readFileSync(join(repoRoot, 'src', 'analyze', 'context', 'shaper-provider.ts'), 'utf8');
-	const fb = /SUMMARISER_CLI_FALLBACK = \{ 'cli-claude': '([^']+)', 'cli-codex': '([^']+)' \}/.exec(shaper);
-	assert.ok(fb, 'SUMMARISER_CLI_FALLBACK found');
-	assert.equal(claude.summariserModel, fb[1]);
-	assert.equal(codex.summariserModel, fb[2]);
+	assert.doesNotMatch(shaper, /SUMMARISER_CLI_FALLBACK/);
 });
 
 test('model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit', () => {

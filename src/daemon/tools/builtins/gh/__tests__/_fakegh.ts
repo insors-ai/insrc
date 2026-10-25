@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 const SCRIPT = `#!/bin/sh
 echo "$@" >> "$FAKE_LOG"
-if [ "$1" = auth ] && [ "$FAKE_MODE" != ok ]; then echo "github.com: logged in as fake" ; exit 0; fi
+if [ "$1" = auth ] && [ "$FAKE_MODE" = fail403 ]; then echo "github.com: logged in as fake" ; exit 0; fi
 case "$*" in
   *--json*)
     if [ -n "$FAKE_JSON_FILE" ]; then cat "$FAKE_JSON_FILE"; exit 0; fi ;;
@@ -15,7 +15,7 @@ case "$*" in
     if [ -n "$FAKE_LOG_STDOUT_FILE" ]; then cat "$FAKE_LOG_STDOUT_FILE"; exit 0; fi ;;
 esac
 case "$FAKE_MODE" in
-  stdin) cat > "$FAKE_LOG.stdin" ;;
+  stdin) cat > "$FAKE_LOG.stdin"; if [ -n "$FAKE_STDOUT_FILE" ]; then cat "$FAKE_STDOUT_FILE"; else echo ok; fi ;;
   echoin) cat >&2; exit 1 ;;
   fail403) echo "HTTP 403: forbidden" >&2; exit 1 ;;
   fail404) echo "HTTP 404: not found" >&2; exit 1 ;;

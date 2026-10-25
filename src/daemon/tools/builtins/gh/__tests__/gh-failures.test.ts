@@ -89,3 +89,19 @@ test('gh-failures.test.ts: a failed gh run view log command fails the call with 
 		assert.equal(r.data, undefined);
 	} finally { gh.restore(); }
 });
+
+import { ghExec } from '../helpers.js';
+
+test('gh-failures.test.ts: a fake gh that closes its stdin early gives a stdin error that is a failure even at exit 0', async () => {
+	// the fake prints ok and exits 0 without reading its input; four MiB cannot fit in the pipe, so the write fails
+	const gh = installFakeGh('ok');
+	try {
+		const o = await ghExec(['gh', 'secret', 'set', 'T'], { input: 'x'.repeat(4 * 1024 * 1024), key: { toolId: 'gh_secret', op: 'set', mutating: true } });
+		assert.equal(o.code, 0, 'gh itself exited 0');
+		assert.ok(o.stdinError !== undefined, `the write to its standard input failed (${o.stdinError})`);
+		const f = ghFailureOf(o, { mutating: true });
+		assert.equal(f?.kind, 'rejected');
+		assert.match(f?.message ?? '', /writing its standard input failed/);
+		assert.ok(f?.message.includes(GH_UNKNOWN_OUTCOME));
+	} finally { gh.restore(); }
+});

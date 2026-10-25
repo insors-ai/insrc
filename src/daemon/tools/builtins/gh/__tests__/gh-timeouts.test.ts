@@ -69,3 +69,38 @@ test('gh-timeouts.test.ts: no ghExec call in repo.ts, release.ts or project.ts p
 	assert.equal(ghTimeoutMs({ toolId: 'gh_repo_clone' }), 600_000);
 	assert.equal(ghTimeoutMs({ toolId: 'gh_release_create' }), 180_000);
 });
+
+import { readdirSync } from 'node:fs';
+import { defineGhFamily, field, val } from '../op-table.js';
+import { installFakeGh } from './_fakegh.js';
+import { GH_UNKNOWN_OUTCOME } from '../helpers.js';
+
+test('gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out naming the command and the limit, a mutating time-out adds that the outcome is unknown, and no ghExec call outside the table passes its own timeout', async () => {
+	const probe = defineGhFamily({
+		id: 'gh_timeout_probe', description: 'probe',
+		ops: [
+			{ name: 'read', command: ['probe', 'read'], cls: 'none', limitS: 1, fields: { n: field.int() }, args: [val('-n', 'n')], out: { kind: 'text' } },
+			{ name: 'write', command: ['probe', 'write'], cls: 'common', limitS: 1, fields: { n: field.int() }, args: [val('-n', 'n')], out: { kind: 'mutation' } },
+		],
+	});
+	const gh = installFakeGh('sleep');
+	const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
+	try {
+		const started = Date.now();
+		const read = await probe.execute({ op: 'read' }, deps);
+		assert.ok(Date.now() - started < 4000, 'the limit ended the call, not the five-second sleep');
+		assert.equal(read.success, false);
+		assert.equal(read.failure?.kind, 'timed-out');
+		assert.equal(read.failure?.message, 'gh probe read timed out after 1 s');
+		assert.ok(!read.failure?.message.includes(GH_UNKNOWN_OUTCOME), 'a read does not claim an unknown outcome');
+		const write = await probe.execute({ op: 'write', n: 2 }, deps);
+		assert.equal(write.failure?.kind, 'timed-out');
+		assert.equal(write.failure?.message, `gh probe write -n 2 timed out after 1 s; ${GH_UNKNOWN_OUTCOME}`);
+	} finally { gh.restore(); }
+
+	// no gh source outside helpers.ts passes its own timeout to a command
+	const dir = dirname(dirname(fileURLToPath(import.meta.url)));
+	for (const file of readdirSync(dir).filter(f => f.endsWith('.ts') && f !== 'helpers.ts')) {
+		assert.ok(!/timeoutMs/.test(readFileSync(join(dir, file), 'utf8')), `${file} names no timeoutMs`);
+	}
+});

@@ -1785,15 +1785,25 @@
           "log.debug"
         ],
         [
+          "provider-adapter",
+          "vectorPass.embedQuery"
+        ],
+        [
+          "provider-use",
+          "vectorPass.embedQuery"
+        ],
+        [
           "storage-call",
           "vectorPass.searchEntityVecs"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "b9847a89109e6bd82802bf048f36ba7f243f23e8e9551a1901842361c3eb7889",
+      "siteCount": 9,
+      "sitesDigest": "3f098ebe0fa0ccc6513aae67e0d4d11e49621f1c0e9d93e217d36c3606b68032",
       "sourceDigest": "a42313637c7ba6239fe4db511542e96db817ce5709e3fbcdf99ce4d394037f45",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
+        "provider-use",
         "storage-call"
       ]
     },
@@ -7953,6 +7963,62 @@
           "deleteUnresolvedForRepo"
         ],
         [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
           "storage-call",
           "findCallees"
         ],
@@ -8237,13 +8303,15 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 86,
-      "sitesDigest": "b5bab6f10f03169f3d25dc64cb5bd145878b096b5ead9e31ca199d8b1a31634f",
+      "siteCount": 100,
+      "sitesDigest": "a43e1704cabbd3804a40c88b9bd884c47dbdab37e86c249dd583a467dd2aad88",
       "sourceDigest": "f1ebd83869a683861f8b9b41ca077b6dc5990b0bbdebc0bf3685127fd71fa77b",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
+        "provider-adapter",
         "provider-backend",
+        "provider-use",
         "serialization",
         "storage-call"
       ]
@@ -8271,6 +8339,10 @@
         [
           "storage-call",
           "declareLiveStoreOwner"
+        ],
+        [
+          "provider-adapter",
+          "getActiveEmbedderBackend"
         ],
         [
           "storage-call",
@@ -8437,12 +8509,13 @@
           "startPeriodicReaderCheck"
         ]
       ],
-      "siteCount": 46,
-      "sitesDigest": "1c58172964186c4da2a2e242a1e995b246c88ea26c36f3e100735fd03f9b4e4a",
+      "siteCount": 47,
+      "sitesDigest": "3a91a185ae73eab582a56aa2435590aab7113c6886fcaf5af4fda193977f00f8",
       "sourceDigest": "745b7bde620a3659dfadfa73d4fa1ad1ab2ddff2ad3f96bba2ece3a507603b8e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
+        "provider-adapter",
         "storage-call"
       ]
     },
@@ -8451,8 +8524,20 @@
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "sites": [
         [
+          "provider-adapter",
+          "ensureEmbeddingModel"
+        ],
+        [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "provider-adapter",
+          "isConfiguredEmbeddingModelInstalled"
+        ],
+        [
+          "provider-adapter",
+          "isOllamaAvailable"
         ],
         [
           "provider-adapter",
@@ -8499,12 +8584,32 @@
           "rmSync"
         ],
         [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
+        ],
+        [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
+        ],
+        [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
+        ],
+        [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
+        ],
+        [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
+        ],
+        [
           "filesystem-write",
           "writeFileSync"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "f3085c6b91d7b2779119c5f951d3438c7f2393ea377c1af5d60b9ff615d5405c",
+      "siteCount": 21,
+      "sitesDigest": "eaa16cc192aa98893a1f6f506e468364adadc4dd168d2ae6c9af941a49ba9463",
       "sourceDigest": "be5f43cee0683d2c48fed35f6710b2a3b56ab686715fcaeabeeb1395929572de",
       "boundaries": [
         "diagnostic",
@@ -8631,6 +8736,14 @@
           "compactConversations"
         ],
         [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -8647,11 +8760,13 @@
           "log.info"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "b88b6d292e44d36e020f97a875b57eaa1cdc3b80a8a6a80518d58673e4460cc0",
+      "siteCount": 7,
+      "sitesDigest": "8f213e2d42c99230b6af9a04ee11f2f4b552aee20a4de5ebd78db8a290ee1271",
       "sourceDigest": "e4624cd21f4197d4d8b8f723073f478297f8e76d58423121f4ed3f0c98338388",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
+        "provider-use",
         "storage-call"
       ]
     },
@@ -10193,12 +10308,17 @@
         [
           "storage-call",
           "installStoreGuard"
+        ],
+        [
+          "provider-adapter",
+          "setActiveEmbedderBackend"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "11d6b1cccb261b12dead5515ce9c4f6117f75e311fd7ffc1e5551c38b7da50eb",
+      "siteCount": 4,
+      "sitesDigest": "73a28caed98641655636298d562f77b42aa09f78cc93074049cece7eb8e1ba70",
       "sourceDigest": "66cbe422009f0c0179a527f08815b80308b7c7f1cfbea7c09396fe29d9fb0218",
       "boundaries": [
+        "provider-adapter",
         "storage-call"
       ]
     },
@@ -10782,6 +10902,14 @@
       "rationale": "Connection tools consume exact-root resolver under callback leases. Docs/vector/lineage/graph embedding modes must refuse temporary inputs before retrieval, backend calls or fallback handling.",
       "sites": [
         [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -10798,11 +10926,13 @@
           "searchEntities"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "983c41983545e02546bcb0a67cb4217de0748172c051a7cd28cb58ace8a4eef9",
+      "siteCount": 6,
+      "sitesDigest": "f68e7961d7da313142ba9d882945df72f434090bcf158cfc090a47f7d13026db",
       "sourceDigest": "95f97b9404dd9b8c2164d2683dcfc0fef1a797b075af1431bab9354735d25105",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
+        "provider-use",
         "storage-call"
       ]
     },
@@ -11467,6 +11597,14 @@
           "closureEntities"
         ],
         [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
           "storage-call",
           "findDefinedIn"
         ],
@@ -11511,10 +11649,12 @@
           "unreachableEntities"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "1a47920ee0685d728d125c257f645ddaf491e55319d1992adcf95196ff38c249",
+      "siteCount": 14,
+      "sitesDigest": "63f68ae6dd6c777466d111bc52e3ea6e82f06553d8e3db047e2762fa17d79e30",
       "sourceDigest": "9c7e1a859984db4818cf5671c7f4fbde7793af82c0c7b09148bd8bfa6052df58",
       "boundaries": [
+        "provider-adapter",
+        "provider-use",
         "storage-call"
       ]
     },
@@ -18011,6 +18151,10 @@
       "rationale": "Query embedding callers must refuse session data before any local/ONNX/backend call; saved/background index embeddings retain their existing behavior.",
       "sites": [
         [
+          "provider-adapter",
+          "formatQuery"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -18085,10 +18229,26 @@
         [
           "provider-adapter",
           "onnxEmbedQuery"
+        ],
+        [
+          "provider-adapter",
+          "onProgress"
+        ],
+        [
+          "provider-adapter",
+          "withTimeout"
+        ],
+        [
+          "provider-adapter",
+          "withTimeout"
+        ],
+        [
+          "provider-adapter",
+          "withTimeout"
         ]
       ],
-      "siteCount": 19,
-      "sitesDigest": "25a0fd5218f0279f38b757365348ed4100de6f1e5bd92e107f00f2ffb0e08bc4",
+      "siteCount": 24,
+      "sitesDigest": "109f2c6db340a327d3b53ec429a58582bb9bc2e061d501c83061769bdf293bb4",
       "sourceDigest": "dfdbbd164c00217b8b711965965fba80081322b12080307863960488bd061ef4",
       "boundaries": [
         "diagnostic",
@@ -18212,6 +18372,30 @@
         [
           "storage-call",
           "deleteUnresolvedForRepoFile"
+        ],
+        [
+          "provider-adapter",
+          "embedEntities"
+        ],
+        [
+          "provider-adapter",
+          "embedEntities"
+        ],
+        [
+          "provider-use",
+          "embedEntities"
+        ],
+        [
+          "provider-use",
+          "embedEntities"
+        ],
+        [
+          "provider-adapter",
+          "embedText"
+        ],
+        [
+          "provider-use",
+          "embedText"
         ],
         [
           "storage-call",
@@ -18602,12 +18786,14 @@
           "upsertRelations"
         ]
       ],
-      "siteCount": 110,
-      "sitesDigest": "d0a6e2844aaf7f0cdc68c38b6c4cbdf1ae9dc21e000d346f5b83005d2a2bd8bb",
+      "siteCount": 116,
+      "sitesDigest": "c6f393227388b1f6215d12d414f8b90449afc748192b765c2a27e581c150eda7",
       "sourceDigest": "24219bafb6699995867874487001159f759bc854bfdf10841b0813bcdb310acb",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
         "provider-backend",
+        "provider-use",
         "storage-call"
       ]
     },
@@ -19940,6 +20126,14 @@
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
       "sites": [
         [
+          "provider-adapter",
+          "embedQuery"
+        ],
+        [
+          "provider-use",
+          "embedQuery"
+        ],
+        [
           "storage-call",
           "findCallees"
         ],
@@ -19968,11 +20162,13 @@
           "searchEntities"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "3772df217fecb34eed9796cab6bbc716cc7784851e8d73cc49a7c8bce4ebf641",
+      "siteCount": 9,
+      "sitesDigest": "ba8156379eee8000ab74d935b979178de8153d679da66c868f0e541ab6f8db1c",
       "sourceDigest": "2cdbe525b1ab13f27b77c333c33d04557a424075eeefa2b4af5ab550a5cecc02",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
+        "provider-use",
         "storage-call"
       ]
     },

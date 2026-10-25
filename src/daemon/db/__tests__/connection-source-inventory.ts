@@ -117,6 +117,12 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 					if (named(awaited, connectionNames)) boundaries.add('connection-factory');
 				}
 				if (/\/src\/agent\/providers\//.test(declarationFile)) boundaries.add('provider-adapter');
+				// typeof embedQuery keeps the original function declaration even when
+				// injected under a different object/member name. It is not LLMProvider.
+				if (/\/src\/indexer\/embedder\.ts$/.test(declarationFile)) {
+					boundaries.add('provider-adapter');
+					if (/^embed/.test(declaredName)) boundaries.add('provider-use');
+				}
 				// ONNX's awaited pipeline is explicitly cast to a callable tensor port,
 				// not LLMProvider. Resolve its function-type declaration, including aliases.
 				if (file === 'src/agent/providers/onnx-embedder.ts' && declaration && ts.isFunctionTypeNode(declaration)) boundaries.add('provider-use');

@@ -41,12 +41,15 @@ test('CM-S3-INVENTORY: production boundaries have explicit reviewed classificati
 	assert.ok(!gate.scopes.includes('temporary'));
 	assert.equal(actual.filter(s => s.file === 'src/agent/providers/onnx-embedder.ts' && s.expression === 'pipe' && s.boundary === 'provider-use').length, 3,
 		'all three ONNX tensor pipeline submissions must be identified, not merely their enclosing file');
+	assert.ok(actual.some(s => s.file === 'src/analyze/docs-retrieval.ts' && s.expression === 'vectorPass.embedQuery' && s.boundary === 'provider-use'),
+		'injected typeof embedQuery is an input submission boundary');
 });
 
 test('CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered', () => {
 	const fixture = mkdtempSync(join(tmpdir(), 'cm-s3-types-'));
 	try {
 		mkdirSync(join(fixture, 'src', 'shared'), { recursive: true });
+		mkdirSync(join(fixture, 'src', 'indexer'), { recursive: true });
 		writeFileSync(join(fixture, 'tsconfig.json'), JSON.stringify({ compilerOptions: {
 			module: 'nodenext', target: 'es2022', strict: true, types: ['node'], typeRoots: [join(root, 'node_modules', '@types')], skipLibCheck: true,
 		} }));
@@ -55,25 +58,31 @@ export interface LLMProvider { complete(input: string): Promise<string> }
 export interface Driver { query(input: string): Promise<string> }
 export interface ConnectionResolver { withConnection(id: string): Promise<Driver> }
 `);
+		writeFileSync(join(fixture, 'src', 'indexer', 'embedder.ts'), `export async function embedQuery(input: string): Promise<number[]> { return [input.length]; }`);
 		writeFileSync(join(fixture, 'src', 'caller.ts'), `
 import type { LLMProvider as Renamed, ConnectionResolver as Port, Driver } from './shared/types.js';
 import { writeFile as renamedWrite } from 'node:fs/promises';
+import type { embedQuery as queryFunction } from './indexer/embedder.js';
 declare const provider: Renamed;
 declare const resolver: Port;
 declare const injected: () => Promise<Driver>;
 declare const providerFactory: () => Promise<Renamed>;
+declare const vectorPort: { renamedQuery: typeof queryFunction };
+const { renamedQuery: detachedQuery } = vectorPort;
 const { complete: detachedComplete } = provider;
 const { withConnection: detachedResolve } = resolver;
 const pack = JSON.stringify;
 async function run() {
  await detachedComplete('canary'); await detachedResolve('id');
  await injected(); await providerFactory();
+ await vectorPort.renamedQuery('private'); await detachedQuery('private');
  await renamedWrite('/not-executed', pack({ marker: 'canary' }));
 }
 `);
 		const actual = sessionSourceInventory(fixture).filter(s => s.file === 'src/caller.ts');
 		for (const [expression, boundary] of [['detachedComplete', 'provider-use'], ['detachedResolve', 'connection-use'],
-			['injected', 'connection-factory'], ['providerFactory', 'provider-factory'], ['pack', 'serialization'], ['renamedWrite', 'filesystem-write']]) {
+			['injected', 'connection-factory'], ['providerFactory', 'provider-factory'], ['pack', 'serialization'], ['renamedWrite', 'filesystem-write'],
+			['vectorPort.renamedQuery', 'provider-use'], ['detachedQuery', 'provider-use']]) {
 			assert.ok(actual.some(s => s.expression === expression && s.boundary === boundary), `${expression}: ${boundary}`);
 		}
 	} finally { rmSync(fixture, { recursive: true, force: true }); }

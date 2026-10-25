@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T13:49:15.323Z",
+    "updatedAt": "2026-10-25T16:03:00.124Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "38f2dbc1e",
-        "ranAt": "2026-10-25T13:49:15.323Z",
+        "commit": "139b18307",
+        "ranAt": "2026-10-25T16:03:00.124Z",
         "testsPassed": true,
         "tests": [
           {
@@ -40,6 +40,16 @@
                 "file": "src/shared/__tests__/connection-execution.test.ts",
                 "title": "CM-S3-INVENTORY: explicit saved tuple is immutable, nonserializable and cancellation-bound",
                 "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-execution.test.ts",
+                "title": "CM-S3-INVENTORY: production analysis entry installs saved authority and rejects forged policy before source access",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-execution.test.ts",
+                "title": "CM-S3-INVENTORY: staged production executors refuse supplied unadmitted policy before loading state",
+                "result": "pass"
               }
             ],
             "files": []
@@ -50,7 +60,7 @@
             "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 11613,
+            "durationMs": 11444,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
@@ -67,7 +77,7 @@
             "file": "src/shared/__tests__/connection-execution.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 544,
+            "durationMs": 1079,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: missing or forged execution never defaults to saved",
@@ -75,6 +85,14 @@
               },
               {
                 "title": "CM-S3-INVENTORY: explicit saved tuple is immutable, nonserializable and cancellation-bound",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: production analysis entry installs saved authority and rejects forged policy before source access",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: staged production executors refuse supplied unadmitted policy before loading state",
                 "result": "pass"
               }
             ],

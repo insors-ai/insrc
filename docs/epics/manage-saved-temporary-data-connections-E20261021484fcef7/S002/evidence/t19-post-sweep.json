@@ -122,9 +122,20 @@
     "Full sweep retains 132 skips and 3 TODOs; live LLM services disabled"
   ],
   "S001Review": "Deferred by user; untouched",
-  "S002CodeReview": "Pending independent review",
+  "S002CodeReview": "WARN after round 2: 0 high, 1 medium coverage warning for failed/unverified full sweep; no adherence, conventions or quality findings",
   "releaseReady": false,
   "shippedGateReady": false,
-  "buildApproval": "Pending explicit user approval after review",
-  "currentSourceChangedAfterSweep": true
+  "buildApproval": "Pending; no BUILD approval requested while required checks remain unresolved",
+  "currentSourceChangedAfterSweep": true,
+  "codeReviewPath": "../CR.md",
+  "taskGates": {
+    "passed": 17,
+    "total": 19,
+    "pending": {
+      "t7": "Actual MSSQL service evidence requires explicit Microsoft container EULA authorization",
+      "t19": "Original full sweep failed; final source has focused follow-ups, not a passing final full sweep"
+    }
+  },
+  "additionalEvidence": "t19-clickhouse-followup.json",
+  "task16Scope": "Passed after executing and recording legacy compatibility coverage; additive attribution correction preserves history"
 }

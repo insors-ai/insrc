@@ -32,8 +32,10 @@ test('jira-failures.test.ts: jiraFailureOf precedence and the probe rules', () =
   assert.equal(rej?.kind, 'rejected');
   assert.match(rej?.message ?? '', /Issue does not exist/);
   assert.match(rej?.message ?? '', new RegExp(ACLI_UNKNOWN_OUTCOME));
-  // acli's own unauthorized text is positive evidence
-  assert.equal(jiraFailureOf(out({ stderr: '✗ Error: unauthorized: use acli jira auth login to authenticate' }), read)?.kind, 'missing-signin');
+  // acli's own unauthorized text is not enough without the completed probe
+  const ownText = { stderr: '✗ Error: unauthorized: use acli jira auth login to authenticate' };
+  assert.equal(jiraFailureOf(out(ownText), read)?.kind, 'rejected');
+  assert.equal(jiraFailureOf(out({ ...ownText, probe: { code: 1, completed: true, output: ownText.stderr } }), read)?.kind, 'missing-signin');
   // an unexplained failure: only a completed probe that says unauthorized gives missing-signin
   const generic = { stderr: '✗ Error: failed to fetch work item details' };
   assert.equal(jiraFailureOf(out(generic), read)?.kind, 'rejected');
@@ -90,9 +92,14 @@ test('jira-failures.test.ts: not installed, not signed in, network probe, time-o
     assert.equal(fake.calls().filter(c => c.startsWith('jira auth status')).length, 0);
   } finally { fake.restore(); }
 
-  // acli's own unauthorized text
-  fake = installFakeAcli('fail-unauthorized');
-  try { assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'missing-signin'); } finally { fake.restore(); }
+  // acli's own unauthorized text still goes through the probe, which settles it either way
+  fake = installFakeAcli('fail-unauthorized', { probe: 'unauthorized' });
+  try {
+    assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'missing-signin');
+    assert.equal(fake.calls().filter(c => c.startsWith('jira auth status')).length, 1);
+  } finally { fake.restore(); }
+  fake = installFakeAcli('fail-unauthorized', { probe: 'ok' });
+  try { assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'rejected'); } finally { fake.restore(); }
 
   // network failure of the command itself
   fake = installFakeAcli('fail-network');

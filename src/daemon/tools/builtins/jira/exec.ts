@@ -105,7 +105,7 @@ export async function acliExec(argv: string[], opts: { cwd?: string | undefined;
   };
   const ranToExit = !r.spawnError && !r.timedOut && !r.aborted && !r.signal && r.code !== null && r.code !== 0 && r.code !== 127;
   const text = `${r.stderr}\n${stdout}`;
-  if (!ranToExit || REJECTION_RE.test(text) || SIGNED_OUT_RE.test(text) || NETWORK_RE.test(text)) { return base; }
+  if (!ranToExit || REJECTION_RE.test(text) || NETWORK_RE.test(text)) { return base; }
   const p = await runShellBytes(['acli', 'jira', 'auth', 'status'], { cwd: opts.cwd, timeoutMs: PROBE_LIMIT_MS });
   return { ...base, probe: { code: p.code, output: `${bytesToText(p.stdout, false)}${p.stderr}`.trim(), completed: !p.spawnError && !p.timedOut && !p.aborted && !p.signal && p.code !== null } };
 }
@@ -119,9 +119,9 @@ export const ACLI_UNKNOWN_OUTCOME = 'the outcome is unknown; check the current s
 /**
  * The failure of one outcome, or undefined when it ran clean. Precedence: spawn failure or exit 127, time-out, abort,
  * signal, error output past the cap, an output cut at the cap, then a non-zero exit. Every failure after the process
- * started adds the unknown-outcome sentence for a call that changes Jira. A non-zero exit is missing-signin only on positive
- * evidence: acli's own text says unauthorized, or the sign-in probe completed and said so; a probe that failed to complete
- * (or whose text is a network failure) never makes it one.
+ * started adds the unknown-outcome sentence for a call that changes Jira. A non-zero exit is missing-signin only when the
+ * sign-in probe ('acli jira auth status') completed and said unauthorized; acli's own text alone is not enough, and a probe that
+ * failed to complete (or whose text is a network failure) never makes it one.
  */
 export function jiraFailureOf(o: AcliOutcome, opts: { mutating: boolean }): ToolFailure | undefined {
   const unknown = (msg: string): string => opts.mutating ? `${msg}; ${ACLI_UNKNOWN_OUTCOME}` : msg;
@@ -139,7 +139,7 @@ export function jiraFailureOf(o: AcliOutcome, opts: { mutating: boolean }): Tool
   const probeText = o.probe?.output ?? '';
   const original = probeText.length > 0 ? probeText : undefined;
   const probeSaysSignedOut = o.probe !== undefined && o.probe.completed && o.probe.code !== 0 && SIGNED_OUT_RE.test(probeText) && !NETWORK_RE.test(probeText);
-  if (!REJECTION_RE.test(text) && (SIGNED_OUT_RE.test(text) || probeSaysSignedOut)) {
+  if (probeSaysSignedOut) {
     return { kind: 'missing-signin', message: unknown('acli is not signed in; sign in with acli jira auth login outside the daemon'), original: original ?? msg };
   }
   if (NETWORK_RE.test(text) || NETWORK_RE.test(probeText)) { return { kind: 'unreachable', message: unknown(msg), ...(original !== undefined ? { original } : {}) }; }

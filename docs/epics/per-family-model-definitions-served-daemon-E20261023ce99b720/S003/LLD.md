@@ -73,7 +73,7 @@ This Story makes everything the daemon runs follow the definitions: tier default
 **Parameters:**
 - `params: { role: string; repoPath: string }` — The reasoning role and the repo whose `tasks`/coreFloor apply.
 
-**Returns:** `RoleResolution` — The tier (after the repo's/global tasks and the core floor), family, canonical model id, the effort that will be passed, the model's inputLimit, the decision-A fallback when one happened, cli.kind for a CLI family, and for ollama the host, numCtx (the model's token limit) and the global numPredict — exactly what the daemon's own router uses.
+**Returns:** `RoleResolution` — The tier (after the repo's/global tasks and the core floor), family, canonical model id, the effort that will be passed, the model's inputLimit, the decision-A fallback (reason and requested model, taken from the per-tier resolution kept on the config) when one happened, cli.kind for a CLI family, and for ollama the host, numCtx (the model's token limit) and the global numPredict — exactly what the daemon's own router uses.
 
 **Errors:**
 - `{ error: 'invalid-params: ...', recoverable: false }` when role or repoPath missing or not a string.
@@ -94,7 +94,7 @@ resolveTier(tiering: TieringOverride, tier: TierName): TierModel  // src/config/
 - `tiering: TieringOverride` — The parsed GLOBAL tiering (tiers, efforts).
 - `tier: TierName` — The tier to resolve.
 
-**Returns:** `TierModel` — getModelRegistry().resolveTier(tier, configured-or-default setting) mapped to { runner: family, model: canonical id, effort? }; an unset tier uses the default family's tierDefault (ac1).
+**Returns:** `TierModel` — getModelRegistry().resolveTier(tier, configured-or-default setting) mapped to { runner: family, model: canonical id, effort? }; an unset tier (or '' model) uses the default family's tierDefault including its effort (ac1). An empty effort ('') is an explicit request for the CLI's own default. The full TierResolution (including fallback and droppedEffort) is kept per tier on AnalyzeConfig.tierResolutions so the router and models.resolveRole can report it.
 
 **Preconditions:**
 - Runs in a daemon thread (the registry is available).
@@ -112,7 +112,7 @@ resolveRole(role: RoleId, cfg: AnalyzeConfig, repoPath: string | undefined, deps
 **Parameters:**
 - `repoPath: string | undefined` _(optional)_ — Selects the repo's `tasks` and coreFloor only.
 
-**Returns:** `RoleResolution` — Tier from byRepo tasks → global tasks → taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback.
+**Returns:** `RoleResolution` — Tier from byRepo tasks → global tasks → taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback. It also carries the tier's fallback (reason, requested) from AnalyzeConfig.tierResolutions.
 
 **Preconditions:**
 - cfg comes from loadAnalyzeConfig (tiers already resolved through the registry).
@@ -146,7 +146,7 @@ localToolLoopModel(cfg: AnalyzeConfig): { model: string; numCtx: number }  // sr
 **Parameters:**
 - `cfg: AnalyzeConfig` — Resolved config.
 
-**Returns:** `{ model: string; numCtx: number }` — The configured models.local.coreModel when the ollama family lists it, else registry.toolLoopModel() with a warning naming both; numCtx is that model's token inputLimit (replacing cfg.shaper.ollamaNumCtx).
+**Returns:** `{ model: string; numCtx: number }` — Keeps today's precedence: the cheap tier's resolved model when the cheap tier resolves to the ollama family; otherwise models.local.coreModel when the ollama family lists it; otherwise registry.toolLoopModel() (logged with the requested coreModel when one was set but is unlisted). numCtx is the chosen model's token inputLimit (replacing cfg.shaper.ollamaNumCtx).
 
 **Preconditions:**
 - Daemon thread.
@@ -160,7 +160,7 @@ localToolLoopModel(cfg: AnalyzeConfig): { model: string; numCtx: number }  // sr
 export const CONFIG_CATALOG: readonly ConfigOption[]  // = buildConfigCatalog(SHIPPED_DEFINITIONS); export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigOption[]
 ```
 
-**Returns:** `readonly ConfigOption[]` — Rows unchanged except: models.tiers.<tier>.runner default = defs.defaultFamily and enumValues = the family ids; models.tiers.<tier>.model default = that family's tierDefaults[tier].model; models.tiers.<tier>.effort enumValues = '' plus the de-duplicated efforts of the shipped models; models.local.coreModel default = the ollama toolLoopModel; models.shaper.ollamaNumCtx removed (and added to RETIRED_PATHS).
+**Returns:** `readonly ConfigOption[]` — Rows unchanged except: models.tiers.<tier>.runner default = defs.defaultFamily and enumValues = the family ids; models.tiers.<tier>.model default = that family's tierDefaults[tier].model; models.tiers.<tier>.effort enumValues = '' plus the de-duplicated efforts of the shipped models and default = the default family's tierDefaults[tier].effort ('' when the file sets none), so a definition-supplied default effort survives reconcile; models.local.coreModel default = the ollama toolLoopModel; models.shaper.ollamaNumCtx removed (and added to RETIRED_PATHS).
 
 **Preconditions:**
 - SHIPPED_DEFINITIONS is the shipped file imported as a JSON module (resolveJsonModule + `with { type: 'json' }`); tsc rejects a syntactically broken file at build.
@@ -205,18 +205,21 @@ embeddingModel(): string; embeddingDim(): number  // src/indexer/embedder.ts: th
 **Returns:** `string | number` — loadLocalProviderConfig() is called on first use, not at module load (HLD override item 1); embedding values themselves are unchanged and out of scope (override item 3).
 
 **Postconditions:**
-- Importing src/daemon/index.ts reads no local settings before main() validates the definitions.
+- src/config/local.ts no longer holds any value taken from the definitions (its coreModel default is removed; an unset coreModel means the definitions' tool-loop default, resolved at use through the registry), so the module-load local-settings reads that remain (the Lance tables' embeddingDim in src/db/lance/*-vec.ts and working-memory-bullets.ts, reached through src/daemon/handler-runtime.ts) read no definition-derived value before main() validates the file.
+- The getter callers migrate: src/daemon/lifecycle.ts (the ONNX dimension check and its diagnostics) calls embeddingDim(), and IndexerService.reembed in src/indexer/index.ts calls embeddingModel(); embeddingKeepAlive is also read on first use.
 
 ## 3. Data model changes
 
 ### 3.1 `Settings catalog model rows (src/config/config-catalog.ts)` — field-modify
 
-Tier runner/model defaults, effort enumValues and the local coreModel default come from the definitions; models.shaper.ollamaNumCtx leaves the catalog and joins RETIRED_PATHS. A new src/config/model-defaults.ts imports the shipped JSON and derives these values, also used by src/config/local.ts (coreModel default) and the temporary DEFAULT_TIERS/TIER_EFFORTS exports in src/config/analyze.ts, which only src/cli may import (s5 removes them). tsconfig gains resolveJsonModule.
+Tier runner/model defaults, effort enumValues and the local coreModel default come from the definitions; models.shaper.ollamaNumCtx leaves the catalog and joins RETIRED_PATHS. A new src/config/model-defaults.ts imports the shipped JSON and derives these values, used by the settings catalog and the temporary DEFAULT_TIERS/TIER_EFFORTS exports in src/config/analyze.ts, which only src/cli may import (s5 removes them). tsconfig gains resolveJsonModule. src/config/local.ts drops its coreModel default (unset = the definitions' tool-loop default, resolved at use).
 
 ```
 - models.tiers.core.model default ''  + default = defaultFamily tierDefaults.core.model ('opus' today)
 - effort enumValues ['', low..max]  + ['', ...shipped efforts] (adds 'ultra')
 - models.shaper.ollamaNumCtx row  + RETIRED_PATHS { path: 'models.shaper.ollamaNumCtx' }
+- effort default ''  + default = tierDefaults[tier].effort ?? ''
+- local.ts DEFAULTS.coreModel
 ```
 
 **Call sites:**
@@ -229,16 +232,19 @@ Tier runner/model defaults, effort enumValues and the local coreModel default co
 - `src/cli/panes/model-tiers.ts:19`
 - `vscode-plugin/src/config/key-map.ts:12`
 - `src/cli/services/maintenance.ts:189`
+- `src/daemon/lifecycle.ts:152`
+- `src/indexer/index.ts:1021`
 
 ### 3.2 `Tiering config (src/config/analyze.ts)` — field-modify
 
-TierEffort becomes EffortLevel (any non-empty string; acceptance is decided per model by the registry); TieringOverride under byRepo carries only roleTiers and coreFloor; AnalyzeShaperProviderKind becomes FamilyId; readRepoOverride, resolveRepoShaperProvider, resolveRepoShaperModel and RepoShaperOverride are removed with their callers in src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; DEFAULT_SHAPER.ollamaNumCtx goes.
+TierEffort becomes EffortLevel (any non-empty string; acceptance is decided per model by the registry); TieringOverride under byRepo carries only roleTiers and coreFloor; AnalyzeShaperProviderKind becomes FamilyId; readRepoOverride, resolveRepoShaperProvider, resolveRepoShaperModel and RepoShaperOverride are removed with their callers in src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; DEFAULT_SHAPER.ollamaNumCtx goes. AnalyzeConfig gains tierResolutions: Record<TierName, TierResolution> (the registry's per-tier result, with fallback and droppedEffort).
 
 ```
 - AnalyzeTiering.byRepo[repo].tiers
 - AnalyzeShaperConfig.ollamaNumCtx
 - resolveRepoShaperProvider / resolveRepoShaperModel
 ~ TierEffort = EffortLevel
++ AnalyzeConfig.tierResolutions
 ```
 
 **Call sites:**
@@ -327,7 +333,7 @@ Adds ['models.resolveRole', 'session', false]; handler-runtime.test.ts RECORDED_
   - Response: Logs a warning naming tier, requested model, reason and the default used, and runs the tier default (decision A).
   - User impact: Work continues on the default model; the setting is left as written for the user to fix.
 - **models.local.coreModel names an Ollama model the definitions do not list.** (recoverable)
-  - Detection: registry.find('ollama', coreModel) returns undefined in localToolLoopModel.
+  - Detection: In localToolLoopModel, when the cheap tier does not resolve to ollama, registry.find('ollama', coreModel) returns undefined.
   - Response: Uses registry.toolLoopModel() and logs a warning naming both models.
   - User impact: The tool loop runs on the listed default.
 - **config.write sets models.tiers.<tier>.model to a model the user rejected.** (recoverable)
@@ -355,6 +361,9 @@ Adds ['models.resolveRole', 'session', false]; handler-runtime.test.ts RECORDED_
 | An effort the user's approved model accepts but no shipped model lists. | Accepted at resolution (the registry includes approved efforts); the catalog's effort enum (shipped efforts only) does not limit config.write, which does not enum-check. |
 | The cheap tier runs on ollama. | The summariser builds an OllamaProvider with num_ctx from the model's token inputLimit. |
 | A haiku tier (token inputLimit). | CliProvider gets no inputBudgetChars (only a 'chars' limit sets it), as today. |
+| A definitions file whose tier default carries an effort, and a fresh config.json. | Reconcile writes that effort as the tier's effort default; resolution passes it to the CLI. An explicit '' still means the CLI's own default. |
+| The cheap tier set to an Ollama model different from models.local.coreModel. | The tool loop runs the cheap tier's model (today's precedence), with that model's token limit as num_ctx. |
+| A tier set to an unlisted model that falls back to a default the tier would also get when unset. | models.resolveRole still reports fallback { reason, requested }, kept from the per-tier resolution. |
 
 **Invariants to preserve**
 
@@ -371,19 +380,19 @@ Adds ['models.resolveRole', 'session', false]; handler-runtime.test.ts RECORDED_
 **Test levels**
 
 - **unit** — Tier resolution, routing, provider construction, settings catalog and reconcile against fixture definitions.
-  - Subjects: `tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a tier set by alias resolves to the canonical model; '' model is unset`, `effort: a tier whose model does not accept its effort resolves without it and logs a warning naming tier, model and effort; the built CliProvider gets no effort`, `decision A: an unlisted and a rejected model fall back to the tier default with a warning naming tier, requested model, reason and default`, `role router (src/analyze/context/role-router.ts): a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps`, `provider construction: CLI kind from registry.cliKind; Codex inputBudgetChars from the model's chars limit; haiku gets none; an Ollama tier's num_ctx is the fixture model's token limit; the summariser uses the family's summariserModel when the cheap model is not of its family`, `tool loop: a listed coreModel is used with its token limit; an unlisted coreModel runs registry.toolLoopModel() with a warning naming both`, `settings catalog: buildConfigCatalog(fixture) gives tier runner/model defaults, effort enum values and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog`, `reconcile: with a fixture whose defaults differ from today's, a fresh config is filled with the fixture's values; byRepo tiers are removed and reported per repo and tier, tasks and coreFloor kept; models.shaper.ollamaNumCtx pruned`, `config.write: a rejected tier model is refused with reason 'rejected-model' and config.json unchanged; a tier, tasks, coreFloor or coreModel write returns restartRequired:true; an unrelated write does not`, `models.resolveRole: for a CLI tier and an Ollama tier the answer equals the router's resolution and the provider settings the daemon builds; bad params give the invalid-params error`, `embedder: importing src/indexer/embedder.ts does not call loadLocalProviderConfig; the first getter call does`
+  - Subjects: `tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile → parse → resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset`, `effort: a tier whose model does not accept its effort resolves without it and logs a warning naming tier, model and effort; the built CliProvider gets no effort`, `decision A: an unlisted and a rejected model fall back to the tier default with a warning naming tier, requested model, reason and default`, `role router (src/analyze/context/role-router.ts): a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps`, `provider construction: CLI kind from registry.cliKind; Codex inputBudgetChars from the model's chars limit; haiku gets none; an Ollama tier's num_ctx is the fixture model's token limit; the summariser uses the family's summariserModel when the cheap model is not of its family`, `tool loop: an ollama cheap tier's model wins (today's precedence); else a listed coreModel; else registry.toolLoopModel() with a warning naming the requested coreModel; num_ctx is the chosen model's token limit`, `settings catalog: buildConfigCatalog(fixture) gives tier runner/model defaults, effort enum values and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog`, `reconcile: with a fixture whose defaults differ from today's, a fresh config is filled with the fixture's values; byRepo tiers are removed and reported per repo and tier, tasks and coreFloor kept; models.shaper.ollamaNumCtx pruned`, `config.write: a rejected tier model is refused with reason 'rejected-model' and config.json unchanged; a tier, tasks, coreFloor or coreModel write returns restartRequired:true; an unrelated write does not`, `models.resolveRole: for a CLI tier and an Ollama tier the answer equals the router's resolution and the provider settings the daemon builds; for an unlisted and a rejected tier model it reports fallback with reason and requested model; bad params give the invalid-params error`, `embedder: importing src/indexer/embedder.ts does not call loadLocalProviderConfig; the first getter call does; src/daemon/lifecycle.ts and IndexerService.reembed use the getters`
   - Fixtures: `Fixture definitions with defaults differing from today's (via INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests), a model without some effort, a Codex chars limit and two Ollama models with different token limits`, `An approved-model store with one rejected model (_setApprovedModelsPathForTests)`, `A temp HOME/config.json with byRepo tiers, tasks and coreFloor, and models.shaper.ollamaNumCtx`
 - **contract** — No literals or retired settings remain where the Story removes them; the RPC tables stay in step.
-  - Subjects: `source scan (src/**, non-test): fails on a model-name literal outside the definitions file and the embedding exclusions, on 'cli-claude'/'cli-codex' literals outside src/daemon/model-catalog.ts, src/daemon/model-registry.ts and the family implementations, on runner 'ollama' literals outside an allow-list of non-runner uses, on any read of ollamaNumCtx, and on any import of DEFAULT_TIERS or TIER_EFFORTS outside src/cli`, `method-class and handler-runtime pins include models.resolveRole`, `installers: both copies are identical and contain no model-name literal; step 4b reads tier defaults and the tool-loop model from the definitions file (dry run against a temp checkout)`
+  - Subjects: `source scan over daemon code (src/** non-test, excluding src/cli/** which s5 migrates, src/shared/model-recommender.ts DEFAULT_LOCAL_MODEL which s5 replaces, and embedding-model literals per override item 3): fails on a model-name literal outside the definitions file, on 'cli-claude'/'cli-codex' literals outside src/daemon/model-catalog.ts, src/daemon/model-registry.ts and the family implementations, on runner 'ollama' literals outside an allow-list of non-runner uses, on any read of ollamaNumCtx, and on any import of DEFAULT_TIERS or TIER_EFFORTS outside src/cli; each exclusion names its owning Story`, `method-class and handler-runtime pins include models.resolveRole`, `installers: both copies are identical and contain no tier-model or tool-loop model literal (embedding-model choices are excluded, override item 3); step 4b reads tier defaults and the tool-loop model from the definitions file (dry run against a temp checkout)`
 - **integration** — A real daemon resolves from the file and the cold-import order holds.
-  - Subjects: `cold daemon import with valid and with invalid definitions: no local settings are read before validation, and an invalid file stops the daemon with ModelCatalogValidationError naming the entry`, `a daemon in a temp home with byRepo tiers in config.json removes them at boot with the warnings, and models.resolveRole over the socket returns the global tier's model for a repo whose tasks pick that tier`, `the TUI build (tsc) passes and its model-tiers pane shows the definitions' defaults`
+  - Subjects: `cold daemon import with valid and with invalid definitions, instrumented: no definition-derived value (registry, model-defaults resolution or validated file) is read before main() validates, the remaining module-load local-settings reads return no definition-derived field, and an invalid file stops the daemon with ModelCatalogValidationError naming the entry`, `a daemon in a temp home with byRepo tiers in config.json removes them at boot with the warnings, and models.resolveRole over the socket returns the global tier's model for a repo whose tasks pick that tier`, `the TUI build (tsc) passes and its model-tiers pane shows the definitions' defaults`
   - Fixtures: `The startDaemon helper (src/mcp/__tests__/helpers/mcp-e2e.ts) with INSRC_MODE=mcp for stderr`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `unit: an unset tier resolves to the fixture definitions' default`, `unit: reconcile fills a fresh config with a fixture's differing defaults`, `unit: buildConfigCatalog(fixture) defaults come from the fixture` |
+| `ac1` | `unit: an unset tier resolves to the fixture definitions' default`, `unit: reconcile fills a fresh config with a fixture's differing defaults`, `unit: buildConfigCatalog(fixture) defaults come from the fixture`, `unit: a fixture's non-empty default efforts survive reconcile → parse → resolution` |
 | `ac2` | `unit: an unaccepted effort is dropped with a warning naming tier, model and effort and the CliProvider gets no effort` |
 | `ac3` | `contract: the source scan finds no runner or model literal outside the allowed files, no ollamaNumCtx read and no daemon import of DEFAULT_TIERS/TIER_EFFORTS`, `unit: provider construction takes the CLI kind, budget and num_ctx from the registry` |
 | `ac4` | `unit: a repo's tasks choice picks the tier while runner, model and effort come from the global tier`, `integration: models.resolveRole over the socket returns the global tier's model for a repo-chosen tier` |
@@ -401,14 +410,14 @@ Adds ['models.resolveRole', 'session', false]; handler-runtime.test.ts RECORDED_
 
 1. Enable resolveJsonModule; add src/config/model-defaults.ts deriving tier defaults, efforts and the tool-loop model from the shipped JSON; add the Codex chars inputLimit to the definitions file. — ↩ rollbackable
 2. Build the settings catalog's model rows from the definitions (buildConfigCatalog), retire models.shaper.ollamaNumCtx, make reconcile prune byRepo tiers with per-repo/tier warnings and reconcile from the validated file in the daemon. — ✕ non-rollbackable
-3. Resolve tiers through the registry in loadAnalyzeConfig (dropped-effort and fallback warnings); effort type becomes EffortLevel; byRepo parsing keeps tasks and coreFloor; remove readRepoOverride and resolveRepoShaperProvider/Model and their callers; derive DEFAULT_TIERS/TIER_EFFORTS from the JSON for the TUI. — ↩ rollbackable
-4. Route provider construction through the registry: CLI kind, effort acceptance, inputBudgetChars from the model's chars limit (remove CODEX_INPUT_BUDGET_CHARS), Ollama num_ctx from the model's token limit, the summariser from registry.summariserModel (remove SUMMARISER_CLI_FALLBACK), the tool loop from a listed coreModel or registry.toolLoopModel(). — ↩ rollbackable
+3. Resolve tiers through the registry in loadAnalyzeConfig (dropped-effort and fallback warnings); effort type becomes EffortLevel; byRepo parsing keeps tasks and coreFloor; remove readRepoOverride and resolveRepoShaperProvider/Model and their callers; derive DEFAULT_TIERS/TIER_EFFORTS from the JSON for the TUI. AnalyzeConfig keeps each tier's TierResolution (fallback, droppedEffort) for the router and models.resolveRole. — ↩ rollbackable
+4. Route provider construction through the registry: CLI kind, effort acceptance, inputBudgetChars from the model's chars limit (remove CODEX_INPUT_BUDGET_CHARS), Ollama num_ctx from the model's token limit, the summariser from registry.summariserModel (remove SUMMARISER_CLI_FALLBACK), the tool loop keeping today's precedence (an ollama cheap tier's model, else a listed coreModel, else registry.toolLoopModel()). — ↩ rollbackable
 5. Replace the remaining runner/CLI-kind literals and mappings in step-context, MCP server, code-review and workflow RPCs, build-step validation, attribution and the claude.models fallback with registry lookups; unions take FamilyId. — ↩ rollbackable
 6. config.write refusal and restartRequired; models.resolveRole handler, method-class entry and RECORDED_RPC. — ↩ rollbackable
-7. Embedder settings read on first use; both installers read tier defaults and the tool-loop model from the cloned definitions file. — ↩ rollbackable
+7. Embedder settings (model, dim, keepAlive) read on first use, with src/daemon/lifecycle.ts and IndexerService.reembed migrated to the getters; local.ts drops its coreModel default; both installers read tier defaults and the tool-loop model from the cloned definitions file. — ↩ rollbackable
 8. Tests: resolution, routing, providers, catalog, reconcile, config.write, resolveRole, cold import, and the source-literal scan. — ↩ rollbackable
 
-**Backward compat:** Existing tier settings keep working: aliases and listed ids resolve as before, and an unlisted model now falls back to the tier default with a warning instead of being passed to the CLI (decision A). Per-repo tier overrides stop applying and are removed from config.json at the next boot (not restorable by rollback; a warning names each repo and tier); per-repo tasks and coreFloor are kept. models.shaper.ollamaNumCtx is removed; Ollama now runs at each model's own context window (qwen3.6:27b: 32768, the same value). An empty core model ('' today) now resolves to the definitions' core default (opus), the model the claude CLI chose by default. config.write's result gains optional fields (restartRequired, reason, detail), so existing clients that read only ok keep working; models.resolveRole is new. The settings catalog keeps every row except ollamaNumCtx; its effort enum gains 'ultra'. resolveRepoShaperProvider/resolveRepoShaperModel were internal to the daemon.
+**Backward compat:** Existing tier settings keep working: aliases and listed ids resolve as before, and an unlisted model now falls back to the tier default with a warning instead of being passed to the CLI (decision A). Per-repo tier overrides stop applying and are removed from config.json at the next boot (not restorable by rollback; a warning names each repo and tier); per-repo tasks and coreFloor are kept. models.shaper.ollamaNumCtx is removed; Ollama now runs at each model's own context window (qwen3.6:27b: 32768, the same value). An empty core model ('' today) now resolves to the definitions' core default (opus), the model the claude CLI chose by default. config.write's result gains optional fields (restartRequired, reason, detail), so existing clients that read only ok keep working; models.resolveRole is new. The settings catalog keeps every row except ollamaNumCtx; its effort enum gains 'ultra'. resolveRepoShaperProvider/resolveRepoShaperModel were internal to the daemon. A tier default effort set in the definitions is written into config.json by reconcile like the other defaults. local.ts no longer defaults coreModel; reconcile still writes the catalog's coreModel default (the tool-loop model), so behaviour is unchanged.
 
 ## 8. Alternatives considered
 
@@ -445,3 +454,30 @@ CONFIG_CATALOG keeps its current rows; after validateModelCatalog the daemon mut
 - **[[c7]]** `code` `src/config/reconcile.ts:328` — "export function reconcileConfig("
 - **[[c8]]** `code` `src/indexer/embedder.ts:16` — "const _localDefaults = loadLocalProviderConfig();"
 - **[[c9]]** `stakeholder` `HLD-ce99b72065d03b1b approval override 2026-10-25` — "(1) s3: the embedder's module-load read of local settings (src/indexer/embedder.ts:16) becomes a first-use read so definition-derived defaults are validated first; test a cold daemon import with valid"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**6 do not hold · 1 could not be verified · 6 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T17:55:24.709Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| coverage-of-intent | HIGH | Definition-supplied default efforts remain effective after a fresh configuration is reconciled. | Section 2.7 changes effort enumValues but leaves their defaults unchanged: config-catalog.ts specifies "default: ''". Reconcile writes those defaults alongside the definition-derived model. parseTiering then treats '' as no effort. For a listed model, registry.resolveTier explicitly returns "if (effort === undefined) return { family: setting.runner, model: found }"; it does not restore tierDefault.effort. Thus a valid definition with a default effort loses it after fresh reconcile, contrary to the default-effort behavior promised in §5. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/config/analyze.ts, src/daemon/model-registry.ts, src/daemon/model-catalog.ts] | Specify how catalog reconciliation preserves definition-supplied default efforts while distinguishing an explicit request for CLI-default effort. Test reconcile → parse → resolution using a fixture with nonempty default efforts. |
+| change-sites | HIGH | Making the embedder lazy is sufficient to prevent local settings reads before main() validates definitions. | index.ts statically imports buildHandlerRuntime; handler-runtime.ts statically imports artifact-vec.ts. That module executes "const EMBEDDING_DIM = loadLocalProviderConfig().embeddingDim;" at module evaluation. The same eager pattern exists in entity-vec, turn-vec, session-vec, config-vec, response-segment-vec and working-memory-bullets. local.ts caches the entire configuration, including coreModel. These reads precede main() independently of embedder.ts. [files: src/daemon/index.ts, src/daemon/handler-runtime.ts, src/config/local.ts, src/indexer/embedder.ts, src/db/lance/artifact-vec.ts, src/db/lance/entity-vec.ts, src/db/lance/turn-vec.ts, src/db/lance/session-vec.ts, src/db/lance/config-vec.ts, src/db/lance/response-segment-vec.ts, src/db/lance/working-memory-bullets.ts] | Inventory and defer every eager local-config reader reachable from the daemon entry. Include the embedder's embeddingKeepAlive initialization, and instrument the real cold import to assert validation precedes the first settings read. |
+| change-sites | HIGH | The change-site inventory covers consumers of the embedding constants replaced by getters. | lifecycle.ts imports EMBEDDING_DIM and uses it in the ONNX compatibility check and diagnostics. IndexerService.reembed dynamically imports EMBEDDING_MODEL and passes it to updateEmbedding. Neither caller is included in the getter migration. Removing the exports as specified without migrating these consumers breaks compilation and reembedding/bootstrap behavior. [files: src/indexer/embedder.ts, src/indexer/index.ts, src/daemon/lifecycle.ts] | Add lifecycle.ts and IndexerService.reembed to the migration, replace constant accesses with getter calls, and preserve their existing dimension-check and embedding-model attribution behavior. |
+| change-sites | HIGH | The specified resolved-config data flow can supply models.resolveRole's required fallback information. | Section 2.3 maps registry results to only "{ runner: family, model: canonical id, effort? }". TierModel has only those fields, and assembleConfig replaces tiering.tiers with the resolved tiers. The registry's "fallback: { reason, requested: setting.model }" is therefore discarded. The proposed pure role resolver receives that resolved config, so wrapping it cannot distinguish a configured default from an unlisted/rejected request that fell back to the same default. [files: src/config/analyze.ts, src/daemon/model-registry.ts, src/analyze/context/role-router.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md] | Preserve per-tier fallback provenance in resolved config or an associated resolution record, and carry it through role resolution into the RPC result. Test both fallback reasons over IPC. |
+| current-behaviour | MED | The tool loop currently selects models.local.coreModel without another model-selection precedence layer. | The complete localToolLoopModel body first checks the cheap tier: "if (cheap?.runner === 'ollama' && cheap.model.length > 0) return cheap.model;". Only otherwise does it return loadLocalProviderConfig().coreModel. Both tool-loop construction sites call this helper. The migration description omits that existing precedence, while §2.6 replaces it with coreModel-first selection. [files: src/analyze/context/driver.ts] | Describe the existing cheap-Ollama precedence and explicitly decide whether to preserve or remove it. Document and test the behavior when cheap.model differs from local.coreModel. |
+| tests | MED | The proposed source-literal scans can pass while preserving the explicitly deferred client and embedding scope. | The scan rejects cli-claude/cli-codex literals throughout non-test src except registry/catalog/family implementations. ModelTiersPane.tsx still validates those literal runners and is deferred to s5. model-recommender.ts retains "DEFAULT_LOCAL_MODEL = 'qwen3.6:27b'", also deferred to s5. Both installers retain embedding model literals, yet the installer test requires no model-name literal without an embedding exclusion. These gates contradict the staged scope. [files: src/cli/panes/ModelTiersPane.tsx, src/shared/model-recommender.ts, scripts/insrc-daemon-install.sh, vscode-plugin/assets/insrc-daemon-install.sh, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md] | Give the scans explicit, narrowly named temporary exclusions for s5-owned stopgaps and installer embedding choices, with removal assigned to their owning Story. Keep daemon model-selection checks strict. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The referenced HLD ER companion renders correctly and its rendered content matches its source. | Inspected the generated HTML, embedded Mermaid entity/relationship source and descriptive tables. Browser inventory contained no controllable browser. Attempting to access native Google Chrome returned "Computer Use was not approved to use Google Chrome". Mermaid execution, clipping and rendered readability could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render and visually inspect the existing companion; correct or regenerate it if necessary. |

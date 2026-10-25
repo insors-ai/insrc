@@ -606,6 +606,7 @@ function slugifySheetName(name: string): string {
 // ---------------------------------------------------------------------------
 function makeFactory(kind: DuckDBFileKind) {
 	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
+		driverResourceLog('db-duckdb-file', context); // Check before source access or native engine allocation.
 		try {
 			if (config.path === undefined) {
 				throw new Error(`data-driver: ${kind} connection '${config.id}' missing path`);

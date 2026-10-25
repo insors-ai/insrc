@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 61 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -245,3 +245,23 @@ Run at 2026-10-25T19:44:45.908Z on commit `966f6dd48`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/driver-log-policy.test.ts` | 0 | 3 | 2.8 s |  |
+
+## t11
+
+Run at 2026-10-25T19:57:38.956Z on commit `4bc899bc0`. Tests check: **failed**. 2 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: fail: 'CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain' in src/daemon/db/__tests__/session-driver-logs.test.ts
+
+**integration: CM-S3-DRIVER-LOGS: actual normal daemon PG/Redis/SDK idle/reconnect/error/disposal canaries and saved marker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| fail | CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain | `src/daemon/db/__tests__/session-driver-logs.test.ts` |
+| pass | CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources | `src/daemon/db/__tests__/session-driver-logs.test.ts` |
+| pass | CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules | `src/daemon/db/__tests__/session-driver-logs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 1 | 3 | 2.4 s |  |

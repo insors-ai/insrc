@@ -31,6 +31,7 @@ async function make(config: ConnectionConfig) {
 }
 if (process.argv[4] === 'ambient-refusal') {
  await assert.rejects(make({ id: 'CM_TEMP_PRIVATE_ENDPOINT_CANARY', kind: 'redis', url: 'redis://CM_TEMP_PRIVATE_ENDPOINT_CANARY:1' }), { code: 'unsupported-temporary' });
+ await assert.rejects(make({ id: 'CM_TEMP_PRIVATE_ENDPOINT_CANARY-file', kind: 'csv', path: '/CM_TEMP_PRIVATE_PATH_CANARY/missing.csv' }), { code: 'unsupported-temporary' });
  // Saved construction remains available with ambient SDK debugging enabled.
  const saved = await getFactory('redis')!({ id: 'saved', kind: 'redis', url: 'redis://127.0.0.1:1' }); await saved.close();
  await owner.close(); process.stdout.write('ambient-refusal-ok\n'); process.exit(0);

@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T19:44:45.908Z",
+    "updatedAt": "2026-10-25T19:57:38.956Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -891,6 +891,61 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "4bc899bc0",
+        "ranAt": "2026-10-25T19:57:38.956Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S3-DRIVER-LOGS: actual normal daemon PG/Redis/SDK idle/reconnect/error/disposal canaries and saved marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",
+                "result": "fail"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 2353,
+            "titles": [
+              {
+                "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",
+                "result": "fail"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain' in src/daemon/db/__tests__/session-driver-logs.test.ts"
       }
     ]
   }

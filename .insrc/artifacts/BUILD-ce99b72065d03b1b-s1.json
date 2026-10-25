@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s1",
+    "createdAt": "2026-10-25T14:58:56.690Z",
+    "updatedAt": "2026-10-25T15:11:02.264Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Moved the daemon's fatal model-definitions validation from after worker start to just before the settings reconcile, proven by a real daemon boot in a temp home against a corrupted asset.",
+    "testRecord": {
+      "md": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/assets/models/cloud-model-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/helpers/registry-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/worker-model-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/worker-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/boot-model-catalog.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:11:02.264Z"
+      }
+    ],
+    "commit": "5aa9be4be"
+  }
+}

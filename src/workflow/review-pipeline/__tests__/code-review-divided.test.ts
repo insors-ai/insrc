@@ -116,7 +116,7 @@ function testMet(name: string, reported: readonly { name: string; result: string
 	return files.some(f => f.state === 'passing' && (f.file === m?.[1] || f.titles.some(t => t.title === m?.[2])));
 }
 
-const contractFinding = (name: string) => ({ severity: 'HIGH', location: AT, message: `${name} is not implemented` });
+const contractFinding = (name: string) => ({ severity: 'HIGH', confidence: 'breach', location: AT, message: `${name} is not implemented` });
 const frFinding = (id: string) => ({ severity: 'HIGH', location: AT, message: `${id} is not realized`, expectationRef: id, confidence: 'breach' });
 const testFinding = (name: string) => ({ severity: 'HIGH', location: AT, message: `${name} is missing`, findingKind: 'promised-test', expectationRef: name, confidence: 'breach' });
 const breachFinding = (s: Sym, rule: string) => ({ severity: 'MED', location: `${s.file}:1`, message: `${s.name} breaks ${rule}`, expectationRef: rule, confidence: 'breach' });
@@ -133,7 +133,7 @@ function scriptedModel(opts: { failObligationTwice?: boolean } = {}): Judged {
 		const system = messages[0]!.content as string;
 		const kind =
 			system.includes('You condense evidence notes') ? 'reduce'
-			: system.includes('You judge ONE obligation, once') ? 'obligation'
+			: system.includes('You judge ONE obligation') ? 'obligation'
 			: system.includes('You judge ONE call that crosses chunks') ? 'relation'
 			: system.includes('looking for DUPLICATED LOGIC across a divided review') ? 'compare'
 			: system.includes('DUPLICATE logic') ? 'pair'
@@ -218,6 +218,11 @@ function scriptedModel(opts: { failObligationTwice?: boolean } = {}): Judged {
 
 function provider(model: Judged): LLMProvider {
 	return {
+		runReviewSession: async (prompt: string, schema: StructuredSchema) => {
+			const cut = prompt.indexOf('\n\n##');
+			const messages: LLMMessage[] = [{ role: 'system', content: prompt.slice(0, cut) }, { role: 'user', content: prompt.slice(cut + 2) }];
+			return { callId: /This request's id is "([^"]+)"/.exec(prompt)![1]!, answer: model.answer(messages) };
+		},
 		completeStructured: async (messages: LLMMessage[], _schema: StructuredSchema) => {
 			const callId = /This request's id is "([^"]+)"/.exec(text(messages))![1]!;
 			return { callId, answer: model.answer(messages) };

@@ -214,7 +214,7 @@ test('adherence, functional-coverage and conventions chunk schemas have no findi
 	const props = (NOTES_CHUNK_SCHEMA as { properties: Record<string, unknown>; additionalProperties: boolean }).properties;
 	assert.deepEqual(Object.keys(props), ['notes'], 'notes only');
 	assert.equal((NOTES_CHUNK_SCHEMA as { additionalProperties: boolean }).additionalProperties, false);
-	const missing = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'clause lld:contract:2 is not implemented', expectationRef: 'lld:contract:2' };
+	const missing = { severity: 'HIGH', confidence: 'breach', location: 'src/order/order.ts:1', message: 'clause lld:contract:2 is not implemented', expectationRef: 'lld:contract:2' };
 	// A findings field, or a finding smuggled into a note, fails the schema.
 	assert.equal(validateAgainstSchema(NOTES_CHUNK_SCHEMA, { notes: [], findings: [missing] }).ok, false);
 	assert.equal(validateAgainstSchema(NOTES_CHUNK_SCHEMA, { notes: [{ key: 'lld:contract:2', atomIds: [], note: 'x', ...missing }] }).ok, false);
@@ -277,7 +277,7 @@ test("a chunk answer with an unknown key, an atom outside its call's carries, or
 		const first = nextCalls(job, adapter)[0]!;
 		const mine = first.carries.atomIds[0]!;
 		const outside = DIVIDING.symbols.map(x => x.entityId).find(id => !first.carries.atomIds.includes(id))!;
-		const finding = (findingKind: string, symbolId: string) => ({ severity: 'HIGH', location: 'src/order/order.ts:1', message: 'm', findingKind, symbolId });
+		const finding = (findingKind: string, symbolId: string) => ({ severity: 'HIGH', confidence: 'breach', location: 'src/order/order.ts:1', message: 'm', findingKind, symbolId });
 		// A promised-test finding from a chunk: re-issued with the reason, the same chunk call.
 		const next = applyOutput(job, adapter, first.callId, echo(first, { findings: [finding('promised-test', mine)], notes: [] }));
 		const again = next.pending.find(c => c.attempt === 2)!;
@@ -403,7 +403,7 @@ test('a key with no notes is adjudicated on the no-evidence statement', () => {
 	}
 	// A missing clause reported by its obligation call is a finding of the dimension, as one call would report it.
 	const gather = adapter.gather!;
-	const missing = { severity: 'HIGH', location: 'src/order/cancel.ts:1', message: 'cancelOrder is not implemented', expectationRef: 'LLD contract 2: cancelOrder' };
+	const missing = { severity: 'HIGH', confidence: 'breach', location: 'src/order/cancel.ts:1', message: 'cancelOrder is not implemented', expectationRef: 'LLD contract 2: cancelOrder' };
 	const part = gather.partOf({ role: 'obligation', key: keys[1]!, atomIds: [], answer: { findings: [missing] } }) as { findings: unknown[] };
 	assert.deepEqual(part.findings, [{ ...missing, dimension: 'adherence' }]);
 });
@@ -465,7 +465,7 @@ test('a promised test passed only by a reported smoke run, with no test file or 
 	assert.ok(userOf(judged.find(c => c.carries.key === `test:${SMOKE}`)!).includes('docs/smoke.txt'));
 	assert.ok(userOf(judged.find(c => c.carries.key === `test:${UNIT}`)!).includes('src/order/__tests__/order.test.ts'));
 	for (const c of judged) assert.ok(!(c.prompt.messages[0]!.content as string).includes('coverageEvidence class'), 'no symbol grading in the judgement');
-	const symbolFinding = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'not exercised', findingKind: 'symbol-coverage', symbolId: 'id-placeOrder' };
+	const symbolFinding = { severity: 'HIGH', confidence: 'breach', location: 'src/order/order.ts:1', message: 'not exercised', findingKind: 'symbol-coverage', symbolId: 'id-placeOrder' };
 	const first = judged[0]!;
 	zjob = applyOutput(zjob, zero, first.callId, echo(first, { findings: [symbolFinding] }));
 	const again = zjob.pending.find(c => c.attempt === 2)!;
@@ -541,7 +541,7 @@ test('a relation call carries both full summaries when they fit, else full again
 		// A size no row fits even against the other's summary: named as too large, never cut.
 		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/order/order.ts#placeOrder'));
 		// When both do not fit the limit, the same two calls.
-		const tight = modelDimensionAdapter(spec(s), s, snap, 9_000) as unknown as ReviewAdapter<unknown>;
+		const tight = modelDimensionAdapter(spec(s), s, snap, spec === adherenceSpec ? 11_000 : 9_000) as unknown as ReviewAdapter<unknown>;
 		assert.equal(tight.gather!.relationCall!([caller, callee]).length, 2);
 		// A cut relation that is not a call (same module) is not judged.
 		assert.deepEqual(relationCall([atomOf('id-price'), atomOf('id-discount')]), []);
@@ -575,7 +575,7 @@ test('a relation answer naming a counterpart or location outside its two symbols
 			if (call.role === 'relation') { relation = call; break; }
 			j = applyOutput(j, adapter, call.callId, echo(call, call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] }));
 		}
-		const mismatch = { severity: 'MED', location: 'src/order/order.ts:3', message: 'placeOrder ignores the error fill throws' };
+		const mismatch = { severity: 'MED', confidence: 'breach', location: 'src/order/order.ts:3', message: 'placeOrder ignores the error fill throws' };
 		// In the caller's file but about another symbol (its message does not name the caller): rejected.
 		assert.equal(adapter.gather!.validate!({ findings: [{ ...mismatch, message: 'cancelOrder is unsafe' }] }, relation).length, 1, `${kind}: not about the caller`);
 		// A location outside the two symbols: re-issued once, with the reason.
@@ -804,7 +804,7 @@ test('pipelineCalls counts chunk, obligation, relation and merge calls and is ab
 
 test('merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once', () => {
 	// Identical findings from two obligations are kept once, in stage order after the chunk findings.
-	const same = { severity: 'MED', location: 'src/order/order.ts:4', message: 'placeOrder departs from the contract', expectationRef: 'LLD contract 1: placeOrder' };
+	const same = { severity: 'MED', confidence: 'breach', location: 'src/order/order.ts:4', message: 'placeOrder departs from the contract', expectationRef: 'LLD contract 1: placeOrder' };
 	const adherence = divided(adherenceSpec, 'controller', call => call.role === 'chunk' ? { notes: [] } : call.carries.key === 'lld:contract:1' || call.carries.key === 'plan:t1' ? { findings: [same] } : call.carries.key === 'lld:edge:1' ? { findings: [{ ...same, location: 'src/price/price.ts:1' }] } : { findings: [] }).result;
 	const recorded = throughHandler(adherence);
 	assert.deepEqual(recorded.findings.map(f => f.location), ['src/order/order.ts:4'], 'once');

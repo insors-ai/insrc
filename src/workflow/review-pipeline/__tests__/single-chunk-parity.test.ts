@@ -12,6 +12,7 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts
  */
 
+import { sessionMessages } from './enveloped.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -76,15 +77,15 @@ const grounding: CodeReviewGrounding = {
 /** Recorded answers, by the dimension's schema. */
 const ANSWERS = new Map<unknown, unknown>([
 	[ADHERENCE_FINDINGS_SCHEMA, { findings: [
-		{ severity: 'MED', location: 'src/a.ts:3', message: 'diverges from c1', expectationRef: 'c1' },
-		{ severity: 'HIGH', location: 'src/other.ts:1', message: 'outside the Story' },
+		{ severity: 'MED', confidence: 'breach', location: 'src/a.ts:3', message: 'diverges from c1', expectationRef: 'c1' },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/other.ts:1', message: 'outside the Story' },
 	] }],
 	[CONVENTIONS_FINDINGS_SCHEMA, { findings: [{ severity: 'LOW', location: 'src/a.ts:5', message: 'idiom drift', confidence: 'observation' }] }],
 	[COVERAGE_FINDINGS_SCHEMA, { findings: [{ severity: 'HIGH', location: 'src/a.ts:1', message: 'untested', confidence: 'breach', findingKind: 'other' }] }],
 	[QUALITY_FINDINGS_SCHEMA, { findings: [] }],
 	[FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, { findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:2', message: 'FR-1 not realized', expectationRef: 'FR-1' },
-		{ severity: 'HIGH', location: 'src/a.ts:2', message: 'invented', expectationRef: 'FR-9' },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts:2', message: 'FR-1 not realized', expectationRef: 'FR-1' },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts:2', message: 'invented', expectationRef: 'FR-9' },
 	] }],
 ]);
 
@@ -94,6 +95,7 @@ interface Seen { readonly messages: LLMMessage[]; readonly schema: unknown; read
 function recordedProvider(onCall?: (seen: Seen) => void): { provider: LLMProvider; seen: Seen[] } {
 	const seen: Seen[] = [];
 	const provider = {
+		runReviewSession: async (prompt: string, schema: StructuredSchema, opts: { cwd: string; deadlineMs: number; stallMs?: number | undefined; internalRetry?: boolean | undefined }) => provider.completeStructured(sessionMessages(prompt), schema, { cwd: opts.cwd, internalRetry: opts.internalRetry, timeoutMs: opts.deadlineMs, ...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}) }),
 		completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts) => {
 			const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;
 			const s: Seen = { messages: unenveloped(messages), schema: inner, opts };
@@ -142,7 +144,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		const a = out.artifact.body;
 		assert.deepEqual(a.dimensions.map(d => d.dimension), ['adherence', 'conventions', 'coverage', 'quality', 'functional-coverage', 'diagram', 'ux']);
 		const byDim = new Map(a.dimensions.map(d => [d.dimension, d] as const));
-		assert.deepEqual(byDim.get('adherence')!.findings, [{ dimension: 'adherence', severity: 'MED', location: 'src/a.ts:3', message: 'diverges from c1', expectationRef: 'c1' }], 'out-of-scope dropped');
+		assert.deepEqual(byDim.get('adherence')!.findings, [{ dimension: 'adherence', severity: 'MED', confidence: 'breach', location: 'src/a.ts:3', message: 'diverges from c1', expectationRef: 'c1' }], 'out-of-scope dropped');
 		assert.deepEqual(byDim.get('conventions')!.findings, [{ dimension: 'conventions', severity: 'LOW', location: 'src/a.ts:5', message: 'idiom drift', confidence: 'observation' }]);
 		const coverage = byDim.get('coverage')!;
 		assert.deepEqual(coverage.findings.map(f => [f.severity, f.confidence, f.findingKind]), [['LOW', 'observation', 'other']], 'a HIGH that may not stand is lowered, once');
@@ -164,6 +166,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		let first = true;
 		const retried = recordedProvider();
 		const flaky = {
+			runReviewSession: async (prompt: string, schema: StructuredSchema, o: { cwd: string; deadlineMs: number; internalRetry?: boolean | undefined }) => flaky.completeStructured(sessionMessages(prompt), schema, { cwd: o.cwd, timeoutMs: o.deadlineMs, internalRetry: o.internalRetry }),
 			completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, o?: StructuredCompletionOpts) => {
 				const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;
 				if (inner === ADHERENCE_FINDINGS_SCHEMA && first) { first = false; retried.seen.push({ messages: unenveloped(messages), schema: inner, opts: o }); return enveloped(schema, { findings: 'not an array' }); }
@@ -179,6 +182,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		let qualityAsks = 0;
 		const written: string[] = [];
 		const failing = {
+			runReviewSession: async (prompt: string, schema: StructuredSchema, o: { cwd: string; deadlineMs: number; internalRetry?: boolean | undefined }) => failing.completeStructured(sessionMessages(prompt), schema, { cwd: o.cwd, timeoutMs: o.deadlineMs, internalRetry: o.internalRetry }),
 			completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, o?: StructuredCompletionOpts) => {
 				if ((schema as unknown as { properties: { answer: unknown } }).properties.answer === QUALITY_FINDINGS_SCHEMA) { qualityAsks++; throw new Error('model unavailable'); }
 				return recordedProvider().provider.completeStructured(messages, schema, o);

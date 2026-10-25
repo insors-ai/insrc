@@ -37,12 +37,12 @@ const grounding = (n = 1): CodeReviewGrounding => ({
 	})),
 });
 
-/** A fake LLMProvider that scripts completeStructured and counts calls; any
+/** A fake LLMProvider that scripts runReviewSession and counts calls; any
  *  OTHER provider method is absent, so the judge touching one would throw. */
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
 	const provider = {
-		completeStructured: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); },
+		runReviewSession: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); },
 	} as unknown as LLMProvider;
 	return { provider, calls: () => n };
 }
@@ -51,7 +51,7 @@ function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => 
 
 test('judgeAdherence: maps model findings to DimensionResult{adherence} with expectationRef (ac1)', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'MED', location: 'src/a.ts:10', message: 'diverges', expectationRef: 'LLD sc1 clause' },
+		{ severity: 'MED', confidence: 'breach', location: 'src/a.ts:10', message: 'diverges', expectationRef: 'LLD sc1 clause' },
 	] });
 	const res = await judgeAdherence(subject(), grounding(), provider);
 	assert.equal(res.dimension, 'adherence');
@@ -79,8 +79,8 @@ test('judgeAdherence: empty grounding still yields a valid empty result (ac2)', 
 
 test('judgeAdherence: drops a finding whose location file is outside the changed set', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:1',      message: 'in scope' },
-		{ severity: 'HIGH', location: 'src/other.ts:99', message: 'out of scope' },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts:1',      message: 'in scope' },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/other.ts:99', message: 'out of scope' },
 	] });
 	const res = await judgeAdherence(subject(['src/a.ts']), grounding(), provider);
 	assert.equal(res.findings.length, 1);
@@ -89,7 +89,7 @@ test('judgeAdherence: drops a finding whose location file is outside the changed
 
 // ---- ac4: exactly one provider call, no other method touched ----
 
-test('judgeAdherence: issues exactly ONE completeStructured call, no other provider method (ac4/k4/k3)', async () => {
+test('judgeAdherence: issues exactly ONE runReviewSession call, no other provider method (ac4/k4/k3)', async () => {
 	const { provider, calls } = fakeProvider({ findings: [] });
 	await judgeAdherence(subject(), grounding(), provider);
 	assert.equal(calls(), 1);
@@ -120,8 +120,8 @@ test('judgeAdherence: invalid model output exhausts the retry cap and PROPAGATES
 
 test('ADHERENCE_FINDINGS_SCHEMA per-finding shape is 1:1 with sc3 DimensionFinding fields', () => {
 	const props = (ADHERENCE_FINDINGS_SCHEMA as { properties: { findings: { items: { properties: Record<string, unknown>; required: string[] } } } }).properties.findings.items;
-	assert.deepEqual(Object.keys(props.properties).sort(), ['expectationRef', 'location', 'message', 'severity']);
-	assert.deepEqual([...props.required].sort(), ['location', 'message', 'severity']);   // expectationRef optional
+	assert.deepEqual(Object.keys(props.properties).sort(), ['confidence', 'expectationRef', 'location', 'message', 'severity']);
+	assert.deepEqual([...props.required].sort(), ['confidence', 'location', 'message', 'severity']);   // expectationRef optional
 });
 
 test('buildAdherencePrompt: the output-shape reminder is TRAILING (after the changed symbols)', () => {
@@ -132,13 +132,13 @@ test('buildAdherencePrompt: the output-shape reminder is TRAILING (after the cha
 // ---- S001: three-mode fork points ----
 
 test('judgeAdherence: both contracts null (mode C) -> empty result with ZERO provider calls', async () => {
-	const { provider, calls } = fakeProvider({ findings: [{ severity: 'HIGH', location: 'src/a.ts:1', message: 'fabricated' }] });
+	const { provider, calls } = fakeProvider({ findings: [{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts:1', message: 'fabricated' }] });
 	const res = await judgeAdherence(subjectNoContract(), grounding(), provider);
 	assert.deepEqual(res, { dimension: 'adherence', findings: [] });
 	assert.equal(calls(), 0, 'no provider call in mode C — never a fabricated departure');
 });
 
-test('judgeAdherence: a contract present -> issues exactly one completeStructured call (mode B unchanged)', async () => {
+test('judgeAdherence: a contract present -> issues exactly one runReviewSession call (mode B unchanged)', async () => {
 	const { provider, calls } = fakeProvider({ findings: [] });
 	await judgeAdherence(subjectLldOnly(), grounding(), provider);
 	assert.equal(calls(), 1);

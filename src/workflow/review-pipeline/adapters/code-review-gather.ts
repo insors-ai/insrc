@@ -163,7 +163,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const system = [
 			chunk.obligationFraming ?? chunk.framing,
 			chunk.sourceInspection
-				? 'This review was DIVIDED into chunks. Judge ONE obligation using source inspection and the notes as navigation. Missing notes are missing evidence, never proof that implementation is absent. Read the relevant changed files and helpers before deciding.'
+				? 'This review was DIVIDED into chunks. You judge ONE obligation using source inspection and the notes as navigation. Missing notes are missing evidence, never proof that implementation is absent. Read the relevant changed files and helpers before deciding.'
 				: 'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
 			...(chunk.sourceInspection ? [SOURCE_INSPECTION_RULES] : []),
 			chunk.judge ?? '',

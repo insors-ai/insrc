@@ -50,7 +50,7 @@ const grounding = (symbols: readonly Partial<ChangedSymbolSummary>[] = [{ file: 
 
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
-	const provider = { completeStructured: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); } } as unknown as LLMProvider;
+	const provider = { runReviewSession: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); } } as unknown as LLMProvider;
 	return { provider, calls: () => n };
 }
 
@@ -76,7 +76,7 @@ test('judgeFunctionalCoverage: an unrealized FR is a HIGH finding bound to its F
 
 test('judgeFunctionalCoverage: a finding outside the changed set is dropped', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/OTHER.ts:1', message: 'x', expectationRef: FR1 },
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/OTHER.ts:1', message: 'x', expectationRef: FR1 },
 	] });
 	const res = await judgeFunctionalCoverage(subject(['src/a.ts']), grounding(), provider);
 	assert.equal(res.findings.length, 0);
@@ -84,7 +84,7 @@ test('judgeFunctionalCoverage: a finding outside the changed set is dropped', as
 
 test('judgeFunctionalCoverage: a finding referencing an unknown FR id is dropped', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:1', message: 'x', expectationRef: FR2 }, // FR2 not declared
+		{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts:1', message: 'x', expectationRef: FR2 }, // FR2 not declared
 	] });
 	const res = await judgeFunctionalCoverage(subject(['src/a.ts'], [{ id: FR1, statement: 'one', scope: 'doc' }]), grounding(), provider);
 	assert.equal(res.findings.length, 0);

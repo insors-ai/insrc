@@ -12,12 +12,12 @@
  * code. It mirrors the shipped coverage/adherence judges seam-for-seam:
  *   - the FR expectations come from the subject's approved LLD/PLAN
  *     `body.functionalDefinition.requirements` (each FR id + statement);
- *   - the grounding's changed-symbol summaries are the evidence of what was built;
- *   - it issues exactly ONE serial provider call (k4/k5, no Promise.all), wrapped
- *     in withStructuredRetry so an unvalidatable output PROPAGATES rather than
+ *   - changed-symbol summaries guide read-only source inspection;
+ *   - it uses serial reviewer sessions (no Promise.all), with pipeline retries
+ *     so an unvalidatable output PROPAGATES rather than
  *     fabricating a "fully realized" pass;
  *   - each finding binds `expectationRef` to the FR id judged unrealized/partial,
- *     carries the review Severity VERBATIM, and folds through the existing
+ *     retains source-proven breach severity and lowers uncertainty to LOW, through the existing
  *     computeReviewVerdict reducer UNCHANGED (k4); and
  *   - runs no tests and modifies no file on disk (read-only).
  *
@@ -26,6 +26,7 @@
  * work keeps exactly the base four dimensions (absent-safe).
  */
 
+import { SOURCE_INSPECTION_RULES } from '../source-inspection.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
@@ -37,15 +38,15 @@ const DIMENSION: ReviewDimension = 'functional-coverage';
 /** The model's raw functional-coverage output, validated against the schema.
  *  Per-finding shape maps 1:1 onto sc3 DimensionFinding minus the fixed
  *  `dimension` (the judge stamps that); `expectationRef` names the FR id the
- *  finding is about; `confidence` distinguishes a wholly-unrealized FR ('breach')
- *  from a partially/unclearly realized one ('observation'). */
+ *  finding is about; `confidence` distinguishes a source-proven departure ('breach')
+ *  from insufficient evidence ('observation'). */
 interface FunctionalCoverageOutput {
 	readonly findings: readonly {
 		readonly severity: 'HIGH' | 'MED' | 'LOW';
 		readonly location: string;
 		readonly message:  string;
-		readonly expectationRef?: string;
-		readonly confidence?: 'breach' | 'observation';
+		readonly expectationRef?: string | undefined;
+		readonly confidence?: 'breach' | 'observation' | undefined;
 	}[];
 }
 
@@ -61,7 +62,7 @@ export const FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA: StructuredSchema = {
 			items: {
 				type: 'object',
 				additionalProperties: false,
-				required: ['severity', 'location', 'message'],
+				required: ['severity', 'location', 'message', 'confidence'],
 				properties: {
 					severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
 					location:       { type: 'string' },   // `file:line` inside the changed set
@@ -102,10 +103,10 @@ export function buildFunctionalCoveragePrompt(
 	const frs = functionalRequirementsOf(subject);
 	const system = [
 		'You are an independent code reviewer judging FUNCTIONAL COVERAGE: whether each functional requirement (FR) the design declared was GENUINELY realized by the changed code.',
-		'For each FR listed below, decide from the changed-symbol summaries whether the outcome it states is actually implemented. An FR with no supporting changed code is a HIGH finding naming the FR id in `expectationRef`, confidence:"breach".',
-		'An FR that is only PARTIALLY realized, or whose realization cannot be confirmed from the changed symbols, is a distinct finding with confidence:"observation" and a message saying what is missing — NOT reported as wholly unrealized.',
+		'For each FR listed below, inspect actual source and relevant helpers to decide whether its outcome is implemented. A source-demonstrated missing outcome is a HIGH finding naming the FR id in `expectationRef`, confidence:"breach".',
+		'A source-proven PARTIAL implementation is a breach graded for the actual missing behavior. An FR whose realization cannot be verified is only a LOW finding with confidence:"observation", explaining the evidence gap.',
 		'Judge genuine realization, not mere mention: a symbol whose name resembles the FR but does not implement its stated outcome does NOT satisfy it.',
-		'Reason only over the structured symbol summaries provided — you are not given raw file contents and you cannot run any test.',
+		SOURCE_INSPECTION_RULES,
 		'If every FR is genuinely realized by the changed code, return an EMPTY findings array. Never manufacture findings.',
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');
@@ -115,6 +116,8 @@ export function buildFunctionalCoveragePrompt(
 		'```json', JSON.stringify(frs.map(r => ({ id: r.id, statement: r.statement, scope: r.scope, itemRef: r.itemRef })), null, 2), '```',
 		'## The Story\'s changed symbols (structured summaries)',
 		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
+		'## The Story\'s changed files (source inspection scope)',
+		...subject.changedFiles.map(file => `- ${file}`),
 		'## Output',
 		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "expectationRef": "the FR id", "confidence": "breach|observation" } ] }.',
 		'Each finding.location MUST be a file within the Story\'s changed set. Return an empty findings array if every FR is realized.',
@@ -139,13 +142,14 @@ export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensi
 	const frIds = new Set(functionalRequirementsOf(subject).map(r => r.id));
 	return {
 		dimension: DIMENSION,
+		sourceInspection: true,
 		schema:    FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildFunctionalCoveragePrompt(subject, grounding, note),
 		obligations: () => functionalCoverageObligations(functionalRequirementsOf(subject)),
 		// A divided review: chunks note how their code realises each FR; the gather judges each FR.
 		chunk: {
 			kind: 'notes',
-			judge: 'Judge whether the changed code GENUINELY realizes this FR. An FR no note shows realized is a HIGH finding, confidence "breach". An FR only partly realized, or whose realization cannot be confirmed from the notes, is a finding with confidence "observation" saying what is missing, not reported as wholly unrealized.',
+			judge: 'Judge whether the changed code GENUINELY realizes this FR. Read actual source and helpers; missing notes do not prove absence. A source-proven unrealized FR is HIGH with confidence "breach"; source-proven partial behavior is a breach graded for impact. Unverifiable realization is only LOW with confidence "observation" explaining the evidence gap.',
 			framing: 'You are an independent code reviewer gathering evidence on FUNCTIONAL COVERAGE: whether each functional requirement (FR) the design declared is GENUINELY realized by the changed code. Genuine realization counts, not mere mention: a symbol whose name resembles an FR but does not implement its stated outcome does not realize it.',
 		},
 		toResult:  output => ({
@@ -155,11 +159,11 @@ export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensi
 				.filter(f => f.expectationRef === undefined || frIds.has(f.expectationRef)) // never reference an unknown FR id
 				.map((f): DimensionFinding => ({
 					dimension: DIMENSION,
-					severity:  f.severity,
+					severity:  f.confidence === 'breach' ? f.severity : 'LOW',
+					confidence: f.confidence === 'breach' ? 'breach' : 'observation',
 					location:  f.location,
 					message:   f.message,
 					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
-					...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
 				})),
 		}),
 	};

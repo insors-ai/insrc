@@ -63,3 +63,11 @@ export function envelopeProvider<P extends object>(provider: P): P {
 		},
 	});
 }
+
+/** Reconstruct adapter messages and the trailing envelope for a scripted session provider. */
+export function sessionMessages(prompt: string): { role: 'system' | 'user'; content: string }[] {
+	const own = prompt.startsWith('## System\n') ? prompt.slice('## System\n'.length) : prompt;
+	const cut = own.indexOf('\n\n##');
+	const envelope = own.lastIndexOf(`\n\n${ENVELOPE_LINE}`);
+	return [{ role: 'system', content: own.slice(0, cut) }, { role: 'user', content: own.slice(cut + 2, envelope) }, { role: 'user', content: own.slice(envelope + 2) }];
+}

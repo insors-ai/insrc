@@ -6,12 +6,11 @@
 /**
  * Code-review S002 — the ADHERENCE dimension judge.
  *
- * `judgeAdherence` compares the Story's changed code (sc2 grounding summaries,
- * never raw files) against its approved LLD + PLAN, and reports each place the
+ * `judgeAdherence` inspects the Story's source in a read-only reviewer session and compares it against its approved LLD + PLAN, and reports each place the
  * implementation DEPARTS from an approved expectation as a DimensionFinding
  * naming that expectation (`expectationRef`). It:
- *   - issues exactly ONE serial provider call (k4, no Promise.all), wrapped in
- *     withStructuredRetry so an unvalidatable model output PROPAGATES a failure
+ *   - uses serial read-only reviewer sessions (no Promise.all), with the pipeline
+ *     retry so an unvalidatable model output PROPAGATES a failure
  *     rather than a fabricated "no divergence" pass (S006 ac5);
  *   - reasons only over the LLMProvider abstraction (k3) at whatever tier the
  *     orchestrator resolved (the provider is injected — the tier/no-cloud-REST
@@ -24,6 +23,7 @@
  * Read-only throughout.
  */
 
+import { SOURCE_INSPECTION_RULES } from '../source-inspection.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
@@ -39,7 +39,8 @@ interface AdherenceOutput {
 		readonly severity: 'HIGH' | 'MED' | 'LOW';
 		readonly location: string;
 		readonly message:  string;
-		readonly expectationRef?: string;
+		readonly expectationRef?: string | undefined;
+		readonly confidence?: 'breach' | 'observation' | undefined;
 	}[];
 }
 
@@ -56,11 +57,12 @@ export const ADHERENCE_FINDINGS_SCHEMA: StructuredSchema = {
 			items: {
 				type: 'object',
 				additionalProperties: false,
-				required: ['severity', 'location', 'message'],
+				required: ['severity', 'location', 'message', 'confidence'],
 				properties: {
 					severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
 					location:       { type: 'string' },   // `file:line` inside the changed set
 					message:        { type: 'string' },
+					confidence:     { type: 'string', enum: ['breach', 'observation'] },
 					expectationRef: { type: 'string' },   // the approved clause departed from
 				},
 			},
@@ -90,7 +92,7 @@ export function buildAdherencePrompt(
 		'Report ONLY places where the code DEPARTS from an approved expectation. For each departure, name the specific approved expectation it failed to meet in `expectationRef`.',
 		'Do NOT raise a finding against a design decision merely because you would have decided differently — the approved decision itself is OUT OF SCOPE; only departures from it are findings.',
 		'If the code satisfies every approved expectation, return an EMPTY findings array. Never manufacture findings to appear thorough.',
-		'Reason only over the structured symbol summaries provided — you are not given raw file contents.',
+		SOURCE_INSPECTION_RULES,
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');
 
@@ -106,8 +108,10 @@ export function buildAdherencePrompt(
 			: []),
 		'## The Story\'s changed symbols (structured summaries — the code under review)',
 		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
+		'## The Story\'s changed files (source inspection scope)',
+		...subject.changedFiles.map(file => `- ${file}`),
 		'## Output',
-		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "expectationRef": "the approved clause departed from" } ] }.',
+		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "expectationRef": "the approved clause departed from", "confidence": "breach|observation" } ] }.',
 		'Each finding.location MUST be a file within the Story\'s changed set. Return an empty findings array if the code adheres.',
 	].join('\n');
 
@@ -131,6 +135,7 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 	const changed = new Set(subject.changedFiles);
 	return {
 		dimension: DIMENSION,
+		sourceInspection: true,
 		schema:    ADHERENCE_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildAdherencePrompt(subject, grounding, note),
 		toResult:  output => ({
@@ -139,7 +144,8 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 				.filter(f => changed.has(fileOf(f.location)))   // scope to the Story's own changes
 				.map((f): DimensionFinding => ({
 					dimension: DIMENSION,
-					severity:  f.severity,
+					severity:  f.confidence === 'breach' ? f.severity : 'LOW',
+					confidence: f.confidence === 'breach' ? 'breach' : 'observation',
 					location:  f.location,
 					message:   f.message,
 					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
@@ -150,7 +156,7 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 		chunk: {
 			kind: 'notes',
 			relation: 'A use that departs from an approved clause or plan task either symbol carries is a finding naming that clause in expectationRef; a design decision itself is out of scope.',
-			judge: 'Judge whether the Story\'s changed code implements this approved clause or plan task. A place where the code departs from it is a finding located at that code. A clause or task that requires code and that no note shows implemented is an unimplemented-expectation finding. Report only departures from the approved expectation; the approved decision itself is out of scope.',
+			judge: 'Judge whether the Story\'s changed code implements this approved clause or plan task. A place where the code departs from it is a finding located at that code. Check actual source and relevant helpers before reporting missing implementation; missing notes alone are not a breach. If the clause cannot be verified, report LOW with confidence "observation"; source-proven departures carry confidence "breach". Report only departures from the approved expectation; the approved decision itself is out of scope.',
 			framing: 'You are an independent code reviewer gathering evidence on ADHERENCE: whether a Story\'s changed code correctly implements its approved plan tasks and honours its approved design (LLD) clauses. Departures from an approved expectation matter; a design decision itself is out of scope.',
 		},
 		...(subject.approvedLld === null && subject.approvedPlan === null ? { skip: () => ({ dimension: DIMENSION, findings: [] }) } : {}),

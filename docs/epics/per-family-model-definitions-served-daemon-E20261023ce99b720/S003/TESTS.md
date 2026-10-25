@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -173,3 +173,49 @@ Run at 2026-10-25T20:25:26.517Z on commit `0fc29d4df`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/role-router-global-tiers.test.ts` | 0 | 3 | 0.9 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.1 s |  |
+
+## t5
+
+Run at 2026-10-25T20:41:44.108Z on commit `b0b37ecbe`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+| pass | buildSummariserProvider: a CLI summariser pins the cheap tier's model, and replaces a model of another family with the family's summariser model | `src/analyze/context/__tests__/summariser-provider.test.ts` |
+
+**unit: provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+
+**unit: provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+
+**unit: input-budget.test.ts: a CliProvider reports the budget it is given and a registry-built Codex provider reports the file's chars limit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a CliProvider reports the budget it is given (absent when not given); Ollama reports undefined | `src/agent/providers/__tests__/input-budget.test.ts` |
+| pass | a provider built through the registry for a Codex model reports the definitions file's chars limit; haiku (a token limit) none | `src/agent/providers/__tests__/input-budget.test.ts` |
+
+**unit: session-source-inventory suite passes after t5**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/input-budget.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/analyze/context/__tests__/provider-from-registry.test.ts` | 0 | 3 | 0.8 s |  |
+| `src/analyze/context/__tests__/summariser-provider.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 12.9 s |  |

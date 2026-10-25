@@ -2,6 +2,8 @@
 import type { ConnectionConfig, Driver, DriverFamily } from './db-driver.js';
 
 export type ConnectionScope = 'saved' | 'temporary';
+export interface SessionResume { readonly sessionHandle: string; readonly capability: string; readonly daemonEpoch: string }
+export interface OpenConnectionSessionResult extends SessionResume { readonly heartbeatMs: 30000; readonly leaseMs: 90000 }
 export interface ConnectionKey { readonly repoRoot: string; readonly scope: ConnectionScope; readonly id: string }
 export type CredentialPatch = { readonly action: 'keep' } | { readonly action: 'replace'; readonly value: string } | { readonly action: 'clear' };
 export interface DraftTestRequest {

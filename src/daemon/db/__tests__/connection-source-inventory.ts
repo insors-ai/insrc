@@ -82,7 +82,7 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 	const checker = program.getTypeChecker();
 	const sites: InventorySite[] = [...acquisitions];
 	const providerNames = new Set(['LLMProvider', 'OllamaProvider', 'CliProvider']);
-	const connectionNames = new Set(['ConnectionResolver', 'DriverPool', 'DriverFactory', 'Driver', 'BaseDriver', 'RdbmsDriver', 'KvDriver', 'FileDriver']);
+	const connectionNames = new Set(['ConnectionResolver', 'DriverPool', 'DriverFactory', 'Driver', 'BaseDriver', 'RdbmsDriver', 'KvDriver', 'FileDriver', 'ConnectionSessionOwner', 'SessionOwnerPorts']);
 	const named = (type: ts.Type, names: Set<string>, seen = new Set<ts.Type>()): boolean => {
 		if (seen.has(type)) return false;
 		seen.add(type);
@@ -169,7 +169,7 @@ export function sessionSourceInventory(root: string): InventorySite[] {
 				}
 				if (/^(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rename|renameSync|mkdir|mkdirSync|rm|rmSync|unlink|unlinkSync)$/.test(declaredName)
 					&& /(?:\/node_modules\/@types\/node\/fs|\/src\/)/.test(declarationFile)) boundaries.add('filesystem-write');
-				if (/^(?:readFile|readFileSync|createReadStream|readdir|readdirSync)$/.test(declaredName)
+				if (/^(?:readFile|readFileSync|createReadStream|readdir|readdirSync|realpath|realpathSync|stat|statSync|lstat|lstatSync|access|accessSync)$/.test(declaredName)
 					&& /\/node_modules\/@types\/node\/fs/.test(declarationFile)) boundaries.add('filesystem-read');
 				if (/^(?:open|openSync|mkdtemp|mkdtempSync)$/.test(declaredName)
 					&& /\/node_modules\/@types\/node\/fs/.test(declarationFile)) boundaries.add('filesystem-open');

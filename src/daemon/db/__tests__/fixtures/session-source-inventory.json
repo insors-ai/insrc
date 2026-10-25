@@ -294,6 +294,10 @@
           "spawnOnce"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "provider-adapter",
           "super"
         ],
@@ -546,8 +550,8 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 134,
-      "sitesDigest": "623bccc1665694696f4ae902ed95e7c87e6bd50e846281beca02b4d8b9bfb2dd",
+      "siteCount": 135,
+      "sitesDigest": "88a6f6016f8174c03db04faf1e424336dac358f908a274c0f94371c113af3c47",
       "sourceDigest": "d19f65f7ea917105d721031f15cbe2944ec43f9486ba49644901167c8dd79585",
       "boundaries": [
         "diagnostic",
@@ -1184,6 +1188,26 @@
         "serialization"
       ]
     },
+    "src/analyze/classifier/validate.ts": {
+      "classification": "session-invocation",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "sites": [
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "303764c40b646a9213815928fdb92a080b106c9e56b85e5072a89752fb4e219a",
+      "sourceDigest": "f8deaaef7201ceadbc5adba2c7b095890530ba3b8a692589e8bd873519c6729e",
+      "boundaries": [
+        "filesystem-read"
+      ]
+    },
     "src/analyze/connection-access.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
@@ -1223,10 +1247,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "08ebb104b42159e05d544ba33e1616d34d0b0e44aa867fdad65a3f294b06cf26",
+      "siteCount": 5,
+      "sitesDigest": "b8507f3fcf349baca961853408e212425a97ce4fc4f409f812819c40c599d561",
       "sourceDigest": "4864b7a5b6e5abb129f58072d2a3a2683faf7cde5c481f2d6ce57f98ceeb550f",
       "boundaries": [
         "diagnostic",
@@ -2344,10 +2372,14 @@
         [
           "filesystem-read",
           "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "a907d0f1042d0e3d375d14c364109130fde15600c44b7188d14450321ad41d5c",
+      "siteCount": 8,
+      "sitesDigest": "5f37ddc167f17815bf6cdd7ed6d0aaf3d42dd20f025dcfb0119c4beb07fd492f",
       "sourceDigest": "25f5b800b70f825a7ca40840e5fa0a7d3d87a6e861f457c2486db592af625e0d",
       "boundaries": [
         "diagnostic",
@@ -3084,10 +3116,26 @@
         [
           "filesystem-read",
           "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "d0104666637aff3b039b0f1e84569a13b3e3eb358621405c8757650e6c66140d",
+      "siteCount": 10,
+      "sitesDigest": "46fc2c0cec070fdea28513c63c204b0aac691ac843433d8b9de9f36eb1035e11",
       "sourceDigest": "44b6226f41407bae5ad374db8b3951237710498c2c87e1772edc2ac288f3521e",
       "boundaries": [
         "diagnostic",
@@ -5222,6 +5270,10 @@
           "listRepos"
         ],
         [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
           "diagnostic",
           "process.stderr.write"
         ],
@@ -5230,11 +5282,12 @@
           "process.stderr.write"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "f331400e4d9ac91c86a3c42160b75206a0f21d8afaa6b41069a680710ce1fbba",
+      "siteCount": 11,
+      "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
       "sourceDigest": "3a2acd077b3bd8dafb68913621a03fddc205590455a6ff78b6e7169218eddf21",
       "boundaries": [
         "diagnostic",
+        "filesystem-read",
         "serialization",
         "storage-call",
         "unresolved-call"
@@ -5553,6 +5606,10 @@
           "readFile"
         ],
         [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
           "filesystem-write",
           "rm"
         ],
@@ -5561,8 +5618,8 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "844862fb81952476b849153dbbf89dbb6dd600f0ba4242f7ac074f730e3fdb69",
+      "siteCount": 6,
+      "sitesDigest": "3e2a9e570583125528ac2697c43eac95bba997a9e21544849d00dbd377ac946d",
       "sourceDigest": "358243292fa568f048db6f639e48aacc8355083002c8203c6959c2046913c8e9",
       "boundaries": [
         "filesystem-open",
@@ -6182,6 +6239,10 @@
           "nodeFs.renameSync"
         ],
         [
+          "filesystem-read",
+          "nodeFs.statSync"
+        ],
+        [
           "filesystem-write",
           "nodeFs.unlinkSync"
         ],
@@ -6194,8 +6255,8 @@
           "nodeFs.writeFileSync"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "cd9a0f3b569eff8e070e08bc7fa246d6000e16f97a992ca7a647d8dbe2fc4737",
+      "siteCount": 13,
+      "sitesDigest": "eed5a25e79073cb83a00bf2f5f5a1ab88cebfc14fd9fb313e517dc3727863387",
       "sourceDigest": "261d6a169a5ab938dce83fb49ddcd2ae5f8b267bb2b5eec675edd7dd2965a7c0",
       "boundaries": [
         "filesystem-read",
@@ -6881,6 +6942,18 @@
           "readFile"
         ],
         [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
           "filesystem-write",
           "unlink"
         ],
@@ -6897,8 +6970,8 @@
           "writeFile"
         ]
       ],
-      "siteCount": 18,
-      "sitesDigest": "58066242e3dfbeb843cab5f9b12d066da77d1af6cc4b78f710e9d92f1b8a55ac",
+      "siteCount": 21,
+      "sitesDigest": "435c01a5abdb1c4a02b448f138fb40be786071d54165a6b54b227fe4240c020b",
       "sourceDigest": "b73a0edb68d6a4b9731718c7d87616678f4fd5511c998adf20c943e44d10da92",
       "boundaries": [
         "diagnostic",
@@ -6914,10 +6987,14 @@
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "e257b3c1071f772e54a894bc9b7d8b5b3b59782980bf371a1efaef22870cd3ac",
+      "siteCount": 2,
+      "sitesDigest": "83b342c0ac79bc7b45c90fedcf35225b7ca5d766b8a36a07cafbbb21eff94f09",
       "sourceDigest": "fa2724ba5c12063b2c873de25ba26d6d5a1c0232e0dded46c89938d33560f6c8",
       "boundaries": [
         "filesystem-read"
@@ -6946,10 +7023,14 @@
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "0bd7400859d162516563321504dce535f57eb4d61466c28b4c73b79c47dbe80a",
+      "siteCount": 6,
+      "sitesDigest": "0d5c63fec12415b0c7cc390980a855d22bf320e5f51410d85aa6f6c9a82bc7ab",
       "sourceDigest": "1f9c0f7b6a3f3f7c2e4ca04794da4490b35b406b70a26e24cbf7b0cb8f8a4761",
       "boundaries": [
         "diagnostic",
@@ -7003,10 +7084,18 @@
         [
           "filesystem-write",
           "rmSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "19780b3ae2a21c7524e01235020ce2cae8738bcd9d5f124c251261a881bbec06",
+      "siteCount": 13,
+      "sitesDigest": "d0f8803d4685488c4c2e5fc8cdc193ec34ca3abdedd0da9916fc89181f45889c",
       "sourceDigest": "754105eff73fc276d84090f611d906fa3d5c7fb18629947a97f9c611ebdeb3c5",
       "boundaries": [
         "diagnostic",
@@ -7230,7 +7319,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "1a30efb368fe8cfde6579740b7d94a2899ef6bffbbb9bdd7c5a01ecf1be5e49a",
+      "sourceDigest": "d360f2e66765bcf9b95cc44f2e56dd8221ab85ffcdce7f2f8762a83e2e7eea85",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
@@ -7352,6 +7441,14 @@
           "Buffer.allocUnsafe"
         ],
         [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
+          "filesystem-read",
+          "file.stat"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -7378,6 +7475,50 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
         ],
         [
           "filesystem-write",
@@ -7412,8 +7553,12 @@
           "readFile"
         ],
         [
-          "filesystem-write",
-          "rename"
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
         ],
         [
           "filesystem-write",
@@ -7429,7 +7574,7 @@
         ],
         [
           "filesystem-write",
-          "rm"
+          "rename"
         ],
         [
           "filesystem-write",
@@ -7454,6 +7599,14 @@
         [
           "filesystem-write",
           "rm"
+        ],
+        [
+          "filesystem-write",
+          "rm"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ],
         [
           "filesystem-write",
@@ -7464,8 +7617,8 @@
           "writeFile"
         ]
       ],
-      "siteCount": 29,
-      "sitesDigest": "07a476883370697f267f73afa668053e67d9d7b1f18ebbf813f2f75171442043",
+      "siteCount": 45,
+      "sitesDigest": "2194857be45e6c2d346853c25285fef1059db122e5d59c0554c7ce0da4fd72c3",
       "sourceDigest": "3605a7c48065f40dafc22ebf138bad1b17cbba6c4f63716ef970f827a163774d",
       "boundaries": [
         "diagnostic",
@@ -7718,15 +7871,24 @@
           "Buffer.allocUnsafe"
         ],
         [
+          "filesystem-read",
+          "handle.stat"
+        ],
+        [
           "filesystem-open",
           "open"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "42ec53823e41738640e0d66d4003f26fd3a3da10b50f3b157f4c05e4d857eefa",
+      "siteCount": 4,
+      "sitesDigest": "74e9c83a45b0e3cd4c687e1bc104faa3d2ab053d107399d867b4ff01e7545d3d",
       "sourceDigest": "4c948950ee3c70cc4e530553bd77b6267625fb4e4e2cf1645f37a5473907b0d9",
       "boundaries": [
         "filesystem-open",
+        "filesystem-read",
         "serialization"
       ]
     },
@@ -8139,12 +8301,16 @@
           "reader.getRowObjects"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "vReader.getRowObjects"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "fcb8200f462e15abaa858e5e50e6bea8209b52e65062bed72d40997832b1d700",
+      "siteCount": 25,
+      "sitesDigest": "a91d3db4ccc87cf9dec134c9f031d724ba34823d0b31ef2f4f4ccd5ff482a84c",
       "sourceDigest": "9c546ae5aae5562ca5cab4beab12ef664c23eef949fd6097aaa15932b9446f1e",
       "boundaries": [
         "diagnostic",
@@ -8725,10 +8891,14 @@
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "0de01cfdc923ba71c3d7d9eb730451eecffb6da858bae1ccff2b4eb1f62eef7e",
+      "siteCount": 2,
+      "sitesDigest": "b86bd78a727b461c5ab3cf1ee1345a2b9bc3503f80f95d778a1c9526e3e624d7",
       "sourceDigest": "7f4c2457ef84a4dcd0f767f539475674687be5508e4d9fd2bd22113d8291296d",
       "boundaries": [
         "filesystem-read"
@@ -9063,6 +9233,18 @@
           "prepared.runAndReadAll"
         ],
         [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
           "storage-call",
           "statements.prepare"
         ],
@@ -9071,10 +9253,11 @@
           "this.engine.instance.connect"
         ]
       ],
-      "siteCount": 30,
-      "sitesDigest": "cbe86f9639ad0c795818f360d8438c7c105eb911884ff9a812c2eb85c2e1e9c4",
+      "siteCount": 33,
+      "sitesDigest": "facf01310f693b0a33907d02f6983f8fe0a11b02559b074973d021f67908c604",
       "sourceDigest": "abd3b06db55bd732257a4706240782d00f32867479a4a51f93b76b59cabdf195",
       "boundaries": [
+        "filesystem-read",
         "serialization",
         "storage-call"
       ]
@@ -9133,10 +9316,18 @@
         [
           "filesystem-read",
           "readdir"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "1a21121673c6e6b80885430d76cb1ef55dfb255ce73f86d374a4162a421fed31",
+      "siteCount": 3,
+      "sitesDigest": "93ec384a0f1fba09768b5c1dbb9e8d0fe6c0f1a2153536a92467a22533b48cab",
       "sourceDigest": "baa0d798e2b3d99e625422119c97239abb97cad1f8e2b75b9e6daf06182c64f0",
       "boundaries": [
         "filesystem-read"
@@ -9155,15 +9346,19 @@
           "handle.readFile"
         ],
         [
-          "filesystem-write",
-          "handle.writeFile"
+          "filesystem-read",
+          "handle.stat"
+        ],
+        [
+          "filesystem-read",
+          "handle.stat"
         ],
         [
           "filesystem-write",
           "handle.writeFile"
         ],
         [
-          "serialization",
+          "filesystem-write",
           "handle.writeFile"
         ],
         [
@@ -9172,7 +9367,7 @@
         ],
         [
           "serialization",
-          "JSON.parse"
+          "handle.writeFile"
         ],
         [
           "serialization",
@@ -9188,7 +9383,7 @@
         ],
         [
           "serialization",
-          "JSON.stringify"
+          "JSON.parse"
         ],
         [
           "serialization",
@@ -9225,6 +9420,34 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
         ],
         [
           "filesystem-write",
@@ -9359,8 +9582,8 @@
           "writeWithManagedProof"
         ]
       ],
-      "siteCount": 53,
-      "sitesDigest": "23201cbfe291de0ef6bfe0e4af9a6c1a570c1ef819f7b85d341a621ddc5e7a9f",
+      "siteCount": 61,
+      "sitesDigest": "69a89181cd97a2eac354dc8842e6526bd6acc5a1d1265e2d3becbe4119e79fe3",
       "sourceDigest": "4cb1e3dd43b189b4e7ebf54c45f40a021004ef3fc6b738460946034cd0b3e50a",
       "boundaries": [
         "filesystem-open",
@@ -9394,12 +9617,24 @@
           "JSON.stringify"
         ],
         [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
           "acquisition:acquire-call",
           "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)"
         ],
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
         ],
         [
           "serialization",
@@ -9410,8 +9645,8 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "00ff96395dc24cc1b4475ef7845ee76c6cd691ab47b95cd9193b2ae61430326d",
+      "siteCount": 12,
+      "sitesDigest": "7d91211dab89e64ab72fc4fd256311c3a2b449245b44bd8035f736f97f173e6b",
       "sourceDigest": "56f0e0e8c4a320074def5df001dc6321cbfbb37af2038e64b1615447672b382a",
       "boundaries": [
         "acquisition:acquire-call",
@@ -9453,12 +9688,28 @@
           "handle.readFile"
         ],
         [
+          "filesystem-read",
+          "handle.stat"
+        ],
+        [
           "filesystem-write",
           "handle.writeFile"
         ],
         [
           "serialization",
           "handle.writeFile"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
         ],
         [
           "filesystem-write",
@@ -9485,8 +9736,8 @@
           "unlink"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "bc6fe79960eabd9dd3a16724d51f580a8b9267d42dd36e904a5eb8837a5ff2da",
+      "siteCount": 13,
+      "sitesDigest": "aad5d61b7df5abefd094513ff3b9b755b28f3dab0ae8e1560e96fb42a4191732",
       "sourceDigest": "8bf64632c001f762b51dc8fec37c5e1068b6e5dfcf1f0a4520ada729407ab1f1",
       "boundaries": [
         "filesystem-open",
@@ -9524,6 +9775,14 @@
           "JSON.stringify"
         ],
         [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
           "filesystem-open",
           "open"
         ],
@@ -9544,13 +9803,34 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "3c7aaec7afe0ab56f0ccfc639ab36540671100b5a6b32c0cfa574aaddf9a247c",
+      "siteCount": 13,
+      "sitesDigest": "819e466f3e73b825d555c8c35c1035a191a9a62c88d3978be8b2fdc6ff4e00ec",
       "sourceDigest": "731ae0937e74881578655bdb9d5441cf31e4f9c2cb28d0290d604d13cc687d8e",
       "boundaries": [
         "filesystem-open",
+        "filesystem-read",
         "filesystem-write",
         "serialization"
+      ]
+    },
+    "src/daemon/db/management-root.ts": {
+      "classification": "shared-root-validation",
+      "rationale": "Shared canonical root and registered-directory validation consumes S001 eligibility. Readonly filesystem checks must precede owner admission; legacy saved lookup normalization stays unchanged.",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "19eed97787d3a0f63a243dd3633c258ad26acc3c16da5b4c7c56746e249ff20d",
+      "sourceDigest": "2837fb8867ce3ca853e2ac1bf8d03aaa841000a911fbfeee0eb7ae00b16b9534",
+      "boundaries": [
+        "filesystem-read"
       ]
     },
     "src/daemon/db/management-startup.ts": {
@@ -9582,6 +9862,14 @@
           "DriverPool"
         ],
         [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
           "acquisition:acquire-call",
           "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)"
         ],
@@ -9592,10 +9880,14 @@
         [
           "connection-use",
           "pool.withConnection"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "a95a815dd0a074cd2de9a2e01a46f1d4dc4db680162d59b81fe39dea360ad5f1",
+      "siteCount": 12,
+      "sitesDigest": "b341d52f00e38184c6a2682dc3826da04e6beb1fe393982590418ee6dfbac813",
       "sourceDigest": "7e50893b64941e1a32ef2adb41acbd1f27ea46797b6241140241a543b0b4470c",
       "boundaries": [
         "acquisition:acquire-call",
@@ -9604,7 +9896,8 @@
         "acquisition:symbol:DriverPool",
         "acquisition:symbol:acquirePool",
         "connection-factory",
-        "connection-use"
+        "connection-use",
+        "filesystem-read"
       ]
     },
     "src/daemon/db/management-state.ts": {
@@ -9701,6 +9994,14 @@
           "randomBytes(32).toString"
         ],
         [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-read",
+          "stat"
+        ],
+        [
           "serialization",
           "supplied.toString"
         ],
@@ -9717,10 +10018,11 @@
           "this.mac(domain, value).toString"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "b5c1a0f5a7d2bdaa45fd5f698f53cc3490696aa486b5d5d21226077bdd0a0b32",
+      "siteCount": 17,
+      "sitesDigest": "1eb42df85521c04ee32461bcabe3cffc25a11a847632bc8d96af995b0d9153b0",
       "sourceDigest": "711f285558f7c26e185dbde026cbf4a37be8a80b63a411e1227d85dde441b59b",
       "boundaries": [
+        "filesystem-read",
         "serialization"
       ]
     },
@@ -9777,6 +10079,10 @@
           "JSON.stringify"
         ],
         [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
           "acquisition:pool-member",
           "this.ports.pool.beginMutation"
         ],
@@ -9833,13 +10139,14 @@
           "this.ports.pool.safeList"
         ]
       ],
-      "siteCount": 26,
-      "sitesDigest": "ed6d94f7e713430bfb2a6cd5defaddafa3d8a8c31a943d5db18e60776f97426c",
+      "siteCount": 27,
+      "sitesDigest": "c0156fe15f04e159a75a0a354c223a6f26a82e1ceef8bed01ea9849617e231c3",
       "sourceDigest": "0f0827dfada4af87bcc1b4e087e1c5c9ce5a75d47215976b2fff472043e9a478",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:symbol:DriverPool",
         "connection-use",
+        "filesystem-read",
         "serialization"
       ]
     },
@@ -10669,6 +10976,22 @@
         "diagnostic"
       ]
     },
+    "src/daemon/db/runtime-config.ts": {
+      "classification": "resolver-resource-foundation",
+      "rationale": "Shared connection/resource seam; private owner overlays and leases must not fall back to saved credentials or caches. Preserve ordinary saved semantics and existing sc8 resource implementation.",
+      "sites": [
+        [
+          "filesystem-read",
+          "access"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "fbb20a7ea7dd38a1fdfd2ee87d400bfc57957a5993e566cad08937b6f19ab289",
+      "sourceDigest": "020ce92ad0c2e79904e03e2b0b31c805aca3a9956ba6ee215bfb45ede395e4b3",
+      "boundaries": [
+        "filesystem-read"
+      ]
+    },
     "src/daemon/db/secrets.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S001/S002 saved or probe foundation. Session path may use only documented readonly/profile/preparation ports; saved storage is forbidden for temporary data and writes require shared reservation guard.",
@@ -10719,6 +11042,147 @@
       "sourceDigest": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",
       "boundaries": [
         "diagnostic",
+        "serialization"
+      ]
+    },
+    "src/daemon/db/session-owner.ts": {
+      "classification": "session-owner",
+      "rationale": "S003 private memory authority: control digest and epoch/generation checks, monotonic lease/quota and root-owned overlays. Bootstrap tokens only reach authenticated control; no persistent ports or saved credential fallback.",
+      "sites": [
+        [
+          "serialization",
+          "randomBytes(32).toString"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#expire"
+        ],
+        [
+          "connection-use",
+          "this.#expire"
+        ],
+        [
+          "connection-use",
+          "this.#expire"
+        ],
+        [
+          "connection-use",
+          "this.#expire"
+        ],
+        [
+          "connection-use",
+          "this.#expire"
+        ],
+        [
+          "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
+          "this.#now"
+        ],
+        [
+          "connection-use",
+          "this.#ports.createOverlay"
+        ],
+        [
+          "connection-use",
+          "this.#ports.createOverlay"
+        ],
+        [
+          "connection-use",
+          "this.#result"
+        ],
+        [
+          "connection-use",
+          "this.#result"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.close"
+        ],
+        [
+          "connection-use",
+          "this.sweepExpired"
+        ],
+        [
+          "connection-use",
+          "this.sweepExpired"
+        ],
+        [
+          "connection-use",
+          "this.sweepExpired"
+        ]
+      ],
+      "siteCount": 32,
+      "sitesDigest": "53a21b7b8e34af2b76d2ac30903f2ca8a801e1f961e286267e0c8e6242e2a847",
+      "sourceDigest": "881692d60378567ef8908e5d87a935c263d6fddd2111debd17c627145821e942",
+      "boundaries": [
+        "connection-use",
         "serialization"
       ]
     },
@@ -11481,6 +11945,10 @@
           "send"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "filesystem-write",
           "unlinkSync"
         ],
@@ -11501,8 +11969,8 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 186,
-      "sitesDigest": "101d2893b7b31c8f93988cdd0d670ecce267f6515db94e319a9b9088c1cc9f23",
+      "siteCount": 187,
+      "sitesDigest": "04a17f3a481cefde3ea63ef1e7ad881fc0093235ac7a5b9b146cd179d8a5cbca",
       "sourceDigest": "b644a4849e6222a0a8400fd56155f61519c07181585adb447066cdd1b7e69ff3",
       "boundaries": [
         "diagnostic",
@@ -12222,6 +12690,10 @@
           "decodeOutEdgeKey"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "store.entity.getRange"
         ],
@@ -12230,10 +12702,11 @@
           "store.outEdge.getRange"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "5635bd9234e3a585c8a548cee6892425a10b2a46c5973c5bc71a353992cb3241",
+      "siteCount": 9,
+      "sitesDigest": "e3b9683b14abdbf5b6dcc945afe0549bc4e5f4b3c26b616a268ccf22710b64f5",
       "sourceDigest": "cf29a28a4c5dadcb6c67bd93a6e6af91866023020df7ebbce43c14486904b625",
       "boundaries": [
+        "filesystem-read",
         "serialization",
         "storage-call"
       ]
@@ -12948,6 +13421,10 @@
           "rmSync"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "filesystem-write",
           "writeFileSync"
         ],
@@ -12956,8 +13433,8 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "fb46baacfb0626616d2ad75a5ca7b727d30b1270b7e03e10a8f91e1efd20876f",
+      "siteCount": 16,
+      "sitesDigest": "54c923481262f16ddbefa35749f406bbf1f2abf94d8b1838751a22b40d70078f",
       "sourceDigest": "0cacaaa6f03cca00be039286e804dd58750182b49a92ea18e0a3859ddafaeb2e",
       "boundaries": [
         "diagnostic",
@@ -13622,13 +14099,18 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "22bff5564cd5780a8524521e3288014989745a4107df02b60160d5f7131aeb7a",
+      "siteCount": 5,
+      "sitesDigest": "5c1020f95856e3cbc1953d2f633eafba5ffe7c0a29c1bfd20a35fb1133e5805c",
       "sourceDigest": "de8250ad22085d46be68f3ce1c4e4c92b9a25596b85e9f64874813d0df60aef7",
       "boundaries": [
         "diagnostic",
+        "filesystem-read",
         "serialization",
         "storage-call"
       ]
@@ -13864,6 +14346,10 @@
           "readFileSync"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "unresolved-call",
           "StatusBoard"
         ],
@@ -13876,8 +14362,8 @@
           "this.info"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "6df9eba8e94091232a4133d80f7fb7038ad3a6c4313652a575e21da487466550",
+      "siteCount": 11,
+      "sitesDigest": "040dbb179427e0463fa5e78301d06604d9f0f19d0ef49e40c8921c42e4fb3990",
       "sourceDigest": "cbf5cf8b27f771c94d08de9130070cc98c6a1a41c0cf8ab147caf921d843ff03",
       "boundaries": [
         "diagnostic",
@@ -15040,10 +15526,14 @@
         [
           "filesystem-read",
           "fs.readFile"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "269c61cc601c5970748c393a3892c37c2232b4710d8bf5cf71df924ab641e0d3",
+      "siteCount": 3,
+      "sitesDigest": "03e3d3e58f82e2e933a7b860119c0d53fd5ec36721eccf42341db07b5656aaf3",
       "sourceDigest": "0355a313620d12c05a6e05b3d73d2eab0b1ee8c8f011f933316b1905ab9d617c",
       "boundaries": [
         "filesystem-read"
@@ -15060,10 +15550,14 @@
         [
           "filesystem-read",
           "fs.readFile"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "8cf7fbe7730301d4c4d6b6bd969cd635d3ec0ce7aa4974fbbddf862d457456fb",
+      "siteCount": 3,
+      "sitesDigest": "a3b64adf8a1359541596fb4dfa1a97ad079442f9bb8d868b3d7b5549695afc4e",
       "sourceDigest": "dac65534828001f378937116d4764f5d5e36fb431450d4c6877cab8002f14c2e",
       "boundaries": [
         "filesystem-read"
@@ -15108,11 +15602,15 @@
       "sites": [
         [
           "filesystem-read",
+          "fs.access"
+        ],
+        [
+          "filesystem-read",
           "fs.readFile"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "e60ba3998ea95d1a9ea295ecc6f1f76dd4d3010c65db03be672d37b63756f2a5",
+      "siteCount": 2,
+      "sitesDigest": "779c9e59cedd989294a0c0d75bc3347c6f963739525314b9f964339e53dcb39b",
       "sourceDigest": "db0600db7f36dc74a7755266ae8990749a073cab98757ae3c6481f7eb0239d02",
       "boundaries": [
         "filesystem-read"
@@ -15673,12 +16171,17 @@
         [
           "filesystem-write",
           "fs.mkdir"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "02ee0b356752f0452f4dbaecd1889bd3d492b51dc31422c4a5398a15ca54e334",
+      "siteCount": 2,
+      "sitesDigest": "b3c026f42f2ce1383e82b2a0b0d706fddd718702fcd76c66aaf5c95e9a790891",
       "sourceDigest": "568c13fc0ef62a9cb7cdf4c79510b9d4f06f92d197cae0f4a2a059667d4a2815",
       "boundaries": [
+        "filesystem-read",
         "filesystem-write"
       ]
     },
@@ -15701,10 +16204,18 @@
         [
           "filesystem-write",
           "fs.rm"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "6ea6bf785975d351dbc078a09172c1e42aadc1875903850573e974b68c1e898e",
+      "siteCount": 6,
+      "sitesDigest": "757251af9dad8c7fce04d0fafbcc4a3d534913d1944b385905069fedc9629439",
       "sourceDigest": "b6fde5f8d73ff2ac360c8dd9601fd7333fd07ad4124b58a84f7e127d4295d2db",
       "boundaries": [
         "filesystem-read",
@@ -15792,12 +16303,17 @@
         [
           "filesystem-write",
           "fs.rm"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "9abc033360ccb7f0b9de6f73be7778333cc4740325e0712d3e36792276e0f8b5",
+      "siteCount": 5,
+      "sitesDigest": "f85e820d7e2d1a69337a15f76ee2347d128aed1c3888359264beb2351091dfbd",
       "sourceDigest": "91f76636cba871b85f939c01be1eeed0e16e030d1ed42804a033b51db80ef0c8",
       "boundaries": [
+        "filesystem-read",
         "filesystem-write"
       ]
     },
@@ -15838,10 +16354,18 @@
         [
           "filesystem-read",
           "fs.readFile"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "2828572beb05119ccdf63990266ad72164dc5530ba713f07ae629922f601575c",
+      "siteCount": 4,
+      "sitesDigest": "4a2f7d43c89e12ae53414239523e83c3ff19a1a62e015bfbbac90cab1f2890dc",
       "sourceDigest": "521e04bf55d3942c603ee0d7504f294429e8f33b5fe155816bc2fbe9f97ab330",
       "boundaries": [
         "filesystem-read"
@@ -15854,12 +16378,21 @@
         [
           "serialization",
           "(stat.mode & 0o777).toString"
+        ],
+        [
+          "filesystem-read",
+          "fs.lstat"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "979d209ece3cff7fc5b033f8d2bb4114b26ffe51df9e03d07fa4fa4e9311b3f3",
+      "siteCount": 3,
+      "sitesDigest": "ce0bf82a4067e703a2927d7cf485a898826dab55d6cbcf83aaa1a5e27c47f8d1",
       "sourceDigest": "6bbea71d740440597f88e9ed398f9a1e848f33a6d3a29a0196f8c700cf6c6e1c",
       "boundaries": [
+        "filesystem-read",
         "serialization"
       ]
     },
@@ -15872,6 +16405,14 @@
           "fs.mkdir"
         ],
         [
+          "filesystem-read",
+          "fs.stat"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
+        ],
+        [
           "filesystem-write",
           "fs.writeFile"
         ],
@@ -15880,10 +16421,11 @@
           "fs.writeFile"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "70c25747dc54738d3bed6fa7f932def70e140194db509ef4c680fd894be9c488",
+      "siteCount": 5,
+      "sitesDigest": "3c481a1459a8529e573942dd98846499625856afb1571acd8a0c5e4cfd75e58a",
       "sourceDigest": "44d28a1eacdc66d9fa3cf1fa374fd5f4402d8a5370ea501352c41881451e19dd",
       "boundaries": [
+        "filesystem-read",
         "filesystem-write",
         "serialization"
       ]
@@ -16071,12 +16613,24 @@
           "FormData"
         ],
         [
+          "filesystem-read",
+          "fs.access"
+        ],
+        [
           "filesystem-write",
           "fs.mkdir"
         ],
         [
           "filesystem-read",
           "fs.readFile"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
+        ],
+        [
+          "filesystem-read",
+          "fs.stat"
         ],
         [
           "filesystem-write",
@@ -16111,8 +16665,8 @@
           "ws.send"
         ]
       ],
-      "siteCount": 25,
-      "sitesDigest": "b6d80640429ca7440a58dbbaaccc3b19b8e569e47e0eadb1d505af2534b9497d",
+      "siteCount": 28,
+      "sitesDigest": "a13bd071974bf1bd8946b1a0fb21c7f8e55da581878cb0243c55c68e9ffdd305",
       "sourceDigest": "d84d5bdc31ac1fc4f1ac4ae29d24e4d6b21ac4ac3e49ca78aa9c91d4dd7606e0",
       "boundaries": [
         "filesystem-read",
@@ -16236,14 +16790,19 @@
       "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
       "sites": [
         [
+          "filesystem-read",
+          "fs.access"
+        ],
+        [
           "serialization",
           "JSON.parse"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "14322892f58a9eeff1d2109f21d6c2a22c5baf8fd724bae533c1a0bf61917b41",
+      "siteCount": 2,
+      "sitesDigest": "069bfa799b350c6c3b9bdf11cedb3b61534fa55f16746af5914a29cdf78246ed",
       "sourceDigest": "d51c3d225dfd6e2a680048ee342cb4d921efc3c8bb39093aecbb95ec933b112c",
       "boundaries": [
+        "filesystem-read",
         "serialization"
       ]
     },
@@ -16254,10 +16813,14 @@
         [
           "filesystem-read",
           "fs.readdir"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "47b1a38646dee55038532f862900f42cad236529fb60b12795b2d733b74c8785",
+      "siteCount": 2,
+      "sitesDigest": "1d46de72ca05f2912934bedec767e9177f2f4cf43bf8c600cc082fd878307269",
       "sourceDigest": "68a9694c01bc6c4e1aedb011ccfc4fe4c3e7874d8d0f6ec58f76d09f75fb714b",
       "boundaries": [
         "filesystem-read"
@@ -16278,10 +16841,14 @@
         [
           "storage-call",
           "isLiveStoreFile"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "1670d2a10a3a4b3b5c021e8fcd8e44142d873f1fd6f5f9d758b634a692b15c9e",
+      "siteCount": 4,
+      "sitesDigest": "7cd2b3a5ff0b3a5df5ab78912b22ccda4a867d06f16694c978f55264b4995b77",
       "sourceDigest": "5b68e977c4288f73c90f29050b7bfcdee6e113f9488a5869df294c18b573450e",
       "boundaries": [
         "filesystem-read",
@@ -16295,10 +16862,14 @@
         [
           "filesystem-read",
           "fs.readdir"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "630712b5897d4f05f71bf325d15b65a391863ebc60c07667f701b265ee0f0d09",
+      "siteCount": 2,
+      "sitesDigest": "d89f7d1788855b0cabfe319c6199aa6bce409caf0bc7162f45d9d42ca8f3b883",
       "sourceDigest": "7a3a7258f58bba1b65b23803f318c6c337edde0edb91ff943f9b6ae7d26e9733",
       "boundaries": [
         "filesystem-read"
@@ -16311,11 +16882,31 @@
         [
           "filesystem-read",
           "fs.readdir"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "2bb0a46d3b4d6781e90d64cc8074370c86fefd6f86c8cd0138a8399c8f332bee",
+      "sourceDigest": "50fd39bb0a1edc9fdcaefce325804b5c2d0687f3ebd0dda2cbfd359f7d4788cf",
+      "boundaries": [
+        "filesystem-read"
+      ]
+    },
+    "src/daemon/tools/builtins/shell/cwd.ts": {
+      "classification": "tool-allowlist-boundary",
+      "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
+      "sites": [
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
       "siteCount": 1,
-      "sitesDigest": "7a54a9af6a9076b11d9f87f0ee6cc47c8fb4ec40b70071d7608e132f426f99dd",
-      "sourceDigest": "50fd39bb0a1edc9fdcaefce325804b5c2d0687f3ebd0dda2cbfd359f7d4788cf",
+      "sitesDigest": "7e937e50fa76d180933807111e2e23aa7c8564e8def100136a3d6b5ee9223532",
+      "sourceDigest": "70116633f1b33ec23d7dbecadb416cc0a56067ac4326c8cbf6f76030eaae01fa",
       "boundaries": [
         "filesystem-read"
       ]
@@ -18460,6 +19051,14 @@
           "prefixSuccessor"
         ],
         [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
           "storage-call",
           "s.docSummary.get"
         ],
@@ -18530,6 +19129,10 @@
         [
           "storage-call",
           "s.entityStringByU64.get"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ],
         [
           "storage-call",
@@ -18656,10 +19259,11 @@
           "writeIfCurrentInTxn"
         ]
       ],
-      "siteCount": 160,
-      "sitesDigest": "af58ba9342e0d7e12e626afa469107bc249c31ca921825764928b0106beadd5e",
+      "siteCount": 163,
+      "sitesDigest": "d3970d87e77a96c5414bf441fa51f86445f263ec7897f3ba282b28860b74910a",
       "sourceDigest": "c4e4d6ce9c0423d3c4f958396f73e5909cf31e606fa66e616397f9515a816979",
       "boundaries": [
+        "filesystem-read",
         "serialization",
         "storage-call"
       ]
@@ -22046,6 +22650,10 @@
           "log.warn"
         ],
         [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -22176,6 +22784,14 @@
         [
           "storage-call",
           "readSchemaVersion"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
         ],
         [
           "storage-call",
@@ -22414,6 +23030,26 @@
           "SimulatedCrash"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "store.meta.get"
         ],
@@ -22478,8 +23114,8 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 219,
-      "sitesDigest": "5681f70c5c3a9eaede0bcadecabd220ba5c369c0c65fceefe09f18a1bd130a65",
+      "siteCount": 227,
+      "sitesDigest": "3daf2d6774a5df88bdd9f963e22b472189e612faa7eaf724780725cc2d9af7db",
       "sourceDigest": "e560123fd7618c716c594d88558c620155a267c7e8b9e835d906c6db46964fe2",
       "boundaries": [
         "diagnostic",
@@ -24824,6 +25460,10 @@
           "s.repo.remove"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "store.repo.getRange"
         ],
@@ -24852,10 +25492,11 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 57,
-      "sitesDigest": "99ff41580c75aad943d316746be5c1c5501efe15b31f76a498292985e549a532",
+      "siteCount": 58,
+      "sitesDigest": "9e296ca612146c6d204619ee11e3644f82366859b381045e40b295d38adc9911",
       "sourceDigest": "8701b4619e259817cb6ee5d561f19ee5824cabfb629adb7024f6f3e4b1da11a0",
       "boundaries": [
+        "filesystem-read",
         "serialization",
         "storage-call",
         "unresolved-call"
@@ -26414,10 +27055,14 @@
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "1900096001089d9df61deb73a4280a20f111bc3b98535f1301a64aa82b8bce4a",
+      "siteCount": 4,
+      "sitesDigest": "645a4cc1e65316992833ad399dd05c927429ee86036a5e2de080e898eea12518",
       "sourceDigest": "42599083845269d7562a123c03bb3f20f4bc88b856bfcf7c5c70a590546a1b4d",
       "boundaries": [
         "diagnostic",
@@ -26865,6 +27510,10 @@
           "readIndexState"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "updateUnresolvedMetaBatch"
         ],
@@ -26889,8 +27538,8 @@
           "zeroPending"
         ]
       ],
-      "siteCount": 51,
-      "sitesDigest": "8645b7889b13991658c28d29e0fff389942315f6990cf75e550ff86986f3537b",
+      "siteCount": 52,
+      "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
       "sourceDigest": "c5c851a2541ae161a71c692ac294f7107f66b628e8efe269ccc15b0335fced25",
       "boundaries": [
         "diagnostic",
@@ -27097,10 +27746,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "34c69537542668242ad2370584255286c896631d82f13a39c2d5cf0aff4dfc45",
+      "siteCount": 2,
+      "sitesDigest": "58eefe6203c292d94a363cc3f1d989f8c3239d2c4480260d7060184f9bed15c3",
       "sourceDigest": "fbd887f95853a4ab67cc92078fee29f77ad75d6e8a0745db9482a2ddfcfcd74e",
       "boundaries": [
         "filesystem-read"
@@ -27587,6 +28240,18 @@
           "setUncommittedFiles"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "serialization",
           "this.writeIndexStatus"
         ],
@@ -27643,8 +28308,8 @@
           "upsertRelations"
         ]
       ],
-      "siteCount": 133,
-      "sitesDigest": "31b550f366a8c473cb1d4421d76a5bf273052daf39889b2596dcf63624c155c2",
+      "siteCount": 136,
+      "sitesDigest": "f03c0b903f8638fad4e75dba0941503873a7722e33eddd780d637525e5ecfa06",
       "sourceDigest": "24219bafb6699995867874487001159f759bc854bfdf10841b0813bcdb310acb",
       "boundaries": [
         "diagnostic",
@@ -27965,10 +28630,22 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "cf354aa054926b45bdcd5efad04b3fd47d2f3ab127925b901ab0c957ca0549d5",
+      "siteCount": 6,
+      "sitesDigest": "9458184d283c1ef796fde4bc4bf39b3d2d6cee4c9fdfa25eabf35a1b12ca984e",
       "sourceDigest": "75aff6f65d0e4634ed7b7ca73688a608c5e6ea1197a1d23574ad5f7169308570",
       "boundaries": [
         "filesystem-read",
@@ -28039,10 +28716,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "ab211b72d8dd583ebeb379af43a79a11d6d57f9ff53f95ca06758828197b2486",
+      "siteCount": 8,
+      "sitesDigest": "7e4411d099c59b2e6f1499a1fbf1c5c68903a434c22c8ec06510e460ddffba4d",
       "sourceDigest": "97a0707d2aad71f60ce81427c1e7127f513cefd686a99c9c73bf80f49c01a275",
       "boundaries": [
         "diagnostic",
@@ -28287,7 +28968,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d7257b8bbda3a7731bafaa9c6ac9ce22972da63122247d4476d5432999535c5a",
-      "sourceDigest": "6006cf4b35c9749a35d51c05898522d9f873b2176d757265b2be0bd67366e678",
+      "sourceDigest": "97c4ffa30c70b5421002240949751e86d64199d6e37bece1b2048bd1d91c2f53",
       "boundaries": [
         "acquisition:symbol:ConnectionResolver"
       ]
@@ -28604,11 +29285,23 @@
       "sites": [
         [
           "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
           "readdirSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "b0ee6ae96dfbb7e661d631ddd7f24bb4d9eeefa93b143a73652a1df8ffee9573",
+      "siteCount": 4,
+      "sitesDigest": "cfa23b911ae601c3e860ad75ee1224595052900859e1c705d93fd973983906aa",
       "sourceDigest": "4569e918c97f7c25bf552f925541143f7ebad633c16b643806ae3945e3071913",
       "boundaries": [
         "filesystem-read"
@@ -29002,10 +29695,22 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "5957fa3f6aea743719c59cdacfa4fbd8e769cfe75fe9301268f3ab79ec431254",
+      "siteCount": 6,
+      "sitesDigest": "4717c76bc3077b4fb7c5877d25a410230c5a7ef97069b023d5dcf254f6e81078",
       "sourceDigest": "81af7d8f951849dbf526bc4a6bf26c6a63aea6a7f98a959d668ceccf47689683",
       "boundaries": [
         "filesystem-read",
@@ -29039,10 +29744,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "1fa9e40b62969ab764a40839a7d1866452e87524bbb6130a8ce88bedf88cd596",
+      "siteCount": 7,
+      "sitesDigest": "7aa8f4e73c0bbda612661e5e883bae33cf28f11797b5c4d486fc457f4aef2f4e",
       "sourceDigest": "069e979ecae47dbdb35ffae27870dca54f2c8ecf31aadaef51261c5229809d8d",
       "boundaries": [
         "diagnostic",
@@ -29153,10 +29862,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "stat"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "aa8cba55a06069b38c34cdb0e1f578431d4efe3595492c06bc79e33aa1a1d32c",
+      "siteCount": 7,
+      "sitesDigest": "380801496aec6410936dc9f0a43af99dff4d718a000175979ff8b809eeaa76ee",
       "sourceDigest": "d8a1912be08f22ceb1bfc332a206f2ccc5e41fe5fc7f7a81c9e41abdde7a4d45",
       "boundaries": [
         "diagnostic",
@@ -29277,10 +29990,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "4ae8d91c15721d5ab05be53b47348603b83a7d00fede2b13f335cd73c86e8973",
+      "siteCount": 5,
+      "sitesDigest": "deb1a139e8907233ea6ebcd621e37035ff7c52431ee633708120897fc70fdeb0",
       "sourceDigest": "7e6138347760db3f8853f1a53c07cb8cdb9fc05e4042d555f91ae86e7f6c166c",
       "boundaries": [
         "diagnostic",
@@ -29742,14 +30459,19 @@
           "import"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "storage-call",
           "store.entity.getRange"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "caf20b6f7d2b6589f6129b9904c15996508a966e8feb31adf3f7aabec4a3a58c",
+      "siteCount": 9,
+      "sitesDigest": "48faf4ce1656dcbee6587f7910b5111a5144bbaf0c560c67d303277f1958219e",
       "sourceDigest": "b779bf29e936741234db6f06057b308c9d95cc5d4f84ea3a0bf6530474b82504",
       "boundaries": [
+        "filesystem-read",
         "serialization",
         "storage-call",
         "unresolved-call"
@@ -30117,10 +30839,14 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "810bb06cc7eaa20bfb5bcac591295c63fda96ba8cc19f60ccb802334e2f9d68f",
+      "siteCount": 6,
+      "sitesDigest": "ce0922a046f9e7c57574d395e0fbf0a9c326c4ed0df58bf7b6bd565cde9403b2",
       "sourceDigest": "bf40bfa90f6fe19cbf75883f266f4fa17ea944d37af0a354961781135e7cde77",
       "boundaries": [
         "diagnostic",
@@ -30523,6 +31249,18 @@
           "readFileSync"
         ],
         [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
           "filesystem-write",
           "writeFileSync"
         ],
@@ -30547,8 +31285,8 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "c0fe98a4de1d739bfc4662b49ed1e9bc26353d6b6120813943518ea2a4399fe1",
+      "siteCount": 35,
+      "sitesDigest": "f77359b3cfd14ff9197ac20a834327ed572b5dc040af2be83f210cdf6d07cdc1",
       "sourceDigest": "17adae799d2a181c687e0bcc2c99f20e5bf2d522d328d15bc390eb3ae1bf584f",
       "boundaries": [
         "diagnostic",
@@ -30774,10 +31512,14 @@
         [
           "filesystem-read",
           "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "0e888d5a5d6d4f61dd1f96906064050f07f15b99d4ac2e44cd769ef983175680",
+      "siteCount": 4,
+      "sitesDigest": "79e0981a0e7d8e3c49b582603b2796ad50518013522f4272dfbed3485b50e7a7",
       "sourceDigest": "e552be68e414d260830aa4282cf9a54423efd63fb48fc7465695ef52bb0d40d8",
       "boundaries": [
         "filesystem-read"
@@ -32615,8 +33357,24 @@
           "readFileSync"
         ],
         [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
           "filesystem-write",
           "renameSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ],
         [
           "filesystem-write",
@@ -32671,8 +33429,8 @@
           "writeUniqueTemp"
         ]
       ],
-      "siteCount": 25,
-      "sitesDigest": "b8054307512e680a6575f65f17c598f3d8b475bcd71930b24149e30a21114e5d",
+      "siteCount": 29,
+      "sitesDigest": "094326d3876791b89fc53d5f25e68ee53174df7b2f156b5be8408fa34e02199a",
       "sourceDigest": "88e9873d357dd7a20bbcb05ffeeeb02be57280b671e5bf8dc12b83cd890de9fa",
       "boundaries": [
         "filesystem-open",
@@ -32688,12 +33446,17 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "eb97e88ade5238b57392996ac91f478791e15314df06398db5e8bb3aedb4260a",
+      "siteCount": 2,
+      "sitesDigest": "7293a5a60733c070f880c77686ba04a23b38debc1f1ae029cd50d25bf377da02",
       "sourceDigest": "ecff6b28979fae5b2154e5fc5fe4901ea4213eecaaafe7487ba9a46c56e72162",
       "boundaries": [
+        "filesystem-read",
         "serialization"
       ]
     },

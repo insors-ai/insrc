@@ -1,6 +1,5 @@
 /** Strict v2 adapters. Authority comes from transport and the installed maintenance owner. */
-import { realpath } from 'node:fs/promises';
-import { isAbsolute, resolve } from 'node:path';
+import { connectionLookupRoot as root } from './db/management-root.js';
 import type { RpcHandlers } from './server.js';
 import type { TrustedRpcContext } from './request-context.js';
 import type { ManagementRequestContext, ManagementCapabilities, MutationRequest, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
@@ -33,20 +32,6 @@ function trusted(context: TrustedRpcContext | undefined): TrustedRpcContext {
 	if (!context || typeof context.connectionIdentity !== 'string' || !context.connectionIdentity || typeof context.daemonEpoch !== 'string' || !context.daemonEpoch)
 		throw new ManagementInputError();
 	return context;
-}
-async function root(value: unknown, canonical = false): Promise<string> {
-	if (typeof value !== 'string' || !value || value.length > 16384 || /[\u0000-\u001f]/.test(value) || !isAbsolute(value))
-		throw new ManagementInputError();
-	let actual: string;
-	try {
-		actual = await realpath(value);
-	}
-	catch {
-		throw new ManagementInputError();
-	}
-	if (canonical && (actual !== value || resolve(value) !== value))
-		throw new ManagementInputError();
-	return actual;
 }
 export function managementContext(repoRoot: string, context: TrustedRpcContext): ManagementRequestContext {
 	return { connectionIdentity: context.connectionIdentity, access: { lookupRoot: repoRoot, managementRepoRoot: repoRoot, daemonEpoch: context.daemonEpoch } };

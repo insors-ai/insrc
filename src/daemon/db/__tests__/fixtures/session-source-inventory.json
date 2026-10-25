@@ -7273,8 +7273,8 @@
       ]
     },
     "src/daemon/config-write.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "classification": "configuration-boundary",
+      "rationale": "Existing static configuration/model selection may be read without temporary data. Session-derived config/feedback/cache writes are not admitted, and selected model/coreFloor cannot be weakened for privacy fallback.",
       "sites": [
         [
           "serialization",

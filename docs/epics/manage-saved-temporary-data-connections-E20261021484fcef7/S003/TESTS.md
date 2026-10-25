@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 67 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 69 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -313,3 +313,20 @@ Run at 2026-10-25T21:04:02.362Z on commit `1caf36b1d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/session-host-bootstrap.test.ts` | 0 | 3 | 2.2 s |  |
+
+## t15
+
+Run at 2026-10-25T21:13:02.687Z on commit `0ff661796`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CLIENT-EGRESS: real forwardStep all analysis phases/one-shot deny before state/provider/output; all channels captured**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads | `src/daemon/steps/__tests__/analysis-client-refusal.test.ts` |
+| pass | CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels | `src/daemon/steps/__tests__/analysis-client-refusal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/analysis-client-refusal.test.ts` | 0 | 2 | 1.7 s |  |

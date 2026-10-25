@@ -187,6 +187,7 @@ test('approval-class-mapping.test.ts: the 228-row snapshot is not edited and add
 	const file = JSON.parse(readFileSync(join(HERE, 'fixtures', 'added-by-s5.json'), 'utf8')) as { tools: { id: string; inputSchema: unknown; approval: string }[] };
 	assert.equal(snapshot.length, 228);
 	assert.equal('addedByS5' in snapshotFile, false, 'the new tools are recorded beside the snapshot, not in it');
+	assert.equal(file.tools.length, 22, 'the twenty-two family tools of Story s5');
 	const ids = new Set(snapshot.map(t => t.id));
 	for (const rec of file.tools) {
 		const tool = live.get(rec.id);

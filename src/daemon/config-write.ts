@@ -17,7 +17,7 @@
  */
 
 import { setConfigAtPath } from '../config/write-path.js';
-import type { FamilyId } from './model-catalog.js';
+import type { CliFamilyId, FamilyId } from './model-catalog.js';
 import type { ModelRegistry } from './model-registry.js';
 
 export type ConfigWriteResult =
@@ -53,7 +53,7 @@ function rejectedIn(registry: ModelRegistry, tier: unknown): { family: FamilyId;
 	if (typeof runner !== 'string' || typeof model !== 'string') return undefined;
 	const family = registry.families().find(f => f.id === runner);
 	if (family === undefined || registry.cliKind(family.id) === undefined) return undefined;
-	const rejected = registry.rejected(family.id as Exclude<FamilyId, 'ollama'>).includes(model);
+	const rejected = registry.rejected(family.id as CliFamilyId).includes(model);
 	return rejected && registry.find(family.id, model) === undefined ? { family: family.id, model } : undefined;
 }
 

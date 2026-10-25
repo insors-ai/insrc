@@ -213,6 +213,14 @@ async function main(): Promise<void> {
 	// later read — this thread's and every worker's — sees the reconciled file.
 	resetLocalProviderConfigCache();
 	resetAnalyzeConfigCache();
+	try {
+		// The local tool-loop model as the reconciled settings choose it (diagnostic).
+		const { localToolLoopModel } = await import('../analyze/context/driver.js');
+		const { loadAnalyzeConfig } = await import('../config/analyze.js');
+		log.info(localToolLoopModel(loadAnalyzeConfig()), 'local tool-loop model');
+	} catch (err) {
+		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'local tool-loop model: could not be resolved');
+	}
 
 	// 2c. One-shot Phase 0 agent-family rename migration (idempotent).
 	// Rewrites any persisted `agentId: 'pair' | 'delegate'` to the new

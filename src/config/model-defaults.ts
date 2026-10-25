@@ -78,8 +78,9 @@ export function deriveModelDefaults(defs: ModelDefinitionsFile): DerivedModelDef
 		}
 	}
 
-	const ollama = families.find(f => str(f['id']) === 'ollama') ?? {};
-	return { familyIds, defaultFamily, tiers, efforts, toolLoopModel: str(ollama['toolLoopModel']) };
+	// The local family: the one without a CLI kind.
+	const local = families.find(f => f['cliKind'] === undefined && str(f['id']) !== '') ?? {};
+	return { familyIds, defaultFamily, tiers, efforts, toolLoopModel: str(local['toolLoopModel']) };
 }
 
 /** The shipped definitions' defaults. */

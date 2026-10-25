@@ -23,7 +23,7 @@ import { loadAnalyzeConfig, type AnalyzeConfig, type TierName } from '../config/
 import { loadLocalProviderConfig } from '../config/local.js';
 import { OllamaProvider } from '../agent/providers/ollama.js';
 import { resolveRole } from '../analyze/context/role-router.js';
-import { ollamaNumCtx } from '../analyze/context/shaper-provider.js';
+import { ollamaContextWindow } from '../analyze/context/shaper-provider.js';
 import {
 	validateModelCatalog,
 	type CliFamilyId,
@@ -99,7 +99,7 @@ export function projectDefinitions(
 	installed: readonly string[] | undefined,
 ): ModelDefinitionsResult {
 	const families = registry.families().map((f): FamilyDefinitionEntry => {
-		const cli = f.id !== 'ollama';
+		const cli = f.cliKind !== undefined;
 		const models = registry.models(f.id).map((m): ModelDefinitionEntry => ({
 			id:      m.id,
 			aliases: m.aliases ?? [],
@@ -206,6 +206,6 @@ export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT
 		...(r.fallback !== undefined ? { fallback: r.fallback } : {}),
 		...(kind !== undefined
 			? { cli: { kind } }
-			: { ollama: { host: loadLocalProviderConfig().host, numCtx: ollamaNumCtx(registry, model), numPredict: cfg.shaper.ollamaNumPredict } }),
+			: { ollama: { host: loadLocalProviderConfig().host, numCtx: ollamaContextWindow(registry, model), numPredict: cfg.shaper.ollamaNumPredict } }),
 	};
 }

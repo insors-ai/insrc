@@ -35,7 +35,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
 import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
-import type { EffortLevel, FamilyId } from '../../daemon/model-catalog.js';
+import type { CliFamilyId, EffortLevel, FamilyId } from '../../daemon/model-catalog.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
@@ -199,7 +199,7 @@ function isFamily(registry: ModelRegistry, v: unknown): v is AnalyzeShaperProvid
 
 /** An Ollama model's context window: its token inputLimit, else the tool-loop
  *  model's (a model the definitions do not list). */
-export function ollamaNumCtx(registry: ModelRegistry, model: ResolvedModel | undefined): number {
+export function ollamaContextWindow(registry: ModelRegistry, model: ResolvedModel | undefined): number {
 	const limit = model?.inputLimit ?? registry.toolLoopModel().inputLimit;
 	return limit?.max ?? 0;
 }
@@ -234,7 +234,7 @@ export function familyProvider(
 		});
 	}
 	const local = loadLocalProviderConfig();
-	return new OllamaProvider(model?.id ?? opts.requested ?? registry.toolLoopModel().id, local.host, ollamaNumCtx(registry, model));
+	return new OllamaProvider(model?.id ?? opts.requested ?? registry.toolLoopModel().id, local.host, ollamaContextWindow(registry, model));
 }
 
 /**
@@ -298,7 +298,7 @@ export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<Sha
 		// Pin the cheap tier's model; one that is not a model of this family (a
 		// config left half-edited, e.g. a CLI runner with an Ollama model) gives
 		// way to the family's summariser model, never the CLI's own default.
-		const model = found ?? registry.summariserModel(family as Exclude<FamilyId, 'ollama'>);
+		const model = found ?? registry.summariserModel(family as CliFamilyId);
 		if (found === undefined) log.warn({ family, configured: cfg.summariserModel, model: model.id }, "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model");
 		log.info({ family, model: model.id }, 'summariser provider: routing through CliProvider');
 		return familyProvider(registry, family, model, { effort: cfg.summariserEffort });

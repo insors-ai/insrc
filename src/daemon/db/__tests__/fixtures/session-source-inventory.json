@@ -11051,6 +11051,18 @@
       "sites": [
         [
           "serialization",
+          "hash.toString"
+        ],
+        [
+          "serialization",
+          "hash.toString"
+        ],
+        [
+          "serialization",
+          "hash.toString"
+        ],
+        [
+          "serialization",
           "randomBytes(32).toString"
         ],
         [
@@ -11075,6 +11087,30 @@
         ],
         [
           "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#context"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
+          "this.#control"
+        ],
+        [
+          "connection-use",
           "this.#control"
         ],
         [
@@ -11143,11 +11179,39 @@
         ],
         [
           "connection-use",
+          "this.#ports.createOverlay"
+        ],
+        [
+          "connection-use",
           "this.#result"
         ],
         [
           "connection-use",
           "this.#result"
+        ],
+        [
+          "connection-use",
+          "this.#revokeData"
+        ],
+        [
+          "connection-use",
+          "this.#revokeData"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
+        ],
+        [
+          "connection-use",
+          "this.#session"
         ],
         [
           "connection-use",
@@ -11167,6 +11231,22 @@
         ],
         [
           "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
+          "this.dataBinding"
+        ],
+        [
+          "connection-use",
           "this.sweepExpired"
         ],
         [
@@ -11178,9 +11258,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "53a21b7b8e34af2b76d2ac30903f2ca8a801e1f961e286267e0c8e6242e2a847",
-      "sourceDigest": "881692d60378567ef8908e5d87a935c263d6fddd2111debd17c627145821e942",
+      "siteCount": 52,
+      "sitesDigest": "123664ddd0ab344e03ddd938321622f6e9460cb5082b562233aa9e4545c68b39",
+      "sourceDigest": "7adb1516909bc71250efaf250412457c888c7cdf02a9ed76e21b327f799682c7",
       "boundaries": [
         "connection-use",
         "serialization"
@@ -28934,7 +29014,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d7257b8bbda3a7731bafaa9c6ac9ce22972da63122247d4476d5432999535c5a",
-      "sourceDigest": "97c4ffa30c70b5421002240949751e86d64199d6e37bece1b2048bd1d91c2f53",
+      "sourceDigest": "e1eefe790a9011a528b0e0e6076ab0e413b842abb3c080f42ba57ac0a92d5da3",
       "boundaries": [
         "acquisition:symbol:ConnectionResolver"
       ]

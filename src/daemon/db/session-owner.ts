@@ -2,19 +2,37 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import type { TrustedRpcContext } from '../request-context.js';
-import type { OpenConnectionSessionResult, SessionResume } from '../../shared/connection-management.js';
+import type { OpenConnectionSessionResult, SessionResume, SessionDataAttach, ConnectionSessionAudience, ConnectionAccessContext } from '../../shared/connection-management.js';
 import { ManagementServiceError } from './management.js';
 import { registeredConnectionRoot } from './management-root.js';
 
 export const CONNECTION_SESSION_HEARTBEAT_MS = 30_000;
 export const CONNECTION_SESSION_LEASE_MS = 90_000;
 export const MAX_CONNECTION_SESSIONS = 64;
+export const MAX_SESSION_DATA_DELEGATIONS = 32;
+
+interface DataDelegation {
+	readonly digest: Buffer;
+	readonly root: string;
+	readonly generation: number;
+	readonly audience: ConnectionSessionAudience;
+	readonly attachments: Map<string, AbortController>;
+}
+interface DataAttachment<Overlay> { readonly session: Session<Overlay>; readonly delegation: DataDelegation; readonly controller: AbortController }
+export interface SessionDataBinding {
+	readonly access: ConnectionAccessContext;
+	readonly audience: ConnectionSessionAudience;
+	readonly controlGeneration: number;
+	readonly signal: AbortSignal;
+}
 
 interface Session<Overlay> {
+	phase: 'active' | 'closing';
 	readonly handle: string;
 	readonly capabilityDigest: Buffer;
 	readonly signingKey: Buffer;
 	readonly overlays: Map<string, Overlay>;
+	readonly delegations: Map<string, DataDelegation>;
 	deadline: number;
 	generation: number;
 	controlIdentity: string | undefined;
@@ -28,6 +46,7 @@ export interface SessionOwnerPorts<Overlay> {
 }
 const token = (): string => randomBytes(32).toString('base64url');
 const digest = (capability: string): Buffer => createHash('sha256').update('connection-session:control\0').update(capability).digest();
+const dataDigest = (capability: string): Buffer => createHash('sha256').update('connection-session:data\0').update(capability).digest();
 const expired = (): ManagementServiceError => new ManagementServiceError('session-expired');
 
 /** One instance per daemon epoch. Private maps are never serialized or recovered.
@@ -37,6 +56,10 @@ const expired = (): ManagementServiceError => new ManagementServiceError('sessio
 export class ConnectionSessionOwner<Overlay> {
 	readonly #sessions = new Map<string, Session<Overlay>>();
 	readonly #controls = new Map<string, { handle: string; generation: number }>();
+	readonly #data = new Map<string, DataAttachment<Overlay>>();
+	/** Transport role stays sticky after revocation until the socket disconnects. */
+	readonly #dataTransports = new Map<string, { handle: string; root: string; audience: ConnectionSessionAudience }>();
+	readonly #controlTransports = new Set<string>();
 	readonly #ports: SessionOwnerPorts<Overlay>;
 	readonly #timer: ReturnType<typeof setInterval>;
 	#lastNow = -Infinity;
@@ -61,7 +84,7 @@ export class ConnectionSessionOwner<Overlay> {
 	}
 	#session(handle: string): Session<Overlay> {
 		const session = this.#sessions.get(handle);
-		if (!session) throw expired();
+		if (!session || session.phase !== 'active') throw expired();
 		if (this.#now() >= session.deadline) { this.#expire(session); throw expired(); }
 		return session;
 	}
@@ -74,12 +97,28 @@ export class ConnectionSessionOwner<Overlay> {
 		return session;
 	}
 	#expire(session: Session<Overlay>): void {
+		session.phase = 'closing';
 		this.#sessions.delete(session.handle);
 		if (session.controlIdentity) this.#controls.delete(session.controlIdentity);
 		session.controlIdentity = undefined;
 		session.capabilityDigest.fill(0);
 		session.signingKey.fill(0);
+		this.#revokeData(session);
 		session.overlays.clear();
+	}
+	#revokeData(session: Session<Overlay>): void {
+		const controllers: AbortController[] = [];
+		for (const delegation of session.delegations.values()) {
+			for (const [identity, controller] of delegation.attachments) {
+				this.#data.delete(identity);
+				controllers.push(controller);
+			}
+			delegation.attachments.clear();
+			delegation.digest.fill(0);
+		}
+		session.delegations.clear();
+		// Invalidate every attachment before notifying synchronous abort listeners.
+		for (const controller of controllers) controller.abort();
 	}
 	sweepExpired(): void {
 		if (this.#closed) return;
@@ -92,13 +131,15 @@ export class ConnectionSessionOwner<Overlay> {
 	}
 	async open(context: TrustedRpcContext, repoRoot: string): Promise<OpenConnectionSessionResult> {
 		this.#context(context);
+		if (this.#dataTransports.has(context.connectionIdentity)) throw expired();
 		const root = await registeredConnectionRoot(repoRoot, this.#ports.isRegistered);
 		this.#context(context);
+		if (this.#dataTransports.has(context.connectionIdentity)) throw expired();
 		this.sweepExpired();
 		if (this.#controls.has(context.connectionIdentity) || this.#sessions.size >= MAX_CONNECTION_SESSIONS) throw new ManagementServiceError('busy');
 		const handle = token(), capability = token();
-		const session: Session<Overlay> = { handle, capabilityDigest: digest(capability), signingKey: randomBytes(32),
-			deadline: this.#now() + CONNECTION_SESSION_LEASE_MS, generation: 1, controlIdentity: context.connectionIdentity, overlays: new Map() };
+		const session: Session<Overlay> = { phase: 'active', handle, capabilityDigest: digest(capability), signingKey: randomBytes(32),
+			deadline: this.#now() + CONNECTION_SESSION_LEASE_MS, generation: 1, controlIdentity: context.connectionIdentity, overlays: new Map(), delegations: new Map() };
 		try {
 			session.overlays.set(root, this.#ports.createOverlay(root, handle));
 			this.#context(context);
@@ -109,10 +150,12 @@ export class ConnectionSessionOwner<Overlay> {
 		}
 		this.#sessions.set(handle, session);
 		this.#controls.set(context.connectionIdentity, { handle, generation: session.generation });
+		this.#controlTransports.add(context.connectionIdentity);
 		return this.#result(session, capability);
 	}
 	resume(context: TrustedRpcContext, request: SessionResume): OpenConnectionSessionResult {
 		this.#context(context);
+		if (this.#dataTransports.has(context.connectionIdentity)) throw expired();
 		if (!request || request.daemonEpoch !== this.#ports.daemonEpoch || typeof request.sessionHandle !== 'string'
 			|| typeof request.capability !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(request.sessionHandle)
 			|| !/^[A-Za-z0-9_-]{43}$/.test(request.capability)) throw expired();
@@ -123,10 +166,75 @@ export class ConnectionSessionOwner<Overlay> {
 		if (occupied && occupied.handle !== session.handle) throw new ManagementServiceError('busy');
 		if (session.controlIdentity) this.#controls.delete(session.controlIdentity);
 		session.generation++;
+		const generation = session.generation;
 		session.controlIdentity = context.connectionIdentity;
 		this.#controls.set(context.connectionIdentity, { handle: session.handle, generation: session.generation });
+		this.#controlTransports.add(context.connectionIdentity);
+		this.#revokeData(session);
+		if (this.#control(context) !== session || session.generation !== generation) throw expired();
 		// Resume preserves the deadline. Only a current-control heartbeat renews it.
 		return this.#result(session, request.capability);
+	}
+	async delegate(context: TrustedRpcContext, repoRoot: string, audience: ConnectionSessionAudience): Promise<SessionResume> {
+		const session = this.#control(context), generation = session.generation;
+		if (audience !== 'workbench-ui' && audience !== 'mcp-unverified') throw new ManagementServiceError('invalid-input');
+		const root = await registeredConnectionRoot(repoRoot, this.#ports.isRegistered);
+		if (this.#control(context) !== session || session.generation !== generation) throw expired();
+		if (session.delegations.size >= MAX_SESSION_DATA_DELEGATIONS) throw new ManagementServiceError('busy');
+		const capability = token(), hash = dataDigest(capability);
+		session.delegations.set(hash.toString('hex'), { digest: hash, root, generation, audience, attachments: new Map() });
+		return Object.freeze({ sessionHandle: session.handle, capability, daemonEpoch: this.#ports.daemonEpoch });
+	}
+	async attach(context: TrustedRpcContext, request: SessionDataAttach): Promise<SessionDataBinding> {
+		this.#context(context);
+		if (!request || request.daemonEpoch !== this.#ports.daemonEpoch || typeof request.sessionHandle !== 'string'
+			|| typeof request.capability !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(request.capability)) throw expired();
+		const session = this.#session(request.sessionHandle), hash = dataDigest(request.capability);
+		const delegation = session.delegations.get(hash.toString('hex'));
+		if (!delegation || !timingSafeEqual(hash, delegation.digest) || request.repoRoot !== delegation.root
+			|| delegation.generation !== session.generation || this.#controlTransports.has(context.connectionIdentity)) throw expired();
+		const role = this.#dataTransports.get(context.connectionIdentity);
+		if (role && (role.handle !== session.handle || role.root !== delegation.root || role.audience !== delegation.audience)) throw expired();
+		await registeredConnectionRoot(request.repoRoot, this.#ports.isRegistered);
+		this.#context(context);
+		if (this.#session(session.handle) !== session || session.generation !== delegation.generation
+			|| session.delegations.get(hash.toString('hex')) !== delegation || this.#controlTransports.has(context.connectionIdentity)) throw expired();
+		const currentRole = this.#dataTransports.get(context.connectionIdentity);
+		if (currentRole && (currentRole.handle !== session.handle || currentRole.root !== delegation.root || currentRole.audience !== delegation.audience)) throw expired();
+		const existing = this.#data.get(context.connectionIdentity);
+		if (existing && (existing.session !== session || existing.delegation !== delegation)) throw expired();
+		if (!existing) {
+			const controller = new AbortController();
+			delegation.attachments.set(context.connectionIdentity, controller);
+			this.#data.set(context.connectionIdentity, { session, delegation, controller });
+			this.#dataTransports.set(context.connectionIdentity, { handle: session.handle, root: delegation.root, audience: delegation.audience });
+		}
+		return this.dataBinding(context, request.repoRoot);
+	}
+	dataBinding(context: TrustedRpcContext, repoRoot: string): SessionDataBinding {
+		this.#context(context);
+		const attached = this.#data.get(context.connectionIdentity);
+		if (!attached || this.#session(attached.session.handle) !== attached.session
+			|| attached.delegation.generation !== attached.session.generation || attached.delegation.root !== repoRoot
+			|| attached.controller.signal.aborted) throw expired();
+		return Object.freeze({ access: Object.freeze({ lookupRoot: repoRoot, managementRepoRoot: repoRoot,
+			 daemonEpoch: this.#ports.daemonEpoch, sessionHandle: attached.session.handle }), audience: attached.delegation.audience,
+			controlGeneration: attached.session.generation, signal: attached.controller.signal });
+	}
+	async dataOverlay(context: TrustedRpcContext, repoRoot: string): Promise<Overlay> {
+		const binding = this.dataBinding(context, repoRoot);
+		if (binding.audience !== 'workbench-ui') throw new ManagementServiceError('upgrade-required');
+		const session = this.#session(binding.access.sessionHandle!);
+		const root = await registeredConnectionRoot(repoRoot, this.#ports.isRegistered);
+		const current = this.dataBinding(context, root);
+		if (current.signal !== binding.signal || current.controlGeneration !== binding.controlGeneration) throw expired();
+		if (!session.overlays.has(root)) {
+			let overlay: Overlay;
+			try { overlay = this.#ports.createOverlay(root, session.handle); } catch { throw expired(); }
+			if (this.dataBinding(context, root).signal !== binding.signal) throw expired();
+			session.overlays.set(root, overlay);
+		}
+		return session.overlays.get(root)!;
 	}
 	heartbeat(context: TrustedRpcContext): { readonly status: 'active'; readonly leaseMs: 90000 } {
 		const session = this.#control(context);
@@ -149,6 +257,15 @@ export class ConnectionSessionOwner<Overlay> {
 	}
 	end(context: TrustedRpcContext): void { this.#expire(this.#control(context)); }
 	disconnect(context: TrustedRpcContext): void {
+		if (context.daemonEpoch !== this.#ports.daemonEpoch) return;
+		this.#dataTransports.delete(context.connectionIdentity);
+		this.#controlTransports.delete(context.connectionIdentity);
+		const data = this.#data.get(context.connectionIdentity);
+		if (data && context.daemonEpoch === this.#ports.daemonEpoch) {
+			this.#data.delete(context.connectionIdentity);
+			data.delegation.attachments.delete(context.connectionIdentity);
+			data.controller.abort();
+		}
 		const attachment = this.#controls.get(context.connectionIdentity);
 		if (!attachment || context.daemonEpoch !== this.#ports.daemonEpoch) return;
 		this.#controls.delete(context.connectionIdentity);
@@ -159,5 +276,6 @@ export class ConnectionSessionOwner<Overlay> {
 		clearInterval(this.#timer);
 		this.#closed = true;
 		for (const session of this.#sessions.values()) this.#expire(session);
+		this.#dataTransports.clear(); this.#controlTransports.clear();
 	}
 }

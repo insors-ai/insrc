@@ -8,7 +8,7 @@ import { createConnection } from 'node:net';
 import { ConnectionSessionOwner } from '../session-owner.js';
 import { ManagementServiceError, managementRejection } from '../management.js';
 import type { TrustedRpcContext } from '../../request-context.js';
-import type { OpenConnectionSessionResult, SessionResume } from '../../../shared/connection-management.js';
+import type { OpenConnectionSessionResult, SessionResume, SessionDataAttach, ConnectionSessionAudience } from '../../../shared/connection-management.js';
 import { IpcServer, directDispatch } from '../../server.js';
 import type { RpcHandler } from '../../server.js';
 
@@ -210,5 +210,155 @@ test('CM-S3-RECONNECT: real sockets preserve overlay data across roots and contr
 	} finally {
 		await a?.close(); await b?.close(); await server.close(); owner?.close();
 		rmSync(f.directory, { recursive: true, force: true });
+	}
+});
+
+test('CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences', async () => {
+	const f = fixture(); let checks = 0;
+	const owner = new ConnectionSessionOwner({ daemonEpoch: 'epoch', isRegistered: async root => { checks++; return f.registered.has(root); },
+		createOverlay: () => new Map<string, string>() });
+	try {
+		const control = context('control'), data = context('data'), mcp = context('mcp');
+		const opened = await owner.open(control, f.a);
+		const ui = await owner.delegate(control, f.a, 'workbench-ui');
+		await assert.rejects(() => owner.attach(data, { ...opened, repoRoot: f.a }), code('session-expired'));
+		const before = checks;
+		await assert.rejects(() => owner.attach(data, { ...ui, repoRoot: f.b }), code('session-expired'));
+		assert.equal(checks, before, 'wrong-root token must fail before target access');
+		const binding = await owner.attach(data, { ...ui, repoRoot: f.a });
+		assert.equal(binding.audience, 'workbench-ui');
+		assert.equal(await owner.dataOverlay(data, f.a), await owner.overlay(control, f.a));
+		assert.throws(() => owner.heartbeat(data), code('session-expired'));
+		assert.throws(() => owner.end(data), code('session-expired'));
+		assert.throws(() => owner.resume(data, ui), code('session-expired'));
+		assert.throws(() => owner.resume(context('fresh'), ui), code('session-expired'));
+		assert.throws(() => owner.resume(data, opened), code('session-expired'), 'an attached data transport cannot become control');
+		await assert.rejects(() => owner.delegate(data, f.a, 'workbench-ui'), code('session-expired'));
+		await assert.rejects(() => owner.attach(control, { ...ui, repoRoot: f.a }), code('session-expired'));
+		const restricted = await owner.delegate(control, f.a, 'mcp-unverified');
+		const restrictedBinding = await owner.attach(mcp, { ...restricted, repoRoot: f.a, audience: 'workbench-ui' } as SessionDataAttach);
+		assert.equal(restrictedBinding.audience, 'mcp-unverified');
+		const beforeData = checks;
+		await assert.rejects(() => owner.dataOverlay(mcp, f.a), code('upgrade-required'));
+		assert.equal(checks, beforeData, 'restricted reasoning cannot touch a data target');
+	} finally { owner.close(); rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal', async () => {
+	const f = fixture(); const owner = new ConnectionSessionOwner({ daemonEpoch: 'epoch',
+		isRegistered: async root => f.registered.has(root), createOverlay: () => new Map() });
+	try {
+		const control = context('control'), next = context('next'), a = context('a'), b = context('b'), c = context('c');
+		const opened = await owner.open(control, f.a), delegated = await owner.delegate(control, f.a, 'workbench-ui');
+		const first = await owner.attach(a, { ...delegated, repoRoot: f.a });
+		const second = await owner.attach(b, { ...delegated, repoRoot: f.a });
+		assert.notEqual(first.signal, second.signal);
+		owner.disconnect(a); assert.equal(first.signal.aborted, true); assert.equal(second.signal.aborted, false);
+		const third = await owner.attach(c, { ...delegated, repoRoot: f.a });
+		for (let i = 1; i < 32; i++) await owner.delegate(control, f.a, 'mcp-unverified');
+		await assert.rejects(() => owner.delegate(control, f.a, 'workbench-ui'), code('busy'));
+		owner.resume(next, opened);
+		assert.equal(second.signal.aborted, true); assert.equal(third.signal.aborted, true);
+		await assert.rejects(() => owner.open(b, f.a), code('session-expired'), 'a revoked data socket must not become a control bootstrap');
+		assert.throws(() => owner.resume(b, opened), code('session-expired'));
+		assert.throws(() => owner.dataBinding(b, f.a), code('session-expired'));
+		await assert.rejects(() => owner.attach(context('old-token'), { ...delegated, repoRoot: f.a }), code('session-expired'));
+		const refreshed = await owner.delegate(next, f.a, 'workbench-ui');
+		const fresh = await owner.attach(b, { ...refreshed, repoRoot: f.a });
+		assert.equal(fresh.signal.aborted, false);
+		owner.end(next); assert.equal(fresh.signal.aborted, true); assert.equal(owner.size, 0);
+	} finally { owner.close(); rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers', async () => {
+	const f = fixture(); const owner = new ConnectionSessionOwner({ daemonEpoch: 'epoch',
+		isRegistered: async root => f.registered.has(root), createOverlay: () => new Map() });
+	try {
+		const old = context('old'), next = context('next'), a = context('a'), b = context('b');
+		const opened = await owner.open(old, f.a), delegated = await owner.delegate(old, f.a, 'workbench-ui');
+		const first = await owner.attach(a, { ...delegated, repoRoot: f.a });
+		await owner.attach(b, { ...delegated, repoRoot: f.a });
+		const observed: string[] = [];
+		first.signal.addEventListener('abort', () => {
+			for (const act of [() => owner.heartbeat(old), () => owner.dataBinding(b, f.a)]) {
+				try { act(); observed.push('unexpected-authority'); } catch (error) { observed.push((error as ManagementServiceError).code); }
+			}
+		}, { once: true });
+		owner.resume(next, opened); assert.deepEqual(observed, ['session-expired', 'session-expired']);
+		const refreshed = await owner.delegate(next, f.a, 'workbench-ui');
+		const binding = await owner.attach(a, { ...refreshed, repoRoot: f.a });
+		binding.signal.addEventListener('abort', () => {
+			try { owner.heartbeat(next); observed.push('unexpected-authority'); } catch (error) { observed.push((error as ManagementServiceError).code); }
+		}, { once: true });
+		owner.end(next); assert.equal(observed.at(-1), 'session-expired');
+	} finally { owner.close(); rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change', async () => {
+	const f = fixture(); let pause = false, entered!: () => void, decide!: (value: boolean) => void;
+	const entering = new Promise<void>(resolve => { entered = resolve; }), decision = new Promise<boolean>(resolve => { decide = resolve; });
+	const owner = new ConnectionSessionOwner({ daemonEpoch: 'epoch', isRegistered: async root => {
+		if (pause) { entered(); return decision; } return f.registered.has(root);
+	}, createOverlay: () => new Map() });
+	try {
+		const old = context('old'), next = context('next'), data = context('data');
+		const opened = await owner.open(old, f.a), delegated = await owner.delegate(old, f.a, 'workbench-ui');
+		pause = true; const pending = owner.attach(data, { ...delegated, repoRoot: f.a }); await entering;
+		owner.resume(next, opened); decide(true);
+		await assert.rejects(pending, code('session-expired'));
+		assert.throws(() => owner.dataBinding(data, f.a), code('session-expired'));
+	} finally { owner.close(); rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience', async () => {
+	const f = fixture(), path = join(f.directory, 'data.sock');
+	let owner: ConnectionSessionOwner<Map<string, string>> | undefined;
+	const ownerFor = (context: TrustedRpcContext) => owner ??= new ConnectionSessionOwner({ daemonEpoch: context.daemonEpoch,
+		isRegistered: async root => f.registered.has(root), createOverlay: () => new Map([['row', 'private-row']]) });
+	const route = (run: (params: unknown, context: TrustedRpcContext) => unknown | Promise<unknown>): RpcHandler => async (params, context) => {
+		try { assert.ok(context); return await run(params, context); } catch (error) { return managementRejection(error); }
+	};
+	const server = new IpcServer(directDispatch({
+		'fixture.open': route((params, context) => ownerFor(context).open(context, (params as { repoRoot: string }).repoRoot)),
+		'fixture.resume': route((params, context) => ownerFor(context).resume(context, params as SessionResume)),
+		'fixture.delegate': route((params, context) => {
+			const { repoRoot, audience } = params as { repoRoot: string; audience: ConnectionSessionAudience };
+			return ownerFor(context).delegate(context, repoRoot, audience);
+		}),
+		'fixture.attach': route(async (params, context) => {
+			const binding = await ownerFor(context).attach(context, params as SessionDataAttach);
+			return { audience: binding.audience, generation: binding.controlGeneration };
+		}),
+		'fixture.heartbeat': route((_params, context) => ownerFor(context).heartbeat(context)),
+		'fixture.end': route((_params, context) => { ownerFor(context).end(context); return { ended: true }; }),
+		'fixture.peek': route(async (params, context) => ({ matches: (await ownerFor(context).dataOverlay(context, (params as { repoRoot: string }).repoRoot)).get('row') === 'private-row' })),
+	}), Date.now, path);
+	const peers: Awaited<ReturnType<typeof client>>[] = [];
+	try {
+		await server.listen();
+		const control = await client(path); peers.push(control);
+		const data = await client(path); peers.push(data);
+		const mcp = await client(path); peers.push(mcp);
+		const next = await client(path); peers.push(next);
+		const opened = await control.call<OpenConnectionSessionResult>('fixture.open', { repoRoot: f.a });
+		const delegated = await control.call<SessionResume>('fixture.delegate', { repoRoot: f.a, audience: 'workbench-ui' });
+		assert.equal((await data.call<{ code: string }>('fixture.resume', delegated)).code, 'session-expired');
+		assert.equal((await data.call<{ code: string }>('fixture.attach', { ...opened, repoRoot: f.a })).code, 'session-expired');
+		assert.deepEqual(await data.call('fixture.attach', { ...delegated, repoRoot: f.a }), { audience: 'workbench-ui', generation: 1 });
+		for (const [method, params] of [['fixture.open', { repoRoot: f.a }], ['fixture.heartbeat', {}], ['fixture.end', {}], ['fixture.resume', opened],
+			['fixture.delegate', { repoRoot: f.a, audience: 'workbench-ui' }]] as const) {
+			assert.equal((await data.call<{ code: string }>(method, params)).code, 'session-expired');
+		}
+		assert.deepEqual(await data.call('fixture.peek', { repoRoot: f.a }), { matches: true });
+		const restricted = await control.call<SessionResume>('fixture.delegate', { repoRoot: f.a, audience: 'mcp-unverified' });
+		assert.deepEqual(await mcp.call('fixture.attach', { ...restricted, repoRoot: f.a, audience: 'workbench-ui', client: 'workbench-ui' }),
+			{ audience: 'mcp-unverified', generation: 1 });
+		assert.equal((await mcp.call<{ code: string }>('fixture.peek', { repoRoot: f.a })).code, 'upgrade-required');
+		await next.call('fixture.resume', opened);
+		assert.equal((await data.call<{ code: string }>('fixture.peek', { repoRoot: f.a })).code, 'session-expired');
+		assert.equal((await mcp.call<{ code: string }>('fixture.peek', { repoRoot: f.a })).code, 'session-expired');
+	} finally {
+		for (const peer of peers) await peer.close();
+		await server.close(); owner?.close(); rmSync(f.directory, { recursive: true, force: true });
 	}
 });

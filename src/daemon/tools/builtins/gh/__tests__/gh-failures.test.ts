@@ -52,10 +52,12 @@ test('gh-failures.test.ts: a signal-only termination is rejected for a read and 
 	assert.ok(ghFailureOf(outcome({ stdoutTruncated: true }), { mutating: true })?.message.includes(GH_UNKNOWN_OUTCOME));
 	assert.ok(ghFailureOf(outcome({ code: 1, stderr: 'dial tcp: lookup api.github.com: no such host' }), { mutating: true })?.message.includes(GH_UNKNOWN_OUTCOME));
 	assert.ok(!ghFailureOf(outcome({ stdoutTruncated: true }), { mutating: false })?.message.includes(GH_UNKNOWN_OUTCOME));
-	// a plain non-zero exit carries gh's own text and no claim about state, mutating or not
+	// a plain non-zero exit keeps gh's own text; a mutating call adds the sentence, a read does not
 	const plain = ghFailureOf(outcome({ code: 1, stderr: 'label already exists\n' }), { mutating: true });
 	assert.equal(plain?.kind, 'rejected');
-	assert.equal(plain?.message, 'label already exists');
+	assert.equal(plain?.message, `label already exists; ${GH_UNKNOWN_OUTCOME}`);
+	assert.equal(ghFailureOf(outcome({ code: 1, stderr: 'label already exists\n' }), { mutating: false })?.message, 'label already exists');
+	assert.ok(ghFailureOf(outcome({ code: 4, stderr: 'gh auth login' }), { mutating: true })?.message.includes(GH_UNKNOWN_OUTCOME));
 });
 
 test('gh-failures.test.ts: spawn error, authentication text, probe-only authentication text, ambiguous failure with a clean probe and network text map to missing-tool, missing-signin, missing-signin, rejected and unreachable', () => {

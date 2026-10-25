@@ -172,8 +172,9 @@ export const GH_UNKNOWN_OUTCOME = 'the outcome is unknown; check the current sta
  * The failure of one outcome, or undefined when it ran clean. One precedence, whatever other flags are set:
  * spawn error, time-out, abort, signal, stdin write error, stderr overflow, an unmarked cut capture, then a
  * non-zero exit. For a mutating call every row after the spawn error happens after execution began, so the
- * message adds the unknown-outcome sentence, as does a mutating call whose network failed or whose output was cut;
- * a plain non-zero exit or a sign-in failure makes no claim about state.
+ * message adds the unknown-outcome sentence, and so does every later failure of a mutating call (a cut capture, a
+ * network failure, a sign-in failure, a plain non-zero exit): gh's own text is kept, and no message says that
+ * nothing changed or that a value was not set.
  */
 export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFailure | undefined {
   const unknown = (msg: string): string => opts.mutating ? `${msg}; ${GH_UNKNOWN_OUTCOME}` : msg;
@@ -200,12 +201,12 @@ export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFail
   const msg = o.stderr.trim() || o.stdout.trim() || `exit ${o.code}`;
   const original = probeText.length > 0 ? probeText : undefined;
   if (GH_AUTH_RE.test(text) || (o.probe !== undefined && o.probe.code !== 0 && GH_AUTH_RE.test(probeText))) {
-    return { kind: 'missing-signin', message: msg, ...(original !== undefined ? { original } : {}) };
+    return { kind: 'missing-signin', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
   }
   if (GH_NETWORK_RE.test(text) || GH_NETWORK_RE.test(probeText)) {
     return { kind: 'unreachable', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
   }
-  return { kind: 'rejected', message: msg, ...(original !== undefined ? { original } : {}) };
+  return { kind: 'rejected', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
 }
 
 /**

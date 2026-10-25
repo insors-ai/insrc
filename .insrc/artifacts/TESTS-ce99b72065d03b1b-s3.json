@@ -4,7 +4,7 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T21:04:58.907Z",
+    "updatedAt": "2026-10-25T21:21:13.723Z",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
     "epicSlug": "per-family-model-definitions-served-daemon"
   },
@@ -1133,6 +1133,177 @@
               },
               {
                 "title": "attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "80f0c1f18",
+        "ranAt": "2026-10-25T21:21:13.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/config-write-models.test.ts",
+                "title": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/config-write-models.test.ts",
+                "title": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-resolve-role.test.ts",
+                "title": "models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "method-class and handler-runtime suites pass with models.resolveRole registered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-source-inventory suite passes after t7",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/config-write-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1052,
+            "titles": [
+              {
+                "title": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 692,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/models-resolve-role.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10944,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1069,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
                 "result": "pass"
               }
             ],

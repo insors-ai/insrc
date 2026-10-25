@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -270,3 +270,50 @@ Run at 2026-10-25T21:04:58.907Z on commit `6abec29e1`. Tests check: **passed**. 
 | `src/daemon/__tests__/list-models.test.ts` | 0 | 8 | 0.7 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.9 s |  |
 | `src/workflow/__tests__/attribution.test.ts` | 0 | 12 | 0.5 s |  |
+
+## t7
+
+Run at 2026-10-25T21:21:13.723Z on commit `80f0c1f18`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias | `src/daemon/__tests__/config-write-models.test.ts` |
+
+**unit: config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes | `src/daemon/__tests__/config-write-models.test.ts` |
+
+**unit: models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | models-resolve-role.test.ts: CLI and Ollama tiers match the router and provider settings; fallback reported for unlisted and rejected models; bad params refused; family, cli/ollama and inputLimit projected | `src/daemon/__tests__/models-resolve-role.test.ts` |
+
+**unit: method-class and handler-runtime suites pass with models.resolveRole registered**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique | `src/daemon/threads/__tests__/method-class.test.ts` |
+| pass | coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry | `src/daemon/threads/__tests__/method-class.test.ts` |
+| pass | the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets | `src/daemon/__tests__/handler-runtime.test.ts` |
+
+**unit: session-source-inventory suite passes after t7**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/config-write-models.test.ts` | 0 | 2 | 1.1 s |  |
+| `src/daemon/__tests__/handler-runtime.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/daemon/__tests__/models-resolve-role.test.ts` | 0 | 1 | 0.5 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.9 s |  |
+| `src/daemon/threads/__tests__/method-class.test.ts` | 0 | 3 | 1.1 s |  |

@@ -1,7 +1,7 @@
 /** Immutable resource diagnostics and daemon-only temporary construction authority. */
 import { getLogger } from '../../shared/logger.js';
 import type { ConnectionConfig, DriverFactory, DriverFactoryContext } from '../../shared/db-driver.js';
-import type { FileExecutionPolicy } from '../../shared/connection-management.js';
+import type { FileExecutionPolicy, FileExecutionResource } from '../../shared/connection-management.js';
 export class DriverLogPolicyError extends Error {
  readonly code = 'unsupported-temporary';
  constructor() { super('Temporary driver privacy policy is unavailable.'); this.name = 'DriverLogPolicyError'; }
@@ -14,6 +14,7 @@ export interface DriverResourceLog {
 interface Owner { readonly ownerId: string; readonly root: string; readonly assertActive: () => void }
 const owners = new WeakMap<object, Owner>();
 const contexts = new WeakMap<DriverFactoryContext, object>();
+const fileOwners = new WeakMap<DriverFactoryContext, (resource: FileExecutionResource) => void>();
 const configs = new WeakMap<ConnectionConfig, { readonly owner: object; readonly revision: string }>();
 const factories = new WeakSet<DriverFactory>();
 const quiet: DriverResourceLog = Object.freeze({ quiet: true, emit: () => {} });
@@ -22,12 +23,12 @@ const denied = () => new DriverLogPolicyError();
 export function temporaryDriverOwner(ownerId: string, root: string, assertActive: () => void): object {
  const token = Object.freeze({}); owners.set(token, Object.freeze({ ownerId, root, assertActive })); return token;
 }
-export function temporaryDriverContext(owner: object, policy: FileExecutionPolicy): DriverFactoryContext {
+export function temporaryDriverContext(owner: object, policy: FileExecutionPolicy, retainFile?: (resource: FileExecutionResource) => void): DriverFactoryContext {
  const record = owners.get(owner); if (!record) throw denied(); record.assertActive();
  if (policy.persistence !== 'memory-only' || policy.allowSpill !== false || policy.memoryBudgetBytes !== 256 * 1024 * 1024 || policy.identity.ownerId !== record.ownerId || policy.identity.lookupRoot !== record.root) throw denied();
  const context: DriverFactoryContext = { runtimeLogPolicy: 'temporary-quiet', fileExecutionPolicy: Object.freeze({ ...policy, identity: Object.freeze({ ...policy.identity }) }) };
  Object.defineProperty(context, 'toJSON', { value: () => { throw denied(); } });
- contexts.set(context, owner); return Object.freeze(context);
+ contexts.set(context, owner); if (retainFile) fileOwners.set(context, retainFile); return Object.freeze(context);
 }
 function validate(context: DriverFactoryContext): object {
  const owner = contexts.get(context), record = owner && owners.get(owner);
@@ -79,4 +80,10 @@ export function driverResourceLog(module: string, context?: DriverFactoryContext
  return Object.freeze({ quiet: false, emit: (level: Level, format: Parameters<DriverResourceLog['emit']>[1]) => {
   const { fields, message } = format(); getLogger(module)[level](fields ?? {}, message);
  } });
+}
+
+/** Capture before file allocation; the retained callback must accept late cleanup ownership after expiry. */
+export function temporaryFileExecutionOwner(context: DriverFactoryContext | undefined): ((resource: FileExecutionResource) => void) | undefined {
+ if (!hasPolicy(context)) return undefined;
+ validate(context!); const retain = fileOwners.get(context!); if (!retain) throw denied(); return retain;
 }

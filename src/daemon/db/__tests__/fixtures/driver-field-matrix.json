@@ -2359,7 +2359,7 @@
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
     "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",
     "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
-    "src/daemon/db/drivers/duckdb-file.ts": "270460de4510cc89db0fc52159df4861179529e28decc4992e359ccf464e8f44",
+    "src/daemon/db/drivers/duckdb-file.ts": "53e9fc1c0d6b10e195e3f9e0810ae187509e17e33edff1cccdb3d650376a142a",
     "src/daemon/db/drivers/dynamodb.ts": "19e94420eafc49b8a4b5f1b5c3c48d301819b59e848366fb549d9583e99c082a",
     "src/daemon/db/drivers/etcd.ts": "e144c039dffcc036d48eb42bc03db0394fdceb2fca19fe86dc91edcca6f18fbe",
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",

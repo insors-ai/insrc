@@ -103,7 +103,7 @@
     },
     "src/daemon/db/session-resources.ts": {
       "classification": "private-owner-resource",
-      "rationale": "S003 t9/t10: private session/root/revision construction uses branded factory context, retains late SDK cleanup and never acquires a saved pool or credentials."
+      "rationale": "S003 t9/t12: private session/root/revision construction uses branded factory context, retains file engines before driver publication and interrupts/drains them on owner end or late constructor refusal. No saved pool or credential acquisition."
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "private-revision-lease",
@@ -1232,12 +1232,12 @@
     },
     {
       "file": "src/daemon/db/session-resources.ts",
-      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
       "boundary": "driver-port-call"
     },
     {
       "file": "src/daemon/db/session-resources.ts",
-      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }));\n    const driver = await invokeTemporaryFactory(factory, config, context);\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
       "boundary": "driver-port-call"
     },
     {

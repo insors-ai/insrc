@@ -1,4 +1,4 @@
-import { driverResourceLog } from '../driver-log-policy.js';
+import { driverResourceLog, temporaryFileExecutionOwner } from '../driver-log-policy.js';
 /**
  * DuckDB-backed FileDriver -- one implementation for every file kind
  * DuckDB reads natively (csv / tsv / jsonl / ndjson / json / parquet
@@ -607,6 +607,7 @@ function slugifySheetName(name: string): string {
 function makeFactory(kind: DuckDBFileKind) {
 	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		driverResourceLog('db-duckdb-file', context); // Check before source access or native engine allocation.
+		const retainFile = temporaryFileExecutionOwner(context);
 		try {
 			if (config.path === undefined) {
 				throw new Error(`data-driver: ${kind} connection '${config.id}' missing path`);
@@ -637,13 +638,16 @@ function makeFactory(kind: DuckDBFileKind) {
 				? await MemoryFileExecution.open(policy, { nativePaths: isConvertedKind(kind) ? [] : sourcePaths,
 					...((kind === 'arrow' || kind === 'feather') ? { localReaders: ['arrow'] as const } : {}) })
 				: savedFileExecution(policy);
+			retainFile?.(execution); // Owner retains even a late allocation whose constructor authority has expired.
 			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options, context);
 		}
 		catch (error) {
 			if (context?.fileExecutionPolicy?.persistence !== 'memory-only')
 				throw error;
+			const authorityCode = error && typeof error === 'object' ? Object.getOwnPropertyDescriptor(error, 'code')?.value : undefined;
+			if (authorityCode === 'session-expired') throw Object.assign(new Error('Connection session expired.'), { code: 'session-expired' });
 			const message = error instanceof Error ? error.message : '';
-			throw new Error(['resource-limit', 'unsupported-temporary'].includes(message) ? message : 'Temporary file initialization failed');
+			throw Object.assign(new Error(['resource-limit', 'unsupported-temporary'].includes(message) ? message : 'Temporary file initialization failed'), ['resource-limit', 'unsupported-temporary'].includes(message) ? { code: message } : {});
 		}
 	};
 }

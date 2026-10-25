@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import { ghTimeoutMs } from '../helpers.js';
+
+/** What each existing tool had before the table: its own limit, else the 30 s default of ghExec. */
+const TODAY_S: Record<string, number> = {
+	gh_issue_list: 30, gh_issue_view: 30, gh_issue_create: 60, gh_issue_comment: 30, gh_issue_edit: 30, gh_issue_link: 30,
+	gh_issue_close: 30, gh_issue_reopen: 30,
+	gh_pr_list: 30, gh_pr_view: 30, gh_pr_diff: 60, gh_pr_checks: 30, gh_pr_files: 30, gh_pr_create: 90, gh_pr_edit: 30,
+	gh_pr_comment: 30, gh_pr_review: 30, gh_pr_merge: 180, gh_pr_close: 30, gh_pr_ready: 30,
+	gh_repo_view: 30, gh_repo_list: 30, gh_repo_create: 120, gh_repo_fork: 120, gh_repo_delete: 30, gh_repo_clone: 600,
+	gh_release_list: 30, gh_release_view: 30, gh_release_create: 180, gh_release_edit: 30, gh_release_publish: 30, gh_release_delete: 30,
+	gh_run_list: 30, gh_run_view: 60, gh_run_rerun: 30, gh_run_cancel: 30, gh_workflow_list: 30, gh_workflow_run: 60,
+	gh_project_list: 30, gh_project_view: 30, 'gh:project:item-list': 30, 'gh:project:item-add': 30, 'gh:project:item-update': 30,
+	'gh:project:item-archive': 30, 'gh:project:item-delete': 30, 'gh:project:field-list': 30,
+};
+
+test('gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default', () => {
+	assert.equal(ghTimeoutMs({ toolId: 'gh_repo_clone' }), 600_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_pr_merge' }), 180_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_pr_list' }), 30_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool' }), 30_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool', mutating: true }), 60_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_unknown_tool', op: 'zap', mutating: false }), 30_000);
+});
+
+test("gh-timeouts.test.ts: no existing tool's limit is below its limit today", () => {
+	for (const [toolId, seconds] of Object.entries(TODAY_S)) {
+		assert.ok(ghTimeoutMs({ toolId }) >= seconds * 1000, `${toolId} would have ${ghTimeoutMs({ toolId })} ms, had ${seconds * 1000}`);
+	}
+});

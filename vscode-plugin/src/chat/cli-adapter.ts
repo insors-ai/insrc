@@ -18,11 +18,11 @@
  * of it is unit-testable with a fake spawner.
  *
  * Spike-pinned native stream contracts (S002 migration step 1):
- *   claude: `claude -p <prompt> --output-format=stream-json --verbose`
+ *   claude: `claude -p --input-format=stream-json --output-format=stream-json --replay-user-messages --verbose`
  *           (+ `--resume <session_id>`). Emits NDJSON lines:
  *             {type:'system',subtype:'init',session_id} — session id for resume
  *             {type:'assistant',message:{content:[{type:'text'|'tool_use',...}]}}
- *             {type:'result',subtype,is_error,result}   — terminal
+ *             {type:'result',user_message_uuid|user_message_uuids,...} — terminal only for own UUID
  *             {type:'rate_limit_event'|...}             — ignored noise
  *   codex:  `codex exec --json <prompt>` (+ `codex exec resume <id> --json`).
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
@@ -30,6 +30,7 @@
 import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
@@ -173,7 +174,7 @@ export interface SpawnedProcess {
    * compiling and behaving as today (k2); the decision relay guards on its
    * presence before calling. Only review mode uses it; auto mode never does.
    */
-  write?(data: string): void;
+  write?(data: string): void | Promise<void>;
   /** With a session output: the position just after the last line lines() yielded. */
   readonly cursor?: SegmentCursor | undefined;
 }
@@ -236,6 +237,8 @@ const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
 
 /** Mutable per-turn state a mapper may thread across lines (e.g. the captured native session id). */
 interface TurnState {
+  /** Expected native request identity, reconstructed from the durable host turn id. */
+  requestUuid?: string;
   sessionId?: string;
   /**
    * S001 (dev-chat ux polish): tool_use `id` -> the command it ran, remembered so a later
@@ -281,6 +284,8 @@ interface ProviderMapper {
   readonly resume: boolean;
   /** Build the argv for a turn (prompt + optional resume). */
   buildArgs(req: TurnRequest): string[];
+  /** Initial structured user input; absent for providers using argv/stdin prompt text. */
+  formatInput?(req: TurnRequest, requestUuid: string): string;
   /** Map one native line to 0..n TurnEvents. Return [] to ignore (noise). Throw to signal an unparseable line. */
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[];
   /**
@@ -515,10 +520,8 @@ const claudeMapper: ProviderMapper = {
   id: 'claude',
   resume: true,
   buildArgs(req: TurnRequest): string[] {
-    // ISSUE-65cb63f7: the prompt goes LAST, after `--`, so the CLI's option parser
-    // never reads it as a flag (a prompt starting with '-' was rejected as an
-    // unknown option). `-p` is the print-mode switch; the prompt is positional.
-    const args = ['-p', '--output-format=stream-json', '--verbose'];
+    // Structured input supplies stable request correlation and safely carries leading-dash prompts.
+    const args = ['-p', '--input-format=stream-json', '--output-format=stream-json', '--replay-user-messages', '--verbose'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
     // Attachments: the directories the turn may read, before the permission flags. The next
     // flag (or the closing `--`) ends the variadic list. None => today's argv exactly.
@@ -535,9 +538,13 @@ const claudeMapper: ProviderMapper = {
     // S001 (bugfix): the manual/edit-auto grant re-run pre-allows the approved tool so the resumed
     // action proceeds instead of denying again. Space-separated names after --allowedTools.
     if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
-    // `--` also ends the variadic --allowedTools list, so the prompt is never taken for a tool name.
-    args.push('--', req.prompt);
+    // End variadic tool/directory options; the prompt travels only in structured stdin.
+    args.push('--');
     return args;
+  },
+  formatInput(req, requestUuid) {
+    return JSON.stringify({ type: 'user', uuid: requestUuid, session_id: '', parent_tool_use_id: null,
+      message: { role: 'user', content: req.prompt } }) + '\n';
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();
@@ -658,6 +665,12 @@ const claudeMapper: ProviderMapper = {
       return out;
     }
     if (type === 'result') {
+      if (state.requestUuid !== undefined) {
+        const ids = obj['user_message_uuids'];
+        const matched = obj['user_message_uuid'] === state.requestUuid ||
+          (Array.isArray(ids) && ids.every(id => typeof id === 'string') && ids.includes(state.requestUuid));
+        if (!matched) return []; // queued/background result, not this submitted request
+      }
       // Story S004: an is_error result carries the provider's text; keep it on the done event.
       const failed = obj['is_error'] === true;
       const text = failed && typeof obj['result'] === 'string' && (obj['result'] as string).trim() !== '' ? (obj['result'] as string).trim() : undefined;
@@ -889,7 +902,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
   let turnSeq = 0;
 
   async function* run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
-    const turnId = `${mapper.id}-${Date.now()}-${turnSeq++}`;
+    const requestUuid = mapper.formatInput === undefined ? undefined : randomUUID();
+    const turnId = requestUuid === undefined ? `${mapper.id}-${Date.now()}-${turnSeq++}` : `claude-request-${requestUuid}`;
     // Honor the capability: if this provider can't resume, drop the handle and
     // start a fresh session rather than passing an unsupported flag (never throw).
     let effectiveReq = req;
@@ -949,7 +963,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       };
       proc.exit.then(close, () => close({ code: null, signal: null }));
     }
-    const state: TurnState = {};
+    const state: TurnState = requestUuid === undefined ? {} : { requestUuid };
     let sawError = false;
     let sawDone = false;
     // Set BEFORE a terminal event is yielded, so a consumer that returns at it (the panel)
@@ -972,6 +986,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         terminal = true;
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
+      }
+      if (mapper.formatInput !== undefined && requestUuid !== undefined) {
+        if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
+        await proc.write(mapper.formatInput(effectiveReq, requestUuid));
       }
       opts?.onSpawn?.({
         pid: proc.pid,
@@ -1009,6 +1027,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             // blocks on a full pipe; nothing after the terminal event is yielded.
             void drain(stdout);
           }
+          // Checkpoint before terminal yield: consumers commonly return immediately at done.
+          if (terminal && proc.cursor !== undefined) opts?.onProgress?.(proc.cursor);
           // Enrich a mapper-produced done with the session id captured so far.
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (sawDone || sawError) return;
@@ -1030,6 +1050,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: `${BINARY[mapper.id]} is not authenticated — run its login command, then retry` };
       } else if (code !== 0) {
         yield { kind: 'error', turnId, message: `${BINARY[mapper.id]} exited with code ${code}${stderrTail ? `: ${stderrTail.trim()}` : ''}` };
+      } else if (state.requestUuid !== undefined) {
+        yield { kind: 'error', turnId, message: 'Claude ended without a result for this request; update the CLI if it does not support request correlation' };
       } else {
         // Exited cleanly but emitted no terminal event — synthesize one.
         yield doneEvent(true);
@@ -1082,7 +1104,12 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (no live stdin)`);
       return;
     }
-    proc.write(mapper.formatDecision(requestId, decision));
+    try {
+      void Promise.resolve(proc.write(mapper.formatDecision(requestId, decision))).catch(() =>
+        log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (stdin write failed)`));
+    } catch {
+      log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (stdin write failed)`);
+    }
   }
 
   async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
@@ -1120,7 +1147,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     };
     opts?.onAttach?.(handle);
 
-    const state: TurnState = {};
+    const requestUuid = mapper.id === 'claude' ? /^claude-request-([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/.exec(turnId)?.[1] : undefined;
+    const state: TurnState = requestUuid === undefined ? {} : { requestUuid };
     const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
       kind: 'done',
       turnId,
@@ -1138,6 +1166,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           continue;
         }
         for (const ev of events) {
+          if (ev.kind === 'done' || ev.kind === 'error') opts?.onProgress?.(cursor);
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (ev.kind === 'done' || ev.kind === 'error') return;
         }
@@ -1287,6 +1316,8 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     // The child holds its own copies of the descriptors; ours are not needed after spawn.
     for (const fd of fds ?? []) closeSync(fd);
   }
+  // write callbacks report failures to the adapter; the error event must also be handled.
+  child.stdin?.on('error', () => {});
   let exited = false;
   child.on('exit', () => {
     exited = true;
@@ -1361,15 +1392,14 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
       child.kill(signal);
     },
-    write: (data: string) => {
-      // Best-effort: a closed/absent stdin must never crash the stream loop — the
-      // decision relay treats a failed write as "decision undeliverable" (k3, local stdio only).
-      try {
-        child.stdin?.write(data);
-      } catch {
-        /* stdin closed / process gone — the pending entry is cleared by the caller */
+    write: (data: string) => new Promise<void>((resolve, reject) => {
+      const input = child.stdin;
+      if (input === null || input.destroyed || input.writableEnded) {
+        reject(new Error('CLI stdin is closed'));
+        return;
       }
-    },
+      input.write(data, (err) => err ? reject(err) : resolve());
+    }),
   };
 };
 

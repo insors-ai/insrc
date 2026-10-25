@@ -331,7 +331,7 @@ test('after run() returns at done, decide() still reaches the live process, and 
   assert.ok(appr, 'surfaced an approval-request');
   assert.equal(events.at(-1)!.kind, 'done');
   adapter.decide(appr!.turnId, appr!.requestId, 'approve');
-  assert.equal(spawner.procs[0]!.writes().length, 1, 'the decision reached the live process after run() returned');
+  assert.equal(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user').length, 1, 'the decision reached the live process after run() returned');
 
   // Same again, but the process exits before the decision: the entry is gone.
   const { deps: deps2, spawner: spawner2 } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
@@ -341,7 +341,7 @@ test('after run() returns at done, decide() still reaches the live process, and 
   spawner2.procs[0]!.exitNow();
   await tick();
   adapter2.decide(appr2.turnId, appr2.requestId, 'approve');
-  assert.equal(spawner2.procs[0]!.writes().length, 0, 'no write once the process has exited');
+  assert.equal(spawner2.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user').length, 0, 'no write once the process has exited');
   await adapter2.cancel(appr2.turnId);
   assert.deepEqual(spawner2.procs[0]!.signals(), [], 'cancel() after the exit finds no live entry and signals nothing');
 });
@@ -705,13 +705,13 @@ test('S004 t3: the fake spawner records write() calls on the spawned proc (decis
   assert.equal(typeof proc.write, 'function');
   proc.write?.('{"type":"permission_response","id":"req-1","decision":"approve"}\n');
   proc.write?.('{"type":"permission_response","id":"req-2","decision":"deny"}\n');
-  assert.deepEqual(spawner.procs[0]!.writes(), [
+  assert.deepEqual(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user'), [
     '{"type":"permission_response","id":"req-1","decision":"approve"}\n',
     '{"type":"permission_response","id":"req-2","decision":"deny"}\n',
   ]);
 });
 
-test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)', async () => {
+test('Claude requires writable stdin for correlated input and reports its absence', async () => {
   // A minimal spawner whose procs have NO write() method — proves the seam is
   // additive-optional: existing spawner shapes compile and behave as today.
   const noWriteSpawn: SpawnFn = () => {
@@ -730,14 +730,15 @@ test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (
   const deps: AdapterDeps = { spawn: noWriteSpawn, isInstalled: () => true };
   const reg = createProviderRegistry(deps);
   const events = await collect(reg.get('claude').run(REQ({ provider: 'claude' })));
-  assert.equal(events.at(-1)?.kind, 'done', 'turn completes normally with a write-less proc');
+  assert.equal(events.at(-1)?.kind, 'error');
+  assert.match((events.at(-1) as {message:string}).message, /stdin unavailable/);
 });
 
 // ---- S004 t4: permissionMode -> buildArgs review/auto flags -------------------
 
 test('S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)', async () => {
-  const base = ['-p', '--output-format=stream-json', '--verbose'];
-  const end = ['--', 'hi'];
+  const base = ['-p', '--input-format=stream-json', '--output-format=stream-json', '--replay-user-messages', '--verbose'];
+  const end = ['--'];
   // undefined: no permission flag (k2 — byte-identical to today's argv).
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
@@ -1033,16 +1034,16 @@ test('S004 t5: decide() writes the correct control response for a live requestId
   const { adapter, spawner, it, appr } = await openUntilApproval('claude', hangingPerm);
   assert.ok(appr, 'surfaced an approval-request');
   adapter.decide(appr!.turnId, appr!.requestId, 'approve');
-  const writes = spawner.procs[0]!.writes();
+  const writes = spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user');
   assert.equal(writes.length, 1, 'exactly one control response written');
   assert.match(writes[0]!, /perm-claude-1/, 'carries the correlation id');
   assert.match(writes[0]!, /allow/, 'approve -> allow behavior');
   // A duplicate/late decide for the same id is a no-op (at most one write per id).
   adapter.decide(appr!.turnId, appr!.requestId, 'deny');
-  assert.equal(spawner.procs[0]!.writes().length, 1);
+  assert.equal(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user').length, 1);
   // An unknown id is a no-op.
   adapter.decide(appr!.turnId, 'no-such-req', 'approve');
-  assert.equal(spawner.procs[0]!.writes().length, 1);
+  assert.equal(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user').length, 1);
   adapter.cancel(appr!.turnId);
   await it.return?.(undefined);
 });
@@ -1053,7 +1054,7 @@ test('S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() 
   assert.ok(appr);
   adapter.cancel(appr!.turnId); // kills the turn + clears the registry
   adapter.decide(appr!.turnId, appr!.requestId, 'approve');
-  assert.equal(spawner.procs[0]!.writes().length, 0, 'no write after cancel — the request was cleaned up');
+  assert.equal(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user').length, 0, 'no write after cancel — the request was cleaned up');
   await it.return?.(undefined);
 });
 
@@ -1253,8 +1254,8 @@ test('run() yields the same events from the output file as from a pipe, reports 
   if (process.platform === 'win32') return t.diagnostic('uses sh');
   const lines = [...CLAUDE_TEXT_TURN];
   // The CLI answers, then keeps running and writes once more before it exits.
-  const script = `${lines.map((l) => `printf '%s\\n' '${l.replace(/'/g, "'\\''")}'`).join('; ')}; sleep 0.3; echo '{"type":"late"}'`;
-  const shSpawn: SpawnFn = (_cmd, _args, opts) => nodeSpawner('sh', ['-c', script], opts);
+  const script = `let input='';process.stdin.on('data',chunk=>{input+=chunk;const end=input.indexOf('\\n');if(end<0)return;const req=JSON.parse(input.slice(0,end));process.stdin.pause();for(const line of ${JSON.stringify(lines)}){const frame=JSON.parse(line);if(frame.type==='result')frame.user_message_uuid=req.uuid;process.stdout.write(JSON.stringify(frame)+'\\n');}setTimeout(()=>{process.stdout.write('{"type":"late"}\\n');process.exit(0)},300)});`;
+  const shSpawn: SpawnFn = (_cmd, _args, opts) => nodeSpawner(process.execPath, ['-e', script], opts);
   const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
   const sessionOutput = createSessionOutput({ root, pollMs: 5 });
 
@@ -1267,7 +1268,7 @@ test('run() yields the same events from the output file as from a pipe, reports 
 
   const strip = (evs: TurnEvent[]) => evs.map((e) => ({ ...e, turnId: '' }));
   assert.deepEqual(strip(filed), strip(piped), 'the same events from the session file as from the pipe');
-  assert.equal(progress.length, 3, 'a position after each line before the terminal one');
+  assert.equal(progress.length, 4, 'a position after every line including the terminal one');
   assert.ok(progress[0]! < progress[1]! && progress[1]! < progress[2]!, 'positions advance');
   assert.ok(spawned?.cursor !== undefined && spawned.cursor.sessionId === 's1', 'onSpawn hands over the segment start');
   assert.equal(spawned?.outPath, join(root, 's1.ndjson'));
@@ -1342,7 +1343,7 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'done'], 'only the events after the saved cursor, ending at the terminal one');
   assert.equal((events[0] as { text: string }).text, 'world');
   assert.equal(events.every((e) => e.turnId === 'turn-1'), true);
-  assert.equal(progress.length, 1, 'a position after the non-terminal line');
+  assert.equal(progress.length, 2, 'positions include the terminal line');
 
   // A turn whose process is gone without a terminal event.
   const seg2 = await sessionOutput.beginTurn('s1', 'turn-2');
@@ -1422,9 +1423,15 @@ test('65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verb
       })));
       const args = spawner.calls[0]!.args;
       const label = `${c.provider}${c.resume ? ' resume' : ''}${c.grant ? ' grant' : ''}: ${JSON.stringify(prompt.slice(0, 12))}`;
-      assert.equal(args[args.length - 1], prompt, `${label} — the prompt is the last argument, unchanged`);
-      assert.equal(args[args.length - 2], '--', `${label} — directly after the end-of-options marker`);
-      assert.equal(args.indexOf('--'), args.length - 2, `${label} — the only marker, so every flag precedes it`);
+      if (c.provider === 'claude') {
+        const input = JSON.parse(spawner.procs[0]!.writes().find(w => JSON.parse(w).type === 'user')!);
+        assert.equal(input.message.content, prompt, `${label} — unchanged structured content`);
+        assert.equal(args.at(-1), '--');
+        assert.equal(args.slice(args.indexOf('--') + 1).length, 0);
+      } else {
+        assert.equal(args.at(-1), prompt);
+        assert.equal(args.at(-2), '--');
+      }
     }
   }
 });
@@ -1449,18 +1456,18 @@ test("claude permission_denied emits resolution 'turn-ended'; control-protocol a
 
 // ---- Story E2026101259da3204:S001 t2: readDirs -> claude --add-dir ---------------
 
-test('claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today', async () => {
+test('claude argv: readDirs adds --add-dir with each directory before the permission flags and structured input keeps the prompt out of argv', async () => {
   const argv = async (over: Partial<TurnRequest>): Promise<readonly string[]> => {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', ...over })));
     return spawner.calls[0]!.args;
   };
-  const base = ['-p', '--output-format=stream-json', '--verbose'];
+  const base = ['-p', '--input-format=stream-json', '--output-format=stream-json', '--replay-user-messages', '--verbose'];
   const resume = { provider: 'claude' as const, nativeSessionId: 'sess-1' };
   const dirs = ['/home/u/.insrc/chat-attachments/s1', '/other dir'];
 
   // With readDirs: after --resume, before every permission flag, and the prompt is still last.
-  assert.deepEqual(await argv({ readDirs: [dirs[0]!] }), [...base, '--add-dir', dirs[0]!, '--', 'hi']);
+  assert.deepEqual(await argv({ readDirs: [dirs[0]!] }), [...base, '--add-dir', dirs[0]!, '--']);
   assert.deepEqual(await argv({ readDirs: dirs, resume, permissionMode: 'edit-auto', allowedTools: ['Bash', 'Read'] }), [
     ...base,
     '--resume',
@@ -1475,7 +1482,6 @@ test('claude argv: readDirs adds --add-dir with each directory before the permis
     'Bash',
     'Read',
     '--',
-    'hi',
   ]);
   for (const permissionMode of ['manual', 'edit-auto', 'auto'] as const) {
     const args = await argv({ readDirs: dirs, permissionMode, allowedTools: ['Bash'] });
@@ -1484,17 +1490,17 @@ test('claude argv: readDirs adds --add-dir with each directory before the permis
     for (const flag of ['--permission-mode', '--permission-prompts', '--allowedTools']) {
       if (args.includes(flag)) assert.ok(at < args.indexOf(flag), `--add-dir comes before ${flag}`);
     }
-    assert.deepEqual(args.slice(-2), ['--', 'hi']);
+    assert.deepEqual(args.slice(-1), ['--']);
   }
 
   // Without readDirs (absent or empty) the argv is exactly what it was, in every combination.
   const today: Array<[Partial<TurnRequest>, string[]]> = [
-    [{}, [...base, '--', 'hi']],
-    [{ resume }, [...base, '--resume', 'sess-1', '--', 'hi']],
-    [{ permissionMode: 'manual' }, [...base, '--permission-prompts', 'host', '--', 'hi']],
-    [{ permissionMode: 'edit-auto' }, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host', '--', 'hi']],
-    [{ permissionMode: 'auto' }, [...base, '--permission-mode', 'bypassPermissions', '--', 'hi']],
-    [{ resume, permissionMode: 'manual', allowedTools: ['Bash'] }, [...base, '--resume', 'sess-1', '--permission-prompts', 'host', '--allowedTools', 'Bash', '--', 'hi']],
+    [{}, [...base, '--']],
+    [{ resume }, [...base, '--resume', 'sess-1', '--']],
+    [{ permissionMode: 'manual' }, [...base, '--permission-prompts', 'host', '--']],
+    [{ permissionMode: 'edit-auto' }, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host', '--']],
+    [{ permissionMode: 'auto' }, [...base, '--permission-mode', 'bypassPermissions', '--']],
+    [{ resume, permissionMode: 'manual', allowedTools: ['Bash'] }, [...base, '--resume', 'sess-1', '--permission-prompts', 'host', '--allowedTools', 'Bash', '--']],
   ];
   for (const [over, expected] of today) {
     assert.deepEqual(await argv(over), expected);
@@ -1545,7 +1551,7 @@ test('codex is started with no input stream and claude keeps its input open; a d
     await adapter.cancel(ev.turnId);
   }
   assert.ok(asked, 'the fixture raised an approval request');
-  assert.deepEqual(spawner.procs[0]!.writes(), [], 'nothing is written to a process started without an input');
+  assert.deepEqual(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user'), [], 'nothing is written to a process started without an input');
   assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 1);
 });
 
@@ -1560,7 +1566,7 @@ test('the real spawner with closeInput starts a process that reads its input to 
   assert.deepEqual(lines, ['{"answered":true}']);
   assert.equal((await closed.exit).code, 0);
   // A write to a process with no input does nothing and does not throw.
-  assert.doesNotThrow(() => closed.write?.('late\n'));
+  await assert.rejects(Promise.resolve().then(() => closed.write?.('late\n')), /stdin is closed/);
 
   // With the input left open the same process is still waiting, which is the defect.
   const open = nodeSpawner('sh', ['-c', script], { cwd: process.cwd() });

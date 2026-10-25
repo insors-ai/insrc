@@ -11,6 +11,8 @@ import type { SpawnFn, SpawnedProcess } from '../cli-adapter.js';
 /** A scripted process outcome: the stdout lines it emits, its exit, optional stderr, optional spawn error. */
 export interface FakeProcScript {
   readonly lines: readonly string[];
+  /** Exact native result metadata; only __REQUEST_UUID__ placeholders are substituted. */
+  readonly rawResults?: boolean;
   readonly exit?: { code: number | null; signal: string | null };
   readonly stderr?: string;
   readonly spawnErrorCode?: string;
@@ -120,14 +122,14 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
   const spawn: SpawnFn = (command, args, opts) => {
     calls.push({ command, args: [...args], cwd: opts.cwd, ...(opts.closeInput !== undefined ? { closeInput: opts.closeInput } : {}) });
     const s = single ?? scripts![Math.min(idx++, scripts!.length - 1)]!;
-    const { proc, handle } = makeFakeProc(s);
+    const { proc, handle } = makeFakeProc(s, command === 'claude' && args.includes('--input-format=stream-json'));
     procs.push(handle);
     return proc;
   };
   return { spawn, calls, procs };
 }
 
-function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakeProcHandle } {
+function makeFakeProc(s: FakeProcScript, correlated = false): { proc: SpawnedProcess; handle: FakeProcHandle } {
   let killed = false;
   const writes: string[] = [];
   // Created eagerly so kill() can always resolve it, with no race against the
@@ -162,7 +164,17 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
       if (s.throwAfter !== undefined && emitted >= s.throwAfter) {
         throw Object.assign(new Error('EPIPE: stdout stream error'), { code: 'EPIPE' });
       }
-      yield line;
+      // Existing single-turn scripts designate their result as the submitted request's.
+      // Queued/malformed protocol regressions use rawResults and mark only their own result.
+      const request = writes.map(w => { try { return JSON.parse(w); } catch { return undefined; } }).find(w => w?.type === 'user');
+      let native = line.replaceAll('__REQUEST_UUID__', request?.uuid ?? 'baseline-no-request-uuid');
+      if (correlated && !s.rawResults) {
+        try {
+          const frame = JSON.parse(native);
+          if (frame.type === 'result' && frame.user_message_uuid === undefined && frame.user_message_uuids === undefined) native = JSON.stringify({ ...frame, user_message_uuid: request?.uuid });
+        } catch { /* retain malformed-line fixtures */ }
+      }
+      yield native;
       emitted++;
     }
     if (s.throwAfter !== undefined && emitted >= s.throwAfter) {

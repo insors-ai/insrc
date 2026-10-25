@@ -13,23 +13,25 @@ case "$FAKE_MODE" in
   fail404) echo "HTTP 404: not found" >&2; exit 1 ;;
   multibyte) printf 'aaaa\\303\\251\\303\\251' ;;
   sleep) sleep 5 ;;
-  *) echo ok ;;
+  *) if [ -n "$FAKE_STDOUT_FILE" ]; then cat "$FAKE_STDOUT_FILE"; else echo ok; fi ;;
 esac
 `;
 
 export interface FakeGh { dir: string; log: string; calls: () => string[]; stdin: () => string; restore: () => void }
 
-export function installFakeGh(mode: string): FakeGh {
+/** `stdout`, when given, is what the default mode prints instead of 'ok'. */
+export function installFakeGh(mode: string, stdout?: string): FakeGh {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-fakegh-'));
 	const bin = join(dir, 'gh');
 	writeFileSync(bin, SCRIPT);
 	chmodSync(bin, 0o755);
 	const log = join(dir, 'calls.log');
 	writeFileSync(log, '');
-	const saved = { PATH: process.env['PATH'], FAKE_LOG: process.env['FAKE_LOG'], FAKE_MODE: process.env['FAKE_MODE'] };
+	const saved = { PATH: process.env['PATH'], FAKE_LOG: process.env['FAKE_LOG'], FAKE_MODE: process.env['FAKE_MODE'], FAKE_STDOUT_FILE: process.env['FAKE_STDOUT_FILE'] };
 	process.env['PATH'] = `${dir}:${saved.PATH ?? ''}`;
 	process.env['FAKE_LOG'] = log;
 	process.env['FAKE_MODE'] = mode;
+	if (stdout !== undefined) { writeFileSync(`${log}.out`, stdout); process.env['FAKE_STDOUT_FILE'] = `${log}.out`; } else { delete process.env['FAKE_STDOUT_FILE']; }
 	return {
 		dir, log,
 		calls: () => readFileSync(log, 'utf8').split('\n').filter(Boolean),

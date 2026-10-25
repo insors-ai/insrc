@@ -37,6 +37,9 @@ const snapshot = snapshotFile.tools;
 /** Former requiresApproval-true tools that Story s4 turned into per-input classes. */
 const PER_INPUT_SINCE_S4 = new Set(['git_reset', 'git_push', 'git_checkout']);
 
+/** Former requiresApproval-true tools that Story s5 made destructive or per-input: never none. */
+const PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 = new Set(['gh_issue_close', 'gh_pr_close', 'gh_pr_merge']);
+
 registerBuiltinTools();
 const live = new Map(listTools().map(t => [t.id, t]));
 
@@ -51,6 +54,9 @@ test('approval-class-mapping.test.ts: every former requiresApproval true builtin
 			if (PER_INPUT_SINCE_S4.has(old.id)) {
 				// s4 made these per-input (destructive for hard reset, forced push, checkout of a path): still never none
 				assert.equal(typeof tool.approval, 'function', old.id);
+				assert.ok(['common', 'destructive'].includes(resolveApprovalClass(tool, {})), old.id);
+			} else if (PER_INPUT_OR_DESTRUCTIVE_SINCE_S5.has(old.id)) {
+				// s5 raised these to destructive (or to a per-input class): still never none
 				assert.ok(['common', 'destructive'].includes(resolveApprovalClass(tool, {})), old.id);
 			} else {
 				assert.equal(tool.approval, 'common', old.id);

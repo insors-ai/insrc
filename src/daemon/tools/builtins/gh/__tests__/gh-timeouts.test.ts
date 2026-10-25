@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 import { ghTimeoutMs, registerGhLimits } from '../helpers.js';
@@ -34,5 +37,19 @@ test('gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and
 test("gh-timeouts.test.ts: no existing tool's limit is below its limit today", () => {
 	for (const [toolId, seconds] of Object.entries(TODAY_S)) {
 		assert.ok(ghTimeoutMs({ toolId }) >= seconds * 1000, `${toolId} would have ${ghTimeoutMs({ toolId })} ms, had ${seconds * 1000}`);
+	}
+});
+
+test('gh-timeouts.test.ts: no ghExec call in issue.ts or pr.ts passes its own timeout', () => {
+	const dir = dirname(dirname(fileURLToPath(import.meta.url)));
+	for (const file of ['issue.ts', 'pr.ts']) {
+		const text = readFileSync(join(dir, file), 'utf8');
+		const calls = text.match(/ghExec\([^;]*;/g) ?? [];
+		assert.ok(calls.length > 0, `${file} calls ghExec`);
+		for (const call of calls) {
+			assert.ok(!/timeoutMs/.test(call), `${file}: ${call}`);
+			assert.ok(/key: \{ toolId: /.test(call), `${file} passes its limit key: ${call}`);
+		}
+		assert.ok(!/timeoutMs/.test(text), `${file} names no timeoutMs`);
 	}
 });

@@ -9,26 +9,20 @@
  * input (owner/name).
  */
 
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, strArr, joinCsv, md, fail, shellFail, ghExec, parseJson } from './helpers.js';
+import { Type } from '@sinclair/typebox';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, num, strArr, joinCsv, md, fail, ghExec, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
+import {
+  GhIssueCommentDataSchema, GhIssueCreateDataSchema, GhIssueLinkDataSchema, GhIssueListDataSchema, GhIssueRowSchema,
+  GhIssueStateDataSchema, GhNumberDataSchema,
+} from './schemas.js';
+import type { GhIssueRow } from './schemas.js';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface RawIssue {
-  number: number;
-  title: string;
-  state: string;
-  author?: { login: string };
-  assignees?: Array<{ login: string }>;
-  labels?: Array<{ name: string }>;
-  body?: string;
-  url?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  comments?: Array<{ author?: { login: string }; body: string; createdAt?: string }>;
-}
+type RawIssue = GhIssueRow;
 
 const ISSUE_JSON_FIELDS = 'number,title,state,author,assignees,labels,url,createdAt,updatedAt';
 const ISSUE_VIEW_FIELDS = ISSUE_JSON_FIELDS + ',body,comments';
@@ -37,23 +31,20 @@ const ISSUE_VIEW_FIELDS = ISSUE_JSON_FIELDS + ',body,comments';
 // list
 // ---------------------------------------------------------------------------
 
-export const ghIssueListTool: Tool = {
+export const ghIssueListTool = withGhFailureNet({
   id: 'gh_issue_list',
   description: 'List / search issues in the current or named repo.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string', description: 'owner/name. Falls back to gh\'s current-repo detection.' },
-      state: { type: 'string', enum: ['open', 'closed', 'all'] },
-      limit: { type: 'number', minimum: 1, maximum: 500 },
-      labels: { type: 'array', items: { type: 'string' } },
-      assignee: { type: 'string' },
-      author: { type: 'string' },
-      search: { type: 'string', description: 'Full-text search (gh issue list --search).' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String({ description: "owner/name. Falls back to gh's current-repo detection." })),
+    state: Type.Optional(Type.Unsafe<'open' | 'closed' | 'all'>({ type: 'string', enum: ['open', 'closed', 'all'] })),
+    limit: Type.Optional(Type.Number({ minimum: 1, maximum: 500 })),
+    labels: Type.Optional(Type.Array(Type.String())),
+    assignee: Type.Optional(Type.String()),
+    author: Type.Optional(Type.String()),
+    search: Type.Optional(Type.String({ description: 'Full-text search (gh issue list --search).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhIssueListDataSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const argv = ['gh', 'issue', 'list', '--json', ISSUE_JSON_FIELDS];
@@ -67,67 +58,59 @@ export const ghIssueListTool: Tool = {
     if (str(input, 'author'))   { argv.push('-A', str(input, 'author')!); }
     if (str(input, 'search'))   { argv.push('-S', str(input, 'search')!); }
 
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_issue_list', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_list' } });
+    const bad = ghFailResult('gh_issue_list', r, false); if (bad) { return bad; }
     const issues = parseJson<RawIssue[]>(r.stdout) ?? [];
     const data = { count: issues.length, issues };
     return { output: renderIssueList(issues), format: 'markdown', success: true, data };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // view
 // ---------------------------------------------------------------------------
 
-export const ghIssueViewTool: Tool = {
+export const ghIssueViewTool = withGhFailureNet({
   id: 'gh_issue_view',
   description: 'View a single issue: body, comments, metadata.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      number: { type: 'number', description: 'Issue number.', minimum: 1 },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1, description: 'Issue number.' }),
+  }, { additionalProperties: false }),
+  outputSchema: GhIssueRowSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
     if (!n) { return fail('gh_issue_view', 'missing number'); }
     const argv = ['gh', 'issue', 'view', String(n), '--json', ISSUE_VIEW_FIELDS];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_issue_view', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_view' } });
+    const bad = ghFailResult('gh_issue_view', r, false); if (bad) { return bad; }
     const issue = parseJson<RawIssue>(r.stdout);
     if (!issue) { return fail('gh_issue_view', 'could not parse gh JSON'); }
     return { output: renderIssueView(issue), format: 'markdown', success: true, data: issue };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // create
 // ---------------------------------------------------------------------------
 
-export const ghIssueCreateTool: Tool = {
+export const ghIssueCreateTool = withGhFailureNet({
   id: 'gh_issue_create',
   description: 'Create an issue.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      title: { type: 'string' },
-      body: { type: 'string' },
-      labels: { type: 'array', items: { type: 'string' } },
-      assignees: { type: 'array', items: { type: 'string' } },
-      milestone: { type: 'string' },
-      project: { type: 'string', description: 'Project (v2) title to add the issue to.' },
-    },
-    required: ['title'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    title: Type.String(),
+    body: Type.Optional(Type.String()),
+    labels: Type.Optional(Type.Array(Type.String())),
+    assignees: Type.Optional(Type.Array(Type.String())),
+    milestone: Type.Optional(Type.String()),
+    project: Type.Optional(Type.String({ description: 'Project (v2) title to add the issue to.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhIssueCreateDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -175,30 +158,26 @@ export const ghIssueCreateTool: Tool = {
     if (str(input, 'milestone')) { argv.push('-m', str(input, 'milestone')!); }
     if (str(input, 'project'))   { argv.push('-p', str(input, 'project')!); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_create' } });
-    if (r.code !== 0) { return shellFail('gh_issue_create', r); }
+    const bad = ghFailResult('gh_issue_create', r, true); if (bad) { return bad; }
     const url = r.stdout.trim();
     return { output: `Created issue: ${url}`, format: 'markdown', success: true, data: { url } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // comment
 // ---------------------------------------------------------------------------
 
-export const ghIssueCommentTool: Tool = {
+export const ghIssueCommentTool = withGhFailureNet({
   id: 'gh_issue_comment',
   description: 'Add a comment to an issue.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      number: { type: 'number', minimum: 1 },
-      body: { type: 'string' },
-    },
-    required: ['number', 'body'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1 }),
+    body: Type.String(),
+  }, { additionalProperties: false }),
+  outputSchema: GhIssueCommentDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -232,36 +211,32 @@ export const ghIssueCommentTool: Tool = {
     if (!n || !body) { return fail('gh_issue_comment', 'missing number or body'); }
     const argv = ['gh', 'issue', 'comment', String(n), '-b', body];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_issue_comment', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_comment' } });
+    const bad = ghFailResult('gh_issue_comment', r, true); if (bad) { return bad; }
     return { output: `Commented on #${n}.`, format: 'markdown', success: true, data: { number: n, url: r.stdout.trim() } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // edit
 // ---------------------------------------------------------------------------
 
-export const ghIssueEditTool: Tool = {
+export const ghIssueEditTool = withGhFailureNet({
   id: 'gh_issue_edit',
   description: 'Edit an issue\'s title / body / labels / assignees / milestone.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      number: { type: 'number', minimum: 1 },
-      title: { type: 'string' },
-      body: { type: 'string' },
-      addLabels: { type: 'array', items: { type: 'string' } },
-      removeLabels: { type: 'array', items: { type: 'string' } },
-      addAssignees: { type: 'array', items: { type: 'string' } },
-      removeAssignees: { type: 'array', items: { type: 'string' } },
-      milestone: { type: 'string', description: 'Use empty string to clear.' },
-    },
-    required: ['number'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1 }),
+    title: Type.Optional(Type.String()),
+    body: Type.Optional(Type.String()),
+    addLabels: Type.Optional(Type.Array(Type.String())),
+    removeLabels: Type.Optional(Type.Array(Type.String())),
+    addAssignees: Type.Optional(Type.Array(Type.String())),
+    removeAssignees: Type.Optional(Type.Array(Type.String())),
+    milestone: Type.Optional(Type.String({ description: 'Use empty string to clear.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhNumberDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -306,33 +281,29 @@ export const ghIssueEditTool: Tool = {
       argv.push('-m', typeof m === 'string' ? m : '');
     }
     if (str(input, 'repo'))      { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_issue_edit', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_edit' } });
+    const bad = ghFailResult('gh_issue_edit', r, true); if (bad) { return bad; }
     return { output: `Edited #${n}.`, format: 'markdown', success: true, data: { number: n } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // close / reopen
 // ---------------------------------------------------------------------------
 
-function stateChangeTool(id: string, op: 'close' | 'reopen'): Tool {
-  return {
+function stateChangeTool(id: 'gh_issue_close' | 'gh_issue_reopen', op: 'close' | 'reopen') {
+  return withGhFailureNet({
     id,
     description: op === 'close' ? 'Close an issue.' : 'Reopen an issue.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        cwd: { type: 'string' },
-        repo: { type: 'string' },
-        number: { type: 'number', minimum: 1 },
-        reason: { type: 'string', description: 'close only: "completed" or "not planned".', enum: ['completed', 'not planned'] },
-        comment: { type: 'string', description: 'Optional closing comment.' },
-      },
-      required: ['number'],
-      additionalProperties: false,
-    },
-    approval: 'common',
+    inputSchema: Type.Object({
+      cwd: Type.Optional(Type.String()),
+      repo: Type.Optional(Type.String()),
+      number: Type.Number({ minimum: 1 }),
+      reason: Type.Optional(Type.Unsafe<'completed' | 'not planned'>({ type: 'string', enum: ['completed', 'not planned'], description: 'close only: "completed" or "not planned".' })),
+      comment: Type.Optional(Type.String({ description: 'Optional closing comment.' })),
+    }, { additionalProperties: false }),
+    outputSchema: GhIssueStateDataSchema,
+    approval: (op === 'close' ? 'destructive' : 'common') as 'destructive' | 'common',
 
     buildApprovalGate(input: ToolInput): ToolApprovalGate {
       const n = num(input, 'number');
@@ -359,11 +330,11 @@ function stateChangeTool(id: string, op: 'close' | 'reopen'): Tool {
       if (op === 'close' && str(input, 'reason'))   { argv.push('-r', str(input, 'reason')!); }
       if (op === 'close' && str(input, 'comment')) { argv.push('-c', str(input, 'comment')!); }
       if (str(input, 'repo'))                       { argv.push('-R', str(input, 'repo')!); }
-      const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-      if (r.code !== 0) { return shellFail(id, r); }
+      const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: id } });
+      const bad = ghFailResult(id, r, true); if (bad) { return bad; }
       return { output: `${op === 'close' ? 'Closed' : 'Reopened'} #${n}.`, format: 'markdown', success: true, data: { number: n, op } };
     },
-  };
+  });
 }
 
 export const ghIssueCloseTool = stateChangeTool('gh_issue_close', 'close');
@@ -373,25 +344,17 @@ export const ghIssueReopenTool = stateChangeTool('gh_issue_reopen', 'reopen');
 // link (close as completed by PR, or add a reference comment)
 // ---------------------------------------------------------------------------
 
-export const ghIssueLinkTool: Tool = {
+export const ghIssueLinkTool = withGhFailureNet({
   id: 'gh_issue_link',
   description: 'Add a cross-reference comment linking an issue to a PR or another issue.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      repo: { type: 'string' },
-      number: { type: 'number', minimum: 1, description: 'Issue to comment on.' },
-      target: { type: 'string', description: 'Target reference (e.g. "#42", "owner/repo#42", full URL).' },
-      relation: {
-        type: 'string',
-        enum: ['closes', 'fixes', 'resolves', 'relates-to', 'blocks', 'blocked-by'],
-        description: 'Relation verb that goes into the auto-generated comment.',
-      },
-    },
-    required: ['number', 'target'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    repo: Type.Optional(Type.String()),
+    number: Type.Number({ minimum: 1, description: 'Issue to comment on.' }),
+    target: Type.String({ description: 'Target reference (e.g. "#42", "owner/repo#42", full URL).' }),
+    relation: Type.Optional(Type.Unsafe<'closes' | 'fixes' | 'resolves' | 'relates-to' | 'blocks' | 'blocked-by'>({ type: 'string', enum: ['closes', 'fixes', 'resolves', 'relates-to', 'blocks', 'blocked-by'], description: 'Relation verb that goes into the auto-generated comment.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GhIssueLinkDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -417,11 +380,11 @@ export const ghIssueLinkTool: Tool = {
     const body = `${rel} ${target}`;
     const argv = ['gh', 'issue', 'comment', String(n), '-b', body];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
-    const r = await ghExec(argv, { cwd: str(input, 'cwd') });
-    if (r.code !== 0) { return shellFail('gh_issue_link', r); }
+    const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_issue_link' } });
+    const bad = ghFailResult('gh_issue_link', r, true); if (bad) { return bad; }
     return { output: `Linked #${n} -> ${target} (${rel}).`, format: 'markdown', success: true, data: { number: n, target, relation: rel } };
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // Rendering

@@ -275,17 +275,3 @@ export function ghApprovalClass(toolId: string, input: Record<string, unknown>):
   if (base === 'common' && DESTRUCTIVE_FLAGS.some(k => isSet(input[k]))) { return 'destructive'; }
   return base;
 }
-
-/**
- * The failed result of a gh call that did not finish clean, or undefined when it did. The legacy text stays in
- * output and error ('[id] gh's own text'); the typed failure from ghFailureOf rides beside it.
- */
-export function ghFailResult(id: string, o: GhOutcome, mutating: boolean): ToolResult | undefined {
-  const failure = ghFailureOf(o, { mutating });
-  if (failure === undefined) { return undefined; }
-  if (o.spawnError) {
-    return { output: `[${id}] ${failure.message}`, format: 'text', success: false, error: 'gh not found', failure };
-  }
-  const msg = o.stderr.trim() || o.stdout.trim() || (o.code !== null && o.code !== 0 ? `exit ${o.code}` : failure.message);
-  return { output: `[${id}] ${msg}`, format: 'text', success: false, error: msg, failure };
-}

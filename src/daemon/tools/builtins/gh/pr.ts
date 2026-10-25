@@ -12,7 +12,8 @@
 
 import { Type } from '@sinclair/typebox';
 import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, num, strArr, joinCsv, md, fail, ghExec, ghApprovalClass, ghFailResult, parseJson, withGhFailureNet } from './helpers.js';
+import { str, num, strArr, joinCsv, md, fail, ghExec, ghApprovalClass, parseJson, withGhFailureNet } from './helpers.js';
+import { ghFailResult } from './legacy.js';
 import {
   GhIssueCommentDataSchema, GhNumberDataSchema, GhPrChecksDataSchema, GhPrDiffDataSchema, GhPrFilesDataSchema, GhPrListDataSchema,
   GhPrMergeDataSchema, GhPrReviewDataSchema, GhPrRowSchema, GhPrUrlDataSchema,

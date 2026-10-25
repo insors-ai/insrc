@@ -7330,7 +7330,7 @@
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
-      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Only static metadata is admitted until concrete memory-only consumers are installed; fixed rejections and terminal stream errors carry no capability.",
+      "rationale": "S003 private main-daemon session protocol. Strict bounded decoding and socket-owned claims precede core access; pending or failed attachment cannot fall back to saved execution. Only audited metadata and temporary ticket/mutate/status/read are admitted; other data consumers refuse until concrete integrations are installed; fixed rejections and terminal stream errors carry no capability.",
       "sites": [
         [
           "connection-factory",
@@ -7390,6 +7390,10 @@
         ],
         [
           "connection-use",
+          "this.#owner?.hasOverlayEntry"
+        ],
+        [
+          "connection-use",
           "this.#owner.controlBinding"
         ],
         [
@@ -7405,9 +7409,9 @@
           "this.#ownerFor"
         ]
       ],
-      "siteCount": 18,
-      "sitesDigest": "dd0616fa93bea7af3bd0e3c4a8eb10d1c1397800705fff650f48f2753b53a9fe",
-      "sourceDigest": "42321a5f93ec5f285a0d87f56393e7cfdd78e81d5d97136c110312f5b95b2ff4",
+      "siteCount": 19,
+      "sitesDigest": "baf0351cb09318c73d887d4dc6a49f8231995e2a23f56a6357ff8a15d4561775",
+      "sourceDigest": "90e0abed7b1915a061f2027206b723499b07d34dfa9c5699e823eb7f3be9d90c",
       "boundaries": [
         "connection-factory",
         "connection-use",
@@ -7457,7 +7461,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "eb2766c44a7a99e04227c37bbbd64c967974cd3079f6eccf1ae8de8078114c67",
-      "sourceDigest": "1c713bb489b1d0f6906266a610a0568172b706a616b32bbdbed9e51094036930",
+      "sourceDigest": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -7516,6 +7520,22 @@
         "filesystem-read",
         "filesystem-write",
         "serialization"
+      ]
+    },
+    "src/daemon/db/connection-reservations.ts": {
+      "classification": "root-reservation-coordinator",
+      "rationale": "Daemon-owned boolean reservation ports share the existing exact-root mutation gate. No current-session global, configs, credentials or reverse alias index. Enabled enrollment refuses new noncanonical upserts before saved target access; disabled saved-only behavior and exact supplied-path hashing remain unchanged.",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpath"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "7d367f6f4a3c3cd3c39ef591a96009a365985555d00d4bf14b2f4c3865139bbb",
+      "sourceDigest": "d3ef8865918d2ef1237fcc3c1fa0fa2d976a6055c08a243aa82b51aa73993d62",
+      "boundaries": [
+        "filesystem-read"
       ]
     },
     "src/daemon/db/converter-cache.ts": {
@@ -9670,7 +9690,7 @@
       ],
       "siteCount": 61,
       "sitesDigest": "69a89181cd97a2eac354dc8842e6526bd6acc5a1d1265e2d3becbe4119e79fe3",
-      "sourceDigest": "4cb1e3dd43b189b4e7ebf54c45f40a021004ef3fc6b738460946034cd0b3e50a",
+      "sourceDigest": "1290c8280312d6924ea262463762e494841f908ab114cd270bf254e74ada51e5",
       "boundaries": [
         "filesystem-open",
         "filesystem-read",
@@ -9759,7 +9779,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "ec4d5d2c42ac07c675bec075a833c6e390bf65446b818ab3e280a7468bec077b",
+      "sourceDigest": "27e6915d14c4bc08ba3644057fc5b443de721bae841fb84443ff7f5187960170",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -10227,7 +10247,7 @@
       ],
       "siteCount": 27,
       "sitesDigest": "c0156fe15f04e159a75a0a354c223a6f26a82e1ceef8bed01ea9849617e231c3",
-      "sourceDigest": "0f0827dfada4af87bcc1b4e087e1c5c9ce5a75d47215976b2fff472043e9a478",
+      "sourceDigest": "745c807e88ec8b2a8b7b46a7e89188f7638ecc2e155d8883011fafd32e46a842",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:symbol:DriverPool",
@@ -10256,30 +10276,6 @@
       "classification": "resolver-resource-foundation",
       "rationale": "Shared connection/resource seam; private owner overlays and leases must not fall back to saved credentials or caches. Preserve ordinary saved semantics and existing sc8 resource implementation.",
       "sites": [
-        [
-          "acquisition:pool-member",
-          "(await pool(context)).lease"
-        ],
-        [
-          "connection-use",
-          "(await pool(context)).lease"
-        ],
-        [
-          "acquisition:pool-member",
-          "(await pool(context)).safeList"
-        ],
-        [
-          "connection-use",
-          "(await pool(context)).safeList"
-        ],
-        [
-          "acquisition:pool-member",
-          "(await pool(context)).withConnection"
-        ],
-        [
-          "connection-use",
-          "(await pool(context)).withConnection"
-        ],
         [
           "connection-factory",
           "(ports.poolSource ?? acquirePool)"
@@ -10389,22 +10385,6 @@
           "overlay"
         ],
         [
-          "connection-factory",
-          "overlay"
-        ],
-        [
-          "connection-factory",
-          "overlay"
-        ],
-        [
-          "acquisition:resolver-port-call",
-          "overlay(context)"
-        ],
-        [
-          "acquisition:resolver-port-call",
-          "overlay(context)"
-        ],
-        [
           "acquisition:resolver-port-call",
           "overlay(context)"
         ],
@@ -10435,22 +10415,6 @@
         [
           "connection-factory",
           "pool"
-        ],
-        [
-          "connection-factory",
-          "pool"
-        ],
-        [
-          "connection-factory",
-          "pool"
-        ],
-        [
-          "acquisition:pool-port-call",
-          "pool(context)"
-        ],
-        [
-          "acquisition:pool-port-call",
-          "pool(context)"
         ],
         [
           "acquisition:pool-port-call",
@@ -10463,6 +10427,38 @@
         [
           "acquisition:resolver-port-call",
           "ports.sessionOverlay(context)"
+        ],
+        [
+          "acquisition:pool-member",
+          "saved.lease"
+        ],
+        [
+          "connection-use",
+          "saved.lease"
+        ],
+        [
+          "acquisition:pool-member",
+          "saved.safeList"
+        ],
+        [
+          "acquisition:pool-member",
+          "saved.safeList"
+        ],
+        [
+          "connection-use",
+          "saved.safeList"
+        ],
+        [
+          "connection-use",
+          "saved.safeList"
+        ],
+        [
+          "acquisition:pool-member",
+          "saved.withConnection"
+        ],
+        [
+          "connection-use",
+          "saved.withConnection"
         ],
         [
           "acquisition:symbol:savedConnectionResolver",
@@ -10481,22 +10477,6 @@
           "session.list"
         ],
         [
-          "acquisition:resolver-member",
-          "session.list"
-        ],
-        [
-          "acquisition:resolver-member",
-          "session.list"
-        ],
-        [
-          "connection-use",
-          "session.list"
-        ],
-        [
-          "connection-use",
-          "session.list"
-        ],
-        [
           "connection-use",
           "session.list"
         ],
@@ -10509,9 +10489,9 @@
           "session.withConnection"
         ]
       ],
-      "siteCount": 63,
-      "sitesDigest": "8eef4594a04492029a361958d5c33b5a8a342ec73304d4d36ea5247d00669480",
-      "sourceDigest": "4a849c02b88e152afe663d888d9f9f3bded819898d5447a0b494e76f926c2c69",
+      "siteCount": 53,
+      "sitesDigest": "47725d6921d51bd0a739e01195ec614cc1780925c5aaeecf0f2c3936df92bf0f",
+      "sourceDigest": "bbc082428dcdafd95ce3dd355d4a2af2c976c92dfd6ec406d3f1ef73dc584e55",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",
@@ -11142,7 +11122,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d7fbc7435a5e936a49cf173489e1062fb4fc71778e51100c993c184e9613a4df",
-      "sourceDigest": "648756cfe7da4723f0a1e1ea576057c853acfa18311f83e8ce41ca6b4761333f",
+      "sourceDigest": "a7e350f925c7773634f6979ba2a92b3d7d31fa1b9016d75d84d1beaeef95a00e",
       "boundaries": [
         "serialization"
       ]
@@ -11478,11 +11458,15 @@
         [
           "connection-use",
           "this.sweepExpired"
+        ],
+        [
+          "connection-use",
+          "this.sweepExpired"
         ]
       ],
-      "siteCount": 68,
-      "sitesDigest": "5f6d720c5d25a48eebdba7ef28e5d87932a8801f97217c6907f9a6b641725bbe",
-      "sourceDigest": "129e20ad828d855b49d46519e86271fc3082ddee5534e2bb537d071afac30cef",
+      "siteCount": 69,
+      "sitesDigest": "d427225ca93a488e1c5b32e9dc9ceb089443c3cac690c6fb9361b4209e5eebfe",
+      "sourceDigest": "785a81dc384c15d7820563ac603d773a58168bfb7f1c2cc053933a9359620294",
       "boundaries": [
         "connection-use",
         "serialization"

@@ -44,6 +44,7 @@ export class TemporaryConnectionOverlay {
  #quota(previous: Entry | undefined, next: Entry): void {
   if (this.#budget.entries + (previous ? 0 : 1) > MAX_SESSION_CONNECTIONS || this.#budget.bytes - (previous?.bytes ?? 0) + next.bytes > MAX_SESSION_CONFIG_BYTES) throw reject('busy');
  }
+ contains(id: string): boolean { this.#active(); return this.#entries.has(id); }
  list(): readonly SafeConnection[] { this.#active(); return Object.freeze([...this.#entries.values()].map(entry => entry.safe)); }
  read(id: string): SafeConnection { this.#active(); const entry = this.#entries.get(id); if (!entry) throw reject('not-found'); return entry.safe; }
  async prepare(draft: TemporaryEntryDraft, signal?: AbortSignal): Promise<PreparedTemporaryEntry> {

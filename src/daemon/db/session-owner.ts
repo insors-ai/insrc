@@ -75,6 +75,15 @@ export class ConnectionSessionOwner<Overlay> {
 		this.#timer = setInterval(() => { try { this.sweepExpired(); } catch { this.close(); } }, 1000);
 		this.#timer.unref();
 	}
+	/** Boolean root-local reservations only; never exposes another owner's entries. */
+	hasOverlayEntry(root: string, contains: (overlay: Overlay) => boolean): boolean {
+		this.sweepExpired();
+		for (const session of this.#sessions.values()) {
+			const overlay = session.overlays.get(root);
+			if (overlay !== undefined && contains(overlay)) return true;
+		}
+		return false;
+	}
 	get size(): number { this.sweepExpired(); return this.#sessions.size; }
 	#now(): number {
 		const now = (this.#ports.monotonicNow ?? (() => performance.now()))();

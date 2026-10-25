@@ -3,6 +3,9 @@ import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
 import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
+import { installConnectionReservations } from './db/connection-reservations.js';
+import { savedConnectionIds } from './db/managed-store.js';
+import { connectionsPath } from './db/config.js';
 import { withSavedRootGate } from './db/management.js';
 import { createTemporaryOverlay, TemporaryConnectionOverlay } from './db/session-entries.js';
 import { ConnectionSessionOwner } from './db/session-owner.js';
@@ -31,12 +34,17 @@ const fail = (code: 'session-expired' | 'upgrade-required') => new ManagementSer
 
 export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 	readonly #ports: ConnectionSessionRpcPorts<Overlay>;
+	readonly #uninstallReservations: () => void;
 	readonly #intents = new Map<string, ChannelKind>();
 	readonly #claims = new Map<string, Claim>();
 	#owner: ConnectionSessionOwner<Overlay> | undefined;
 	#epoch: string | undefined;
 	#closed = false;
-	constructor(ports: ConnectionSessionRpcPorts<Overlay>) { this.#ports = Object.freeze({ ...ports }); }
+	constructor(ports: ConnectionSessionRpcPorts<Overlay>) {
+		this.#ports = Object.freeze({ ...ports });
+		this.#uninstallReservations = installConnectionReservations({ ready: () => this.ready(), isRegistered: ports.isRegistered,
+			contains: (root, id) => this.#owner?.hasOverlayEntry(root, overlay => overlay instanceof TemporaryConnectionOverlay && overlay.contains(id)) ?? false });
+	}
 	async ready(): Promise<boolean> { return !this.#closed && await this.#ports.enabled() && !this.#closed; }
 	#context(context: TrustedRpcContext): void {
 		if (this.#closed || !context?.connectionIdentity || !context.daemonEpoch || context.signal?.aborted || context.connectionSignal?.aborted) throw fail('session-expired');
@@ -142,6 +150,8 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			if (command.method === 'db.connections.v2.read') return overlay.read(command.key.id);
 			return await ledger.mutate(command.request, (request, commit) => withSavedRootGate(command.root, async () => {
 				assertRequest();
+				if ((await savedConnectionIds(connectionsPath(command.root))).has(request.key.id)) throw new ManagementServiceError('duplicate-id');
+				assertRequest();
 				const prepared = await overlay.prepare({ key: request.key, mode: request.mode as 'create' | 'update', publicPatch: request.publicPatch ?? {}, credentials: request.credentials ?? {}, ...(request.expectedRevision !== undefined ? { expectedRevision: request.expectedRevision } : {}) }, context.signal);
 				assertRequest(); return commit(() => overlay.commit(prepared));
 			}), assertRequest);
@@ -190,8 +200,11 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		this.#owner?.disconnect(context);
 		this.#claims.delete(context.connectionIdentity); this.#intents.delete(context.connectionIdentity);
 	}
-	stopAdmission(): void { this.#closed = true; this.#owner?.close(); }
-	async close(): Promise<void> { this.stopAdmission(); this.#claims.clear(); this.#intents.clear(); }
+	stopAdmission(): void { this.#closed = true; this.#uninstallReservations(); this.#owner?.close(); }
+	async close(): Promise<void> {
+		this.stopAdmission(); this.#claims.clear();
+		// Keep safe role markers until each socket disconnects: closing authority cannot downgrade a live channel.
+	}
 }
 
 export const connectionSessionRuntime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({

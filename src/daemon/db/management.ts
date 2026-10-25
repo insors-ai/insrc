@@ -1,3 +1,4 @@
+import { assertSavedIdAvailable } from './connection-reservations.js';
 /** Serialized saved-connection application service. Routes remain disabled until maintenance gates install it. */
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
@@ -232,6 +233,7 @@ export class SavedConnectionManagement {
 			}
 			if (this.ports.tickets.expired(request.ticket))
 				throw new ManagementServiceError('reconciliation-required');
+			if (request.mode === 'create') await assertSavedIdAvailable(this.root, request.key.id);
 			const existing = current.file.connections.find(c => c.id === request.key.id);
 			if (request.mode === 'create' && existing)
 				throw new ManagementServiceError('duplicate-id');
@@ -405,6 +407,7 @@ export class SavedConnectionManagement {
 		}
 		return withSavedRootGate(this.root, async () => {
 			try {
+				await assertSavedIdAvailable(this.root, config.id);
 				const current = await this.current();
 				const previous = current.file.connections.find(c => c.id === config.id);
 				if (previous && previous.kind !== config.kind)

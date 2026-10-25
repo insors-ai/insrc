@@ -18,6 +18,7 @@
  * pointing at the same repoPath.
  */
 import { getLogger } from '../../shared/logger.js';
+import { ConnectionUseError } from './lease-gate.js';
 import { DriverPool } from './pool.js';
 import type { ConnectionAccessContext, ConnectionResolver } from '../../shared/connection-management.js';
 const log = getLogger('db-pool-cache');
@@ -44,23 +45,27 @@ export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionR
 			throw new SessionAccessError();
 		return ports.sessionOverlay(context);
 	};
+	const sources = async (context: ConnectionAccessContext) => {
+		const session = await overlay(context), saved = await pool(context);
+		const temporary = session ? await session.list(context) : [];
+		if (session) {
+			const savedIds = new Set(saved.safeList().map(entry => entry.key.id));
+			if (temporary.some(entry => savedIds.has(entry.key.id))) throw new ConnectionUseError('duplicate-id');
+		}
+		return { session, saved, temporary };
+	};
 	return {
 		async list(context) {
-			const session = await overlay(context);
-			const saved = (await pool(context)).safeList();
-			return session ? [...saved, ...await session.list(context)] : saved;
+			const { saved, temporary } = await sources(context);
+			return [...saved.safeList(), ...temporary];
 		},
 		async lease(context, id) {
-			const session = await overlay(context);
-			if (session && (await session.list(context)).some(c => c.key.id === id))
-				return session.lease(context, id);
-			return (await pool(context)).lease(id);
+			const { session, saved, temporary } = await sources(context);
+			return session && temporary.some(entry => entry.key.id === id) ? session.lease(context, id) : saved.lease(id);
 		},
 		async withConnection(context, id, use) {
-			const session = await overlay(context);
-			if (session && (await session.list(context)).some(c => c.key.id === id))
-				return session.withConnection(context, id, use);
-			return (await pool(context)).withConnection(id, use);
+			const { session, saved, temporary } = await sources(context);
+			return session && temporary.some(entry => entry.key.id === id) ? session.withConnection(context, id, use) : saved.withConnection(id, use);
 		},
 	};
 }

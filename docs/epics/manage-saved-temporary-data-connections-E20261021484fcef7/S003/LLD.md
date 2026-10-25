@@ -569,3 +569,26 @@ Keep the same sc5 session/capability protocol and sc1/sc2/sc3/sc8 contracts, but
 - **[[c16]]** `analyze-bundle` `S003 cycle2 provider discovery: src/analyze/context/shaper-provider.ts; src/analyze/context/role-router.ts; src/analyze/runtimes/shared/aggregator.ts; src/agent/read-only-tool-loop.ts; src/agent/providers/cli-provider.ts; src/agent/providers/ollama.ts; direct and injected completion source grep`
 - **[[c17]]** `analyze-bundle` `S003 cycle2 round2 discovery: constraintsForTopic/retrieveDocSections/embedQuery/onnxEmbedQuery symbol and caller probes plus source enumeration of adherence records, query-embedding callers and independent filesystem write sinks across src/analyze, src/daemon and src/indexer`
 - **[[c18]]** `analyze-bundle` `S003 cycle2 round3: saveConnectionRpc/saveConnections/legacyUpsert/withSavedRootGate symbol and caller probes plus manual src/daemon/db-rpc.ts:120, src/daemon/db/management.ts:398, src/daemon/db/config.ts:150 and src/daemon/threads/method-class.ts:246`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T09:51:42.484Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | HIGH | The provider integration inventory closes every LLM-analysis path for session-derived data. | handlePlan and handleNarrow return `next: 'emit_bundle'` with `userTurn: prepared.userTurn` for the outer client's LLM. prepareSynthesize calls buildMessages, which embeds `JSON.stringify(r.output, null, 2)` for exploration results; handleBundle explicitly stamps `modelId: 'client'`. This path invokes no daemon LLMProvider. The proposed phase changes propagate authority and disable persistence but do not prevent data-bearing reasoning prompts from bypassing the verified-local-provider boundary. [files: src/daemon/steps/analyze-step/phases/plan.ts, src/daemon/steps/analyze-step/phases/narrow.ts, src/daemon/steps/analyze-step/phases/bundle.ts, src/daemon/steps/analyze-step/answer-turn.ts, src/analyze/context/synthesizer.ts, src/mcp/forward-step.ts] | Specify an enforceable session-memory policy for multi-turn reasoning: reject unsupported client-authored reasoning before returning data-bearing prompts, or route those turns through an admitted daemon provider. Add a real forwardStep→plan/narrow regression proving that unverified clients receive no session-derived reasoning prompt. |
+| error-paths | HIGH | The specified failure handling and sink inventory close raw driver-error logging for temporary runtime resources. | PostgresDriver installs `pool.on('error', ...)` that calls `log.warn({ id, err: err.message }, 'pool error')`; RedisDriver similarly logs raw client error messages. These asynchronous listeners bypass outer RPC/tool error mapping. getLogger returns cached module loggers backed by persistent pino-roll output; only the separate probe-worker mode is silent. The design reuses these factories in the main daemon but specifies no owner-scoped logging mechanism or migration for these listeners. [files: src/daemon/db/drivers/pg.ts, src/daemon/db/drivers/redis.ts, src/daemon/db/registry.ts, src/shared/logger.ts] | Add concrete runtime-driver logging change sites and a per-resource safe logging policy covering asynchronous events through disposal. Do not silence the shared logger globally. Test PG/Redis event errors containing endpoint/data canaries, including events outside callbacks and during drain, against the actual daemon log sink. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| boundaries | The linked ER and sequence companions render correctly and remain visually consistent with the design. | Both generated HTML files and their embedded Mermaid sources were inspected. Opening the ER file failed with `Browser is not available: iab`; browser inventory returned no available browsers. Neither rendered diagram could be inspected. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html] | Render and inspect both existing companions before claiming visual verification; correct or regenerate any rendering defects. |

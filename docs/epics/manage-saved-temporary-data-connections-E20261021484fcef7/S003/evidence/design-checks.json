@@ -26,11 +26,11 @@
   ],
   "latestReview": {
     "verdict": "block",
-    "reviewedAt": "2026-10-25T09:11:01.824Z",
+    "reviewedAt": "2026-10-25T09:51:42.484Z",
     "counts": {
-      "high": 3,
-      "med": 1,
-      "low": 8,
+      "high": 2,
+      "med": 0,
+      "low": 11,
       "unverified": 1
     },
     "transportTimedOut": true,
@@ -39,37 +39,28 @@
       {
         "item": "change-sites",
         "severity": "HIGH",
-        "premise": "The claimed complete consumer inventory includes the connection-scope validation and resolution paths needed for temporary-only IDs.",
-        "action": "Add these sites and callers to the inventory. Specify owner/root-bound connection existence and scope resolution using the validated overlay, preserve unattached saved semantics, and test temporary-only IDs plus same-name saved IDs in another root."
+        "premise": "The provider integration inventory closes every LLM-analysis path for session-derived data.",
+        "action": "Specify an enforceable session-memory policy for multi-turn reasoning: reject unsupported client-authored reasoning before returning data-bearing prompts, or route those turns through an admitted daemon provider. Add a real forwardStep\u2192plan/narrow regression proving that unverified clients receive no session-derived reasoning prompt."
       },
       {
-        "item": "change-sites",
+        "item": "error-paths",
         "severity": "HIGH",
-        "premise": "The stream migration inventory covers every component that must retain maintenance exclusion through owned drain.",
-        "action": "Add holdingForward to the concrete migration inventory and make terminal frames/disconnect retain the hold until handler completion and registered drains settle. Exercise the real enabled maintenance lock in CM-S3-STREAM."
-      },
-      {
-        "item": "change-sites",
-        "severity": "HIGH",
-        "premise": "The listed carrier and persistence changes cover the orchestrator and recursive planner callers that must preserve session-memory policy.",
-        "action": "Document RunAnalyzeArgs/Opts and RecursivePlannerArgs/PlanBuilderOpts propagation, owner-memory record access, and success/error/resume handling at these sites. Include completeRun and nested measurement/planning branches in CM-S3-CACHE and CM-S3-CONTEXT."
-      },
-      {
-        "item": "change-sites",
-        "severity": "MED",
-        "premise": "The complete migration inventory specifies the provider admission boundary required by its nonpersistent-provider rule.",
-        "action": "Specify the provider admission API and supported-mode evidence, inventory all factory/direct/injected provider paths, and define refusal before prompt submission. Add tests proving rejection before spawn/send and policy retention through aggregation, retries and injected providers."
+        "premise": "The specified failure handling and sink inventory close raw driver-error logging for temporary runtime resources.",
+        "action": "Add concrete runtime-driver logging change sites and a per-resource safe logging policy covering asynchronous events through disposal. Do not silence the shared logger globally. Test PG/Redis event errors containing endpoint/data canaries, including events outside callbacks and during drain, against the actual daemon log sink."
       }
     ]
   },
   "reviewCallsThisCycle": {
-    "startupError": 1,
-    "completed": 2,
+    "cycle": 2,
+    "startupError": 0,
+    "completed": 3,
+    "transportTimeouts": 3,
+    "daemonResultsRecovered": 3,
     "additionalCycleRequiresUserConfirmation": true
   },
   "reviewCycle2": {
     "authorizedBy": "user",
-    "status": "round3 corrections ready for independent review",
+    "status": "complete: three independent reviews; two HIGH findings remain, awaiting user authorization for another cycle",
     "changes": [
       "root-bound connection scope checks and all discovered callers",
       "holdingForward holds maintenance through handler settlement AND drains",
@@ -89,6 +80,7 @@
       "shared reservation check in adopted legacyUpsert and unmanaged saveConnectionRpc before credentials/registry writes",
       "unattached legacy and complete connection owner RPC catalog forced main-daemon routing",
       "canonical root/alias lock identity and production race matrix across adopted/unadopted roots"
-    ]
+    ],
+    "round3RecoveredResult": "Legacy saved-writer collision closed. New blockers: unverified client reasoning prompt egress and asynchronous runtime driver logs bypass admission/sanitization."
   }
 }

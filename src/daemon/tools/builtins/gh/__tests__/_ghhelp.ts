@@ -54,7 +54,9 @@ export function flagsOf(command: string): HelpFlag[] {
 	const out: HelpFlag[] = [];
 	for (const line of m[1].split('\n')) {
 		const f = /^\s+(?:(-\w), )?(--[\w-]+)(.*)$/.exec(line);
-		if (f?.[2] !== undefined) { out.push({ ...(f[1] !== undefined ? { short: f[1] } : {}), long: f[2], description: (f[3] ?? '').trim() }); }
+		const shortOnly = /^\s+(-\w)(\s.*)$/.exec(line);
+		if (f?.[2] === undefined && shortOnly?.[1] !== undefined) { out.push({ long: shortOnly[1], description: (shortOnly[2] ?? '').trim() }); }
+		else if (f?.[2] !== undefined) { out.push({ ...(f[1] !== undefined ? { short: f[1] } : {}), long: f[2], description: (f[3] ?? '').trim() }); }
 	}
 	return out;
 }

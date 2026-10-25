@@ -54,7 +54,7 @@ test('gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, cov
 	const gh = listTools().filter(t => t.id.startsWith('gh_') || t.id.startsWith('gh:'));
 	assert.equal(gh.length, 68);
 	assert.equal(gh.filter(t => (t as { ops?: unknown }).ops !== undefined).length, 22);
-	// every registered gh tool serves some covered command, except the tool that has no gh command of its own
+	// every registered gh tool serves some covered command
 	const served = new Set(GH_COVERAGE.flatMap(r => r.toolIds ?? []));
-	assert.deepEqual(gh.map(t => t.id).filter(id => !served.has(id)), ['gh_pr_files']);
+	assert.deepEqual(gh.map(t => t.id).filter(id => !served.has(id)), []);
 });

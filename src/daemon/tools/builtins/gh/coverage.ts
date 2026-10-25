@@ -75,7 +75,7 @@ export const GH_COVERAGE: readonly GhCoverageRow[] = [
   { command: "pr reopen", owner: "covered", toolIds: ["gh_pr_manage"], op: "reopen" },
   { command: "pr review", owner: "covered", toolIds: ["gh_pr_review"] },
   { command: "pr unlock", owner: "covered", toolIds: ["gh_pr_manage"], op: "unlock" },
-  { command: "pr view", owner: "covered", toolIds: ["gh_pr_view"] },
+  { command: "pr view", owner: "covered", toolIds: ["gh_pr_view", "gh_pr_files"] },
   { command: "project close", owner: "covered", toolIds: ["gh_project_manage"], op: "close" },
   { command: "project copy", owner: "covered", toolIds: ["gh_project_manage"], op: "copy" },
   { command: "project create", owner: "covered", toolIds: ["gh_project_manage"], op: "create" },

@@ -421,7 +421,7 @@ export function defineGhFamily(spec: { id: string; description: string; ops: rea
     async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
       const def = byName.get(String(input['op']));
       if (def === undefined) { return rejectInput(id, `unknown op ${JSON.stringify(input['op'])}; the ops are ${ops.map(o => o.name).join(', ')}`); }
-      const refusal = refuseInput(def, input, { dashSafe: spec.dashSafe !== false });
+      const refusal = refuseInput(def, input, { dashSafe: spec.dashSafe === true });
       if (refusal !== undefined) { return rejectInput(id, refusal); }
       const argv = buildArgv(def, input);
       const stdin = def.stdin?.(input);

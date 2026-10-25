@@ -127,9 +127,10 @@ async function textOf(input: Record<string, unknown>): Promise<{ r: ToolResult; 
 }
 
 test('jira-live.test.ts: the disposable-project probe records the real success text of each project mutation', { skip: skipProbe }, async () => {
-  const dir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'live');
+  // the recordings are the fixtures the reader tests (jira-project-auth.test.ts) read; the site name is replaced so the repository does not carry it
+  const dir = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures');
   mkdirSync(dir, { recursive: true });
-  const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim()}\n`);
+  const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim().replace(/https:\/\/[^/\s]+/g, 'https://example.atlassian.net')}\n`);
   const key = probe.key as string;
   let made = false;
   let archived = false;

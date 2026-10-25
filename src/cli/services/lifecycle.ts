@@ -14,6 +14,7 @@
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 
+import { performance } from 'node:perf_hooks';
 import { PATHS } from '../../shared/paths.js';
 import { captureStopTarget } from '../../shared/daemon-process-client.js';
 import type { StopTarget } from '../../shared/daemon-process-client.js';
@@ -88,7 +89,7 @@ export async function waitForStop(timeoutMs = 30_000, target?: StopTarget | unde
  const observed = target ?? captured?.target;
  try {
   if (!observed) { if (captured) cleanupStoppedDaemon(captured); return true; }
-  const deadline = Date.now() + timeoutMs;
+  const deadline = performance.now() + timeoutMs;
   do {
    if (await observed.handle.hasExited()) {
     // A foreign target carries no authority over current paths. Only absence
@@ -96,8 +97,8 @@ export async function waitForStop(timeoutMs = 30_000, target?: StopTarget | unde
     cleanupStoppedDaemon(captured ?? { target: observed, pidFile: undefined, socketFile: undefined });
     return true;
    }
-   if (Date.now() >= deadline) return false;
-   await sleep(Math.min(100, Math.max(0, deadline - Date.now())));
+   if (performance.now() >= deadline) return false;
+   await sleep(Math.min(100, Math.max(0, deadline - performance.now())));
   } while (true);
  } finally { if (ownsHandle) await captured?.target?.handle.close(); }
 }
@@ -105,8 +106,8 @@ export async function waitForStop(timeoutMs = 30_000, target?: StopTarget | unde
 /** Wait until the daemon accepted startup (pid file + socket present
  *  and pid alive). Returns the pid, or undefined on timeout. */
 export async function waitForReady(timeoutMs = 60_000): Promise<number | undefined> {
-	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
+	const deadline = performance.now() + timeoutMs;
+	while (performance.now() < deadline) {
 		const pid = pidFromFile();
 		if (pid !== undefined && existsSync(PATHS.sockFile) && pidAlive(pid)) return pid;
 		await sleep(500);

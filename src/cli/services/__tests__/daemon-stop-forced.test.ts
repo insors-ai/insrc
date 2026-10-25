@@ -257,3 +257,26 @@ test('Fresh HOME capture and stop create the missing guard parent and report no 
  assert.equal(await waitForStop(0), true);
  assert.equal(existsSync(PATHS.daemonRunGuard), false); assert.equal(existsSync(PATHS.pidFile), false); assert.equal(existsSync(PATHS.sockFile), false);
 });
+
+test('Backward wall-clock adjustment cannot postpone CLI forced stop of an unresponsive original', { timeout: 5000 }, async () => {
+ const { performance } = await import('node:perf_hooks');
+ const child = await startStubborn(true), originalNow = Date.now;
+ let jump: ReturnType<typeof setTimeout> | undefined;
+ const started = performance.now();
+ try {
+  const outcome = await stopDaemon({ stopWaitMs: 150, requestShutdown: async () => {
+   jump = setTimeout(() => { Date.now = () => originalNow() - 60000; }, 50); return 'no-reply';
+  } });
+  assert.deepEqual(outcome, { stopped: true, forced: true, pid: child.pid });
+  assert.equal(await exited(child), 'SIGKILL'); assert.ok(performance.now() - started < 2000);
+ } finally { if (jump) clearTimeout(jump); Date.now = originalNow; }
+});
+
+test('Backward wall-clock adjustment cannot extend CLI readiness timeout', { timeout: 5000 }, async () => {
+ const { waitForReady } = await import('../lifecycle.js');
+ const { performance } = await import('node:perf_hooks');
+ const originalNow = Date.now, started = performance.now();
+ const jump = setTimeout(() => { Date.now = () => originalNow() - 60000; }, 20);
+ try { assert.equal(await waitForReady(80), undefined); assert.ok(performance.now() - started < 1500); }
+ finally { clearTimeout(jump); Date.now = originalNow; }
+});

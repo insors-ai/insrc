@@ -67,3 +67,14 @@ test('describeStop: says when the daemon was killed', () => {
  assert.equal(describeStop({ stopped: true, forced: false }), 'daemon stopped');
  assert.equal(describeStop({ stopped: true, forced: true, pid: 5 }), 'daemon did not stop by itself; killed (pid 5)');
 });
+
+test('Backward wall-clock adjustment cannot extend the bounded forced-termination observation phase', { timeout: 5000 }, async () => {
+ const f = fixture({ survives: true }), originalNow = Date.now;
+ const { performance } = await import('node:perf_hooks');
+ const jump = setTimeout(() => { Date.now = () => originalNow() - 60000; }, 20);
+ const started = performance.now();
+ try {
+  await assert.rejects(stopDaemonWith({ ...f.deps, killWaitMs: 80, sleep: () => new Promise(resolve => setTimeout(resolve, 10)) }), /still alive after SIGKILL/);
+  assert.ok(performance.now() - started < 1000); assert.equal(f.state().closed, 1);
+ } finally { clearTimeout(jump); Date.now = originalNow; }
+});

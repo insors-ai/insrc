@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { rpc } from '../client.js';
+import { performance } from 'node:perf_hooks';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus } from '../../shared/types.js';
 import { captureDaemon, cleanupStoppedDaemon, waitForReady, waitForStop } from './lifecycle.js';
@@ -165,9 +166,9 @@ export async function stopDaemonWith(deps: StopDeps): Promise<StopOutcome> {
   }
   try { await target.handle.terminate(); }
   catch (error) { throw new Error(`daemon (pid ${target.pid}) SIGKILL failed: ${error instanceof Error ? error.message : String(error)}; restart withheld`); }
-  const deadline = Date.now() + deps.killWaitMs;
+  const deadline = performance.now() + deps.killWaitMs;
   while (!(await target.handle.hasExited())) {
-   if (Date.now() >= deadline) throw new Error(`daemon (pid ${target.pid}) is still alive after SIGKILL; restart withheld`);
+   if (performance.now() >= deadline) throw new Error(`daemon (pid ${target.pid}) is still alive after SIGKILL; restart withheld`);
    await deps.sleep(100);
   }
   deps.cleanup(captured);

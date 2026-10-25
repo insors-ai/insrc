@@ -29,6 +29,7 @@ import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js
 import { resolveStoryRangeBase } from '../workflow/runners/build/range-base.js';
 import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.js';
 import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
+import { familyForClient, getModelRegistry } from './model-registry.js';
 import {
 	loadAnalyzeConfig,
 	type AnalyzeConfig,
@@ -188,8 +189,7 @@ export async function codeReviewRunStart(
 
 function defaultProvider(_repoPath: string, client: 'claude' | 'codex' | undefined): { provider: LLMProvider; modelLabel: string } {
 	const cfg = loadAnalyzeConfig();
-	const clientDefault: AnalyzeShaperProviderKind | undefined =
-		client === 'claude' ? 'cli-claude' : client === 'codex' ? 'cli-codex' : undefined;
+	const clientDefault: AnalyzeShaperProviderKind | undefined = familyForClient(client);
 	return {
 		provider:   buildShaperProvider(cfg, { clientDefault, cliTimeoutMs: CODE_REVIEW_CLI_TIMEOUT_MS }),
 		modelLabel: modelLabelFor(cfg, clientDefault),
@@ -258,8 +258,8 @@ function modelLabelFor(
 		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
 		clientDefault,
 	});
-	if (effective === 'ollama') return `ollama:${cfg.shaperModel}`;
-	const cli = effective === 'cli-claude' ? 'claude' : 'codex';
+	const cli = getModelRegistry().cliKind(effective);
+	if (cli === undefined) return `${effective}:${cfg.shaperModel}`;
 	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
 }
 

@@ -149,16 +149,6 @@ export function stepClient(): StepClient | undefined {
 	return storage.getStore()?.client;
 }
 
-/** The shaper provider kind a client implies, for runWithClientProviderContext. */
-export function clientProviderKind(client: StepClient | undefined): 'cli-claude' | 'cli-codex' | undefined {
-	return client === 'claude' ? 'cli-claude' : client === 'codex' ? 'cli-codex' : undefined;
-}
-
-/** The client a shaper provider kind names: the inverse of clientProviderKind. */
-export function stepClientOf(kind: string | undefined): StepClient | undefined {
-	return kind === 'cli-claude' ? 'claude' : kind === 'cli-codex' ? 'codex' : undefined;
-}
-
 /** The tools the daemon's `step.call` request runs (the MCP server forwards them). */
 export const STEP_TOOL_NAMES = [
 	'insrc_analyze',

@@ -182,7 +182,8 @@ test('source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/
   for (const spec of imports) {
     assert.doesNotMatch(spec, /@anthropic|openai|undici|node:http|node:https|axios/i, `forbidden import: ${spec}`);
   }
-  assert.deepEqual(imports, ['./model-definitions.js'], 'its only dependency is the models.definitions projection');
+  const runtime = [...src.matchAll(/^import\s+(?!type\b)[^;]*?from\s+'([^']+)'/gms)].map(m => m[1]!);
+  assert.deepEqual(runtime, ['./model-definitions.js'], 'its only runtime dependency is the models.definitions projection');
 });
 
 test("handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)", () => {
@@ -199,4 +200,19 @@ test('integration: listModels(cli-claude) with the default deps lists the shippe
   const r = asResult(await listModels({ provider: 'cli-claude' }));   // default deps; a CLI family never reaches the real ollama lister
   assert.equal(r.available, true);
   assert.deepEqual(r.models.map(m => m.id), validateModelCatalog().families.find(f => f.id === 'cli-claude')!.models.map(m => m.id));
+});
+
+test("list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error", async () => {
+  useFixture();
+  const { deps } = fakeDeps(async () => [{ id: 'qwen:1b' }]);
+  const ids = getModelRegistry().families().map(f => f.id);
+  assert.deepEqual([...ids].sort(), ['cli-claude', 'cli-codex', 'ollama']);
+  for (const id of ids) {
+    const r = await listModels({ provider: id }, deps);
+    assert.ok(!('error' in r), id);
+    assert.equal((r as ModelListResult).provider, id);
+  }
+  for (const bad of ['cli-gemini', 'Ollama', 'claude', 'codex', '']) {
+    assert.deepEqual(await listModels({ provider: bad }, deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, bad);
+  }
 });

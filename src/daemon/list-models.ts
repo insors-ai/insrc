@@ -27,10 +27,11 @@ import {
   projectDefinitions,
   type ModelDefinitionsDeps,
 } from './model-definitions.js';
+import type { FamilyId } from './model-catalog.js';
+import type { ModelRegistry } from './model-registry.js';
 
-/** The three providers the list capability serves — exactly the reused runner
- *  enum values (k3): the three model families. */
-export type ModelProvider = 'ollama' | 'cli-claude' | 'cli-codex';
+/** The providers the list capability serves: the model families. */
+export type ModelProvider = FamilyId;
 
 /** The sc2 request. */
 export interface ListModelsParams {
@@ -64,8 +65,6 @@ export interface ListModelsError {
  *  bounded ollama lister, getModelRegistry and the definitions file version). */
 export type ListModelsDeps = ModelDefinitionsDeps;
 
-const ALL_PROVIDERS = new Set<ModelProvider>(['ollama', 'cli-claude', 'cli-codex']);
-
 /** Narrow a definitions model entry into a ModelInfo
  *  (exactOptionalPropertyTypes-correct: never set displayName:undefined). */
 function toModelInfo(m: { readonly id: string; readonly displayName?: string | undefined }): ModelInfo {
@@ -84,10 +83,14 @@ export async function listModels(
   params: unknown,
   deps: ListModelsDeps = DEFAULT_MODEL_DEFINITIONS_DEPS,
 ): Promise<ModelListResult | ListModelsError> {
-  const provider = extractProvider(params);
+  const registry = deps.registry();
+  const provider = extractProvider(params, registry);
   if (provider === undefined) {
+    // The local family first, then the CLI families in file order (the text callers know).
+    const families = registry.families();
+    const ids = [...families.filter(f => f.cliKind === undefined), ...families.filter(f => f.cliKind !== undefined)].map(f => `'${f.id}'`);
     return {
-      error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`,
+      error: `invalid-params: provider must be one of ${ids.join(' | ')}`,
       recoverable: false,
     };
   }
@@ -96,7 +99,8 @@ export async function listModels(
   // + [] (ac2/k7), never a fabricated or cached-as-fresh list. A reachable server
   // with none of the listed models installed returns available:true + [].
   let installed: readonly string[] | undefined;
-  if (provider === 'ollama') {
+  const local = registry.cliKind(provider) === undefined;
+  if (local) {
     try {
       installed = (await deps.ollamaList()).map(m => m.id);
     } catch {
@@ -106,15 +110,15 @@ export async function listModels(
 
   // Every family is answered from the same projection models.definitions returns
   // (s2/ac2); a CLI family never calls the ollama lister. No cloud REST (ac4).
-  const family = projectDefinitions(deps.registry(), deps.catalogVersion(), installed)
+  const family = projectDefinitions(registry, deps.catalogVersion(), installed)
     .families.find(f => f.id === provider);
-  const served = (family?.models ?? []).filter(m => provider !== 'ollama' || m.installed === true);
+  const served = (family?.models ?? []).filter(m => !local || m.installed === true);
   return { provider, available: true, models: served.map(toModelInfo) };
 }
 
-/** Extract a valid ModelProvider from raw params, or undefined. */
-function extractProvider(params: unknown): ModelProvider | undefined {
+/** Extract a valid ModelProvider (a family id of the registry) from raw params, or undefined. */
+function extractProvider(params: unknown, registry: ModelRegistry): ModelProvider | undefined {
   if (typeof params !== 'object' || params === null) return undefined;
   const p = (params as Record<string, unknown>)['provider'];
-  return typeof p === 'string' && ALL_PROVIDERS.has(p as ModelProvider) ? (p as ModelProvider) : undefined;
+  return typeof p === 'string' ? registry.families().find(f => f.id === p)?.id : undefined;
 }

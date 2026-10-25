@@ -20,7 +20,8 @@
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInStepContext } from '../../shared/step-context.js';
-import type { StepCallContext, StepToolName } from '../../shared/step-context.js';
+import type { StepCallContext, StepClient, StepToolName } from '../../shared/step-context.js';
+import { familyForClient, getModelRegistry } from '../model-registry.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
@@ -83,11 +84,15 @@ function contextOf(raw: unknown): StepCallContext | string {
 	const c = raw as Record<string, unknown>;
 	if (typeof c['cwd'] !== 'string' || c['cwd'].length === 0) return '`context.cwd` (non-empty string) is required';
 	if (c['envRepo'] !== undefined && typeof c['envRepo'] !== 'string') return '`context.envRepo` must be a string';
-	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex') return "`context.client` must be 'claude' or 'codex'";
+	// A client is a CLI the model definitions run: it maps to that family.
+	if (c['client'] !== undefined && (typeof c['client'] !== 'string' || familyForClient(c['client'] as StepClient) === undefined)) {
+		const kinds = [...new Set(getModelRegistry().families().flatMap(f => f.cliKind !== undefined ? [`'${f.cliKind}'`] : []))];
+		return `\`context.client\` must be ${kinds.join(' or ')}`;
+	}
 	return {
 		cwd: c['cwd'],
 		...(typeof c['envRepo'] === 'string' ? { envRepo: c['envRepo'] } : {}),
-		...(c['client'] !== undefined ? { client: c['client'] as 'claude' | 'codex' } : {}),
+		...(c['client'] !== undefined ? { client: c['client'] as StepClient } : {}),
 	};
 }
 

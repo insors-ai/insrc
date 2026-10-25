@@ -27,6 +27,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { TierName } from '../config/analyze.js';
+import type { StepClient } from '../shared/step-context.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import {
@@ -93,6 +94,18 @@ export interface ModelRegistry {
 	/** De-duplicated union of every served model's efforts, by first appearance. */
 	effortLevels(): readonly EffortLevel[];
 	resolveTier(tier: TierName, setting: TierSetting): TierResolution;
+}
+
+/**
+ * The family a calling client's identity implies (Claude Code → the family whose
+ * cliKind is 'claude', Codex → 'codex'): the default family when its CLI kind
+ * matches, else the first such family in file order; undefined for no client or
+ * one no family runs. Daemon-owned: client processes forward only the identity.
+ */
+export function familyForClient(client: StepClient | undefined, registry: ModelRegistry = getModelRegistry()): FamilyId | undefined {
+	if (client === undefined) return undefined;
+	if (registry.cliKind(registry.defaultFamily()) === client) return registry.defaultFamily();
+	return registry.families().find(f => f.cliKind === client)?.id;
 }
 
 let storePathOverride: string | undefined;

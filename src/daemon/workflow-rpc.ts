@@ -32,6 +32,7 @@ import type { AnalyzeContextBundle } from '../analyze/context/types.js';
 import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
 import type { RoleId } from '../config/role-taxonomy.js';
+import { familyForClient, getModelRegistry } from './model-registry.js';
 import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { resolveStageFocus } from '../workflow/seed-focus.js';
@@ -415,8 +416,7 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	const intent: WorkflowIntent = { workflow: p.workflow, focus: resolvedFocus, repoPath, repoIndexedAt: null, params };
 
 	const cfg = loadAnalyzeConfig();
-	const clientDefault: AnalyzeShaperProviderKind | undefined =
-		p.client === 'claude' ? 'cli-claude' : p.client === 'codex' ? 'cli-codex' : undefined;
+	const clientDefault: AnalyzeShaperProviderKind | undefined = familyForClient(p.client);
 	// Resolution chain: global config > per-run caller > ollama.
 	// Workflow synthesize generates a whole artifact — well past the CLI's
 	// 120 s default — so give CLI providers a generous timeout (Ollama ignores it).
@@ -625,8 +625,8 @@ function modelLabelFor(
 		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
 		clientDefault,
 	});
-	if (effective === 'ollama') return `ollama:${cfg.shaperModel}`;
-	const cli = effective === 'cli-claude' ? 'claude' : 'codex';
+	const cli = getModelRegistry().cliKind(effective);
+	if (cli === undefined) return `${effective}:${cfg.shaperModel}`;
 	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
 }
 

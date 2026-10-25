@@ -91,3 +91,24 @@ test('singleModelAttribution parses an ollama:<model> label into runner+model', 
 	assert.equal(a.outputs[0]!.runner, 'ollama');
 	assert.equal(a.outputs[0]!.model, 'qwen3-test');
 });
+
+test('attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families', () => {
+	const stampOf = (label: string) => singleModelAttribution(label).outputs[0]!;
+	const cases: Array<[string, string, string]> = [
+		['claude',                'cli-claude', 'claude'],
+		['client',                'cli-claude', 'client'],
+		['codex',                 'cli-codex',  'codex'],
+		['codex:gpt-6.1-sol',     'cli-codex',  'codex:gpt-6.1-sol'],
+		['ollama',                'ollama',     'ollama'],
+		['ollama:qwen3.6:27b',    'ollama',     'qwen3.6:27b'],
+		['ollama:llama2:retired', 'ollama',     'llama2:retired'],
+	];
+	for (const [label, runner, model] of cases) {
+		assert.deepEqual([stampOf(label).runner, stampOf(label).model], [runner, model], label);
+		// The legacy read-shim decodes a scalar meta.model the same way.
+		assert.equal(attributionOf({ model: label } as unknown as ArtifactMetaBase)[0]!.runner, runner, `legacy ${label}`);
+	}
+	// A bare model id or alias maps to the family that lists it.
+	assert.equal(stampOf('gpt-6-astra').runner, 'cli-codex');
+	assert.equal(stampOf('opus').runner, 'cli-claude');
+});

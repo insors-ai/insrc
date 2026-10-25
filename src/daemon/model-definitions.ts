@@ -138,3 +138,21 @@ export async function modelDefinitions(deps: ModelDefinitionsDeps = DEFAULT_MODE
 	}
 	return projectDefinitions(deps.registry(), deps.catalogVersion(), installed);
 }
+
+/** One `claude.models` row (the RPC's existing shape). */
+export interface ClaudeModelEntry {
+	readonly id:          string;
+	readonly displayName: string;
+	readonly createdAt:   string;
+}
+
+/**
+ * The `claude.models` answer: the served models of the family the claude CLI
+ * runs (listed, then user-approved), from the model definitions — no cloud REST
+ * call (DEF k1). Empty when no family runs the claude CLI.
+ */
+export function claudeModels(registry: ModelRegistry = getModelRegistry()): ClaudeModelEntry[] {
+	const family = registry.families().find(f => f.cliKind === 'claude');
+	if (family === undefined) return [];
+	return registry.models(family.id).map(m => ({ id: m.id, displayName: m.displayName ?? m.id, createdAt: '' }));
+}

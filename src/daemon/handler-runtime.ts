@@ -38,7 +38,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
-import { modelDefinitions } from './model-definitions.js';
+import { claudeModels, modelDefinitions } from './model-definitions.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -1220,33 +1220,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return data['models'] ?? [];
 		},
 
-		// Claude model listing
-		'claude.models': async () => {
-			const { getKey } = await import('../shared/keystore.js');
-			const key = await getKey('ANTHROPIC_API_KEY');
-			if (key) {
-				try {
-					const Anthropic = (await import('@anthropic-ai/sdk')).default;
-					const client = new Anthropic({ apiKey: key });
-					const models = await client.models.list();
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					return models.data.map((m: any) => ({
-						id: m.id,
-						displayName: m.display_name ?? m.id,
-						createdAt: m.created_at ?? '',
-					}));
-				} catch (err) {
-					log.warn({ error: String(err) }, 'failed to list Claude models via API');
-				}
-			}
-			// Fallback: static catalog
-			return [
-				{ id: 'claude-haiku-4-5', displayName: 'Claude Haiku 4.5', createdAt: '' },
-				{ id: 'claude-sonnet-4-5', displayName: 'Claude Sonnet 4.5', createdAt: '' },
-				{ id: 'claude-sonnet-4-6', displayName: 'Claude Sonnet 4.6', createdAt: '' },
-				{ id: 'claude-opus-4-6', displayName: 'Claude Opus 4.6', createdAt: '' },
-			];
-		},
+		// Claude model listing: the served models of the family the claude CLI
+		// runs, from the model definitions (no cloud REST call, DEF k1).
+		'claude.models': async () => claudeModels(),
 
 		// Phase 1 cleanup: agent step bindings RPC gone with the agent
 		// framework. IDE Model Providers pane no longer surfaces per-step

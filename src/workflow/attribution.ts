@@ -25,19 +25,30 @@
  */
 
 import type { ArtifactMetaBase, ArtifactModelAttribution, OutputModelStamp } from './types.js';
+import { SHIPPED_DEFINITIONS } from '../config/model-defaults.js';
 
 /** Best-effort map a run-wide scalar model label
- *  (`client` | `ollama:<m>` | `claude` | `codex` | …) onto a runner + model for
- *  a single synthesized stamp. `role` is a placeholder note — `(legacy)` for the
- *  read-shim on old artifacts, `(client)` for the MCP client-driven write path.
- *  Fidelity is approximate by design. */
+ *  (`client` | `ollama:<m>` | `claude` | `codex` | `codex:<m>` | …) onto a runner
+ *  + model for a single synthesized stamp, decoded by the shipped definitions'
+ *  family metadata before any model lookup, so historical labels keep their
+ *  family: a family id (`ollama`, `ollama:<m>`, even for a model no longer
+ *  listed), then a CLI kind prefix (`claude`, `codex`, `codex:<m>`), then a
+ *  model id or alias of a family, else the default family (`client` included).
+ *  `role` is a placeholder note — `(legacy)` for the read-shim on old artifacts,
+ *  `(client)` for the MCP client-driven write path. Fidelity is approximate by
+ *  design. */
 function labelStamp(label: string, role: string): OutputModelStamp {
-	if (label.startsWith('ollama:')) return { role, tier: 'core', runner: 'ollama', model: label.slice('ollama:'.length) };
-	if (label === 'ollama')          return { role, tier: 'core', runner: 'ollama', model: 'ollama' };
-	if (label === 'codex' || label.startsWith('codex')) return { role, tier: 'core', runner: 'cli-codex', model: label };
-	// 'client' (outer MCP client drove) / 'claude' / anything else → treat as a
-	// claude-CLI-family label; the raw label is preserved in `model`.
-	return { role, tier: 'core', runner: 'cli-claude', model: label };
+	const families = SHIPPED_DEFINITIONS.families;
+	const stamp = (runner: OutputModelStamp['runner'], model: string): OutputModelStamp => ({ role, tier: 'core', runner, model });
+	for (const f of families) {
+		if (label === f.id) return stamp(f.id, label);
+		if (label.startsWith(`${f.id}:`)) return stamp(f.id, label.slice(f.id.length + 1));
+	}
+	for (const f of families) {
+		if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);
+	}
+	const byModel = families.find(f => f.models.some(m => m.id === label || (m.aliases ?? []).includes(label)));
+	return stamp(byModel?.id ?? SHIPPED_DEFINITIONS.defaultFamily, label);
 }
 
 /**

@@ -24,7 +24,7 @@ test('jira-project-auth.test.ts: every project op and auth status returns its de
   assert.deepEqual(PROJECT_OPS.map(o => [o.name, o.cls]), [['list', 'none'], ['view', 'none'], ['create', 'common'], ['update', 'common'], ['archive', 'destructive'], ['restore', 'common'], ['delete', 'destructive']]);
   assert.deepEqual(AUTH_OPS.map(o => [o.name, o.cls]), [['status', 'none']]);
 
-  const mark = '✓ done\n';
+  const text = (op: string): string => fixture(`project-${op}.txt`);
   const cases: { tool: GhFamilyTool; input: Record<string, unknown>; stdout: string; argv: string; check: (d: Record<string, any>) => void }[] = [
     { tool: jiraProjectTool, input: { op: 'list' }, stdout: fixture('project-list.json'), argv: 'jira project list --limit 30 --json',
       check: d => { assert.equal(d['count'], 2); assert.deepEqual(d['projects'][0], { key: 'IN', id: '10001', name: 'insrc' }); } },
@@ -32,14 +32,14 @@ test('jira-project-auth.test.ts: every project op and auth status returns its de
     { tool: jiraProjectTool, input: { op: 'list', recent: true }, stdout: fixture('project-list.json'), argv: 'jira project list --recent --json', check: () => {} },
     { tool: jiraProjectTool, input: { op: 'view', key: 'IN' }, stdout: fixture('project-view.json'), argv: 'jira project view --key IN --json',
       check: d => { assert.deepEqual(d['project'], { key: 'IN', id: '10001', name: 'insrc' }); } },
-    { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'Probe', description: '-d', url: 'https://x.io', leadEmail: 'a@b.co' }, stdout: mark,
+    { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'Probe', description: '-d', url: 'https://x.io', leadEmail: 'a@b.co' }, stdout: text('create'),
       argv: 'jira project create --from-project IN --key ZZPROBE --name=Probe --description=-d --url=https://x.io --lead-email=a@b.co', check: d => { assert.equal(d['target'], 'ZZPROBE'); assert.equal(d['ok'], true); } },
-    { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'Probe' }, stdout: mark, argv: 'jira project create --from-project IN --key ZZPROBE --name=Probe', check: () => {} },
-    { tool: jiraProjectTool, input: { op: 'update', projectKey: 'ZZPROBE', name: 'Renamed', key: 'ZZP2' }, stdout: mark,
+    { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'Probe' }, stdout: text('create'), argv: 'jira project create --from-project IN --key ZZPROBE --name=Probe', check: () => {} },
+    { tool: jiraProjectTool, input: { op: 'update', projectKey: 'ZZPROBE', name: 'Renamed', key: 'ZZP2' }, stdout: text('update'),
       argv: 'jira project update --project-key ZZPROBE --key ZZP2 --name=Renamed', check: d => { assert.equal(d['target'], 'ZZPROBE'); } },
-    { tool: jiraProjectTool, input: { op: 'archive', key: 'ZZPROBE' }, stdout: mark, argv: 'jira project archive --key ZZPROBE', check: d => { assert.equal(d['target'], 'ZZPROBE'); } },
-    { tool: jiraProjectTool, input: { op: 'restore', key: 'ZZPROBE' }, stdout: mark, argv: 'jira project restore --key ZZPROBE', check: () => {} },
-    { tool: jiraProjectTool, input: { op: 'delete', key: 'ZZPROBE' }, stdout: mark, argv: 'jira project delete --key ZZPROBE', check: () => {} },
+    { tool: jiraProjectTool, input: { op: 'archive', key: 'ZZPROBE' }, stdout: text('archive'), argv: 'jira project archive --key ZZPROBE', check: d => { assert.equal(d['target'], 'ZZPROBE'); } },
+    { tool: jiraProjectTool, input: { op: 'restore', key: 'ZZPROBE' }, stdout: text('restore'), argv: 'jira project restore --key ZZPROBE', check: () => {} },
+    { tool: jiraProjectTool, input: { op: 'delete', key: 'ZZPROBE' }, stdout: text('delete'), argv: 'jira project delete --key ZZPROBE', check: () => {} },
     { tool: jiraAuthTool, input: { op: 'status' }, stdout: fixture('auth-status.txt'), argv: 'jira auth status',
       check: d => { assert.deepEqual({ signedIn: d['signedIn'], site: d['site'], email: d['email'], authType: d['authType'] }, { signedIn: true, site: 'example.atlassian.net', email: 'user@example.com', authType: 'oauth' }); } },
   ];
@@ -55,10 +55,16 @@ test('jira-project-auth.test.ts: every project op and auth status returns its de
     // no op writes a flag that reads or writes a local file, and none passes --yes (the project commands have none)
     assert.ok(!calls.some(x => /--(from-json|generate-json|paginate|yes)/.test(x)), what);
   }
-  // the project commands accept the success mark only
+  // the project commands accept the text the live probe recorded, with or without a check mark, and nothing else
   const bad = await run(jiraProjectTool, { op: 'archive', key: 'ZZPROBE' }, 'archived');
   assert.equal(bad.r.failure?.kind, 'rejected');
   assert.equal(bad.r.failure?.original, 'archived');
+  for (const [op, input] of [['create', { fromProject: 'IN', key: 'K', name: 'n' }], ['update', { projectKey: 'K', name: 'n' }], ['archive', { key: 'K' }], ['restore', { key: 'K' }], ['delete', { key: 'K' }]] as const) {
+    assert.equal((await run(jiraProjectTool, { op, ...input }, `✓ ${text(op)}`)).r.success, true, `${op} with a check mark`);
+    assert.equal((await run(jiraProjectTool, { op, ...input }, '✓ done\n')).r.failure?.kind, 'rejected', `${op}: a mark alone is not enough`);
+    // each command accepts only its own text
+    assert.equal((await run(jiraProjectTool, { op, ...input }, text(op === 'archive' ? 'delete' : 'archive'))).r.success, false, `${op} given another command's text`);
+  }
   // auth status needs no model call: it reads text, and signed-out text is not signed in
   const out = await run(jiraAuthTool, { op: 'status' }, '');
   assert.equal((out.r.data as { signedIn: boolean }).signedIn, false);

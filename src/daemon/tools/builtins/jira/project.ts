@@ -1,13 +1,14 @@
 /**
  * jira_project: list, view, create (from an existing project: acli's --from-project, company-managed projects only), update,
  * archive, restore, delete. The --from-json and --generate-json forms read or write a local file and are not offered.
- * The success text of the changing commands has not been recorded from a live site yet; their readers accept the success
- * mark only.
+ * Each changing command is read by the success text the live probe recorded (fixtures/live): 'Project K created at <url>',
+ * 'Project K has been successfully updated | archived | restored | deleted'. An archived project must be restored before it can
+ * be deleted.
  */
 
 import { field, lit, on, val } from '../gh/op-table.js';
 import type { GhFamilyTool, OpDef } from '../gh/op-table.js';
-import { jsonAnswer, markAnswer } from './answers.js';
+import { jsonAnswer, patternAnswer } from './answers.js';
 import { defineJiraFamily } from './family.js';
 import { changeShape, projectListShape, projectViewShape } from './schemas.js';
 
@@ -41,7 +42,7 @@ const create: OpDef = {
     description: field.str(), url: field.str(), leadEmail: field.str("The lead's email (default: the lead of the source project)."),
   },
   args: [val('--from-project', 'fromProject'), val('--key', 'key'), val('--name', 'name'), val('--description', 'description'), val('--url', 'url'), val('--lead-email', 'leadEmail')],
-  out: { ...change, build: markAnswer(i => String(i['key'])) },
+  out: { ...change, build: patternAnswer(/^Project \S+ created\b/, i => String(i['key'])) },
 };
 
 const update: OpDef = {
@@ -52,15 +53,15 @@ const update: OpDef = {
     description: field.str(), url: field.str(), leadEmail: field.str("The new lead's email."),
   },
   args: [val('--project-key', 'projectKey'), val('--key', 'key'), val('--name', 'name'), val('--description', 'description'), val('--lead-email', 'leadEmail'), val('--url', 'url')],
-  out: { ...change, build: markAnswer(i => String(i['projectKey'])) },
+  out: { ...change, build: patternAnswer(/^Project \S+ has been successfully updated\b/, i => String(i['projectKey'])) },
 };
 
-const byKey = (name: string, cls: OpDef['cls']): OpDef => ({
+const byKey = (name: string, cls: OpDef['cls'], done: string): OpDef => ({
   name, command: ['project', name], cls, limitS: 60, required: ['key'], fields: { key: field.str('The project key.') }, args: [val('--key', 'key')],
-  out: { ...change, build: markAnswer(i => String(i['key'])) },
+  out: { ...change, build: patternAnswer(new RegExp(`^Project \\S+ has been successfully ${done}\\b`), i => String(i['key'])) },
 });
 
-export const PROJECT_OPS: readonly OpDef[] = [list, view, create, update, byKey('archive', 'destructive'), byKey('restore', 'common'), byKey('delete', 'destructive')];
+export const PROJECT_OPS: readonly OpDef[] = [list, view, create, update, byKey('archive', 'destructive', 'archived'), byKey('restore', 'common', 'restored'), byKey('delete', 'destructive', 'deleted')];
 
 export const jiraProjectTool: GhFamilyTool = defineJiraFamily({
   id: 'jira_project',

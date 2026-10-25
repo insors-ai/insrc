@@ -52,6 +52,18 @@ export function markAnswer(target: (input: BuildContext['input']) => string): Bu
   };
 }
 
+/**
+ * A text result whose first line (after an optional check mark) matches `expected`: the project commands, whose real success
+ * text was recorded by the live probe ('Project K has been successfully archived'; archive, restore and delete print no mark).
+ */
+export function patternAnswer(expected: RegExp, target: (input: BuildContext['input']) => string): Build {
+  return async ctx => {
+    const first = stripAnsi(ctx.stdout).trim().replace(/^✓\s*/, '').split('\n')[0] ?? '';
+    if (!expected.test(first)) { return rejected('acli did not confirm the change', ctx.stdout || ctx.stderr); }
+    return { ok: true, target: target(ctx.input), message: first };
+  };
+}
+
 /** A JSON read: `pick` shapes the parsed document into the answer, or returns undefined when it is not what the op expects. */
 export function jsonAnswer(what: string, pick: (doc: unknown) => Record<string, unknown> | undefined): Build {
   return async ctx => {

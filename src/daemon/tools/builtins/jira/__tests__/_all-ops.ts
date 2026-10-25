@@ -43,11 +43,11 @@ export const ALL_OP_CASES: readonly OpCase[] = [
   { tool: jiraLinkTool, input: { op: 'delete', id: '10001' }, stdout: fixture('link-delete.txt') },
   { tool: jiraProjectTool, input: { op: 'list' }, stdout: fixture('project-list.json') },
   { tool: jiraProjectTool, input: { op: 'view', key: 'IN' }, stdout: fixture('project-view.json') },
-  { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'n' }, stdout: mark },
-  { tool: jiraProjectTool, input: { op: 'update', projectKey: 'ZZPROBE', name: 'n' }, stdout: mark },
-  { tool: jiraProjectTool, input: { op: 'archive', key: 'ZZPROBE' }, stdout: mark },
-  { tool: jiraProjectTool, input: { op: 'restore', key: 'ZZPROBE' }, stdout: mark },
-  { tool: jiraProjectTool, input: { op: 'delete', key: 'ZZPROBE' }, stdout: mark },
+  { tool: jiraProjectTool, input: { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'n' }, stdout: fixture('project-create.txt') },
+  { tool: jiraProjectTool, input: { op: 'update', projectKey: 'ZZPROBE', name: 'n' }, stdout: fixture('project-update.txt') },
+  { tool: jiraProjectTool, input: { op: 'archive', key: 'ZZPROBE' }, stdout: fixture('project-archive.txt') },
+  { tool: jiraProjectTool, input: { op: 'restore', key: 'ZZPROBE' }, stdout: fixture('project-restore.txt') },
+  { tool: jiraProjectTool, input: { op: 'delete', key: 'ZZPROBE' }, stdout: fixture('project-delete.txt') },
   { tool: jiraAuthTool, input: { op: 'status' }, stdout: fixture('auth-status.txt') },
 ];
 

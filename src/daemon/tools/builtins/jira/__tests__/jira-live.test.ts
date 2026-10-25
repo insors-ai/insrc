@@ -122,6 +122,7 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim()}\n`);
   const key = probe.key as string;
   let made = false;
+  let archived = false;
   try {
     const create = await textOf({ op: 'create', fromProject: probe.source, key, name: `insrc probe ${key}`, leadEmail: probe.lead });
     record('create', create.text);
@@ -131,10 +132,13 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
     for (const input of [{ op: 'update', projectKey: key, description: 'insrc probe' }, { op: 'archive', key }, { op: 'restore', key }]) {
       const step = await textOf(input);
       record(String(input.op), step.text);
+      archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived;
       assert.equal(step.r.success, true, `${String(input.op)}: ${step.text}`);
     }
   } finally {
     if (made) {
+      // an archived project cannot be deleted ('You cannot edit the configuration of this project'): restore it first
+      if (archived) { await call(jiraProjectTool, { op: 'restore', key }); }
       const del = await textOf({ op: 'delete', key });
       record('delete', del.text);
       assert.equal(del.r.success, true, `delete of the scratch project ${key}: ${del.text}`);

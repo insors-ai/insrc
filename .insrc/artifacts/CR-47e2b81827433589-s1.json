@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "c5e021eebe518c2f04654d6a40f730271d4c2e7007e3259417361a54273a5d7b",
@@ -17,7 +17,16 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T15:56:45.858Z"
+      }
     },
     "workflow": "code-review",
     "runId": "cr-1792940029986-8vsroc",

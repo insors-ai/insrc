@@ -6,18 +6,30 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 6,
-        "contentHash": "31ddce2e4ee2b37b26ab439e9f6e2df8189ec9162d6b0ecf7e017e92be86e7b9",
-        "at": "2026-10-25T14:52:54.120Z",
+        "number": 7,
+        "contentHash": "ba73cbd24ea7c3dc75faf2df0451e090a644b9ea0dcc1c16f5783bf5531b58b7",
+        "at": "2026-10-25T15:56:42.718Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T15:56:43.692Z",
+        "override": {
+          "reason": "User explicitly approved this scope override in chat. Final independent daemon diff review has no findings and matches the completed BUILD fingerprint. The diff assembler excludes workflow artifacts and documentation evidence, including the four-clause regression harness, which were independently checked during t3 validation. All implementation targets under src/ are covered. Approve this documented workflow/evidence scope mismatch; retain the non-green full-suite limitation."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-456c0964-814e-4824-b99f-ed0abf19a4c1",
@@ -29,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "47e2b81827433589",
     "storyId": "s1",
-    "revision": 6,
+    "revision": 7,
     "updatedAt": "2026-10-25T14:51:59.356Z",
     "authoredBy": "controller",
     "standalone": true,
@@ -60,227 +72,255 @@
           "file": ".insrc/artifacts/LLD-47e2b81827433589-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-47e2b81827433589-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-47e2b81827433589-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/source-inspection.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/call-progress.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/adherence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/enveloped.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-47e2b81827433589-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-47e2b81827433589-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-47e2b81827433589-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-47e2b81827433589-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-47e2b81827433589-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-47e2b81827433589-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/four-highs-result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/review-four-highs.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/validation.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
       },
       {
         "target": {
           "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/baseline-comparison.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T14:51:59.356Z"
+        "timestamp": "2026-10-25T15:56:37.187Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-47e2b81827433589-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:56:37.187Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-47e2b81827433589-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:56:37.187Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:56:37.187Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/give-code-review-adherence-functional-coverage-E2026102547e2b818/S001/evidence/approval-presentation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T15:56:37.187Z"
       }
     ],
-    "commit": "cc33de0f4"
+    "commit": "7f117f946"
   },
   "citations": []
 }

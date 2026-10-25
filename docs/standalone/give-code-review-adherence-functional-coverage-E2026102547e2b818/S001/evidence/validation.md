@@ -56,3 +56,7 @@ The user approved the narrow PLAN correction on 2026-10-25. It removes the circu
 The daemon finished the final diff review after the MCP client's five-minute timeout. Its persisted verdict is WARN solely because grounding is degraded, with **HIGH 0 / MED 0 / LOW 0**. All four dimensions contain no findings. The recorded BUILD fingerprint matches current BUILD revision 6, whose three tasks all passed.
 
 The strict completion coverage check still flags BUILD targets excluded by the diff assembler: workflow JSON/Markdown records and validation evidence under this Story's documentation directory, including the reproduction harness. All BUILD targets under `src/` are covered. These excluded evidence files were inspected during the independent t3 validation, but they are not in the final CR's changed-file set. Closure therefore requires the user's explicit scope override; no override or BUILD approval has been granted by this controller.
+
+## Approved completion
+
+The user explicitly approved the documented workflow/evidence scope override and both final records. BUILD was approved at 2026-10-25T15:56:43.692Z and CR at 2026-10-25T15:56:45.858Z; neither approval skipped a record. The pending-artifact scanner then returned no remaining entries for `47e2b81827433589`. GitHub tracker attachment was unavailable because the tracker is disabled; this is local workflow completion.

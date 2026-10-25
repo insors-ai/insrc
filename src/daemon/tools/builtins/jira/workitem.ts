@@ -100,7 +100,7 @@ const assign: OpDef = {
 
 const clone: OpDef = {
   name: 'clone', command: ['workitem', 'clone'], cls: 'common', limitS: 60,
-  required: ['keys'], fields: { keys: KEYS, toProject: field.str('The project key to clone into (default: the same project).') },
+  required: ['keys', 'toProject'], fields: { keys: KEYS, toProject: field.str('The project key to clone into (acli requires it; use the same key to clone within a project).') },
   args: [csv('--key', 'keys'), val('--to-project', 'toProject'), lit('--yes', '--json')],
   out: { ...change, build: batchAnswer({ clone: true }) },
 };

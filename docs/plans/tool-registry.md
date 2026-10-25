@@ -372,3 +372,30 @@ Run by hand before the s6 build; outputs are in `docs/plans/acli-recorded/` (the
 - **`comment update` has no `--yes`** (`unknown flag: --yes`); `link create` and `link delete` accept it. `link list` returns `{issueLinks:[{id,outwardIssueKey,typeName}]}` with `outwardIssueKey` null on the outward side.
 - **Reads:** `link type` returns four types (Blocks, Cloners, Duplicate, Relates); `attachment list` `{"attachments":[]}`; `list-watchers` carries `isWatching`, `watchCount`, `watchers` with full user objects; `comment visibility --role --project IN` lists `Administrators`, `atlassian-addons-project-access`, `jira-guest-member`; `--group` prints `Available Groups (26 total):` and a box table with ANSI escapes.
 - **Left behind:** IN-1, IN-2 and IN-3 could not be deleted; they are transitioned to Done and labelled `insrc-probe`, and the user can delete them in the Jira UI.
+
+## Jira tools (s6, built 2026-10-26)
+
+Five tools in `src/daemon/tools/builtins/jira/`, 32 ops, all over Atlassian's acli (nothing else is spawned). Changes address work items by key only; the three lists that take a limit (`jira_workitem search`, `jira_comment list`, `jira_project list`) pass a finite `--limit`, never `--paginate`. They return `GhFamilyTool` like the gh families, so shapes are checked at run time (sc2 amendment AMD-10).
+
+| Tool | Op | Class |
+|---|---|---|
+| `jira_workitem` | view, search, count, attachment-list, watcher-list | none |
+| `jira_workitem` | create, edit, transition, assign, clone, archive, unarchive, watcher-remove | common |
+| `jira_workitem` | delete, attachment-delete | destructive |
+| `jira_comment` | list, visibility | none |
+| `jira_comment` | create, update | common |
+| `jira_comment` | delete | destructive |
+| `jira_link` | list, types | none |
+| `jira_link` | create | common |
+| `jira_link` | delete | destructive |
+| `jira_project` | list, view | none |
+| `jira_project` | create, update, restore | common |
+| `jira_project` | archive, delete | destructive |
+| `jira_auth` | status | none |
+
+- **Excluded** (the scope amendment to ac1 above): `workitem create-bulk`, the `--from-json` and `--generate-json` forms of project create and update, `auth login`, `auth logout`, `auth switch`, and every command of `board`, `sprint`, `dashboard`, `field` and `filter`.
+- **Unsupported** (acli does not offer them): a transition by transition id (`workitem transition` takes a status name), and a list of the transitions a work item can take.
+- **Found by the live test:** `workitem clone` needs `--to-project` (the `toProject` input is required). Delete is not permitted for this user in the `IN` project (it is in `SCRUM`), which is why the work item live test uses `INSRC_JIRA_SCRATCH_PROJECT`.
+- **Project mutation text:** the success text of project create, update, archive, restore and delete is recorded by the gated probe (`jira-live.test.ts`, fixtures in `__tests__/fixtures/live/`). Until it has run, the readers accept the success mark only. Not yet recorded: attachment delete's success text (acli has no way to add an attachment here).
+- **Run the live tests:** `INSRC_LIVE_TESTS=1 INSRC_JIRA_SCRATCH_PROJECT=<project> npx tsx --test src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts`; the probe also needs `INSRC_JIRA_PROBE_SOURCE` (a company-managed project, read only), `INSRC_JIRA_PROBE_KEY` and `INSRC_JIRA_PROBE_LEAD`.
+

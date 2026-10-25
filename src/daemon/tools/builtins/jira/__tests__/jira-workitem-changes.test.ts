@@ -68,7 +68,7 @@ test('jira-workitem-changes.test.ts: each changing op returns {ok, target, messa
 test('jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, filter and from-file refused', async () => {
   const keyed = ['edit', 'transition', 'assign', 'clone', 'archive', 'unarchive', 'delete'];
   const base: Record<string, Record<string, unknown>> = {
-    edit: { summary: 's' }, transition: { status: 'Done' }, assign: { assignee: '@me' }, clone: {}, archive: {}, unarchive: {}, delete: {},
+    edit: { summary: 's' }, transition: { status: 'Done' }, assign: { assignee: '@me' }, clone: { toProject: 'IN' }, archive: {}, unarchive: {}, delete: {},
   };
   for (const op of keyed) {
     // repeated keys are sent once, in first-seen order
@@ -95,6 +95,8 @@ test('jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, fi
   assert.match((await run({ op: 'edit', keys: ['IN-1'] }, '{}')).r.failure?.message ?? '', /at least one of/);
   assert.match((await run({ op: 'edit', keys: ['IN-1'], assignee: '@me', removeAssignee: true }, '{}')).r.failure?.message ?? '', /at most one of assignee, removeAssignee/);
   assert.match((await run({ op: 'assign', keys: ['IN-1'] }, '{}')).r.failure?.message ?? '', /exactly one of assignee, removeAssignee/);
+  // clone needs the target project (found by the live test: acli refuses without --to-project)
+  assert.match((await run({ op: 'clone', keys: ['IN-1'] }, '{}')).r.failure?.message ?? '', /needs the field toProject/);
   // create needs a project, a type and a summary
   assert.match((await run({ op: 'create', project: 'IN', type: 'Task' }, '{}')).r.failure?.message ?? '', /needs the field summary/);
 });
@@ -118,7 +120,7 @@ test('jira-workitem-changes.test.ts: a FAILURE result at exit 0 and a partial ba
   assert.equal(del.r.failure?.kind, 'rejected');
   assert.match(del.r.failure?.message ?? '', /permission to delete issues/);
   // a clone message without the new key is a failure, not a guess
-  const clone = await run({ op: 'clone', keys: ['IN-1'] }, batch(k => `Work item ${k} has been cloned`, 'IN-1'));
+  const clone = await run({ op: 'clone', keys: ['IN-1'], toProject: 'IN' }, batch(k => `Work item ${k} has been cloned`, 'IN-1'));
   assert.equal(clone.r.failure?.kind, 'rejected');
   assert.match(clone.r.failure?.message ?? '', /did not say the key of the new work item/);
 });

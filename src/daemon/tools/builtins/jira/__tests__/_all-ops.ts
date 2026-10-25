@@ -24,7 +24,7 @@ export const ALL_OP_CASES: readonly OpCase[] = [
   { tool: jiraWorkitemTool, input: { op: 'edit', keys: ['IN-1'], summary: 's' }, stdout: fixture('batch-edit-success.json') },
   { tool: jiraWorkitemTool, input: { op: 'transition', keys: ['IN-1'], status: 'Done' }, stdout: batch('Work item IN-1 has been successfully transitioned to Done') },
   { tool: jiraWorkitemTool, input: { op: 'assign', keys: ['IN-1'], assignee: '@me' }, stdout: batch('Work item IN-1 has been successfully assigned to user@example.com') },
-  { tool: jiraWorkitemTool, input: { op: 'clone', keys: ['IN-1'] }, stdout: fixture('batch-clone.json') },
+  { tool: jiraWorkitemTool, input: { op: 'clone', keys: ['IN-1'], toProject: 'IN' }, stdout: fixture('batch-clone.json') },
   { tool: jiraWorkitemTool, input: { op: 'archive', keys: ['IN-1'] }, stdout: batch('Work item IN-1 has been successfully archived') },
   { tool: jiraWorkitemTool, input: { op: 'unarchive', keys: ['IN-1'] }, stdout: batch('Work item IN-1 has been successfully unarchived') },
   { tool: jiraWorkitemTool, input: { op: 'delete', keys: ['IN-1'] }, stdout: batch('Work item IN-1 has been successfully deleted') },

@@ -151,12 +151,12 @@ test('resolveShaperKind: roleResolved wins over global/client', () => {
 
 test('resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)', () => {
 	assert.equal(resolveShaperKind({ globalExplicit: 'cli-codex', clientDefault: undefined, roleResolved: 'openai' as never }), 'cli-codex');
-	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined, roleResolved: 'openai' as never }), 'ollama');
+	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined, roleResolved: 'openai' as never }), 'cli-claude', "the floor is the definitions' default family");
 });
 
 test('resolveShaperKind: legacy callers resolve identically (roleResolved absent)', () => {
 	assert.equal(resolveShaperKind({ globalExplicit: 'cli-claude', clientDefault: undefined }), 'cli-claude');
-	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined }), 'ollama');
+	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined }), 'cli-claude');
 });
 
 // ── router surface: memoization + summariser-stays-local ─────────────────────

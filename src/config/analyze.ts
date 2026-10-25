@@ -11,7 +11,7 @@
  * from `tiers.core`, the background summariser from `tiers.cheap`. This loader
  * reads the flat `models.*` surface:
  *   - models.tiers / models.tasks / models.coreFloor / models.byRepo — tiering
- *   - models.shaper.maxToolTurns / .structuredOutputRetries / .ollamaNumCtx /
+ *   - models.shaper.maxToolTurns / .structuredOutputRetries /
  *     .ollamaNumPredict  -- shaper runtime knobs (NOT model specs)
  *   - models.maxPlanDepth.{XS,S,M,L,XL}
  *
@@ -36,7 +36,6 @@ const log = getLogger('config:analyze');
 export interface AnalyzeShaperConfig {
 	readonly maxToolTurns:            number;
 	readonly structuredOutputRetries: number;
-	readonly ollamaNumCtx:            number;
 	/**
 	 * Max output tokens (num_predict) for the shaper's structured-output
 	 * call. The Ollama provider's default is 8192, which the code +
@@ -48,7 +47,8 @@ export interface AnalyzeShaperConfig {
 	 * with retries exhausted -> shaper-schema-unrecoverable.
 	 *
 	 * 20480 gives the model ~2.5x headroom over 8192 without eating into
-	 * the prompt half of ollamaNumCtx (32768 total - prompt budget).
+	 * the prompt half of the model's context window (its token inputLimit in
+	 * the model definitions).
 	 * Bump higher via config.json `models.shaper.ollamaNumPredict`
 	 * for XL-scope runs on large workspaces.
 	 */
@@ -199,14 +199,12 @@ export interface AnalyzeConfig {
 /**
  * Defaults sit at sane v1 starting points. `maxToolTurns: 40` matches
  * the design doc; `structuredOutputRetries: 3` matches the Ollama
- * provider's own default; `ollamaNumCtx: 32768` is the standard
- * shaper-context size (large enough to fit an XL-scope bundle without
- * truncation, but not so large the model OOMs).
+ * provider's own default. An Ollama model's context window is its token
+ * inputLimit in the model definitions.
  */
 const DEFAULT_SHAPER: AnalyzeShaperConfig = {
 	maxToolTurns:            40,
 	structuredOutputRetries: 3,
-	ollamaNumCtx:            32_768,
 	ollamaNumPredict:        20_480,
 };
 
@@ -344,10 +342,6 @@ function readAnalyzeConfig(registry: ModelRegistry): AnalyzeConfig {
 				typeof shaperObj['structuredOutputRetries'] === 'number'
 					? (shaperObj['structuredOutputRetries'] as number)
 					: DEFAULT_SHAPER.structuredOutputRetries,
-			ollamaNumCtx:
-				typeof shaperObj['ollamaNumCtx'] === 'number'
-					? (shaperObj['ollamaNumCtx'] as number)
-					: DEFAULT_SHAPER.ollamaNumCtx,
 			ollamaNumPredict:
 				typeof shaperObj['ollamaNumPredict'] === 'number'
 					? (shaperObj['ollamaNumPredict'] as number)

@@ -57,6 +57,7 @@ import { fileURLToPath } from 'node:url';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { loadAnalyzeConfig, type AnalyzeConfig } from '../../config/analyze.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
+import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
@@ -533,7 +534,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	const messages = buildMessages(promptContent, inputs, invocationMode, shaperId);
 
 	// (5) Resolve provider + tool deps.
-	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildLocalToolLoopProvider(cfg);
 	const toolDeps = buildToolDeps({
 		runId,
 		shaperId,
@@ -839,7 +840,7 @@ export async function runShaperToolLoop(
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
-	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildLocalToolLoopProvider(cfg);
 	const toolDeps = buildToolDeps({
 		runId:          args.runId,
 		shaperId:       args.shaperId,
@@ -1095,21 +1096,31 @@ function deriveEmptyLayers(bundle: AnalyzeContextBundle): BundleLayerName[] {
  * everything reachable via `buildShaperProvider(cfg)`. Tool-loop
  * callers stay on Ollama regardless of shaperProvider.
  */
-function buildProvider(modelId: string, numCtx: number): LLMProvider {
+function buildLocalToolLoopProvider(cfg: AnalyzeConfig): LLMProvider {
+	const { model, numCtx } = localToolLoopModel(cfg);
 	const local = loadLocalProviderConfig();
-	return new OllamaProvider(modelId, local.host, numCtx);
+	return new OllamaProvider(model, local.host, numCtx);
 }
 
 /** The local Ollama model for the tool-loop path (classification / task modes),
- *  which REQUIRES an Ollama provider (`CliProvider.supportsTools === false`).
- *  Derives from the cheap tier when it is an Ollama runner, else the local
- *  `coreModel` — never a CLI-only model id (which would break OllamaProvider).
- *  Replaces the old direct read of the (now derived) `cfg.shaperModel`, which
- *  can resolve to a CLI model id (e.g. opus) that OllamaProvider cannot honor. */
-function localToolLoopModel(cfg: AnalyzeConfig): string {
-	const cheap = cfg.tiering.tiers?.cheap;
-	if (cheap?.runner === 'ollama' && cheap.model.length > 0) return cheap.model;
-	return loadLocalProviderConfig().coreModel;
+ *  which REQUIRES an Ollama provider (`CliProvider.supportsTools === false`),
+ *  and its context window (the model's token inputLimit). In order: the cheap
+ *  tier's model when that tier resolved to the ollama family; else the local
+ *  `coreModel` when the ollama family lists it; else the definitions'
+ *  tool-loop model (logged when a coreModel was set but is not listed) —
+ *  never a CLI-only model id (which would break OllamaProvider). */
+export function localToolLoopModel(cfg: AnalyzeConfig, registry: ModelRegistry = getModelRegistry()): { model: string; numCtx: number } {
+	const cheap = cfg.tierResolutions?.cheap;
+	const coreModel = loadLocalProviderConfig().coreModel;
+	let chosen: ResolvedModel | undefined;
+	if (cheap !== undefined && registry.cliKind(cheap.family) === undefined) chosen = cheap.model;
+	// The local family is the tool-loop model's.
+	chosen ??= registry.find(registry.toolLoopModel().family, coreModel);
+	if (chosen === undefined) {
+		chosen = registry.toolLoopModel();
+		if (coreModel !== '') log.warn({ requested: coreModel, model: chosen.id }, `models.local.coreModel '${coreModel}' is not a listed Ollama model; the tool loop runs ${chosen.id}`);
+	}
+	return { model: chosen.id, numCtx: chosen.inputLimit?.max ?? 0 };
 }
 
 interface BuildToolDepsArgs {

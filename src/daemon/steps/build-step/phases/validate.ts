@@ -16,7 +16,8 @@
 
 import { CliProvider, ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../../agent/providers/cli-provider.js';
 import { createRoleRouter } from '../../../../analyze/context/role-router.js';
-import { runWithRoutingContext, currentRoutingContext } from '../../../../analyze/context/shaper-provider.js';
+import { familyProvider, runWithRoutingContext, currentRoutingContext } from '../../../../analyze/context/shaper-provider.js';
+import { getModelRegistry } from '../../../model-registry.js';
 import { loadAnalyzeConfig } from '../../../../config/analyze.js';
 import { relative } from 'node:path';
 
@@ -184,13 +185,17 @@ export function resolveValidateProvider(repoPath: string): ValidateProvider {
 	// Reuse the ambient sc6 router when a routing seam is established (handleValidate
 	// sets one), else construct one — either way the 'build' tier decides the model.
 	const router = currentRoutingContext()?.router ?? createRoleRouter({});
-	const { resolution } = router.resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
-	if (resolution.runner === 'cli-claude' || resolution.runner === 'cli-codex') {
-		const kind = resolution.runner === 'cli-codex' ? 'codex' : 'claude';
-		return new CliProvider({ kind, ...(resolution.model !== '' ? { model: resolution.model } : {}), ...(resolution.effort !== undefined ? { effort: resolution.effort } : {}) });
-	}
-	log.warn({ runner: resolution.runner }, "build-step[validate]: 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — falling back to claude");
-	return new CliProvider({ kind: 'claude' });
+	const { provider, resolution } = router.resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
+	// A CLI tier: the router's provider (model, accepted effort and input budget from the same factory).
+	if (provider instanceof CliProvider) return provider;
+	// Edit sessions need a CLI: run the default family's default for the 'build' tier instead.
+	const registry = getModelRegistry();
+	const family = registry.defaultFamily();
+	const def = registry.tierDefault(family, resolution.tier);
+	const chosen = registry.resolveTier(resolution.tier, { runner: family, model: def.model, ...(def.effort !== undefined ? { effort: def.effort } : {}) });
+	log.warn({ runner: resolution.runner, model: resolution.model, tier: resolution.tier, family: chosen.family, substitute: chosen.model.id },
+		"build-step[validate]: the 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — running the default family's tier default");
+	return familyProvider(registry, chosen.family, chosen.model, { effort: chosen.effort }) as CliProvider;
 }
 
 export async function handleValidate(input: BuildStepInputValidate): Promise<BuildStepDone | BuildStepError> {

@@ -552,7 +552,7 @@
       ],
       "siteCount": 135,
       "sitesDigest": "88a6f6016f8174c03db04faf1e424336dac358f908a274c0f94371c113af3c47",
-      "sourceDigest": "d19f65f7ea917105d721031f15cbe2944ec43f9486ba49644901167c8dd79585",
+      "sourceDigest": "a6941c2e0f3cbd92eaf7a4f81202af9bad1fdc651ec1fe6ccc6b2a63cb46e51e",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -1424,11 +1424,11 @@
       "sites": [
         [
           "provider-factory",
-          "buildProvider"
+          "buildLocalToolLoopProvider"
         ],
         [
           "provider-factory",
-          "buildProvider"
+          "buildLocalToolLoopProvider"
         ],
         [
           "storage-call",
@@ -1527,6 +1527,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -1599,9 +1603,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 44,
-      "sitesDigest": "267235940345a17eb9341d8584803cc361f9ea67b81543920fb05399364ba86e",
-      "sourceDigest": "64e7e175273a39e8d13b241b961c5a88e474dfeb145c10f0ed49062d26c60386",
+      "siteCount": 45,
+      "sitesDigest": "c7e010de3b7d51b43dcd8e9ed0ce1126c99e97a63120249651f5f12cc52a8315",
+      "sourceDigest": "251a01fd900f990c4b57f737e1041da9ee3931626a3cb653df6504fc5a024b6c",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1824,14 +1828,6 @@
           "CliProvider"
         ],
         [
-          "provider-adapter",
-          "CliProvider"
-        ],
-        [
-          "provider-factory",
-          "CliProvider"
-        ],
-        [
           "provider-factory",
           "CliProvider"
         ],
@@ -1840,8 +1836,16 @@
           "CliProvider"
         ],
         [
-          "provider-use",
-          "CliProvider"
+          "provider-factory",
+          "familyProvider"
+        ],
+        [
+          "provider-factory",
+          "familyProvider"
+        ],
+        [
+          "provider-factory",
+          "familyProvider"
         ],
         [
           "diagnostic",
@@ -1861,7 +1865,7 @@
         ],
         [
           "diagnostic",
-          "log.info"
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -1872,19 +1876,7 @@
           "OllamaProvider"
         ],
         [
-          "provider-adapter",
-          "OllamaProvider"
-        ],
-        [
           "provider-factory",
-          "OllamaProvider"
-        ],
-        [
-          "provider-factory",
-          "OllamaProvider"
-        ],
-        [
-          "provider-use",
           "OllamaProvider"
         ],
         [
@@ -1892,9 +1884,9 @@
           "OllamaProvider"
         ]
       ],
-      "siteCount": 22,
-      "sitesDigest": "597af10a7e39a3a367c6e4fea91ae3ee3f8d799dc57a5ba7e9693ce6117caf5d",
-      "sourceDigest": "26185e41b9869a53ff01885755883d63b5c4221932c57b976c2e914842c231da",
+      "siteCount": 19,
+      "sitesDigest": "067f46db26177a429f24e8e80730e8cf70671606551044f1af4c6494cebdbc3e",
+      "sourceDigest": "018e5f420524bf8ff764407a2f65791d3fe761a7a2ec61f0a18e7230e6d0e9b1",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -6058,7 +6050,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "7c65897d5b5f5ea8444ccacfafb3e7ef6c35e3fa4eabbbed9bfea6a2272a0ea6",
-      "sourceDigest": "441f7f7a45617d7d039c354875b64365d9ba898961bb97944f909d5fd054892b",
+      "sourceDigest": "bdcb6ef70eda838941e4a08c48bfc71a5958da891b2a73378ee5eb37f71c139a",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13726,28 +13718,8 @@
           "(testRecordWriterOverride ?? persistTestRecordTask)"
         ],
         [
-          "provider-adapter",
-          "CliProvider"
-        ],
-        [
-          "provider-adapter",
-          "CliProvider"
-        ],
-        [
           "provider-factory",
-          "CliProvider"
-        ],
-        [
-          "provider-factory",
-          "CliProvider"
-        ],
-        [
-          "provider-use",
-          "CliProvider"
-        ],
-        [
-          "provider-use",
-          "CliProvider"
+          "familyProvider"
         ],
         [
           "diagnostic",
@@ -13786,14 +13758,12 @@
           "persistBuildRecord"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "1680b9aa284a8b9942d7aa7e1ae512ae423d5d378433f6f2b4dddafed42b61c8",
-      "sourceDigest": "1ce0f0d1b2499089c0af5424678609c30930f50030aa65914ea1229bbb62d16a",
+      "siteCount": 11,
+      "sitesDigest": "47243428038cdd8201733dbb487c6d136f6f929258413aa436c22b6d4af121a9",
+      "sourceDigest": "19c05d614a7cc8c51738cb252d752ba0aae370bab78061bdfee83536f54a5c0c",
       "boundaries": [
         "diagnostic",
-        "provider-adapter",
         "provider-factory",
-        "provider-use",
         "serialization"
       ]
     },

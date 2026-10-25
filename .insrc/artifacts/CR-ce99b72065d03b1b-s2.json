@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792949641677-ir0g4k",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T17:34:01.799Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 90255,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 121993,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/__tests__/list-models.test.ts",
+        "src/daemon/__tests__/model-catalog.test.ts",
+        "src/daemon/__tests__/model-definitions.test.ts",
+        "src/daemon/__tests__/model-registry.test.ts",
+        "src/daemon/__tests__/models-definitions-daemon.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/list-models.ts",
+        "src/daemon/model-catalog.ts",
+        "src/daemon/model-definitions.ts",
+        "src/daemon/threads/method-class.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ],
+      "excludedFromScope": [
+        "src/daemon/db/management-enablement.ts",
+        "src/daemon/db/session-owner.ts",
+        "src/daemon/request-context.ts",
+        "src/daemon/server.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/router.ts",
+        "src/shared/connection-management-wire.ts",
+        "src/shared/connection-management.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/model-definitions.ts:79",
+            "message": "The Ollama provider construction and listLocalModels boundary sites moved here, but the inventory fixture only removes their old list-models.ts entry without adding model-definitions.ts. These boundary sites remain unclassified, preventing the required session-source-inventory check from passing.",
+            "expectationRef": "PLAN t1: refresh source-inventory digests and classify model-definitions.ts if it has boundary sites; session-source-inventory.test.ts must pass."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/__tests__/list-models.test.ts:199",
+            "message": "Correctness: this integration assertion expects only shipped Claude models, but the default registry also serves user-approved models. A valid approved Claude model in the user's store makes the test fail. Inject a temporary approved-model store so the result is deterministic.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 0
+    }
+  }
+}

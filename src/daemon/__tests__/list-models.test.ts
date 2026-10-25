@@ -194,6 +194,8 @@ test("handler map: 'providers.listModels' is a real handler delegating to listMo
 });
 
 test('integration: listModels(cli-claude) with the default deps lists the shipped Claude models', async () => {
+  // The shipped asset, with an empty approved-model store (not the user's own), so the answer is deterministic.
+  _setApprovedModelsPathForTests(join(tmp(), 'approved-models.json'));
   const r = asResult(await listModels({ provider: 'cli-claude' }));   // default deps; a CLI family never reaches the real ollama lister
   assert.equal(r.available, true);
   assert.deepEqual(r.models.map(m => m.id), validateModelCatalog().families.find(f => f.id === 'cli-claude')!.models.map(m => m.id));

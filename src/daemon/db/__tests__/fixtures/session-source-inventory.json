@@ -6066,7 +6066,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "cfb7ffbb796ab0a0de2e22ae5bc58b9bec6cf089b3da1e267ee6ead5c302ced9",
-      "sourceDigest": "edced95390d07ed5849338cccf054360d8895f2f60b67e84fb7587dda6025ed9",
+      "sourceDigest": "33008dd4223fe015a23688e677c6f2e7c35caf8db57a82a37eca24025b8c60c0",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -6191,7 +6191,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "e6c4836e97c9cc20d2c65fc3158111a37be5df1a213c0d08c7837887a8022ba8",
-      "sourceDigest": "92c8c45f62e9ae801b3115e2e4ae2103e40f64a869ae00ffd23b7db3b6b0abec",
+      "sourceDigest": "b14d6b2f90fb4f5dd8a315eb17dcef14cfb8ce23f758ea4f236b7e21bc1b3515",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -6283,7 +6283,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "fd51e15cb303fb4c616faf5763bf0126e1f9f83bfbb921643295a20f3aaab65a",
-      "sourceDigest": "61c296153a77a34e9a321fb70d80e478374fad0b382ceb70bc022be182428c4f",
+      "sourceDigest": "25bbbe8aca3c1d77b571585e0e6e16fa707bfc1c072076e473050a4b8a07d96a",
       "boundaries": [
         "serialization"
       ]
@@ -7875,7 +7875,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "73936dbff97b3d0e1ea3edee71af928d8e79bfdc0cb925af0f3c0ec49d170352",
-      "sourceDigest": "9c6616ec02dc032fc21434520cbb0eefdf4310e50d492f863eb6e2e77b2b7890",
+      "sourceDigest": "5daba79f27e74b777b96ab3b87d539d96bc4673a225c19d0f08f88213618aee5",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:DriverFactory",
@@ -12647,6 +12647,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -12691,9 +12695,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 61,
-      "sitesDigest": "1c3a213da34485c9803d67c1740ceb71116fcbcb06618e980c69b6d7ef990d95",
-      "sourceDigest": "ba527fd60a7f3dea9af4534c75f377996436a2abd191a2998573a476b9a3cca2",
+      "siteCount": 62,
+      "sitesDigest": "cec52a1682b1151d4bdb11990aad107900d638ced257e1b9695253ed58be4fa0",
+      "sourceDigest": "6d67b60ab8bce5dbc46f0c6f2bed8326c2c5b7996ae6699195e525d77f49449b",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -12707,6 +12711,30 @@
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "sites": [
+        [
+          "provider-adapter",
+          "embeddingDim"
+        ],
+        [
+          "provider-adapter",
+          "embeddingDim"
+        ],
+        [
+          "provider-adapter",
+          "embeddingDim"
+        ],
+        [
+          "provider-use",
+          "embeddingDim"
+        ],
+        [
+          "provider-use",
+          "embeddingDim"
+        ],
+        [
+          "provider-use",
+          "embeddingDim"
+        ],
         [
           "provider-adapter",
           "ensureEmbeddingModel"
@@ -12800,14 +12828,15 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 23,
-      "sitesDigest": "8415a1553888a99563a9a64ecb52dd36688c0fe682bcfb49767bc62292eb32d5",
-      "sourceDigest": "be5f43cee0683d2c48fed35f6710b2a3b56ab686715fcaeabeeb1395929572de",
+      "siteCount": 29,
+      "sitesDigest": "c0a54658b88b12d583ad6659b58b066e1532cbf66b5d851034ecd2cf729ce67a",
+      "sourceDigest": "6cd4c5950151af2d1f8a07942e0df4f47f25599ef27410f93a5b2e9f97f498b6",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
         "filesystem-write",
         "provider-adapter",
+        "provider-use",
         "serialization"
       ]
     },
@@ -28002,6 +28031,102 @@
       "sites": [
         [
           "provider-adapter",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-adapter",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-adapter",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-use",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-use",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-use",
+          "embeddingKeepAlive"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
+        ],
+        [
+          "provider-adapter",
           "formatQuery"
         ],
         [
@@ -28037,36 +28162,64 @@
           "log.warn"
         ],
         [
-          "provider-backend",
-          "ollama.embed"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.embed"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.embed"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.list"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.list"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.list"
+          "provider-adapter",
+          "ollama"
         ],
         [
-          "provider-backend",
-          "ollama.pull"
+          "provider-adapter",
+          "ollama"
         ],
         [
           "provider-backend",
           "Ollama"
+        ],
+        [
+          "provider-backend",
+          "ollama().embed"
+        ],
+        [
+          "provider-backend",
+          "ollama().embed"
+        ],
+        [
+          "provider-backend",
+          "ollama().embed"
+        ],
+        [
+          "provider-backend",
+          "ollama().list"
+        ],
+        [
+          "provider-backend",
+          "ollama().list"
+        ],
+        [
+          "provider-backend",
+          "ollama().list"
+        ],
+        [
+          "provider-backend",
+          "ollama().pull"
         ],
         [
           "provider-adapter",
@@ -28097,13 +28250,14 @@
           "withTimeout"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "109f2c6db340a327d3b53ec429a58582bb9bc2e061d501c83061769bdf293bb4",
-      "sourceDigest": "dfdbbd164c00217b8b711965965fba80081322b12080307863960488bd061ef4",
+      "siteCount": 55,
+      "sitesDigest": "baae65df6d1fe4121f11c514394522bdd23ed6d55074fd4c38cbe5a4740ba3ac",
+      "sourceDigest": "c107877d9e6e8bbcb9980bb125ecf906db8fac527fc9ee32d5b5d5500f1d5590",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
-        "provider-backend"
+        "provider-backend",
+        "provider-use"
       ]
     },
     "src/indexer/external-endpoints.ts": {
@@ -28242,6 +28396,14 @@
         [
           "storage-call",
           "deleteUnresolvedForRepoFile"
+        ],
+        [
+          "provider-adapter",
+          "embeddingModel"
+        ],
+        [
+          "provider-use",
+          "embeddingModel"
         ],
         [
           "provider-adapter",
@@ -28736,9 +28898,9 @@
           "upsertRelations"
         ]
       ],
-      "siteCount": 136,
-      "sitesDigest": "f03c0b903f8638fad4e75dba0941503873a7722e33eddd780d637525e5ecfa06",
-      "sourceDigest": "24219bafb6699995867874487001159f759bc854bfdf10841b0813bcdb310acb",
+      "siteCount": 138,
+      "sitesDigest": "e3aa3dff0a1afff74766eadf8b0b5b877047124b0cdaf53912c5e5377316e689",
+      "sourceDigest": "aebedec73fba4ba100a11b6894fc70362b8311363941cfd0bf12e160b23eabf8",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

@@ -73,7 +73,7 @@ export function driverResourceLog(module: string, context?: DriverFactoryContext
   // These installed SDK paths expose ambient diagnostics without a resource-local sink.
   // Refuse before SDK construction rather than altering process-wide logging.
   if (module === 'db-nats' || module === 'db-etcd' ||
-   ['DEBUG', 'NODE_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL'].some(key => !!process.env[key])) throw denied();
+   ['DEBUG', 'NODE_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'].some(key => !!process.env[key])) throw denied();
   return quiet;
  }
  return Object.freeze({ quiet: false, emit: (level: Level, format: Parameters<DriverResourceLog['emit']>[1]) => {

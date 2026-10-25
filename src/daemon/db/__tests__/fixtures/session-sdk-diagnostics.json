@@ -47,11 +47,14 @@
       "package": "oracledb",
       "version": "6.10.0",
       "temporary": "resource-local-controls",
-      "rationale": "Application query sites use the lazy sink. No trace handler or pool statistics logger is requested; native trace environment flags refuse before construction. No live Oracle privacy claim.",
+      "rationale": "Application query sites use the lazy sink. No trace handler or pool statistics logger is requested; native trace, NODE_ORACLEDB_DEBUG_PACKETS and ORA_DEBUG_JDWP flags refuse before construction. No live Oracle privacy claim.",
       "files": [
         "oracledb/lib/thin/connection.js",
         "oracledb/lib/traceHandler.js",
-        "oracledb/lib/poolStatistics.js"
+        "oracledb/lib/poolStatistics.js",
+        "oracledb/lib/thin/sqlnet/ntTcp.js",
+        "oracledb/lib/thin/sqlnet/paramParser.js",
+        "oracledb/lib/oracledb.js"
       ]
     },
     {
@@ -165,6 +168,9 @@
     "oracledb/lib/thin/connection.js": "314208c5995769801025b1e5b48de7eca7c868ba14893a9fdef07d2b5243f8b1",
     "oracledb/lib/traceHandler.js": "764bbf1e5e1ba0381ca287c7c946fcc18a9587bc34f69735a18d6610fe7eb148",
     "oracledb/lib/poolStatistics.js": "d78f626e77a706710ffc7f699dfa5690e97f86c6ee294aadd33f5805c3a35a00",
+    "oracledb/lib/thin/sqlnet/ntTcp.js": "769986119c9097a2d67ffa0bb3aed57f9190ba4902bc8376892036cf94fc1fa2",
+    "oracledb/lib/thin/sqlnet/paramParser.js": "942965f4bfa84b8d88b252c8419e2ea503fa26739facd2e465fc95a824c0b7f8",
+    "oracledb/lib/oracledb.js": "3bbbed04d1bf81eeb7ca1d3202257ddc8b62de136698faa84b2827a08496577f",
     "@clickhouse/client/dist/client.js": "342ad2ef795ec46b2b48453095cf770d56db3fd79cf27f48cae3df7e26e787f3",
     "@clickhouse/client/dist/common/client.js": "1f2486bb6b2ee6dd9e4c948cb7f86db790074767f463fa7831d080475ae8f825",
     "ioredis/built/Redis.js": "3d2d8a6538470697dc1b7952b2a39ec6dc6862450e812e2cc3676d03a2ef117d",

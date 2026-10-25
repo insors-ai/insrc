@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792949641677-ir0g4k",
+    "runId": "cr-1792949885923-d3kdhm",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-25T17:34:01.799Z",
+    "createdAt": "2026-10-25T17:38:06.071Z",
     "model": "codex:gpt-6.1-sol",
-    "elapsedMs": 90255,
+    "elapsedMs": 70248,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "ce99b72065d03b1b",
@@ -21,7 +21,7 @@
     "groundingMode": "degraded",
     "fallbackReason": {
       "kind": "freshness-timeout",
-      "waitedMs": 121993,
+      "waitedMs": 120601,
       "inFlight": false,
       "pendingCodeIndexJobs": 0,
       "staleFiles": [
@@ -65,9 +65,9 @@
           {
             "dimension": "adherence",
             "severity": "MED",
-            "location": "src/daemon/model-definitions.ts:79",
-            "message": "The Ollama provider construction and listLocalModels boundary sites moved here, but the inventory fixture only removes their old list-models.ts entry without adding model-definitions.ts. These boundary sites remain unclassified, preventing the required session-source-inventory check from passing.",
-            "expectationRef": "PLAN t1: refresh source-inventory digests and classify model-definitions.ts if it has boundary sites; session-source-inventory.test.ts must pass."
+            "location": "src/daemon/model-definitions.ts:78",
+            "message": "The new module constructs OllamaProvider and calls listLocalModels, moving the provider boundary sites previously classified under list-models.ts. The inventory change removes that old classification without adding model-definitions.ts, leaving these boundary sites unclassified.",
+            "expectationRef": "PLAN t1: refresh the source-inventory digests and classify model-definitions.ts if it has boundary sites; session-source-inventory.test.ts must pass."
           }
         ]
       },
@@ -81,22 +81,13 @@
       },
       {
         "dimension": "quality",
-        "findings": [
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/__tests__/list-models.test.ts:199",
-            "message": "Correctness: this integration assertion expects only shipped Claude models, but the default registry also serves user-approved models. A valid approved Claude model in the user's store makes the test fail. Inject a temporary approved-model store so the result is deterministic.",
-            "counterpartRef": "",
-            "confidence": "breach"
-          }
-        ]
+        "findings": []
       }
     ],
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 2,
+      "med": 1,
       "low": 0
     }
   }

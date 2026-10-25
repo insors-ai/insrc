@@ -143,6 +143,7 @@ function resolveRoleInternal(
 	// admission point materialize's buildShaperProvider will use, so the record
 	// and the constructed provider agree on the runner (k1 centralized).
 	const runner = resolveShaperKind({
+		...(deps.registry !== undefined ? { registry: deps.registry } : {}),
 		globalExplicit,
 		clientDefault:  deps.clientDefault,
 		roleResolved:   tierModel?.runner,

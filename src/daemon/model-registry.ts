@@ -124,7 +124,7 @@ export function _resetModelRegistryForTests(): void { registry = undefined; _res
  * (propagated) when the definitions file is bad; a bad store never throws.
  */
 export function getModelRegistry(): ModelRegistry {
-	if (registry === undefined) registry = buildRegistry(validateModelCatalog(), readStore(storePath()));
+	if (registry === undefined) registry = buildModelRegistry(validateModelCatalog(), readStore(storePath()));
 	return registry;
 }
 
@@ -196,7 +196,9 @@ function nameMatches(m: ModelDefinition, name: string): boolean {
 	return m.id === name || (m.aliases ?? []).includes(name);
 }
 
-function buildRegistry(file: ModelDefinitionsFile, profiles: readonly ApprovedProfile[]): ModelRegistry {
+/** The registry over a definitions file and approved-model profiles (pure: no
+ *  file I/O). getModelRegistry builds it over the validated file and the store. */
+export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonly ApprovedProfile[]): ModelRegistry {
 	const familyOf = (id: FamilyId): FamilyDefinition => file.families.find(f => f.id === id)!;
 
 	// Effective profiles: per (family, modelId) the latest decidedAt wins (a tie

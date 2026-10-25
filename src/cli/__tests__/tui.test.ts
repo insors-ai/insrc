@@ -506,3 +506,17 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	assert.match(lastFrame() ?? '', /coreFloor \(core\/mid\/cheap\):/);
 	unmount();
 });
+
+test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)", async () => {
+	const svc = fakeServices();
+	svc.config.show = async () => ({});
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('5');          // → Model Tiers pane
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /core\s+.*cli-claude.*claude-opus-5-5/);
+	assert.match(frame, /mid\s+.*cli-claude.*claude-sonnet-5/);
+	assert.match(frame, /cheap\s+.*cli-claude.*claude-haiku-5-5/);
+	unmount();
+});

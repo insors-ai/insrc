@@ -31,7 +31,7 @@ export async function prepareRuntimeConfig(config: ConnectionConfig, root: strin
 async function resolvePath(path: string, root: string, signal?: AbortSignal): Promise<string> {
 	signal?.throwIfAborted();
 	const absolute = isAbsolute(path) ? path : resolve(root, path), rel = relative(root, absolute);
-	if (rel === '..' || rel.startsWith('../') || isAbsolute(rel)) throw new Error('Connection path resolves outside the repository.');
+	if (rel === '..' || rel.startsWith('../') || isAbsolute(rel)) throw new Error('Connection path resolves outside the repo root.');
 	await access(absolute, constants.R_OK);
 	signal?.throwIfAborted();
 	return absolute;

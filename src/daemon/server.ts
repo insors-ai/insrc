@@ -84,7 +84,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
         return () => {};
       }
       let running: Promise<unknown>;
-      const context = request.trustedContext ? { ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain } : {}) } : undefined;
+      const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain } : {}) }) : undefined;
       try { running = Promise.resolve(handler(request.params, context)); } catch (err) { running = Promise.reject(err); }
       void running.then(
         result => finish({ kind: 'reply', requestId, result }),

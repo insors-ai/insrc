@@ -41,7 +41,7 @@ export class DraftTestSupervisor {
   let resolveResult!:(value:DraftTestResult)=>void,rejectResult!:(reason:unknown)=>void,resolveDrain!:()=>void,terminal=false;
   const response=new Promise<DraftTestResult>((resolve,reject)=>{resolveResult=resolve;rejectResult=reject;}),drained=new Promise<void>(resolve=>{resolveDrain=resolve;});
   // Registration and reservation happen synchronously before any preparation await.
-  context.registerDrain(drained);
+  try { context.registerDrain(drained); } catch (error) { resolveDrain(); throw error; }
   const finish=(status:DraftTestResult['status'],message?:string):void=>{
    if(terminal)return;terminal=true;
    resolveResult({requestId:request.requestId,draftRevision:request.draftRevision,repoRoot:request.key.repoRoot,daemonEpoch:context.daemonEpoch,status,tookMs:Math.max(0,performance.now()-began),...(message?{safeMessage:message}:{})});
@@ -64,9 +64,11 @@ export class DraftTestSupervisor {
     let effective:EffectiveDraft;
     try{effective=await prepare(controller.signal);}catch(error){if(!terminal){terminal=true;rejectResult(error);}return;}
     controller.signal.throwIfAborted();
+    context.assertRequestActive?.();
     const config=workerConfig(effective.config);
     const runtimeAuth=config.kind==='dynamodb'?await prepareDynamoAuth(config,controller.signal):undefined;
     controller.signal.throwIfAborted();
+    context.assertRequestActive?.();
     if(performance.now()-began>=PROBE_DEADLINE_MS){stop('timeout');return;}
     const start:ProbeWorkerStart=parseProbeWorkerStart({type:'start',requestId:request.requestId,nonce,lookupRoot:request.key.repoRoot,config,...(runtimeAuth?{runtimeAuth}:{})});
     const compiled=fileURLToPath(new URL('../../bin/insrc-connection-test.js',import.meta.url));

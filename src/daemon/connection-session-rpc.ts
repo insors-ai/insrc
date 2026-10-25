@@ -1,13 +1,14 @@
 /** sc5 control protocol and transport admission. No caller JSON grants authority. */
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
-import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty } from '../shared/connection-management-wire.js';
+import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest } from '../shared/connection-management-wire.js';
 import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
 import { bindSessionConnectionResolver } from './db/pool-cache.js';
-import type { ConnectionAccessContext, MutationOutcome } from '../shared/connection-management.js';
+import type { ConnectionAccessContext, MutationOutcome, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
 import { installConnectionReservations } from './db/connection-reservations.js';
 import { savedConnectionIds } from './db/managed-store.js';
 import { connectionsPath } from './db/config.js';
+import { materializeDraft } from './db/driver-profiles.js';
 import { withSavedRootGate } from './db/management.js';
 import { createTemporaryOverlay, TemporaryConnectionOverlay } from './db/session-entries.js';
 import { ConnectionSessionOwner } from './db/session-owner.js';
@@ -24,6 +25,8 @@ interface Claim { readonly kind: 'control' | 'data'; readonly root: string; read
 export interface SessionRpcRuntime {
 	call(method: ConnectionSessionMethod, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 	ready(): Promise<boolean>;
+ probeContext?(context: TrustedRpcContext, request: DraftTestRequest): Promise<TrustedRpcContext>;
+ prepareTemporary?(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft>;
 	manage?(method: string, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 }
 export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPorts<Overlay>, 'daemonEpoch'> {
@@ -31,6 +34,7 @@ export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPor
 }
 const SESSION_METHODS: ReadonlySet<string> = new Set(CONNECTION_SESSION_METHODS);
 const SAFE_METADATA: ReadonlySet<string> = new Set(['db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.listDriverKinds']);
+const PROBE_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.test', 'db.connections.v2.cancelTest']);
 const PREFIX = 'db.connections.v2.session.';
 const fail = (code: 'session-expired' | 'upgrade-required') => new ManagementServiceError(code);
 
@@ -183,6 +187,30 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			}, assertRequest);
 		} catch (error) { return managementRejection(error); }
 	}
+ private async probeOwner(context: TrustedRpcContext, root: string) {
+  if (!await this.ready() || !this.#owner) throw fail('session-expired');
+  const binding = await this.#binding({ kind: 'request', requestId: 'local-probe', method: 'db.connections.v2.test', params: {}, stream: false, trustedContext: context }, root);
+  if (binding.audience !== 'workbench-ui') throw fail('upgrade-required');
+  const owned = await this.#owner.management(context, root), overlay = owned.overlay;
+  if (!(overlay instanceof TemporaryConnectionOverlay)) throw fail('upgrade-required');
+  const assertActive = () => { this.#context(context); context.assertRequestActive?.(); binding.assertActive(); owned.binding.assertActive(); };
+  assertActive(); return { binding, overlay, assertActive };
+ }
+ async probeContext(context: TrustedRpcContext, request: DraftTestRequest): Promise<TrustedRpcContext> {
+  const owned = await this.probeOwner(context, request.key.repoRoot);
+  const signal = AbortSignal.any([owned.binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
+  return Object.freeze({ ...context, signal, assertRequestActive: () => { owned.assertActive(); if (request.expectedRevision !== undefined && owned.overlay.read(request.key.id).revision !== request.expectedRevision) throw new ManagementServiceError('conflict'); }, registerDrain: (work: PromiseLike<unknown>) => {
+   owned.assertActive(); if (!context.registerDrain) throw fail('session-expired'); context.registerDrain(work); owned.overlay.retainProbe(work);
+  } });
+ }
+ async prepareTemporary(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft> {
+  if (request.key.scope !== 'temporary' || request.expectedRevision === undefined) throw new ManagementServiceError('invalid-input');
+  const owned = await this.probeOwner(context, request.key.repoRoot); signal.throwIfAborted();
+  const revision = request.expectedRevision;
+  const result = await owned.overlay.withGeneration(request.key.id, revision, config => materializeDraft({ key: request.key, mode: 'update', expectedRevision: revision,
+   publicPatch: request.publicPatch, credentials: request.credentials, current: { config, revision }, readSecret: async () => { throw new ManagementServiceError('secret-unavailable'); } }));
+  owned.assertActive(); signal.throwIfAborted(); return result;
+ }
 	/** Internal owner entry only. JSON copies of the returned object cannot redeem resolver authority. */
 	async accessFor(context: TrustedRpcContext, root: string): Promise<Readonly<ConnectionAccessContext>> {
 		if (!await this.ready() || !this.#owner) throw fail('session-expired');
@@ -231,12 +259,12 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 					return next(request, deliver);
 				} catch (error) { reject(error); return () => {}; }
 			}
-			if ((!SAFE_METADATA.has(request.method) && !TEMPORARY_MANAGEMENT_METHODS.has(request.method)) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
+			if ((!SAFE_METADATA.has(request.method) && !TEMPORARY_MANAGEMENT_METHODS.has(request.method) && !PROBE_METHODS.has(request.method)) || request.stream) { reject(fail('upgrade-required')); return () => {}; }
 			let cancelled = false, cancel: (() => void) | undefined;
-			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : this.#binding(request)).then(binding => {
+			void Promise.resolve().then(() => TEMPORARY_MANAGEMENT_METHODS.has(request.method) ? this.#binding(request, parseTemporaryManagement(request.method, request.params).root) : request.method === 'db.connections.v2.test' ? this.#binding(request, parseDraftTestRequest(request.params).key.repoRoot) : this.#binding(request)).then(binding => {
 				if (cancelled || request.lifetime?.signal.aborted) { request.lifetime?.complete(); return; }
 				binding.assertActive();
-				if (TEMPORARY_MANAGEMENT_METHODS.has(request.method) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
+				if ((TEMPORARY_MANAGEMENT_METHODS.has(request.method) || PROBE_METHODS.has(request.method)) && binding.audience !== 'workbench-ui') throw fail('upgrade-required');
 				const authenticated: LocalRequestEnvelope = { ...request, trustedContext: Object.freeze({ ...context!, connectionSession: binding }) };
 				const checked: DeliverEnvelope = envelope => { try { binding.assertActive(); deliver(envelope); } catch (error) { reject(error); } };
 				cancel = next(authenticated, checked);

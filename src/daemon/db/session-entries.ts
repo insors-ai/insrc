@@ -148,6 +148,11 @@ export class TemporaryConnectionOverlay {
    },
   });
  }
+ /** Trusted owner probe lifecycle, without staging an entry or receipt. */
+ retainProbe(work: PromiseLike<unknown>): void {
+  this.#active(); const drained = Promise.resolve(work); this.#uses.add(drained);
+  void drained.then(() => this.#uses.delete(drained), () => this.#uses.delete(drained));
+ }
  /** Retired SDK handles are private cleanup truth, not current generation configuration. */
  get cleanupPending(): boolean { return this.#retired.size > 0; }
  async retiredCleanup(): Promise<void> {

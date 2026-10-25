@@ -111,7 +111,7 @@
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "private-transport-resolver",
-      "rationale": "S003 t9: server-owned transport claims mint exact-object lazy resolver bindings; root/generation/request completion checked before private overlay access. No serialized handle grants authority."
+      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits."
     }
   },
   "sites": [

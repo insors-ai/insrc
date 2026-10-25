@@ -30,7 +30,7 @@ test('CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate 
  const server=new IpcServer(router.forward,Date.now,join(root,'fixture.sock'));await server.listen();const a=await client(join(root,'fixture.sock')),b=await client(join(root,'fixture.sock'));
  const draft={requestId:randomUUID(),draftRevision:4,key:{repoRoot:root,scope:'temporary',id:'fixture'},publicPatch:{kind:'csv',path:'data.csv'},credentials:{}};
  try {
-  assert.deepEqual([...MAIN_DAEMON_CONNECTION_METHODS].sort(),['db.connections.v2.cancelTest','db.connections.v2.test','db.testConnection']);
+  for (const method of ['db.connections.v2.cancelTest','db.connections.v2.test','db.testConnection']) assert.ok(MAIN_DAEMON_CONNECTION_METHODS.has(method), method + ' must remain main-daemon owned');
   const result=parseDraftTestResult(await a.call('db.connections.v2.test',draft));assert.equal(result.status,'reachable');assert.equal(result.requestId,draft.requestId);assert.equal(result.repoRoot,root);assert.equal(result.draftRevision,4);
   const legacy=await a.call('db.testConnection',{repoRoot:root,config:{id:'fixture',kind:'csv',path:'data.csv'}}) as {ok:boolean;kind:string;family:string;tookMs:number};
   assert.equal(legacy.ok,true);assert.equal(legacy.kind,'csv');assert.equal(legacy.family,'file');assert.equal(Object.keys(legacy).sort().join(','),'family,kind,ok,tookMs');

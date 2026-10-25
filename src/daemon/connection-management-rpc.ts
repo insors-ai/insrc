@@ -83,14 +83,15 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		}
 		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
 		if(method==='db.connections.v2.test'){
-			const request=parseDraftTestRequest(value);
-			return await connectionTestSupervisor.run(request,context,async signal=>{
+			const request=parseDraftTestRequest(value), runtime=testPorts.sessionRuntime??connectionSessionRuntime;
+			const probeContext=context.connectionSession ? await (runtime.probeContext?.(context,request)??Promise.reject(new ManagementServiceError('upgrade-required'))) : context;
+			return await connectionTestSupervisor.run(request,probeContext,async signal=>{
 				if(!await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())throw new ManagementServiceError('upgrade-required');
 				signal.throwIfAborted();const repoRoot=await root(request.key.repoRoot,true);signal.throwIfAborted();
 				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal);
 				if(request.expectedRevision!==undefined){
-					if(!testPorts.prepareTemporary)throw new ManagementServiceError('upgrade-required');
-					const effective=await testPorts.prepareTemporary(request,context,signal);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
+					const prepare=testPorts.prepareTemporary??runtime.prepareTemporary?.bind(runtime); if(!prepare)throw new ManagementServiceError('upgrade-required');
+					const effective=await prepare(request,probeContext,signal);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
 				}
 				if(!await (testPorts.isRegistered??(async root=>await lookupRepoId(root)!==undefined))(repoRoot))throw new ManagementServiceError('invalid-input');
 				signal.throwIfAborted();

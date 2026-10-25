@@ -1,20 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { Type } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 
+import { executeTool } from '../../../executor.js';
+import { registerTool } from '../../../registry.js';
 import type { Tool } from '../../../types.js';
 import * as issue from '../issue.js';
 import * as pr from '../pr.js';
 import { ghApprovalClass } from '../helpers.js';
 import { installFakeGh } from './_fakegh.js';
-
-/** A failed result carries no data, so it is checked against the failure shape every tool shares. */
-const FailedResult = Type.Object({
-	success: Type.Literal(false), output: Type.String(), error: Type.String(),
-	failure: Type.Object({ kind: Type.String(), message: Type.String() }),
-});
 
 const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
 
@@ -68,8 +63,27 @@ test('gh-output-schemas.test.ts: issue and pr tool results validate against thei
 			// the legacy text stays in output and error
 			assert.equal(r.error, 'HTTP 404: not found', tool.id);
 			assert.equal(r.output, `[${tool.id}] HTTP 404: not found`, tool.id);
+			// a failure carries no data, so the output schema does not apply to it
 			assert.equal(r.data, undefined, tool.id);
-			assert.ok(Value.Check(FailedResult, r), `${tool.id} failed result ${JSON.stringify(r)} does not match the failure shape`);
+		} finally { bad.restore(); }
+	}
+
+	// and through the executor, which checks a success against the output schema and returns a failure as the typed failure, never as a schema mismatch
+	for (const [tool, input, stdout] of CASES) {
+		if (ghApprovalClass(tool.id, {}) === 'destructive') { continue; } // asks the person every time; the direct run above covers it
+		registerTool(tool);
+		const callDeps = { ...deps, approvalMode: 'auto' as const };
+		const ok = installFakeGh('ok', stdout);
+		try {
+			const r = await executeTool(tool.id, input, callDeps);
+			assert.equal(r.success, true, `${tool.id}: ${r.output}`);
+			assert.ok(Value.Check(tool.outputSchema!, r.data), tool.id);
+		} finally { ok.restore(); }
+		const bad = installFakeGh('fail404');
+		try {
+			const r = await executeTool(tool.id, input, callDeps);
+			assert.equal(r.success, false, tool.id);
+			assert.equal(r.failure?.kind, 'rejected', tool.id);
 		} finally { bad.restore(); }
 	}
 });

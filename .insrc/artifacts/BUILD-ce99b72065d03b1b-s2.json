@@ -4,10 +4,11 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s2",
     "createdAt": "2026-10-25T16:58:05.949Z",
-    "updatedAt": "2026-10-25T17:13:47.481Z",
+    "updatedAt": "2026-10-25T17:44:41.257Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
-    "epicSlug": "per-family-model-definitions-served-daemon"
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "approvedAt": "2026-10-25T17:44:41.519Z"
   },
   "body": {
     "tasks": [
@@ -34,86 +35,107 @@
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-definitions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/model-definitions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/list-models.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/model-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-definitions-daemon.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T17:13:47.481Z"
+        "timestamp": "2026-10-25T17:44:41.257Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-ce99b72065d03b1b-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:44:41.257Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-ce99b72065d03b1b-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:44:41.257Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S002/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:44:41.257Z"
       }
     ],
-    "commit": "7f489cb87"
+    "commit": "c25319423"
   }
 }

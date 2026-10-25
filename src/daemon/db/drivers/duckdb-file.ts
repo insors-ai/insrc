@@ -271,6 +271,21 @@ function csvOptionsSql(opts: ResolvedCsvOptions): string {
 // Driver class
 // ---------------------------------------------------------------------------
 class DuckDBFileDriver implements FileDriver {
+	async probeReachability(): Promise<void> {
+		if (!(this.execution instanceof MemoryFileExecution))
+			throw new Error('Private file execution required');
+		// Load real sources before selecting a real workbook target. Never
+		// substitute a made-up sheet or enter the persistent converter cache.
+		const selected = this.connectionOptions?.['sheet'];
+		await this.loadMemoryReader(this.execution);
+		const targets = await this.execution.targets();
+		const target = typeof selected === 'string' ? selected : targets[0]?.targetId;
+		const table = await this.execution.table(target);
+		await this.execution.withConnection(async connection => {
+			await connection.runAndReadAll('SELECT 1 FROM query_table(?) LIMIT 1', [table]);
+		});
+	}
+
 	readonly family = 'file' as const;
 	readonly kind: DuckDBFileKind;
 	private readonly schemaCache = new Map<string, SchemaDescription>();
@@ -504,19 +519,21 @@ class DuckDBFileDriver implements FileDriver {
 			throw new Error('File driver closed');
 		if (this.execution instanceof MemoryFileExecution) {
 			const execution = this.execution;
-			if (!this.memoryReady) {
-				this.memoryReady = isConvertedKind(this.kind)
-					? execution.loadRows((budget, signal) => memoryFileSources(CONVERTERS[this.kind as keyof typeof CONVERTERS], this.sourcePaths, budget, signal, this.connectionOptions))
-					: execution.loadNative({ kind: this.kind as Exclude<DuckDBFileKind, 'avro' | 'bson' | 'fixed-width' | 'xlsx'>, paths: this.sourcePaths,
-						...this.csvOpts, hivePartitioning: this.hivePartitioning });
-			}
-			await this.memoryReady;
+			await this.loadMemoryReader(execution);
 			return execution.table(this.kind === 'xlsx' && !this.isDirectory ? target : undefined);
 		}
 		if (!isConvertedKind(this.kind)) {
 			return resolveReaderPath(this.kind, this.path, this.isDirectory, this.recursive);
 		}
 		return this.ensureConvertedAndGlob(this.kind, target);
+	}
+	private async loadMemoryReader(execution: MemoryFileExecution): Promise<void> {
+		if (this.closed) throw new Error('File driver closed');
+		this.memoryReady ??= isConvertedKind(this.kind)
+			? execution.loadRows((budget, signal) => memoryFileSources(CONVERTERS[this.kind as keyof typeof CONVERTERS], this.sourcePaths, budget, signal, this.connectionOptions))
+			: execution.loadNative({ kind: this.kind as Exclude<DuckDBFileKind, 'avro' | 'bson' | 'fixed-width' | 'xlsx'>, paths: this.sourcePaths,
+				...this.csvOpts, hivePartitioning: this.hivePartitioning });
+		await this.memoryReady;
 	}
 	/**
 	 * Stage a converted-kind connection's source(s) into the cache,

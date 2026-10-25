@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T16:07:36.903Z",
+    "updatedAt": "2026-10-25T16:16:44.451Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -16,7 +16,7 @@
         "passed": false
       }
     ],
-    "summary": "Task1 explicit saved/missing-policy production guards are accepted. Corrected the remaining inventory gap: signature-declaration provenance now covers injected typeof embedQuery ports, renamed members and destructured aliases, alongside ONNX callable tensor ports and SDK backends.405 source files/4184 candidate sites remain classified with readable site entries; temporary release disabled. All remaining implementation tasks and external evidence pending.",
+    "summary": "Task1 adds explicit frozen, nonserializable execution contracts and production staged fail-closed entry guards, including ShapeOpts and RunAnalyzeOpts paths before state/cache access. Typed inventory now records5077 sites across460 files, covering typed/aliased/inherited/call-bound providers, ONNX and injected embedding ports, JSON/MessagePack/binary codecs, transport serialization and unresolved dynamic calls with explicit file classifications. Focused tests and typecheck pass; actual session ownership and all later tasks remain pending and release disabled.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/TESTS.md"
     },
@@ -26,177 +26,177 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/context/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-source-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-source-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/daemon/request-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-execution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/connection-access.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/walker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-connections-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-table-describe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-tables-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-connections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-objects.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/schema-table.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T16:07:36.903Z"
+        "timestamp": "2026-10-25T16:16:44.451Z"
       }
     ],
-    "commit": "449b3b87c"
+    "commit": "209339de4"
   }
 }

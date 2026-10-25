@@ -19,7 +19,7 @@
 
 import { acquirePool } from '../../daemon/db/index.js';
 import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
-import { analysisConnectionContext } from '../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 
 import type {
@@ -46,7 +46,7 @@ export async function runDbConnectionsList(
 	// and the executor reports it as failed. "No connections" is said only when
 	// the registry was read and holds none.
 	const resolver = createConnectionResolver({ poolSource: acquire });
-	const list = await resolver.list(analysisConnectionContext(ctx.repoPath, ctx.connectionExecution));
+	const list = await resolver.list(analysisConnectionContext(ctx.repoPath, ctx.connectionExecution ?? savedAnalysisExecution(ctx.repoPath)));
 	const connections: DbConnectionSummary[] = list.map(c => {
 		const fam = c.family;
 		return {

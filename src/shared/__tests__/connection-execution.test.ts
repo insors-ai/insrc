@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ConnectionExecutionError, requireConnectionExecution, savedConnectionExecution } from '../step-context.js';
+import { ConnectionExecutionError, requireConnectionExecution, savedConnectionExecution, runInStepContext, currentStepContext } from '../step-context.js';
 import type { ConnectionExecutionContext } from '../step-context.js';
 import { analysisConnectionContext, savedAnalysisExecution } from '../../analyze/connection-access.js';
 
@@ -39,7 +39,7 @@ test('CM-S3-INVENTORY: explicit saved tuple is immutable, nonserializable and ca
 test('CM-S3-INVENTORY: production analysis entry installs saved authority and rejects forged policy before source access', async () => {
 	const saved = savedAnalysisExecution('/repo');
 	assert.equal(requireConnectionExecution(saved), saved);
-	assert.deepEqual(analysisConnectionContext('/repo'), { lookupRoot: '/repo', daemonEpoch: 'saved-analysis' });
+	assert.throws(() => analysisConnectionContext('/repo', undefined as never), /session-expired/);
 	assert.equal(analysisConnectionContext('/repo', saved), saved.connectionAccess);
 	assert.throws(() => analysisConnectionContext('/other', saved), /session-expired/);
 	const { dataDiscoveryConnectionsRuntime } = await import('../../analyze/runtimes/data/discovery-connections.js');
@@ -81,4 +81,23 @@ test('CM-S3-INVENTORY: staged production executors refuse supplied unadmitted po
 		() => measureDataSource({ poolPath: '/not-read' }, undefined, entry),
 	];
 	for (const call of calls) await assert.rejects(call, (error: unknown) => error instanceof ConnectionExecutionError && error.code === 'session-expired');
+});
+
+test('CM-S3-INVENTORY: lost carrier in a bound call cannot become saved or enter a provider', async () => {
+	const { runShaperToolLoop } = await import('../../analyze/context/driver.js');
+	const { executePlan, stepPlan } = await import('../../analyze/explore/executor.js');
+	const { shaperFor } = await import('../../analyze/context/index.js');
+	const connectionExecution = { mode: 'session-memory', bindingId: 'server-bound-marker' } as ConnectionExecutionContext;
+	await assert.rejects(() => runShaperToolLoop({} as Parameters<typeof runShaperToolLoop>[0]), /session-expired/);
+	await runInStepContext({ cwd: '/repo', connectionExecution }, async () => {
+		assert.throws(() => analysisConnectionContext('/repo', undefined as never), /session-expired/);
+		assert.throws(() => savedAnalysisExecution('/repo'), /session-expired/);
+		await assert.rejects(() => runShaperToolLoop({} as Parameters<typeof runShaperToolLoop>[0]), /session-expired/);
+		await assert.rejects(() => executePlan({} as Parameters<typeof executePlan>[0]), /session-expired/);
+		await assert.rejects(() => stepPlan({} as Parameters<typeof stepPlan>[0]), /session-expired/);
+		await assert.rejects(() => shaperFor('run', 'data').buildRunBundle({} as never, { runId: 'lost' }), /session-expired/);
+		await assert.rejects(runInStepContext({ cwd: '/shadowed' }, async () => analysisConnectionContext('/repo', undefined as never)), /session-expired/);
+	});
+	assert.equal(currentStepContext(), undefined);
+	assert.equal(analysisConnectionContext('/unattached', savedAnalysisExecution('/unattached')).lookupRoot, '/unattached');
 });

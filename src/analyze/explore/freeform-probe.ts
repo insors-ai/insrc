@@ -40,6 +40,8 @@ import { LookupFailedError } from './lookup-failed.js';
 import { measureRequestScope, measureResolvedScope } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
 import type { AnalyzeTarget } from '../../shared/analyze-types.js';
+import { assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { savedAnalysisExecution } from '../connection-access.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -109,6 +111,8 @@ export async function runFreeformProbe(
 	/** The tool loop; a test passes a stand-in. */
 	loop: typeof runShaperToolLoop = runShaperToolLoop,
 ): Promise<FreeformProbeOutput> {
+	assertExplicitConnectionExecution(ctx.connectionExecution);
+	const connectionExecution = ctx.connectionExecution ?? savedAnalysisExecution(ctx.repoPath);
 	const params = parseParams(exp);
 	const promptPath = legacyShaperPromptPathFor(params.shaperId);
 
@@ -152,6 +156,7 @@ export async function runFreeformProbe(
 	let toolCallCount = 0;
 	try {
 		const result = await loop({
+			connectionExecution,
 			runId:          ctx.runId,
 			shaperId:       params.shaperId,
 			invocationMode: 'run',

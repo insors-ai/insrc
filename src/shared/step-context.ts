@@ -70,6 +70,8 @@ export function savedConnectionExecution(
 	lifetime: ConnectionExecutionLifetime,
 	diagnostics: ConnectionExecutionDiagnostics,
 ): SavedConnectionExecution {
+	// A bound request cannot mint replacement saved authority after losing its tuple.
+	if (currentStepContext()?.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
 	if (access.sessionHandle !== undefined || !access.lookupRoot || !access.daemonEpoch) {
 		throw new ConnectionExecutionError('session-expired');
 	}
@@ -109,12 +111,24 @@ const storage = new AsyncLocalStorage<StepCallContext>();
 
 /** Run `fn` with `ctx` as the step context of everything it awaits. */
 export function runInStepContext<T>(ctx: StepCallContext, fn: () => Promise<T>): Promise<T> {
-	return storage.run(ctx, fn);
+	const outer = storage.getStore()?.connectionExecution;
+	if (outer !== undefined && ctx.connectionExecution !== outer) return Promise.reject(new ConnectionExecutionError('session-expired'));
+	return storage.run(Object.freeze({ ...ctx }), fn);
 }
 
 /** The step context of the current call, or undefined outside a step call. */
 export function currentStepContext(): StepCallContext | undefined {
 	return storage.getStore();
+}
+
+/** Denial-only loss guard. Never infer or return authority from the call context.
+ * A trusted attached host binds its tuple for the request; relays still pass that
+ * exact tuple explicitly. Only genuinely unbound legacy entry points may omit it.
+ */
+export function assertExplicitConnectionExecution(value: ConnectionExecutionContext | undefined): void {
+	const bound = storage.getStore()?.connectionExecution;
+	if (bound !== undefined && value !== bound) throw new ConnectionExecutionError('session-expired');
+	if (value !== undefined) requireConnectionExecution(value);
 }
 
 /** The caller's working directory inside a step call, process.cwd() outside one. */

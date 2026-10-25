@@ -1,6 +1,6 @@
 /** Explicit saved entry and staged fail-closed trusted carrier consumption. */
 import type { ConnectionAccessContext } from '../shared/connection-management.js';
-import { requireConnectionExecution, savedConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
+import { assertExplicitConnectionExecution, requireConnectionExecution, savedConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
 import type { ConnectionExecutionContext, ConnectionExecutionLifetime, SavedConnectionExecution } from '../shared/step-context.js';
 import { RequestLifetime } from '../daemon/request-context.js';
 import { getLogger } from '../shared/logger.js';
@@ -12,8 +12,9 @@ export function savedAnalysisExecution(lookupRoot: string, lifetime: ConnectionE
 	});
 }
 
-export function analysisConnectionContext(lookupRoot: string, execution?: ConnectionExecutionContext): ConnectionAccessContext {
-	const trusted = requireConnectionExecution(execution === undefined ? savedAnalysisExecution(lookupRoot) : execution);
+export function analysisConnectionContext(lookupRoot: string, execution: ConnectionExecutionContext): ConnectionAccessContext {
+	assertExplicitConnectionExecution(execution);
+	const trusted = requireConnectionExecution(execution);
 	if (trusted.connectionAccess.lookupRoot !== lookupRoot) throw new ConnectionExecutionError('session-expired');
 	return trusted.connectionAccess;
 }

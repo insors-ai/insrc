@@ -32,7 +32,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { analysisConnectionContext } from '../../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution } from '../../connection-access.js';
 
 import type {
 	FileDriver,
@@ -69,7 +69,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';
 
-		const access = analysisConnectionContext(repoPath, args.connectionExecution);
+		const access = analysisConnectionContext(repoPath, args.connectionExecution ?? savedAnalysisExecution(repoPath));
 		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
 

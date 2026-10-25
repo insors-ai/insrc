@@ -46,7 +46,7 @@
  *      docs/plans/analyze-context-builder.md Phase 3
  */
 
-import { requireConnectionExecution } from '../../shared/step-context.js';
+import { assertExplicitConnectionExecution, requireConnectionExecution } from '../../shared/step-context.js';
 import { emitStructuredAnswer, runReadOnlyToolLoop, type ReadOnlyToolLoopResult } from '../../agent/read-only-tool-loop.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -411,8 +411,8 @@ async function servedFromCache(
 }
 
 export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
-	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
-	if (args.opts?.connectionExecution !== undefined) requireConnectionExecution(args.opts.connectionExecution);
+	assertExplicitConnectionExecution(args.opts?.connectionExecution ?? args.connectionExecution);
+	if (args.connectionExecution !== undefined) assertExplicitConnectionExecution(args.connectionExecution);
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
@@ -799,8 +799,8 @@ export interface ShaperToolLoopResult {
 }
 
 export interface RunShaperToolLoopArgs {
-	/** Staged trusted carrier; no session execution is admitted without it. */
-	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
+	/** Required normalized tuple, including explicit saved authority for legacy callers. */
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
@@ -834,7 +834,8 @@ export interface RunShaperToolLoopArgs {
 export async function runShaperToolLoop(
 	args: RunShaperToolLoopArgs,
 ): Promise<ShaperToolLoopResult> {
-	if (args.connectionExecution !== undefined) requireConnectionExecution(args.connectionExecution);
+	assertExplicitConnectionExecution(args.connectionExecution);
+	requireConnectionExecution(args.connectionExecution);
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);

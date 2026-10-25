@@ -29,7 +29,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { analysisConnectionContext } from '../../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution } from '../../connection-access.js';
 import { resolve } from 'node:path';
 import { listFilesForConnection } from '../../../daemon/db/list-files.js';
 
@@ -86,7 +86,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 		const connectionId = connectionWithinScope(scope, requireStringParam(args, 'connectionId', TEMPLATE_ID), TEMPLATE_ID);
 		const kindFilter   = optionalStringParam(args, 'kind', TEMPLATE_ID);
 
-		const access = analysisConnectionContext(repoPath, args.connectionExecution);
+		const access = analysisConnectionContext(repoPath, args.connectionExecution ?? savedAnalysisExecution(repoPath));
 		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
 

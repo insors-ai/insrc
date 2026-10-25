@@ -55,6 +55,7 @@ export class RedisDriver implements KvDriver {
 			maxRetriesPerRequest: 1,
 			enableOfflineQueue: false,
 			connectTimeout: SCAN_TIMEOUT_MS,
+			commandTimeout: SCAN_TIMEOUT_MS,
 		});
 		this.client.on('error', (err: Error) => {
 			log.warn({ id, err: err.message }, 'redis client error');
@@ -135,6 +136,7 @@ export class RedisDriver implements KvDriver {
 	async close(): Promise<void> {
 		if (this.client.status === 'wait' || this.client.status === 'end') { this.client.disconnect(); return; }
 		try { await this.client.quit(); }
+		catch { /* A silent/disconnected server cannot prevent local disposal. */ }
 		finally { this.client.disconnect(); }
 	}
 

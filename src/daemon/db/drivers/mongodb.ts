@@ -65,7 +65,7 @@ export class MongoDriver implements KvDriver {
 
 	async probeReachability(): Promise<void> {
 		await this.client.connect();
-		await this.client.db('admin').command({ ping: 1 });
+		await this.client.db('admin').command({ ping: 1 }, { timeoutMS: SCAN_TIMEOUT_MS });
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {

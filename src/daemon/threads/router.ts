@@ -21,7 +21,8 @@ import { getLogger } from '../../shared/logger.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
-import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, RequestEnvelope } from './channel.js';
+import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope } from './channel.js';
+import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
 
@@ -59,7 +60,7 @@ export interface OrphanedRequest {
 
 interface Held {
 	readonly cls: MethodClass;
-	readonly request: RequestEnvelope;
+	readonly request: LocalRequestEnvelope;
 	readonly deliver: DeliverEnvelope;
 	readonly timer: NodeJS.Timeout;
 	cancelled: boolean;
@@ -93,21 +94,25 @@ export class Router {
 	readonly forward: ForwardRequest = (request, deliver) => {
 		const cls = this.opts.classOf(request.method);
 		const ended = this.opts.onRequest?.(request.method, cls);
-		if (ended !== undefined) {
-			const cancel = this.dispatch(cls, request, envelope => {
-				if (envelope.kind === 'reply') ended();
-				else {
+		let finished = false;
+		const finish = (): void => { if (!finished) { finished = true; ended?.(); } };
+		if (request.lifetime) void Promise.all([request.lifetime.completed, request.lifetime.drained]).then(finish);
+		const cancel = this.dispatch(cls, request, envelope => {
+			try { deliver(envelope); }
+			finally {
+				if (envelope.kind === 'reply') {
+					request.lifetime?.complete();
+					if (!request.lifetime) finish();
+				} else {
 					const stream = (envelope.frame as IpcStreamMessage).stream;
-					if (stream === 'done' || stream === 'error') ended();
+					if (stream === 'done' || stream === 'error') finish();
 				}
-				deliver(envelope);
-			});
-			return () => { if (request.stream) ended(); cancel(); };
-		}
-		return this.dispatch(cls, request, deliver);
+			}
+		});
+		return () => { if (request.stream) finish(); cancel(); };
 	};
 
-	private dispatch(cls: MethodClass | undefined, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		if (cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
@@ -121,7 +126,7 @@ export class Router {
 	 * hold; by default, whether this context holds it (a nested call).
 	 */
 	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined } = {}): Promise<unknown> {
-		const request: RequestEnvelope = {
+		const request: LocalRequestEnvelope = {
 			kind: 'request', requestId: `internal-${++this.seq}`, method, params, stream: false,
 			...((opts.underHold ?? holdsMaintenanceLock()) ? { underHold: true } : {}),
 		};
@@ -192,14 +197,19 @@ export class Router {
 		}
 	}
 
-	private send(threadId: number, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const port = this.ports.get(threadId)!;
 		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver });
-		port.postMessage(request);
+		try { port.postMessage(wireRequest(request)); }
+		catch {
+			this.pending.delete(request.requestId);
+			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }
+			finally { request.lifetime?.complete(); }
+		}
 		return () => this.cancel(threadId, request);
 	}
 
-	private hold(cls: MethodClass, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const held: Held = {
 			cls, request, deliver, cancelled: false,
 			timer: setTimeout(() => {
@@ -214,6 +224,8 @@ export class Router {
 			if (held.sentTo !== undefined) { this.cancel(held.sentTo, request); return; }
 			if (held.localCancel !== undefined) { held.localCancel(); return; }
 			held.cancelled = true;
+			request.lifetime?.abort();
+			request.lifetime?.complete();
 			this.release(held);
 		};
 	}
@@ -224,7 +236,7 @@ export class Router {
 	}
 
 	/** The request's socket closed: a stream is cancelled on its worker; a unary request runs on and its reply is dropped there. */
-	private cancel(threadId: number, request: RequestEnvelope): void {
+	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
 		this.pending.delete(request.requestId);
 		this.ports.get(threadId)?.postMessage({ kind: 'cancel', requestId: request.requestId } satisfies CancelEnvelope);

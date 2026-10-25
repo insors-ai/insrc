@@ -21,7 +21,7 @@
 import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
-import type { TrustedRpcContext } from '../request-context.js';
+import type { RequestLifetime, TrustedRpcContext } from '../request-context.js';
 
 const log = getLogger('thread-channel');
 
@@ -41,13 +41,26 @@ export interface RequestEnvelope {
 	readonly stream: boolean;
 	readonly session?: SessionId | undefined;
 	/** Constructed by the socket server; session label/pid and params are untrusted. */
-	readonly trustedContext?: TrustedRpcContext | undefined;
+	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch'> | undefined;
 	/**
 	 * Set on a cross-class request made by a handler that already holds the
 	 * daemon maintenance lock (a nested in-daemon call): the serving worker does
 	 * not request the lock again. An additive sc3 amendment delivered by s2.
 	 */
 	readonly underHold?: boolean | undefined;
+}
+/** Main-thread request only: local lifecycle must never be structured-cloned. */
+export interface LocalRequestEnvelope extends RequestEnvelope {
+	readonly lifetime?: RequestLifetime | undefined;
+}
+export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
+	return {
+		kind: 'request', requestId: request.requestId, method: request.method,
+		params: request.params, stream: request.stream,
+		...(request.session ? { session: { label: request.session.label, pid: request.session.pid } } : {}),
+		...(request.underHold !== undefined ? { underHold: request.underHold } : {}),
+		...(request.trustedContext ? { trustedContext: { connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch } } : {}),
+	};
 }
 export interface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }
 export interface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }

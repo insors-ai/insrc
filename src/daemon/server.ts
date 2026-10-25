@@ -1,12 +1,13 @@
 import { createServer, type Server, type Socket } from 'node:net';
 import { randomUUID } from 'node:crypto';
 import type { TrustedRpcContext } from './request-context.js';
+import { RequestLifetime } from './request-context.js';
 import { rmSync } from 'node:fs';
 import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { LmdbStoreLocksLostError, recordStoreFailureIfLockError } from '../db/graph/store.js';
-import type { FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './threads/channel.js';
+import type { FrameEnvelope, ReplyEnvelope, LocalRequestEnvelope } from './threads/channel.js';
 
 const log = getLogger('ipc');
 
@@ -59,7 +60,7 @@ export type DeliverEnvelope = (envelope: ReplyEnvelope | FrameEnvelope) => void;
  * calls when the request's socket closes: a stream request is aborted; a unary
  * request runs on and its late reply is dropped.
  */
-export type ForwardRequest = (request: RequestEnvelope, deliver: DeliverEnvelope) => () => void;
+export type ForwardRequest = (request: LocalRequestEnvelope, deliver: DeliverEnvelope) => () => void;
 
 /**
  * The in-thread forward: today's dispatch rules over a pair of handler tables.
@@ -73,18 +74,23 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
     const { requestId, method } = request;
     const streamHandler = request.stream ? streamHandlers[method] : undefined;
     if (streamHandler === undefined) {
+      const lifetime = request.lifetime;
+      const finish = (reply: ReplyEnvelope): void => {
+        try { deliver(reply); } finally { lifetime?.complete(); }
+      };
       const handler = handlers[method];
       if (!handler) {
-        deliver({ kind: 'reply', requestId, error: `unknown method: ${method}` });
+        finish({ kind: 'reply', requestId, error: `unknown method: ${method}` });
         return () => {};
       }
       let running: Promise<unknown>;
-      try { running = Promise.resolve(handler(request.params, request.trustedContext)); } catch (err) { running = Promise.reject(err); }
-      running.then(
-        result => deliver({ kind: 'reply', requestId, result }),
-        err => deliver({ kind: 'reply', requestId, error: failureMessage(err, method) }),
-      );
-      return () => {};
+      const context = request.trustedContext ? { ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain } : {}) } : undefined;
+      try { running = Promise.resolve(handler(request.params, context)); } catch (err) { running = Promise.reject(err); }
+      void running.then(
+        result => finish({ kind: 'reply', requestId, result }),
+        err => finish({ kind: 'reply', requestId, error: failureMessage(err, method) }),
+      ).catch(() => { /* Delivery failure cannot strand internal completion. */ });
+      return () => lifetime?.abort();
     }
     const abortController = new AbortController();
     const send = (msg: IpcStreamMessage): void => deliver({ kind: 'frame', requestId, frame: msg });
@@ -298,6 +304,7 @@ export class IpcServer {
 
     const running = this.inflight.get(socket);
     const requestId = String(++this.requestSeq);
+    const lifetime = request.stream === true ? undefined : new RequestLifetime();
     let ended = false;
     let settle!: () => void;
     const settled = new Promise<void>(resolve => { settle = resolve; });
@@ -321,11 +328,16 @@ export class IpcServer {
         cancel();
       }
     };
-    cancel = this.forward({
+    try { cancel = this.forward({
       kind: 'request', requestId, method: request.method, params: request.params, stream: request.stream === true,
       ...(client !== undefined ? { session: client } : {}),
       trustedContext: Object.freeze({ connectionIdentity: `${this.daemonEpoch}:${conn.id}`, daemonEpoch: this.daemonEpoch }),
-    }, deliver);
+      ...(lifetime ? { lifetime } : {}),
+    }, deliver); }
+    catch (error) {
+      try { deliver({kind: 'reply', requestId, error: failureMessage(error, request.method)}); }
+      finally { lifetime?.complete(); }
+    }
     // Remember it until it ends or its socket closes (unless it was answered already).
     if (!ended && running !== undefined && this.inflight.has(socket)) running.set(requestId, () => { cancel(); settle(); });
     else if (!ended) settle();

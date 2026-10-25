@@ -32,31 +32,40 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 		let cancel: (() => void) | undefined;
 		let cancelled = false;
 		let release: () => void = () => {};
+		const complete = (): void => request.lifetime?.complete();
+		const reply = (envelope: Parameters<DeliverEnvelope>[0]): void => {
+			try { if (!cancelled) deliver(envelope); } finally { complete(); }
+		};
 		void withRequestHold(() => new Promise<void>(resolve => {
 			release = resolve;
-			if (cancelled) { resolve(); return; }
+			if (cancelled || request.lifetime?.signal.aborted) { complete(); resolve(); return; }
+			if (request.lifetime) void Promise.all([request.lifetime.completed, request.lifetime.drained]).then(() => resolve());
 			const ending: DeliverEnvelope = envelope => {
-				deliver(envelope);
-				if (envelope.kind === 'reply') resolve();
-				else {
-					const stream = (envelope.frame as IpcStreamMessage).stream;
-					if (stream === 'done' || stream === 'error') resolve();
+				try { deliver(envelope); }
+				finally {
+					if (envelope.kind === 'reply') { complete(); if (!request.lifetime) resolve(); }
+					else {
+						const stream = (envelope.frame as IpcStreamMessage).stream;
+						if (stream === 'done' || stream === 'error') resolve();
+					}
 				}
 			};
-			cancel = forward(request, ending);
+			try { cancel = forward(request, ending); }
+			catch (err) { try { reply({kind:'reply', requestId:request.requestId, error:err instanceof Error ? err.message : String(err)}); } finally { if (!request.lifetime) resolve(); } }
 		})).then(
 			outcome => {
 				if (outcome.ran) return;
-				deliver(request.stream
+				reply(request.stream
 					? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error: outcome.busy, recoverable: true } } }
 					: { kind: 'reply', requestId: request.requestId, error: outcome.busy });
 			},
-			(err: unknown) => deliver({ kind: 'reply', requestId: request.requestId, error: err instanceof Error ? err.message : String(err) }),
-		);
+			(err: unknown) => reply({ kind: 'reply', requestId: request.requestId, error: err instanceof Error ? err.message : String(err) }),
+		).catch(() => { complete(); });
 		return () => {
 			cancelled = true;
-			cancel?.();
-			// A cancelled stream ends here; a unary request runs on and releases with its reply.
+			request.lifetime?.abort();
+			if (cancel) cancel();
+			else complete();
 			if (request.stream) release();
 		};
 	};

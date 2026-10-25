@@ -44,6 +44,7 @@ import {
 import {
   ghIssueManageTool, ghPrManageTool, ghProjectManageTool, ghReleaseAssetTool, ghRepoManageTool, ghRunManageTool, ghWorkflowManageTool,
 } from './manage.js';
+import { ghCacheTool, ghGistTool, ghGpgKeyTool, ghLabelTool, ghSecretTool, ghSshKeyTool, ghVariableTool } from './resources.js';
 
 export function registerGhTools(): void {
   // Issues
@@ -112,4 +113,11 @@ export function registerGhTools(): void {
   registerTool(ghRunManageTool);
   registerTool(ghWorkflowManageTool);
   registerTool(ghProjectManageTool);
+  registerTool(ghLabelTool);
+  registerTool(ghGistTool);
+  registerTool(ghSecretTool);
+  registerTool(ghVariableTool);
+  registerTool(ghCacheTool);
+  registerTool(ghSshKeyTool);
+  registerTool(ghGpgKeyTool);
 }

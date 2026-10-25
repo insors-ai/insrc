@@ -101,6 +101,8 @@ export type OutSpec =
   | { readonly kind: 'text' }
   /** {op, count, rows} from tab-separated lines */
   | { readonly kind: 'rows' }
+  /** {op, count, items} from tab-separated lines whose columns are known: each item has the named string properties */
+  | { readonly kind: 'columns'; readonly columns: readonly string[] }
   /** {op, count, items}: gh's --json array, items with exactly the named fields (the tool adds --json itself) */
   | { readonly kind: 'items'; readonly jsonFields: readonly string[] }
   /** {op, ...shape}: gh's --json object, or a parser of the plain output, picked by the shape's keys */
@@ -130,6 +132,8 @@ export interface OpDef {
   readonly args: readonly Arg[];
   /** Text sent on standard input (a value that must not be in argv). */
   readonly stdin?: (input: ToolInput) => string | undefined;
+  /** The standard input is a secret: it is replaced by [redacted] wherever gh's text repeats it. */
+  readonly secretStdin?: boolean;
   readonly out: OutSpec;
   /** The input identifier a mutation reports as its target when gh printed no URL. */
   readonly target?: (input: ToolInput) => string | undefined;
@@ -249,6 +253,10 @@ function outputMember(def: OpDef): TSchema {
     case 'mutation': return Type.Object({ op, ok: Type.Boolean(), target: Type.String(), message: Type.String() });
     case 'text': return Type.Object({ op, text: Type.String() });
     case 'rows': return Type.Object({ op, count: Type.Number(), rows: Type.Array(Type.Array(Type.String())) });
+    case 'columns': {
+      const item = Type.Object(Object.fromEntries(def.out.columns.map(k => [k, Type.String()])));
+      return Type.Object({ op, count: Type.Number(), items: Type.Array(item) });
+    }
     case 'items': {
       const item = Type.Object(Object.fromEntries(def.out.jsonFields.map(k => [k, Type.Unknown()])));
       return Type.Object({ op, count: Type.Number(), items: Type.Array(item) });
@@ -310,6 +318,11 @@ function shape(id: string, def: OpDef, input: ToolInput, stdout: string, stderr:
       const rows = parseTabRows(stdout);
       return { output: stdout, format: 'text', success: true, data: { op, count: rows.length, rows } };
     }
+    case 'columns': {
+      const cols = def.out.columns;
+      const items = parseTabRows(stdout).map(r => Object.fromEntries(cols.map((c, n) => [c, r[n] ?? ''])));
+      return { output: stdout, format: 'text', success: true, data: { op, count: items.length, items } };
+    }
     case 'items': {
       const items = stdout.trim() === '' ? [] : parseJson<unknown[]>(stdout);
       if (!Array.isArray(items)) { return bad(`${op}: gh did not print a JSON list`); }
@@ -363,7 +376,9 @@ export function defineGhFamily(spec: { id: string; description: string; ops: rea
       });
       const failure = ghFailureOf(o, { mutating });
       if (failure !== undefined) {
-        return { output: `[${id} ${def.name}] ${failure.message}`, format: 'text', success: false, error: failure.message, failure };
+        const hide = (t: string): string => def.secretStdin === true && stdin !== undefined && stdin.length > 0 ? t.split(stdin).join('[redacted]') : t;
+        const clean = { ...failure, message: hide(failure.message), ...(failure.original !== undefined ? { original: hide(failure.original) } : {}) };
+        return { output: `[${id} ${def.name}] ${clean.message}`, format: 'text', success: false, error: clean.message, failure: clean };
       }
       return shape(id, def, input, o.stdout, o.stderr);
     },

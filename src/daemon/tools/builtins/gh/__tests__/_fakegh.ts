@@ -16,6 +16,7 @@ case "$*" in
 esac
 case "$FAKE_MODE" in
   stdin) cat > "$FAKE_LOG.stdin" ;;
+  echoin) cat >&2; exit 1 ;;
   fail403) echo "HTTP 403: forbidden" >&2; exit 1 ;;
   fail404) echo "HTTP 404: not found" >&2; exit 1 ;;
   multibyte) printf 'aaaa\\303\\251\\303\\251' ;;

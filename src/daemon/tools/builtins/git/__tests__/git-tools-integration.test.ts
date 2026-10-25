@@ -164,6 +164,29 @@ test('git_push \':dev\' asks in auto mode and is not run when declined', async (
 	}
 });
 
+test('git_push refuses deleting or force-overwriting a protected ref by refspec unless forceToMain is true', async () => {
+	registerForTests();
+	const { repo, wt, remote } = richRepo();
+	try {
+		gate('approve');
+		const auto = { ...toolDeps(repo), approvalMode: 'auto' as const };
+		const mainBefore = git(remote, 'rev-parse', 'refs/heads/main').trim();
+		for (const ref of [':main', ':refs/heads/main', '+main', '+b:main', ':release/1']) {
+			const r = await executeTool('git_push', { cwd: repo, remote: 'origin', ref }, auto);
+			assert.equal(r.success, false, ref);
+			assert.match(r.output + (r.error ?? ''), /protected ref/, ref);
+		}
+		assert.equal(git(remote, 'rev-parse', 'refs/heads/main').trim(), mainBefore, 'the remote main is untouched');
+		// a delete of an ordinary branch is not blocked by this rule
+		git(repo, 'push', '-q', 'origin', 'b:dev');
+		const del = await executeTool('git_push', { cwd: repo, remote: 'origin', ref: ':dev' }, auto);
+		assert.equal(del.success, true, del.output);
+	} finally {
+		_setApprovalGateForTests(undefined);
+		rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); rmSync(dirname(wt), { recursive: true, force: true });
+	}
+});
+
 test('an existing tool called with its old input returns what it returned before', async () => {
 	registerForTests();
 	const { repo, wt, remote } = richRepo();

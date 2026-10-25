@@ -100,13 +100,19 @@ export const gitPushTool: Tool = {
     const setUpstream = input['setUpstream'] === true;
     const tags = input['tags'] === true;
     const dryRun = input['dryRun'] === true;
-    const protectedRef = PROTECTED_REFS.test(ref);
     const forceToMain = input['forceToMain'] === true;
+    // The ref a refspec writes or deletes: 'src:dst' acts on dst, ':dst' deletes it, '+' forces it.
+    const forcedByRefspec = ref.startsWith('+');
+    const spec = ref.replace(/^\+/, '');
+    const deletesRef = spec.startsWith(':');
+    const target = (spec.includes(':') ? spec.slice(spec.indexOf(':') + 1) : spec).replace(/^refs\/heads\//, '');
+    const protectedRef = PROTECTED_REFS.test(ref) || PROTECTED_REFS.test(target);
 
-    if ((force || forceRaw) && protectedRef && !forceToMain) {
+    if ((force || forceRaw || forcedByRefspec || deletesRef) && protectedRef && !forceToMain) {
+      const what = deletesRef ? 'deleting' : 'force push to';
       return rejectInput(
         'git_push',
-        `refusing force push to protected ref \`${ref}\` -- rerun with forceToMain:true to override`,
+        `refusing ${what} protected ref \`${ref}\` -- rerun with forceToMain:true to override`,
       );
     }
 

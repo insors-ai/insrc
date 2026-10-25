@@ -522,21 +522,18 @@ CONFIG_CATALOG keeps its current rows; after validateModelCatalog the daemon mut
 
 ## Review
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+### ⚠️ Review `WARN` — design.story (design.story)
 
-**2 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T19:20:30.350Z
+**0 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T19:26:51.965Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 
 #### Does not hold (blocks approval)
 
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | HIGH | Replacing only the claude.models static fallback satisfies the upstream CLI-only model-listing constraint. | DEF k1 states: 'model probing and listing go only through the locally installed claude and codex CLIs and local Ollama.' Before the fallback, handler-runtime.ts reads ANTHROPIC_API_KEY, constructs the Anthropic SDK client and executes 'await client.models.list()'. The installed SDK implements this as getAPIList('/v1/models', ...). Section 3.4(d) replaces only the fallback, leaving this direct cloud request active. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, src/daemon/handler-runtime.ts, node_modules/@anthropic-ai/sdk/resources/models.mjs] | Replace the entire claude.models listing path with the Claude-kind family's registry projection, preserving its response shape. |
-| change-sites | HIGH | The JSON-import migration includes every TypeScript configuration needed to keep the VS Code extension building. | vscode-plugin/tsconfig.json neither extends the backend config nor enables resolveJsonModule. key-map.ts imports the backend catalog, and extension build/prepublish execute 'tsc -p tsconfig.json'. An in-memory compiler check adding the proposed JSON import to the catalog produced TS2732: 'Cannot find module ...cloud-model-catalog.json. Consider using --resolveJsonModule'. Enabling the option under the extension's compiler settings removed the diagnostic. The design names only the backend tsconfig change. [files: tsconfig.json, vscode-plugin/tsconfig.json, vscode-plugin/package.json, vscode-plugin/src/config/key-map.ts] | Add vscode-plugin/tsconfig.json to the change sites, enable resolveJsonModule there, and require the extension TypeScript check alongside the esbuild bundle check. |
+_None._
 
 #### Could not verify (does not block)
 
 | Check item | Premise | What was tried and what was missing | Action |
 | --- | --- | --- | --- |
-| data-compatibility | The linked upstream ER companion renders consistently with its source. | Inspected the HTML's narrative, Mermaid definition and entity/relationship tables. Attempted browser rendering, but the tool reported 'Browser is not available: iab'; browser inventory was empty. Diagram layout, clipping and rendered consistency could not be checked. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Verify the existing HTML in a rendering-capable environment; no missing Story-specific diagram is inferred. |
+| data-compatibility | The upstream ER companion renders successfully and consistently with its source. | Inspected the generated HTML, Mermaid definition, relationship tables and rendering initialization. Browser inventory contained no browser surfaces; attempting native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Successful rendering, layout and clipping could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render and visually inspect the existing companion; correct or regenerate it if necessary. |

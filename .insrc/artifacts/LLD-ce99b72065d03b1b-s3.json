@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "warn",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,23 +36,11 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers S003 ac1\u2013ac5 and the approved scope exceptions.",
-          "evidence": "Compared DEF S003 and HLD sc5 with the proposed resolution, effort filtering, literal migration, global-only tiers and reconciliation. The HLD approval override requires first-use embedder settings and excludes embedding-model migration; both are reflected in the design. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, .insrc/artifacts/HLD-ce99b72065d03b1b.json]",
-          "action": "Retain the acceptance mapping and explicit embedding exclusions.",
+          "premise": "The design covers S003's five acceptance criteria and the applicable HLD approval conditions.",
+          "evidence": "Compared DEF S003 ac1–ac5, HLD sc5 and the stored approval override. The design covers definition-derived defaults, unsupported-effort removal, literal migration, global-only tier models and pruning. It also includes first-use embedder settings and cold-import tests. The approval explicitly excludes embedding-model selection and assigns command-bar changes to s5. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, .insrc/artifacts/HLD-ce99b72065d03b1b.json]",
+          "action": "No correction required.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Replacing only the claude.models static fallback satisfies the upstream CLI-only model-listing constraint.",
-          "evidence": "DEF k1 states: 'model probing and listing go only through the locally installed claude and codex CLIs and local Ollama.' Before the fallback, handler-runtime.ts reads ANTHROPIC_API_KEY, constructs the Anthropic SDK client and executes 'await client.models.list()'. The installed SDK implements this as getAPIList('/v1/models', ...). Section 3.4(d) replaces only the fallback, leaving this direct cloud request active. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, src/daemon/handler-runtime.ts, node_modules/@anthropic-ai/sdk/resources/models.mjs]",
-          "action": "Replace the entire claude.models listing path with the Claude-kind family's registry projection, preserving its response shape.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "current-behaviour.1",
@@ -60,9 +48,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Analyze settings are cached, while per-repo tiers and fresh core-provider overrides currently affect model selection.",
-          "evidence": "loadAnalyzeConfig returns its module-level cached value. resolveRoleInternal selects 'byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier]'. readRepoOverride independently reads config.json on each lookup; workflow-rpc and code-review-rpc call resolveRepoShaperProvider. [files: src/config/analyze.ts, src/analyze/context/role-router.ts, src/daemon/workflow-rpc.ts, src/daemon/code-review-rpc.ts]",
-          "action": "Remove both override paths while preserving task-tier precedence and core-floor clamping.",
+          "premise": "Current tier resolution uses literal defaults, and per-repo tier models override global tier models.",
+          "evidence": "Read parsing, assembly and routing bodies. resolveTier returns 'tiering.tiers?.[tier] ?? { ...DEFAULT_TIERS[tier], ... }'. The router selects 'byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier]' and obtains effort from the global tier. readRepoOverride independently reads the repo's core tier fresh from disk. [files: src/config/analyze.ts, src/analyze/context/role-router.ts]",
+          "action": "No correction required.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -72,9 +60,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The described literal budgets, summariser fallback, tool-loop precedence and eager embedder settings match current code.",
-          "evidence": "CliProvider assigns Codex CODEX_INPUT_BUDGET_CHARS = 1_048_576 and forwards effort without model validation. shaper-provider contains SUMMARISER_CLI_FALLBACK and passes cfg.shaper.ollamaNumCtx. localToolLoopModel chooses an Ollama cheap tier before local.coreModel. embedder.ts executes 'const _localDefaults = loadLocalProviderConfig()' at module load. [files: src/agent/providers/cli-provider.ts, src/analyze/context/shaper-provider.ts, src/analyze/context/driver.ts, src/indexer/embedder.ts]",
-          "action": "Retain these concrete migration targets.",
+          "premise": "The stated summariser, tool-loop and provider limitations describe current execution.",
+          "evidence": "The summariser uses SUMMARISER_CLI_FALLBACK for unusable CLI model IDs. localToolLoopModel selects an Ollama cheap tier before local.coreModel. CliProvider assigns the fixed Codex character budget, forwards configured effort, and the Ollama factories receive cfg.shaper.ollamaNumCtx. [files: src/analyze/context/shaper-provider.ts, src/analyze/context/driver.ts, src/agent/providers/cli-provider.ts]",
+          "action": "No correction required.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,9 +72,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing registry provides the resolution capabilities this Story consumes, and its builder can be exported for the client stopgap.",
-          "evidence": "Read ModelRegistry and buildRegistry in full. They already implement find, rejected, tierDefault, summariserModel, toolLoopModel, cliKind and resolveTier, including canonical aliases, droppedEffort and fallback metadata. buildRegistry(file, profiles) is currently private and does not read the approved store; getModelRegistry performs that read separately. [files: src/daemon/model-registry.ts, src/daemon/model-catalog.ts]",
-          "action": "Export the builder as proposed and keep the client stopgap from invoking getModelRegistry.",
+          "premise": "The existing registry supplies the metadata and resolution results the design proposes to reuse.",
+          "evidence": "Read ModelRegistry and its builder implementation. It already exposes find, tierDefault, summariserModel, toolLoopModel, cliKind, rejected and resolveTier. TierResolution already carries fallback and droppedEffort. Shipped definitions take precedence over rejected profiles during successful lookup. Exporting the existing builder requires no new registry interface. [files: src/daemon/model-registry.ts, src/daemon/model-catalog.ts, src/daemon/model-definitions.ts]",
+          "action": "No correction required.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,9 +84,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The identified production callers cover the embedder getter and tool-loop return-shape changes.",
-          "evidence": "Source search and reads found lifecycle.ts consuming EMBEDDING_DIM and IndexerService.reembed consuming EMBEDDING_MODEL, as listed. Both localToolLoopModel callers in driver.ts currently pass its string result alongside cfg.shaper.ollamaNumCtx and need the proposed model/numCtx pair. [files: src/indexer/embedder.ts, src/daemon/lifecycle.ts, src/indexer/index.ts, src/analyze/context/driver.ts]",
-          "action": "Migrate these callers and make the embedder's Ollama client lazy as well, since its current constructor consumes _localDefaults.host.",
+          "premise": "The migration accounts for the direct tier-resolution callers and the exceptional build-validation provider factory.",
+          "evidence": "Analyzer caller results were incomplete, so source search supplemented them. The direct config resolveTier callers are resolveTiers and computeEffectiveTiers; reviewArtifact separately loads config and constructs a router. All client paths are addressed. resolveValidateProvider currently reconstructs a CliProvider from resolution fields or falls back to literal Claude; the design explicitly replaces both branches through the shared factory. [files: src/config/analyze.ts, src/cli/panes/model-tiers.ts, src/cli/services/workflow.ts, src/daemon/steps/build-step/phases/validate.ts, src/agent/providers/cli-provider.ts]",
+          "action": "Preserve existing optional test and construction seams while extending these APIs.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -107,12 +95,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The JSON-import migration includes every TypeScript configuration needed to keep the VS Code extension building.",
-          "evidence": "vscode-plugin/tsconfig.json neither extends the backend config nor enables resolveJsonModule. key-map.ts imports the backend catalog, and extension build/prepublish execute 'tsc -p tsconfig.json'. An in-memory compiler check adding the proposed JSON import to the catalog produced TS2732: 'Cannot find module ...cloud-model-catalog.json. Consider using --resolveJsonModule'. Enabling the option under the extension's compiler settings removed the diagnostic. The design names only the backend tsconfig change. [files: tsconfig.json, vscode-plugin/tsconfig.json, vscode-plugin/package.json, vscode-plugin/src/config/key-map.ts]",
-          "action": "Add vscode-plugin/tsconfig.json to the change sites, enable resolveJsonModule there, and require the extension TypeScript check alongside the esbuild bundle check.",
+          "severity": "LOW",
+          "premise": "The proposed initialization changes address the real early settings reads and exported embedder consumers.",
+          "evidence": "embedder.ts executes 'const _localDefaults = loadLocalProviderConfig();' and constructs its Ollama client during import. lifecycle.ts consumes EMBEDDING_DIM, and IndexerService.reembed imports EMBEDDING_MODEL. Lance modules also populate the local-config cache at module load. The design requires an import without a settings read, migrates the consumers and resets both settings caches after reconciliation. [files: src/indexer/embedder.ts, src/indexer/index.ts, src/daemon/lifecycle.ts, src/config/local.ts, src/db/lance/artifact-vec.ts, src/daemon/index.ts]",
+          "action": "Ensure the embedder's Ollama client construction also uses the first-use initialization path.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -120,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Selective removal of per-repo tiers can preserve existing tasks/coreFloor records and the reconciliation result contract.",
-          "evidence": "The parser stores repo paths and dotted role IDs as literal object keys. reconcile.ts already uses segment arrays and copy-on-write deletion for dynamic per-repo records, and reports pruned labels separately. The design follows that pattern, explicitly removes only tiers, preserves tasks/coreFloor and acknowledges that deleted overrides cannot be restored by rollback. [files: src/config/analyze.ts, src/config/reconcile.ts, src/config/write-path.ts]",
-          "action": "Preserve literal keys during pruning and retain the proposed preservation/idempotence tests.",
+          "premise": "The proposed settings migration can preserve role assignments and core floors while removing repo tier overrides.",
+          "evidence": "Read reconciliation's migration, fill and prune phases. It preserves unenumerated fields and already handles dotted role IDs and repo paths using literal key arrays. Enum reconciliation checks string type rather than membership, so definition-derived display enums do not erase approved custom effort names. The LLD identifies removed subtrees, retained fields, warning labels and irreversible deletion. [files: src/config/reconcile.ts, src/config/config-catalog.ts, src/config/reconcile-io.ts]",
+          "action": "Retain copy-on-write behavior and apply repo-tier pruning after legacy relocation.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +120,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The changed relationships and wire compatibility are documented sufficiently without a new Story-specific ERD.",
-          "evidence": "The design states repo-to-role tier selection, global tier-to-model ownership, family-to-provider construction and compatibility of existing config.write clients. These agree with the current router and HLD sc5. The upstream ER companion's source also describes family ownership, within-family model references and separate approved profiles. This Story does not require a new storage entity or changed UI flow. [files: src/analyze/context/role-router.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
-          "action": "Keep these relationship and compatibility descriptions explicit during implementation.",
+          "premise": "Relationship ownership and compatibility are adequately documented for this Story.",
+          "evidence": "The LLD specifies global ownership of tier runner/model/effort, per-repo role-to-tier selection, floor precedence and historical attribution handling. The upstream companion's narrative and tables document family ownership, model references and profile-to-family multiplicity. These describe the relevant relationships without requiring a separate Story ERD or UX mock. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html, src/workflow/attribution.ts, src/daemon/model-catalog.ts]",
+          "action": "No additional Story-specific diagram is necessary.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +132,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The linked upstream ER companion renders consistently with its source.",
-          "evidence": "Inspected the HTML's narrative, Mermaid definition and entity/relationship tables. Attempted browser rendering, but the tool reported 'Browser is not available: iab'; browser inventory was empty. Diagram layout, clipping and rendered consistency could not be checked. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
-          "action": "Verify the existing HTML in a rendering-capable environment; no missing Story-specific diagram is inferred.",
+          "premise": "The upstream ER companion renders successfully and consistently with its source.",
+          "evidence": "Inspected the generated HTML, Mermaid definition, relationship tables and rendering initialization. Browser inventory contained no browser surfaces; attempting native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Successful rendering, layout and clipping could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
+          "action": "Render and visually inspect the existing companion; correct or regenerate it if necessary.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -156,9 +144,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The Story preserves HLD ownership and the named client migration stopgaps.",
-          "evidence": "Compared HLD sc1\u2013sc5 and Story boundaries with the LLD. Registry/store ownership remains with s1/s4, definitions projection with s2, and picker/approval flows with s5\u2013s7. The retained JSON-derived TUI exports and bundled catalog match the HLD's staged compatibility provisions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/cli/panes/model-tiers.ts, vscode-plugin/src/models/model-tier-picker.ts]",
-          "action": "Keep the stopgaps explicitly assigned to their removal Stories.",
+          "premise": "The changes respect the HLD's registry, approval-flow and client-story ownership boundaries.",
+          "evidence": "Compared HLD §§5–6 with the existing sc1/sc2/sc3 implementations. S003 consumes the registry, adds sc5 and changes runtime consumers. It leaves approval-store writes and probing to s4 and picker redesigns to s5–s7. Catalog bundling, manifest synchronization and temporary TUI exports support the HLD's requirement that intermediate stages remain usable. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-registry.ts, src/daemon/model-definitions.ts, vscode-plugin/esbuild.mjs, vscode-plugin/src/config/key-map.ts]",
+          "action": "No correction required.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -168,9 +156,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The principal resolution, rejected-write and invalid-definitions failures have implementable detection and handling.",
-          "evidence": "The registry already returns droppedEffort and distinguishes rejected-model from unlisted-model; find checks shipped models before fallback. validateModelCatalog throws ModelCatalogValidationError naming the entry. config.write currently mutates its loaded object, so the specified candidate-copy check is necessary to refuse before persistence. Installer step 3 uses a pipefail-protected build pipeline before configuration. [files: src/daemon/model-registry.ts, src/daemon/model-catalog.ts, src/daemon/handler-runtime.ts, scripts/insrc-daemon-install.sh]",
-          "action": "Use section 2.1's effective-rejection predicate, including !registry.find(...), consistently in the abbreviated error-path description.",
+          "premise": "The model-resolution and rejected-write failures have implementable detection and handling.",
+          "evidence": "Registry resolution already distinguishes rejected-model from unlisted-model and reports droppedEffort. Its find operation supports IDs and aliases, enabling the specified shipped-model exception. The current config.write mutates before persistence; the proposed candidate-copy check explicitly precedes that write and covers changed runner/model pairs under parent-object writes. Validation already throws ModelCatalogValidationError naming the faulty entry. [files: src/daemon/model-registry.ts, src/daemon/model-catalog.ts, src/daemon/handler-runtime.ts]",
+          "action": "Use §2.1's effective-rejection predicate in the handler; §5's abbreviated includes check must retain the registry.find exception.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -180,21 +168,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each S003 acceptance criterion maps to a concrete proposed test at an existing seam.",
-          "evidence": "Checked DEF ac1\u2013ac5 against section 6 and existing tier-default, boot-reconcile, provider and RPC contract tests. The plan maps defaults to differing fixtures, unsupported effort to provider inspection/warnings, literal removal to scans, repo selection to router/socket tests, and pruning to preservation/warning tests. These are planned tests; their post-change execution was not verified. [files: src/config/__tests__/tier-defaults.test.ts, src/daemon/__tests__/config-boot-reconcile.test.ts, src/daemon/__tests__/boot-model-catalog.test.ts, src/daemon/__tests__/handler-runtime.test.ts, vscode-plugin/src/config/__tests__/manifest-catalog.test.ts, vscode-plugin/src/models/__tests__/tier-effort.test.ts]",
-          "action": "Retain the mapping, migrate obsolete literal assertions, and add the extension typecheck identified under change-sites.",
+          "premise": "Every S003 acceptance criterion has a proposed proving test, including integration-sensitive changes.",
+          "evidence": "Checked the acceptance mapping against DEF S003: ac1 has fixture defaults and reconciliation tests; ac2 checks warning and omitted effort; ac3 has source scans and provider metadata tests; ac4 has routing and socket tests; ac5 has pruning and boot-warning tests. Existing tests confirm relevant seams and pins, including handler inventory, manifest/catalog equality, installer literals and input budgets; the design explicitly migrates these assertions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/LLD.md, src/config/__tests__/tier-defaults.test.ts, src/daemon/__tests__/model-catalog-asset.test.ts, src/daemon/__tests__/handler-runtime.test.ts, src/agent/providers/__tests__/input-budget.test.ts, vscode-plugin/src/config/__tests__/manifest-catalog.test.ts]",
+          "action": "Execute the proposed tests during implementation. This review verifies test-design coverage, not passing implementation results.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 2,
+        "high": 0,
         "med": 0,
-        "low": 11,
+        "low": 12,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-25T19:20:30.350Z",
+      "reviewedAt": "2026-10-25T19:26:51.965Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -331,7 +319,7 @@
           "internal": "The JetBrains model-tiers section driven by models.definitions instead of ModelTiersModel.PROVIDERS; the unknown-model check and approval dialog; the per-repo settings without per-tier fields; showing restartRequired. Tests: the section offers exactly a fake answer's options and the plugin keeps no runner or model list (ac1); an unknown model is saved only after approval (ac2); the per-repo settings show only `tasks` and coreFloor (ac3)."
         }
       ],
-      "rolloutPhase": "Phase B \u2014 daemon serves and runs by the definitions",
+      "rolloutPhase": "Phase B — daemon serves and runs by the definitions",
       "nonFunctional": {
         "performance": "The file is parsed once per thread and every model question is an in-memory lookup; models.definitions touches no CLI and makes one bounded Ollama listing call, the same one providers.listModels makes today.",
         "security": "No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home written only by the daemon; clients reach it only through models.approve and models.reject (k2).",
@@ -355,12 +343,12 @@
           ],
           "returns": {
             "type": "ConfigWriteResult",
-            "meaning": "ok:true, with restartRequired:true when any restart-sensitive setting (models.tiers, models.tasks, models.coreFloor, models.byRepo, models.local.coreModel) differs between the config before and the candidate after the write \u2014 so parent-object writes such as path 'models' or 'models.local' are covered; ok:false with reason 'invalid-path' (as today) or 'rejected-model' with a detail naming the model and family."
+            "meaning": "ok:true, with restartRequired:true when any restart-sensitive setting (models.tiers, models.tasks, models.coreFloor, models.byRepo, models.local.coreModel) differs between the config before and the candidate after the write — so parent-object writes such as path 'models' or 'models.local' are covered; ok:false with reason 'invalid-path' (as today) or 'rejected-model' with a detail naming the model and family."
           },
           "errors": [
             {
               "type": "ConfigWriteResult { ok: false, reason: 'rejected-model' }",
-              "condition": "After applying the write to a candidate copy (before persisting), some tier whose runner or model the write changed \u2014 whether by a model leaf, a runner leaf, a whole-tier object or a parent object \u2014 names a model that is effectively rejected in that tier's family: in registry.rejected(family) and not resolved by registry.find(family, model) (a model the user rejected that a later shipped file lists is accepted, as resolution and models.definitions treat it). config.json is not written."
+              "condition": "After applying the write to a candidate copy (before persisting), some tier whose runner or model the write changed — whether by a model leaf, a runner leaf, a whole-tier object or a parent object — names a model that is effectively rejected in that tier's family: in registry.rejected(family) and not resolved by registry.find(family, model) (a model the user rejected that a later shipped file lists is accepted, as resolution and models.definitions treat it). config.json is not written."
             },
             {
               "type": "ConfigWriteResult { ok: false, reason: 'invalid-path' }",
@@ -452,7 +440,7 @@
           ],
           "returns": {
             "type": "RoleResolution (internal, src/analyze/context/role-router.ts)",
-            "meaning": "The internal record keeps its existing fields \u2014 role, tier, runner (now typed FamilyId), model (canonical id), effort, clampedByFloor \u2014 and gains fallback?: { reason, requested } from AnalyzeConfig.tierResolutions. Tier from byRepo tasks \u2192 global tasks \u2192 taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback. Its consumers that read runner/model (src/daemon/workflow-rpc.ts attribution and src/daemon/workflow-review-rpc.ts '${runner}:${model}' labels) are unchanged."
+            "meaning": "The internal record keeps its existing fields — role, tier, runner (now typed FamilyId), model (canonical id), effort, clampedByFloor — and gains fallback?: { reason, requested } from AnalyzeConfig.tierResolutions. Tier from byRepo tasks → global tasks → taxonomy default, clamped by the core floor (byRepo ?? global); runner, model and effort only from the resolved global tier (ac4); no byRepo.tiers layer and no DEFAULT_TIERS fallback. Its consumers that read runner/model (src/daemon/workflow-rpc.ts attribution and src/daemon/workflow-review-rpc.ts '${runner}:${model}' labels) are unchanged."
           },
           "errors": [],
           "preconditions": [
@@ -483,7 +471,7 @@
             "The registry comes from overrides.registry, else getModelRegistry() (daemon threads); the TUI review stopgap supplies shippedModelRegistry()."
           ],
           "postconditions": [
-            "SUMMARISER_CLI_FALLBACK and the cli-claude/cli-codex \u2192 claude/codex literal mapping are gone; resolveShaperKind's final floor is the default family's tier runner rather than a literal."
+            "SUMMARISER_CLI_FALLBACK and the cli-claude/cli-codex → claude/codex literal mapping are gone; resolveShaperKind's final floor is the default family's tier runner rather than a literal."
           ]
         },
         {
@@ -519,10 +507,10 @@
           },
           "errors": [],
           "preconditions": [
-            "SHIPPED_DEFINITIONS is the shipped file imported as a JSON module (resolveJsonModule + `with { type: 'json' }`): tsc rejects a syntactically broken file. The build gains a structural gate \u2014 package.json build becomes `tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs`, where the check runs the built validateModelCatalog() against src/assets/models and exits non-zero naming the entry. tsc may already have emitted the JSON into out/assets/models, so the guarantee is that the build fails: the installer's step 3 runs under `set -euo pipefail` and stops before configuring or starting the daemon, and a failed build is not packaged."
+            "SHIPPED_DEFINITIONS is the shipped file imported as a JSON module (resolveJsonModule + `with { type: 'json' }`): tsc rejects a syntactically broken file. The build gains a structural gate — package.json build becomes `tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs`, where the check runs the built validateModelCatalog() against src/assets/models and exits non-zero naming the entry. tsc may already have emitted the JSON into out/assets/models, so the guarantee is that the build fails: the installer's step 3 runs under `set -euo pipefail` and stops before configuring or starting the daemon, and a failed build is not packaged."
           ],
           "postconditions": [
-            "Two sources with separate roles: the imported shipped copy supplies display and fill-in defaults only, through a derivation that never throws (a missing field yields '' or no default), so evaluating CONFIG_CATALOG at module load \u2014 on the daemon's import chains index.ts \u2192 reconcile-io.ts \u2192 reconcile.ts and handler-runtime.ts \u2192 admin-handlers.ts \u2192 settings-catalog.ts \u2014 cannot fail before main(); every run-time decision in the daemon uses the validated registry.",
+            "Two sources with separate roles: the imported shipped copy supplies display and fill-in defaults only, through a derivation that never throws (a missing field yields '' or no default), so evaluating CONFIG_CATALOG at module load — on the daemon's import chains index.ts → reconcile-io.ts → reconcile.ts and handler-runtime.ts → admin-handlers.ts → settings-catalog.ts — cannot fail before main(); every run-time decision in the daemon uses the validated registry.",
             "The daemon reconciles with buildConfigCatalog(validateModelCatalog()) (validated, test-seamed), after main() has validated; the TUI, the updater's loadBuiltCatalog and the VS Code bundle use CONFIG_CATALOG from the shipped JSON."
           ]
         },
@@ -545,7 +533,7 @@
           "preconditions": [],
           "postconditions": [
             "The boot reconcile logs one warning per removed per-repo tier naming repo and tier (ac5).",
-            "After the boot reconcile (src/daemon/index.ts, before any worker starts or any model is resolved), main() drops the main thread's cached local and analyze settings through new production resets resetLocalProviderConfigCache() (src/config/local.ts) and resetAnalyzeConfigCache() (src/config/analyze.ts) \u2014 the existing _\u2026ForTests functions become aliases \u2014 so a local-settings read cached at module load (the Lance tables' embeddingDim via src/daemon/handler-runtime.ts \u2192 src/db/lance/artifact-vec.ts) cannot keep pre-reconcile values: the next read sees the reconciled config.json. Workers start after the reconcile and read it fresh."
+            "After the boot reconcile (src/daemon/index.ts, before any worker starts or any model is resolved), main() drops the main thread's cached local and analyze settings through new production resets resetLocalProviderConfigCache() (src/config/local.ts) and resetAnalyzeConfigCache() (src/config/analyze.ts) — the existing _…ForTests functions become aliases — so a local-settings read cached at module load (the Lance tables' embeddingDim via src/daemon/handler-runtime.ts → src/db/lance/artifact-vec.ts) cannot keep pre-reconcile values: the next read sees the reconciled config.json. Workers start after the reconcile and read it fresh."
           ]
         },
         {
@@ -641,10 +629,10 @@
         ]
       },
       {
-        "entity": "Runner \u2192 CLI-kind and client \u2192 runner mappings",
+        "entity": "Runner → CLI-kind and client → runner mappings",
         "change": "invariant-change",
-        "details": "Runner/CLI-kind mappings and literal defaults outside the family implementations are replaced, with client processes kept off the registry (k2): (a) the MCP server (src/mcp/server.ts, a standalone process) and src/shared/step-context.ts keep detecting the client's identity ('claude' | 'codex', the client's name, not a model definition) and forward only that over step.call, as today; the daemon maps a client identity to the family whose cliKind equals it via the registry through one daemon-owned helper, familyForClient(client, registry) \u2014 used by src/daemon/steps/host.ts, src/daemon/steps/analyze-oneshot.ts (its `deps.clientDefault ?? clientProviderKind(stepClient())` default, src/daemon/steps/analyze-oneshot.ts:102), src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; src/shared/step-context.ts keeps stepClient() and the StepClient identity type but drops clientProviderKind/stepClientOf; (b) provider construction takes registry.cliKind(family) (src/analyze/context/shaper-provider.ts); resolveValidateProvider (src/daemon/steps/build-step/phases/validate.ts:183) reuses the router's constructed provider when the 'build' role resolves to a CLI family (so model, accepted effort and inputBudgetChars come from the same factory), and when it resolves to ollama it resolves the 'build' role's tier for the default family through registry.resolveTier(tier, that family's tierDefault) and builds the CliProvider through the same factory (canonical model, accepted effort, chars budget), logging the substitution; (c) attribution (src/workflow/attribution.ts) decodes a run label by family metadata from the shipped definitions before any model lookup: a label equal to a CLI family's cliKind or starting with it (claude, codex, codex:<model>) maps to that family, a label equal to a family id or prefixed '<familyId>:' (ollama, ollama:<model>) maps to that family even when the model is no longer listed, else a model id/alias lookup across families, else the default family ('client' included) \u2014 historical labels keep their family; (d) the whole claude.models RPC (src/daemon/handler-runtime.ts, today an ANTHROPIC_API_KEY + Anthropic SDK models.list() REST call with a static fallback list) answers from the registry's Claude-kind family \u2014 [{ id, displayName: displayName ?? id, createdAt: '' }] for each served model \u2014 keeping its response shape and removing the direct cloud REST call (DEF k1); the @anthropic-ai/sdk import there goes. Type unions take FamilyId from src/daemon/model-catalog.ts. (e) providers.listModels (src/daemon/list-models.ts): ModelProvider becomes FamilyId and extractProvider admits the registry's family ids instead of its own ALL_PROVIDERS set; the request, the invalid-params text listing the families and the result shape are unchanged.",
-        "schemaDiff": "~ runner/kind literals \u2192 registry lookups; unions \u2192 FamilyId",
+        "details": "Runner/CLI-kind mappings and literal defaults outside the family implementations are replaced, with client processes kept off the registry (k2): (a) the MCP server (src/mcp/server.ts, a standalone process) and src/shared/step-context.ts keep detecting the client's identity ('claude' | 'codex', the client's name, not a model definition) and forward only that over step.call, as today; the daemon maps a client identity to the family whose cliKind equals it via the registry through one daemon-owned helper, familyForClient(client, registry) — used by src/daemon/steps/host.ts, src/daemon/steps/analyze-oneshot.ts (its `deps.clientDefault ?? clientProviderKind(stepClient())` default, src/daemon/steps/analyze-oneshot.ts:102), src/daemon/code-review-rpc.ts and src/daemon/workflow-rpc.ts; src/shared/step-context.ts keeps stepClient() and the StepClient identity type but drops clientProviderKind/stepClientOf; (b) provider construction takes registry.cliKind(family) (src/analyze/context/shaper-provider.ts); resolveValidateProvider (src/daemon/steps/build-step/phases/validate.ts:183) reuses the router's constructed provider when the 'build' role resolves to a CLI family (so model, accepted effort and inputBudgetChars come from the same factory), and when it resolves to ollama it resolves the 'build' role's tier for the default family through registry.resolveTier(tier, that family's tierDefault) and builds the CliProvider through the same factory (canonical model, accepted effort, chars budget), logging the substitution; (c) attribution (src/workflow/attribution.ts) decodes a run label by family metadata from the shipped definitions before any model lookup: a label equal to a CLI family's cliKind or starting with it (claude, codex, codex:<model>) maps to that family, a label equal to a family id or prefixed '<familyId>:' (ollama, ollama:<model>) maps to that family even when the model is no longer listed, else a model id/alias lookup across families, else the default family ('client' included) — historical labels keep their family; (d) the whole claude.models RPC (src/daemon/handler-runtime.ts, today an ANTHROPIC_API_KEY + Anthropic SDK models.list() REST call with a static fallback list) answers from the registry's Claude-kind family — [{ id, displayName: displayName ?? id, createdAt: '' }] for each served model — keeping its response shape and removing the direct cloud REST call (DEF k1); the @anthropic-ai/sdk import there goes. Type unions take FamilyId from src/daemon/model-catalog.ts. (e) providers.listModels (src/daemon/list-models.ts): ModelProvider becomes FamilyId and extractProvider admits the registry's family ids instead of its own ALL_PROVIDERS set; the request, the invalid-params text listing the families and the result shape are unchanged.",
+        "schemaDiff": "~ runner/kind literals → registry lookups; unions → FamilyId",
         "callSites": [
           "src/mcp/server.ts:1367",
           "src/shared/step-context.ts:154",
@@ -696,7 +684,7 @@
         "entity": "VS Code settings manifest (vscode-plugin/package.json contributes.configuration)",
         "change": "field-modify",
         "details": "The manifest's insrc.models.tiers.<tier>.runner/model/effort defaults and enums and insrc.models.local.coreModel default are regenerated from CONFIG_CATALOG by a new vscode-plugin/scripts/sync-manifest-catalog.mjs (run before the extension build and committed), and insrc.models.shaper.ollamaNumCtx is removed with its row. No model fact is written by hand: the script copies the catalog's values, and the existing contract suites vscode-plugin/src/config/__tests__/manifest-catalog.test.ts (no missing/extra keys; schema.default and schema.enum equal CONFIG_CATALOG) and vscode-plugin/src/models/__tests__/tier-effort.test.ts (manifest effort enums equal the catalog's) keep enforcing it. The picker redesign stays with s6.",
-        "schemaDiff": "~ insrc.models.tiers.core.model default '' \u2192 catalog default (opus)\n~ insrc.models.tiers.*.effort enum + 'ultra'\n- insrc.models.shaper.ollamaNumCtx\n+ vscode-plugin/scripts/sync-manifest-catalog.mjs",
+        "schemaDiff": "~ insrc.models.tiers.core.model default '' → catalog default (opus)\n~ insrc.models.tiers.*.effort enum + 'ultra'\n- insrc.models.shaper.ollamaNumCtx\n+ vscode-plugin/scripts/sync-manifest-catalog.mjs",
         "callSites": [
           "vscode-plugin/package.json:299",
           "vscode-plugin/package.json:399",
@@ -859,7 +847,7 @@
           "source": "c3"
         },
         {
-          "text": "The role router keeps its precedence for the tier (byRepo tasks \u2192 global tasks \u2192 taxonomy) and the core-floor clamp (byRepo coreFloor ?? global), and keeps the global tier's effort for every routed role.",
+          "text": "The role router keeps its precedence for the tier (byRepo tasks → global tasks → taxonomy) and the core-floor clamp (byRepo coreFloor ?? global), and keeps the global tier's effort for every routed role.",
           "source": "c4"
         },
         {
@@ -883,7 +871,7 @@
           "level": "unit",
           "purpose": "Tier resolution, routing, provider construction, settings catalog and reconcile against fixture definitions.",
           "subjects": [
-            "tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile \u2192 parse \u2192 resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset",
+            "tier resolution (src/config/analyze.ts): an unset tier resolves to the fixture definitions' default with its effort; a fixture with non-empty default efforts keeps them through reconcile → parse → resolution; '' effort means the CLI default; a tier set by alias resolves to the canonical model; '' model is unset",
             "effort: a tier whose model does not accept its effort resolves without it and logs a warning naming tier, model and effort; the built CliProvider gets no effort",
             "decision A: an unlisted and a rejected model fall back to the tier default with a warning naming tier, requested model, reason and default",
             "role router (src/analyze/context/role-router.ts): a repo's tasks choice picks the tier while runner, model and effort come from the global tier; byRepo coreFloor still clamps",
@@ -930,7 +918,7 @@
           "level": "integration",
           "purpose": "A real daemon resolves from the file and the cold-import order holds.",
           "subjects": [
-            "cold daemon import through both catalog chains (index.ts \u2192 reconcile-io.ts \u2192 reconcile.ts, handler-runtime.ts \u2192 admin-handlers.ts \u2192 settings-catalog.ts), instrumented, with INSRC_MODEL_CATALOG_DIR pointing at a valid, a missing, a malformed and a structurally invalid file: every module imports, the registry and validated file are first read in main(), and an invalid file stops the daemon with ModelCatalogValidationError naming the entry before reconcile",
+            "cold daemon import through both catalog chains (index.ts → reconcile-io.ts → reconcile.ts, handler-runtime.ts → admin-handlers.ts → settings-catalog.ts), instrumented, with INSRC_MODEL_CATALOG_DIR pointing at a valid, a missing, a malformed and a structurally invalid file: every module imports, the registry and validated file are first read in main(), and an invalid file stops the daemon with ModelCatalogValidationError naming the entry before reconcile",
             "a daemon in a temp home with byRepo tiers in config.json removes them at boot with the warnings, and models.resolveRole over the socket returns the global tier's model for a repo whose tasks pick that tier",
             "the TUI build (tsc) passes and its model-tiers pane shows the definitions' defaults",
             "cold start with a fresh home and an alternate catalog (INSRC_MODEL_CATALOG_DIR) that keeps the shipped local model but changes toolLoopModel: after boot, models.resolveRole / the tool-loop choice uses the reconciled coreModel, not the module-load cached one"
@@ -947,7 +935,7 @@
             "unit: an unset tier resolves to the fixture definitions' default",
             "unit: reconcile fills a fresh config with a fixture's differing defaults",
             "unit: buildConfigCatalog(fixture) defaults come from the fixture",
-            "unit: a fixture's non-empty default efforts survive reconcile \u2192 parse \u2192 resolution"
+            "unit: a fixture's non-empty default efforts survive reconcile → parse → resolution"
           ]
         },
         {

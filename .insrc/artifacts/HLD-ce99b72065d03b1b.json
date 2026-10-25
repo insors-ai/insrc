@@ -20,7 +20,185 @@
     "schemaVersion": 1,
     "epicHash": "ce99b72065d03b1b",
     "epicSlug": "per-family-model-definitions-served-daemon",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The assigned migrations eliminate every model-name literal covered by DEF FR005 and the HLD's single-source requirement.",
+          "evidence": "DEF FR005 requires 'Every place' naming a model literally to read the shared description. However, local.ts retains \"embeddingModel: 'qwen3-embedding:0.6b'\", config-catalog.ts repeats that default, and model-recommender.ts defines an EMBEDDING_MODELS catalog. These are active choices: embedder.ts uses the configured embedding model, and recommendModels selects embedding profiles. The HLD assigns migration of coreModel and DEFAULT_LOCAL_MODEL but does not define migration or an upstream exclusion for these embedding facts. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/config/local.ts, src/config/config-catalog.ts, src/shared/model-recommender.ts, src/indexer/embedder.ts]",
+          "action": "Define and assign the embedding-model treatment, or obtain an explicit upstream scope exclusion and narrow the no-literals claim and scan accordingly.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's catalog is a boot-validated, cached cloud-model list whose validation occurs after indexing workers start.",
+          "evidence": "Read validateShape, validateModelCatalog and getCuratedCatalog in full. Validation retains id/displayName for two CLI providers and freezes the result; the accessor refuses pre-validation access. index.ts starts indexing workers at line 283 and awaits catalog validation at line 382, before listening. [files: src/daemon/model-catalog.ts, src/daemon/index.ts]",
+          "action": "Retain the existing validator and accessor behavior during s1's format transition.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Global analyze settings are cached per thread, while current per-repo core overrides are read fresh and replacement workers can load later disk values.",
+          "evidence": "loadAnalyzeConfig returns its module-level cached value. readRepoOverride independently reads config.json on each lookup. Supervisor.replace calls start(spec) to create a replacement worker. The HLD accurately distinguishes these paths and explicitly retires the fresh per-repo override. [files: src/config/analyze.ts, src/daemon/threads/supervisor.ts, src/daemon/threads/indexing-worker.ts]",
+          "action": "Preserve the distinction in migration and restart tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing catalog accessor and bounded Ollama listing are reusable foundations, while capability metadata requires extending the existing format.",
+          "evidence": "CatalogModel contains only id and optional displayName. listModels already injects catalog() and ollamaList(), maps cloud entries through modelsFor, and handles Ollama listing failures. OllamaProvider bounds listing with OLLAMA_LIST_TIMEOUT_MS = 4_000. Aliases, efforts, input limits and approval profiles are not supplied by these existing contracts. [files: src/daemon/model-catalog.ts, src/daemon/list-models.ts, src/agent/providers/ollama.ts]",
+          "action": "Reuse these seams and preserve bounded, failure-tolerant listing.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Moving validation inside main() ahead of reconcile is sufficient to validate definitions before definition-dependent local settings are first read.",
+          "evidence": "index.ts statically imports getActiveEmbedderBackend from embedder.ts. That module executes \"const _localDefaults = loadLocalProviderConfig();\" at line 16, before main() runs. local.ts caches the whole configuration, including coreModel, which s3 makes definition-dependent. Moving the awaited boot hook within main() cannot precede this read. The HLD does not assign adaptation of this eager consumer or establish a separate validated initialization path for it. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/index.ts, src/indexer/embedder.ts, src/config/local.ts]",
+          "action": "Specify and assign initialization changes for the eager local-config consumer and definition-derived defaults. Test a cold daemon import, not only ordering within main(), with valid and invalid definitions.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The client migration accounts for existing callers that must consume config.write's rejection and restartRequired results.",
+          "evidence": "The TUI command bar is another model-setting caller. runConfig executes \"await svc.config.write(key, value);\" and unconditionally returns \"set ...\"; unset behaves similarly. Its service declares only Promise<{ ok: boolean }>. Consequently a new rejected-model refusal is reported as a successful save, and restartRequired is discarded. The s5 change-site and test inventory names the pane, approval screen, review and Setup, but does not account for these command paths. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/cli/command.ts, src/cli/services/config.ts, src/daemon/handler-runtime.ts]",
+          "action": "Add the command-bar config paths and service result type to s5. Handle refused saves and restartRequired, with tests for both outcomes.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Per-repo tier removal can preserve tasks and coreFloor without discarding the whole repo override.",
+          "evidence": "parseTieringOverride handles tiers, tasks and coreFloor independently. Existing CONFIG_MIGRATIONS relocates legacy byRepo entries before reconcile's prune phase. The proposed targeted tier removal therefore fits the stored shape and preserves the two retained fields, including migrated older records. [files: src/config/analyze.ts, src/config/config-catalog.ts, src/config/reconcile.ts]",
+          "action": "Ensure the migration tests include legacy models.analyze.byRepo records and repo paths containing dots.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The relationship documentation adequately identifies ownership, references and cardinality for the proposed stored model.",
+          "evidence": "Inspected the generated ER HTML's Mermaid source, narrative and description tables against sc1/sc2. They describe exactly one entry per built-in family, family-owned models and tier defaults, same-family default references by id/alias, and many user profiles referring to a CLI family outside the shipped file. Family-scoped model-id uniqueness is explicitly documented. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
+          "action": "Keep the companion synchronized when the shared contracts change.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked ER companion renders correctly and its rendered content matches the design.",
+          "evidence": "Read the generated HTML, embedded Mermaid source and rendering initialization. Attempted to open the local companion in the in-app browser; the tool returned 'Browser is not available: iab', and browser inventory was empty. Diagram layout, clipping and successful Mermaid execution could not be visually verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html]",
+          "action": "Render and visually inspect the existing generated companion; correct or regenerate it if rendering fails.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared-contract ownership and settings-write scope respect the Epic's Story boundaries.",
+          "evidence": "sc1/sc2 belong to s1, sc3 to s2, sc5 to s3 and sc4 to s4; client Stories consume those contracts. ISSUE-8dc75bc5 separately owns config.json parse/read refusal, atomic writes and concurrent-writer protection. The HLD excludes that work while assigning durability of the newly introduced approval store to s4. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/standalone/stop-settings-saves-from-wiping-tearing-E202610258dc75bc5/ISSUE.md]",
+          "action": "Keep config.json write hardening in its separate issue.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Unknown-model checks distinguish capability evidence from run success and define refusal and persistence failures.",
+          "evidence": "The recorded CLI probes show Codex accepting a run at an unlisted effort and Claude ignoring an unknown effort with exit 0. The HLD correctly uses Codex model-list evidence, marks Claude support recognised-unconfirmed, requires a successful model run before approval, and defines unknown-check, invalid-efforts, model-did-not-run and write-failed results. Failed writes retain the previous store. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/agent/providers/cli-provider.ts]",
+          "action": "Preserve these distinctions in the fake-CLI and failed-write tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Startup validation also covers the definitions bytes loaded by a replacement worker or a late first reader.",
+          "evidence": "The HLD explicitly allows those readers to load the file 'as [it is] then', after an on-disk change, but says every thread reads an 'already validated file'. Main-thread startup validation cannot validate later bytes. The design gives no validation/failure policy for a missing or malformed late-read definitions file. This matters because Supervisor.replace retries failed starts and ultimately shuts down the daemon after its restart limit. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-catalog.ts, src/daemon/threads/supervisor.ts]",
+          "action": "Specify validation and failure handling for every registry initialization, including late first reads and replacement workers. Add malformed/deleted-file tests for these paths.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each numbered upstream acceptance criterion has a corresponding planned test.",
+          "evidence": "Compared all 24 DEF acceptance criteria with the seven HLD Story test lists: startup/data updates/refusals, IPC parity, tier resolution and pruning, check/approval outcomes, and all three client migrations are mapped. Existing catalog tests provide fixture-directory overrides, list-model tests inject listing/catalog dependencies, and tiering tests exercise parsing without a live daemon. This verifies the test plan and reusable seams, not execution of future tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/__tests__/model-catalog.test.ts, src/daemon/__tests__/list-models.test.ts, src/config/__tests__/analyze-tiering.test.ts]",
+          "action": "Retain the mappings and add regression tests for the initialization and command-result gaps identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 2,
+        "med": 2,
+        "low": 9,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-25T10:47:26.258Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-25T13:39:14.172Z",
+    "reviewOverride": {
+      "reason": "User approved with override 2026-10-25 after review cycle 5 round 3 (revision 14). Design approach unchallenged since revision 12; remaining findings are carried as required items for the Story LLDs: (1) s3: the embedder's module-load read of local settings (src/indexer/embedder.ts:16) becomes a first-use read so definition-derived defaults are validated first; test a cold daemon import with valid and invalid definitions. (2) s5: the TUI command bar config set/unset (src/cli/command.ts:394, :399) and its service result type (src/cli/services/config.ts:22) handle refused saves and restartRequired, with tests. (3) Scope: embedding models (local embeddingModel, the recommender's EMBEDDING_MODELS) are excluded from this Epic; the s3 source-literal scan excludes them. (4) s1: every registry load (boot, replacement worker, late first read) runs the same validator; a failure stops that worker from starting under the supervisor's existing restart limit; tests for a deleted or malformed file read late.",
+      "at": "2026-10-25T13:39:14.167Z"
+    }
   },
   "body": {
     "summary": {

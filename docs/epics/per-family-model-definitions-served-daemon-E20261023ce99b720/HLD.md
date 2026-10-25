@@ -435,3 +435,28 @@ This was reviewed through review cycles 3 and 4; each round found another place 
 - **[[c32]]** `code` `src/daemon/list-models.ts:127` — "const models = deps.catalog().modelsFor(provider).map(toModelInfo);"
 - **[[c33]]** `code` `src/cli/panes/model-tiers.ts:19` — "import { DEFAULT_TIERS, resolveTier, TIER_EFFORTS } from '../../config/analyze.js';"
 - **[[c34]]** `stakeholder` `user 2026-10-25` — "go ahead"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.epic (design.epic)
+
+**4 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-25T10:47:26.258Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | HIGH | Moving validation inside main() ahead of reconcile is sufficient to validate definitions before definition-dependent local settings are first read. | index.ts statically imports getActiveEmbedderBackend from embedder.ts. That module executes "const _localDefaults = loadLocalProviderConfig();" at line 16, before main() runs. local.ts caches the whole configuration, including coreModel, which s3 makes definition-dependent. Moving the awaited boot hook within main() cannot precede this read. The HLD does not assign adaptation of this eager consumer or establish a separate validated initialization path for it. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/index.ts, src/indexer/embedder.ts, src/config/local.ts] | Specify and assign initialization changes for the eager local-config consumer and definition-derived defaults. Test a cold daemon import, not only ordering within main(), with valid and invalid definitions. |
+| change-sites | HIGH | The client migration accounts for existing callers that must consume config.write's rejection and restartRequired results. | The TUI command bar is another model-setting caller. runConfig executes "await svc.config.write(key, value);" and unconditionally returns "set ..."; unset behaves similarly. Its service declares only Promise<{ ok: boolean }>. Consequently a new rejected-model refusal is reported as a successful save, and restartRequired is discarded. The s5 change-site and test inventory names the pane, approval screen, review and Setup, but does not account for these command paths. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/cli/command.ts, src/cli/services/config.ts, src/daemon/handler-runtime.ts] | Add the command-bar config paths and service result type to s5. Handle refused saves and restartRequired, with tests for both outcomes. |
+| coverage-of-intent | MED | The assigned migrations eliminate every model-name literal covered by DEF FR005 and the HLD's single-source requirement. | DEF FR005 requires 'Every place' naming a model literally to read the shared description. However, local.ts retains "embeddingModel: 'qwen3-embedding:0.6b'", config-catalog.ts repeats that default, and model-recommender.ts defines an EMBEDDING_MODELS catalog. These are active choices: embedder.ts uses the configured embedding model, and recommendModels selects embedding profiles. The HLD assigns migration of coreModel and DEFAULT_LOCAL_MODEL but does not define migration or an upstream exclusion for these embedding facts. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/config/local.ts, src/config/config-catalog.ts, src/shared/model-recommender.ts, src/indexer/embedder.ts] | Define and assign the embedding-model treatment, or obtain an explicit upstream scope exclusion and narrow the no-literals claim and scan accordingly. |
+| error-paths | MED | Startup validation also covers the definitions bytes loaded by a replacement worker or a late first reader. | The HLD explicitly allows those readers to load the file 'as [it is] then', after an on-disk change, but says every thread reads an 'already validated file'. Main-thread startup validation cannot validate later bytes. The design gives no validation/failure policy for a missing or malformed late-read definitions file. This matters because Supervisor.replace retries failed starts and ultimately shuts down the daemon after its restart limit. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-catalog.ts, src/daemon/threads/supervisor.ts] | Specify validation and failure handling for every registry initialization, including late first reads and replacement workers. Add malformed/deleted-file tests for these paths. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The linked ER companion renders correctly and its rendered content matches the design. | Read the generated HTML, embedded Mermaid source and rendering initialization. Attempted to open the local companion in the in-app browser; the tool returned 'Browser is not available: iab', and browser inventory was empty. Diagram layout, clipping and successful Mermaid execution could not be visually verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/er-model.html] | Render and visually inspect the existing generated companion; correct or regenerate it if rendering fails. |

@@ -276,10 +276,9 @@ class DuckDBFileDriver implements FileDriver {
 			throw new Error('Private file execution required');
 		// Load real sources before selecting a real workbook target. Never
 		// substitute a made-up sheet or enter the persistent converter cache.
-		const selected = this.connectionOptions?.['sheet'];
 		await this.loadMemoryReader(this.execution);
 		const targets = await this.execution.targets();
-		const target = typeof selected === 'string' ? selected : targets[0]?.targetId;
+		const target = targets[0]?.targetId;
 		const table = await this.execution.table(target);
 		await this.execution.withConnection(async connection => {
 			await connection.runAndReadAll('SELECT 1 FROM query_table(?) LIMIT 1', [table]);

@@ -1,6 +1,6 @@
 import test, {mock} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,readFile,readdir,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,readdir,rm,chmod} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {once} from 'node:events';
@@ -35,8 +35,8 @@ test('CM-S2-A7: all file probe aliases load owned readers with actual targets an
   await add('fixed-width','first\n',{columns:[{name:'value',start:0,length:5,type:'string'}]});
   const avro=join(root,'source.avro'),encoder=avsc.createFileEncoder(avro,{type:'record',name:'Fixture',fields:[{name:'value',type:'string'}]});
   const finished=once(encoder,'finish');encoder.end({value:'first'});await finished;configs.push({id:'fixture',kind:'avro',path:avro});
-  const book=new ExcelJS.Workbook();book.addWorksheet('First').addRows([['value'],['first']]);book.addWorksheet('Empty').addRow(['different']);
-  const xlsx=join(root,'source.xlsx');await book.xlsx.writeFile(xlsx);configs.push({id:'fixture',kind:'xlsx',path:xlsx,options:{sheet:'Empty'}});
+  const book=new ExcelJS.Workbook();book.addWorksheet('Empty').addRow(['different']);book.addWorksheet('Other').addRows([['value'],['first']]);
+  const xlsx=join(root,'source.xlsx');await book.xlsx.writeFile(xlsx);configs.push({id:'fixture',kind:'xlsx',path:xlsx});
   const before=await snapshot(root),statements:string[]=[];
   const original=DuckDBConnection.prototype.run;
   const spy=mock.method(DuckDBConnection.prototype,'run',function(this:DuckDBConnection,...args:Parameters<typeof original>){statements.push(args[0]);return Reflect.apply(original,this,args);});
@@ -48,13 +48,13 @@ test('CM-S2-A7: all file probe aliases load owned readers with actual targets an
     catch(error){if(config.kind==='arrow'||config.kind==='feather')assert.equal((error as Error).message,'unsupported-temporary');else throw error;}
     finally{await driver?.close();}
    }
-   const badSheet=await construct({...configs.at(-1)!,options:{sheet:'absent'}});
-   try{await assert.rejects(badSheet.probeReachability(),/Unknown converted target/);}finally{await badSheet.close();}
+   const unreadable=join(root,'unreadable.csv');await writeFile(unreadable,'value\nsecret\n');await chmod(unreadable,0o000);
+   const blocked=await construct({id:'blocked',kind:'csv',path:unreadable});try{await assert.rejects(blocked.probeReachability());}finally{await blocked.close();await chmod(unreadable,0o600);await rm(unreadable);}
    assert.equal(statements.some(sql=>/^\s*INSTALL\b/i.test(sql)),false);
    assert.deepEqual(await snapshot(root),before);
    for(const kind of ['json','parquet','avro','bson','xlsx']){
-    const bad=join(root,'bad.'+kind);await writeFile(bad,'malformed-private-source');const driver=await construct({id:'bad',kind,path:bad});
-    try{await assert.rejects(driver.probeReachability(),error=>error instanceof Error&&!error.message.includes(root));}finally{await driver.close();}
+    const bad=join(root,'bad.'+kind);await writeFile(bad,'malformed-private-source');const failedBefore=await snapshot(root),driver=await construct({id:'bad',kind,path:bad});
+    try{await assert.rejects(driver.probeReachability(),error=>error instanceof Error&&!error.message.includes(root));}finally{await driver.close();}assert.deepEqual(await snapshot(root),failedBefore);
    }
   }finally{spy.mock.restore();}
  }finally{await rm(root,{recursive:true,force:true});}

@@ -12,8 +12,14 @@ export function savedAnalysisExecution(lookupRoot: string, lifetime: ConnectionE
 	});
 }
 
+/** Validate the explicit carrier before inspecting tool/runtime inputs. */
+export function assertAnalysisConnectionExecution(execution: ConnectionExecutionContext | undefined): void {
+ assertExplicitConnectionExecution(execution);
+ if (execution?.mode === 'session-memory' && execution.audience !== 'workbench-ui') throw new ConnectionExecutionError('unsupported-temporary');
+}
+
 export function analysisConnectionContext(lookupRoot: string, execution: ConnectionExecutionContext): ConnectionAccessContext {
-	assertExplicitConnectionExecution(execution);
+	assertAnalysisConnectionExecution(execution);
 	const trusted = requireConnectionExecution(execution);
 	if (trusted.connectionAccess.lookupRoot !== lookupRoot) throw new ConnectionExecutionError('session-expired');
 	return trusted.connectionAccess;

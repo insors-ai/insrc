@@ -14,7 +14,7 @@
 
 import { acquirePool } from '../../daemon/db/index.js';
 import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
-import { analysisConnectionContext, savedAnalysisExecution } from '../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import type { KvDriver, RdbmsDriver, FileDriver } from '../../daemon/db/index.js';
 
@@ -59,6 +59,7 @@ export async function runDbTableDescribe(
 	/** The connection pool's source; a test passes a stand-in. */
 	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbTableDescribeOutput> {
+	assertAnalysisConnectionExecution(ctx.connectionExecution);
 	const params = parseParams(exp);
 
 	// The registry cannot be read, the connection cannot be opened, or the

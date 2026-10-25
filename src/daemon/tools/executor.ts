@@ -14,6 +14,7 @@
  * the chat-loop wiring lands.
  */
 
+import { assertAnalysisConnectionExecution } from '../../analyze/connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import { getTool } from './registry.js';
 import type { ToolDeps, ToolInput, ToolResult } from './types.js';
@@ -25,6 +26,7 @@ export async function executeTool(
 	input: ToolInput,
 	deps: ToolDeps,
 ): Promise<ToolResult> {
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	const tool = getTool(toolId);
 	if (!tool) {
 		log.error({ toolId }, 'unknown tool');
@@ -45,8 +47,11 @@ export async function executeTool(
 	}
 
 	try {
-		return await tool.execute(input, deps);
+		const result = await tool.execute(input, deps);
+		assertAnalysisConnectionExecution(deps.connectionExecution);
+		return result;
 	} catch (err) {
+		if (deps.connectionExecution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		const errMsg = err instanceof Error ? err.message : String(err);
 		log.error({ id: tool.id, err: errMsg }, 'tool execution failed');
 		return {

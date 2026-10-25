@@ -25,6 +25,8 @@
  * Session and by the executor's gate dispatcher (Phase 2).
  */
 
+import type { ConnectionExecutionContext } from './step-context.js';
+
 // ---------------------------------------------------------------------------
 // AccessPolicy -- per-tool declaration
 // ---------------------------------------------------------------------------
@@ -36,6 +38,7 @@
  * the full `ToolExecContext` it has on hand.
  */
 export interface AccessPolicyContext {
+  readonly connectionExecution?: ConnectionExecutionContext | undefined;
   /** Active repo path; used by extractKey impls that resolve via the pool. */
   readonly repoPath?: string | undefined;
 }

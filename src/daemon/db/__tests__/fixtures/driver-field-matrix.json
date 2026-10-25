@@ -2374,7 +2374,7 @@
     "src/daemon/db/drivers/sqlite.ts": "343b358cf3d3136b5607f974679cdf4d24625919ec749d046636210358deed51",
     "src/daemon/db/pool.ts": "a1e2a330d6a298dc4e01f3a9d9e13bd6a01566ca3221788b6e3c1d5747e1a32f",
     "src/daemon/db/secrets.ts": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",
-    "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
+    "src/daemon/tools/builtins/db/index.ts": "611e43b090ba4f9e91ef939f0c1b8806b00931c3cb0660e0e03745ea5fb66017",
     "src/shared/db-driver.ts": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
     "src/daemon/db-rpc.ts": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",

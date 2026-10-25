@@ -18,7 +18,7 @@
 
 import { acquirePool } from '../../daemon/db/index.js';
 import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
-import { analysisConnectionContext, savedAnalysisExecution } from '../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import type { KvDriver, RdbmsDriver } from '../../daemon/db/index.js';
 
@@ -79,6 +79,7 @@ export async function runDbTablesList(
 	/** The connection pool's source; a test passes a stand-in. */
 	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbTablesListOutput> {
+	assertAnalysisConnectionExecution(ctx.connectionExecution);
 	const params = parseParams(exp);
 	const limit = params.limit ?? DEFAULT_LIMIT;
 

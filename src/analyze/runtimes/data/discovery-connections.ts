@@ -27,7 +27,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { analysisConnectionContext, savedAnalysisExecution } from '../../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../../connection-access.js';
 
 import type {
 	TemplateExecuteArgs,
@@ -58,6 +58,7 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		assertAnalysisConnectionExecution(args.connectionExecution);
 		// The request's scope is always resolved: the kinds a data task accepts,
 		// and the one connection a connection scope holds the task to. An explicit
 		// repo path in the task's params takes precedence over WHERE the pool is

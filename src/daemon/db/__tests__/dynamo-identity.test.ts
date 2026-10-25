@@ -50,3 +50,30 @@ test('CM-S2-E2: Dynamo activation and private auth IPC preserve environment toke
   await new Promise<void>(resolve=>server.close(()=>resolve()));await rm(directory,{recursive:true,force:true});
  }
 });
+
+test('CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback',async()=>{
+ const {DraftTestSupervisor,probeWorkerEnvironment}=await import('../draft-test.js');
+ const {RequestLifetime}=await import('../../request-context.js');
+ const root=await mkdtemp(join(tmpdir(),'cm-aws-worker-'));
+ const names=['AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY','AWS_SESSION_TOKEN','AWS_PROFILE','AWS_SHARED_CREDENTIALS_FILE','AWS_CONFIG_FILE','AWS_EC2_METADATA_DISABLED'];
+ const previous=new Map(names.map(name=>[name,process.env[name]]));const seen:string[]=[];
+ const server=createServer((req,res)=>{seen.push((/Credential=([^/]+)/.exec(String(req.headers.authorization))?.[1]??'')+' '+String(req.headers['x-amz-security-token']));req.resume();res.end('{"TableNames":["PRIVATE_TABLE_CANARY"]}');});
+ await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const address=server.address();assert.ok(address&&typeof address==='object');
+ try{
+  await writeFile(join(root,'credentials'),'[chosen]\naws_access_key_id = CHOSENKEY\naws_secret_access_key = chosen-secret-canary\n[named]\naws_access_key_id = NAMEDKEY\naws_secret_access_key = named-secret-canary\naws_session_token = named-token-canary\n');await writeFile(join(root,'config'),'');
+  Object.assign(process.env,{AWS_SHARED_CREDENTIALS_FILE:join(root,'credentials'),AWS_CONFIG_FILE:join(root,'config'),AWS_EC2_METADATA_DISABLED:'true'});
+  for(const mode of ['environment','chosen','named']){
+   delete process.env['AWS_ACCESS_KEY_ID'];delete process.env['AWS_SECRET_ACCESS_KEY'];delete process.env['AWS_SESSION_TOKEN'];delete process.env['AWS_PROFILE'];
+   if(mode==='environment')Object.assign(process.env,{AWS_ACCESS_KEY_ID:'ENVKEY',AWS_SECRET_ACCESS_KEY:'environment-secret-canary',AWS_SESSION_TOKEN:'environment-token-canary'});else process.env['AWS_PROFILE']='chosen';
+   const config={id:'fixture',kind:'dynamodb',options:{region:'us-east-1',endpoint:'http://127.0.0.1:'+address.port,...(mode==='named'?{profile:'named'}:{})}};
+   const activation=new DynamoDriver('activation','us-east-1',mode==='named'?'named':undefined,config.options.endpoint,config);
+   try{await activation.probeReachability();}finally{await activation.close();}
+   const supervisor=new DraftTestSupervisor(),lifetime=new RequestLifetime();
+   const result=await supervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot:root,scope:'temporary',id:'fixture'},publicPatch:{},credentials:{}},{connectionIdentity:mode,daemonEpoch:'epoch',signal:lifetime.signal,registerDrain:lifetime.registerDrain},async()=>({config,credentialActions:{}}));
+   assert.equal(result.status,'reachable');assert.ok(!JSON.stringify(result).includes('CANARY'));lifetime.complete();await lifetime.drained;assert.equal(supervisor.activeCount,0);await supervisor.shutdown();
+   assert.equal(seen.at(-1),seen.at(-2),'activation and private-worker signing identity agree');
+   assert.equal(Object.keys(probeWorkerEnvironment()).some(key=>key.startsWith('AWS_')),false);
+  }
+  assert.match(seen[0]!,/ENVKEY.*environment-token-canary/);assert.match(seen[2]!,/CHOSENKEY/);assert.match(seen[4]!,/NAMEDKEY.*named-token-canary/);
+ }finally{for(const[name,value]of previous)if(value===undefined)delete process.env[name];else process.env[name]=value;await new Promise<void>(r=>server.close(()=>r()));await rm(root,{recursive:true,force:true});}
+});

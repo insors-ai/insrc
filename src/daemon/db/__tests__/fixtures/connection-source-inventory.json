@@ -33,10 +33,6 @@
       "classification": "full-use-lease",
       "rationale": "t10: retain lease through describe"
     },
-    "src/daemon/db-rpc.ts": {
-      "classification": "bounded-private-probe",
-      "rationale": "t21: bounded private profile-materialized probe receives daemon memory-only authority and awaits cleanup; legacy writes require transport identity and the shared root gate, and responses use safe projections. S002 owns worker orchestration."
-    },
     "src/daemon/db/drivers/mssql.ts": {
       "classification": "driver-internal-library-pool",
       "rationale": "t12: tedious pool acquire nested within outer Driver lease; not management pool"
@@ -96,6 +92,10 @@
     "src/daemon/db/management-startup.ts": {
       "classification": "full-use-lease",
       "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
+    },
+    "src/bin/insrc-connection-test.ts": {
+      "classification": "bounded-private-probe",
+      "rationale": "S002 t14: one-shot private IPC child admits exact kinds, uses memory-only file authority, awaits explicit readonly reachability and close, and exits. No pool registration or live store access."
     }
   },
   "sites": [
@@ -390,6 +390,11 @@
       "boundary": "symbol:dataConnectionResolver"
     },
     {
+      "file": "src/bin/insrc-connection-test.ts",
+      "expression": "factory(start.config,familyOf(start.config.kind)==='file'?{fileExecutionPolicy:fileExecutionPolicy(start.config,{lookupRoot:start.lookupRoot,ownerId:'probe',revision:start.nonce,persistence:'memory-only'})}:undefined)",
+      "boundary": "driver-port-call"
+    },
+    {
       "file": "src/daemon/connection-management-rpc.ts",
       "expression": "savedConnectionResolver.list",
       "boundary": "resolver-member"
@@ -403,21 +408,6 @@
       "file": "src/daemon/connection-management-rpc.ts",
       "expression": "savedConnectionResolver",
       "boundary": "symbol:savedConnectionResolver"
-    },
-    {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t\t}) } : undefined)",
-      "boundary": "driver-port-call"
-    },
-    {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "getFactory",
-      "boundary": "symbol:getFactory"
-    },
-    {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "getFactory",
-      "boundary": "symbol:getFactory"
     },
     {
       "file": "src/daemon/db/drivers/mssql.ts",

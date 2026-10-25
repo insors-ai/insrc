@@ -268,7 +268,7 @@ export async function testConnectionRpc(params: {readonly repoRoot?: unknown; re
    }
    if(validateForFamily(cfg)!==null||!kindExists(cfg.kind))throw new Error();
    family=cfg.family??familyOf(cfg.kind)??'rdbms';
-   const config=await materializeTransientConfig(cfg,family,repoRoot,signal);signal.throwIfAborted();
+   const config=await prepareLegacyProbeConfig(cfg,family,repoRoot,signal);signal.throwIfAborted();
    return {config,credentialActions:{}};
   });
   return {ok:result.status==='reachable',kind:parsed.kind,family,tookMs:result.tookMs,...(result.safeMessage?{error:result.safeMessage}:{})};
@@ -421,7 +421,7 @@ function buildPersistedConfig(input: SaveConnectionInput, family: DriverFamily, 
  * `testConnectionRpc`; the production hot path goes through the
  * pool which does the same transforms.
  */
-async function materializeTransientConfig(input: SaveConnectionInput, family: DriverFamily, repoRoot: string, signal?: AbortSignal): Promise<ConnectionConfig> {
+export async function prepareLegacyProbeConfig(input: SaveConnectionInput, family: DriverFamily, repoRoot: string, signal?: AbortSignal): Promise<ConnectionConfig> {
 	const base: {
 		-readonly [K in keyof ConnectionConfig]: ConnectionConfig[K];
 	} = {

@@ -85,7 +85,7 @@
   },
   "reviewCycle3": {
     "authorizedBy": "user",
-    "status": "round2 corrections ready for review",
+    "status": "round3 namespace correction ready for review",
     "changes": [
       "enforced workbench-ui vs mcp-unverified delegation audience",
       "all client-authored multi-turn and one-shot MCP temporary output refused before state/prompt/error evidence",
@@ -97,6 +97,12 @@
       "required normalized execution tuple at freeform and legacy loop entry, both measureOwnRequest branches",
       "immutable execution-local quiet diagnostics across all consumer success/error/late paths, before source-bearing formatters",
       "63-file production logger candidate inventory with bootstrap/background classifications and captured-sink proving requirements"
+    ],
+    "round2RecoveredResult": "Freeform and consumer diagnostics closed; one HIGH finding for incorrect physical-alias collision promise",
+    "round3Corrections": [
+      "exact saved target identity defines visible root namespace, not filesystem directory alone",
+      "new noncanonical alias upserts resolving to enrolled registered roots refuse before target access/writes",
+      "preexisting alias saved-only targets remain separate/readable with no temporary overlay or implicit migration; incorrect cross-namespace rejection promise removed"
     ]
   }
 }

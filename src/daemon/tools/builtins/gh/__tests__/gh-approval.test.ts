@@ -31,5 +31,7 @@ test('gh-approval.test.ts: every rename, close, merge, delete, transfer, logout,
 		assert.equal(ghApprovalClass(id, {}), 'destructive', id);
 	}
 	assert.equal(ghApprovalClass('gh_pr_list', {}), 'none');
+	// an op no row names asks, even on a tool that has a class of its own
+	assert.equal(ghApprovalClass('gh_pr_list', { op: 'unknown' }), 'destructive');
 	assert.equal(ghApprovalClass('gh_pr_create', {}), 'common');
 });

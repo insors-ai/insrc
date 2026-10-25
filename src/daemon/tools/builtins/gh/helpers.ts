@@ -172,7 +172,8 @@ export const GH_UNKNOWN_OUTCOME = 'the outcome is unknown; check the current sta
  * The failure of one outcome, or undefined when it ran clean. One precedence, whatever other flags are set:
  * spawn error, time-out, abort, signal, stdin write error, stderr overflow, an unmarked cut capture, then a
  * non-zero exit. For a mutating call every row after the spawn error happens after execution began, so the
- * message adds the unknown-outcome sentence; a plain non-zero exit makes no claim about state.
+ * message adds the unknown-outcome sentence, as does a mutating call whose network failed or whose output was cut;
+ * a plain non-zero exit or a sign-in failure makes no claim about state.
  */
 export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFailure | undefined {
   const unknown = (msg: string): string => opts.mutating ? `${msg}; ${GH_UNKNOWN_OUTCOME}` : msg;
@@ -191,7 +192,7 @@ export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFail
   }
   if (o.stderrOverflow) { return { kind: 'rejected', message: unknown(`${o.command}: its error output passed the capture cap`) }; }
   if (o.stdoutTruncated && !o.cutIsAnswer) {
-    return { kind: 'rejected', message: `${o.command}: its output was cut at the capture cap, so it is incomplete` };
+    return { kind: 'rejected', message: unknown(`${o.command}: its output was cut at the capture cap, so it is incomplete`) };
   }
   if (o.code === 0) { return undefined; }
   const text = `${o.stderr}\n${o.stdout}`;
@@ -202,7 +203,7 @@ export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFail
     return { kind: 'missing-signin', message: msg, ...(original !== undefined ? { original } : {}) };
   }
   if (GH_NETWORK_RE.test(text) || GH_NETWORK_RE.test(probeText)) {
-    return { kind: 'unreachable', message: msg, ...(original !== undefined ? { original } : {}) };
+    return { kind: 'unreachable', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
   }
   return { kind: 'rejected', message: msg, ...(original !== undefined ? { original } : {}) };
 }
@@ -267,7 +268,8 @@ function isSet(v: unknown): boolean {
  */
 export function ghApprovalClass(toolId: string, input: Record<string, unknown>): ApprovalClass {
   const op = typeof input['op'] === 'string' ? input['op'] : undefined;
-  const base = (op !== undefined ? APPROVAL.get(`${toolId}.${op}`) : undefined) ?? APPROVAL.get(toolId);
+  // an op that no row names asks, even on a tool that has a class of its own
+  const base = op !== undefined ? APPROVAL.get(`${toolId}.${op}`) : APPROVAL.get(toolId);
   if (base === undefined) { return 'destructive'; }
   if (base === 'common' && DESTRUCTIVE_FLAGS.some(k => isSet(input[k]))) { return 'destructive'; }
   return base;

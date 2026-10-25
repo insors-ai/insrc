@@ -22,6 +22,8 @@ test('gh-failures.test.ts: the one precedence timedOut, aborted, signal, stdinEr
 	assert.match(kindsAndText(outcome({ stdinError: 'EPIPE', stderrOverflow: true, code: 1 })), /standard input failed/);
 	// stderr overflow beats an unmarked cut and a non-zero exit
 	assert.match(kindsAndText(outcome({ stderrOverflow: true, stdoutTruncated: true, code: 1 })), /error output passed the capture cap/);
+	// an unmarked cut beats a non-zero exit
+	assert.match(kindsAndText(outcome({ stdoutTruncated: true, code: 1, stderr: 'label already exists' })), /^rejected\|.*cut at the capture cap/);
 	// an unmarked cut is a failure even at exit 0; a marked cut is the answer
 	assert.match(kindsAndText(outcome({ stdoutTruncated: true })), /^rejected\|.*cut at the capture cap/);
 	assert.equal(ghFailureOf(outcome({ stdoutTruncated: true, cutIsAnswer: true }), { mutating: false }), undefined);
@@ -46,6 +48,10 @@ test('gh-failures.test.ts: a signal-only termination is rejected for a read and 
 		assert.ok(m.includes(GH_UNKNOWN_OUTCOME), m);
 		assert.ok(!/not set|nothing changed/i.test(m), m);
 	}
+	// a cut capture and a network failure of a mutating call also say the outcome is unknown
+	assert.ok(ghFailureOf(outcome({ stdoutTruncated: true }), { mutating: true })?.message.includes(GH_UNKNOWN_OUTCOME));
+	assert.ok(ghFailureOf(outcome({ code: 1, stderr: 'dial tcp: lookup api.github.com: no such host' }), { mutating: true })?.message.includes(GH_UNKNOWN_OUTCOME));
+	assert.ok(!ghFailureOf(outcome({ stdoutTruncated: true }), { mutating: false })?.message.includes(GH_UNKNOWN_OUTCOME));
 	// a plain non-zero exit carries gh's own text and no claim about state, mutating or not
 	const plain = ghFailureOf(outcome({ code: 1, stderr: 'label already exists\n' }), { mutating: true });
 	assert.equal(plain?.kind, 'rejected');

@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../../../../shared/step-context.js';
 import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
@@ -77,6 +79,7 @@ export async function handlePlan(
 		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_plan');
 	} catch (err) {
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('state-decode', 'Temporary analysis continuation is unavailable.', false); }
 		if (err instanceof StepStateDecodeError) {
 			return errorResult('state-decode', err.message, err.code !== 'malformed');
 		}
@@ -87,19 +90,17 @@ export async function handlePlan(
 	// level shape; finalizeDecompose runs ajv + topology check.
 	let validatedPlan;
 	try {
-		validatedPlan = finalizeDecompose(input.plan);
+		validatedPlan = finalizeDecompose(input.plan, execution);
 	} catch (err) {
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('plan-schema', 'Temporary analysis plan is invalid.', true); }
 		if (err instanceof DecomposerSchemaUnrecoverable) {
-			log.warn(
-				{
+			captureAnalysisDiagnostics(log, execution).emit('warn', () => [{
 					runId:       state.runId,
 					err:         err.message,
 					// Preview the client's plan so we can see what shape
 					// it emitted when validation trips.
 					planPreview: JSON.stringify(input.plan ?? null).slice(0, 800),
-				},
-				'insrc_analyze_step[plan]: client-emitted plan failed schema/topology',
-			);
+			}, 'insrc_analyze_step[plan]: client-emitted plan failed schema/topology']);
 			return errorResult(
 				'plan-schema',
 				`emitted plan failed schema / topology validation: ${err.message}. ` +
@@ -160,15 +161,12 @@ export async function handlePlan(
 			stage:          'awaiting_narrow',
 		};
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, execution).emit('info', () => [{
 				runId:           state.runId,
 				pausedExpId:     step.explorationId,
 				pausedExpType:   step.explorationType,
 				priorResults:    step.resumeState.results.length,
-			},
-			'insrc_analyze_step[plan]: paused on narrow-LLM exploration',
-		);
+		}, 'insrc_analyze_step[plan]: paused on narrow-LLM exploration']);
 
 		return {
 			next:            'emit_narrow',
@@ -218,16 +216,13 @@ export async function handlePlan(
 		stage:          'awaiting_bundle',
 	};
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{
 			runId:            state.runId,
 			answerType:       validatedPlan.answerType,
 			explorationCount: executed.results.length,
 			synthesizerKey,
 			totalMs:          executed.totalMs,
-		},
-		'insrc_analyze_step[plan]: executed; emitting synthesizer prompt',
-	);
+	}, 'insrc_analyze_step[plan]: executed; emitting synthesizer prompt']);
 
 	// (7) Return emit_bundle.
 	return {

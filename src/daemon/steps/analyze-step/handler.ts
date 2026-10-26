@@ -104,6 +104,7 @@ async function dispatch(input: unknown, execution?: ConnectionExecutionContext):
 			case 'narrow': return await handleNarrow(step, execution);
 			case 'bundle': return await handleBundle(step, execution);
 			default:
+				if (execution?.mode === 'session-memory') return errorResult('bad-phase', 'Temporary analysis phase is unavailable.', false);
 				return errorResult(
 					'bad-phase',
 					`insrc_analyze_step: unknown phase '${(step as { phase: string }).phase}'. ` +

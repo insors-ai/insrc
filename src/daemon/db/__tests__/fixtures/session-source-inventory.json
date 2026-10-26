@@ -1171,7 +1171,7 @@
       ],
       "siteCount": 42,
       "sitesDigest": "cd6f3d7dcf9d24c1419ded6f229e79f1159e794ea5d1c8b14d9eb9139759abc0",
-      "sourceDigest": "0d9a1aad229d10aed1774db857898a7ee9f91e8702b2a6115785513e57ac2ebb",
+      "sourceDigest": "e497326e8c98e99344dae3f5183246019fe414bac900552e4c7d6121e89a5c75",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -1509,7 +1509,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "d35a58cbfbf241c8b2c0893b11cedef6160a23d9ce5cd69ffefe38620cbdde91",
-      "sourceDigest": "96817fceadf6fce3a7469564a18a4f1c1061f6b4c1ecfe3c4ab91cab08e22f71",
+      "sourceDigest": "487a6af819bea8f6b9f52bee123597b41aea577eaee45084078d54136764c442",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2066,7 +2066,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "e231e3a0cac5fb4bb67ca8b5f6b2bb0362a9dd8aea5d7780c632b6ee85f427bf",
-      "sourceDigest": "b4d4fb13aac5b3afcfe0bbec169d670f0e8c195f968320a8a9a6054f600b798f",
+      "sourceDigest": "a7426ca4befb6210c796a1e00f51a3f2850c49e0f5e21d4ee298c6a1f006eb92",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13878,7 +13878,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "0048f551691b2b9a54fe58bbf59f65fb645a209206d71cfa782c9e672e533b2e",
+      "sourceDigest": "6518439430317c22ba2dae8985454a583b4e67843fc24a2c1f150d04324d1bcd",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14107,7 +14107,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e9159fc4d21b56fcc656c0042d17e1a82a087b082ce9afcc1ecbe447b7397c6b",
-      "sourceDigest": "b2079b22dc9f80b1542ef9cee26263b65e9e1f78340be492c8695dc9234f793e",
+      "sourceDigest": "2af9873e2736d28c8be26335854514e077f873980016676106ebb766d94e3422",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14120,20 +14120,20 @@
       "sites": [
         [
           "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
           "decodeState"
         ],
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 3,
-      "sitesDigest": "109ebb2ba18368b8fb215d157e078bd55c52bb72d9c2517599ebce9a3d6ec6fc",
-      "sourceDigest": "72c00cdcf2f0510ca61ef398823af298f1b257562996bf4b614e95a51ecb24a3",
+      "sitesDigest": "16fef7be962364aa36b085fb586842fd512bfbf99d26a5664249085a265f9655",
+      "sourceDigest": "78aae321a450b91d8e7604ac65af70049c2ab8b0917a7484ffbdb3c637548c20",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14145,31 +14145,31 @@
       "sites": [
         [
           "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
           "decodeState"
         ],
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "storage-call",
@@ -14181,8 +14181,8 @@
         ]
       ],
       "siteCount": 9,
-      "sitesDigest": "d3158b005d1aed746c77a22bc193bb1aeb6ecce956130fff06f3aeb920c1760e",
-      "sourceDigest": "dd883c48e4fb1c6eaafec9b7790f8debc3acf2f73f1542969bd311816bb5661a",
+      "sitesDigest": "d1157efba64999ff2f63210b896e2c2c192af09997294f87da70e7a1dd53680d",
+      "sourceDigest": "7550ae4ccfd9c3442fb9dc04fc0b195081ccc30a9032a6e2068ef089c73b9033",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -14196,6 +14196,18 @@
       "sites": [
         [
           "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
           "decodeState"
         ],
         [
@@ -14205,23 +14217,11 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "b7da36500156e42ab868266a1d99ae52827182baccfd423ade3d0ebf91efd000",
-      "sourceDigest": "366cf3721299b6ccc428cdf986a3a7ac2c9f5e4881037ab635b161e8b07c8566",
+      "sitesDigest": "8bb5f6258e391626af6883c30cf908cc3b596261378a815f00a0f5190524d4f2",
+      "sourceDigest": "747320fc8053f530faac75508ecc52938c276cecba57b63e8902d289b18445c1",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14233,6 +14233,14 @@
       "sites": [
         [
           "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
+        ],
+        [
+          "serialization",
           "encodeState"
         ],
         [
@@ -14240,21 +14248,13 @@
           "getLogger"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "serialization",
           "Math.random().toString"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "548e01d39b546b8e58d5298cf6a28c6ecddbdf7473102eca0fbf94fc2c4efe3c",
-      "sourceDigest": "76d09de8114cfe16191202af4b77529c488f46e4e313c5b7dc01e498ff4cbfc8",
+      "sitesDigest": "cb2d9bcd9098840d82ade88b0046f89dea8720d7a014cc49c0e88aaedc6f40b7",
+      "sourceDigest": "a2a0f2ebd15709bfa9dba6c16e0c18a5b009c5b3ea0b184c947d5780144d44e2",
       "boundaries": [
         "diagnostic",
         "serialization"

@@ -1,3 +1,4 @@
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
@@ -208,12 +209,12 @@ export function prepareSynthesize(
  * Meta stamping is the caller's responsibility -- same shape as the
  * driver's meta-stamp path today.
  */
-export function finalizeSynthesize(raw: unknown): Omit<AnalyzeContextBundle, 'meta'> {
+export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'> {
 	const strippedSchema = stripMetaFromSchema(
 		ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,
 	) as StructuredSchema;
 	const result = validateAgainstSchema<Omit<AnalyzeContextBundle, 'meta'>>(
-		strippedSchema, raw,
+		strippedSchema, raw, execution,
 	);
 	if (!result.ok) {
 		throw new SynthesizerSchemaUnrecoverable(result.errors);

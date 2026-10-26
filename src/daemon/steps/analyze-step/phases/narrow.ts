@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../../../../shared/step-context.js';
 import { assertSessionReuseNow, beginSessionReuse, deriveSessionContinuation } from '../../../../analyze/session-reuse.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
@@ -73,6 +75,7 @@ export async function handleNarrow(
 		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_narrow');
 	} catch (err) {
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('state-decode', 'Temporary analysis continuation is unavailable.', false); }
 		if (err instanceof StepStateDecodeError) {
 			return errorResult('state-decode', err.message, err.code !== 'malformed');
 		}
@@ -90,6 +93,7 @@ export async function handleNarrow(
 
 	// (2) Cross-check the client's echoed explorationId.
 	if (input.explorationId !== state.narrow.explorationId) {
+		if (execution?.mode === 'session-memory') return errorResult('wrong-exploration', 'Temporary analysis continuation does not match.', true);
 		return errorResult(
 			'wrong-exploration',
 			`client echoed explorationId='${input.explorationId}' but the pause ` +
@@ -102,6 +106,7 @@ export async function handleNarrow(
 	// (3) Finalize the narrow output through the runner's finalize().
 	const narrowRunner = getNarrowRunner(state.narrow.explorationType);
 	if (narrowRunner === undefined) {
+		if (execution?.mode === 'session-memory') return errorResult('unknown-narrow-runner', 'Temporary analysis runner is unavailable.', false);
 		return errorResult(
 			'unknown-narrow-runner',
 			`No narrow finalize handler for exploration type ` +
@@ -118,17 +123,15 @@ export async function handleNarrow(
 	//      accepts no answer at all is passed one through unchecked.
 	const noAnswer = input.narrow === null || input.narrow === undefined;
 	if (!(noAnswer && narrowRunner.acceptsNoAnswer === true)) {
-		const check = validateAgainstSchema(narrowRunner.schema, input.narrow);
+		const check = validateAgainstSchema(narrowRunner.schema, input.narrow, execution);
 		if (!check.ok) {
-			log.warn(
-				{
+			if (execution?.mode === 'session-memory') return errorResult('narrow-finalize', 'Temporary analysis answer is invalid.', true);
+			captureAnalysisDiagnostics(log, execution).emit('warn', () => [{
 					runId:           state.runId,
-					explorationId:   state.narrow.explorationId,
-					explorationType: state.narrow.explorationType,
+				explorationId: state.narrow!.explorationId,
+				explorationType: state.narrow!.explorationType,
 					errors:          check.errors,
-				},
-				'insrc_analyze_step[narrow]: the narrow answer does not match the schema',
-			);
+			}, 'insrc_analyze_step[narrow]: the narrow answer does not match the schema']);
 			return errorResult(
 				'narrow-finalize',
 				`The narrow output for exploration '${state.narrow.explorationId}' ` +
@@ -145,7 +148,7 @@ export async function handleNarrow(
 	//      goes on to the next one.
 	const pausedExp = state.plan.explorations.find(e => e.id === state.narrow!.explorationId);
 	const expForOutput: Exploration = pausedExp
-		?? { id: state.narrow.explorationId, type: state.narrow.explorationType, purpose: '', params: {} };
+		?? { id: state.narrow!.explorationId, type: state.narrow!.explorationType, purpose: '', params: {} };
 	let finalizedOutput: ExplorationOutput;
 	try {
 		finalizedOutput = narrowRunner.finalize(
@@ -154,16 +157,14 @@ export async function handleNarrow(
 			state.runId,
 		);
 	} catch (err) {
-		log.warn(
-			{
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); }
+		captureAnalysisDiagnostics(log, execution).emit('warn', () => [{
 				runId:           state.runId,
-				explorationId:   state.narrow.explorationId,
-				explorationType: state.narrow.explorationType,
+			explorationId: state.narrow!.explorationId,
+			explorationType: state.narrow!.explorationType,
 				err:             err instanceof Error ? err.message : String(err),
-			},
-			'insrc_analyze_step[narrow]: finalize threw; the lookup is recorded as failed',
-		);
-		finalizedOutput = failedOutput(expForOutput, err);
+		}, 'insrc_analyze_step[narrow]: finalize threw; the lookup is recorded as failed']);
+		finalizedOutput = failedOutput(expForOutput, err, execution);
 	}
 
 	// (4) Cache the finalized output (same key executePlan uses). A failed
@@ -179,10 +180,7 @@ export async function handleNarrow(
 				execution,
 			);
 		} catch (err) {
-			log.warn(
-				{ runId: state.runId, err: (err as Error).message },
-				'insrc_analyze_step[narrow]: cache put failed; continuing',
-			);
+			captureAnalysisDiagnostics(log, execution).emit('warn', () => [{ runId: state.runId, err: (err as Error).message }, 'insrc_analyze_step[narrow]: cache put failed; continuing']);
 		}
 	}
 
@@ -191,7 +189,7 @@ export async function handleNarrow(
 	assertSessionReuseNow(execution);
 	const carriedOutputs = state.narrow.resumeState.outputs.slice();
 	carriedOutputs.push({
-		id:     state.narrow.explorationId,
+		id: state.narrow!.explorationId,
 		output: finalizedOutput,
 	});
 	const carriedResults = state.narrow.resumeState.results.slice();
@@ -202,15 +200,12 @@ export async function handleNarrow(
 		elapsedMs:   0,   // pause-to-resume wall clock lives outside our timer; report 0
 	});
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{
 			runId:           state.runId,
-			explorationId:   state.narrow.explorationId,
-			explorationType: state.narrow.explorationType,
+		explorationId: state.narrow!.explorationId,
+		explorationType: state.narrow!.explorationType,
 			priorResults:    carriedResults.length,
-		},
-		'insrc_analyze_step[narrow]: finalized; resuming stepPlan',
-	);
+	}, 'insrc_analyze_step[narrow]: finalized; resuming stepPlan']);
 
 	// The token carries the intent, not a resolved scope: resolve it again.
 	const scope = await stepScope(state.intent, undefined, execution);
@@ -296,14 +291,11 @@ export async function handleNarrow(
 		stage:          'awaiting_bundle',
 	};
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{
 			runId:            state.runId,
 			explorationCount: executed.results.length,
 			totalMs:          executed.totalMs,
-		},
-		'insrc_analyze_step[narrow]: plan complete; emitting synthesizer prompt',
-	);
+	}, 'insrc_analyze_step[narrow]: plan complete; emitting synthesizer prompt']);
 
 	return {
 		next:     'emit_bundle',

@@ -80,7 +80,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
     if (streamHandler === undefined) {
       const lifetime = request.lifetime;
       const finish = (reply: ReplyEnvelope): void => {
-        try { deliver(reply); } finally { lifetime?.complete(); }
+				try { deliver(reply); } catch (error) { lifetime?.abort(); throw error; } finally { lifetime?.complete(); }
       };
       const handler = handlers[method];
       if (!handler) {
@@ -108,7 +108,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
     const send = (msg: IpcStreamMessage): void => {
       if (terminal || signal.aborted) return;
       if (msg.stream === 'done' || msg.stream === 'error') terminal = true;
-			const frame = !privateReply ? msg : msg.stream === 'progress' ? { id: msg.id, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } } : msg.stream === 'error' ? { id: msg.id, stream: 'error', data: { error: 'unsupported-temporary', recoverable: false } } : msg.stream === 'done' ? { id: msg.id, stream: 'done', data: {} } : { ...msg, data: privateFailureResult(msg.data) };
+			const frame = !privateReply ? msg : msg.stream === 'progress' ? { id: msg.id, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } } : msg.stream === 'error' ? { id: msg.id, stream: 'error', data: { error: privatePayloadCode(msg.data), recoverable: false } } : msg.stream === 'done' ? { id: msg.id, stream: 'done', data: {} } : { ...msg, data: privateFailureResult(msg.data) };
 			try { deliver({ kind: 'frame', requestId, frame }); }
       catch (error) { abortController.abort(); lifetime?.abort(); throw error; }
     };
@@ -123,12 +123,22 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
   };
 }
 
+/** Fixed display codes only; source messages and accessors are never evaluated. */
+function privatePayloadCode(value: unknown): string {
+	try {
+		const identity = connectionExecutionErrorCode(value); if (identity) return identity;
+		const code: unknown = value !== null && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'code')?.value ?? Object.getOwnPropertyDescriptor(value, 'error')?.value : value;
+		return code === 'session-expired' || code === 'upgrade-required' || code === 'resource-limit' ? code : 'unsupported-temporary';
+	} catch { return 'unsupported-temporary'; }
+}
+
 /** Only failure envelopes are projected. Successful owner-authorized results
  * stay on the workbench data channel; unverified channels are refused earlier.
  * Inspect discriminators as data descriptors, never source/error accessors. */
 function privateFailureResult(value: unknown): unknown {
 	const failure = { code: 'unsupported-temporary', message: 'Temporary connection operation failed.' };
 	try {
+		if (value !== null && typeof value === 'object') failure.code = privatePayloadCode(Object.getOwnPropertyDescriptor(value, 'error')?.value);
 		if (value !== null && typeof value === 'object') {
 			if (Object.getOwnPropertyDescriptor(value, 'ok')?.value === false) return { ok: false, error: failure };
 			if (Object.getOwnPropertyDescriptor(value, 'success')?.value === false) return { output: failure.message, format: 'text', success: false, error: failure.message };

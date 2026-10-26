@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
@@ -89,10 +90,7 @@ export async function handleStart(
 		...(repoIndexedAt !== null ? { repoIndexedAt } : {}),
 	});
 	if (cachedBundle !== null) {
-		log.info(
-			{ runId, repoPath, target, scope, focus: input.focus },
-			'insrc_analyze_step[start]: cache hit; returning done',
-		);
+		captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus: input.focus }, 'insrc_analyze_step[start]: cache hit; returning done']);
 		return {
 			next:     'done',
 			markdown: renderBundleAsMarkdown(cachedBundle),
@@ -121,10 +119,7 @@ export async function handleStart(
 		stage:          'awaiting_plan',
 	};
 
-	log.info(
-		{ runId, repoPath, target, scope, focus: input.focus, synthesizerKey },
-		'insrc_analyze_step[start]: emitting decomposer prompt',
-	);
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus: input.focus, synthesizerKey }, 'insrc_analyze_step[start]: emitting decomposer prompt']);
 
 	return {
 		next:     'emit_plan',

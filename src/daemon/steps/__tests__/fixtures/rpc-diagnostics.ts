@@ -44,6 +44,7 @@ const dispatch = directDispatch({
 	'fixture.saved': async () => { getLogger('analyze-rpc').info({ marker: 'SAVED_CONCURRENT_RPC_MARKER' }, 'Saved control'); return 'SAVED_RPC_OUTPUT'; },
 }, {
 	'fixture.progress': async (_p: unknown, send: any) => { const emit = rpc.makeProgressEmitter(send, 'CM_PRIVATE_RUN', execution); emit(poison); send({ id: 0, stream: 'analyze.result', data: Object.defineProperty({ ok: false }, 'error', { get() { rawReads++; throw Error('CM_PRIVATE_FINAL_GETTER'); } }) }); send({ id: 0, stream: 'done', data: { private: 'CM_PRIVATE_DONE' } }); },
+	'fixture.typedStream': async () => { const err = new ConnectionExecutionError('upgrade-required'); Object.defineProperty(err, 'message', { get() { rawReads++; throw Error('CM_PRIVATE_STREAM_GETTER'); } }); throw err; },
 	'fixture.error': async (_p: unknown, send: any) => { send({ id: 0, stream: 'progress', data: poison }); throw raw; },
 	'fixture.delivery': async (_p: unknown, send: any, _signal: AbortSignal, context: any) => { context.registerDrain(held.then(() => { drainSettled = true; })); send({ id: 0, stream: 'progress', data: poison }); await held; },
 });
@@ -72,6 +73,24 @@ try {
 	}
 	await assert.rejects(handlers.streamHandlers['analyze.run.start'](poison, () => { throw raw; }, lifetime.signal, trusted), { code: 'unsupported-temporary' });
 
+	const typedStream = await request('fixture.typedStream', true); assert.equal(typedStream[0].data.error, 'upgrade-required');
+	const { beginSessionReuse, rememberSessionContinuation } = await load('analyze/session-reuse.js');
+	const { encodeState } = await load('daemon/steps/analyze-step/state.js');
+	const { handleAnalyzeStep } = await load('daemon/steps/analyze-step/handler.js'); const { handlePlan } = await load('daemon/steps/analyze-step/phases/plan.js'); const { handleNarrow } = await load('daemon/steps/analyze-step/phases/narrow.js'); const { handleBundle } = await load('daemon/steps/analyze-step/phases/bundle.js');
+	const { _overrideNarrowRunnerForTest } = await load('analyze/explore/executor.js');
+	await beginSessionReuse(execution);
+	const badPhase = await handleAnalyzeStep({ phase: 'CM_PRIVATE_BAD_PHASE' }, execution); assert.equal(JSON.stringify(badPhase).includes('CM_PRIVATE_'), false);
+	const phaseIntent = { target: 'data', scope: 'S', focused: true, focus: 'fixture', scopeRef: { kind: 'repo', value: root }, reasoning: 'fixture' };
+	const phaseState = { version: 2, runId: 'phase-fixture', repoPath: root, repoIndexedAt: null, intent: phaseIntent, synthesizerKey: 'data', stage: 'awaiting_plan' };
+	const invalidPlan = Object.defineProperty({ answerType: 42, explorations: [], synthesisHint: '' }, 'toJSON', { get() { inputReads++; throw Error('CM_PRIVATE_PLAN_PREVIEW'); } });
+	const planError = await handlePlan({ phase: 'plan', state: await encodeState(phaseState, execution), plan: invalidPlan }, execution); assert.equal(planError.error.code, 'plan-schema'); assert.equal(JSON.stringify(planError).includes('CM_PRIVATE_'), false);
+	const bundleError = await handleBundle({ phase: 'bundle', state: await encodeState({ ...phaseState, stage: 'awaiting_bundle' }, execution), bundle: { system: 42, marker: 'CM_PRIVATE_BUNDLE' } }, execution); assert.equal(bundleError.error.code, 'bundle-schema'); assert.equal(JSON.stringify(bundleError).includes('CM_PRIVATE_'), false);
+	const exploration = { id: 'e1', type: 'capability.reuse-check', purpose: 'fixture', params: { capability: 'fixture' } };
+	const resumeState = await rememberSessionContinuation({ results: [], outputs: [], totalCached: 0, totalMsSoFar: 0 }, execution);
+	const narrowState = { ...phaseState, stage: 'awaiting_narrow', plan: { answerType: 'capability-discovery', explorations: [exploration], synthesisHint: 'fixture' }, narrow: { explorationId: 'e1', explorationType: exploration.type, preparedBlob: {}, resumeState } };
+	const mismatch = await handleNarrow({ phase: 'narrow', explorationId: 'CM_PRIVATE_WRONG_ID', state: await encodeState(narrowState, execution), narrow: {} }, execution); assert.equal(mismatch.error.code, 'wrong-exploration'); assert.equal(JSON.stringify(mismatch).includes('CM_PRIVATE_'), false);
+	const restoreNarrow = _overrideNarrowRunnerForTest(exploration.type, { schema: { type: 'object' }, prepare() { throw Error('unused prepare'); }, finalize() { throw raw; } });
+	try { const finalized = await handleNarrow({ phase: 'narrow', explorationId: 'e1', state: await encodeState(narrowState, execution), narrow: { marker: 'CM_PRIVATE_NARROW_INPUT' } }, execution); assert.equal(finalized.next, 'emit_bundle'); assert.equal(JSON.stringify(finalized).includes('CM_PRIVATE_'), false); } finally { restoreNarrow(); }
 	const frames = [...await request('fixture.raw'), ...await request('fixture.typed'), ...await request('fixture.failure'), ...await request('fixture.progress', true), ...await request('fixture.error', true)]; assert.equal(JSON.stringify(frames).includes('CM_PRIVATE_'), false); assert.ok(JSON.stringify(frames).includes('upgrade-required'));
 	assert.equal(failureMessage(raw, 'CM_PRIVATE_METHOD', { connectionIdentity: 'fixture', daemonEpoch: 'fixture', connectionExecution: execution }), 'unsupported-temporary');
 	rpc.makeProgressEmitter(() => { throw raw; }, 'CM_PRIVATE_RUN', execution)(poison);
@@ -79,6 +98,9 @@ try {
 	dispatch({ kind: 'request', requestId: 'held', method: 'fixture.delivery', params: {}, stream: true, lifetime: deliveryLifetime, trustedContext: { connectionIdentity: 'fixture', daemonEpoch: 'fixture', connectionExecution: execution } }, () => { deliveries++; throw raw; });
 	await deliveryLifetime.completed; assert.equal(deliveryLifetime.signal.aborted, true); let drained = false; void deliveryLifetime.drained.then(() => { drained = true; }); await delay(20); assert.equal(drained, false); assert.equal(drainSettled, false); assert.equal(deliveries, 1);
 	getLogger('tools-executor').info({ marker: 'SAVED_CONCURRENT_RPC_MARKER' }, 'Saved control while owned cleanup is held'); release(); await deliveryLifetime.drained; assert.equal(drainSettled, true);
+	const unaryLifetime = new RequestLifetime(); let releaseUnary!: () => void; const unaryWork = new Promise<void>(r => { releaseUnary = r; });
+	directDispatch({ held: async (_p: unknown, ctx: any) => { ctx.registerDrain(unaryWork); return 'finished'; } })({ kind: 'request', requestId: 'unary-held', method: 'held', params: {}, stream: false, lifetime: unaryLifetime, trustedContext: { connectionIdentity: 'fixture', daemonEpoch: 'fixture', connectionExecution: execution } }, () => { throw raw; });
+	await unaryLifetime.completed; assert.equal(unaryLifetime.signal.aborted, true); let unaryDrained = false; void unaryLifetime.drained.then(() => { unaryDrained = true; }); await delay(10); assert.equal(unaryDrained, false); releaseUnary(); await unaryLifetime.drained;
 	// Saved diagnostic and wire controls use the original formatter/error detail.
 	const savedTool = mock.method(tool, 'execute', async () => { throw Error('SAVED_TOOL_FAILURE_DETAIL'); }); assert.equal((await executeTool(tool.id, {}, { ...deps, connectionExecution: undefined })).error, 'SAVED_TOOL_FAILURE_DETAIL'); savedTool.mock.restore(); assert.equal(failureMessage(Error('SAVED_RPC_FAILURE_DETAIL'), 'saved'), 'SAVED_RPC_FAILURE_DETAIL');
 	let logs = ''; for (let n = 0;n < 100;n++) { await delay(20); logs = Buffer.concat(await bytes(PATHS.logDir)).toString(); if (logs.includes('SAVED_TOOL_FAILURE_DETAIL')) break; } assert.ok(logs.includes('SAVED_TOOL_FAILURE_DETAIL')); assert.ok(logs.includes('SAVED_CONCURRENT_RPC_MARKER')); assert.equal(logs.includes('CM_PRIVATE_'), false); assert.equal(rawReads, 0); assert.equal(inputReads, 0);

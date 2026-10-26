@@ -110,6 +110,7 @@ export function validateAgainstSchema<T>(
 	if (validate(raw)) {
 		return { ok: true, value: raw as T };
 	}
+	if (execution?.mode === 'session-memory') return { ok: false, errors: ['Structured output did not match the schema.'] };
 	const errors = (validate.errors ?? []).map(formatAjvError);
 	return { ok: false, errors };
 }

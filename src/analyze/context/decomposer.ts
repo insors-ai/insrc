@@ -1,3 +1,4 @@
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
@@ -271,12 +272,12 @@ export function prepareDecompose(intent: ClassifiedIntent, scope: ResolvedScope)
  * ExplorationPlan. Throws DecomposerSchemaUnrecoverable on either
  * failure so the outer handler can decide to retry vs give up.
  */
-export function finalizeDecompose(raw: unknown): ExplorationPlan {
+export function finalizeDecompose(raw: unknown, execution?: ConnectionExecutionContext): ExplorationPlan {
 	const result = validateAgainstSchema<{
 		answerType:    AnswerType;
 		explorations:  Exploration[];
 		synthesisHint: string;
-	}>(DECOMPOSE_SCHEMA, raw);
+	}>(DECOMPOSE_SCHEMA, raw, execution);
 	if (!result.ok) {
 		throw new DecomposerSchemaUnrecoverable(result.errors);
 	}

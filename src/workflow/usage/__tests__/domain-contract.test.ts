@@ -156,3 +156,30 @@ test('public eventSetDigest directly verifies canonical set identity and bounded
   assert.notEqual(eventSetDigest([]), eventSetDigest(['a']));
   assert.throws(() => eventSetDigest(Array.from({ length: 1025 }, (_, n) => `event-${n}`)));
 });
+
+test('bad digest excludes only its disjoint call and every unresolved observed call retains an owner entry', async () => {
+  const reducer = new DefaultUsageReducer();
+  const s = start(), f = finish();
+  const secondStart = signed({ ...s, eventId: 'second-start', callId: 'second' });
+  const secondFinish = signed({ ...f, eventId: 'second-finish', callId: 'second' });
+  const damaged = { ...f, payloadDigest: '0'.repeat(64) };
+  const rows = [s, damaged, secondStart, secondFinish], scope = scoped(rows);
+  const result = await reducer.reduce(stream(rows), scope);
+  assert.equal(result.knownTokens, '3'); assert.deepEqual(result.basisEventIds, ['second-finish']);
+  assert.equal(requireEffectiveOwners(result).find(owner => owner.callId === 'call')!.state, 'conflict');
+  assert.equal(requireEffectiveOwners(result).find(owner => owner.callId === 'second')!.state, 'resolved');
+  assert.ok(result.quality.includes('conflict'));
+  assert.deepEqual(await reducer.reduce(stream([...rows].reverse()), scope), result);
+  const unknownSource = signed({ ...f, observation: { ...f.observation, sourceCapabilityId: 'missing-capability' } });
+  const unavailable = signed({ ...f, observation: { ...f.observation, quality: 'unavailable' as const,
+    counters: { inputUncachedTokens: null, cacheReadTokens: null, cacheWriteTokens: null, outputTokens: null, reasoningTokens: null }, reason: 'fixture:no-counters' } });
+  const conflictingModelStart = signed({ ...s, context: { ...s.context, reportedModel: 'model-a' } });
+  const conflictingModelEnd = signed({ ...f, observation: { ...f.observation, reportedModel: 'model-b' } });
+  for (const observed of [[s, unknownSource], [s, unavailable], [conflictingModelStart, conflictingModelEnd], [s, f, signed({ ...secondStart, context: { ...secondStart.context, granularity: 'invocation-total' as const } }), secondFinish]]) {
+    const unresolved = await reducer.reduce(stream(observed), scoped(observed));
+    const owners = requireEffectiveOwners(unresolved);
+    assert.equal(owners.length, observed.length === 4 ? 2 : 1);
+    assert.ok(owners.every(owner => owner.state === 'conflict' || owner.state === 'unavailable'));
+    assert.ok(owners.every(owner => owner.artifactId === null && owner.ownerVersion === null));
+  }
+});

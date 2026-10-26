@@ -12,6 +12,9 @@
  */
 
 import type { ConfigOption } from '../../../src/config/config-catalog.js';
+
+/** A settings row's shape (type, default, enum, group), as the sync engine validates against it. */
+export type { ConfigOption };
 import type { ModelDefinitions } from '../models/definitions.js';
 
 /** One native settings key that changed since the last daemon sync. */

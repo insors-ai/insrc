@@ -11,10 +11,9 @@
  * list, and their valid values come from the daemon's model definitions.
  */
 
-import type { ConfigOption } from '../../../src/config/config-catalog.js';
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import PACKAGE_JSON from '../../package.json' with { type: 'json' };
-import type { ConfigKeyEntry, ConfigKeyMap } from './types.js';
+import type { ConfigKeyEntry, ConfigKeyMap, ConfigOption } from './types.js';
 
 /** The native settings-key prefix every global option's key carries. */
 export const NATIVE_KEY_PREFIX = 'insrc.';

@@ -52,8 +52,8 @@ test('key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / en
   assert.ok(roles.length > 0 && roles.every((e) => e.source === 'raw'), 'per-role entries come from buildPerRoleKeyMap');
   assert.equal(new Set(MERGED_KEY_MAP.entries.map((e) => e.nativeKey)).size, MERGED_KEY_MAP.entries.length, 'no key is mapped twice');
 
-  // No import of the settings catalog's value (a type-only import erases at build).
+  // No import at all from the settings catalog module.
   const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'key-map.ts'), 'utf8');
-  assert.doesNotMatch(src, /^import\s+\{[^}]*\}\s+from\s+'[^']*config-catalog\.js'/m);
+  assert.doesNotMatch(src, /config-catalog/);
   assert.doesNotMatch(src, /\bCONFIG_CATALOG\b/);
 });

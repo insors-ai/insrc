@@ -12,7 +12,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -24,6 +24,7 @@ import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { blockedMeta, recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
 import { approveTarget } from './helpers/approve.js';
+import { validCodeReview, type ReviewVerdict } from './helpers/valid-code-review.js';
 
 const HASH = 'abcd1234ef567890';
 type Party = 'controller' | 'daemon';
@@ -52,7 +53,9 @@ function write(dir: string, name: string, meta: Record<string, unknown>): string
 		state = (rv.block ? blockedMeta : reviewedMeta)({ report, party: rv.by });
 	}
 	const p = join(dir, name);
-	writeFileSync(p, JSON.stringify({ meta: { epicHash: HASH, ...rest, ...state }, body: {}, citations: [] }, null, 2));
+	// a BUILD names the files it changed, and the code review must cover them
+	const body = rest['workflow'] === 'build' ? { changeLog: [{ target: { file: 'src/a.ts' } }, { target: { file: 'src/b.ts' } }] } : {};
+	writeFileSync(p, JSON.stringify({ meta: { epicHash: HASH, ...rest, ...state }, body, citations: [] }, null, 2));
 	return p;
 }
 
@@ -178,7 +181,10 @@ test('T6 the same-party rule applies to any artifact that carries a review, also
 // --- T7: a BUILD record -----------------------------------------------------------
 
 function writeCR(dir: string, storyId: string, meta: Record<string, unknown>, verdict = 'pass'): void {
-	writeFileSync(join(dir, `CR-${HASH}-${storyId}.json`), JSON.stringify({ meta, body: { verdict, counts: { high: verdict === 'block' ? 1 : 0, med: 0, low: 0 } } }));
+	// bound to the BUILD of the Story as it is now (a Story without one binds to nothing)
+	const buildJson = join(dir, `BUILD-${HASH}-${storyId}.json`);
+	const build: unknown = existsSync(buildJson) ? JSON.parse(readFileSync(buildJson, 'utf8')) : {};
+	writeFileSync(join(dir, `CR-${HASH}-${storyId}.json`), JSON.stringify(validCodeReview(build, verdict as ReviewVerdict, { meta, counts: { high: verdict === 'block' ? 1 : 0, med: 0, low: 0 } })));
 }
 const build = (dir: string, author?: Party) => write(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1', ...(author !== undefined ? { authoredBy: author } : {}) });
 

@@ -97,6 +97,13 @@
         "choice": "Align DEF now; retain HLD history",
         "rationale": "User chose option 3: revise the DEF for s7 (title, size L, five criteria) while the HLD keeps its whole-cutover description with a reference to the narrowing.",
         "resolvedAt": "2026-10-26T18:11:35.078Z"
+      },
+      "q729df4d8": {
+        "question": "The cancellation guarantee covers subprocesses. Registered tools that do non-subprocess work (in-process HTTP calls, database or file operations) are not interrupted by the signal; whether they should be is not decided here.",
+        "status": "resolved",
+        "choice": "Subprocess-only cancellation",
+        "rationale": "User chose option 1.",
+        "resolvedAt": "2026-10-26T18:12:36.503Z"
       }
     }
   },

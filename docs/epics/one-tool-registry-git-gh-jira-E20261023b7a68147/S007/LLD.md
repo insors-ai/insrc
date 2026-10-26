@@ -1156,6 +1156,8 @@ Do not change the framing; document that results over 100 items may fail to pars
 
 - `q2fffee10` — The HLD boundary for s7 and DEF section 6.7 still describe the whole cutover (old ac1 to ac6, size XL); the narrowing to five foundation criteria is recorded only in docs/plans/tool-registry.md because the amendment tool is HLD-only. This LLD numbers its acceptance mapping by the five effective criteria (ac1 to ac5) and uses ac6 for the moved site list that s9 and s10 own. The DEF may need a revision for s7 (title, size L, five criteria).
   - **resolved**: Align DEF now; retain HLD history — User chose option 3: revise the DEF for s7 (title, size L, five criteria) while the HLD keeps its whole-cutover description with a reference to the narrowing. _(2026-10-26T18:11:35.078Z)_
+- `q729df4d8` — The cancellation guarantee covers subprocesses. Registered tools that do non-subprocess work (in-process HTTP calls, database or file operations) are not interrupted by the signal; whether they should be is not decided here.
+  - **resolved**: Subprocess-only cancellation — User chose option 1. _(2026-10-26T18:12:36.503Z)_
 
 ## Citations
 

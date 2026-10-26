@@ -9,7 +9,7 @@
 
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, rejectInput, spawnFail, str } from './helpers.js';
 import { parseFetchPorcelain, parseOutput } from './parsers.js';
 import { GitFetchRefsDataSchema } from './schemas.js';
@@ -54,7 +54,7 @@ export const gitFetchRefsTool: Tool = {
     return cls;
   },
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const remote = str(input, 'remote');
     const specs = Array.isArray(input['refspecs']) ? (input['refspecs'] as unknown[]).map(String) : [];
@@ -74,7 +74,7 @@ export const gitFetchRefsTool: Tool = {
     if (typeof input['depth'] === 'number') { argv.push(`--depth=${Math.floor(input['depth'])}`); }
     argv.push(remote, ...specs);
 
-    const r = await runShell(argv, { cwd, timeoutMs: 120_000 });
+    const r = await runShell(argv, { cwd, timeoutMs: 120_000, signal: deps?.signal });
     if (r.spawnError) { return spawnFail('git_fetch_refs', r.stderr); }
     if (r.code !== 0) { return fail('git_fetch_refs', r, { network: true, mutating: true }); }
     const parsed = parseOutput('git_fetch_refs', r, parseFetchPorcelain);

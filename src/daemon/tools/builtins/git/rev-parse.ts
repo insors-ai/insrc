@@ -6,7 +6,7 @@
  */
 
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { GitRevParseDataSchema } from './schemas.js';
 import type { GitRevParseData } from './schemas.js';
@@ -27,7 +27,7 @@ export const gitRevParseTool: Tool = {
   }, { additionalProperties: false }),
   outputSchema: GitRevParseDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const rev = str(input, 'rev');
     const facts: string[] = [];
@@ -47,7 +47,7 @@ export const gitRevParseTool: Tool = {
     argv.push(...facts);
     if (rev !== undefined) { argv.push(rev); }
 
-    const read = await readGit('git_rev_parse', argv, cwd, 10_000);
+    const read = await readGit('git_rev_parse', argv, cwd, 10_000, deps?.signal);
     if (!read.ok) { return read.failure; }
     const values = read.r.stdout.split('\n').filter(l => l !== '');
     const data: GitRevParseData = { values };

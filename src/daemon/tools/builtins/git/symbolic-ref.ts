@@ -7,7 +7,7 @@
 
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, ranToExit, rejectInput, spawnFail, str } from './helpers.js';
 import { GitSymbolicRefDataSchema } from './schemas.js';
 import type { GitSymbolicRefData } from './schemas.js';
@@ -29,7 +29,7 @@ export const gitSymbolicRefTool: Tool = {
     return input['op'] === 'delete' ? 'destructive' : input['op'] === 'set' ? 'common' : 'none';
   },
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const ref = str(input, 'ref');
     const op = str(input, 'op');
@@ -49,7 +49,7 @@ export const gitSymbolicRefTool: Tool = {
       argv.push(ref);
     }
 
-    const r = await runShell(argv, { cwd, timeoutMs: 10_000 });
+    const r = await runShell(argv, { cwd, timeoutMs: 10_000, signal: deps?.signal });
     if (r.spawnError) { return spawnFail('git_symbolic_ref', r.stderr); }
     // -q: exit 1 with nothing printed means "not a symbolic ref", which is the answer null, not a failure
     if (op === 'get' && input['quiet'] === true && ranToExit(r) && r.code === 1) {

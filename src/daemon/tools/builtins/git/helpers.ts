@@ -23,7 +23,7 @@ const NETWORK_RE = /could not resolve host|unable to access|network is unreachab
  * shows it, else 'rejected'.
  */
 /** What the failure helpers read of a finished command: the result of runShell or of runShellBytes. */
-export type Outcome = Pick<ShellResult, 'spawnError' | 'timedOut' | 'stdoutTruncated' | 'code' | 'stderr'> & { stdout?: unknown };
+export type Outcome = Pick<ShellResult, 'spawnError' | 'timedOut' | 'stdoutTruncated' | 'code' | 'stderr'> & { stdout?: unknown; aborted?: boolean | undefined };
 
 export function failureKind(r: Outcome, opts: { network?: boolean } = {}): ToolFailureKind {
   if (r.spawnError) { return 'missing-tool'; }
@@ -66,12 +66,24 @@ export function spawnFail(label: string, err: string): ToolResult {
  * of a timed-out call (output and error keep today's text).
  */
 export function fail(label: string, r: ShellResult, opts: { network?: boolean; mutating?: boolean } = {}): ToolResult {
+  if (r.aborted === true) { return cancelledFail(label, opts.mutating === true); }
   const msg = r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`;
   const kind = failureKind(r, opts.network === true ? { network: true } : {});
   const message = kind === 'timed-out' && opts.mutating === true ? `${msg} (${UNKNOWN_OUTCOME})` : undefined;
   return withFailure(
     { output: `[${label}] failed: ${msg}`, format: 'text', success: false, error: msg },
     kind, r.stderr.trim() || r.stdout.trim(), message,
+  );
+}
+
+/** What failure.message of a cancelled mutating call gains: it was stopped mid-way and may have changed something. */
+export const CANCELLED_OUTCOME = 'the command was cancelled and its outcome is unknown; check the repository before retrying';
+
+/** A command stopped by the caller's signal, or never started because the signal was already aborted: kind 'rejected', text 'cancelled'. */
+export function cancelledFail(label: string, mutating = false): ToolResult {
+  return withFailure(
+    { output: `[${label}] failed: cancelled`, format: 'text', success: false, error: 'cancelled' },
+    'rejected', undefined, mutating ? `cancelled (${CANCELLED_OUTCOME})` : 'cancelled',
   );
 }
 
@@ -88,9 +100,9 @@ export function conflictFailure(result: ToolResult, r: ShellResult): ToolResult 
 
 /** A read-only git command run for a tool's answer: its result, or the failure to return when it could not give one. */
 export async function readGit(
-  label: string, argv: readonly string[], cwd: string, timeoutMs: number,
+  label: string, argv: readonly string[], cwd: string, timeoutMs: number, signal?: AbortSignal,
 ): Promise<{ ok: true; r: ShellResult } | { ok: false; failure: ToolResult }> {
-  const r = await runShell(argv, { cwd, timeoutMs });
+  const r = await runShell(argv, { cwd, timeoutMs, signal });
   if (r.spawnError) { return { ok: false, failure: spawnFail(label, r.stderr) }; }
   if (r.code !== 0) { return { ok: false, failure: fail(label, r) }; }
   return { ok: true, r };

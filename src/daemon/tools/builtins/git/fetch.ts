@@ -9,7 +9,7 @@
 
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail } from './helpers.js';
 import { GitFetchDataSchema } from './schemas.js';
 import type { GitFetchData } from './schemas.js';
@@ -30,7 +30,7 @@ export const gitFetchTool: Tool = {
   outputSchema: GitFetchDataSchema,
   // approval stays none: a fetch updates remote-tracking refs only.
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const all = input['all'] === true;
     const prune = input['prune'] === true;
@@ -46,7 +46,7 @@ export const gitFetchTool: Tool = {
     if (depth)  { argv.push(`--depth=${depth}`); }
     if (remote) { argv.push(remote); }
 
-    const result = await runShell(argv, { cwd, timeoutMs: 120_000 });
+    const result = await runShell(argv, { cwd, timeoutMs: 120_000, signal: deps?.signal });
     if (result.spawnError) { return spawnFail('git_fetch', result.stderr); }
     if (result.code !== 0) { return fail('git_fetch', result, { network: true, mutating: true }); }
 

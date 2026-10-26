@@ -8,8 +8,8 @@
 
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
+import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import { assertSafeArg, cancelledFail, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
 import type { GitDiffFileStat, GitShowData } from './schemas.js';
 import { GitShowDataSchema } from './schemas.js';
 
@@ -32,7 +32,7 @@ export const gitShowTool: Tool = {
   }, { additionalProperties: false }),
   outputSchema: GitShowDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const ref = str(input, 'ref') ?? 'HEAD';
     const path = str(input, 'path');
@@ -47,7 +47,10 @@ export const gitShowTool: Tool = {
     // meaningful metadata even if the diff times out or overflows.
     const headerArgv = ['git', 'show', '--no-color', '--no-patch', `--pretty=format:${HEADER_PRETTY}`, ref];
     if (path) { headerArgv.push('--', path); }
-    const header = await runShell(headerArgv, { cwd, timeoutMs: 15_000 });
+    // No command starts after an abort: the signal is tested before the header and before the diff and stat reads.
+    const aborted = (): boolean => deps?.signal?.aborted === true;
+    if (aborted()) { return cancelledFail('git:show'); }
+    const header = await runShell(headerArgv, { cwd, timeoutMs: 15_000, signal: deps?.signal });
 
     if (header.spawnError) {
       return spawnFail('git:show', header.stderr);
@@ -72,9 +75,10 @@ export const gitShowTool: Tool = {
     const statArgv = ['git', 'show', '--no-color', '--numstat', '--pretty=format:', ref];
     if (path) { statArgv.push('--', path); }
 
+    if (aborted()) { return cancelledFail('git:show'); }
     const [diff, stat] = await Promise.all([
-      runShell(diffArgv, { cwd, timeoutMs: 30_000, maxBytes }),
-      runShell(statArgv, { cwd, timeoutMs: 15_000 }),
+      runShell(diffArgv, { cwd, timeoutMs: 30_000, maxBytes, signal: deps?.signal }),
+      runShell(statArgv, { cwd, timeoutMs: 15_000, signal: deps?.signal }),
     ]);
 
     // The diff is the answer: a read that failed, timed out or could not be spawned is a failure, not an empty diff.

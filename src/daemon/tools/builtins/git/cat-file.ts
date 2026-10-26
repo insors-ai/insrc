@@ -21,6 +21,7 @@ import type { GitCatFileData } from './schemas.js';
 const DEFAULT_MAX_BYTES = 4 * 1024 * 1024;      // per object
 const DEFAULT_STDOUT_LIMIT = 32 * 1024 * 1024;  // for the whole call
 const DEFAULT_STDERR_LIMIT = 64 * 1024;
+const MAX_TIMEOUT_MS = 30_000;                  // the fixed limit; timeoutMs can only lower it
 
 export const gitCatFileTool: Tool = {
   id: 'git_cat_file',
@@ -38,6 +39,7 @@ export const gitCatFileTool: Tool = {
     stdoutLimit: Type.Optional(Type.Number({ description: `Byte budget of everything git prints, for the whole call (default ${DEFAULT_STDOUT_LIMIT}). Past it the read is cut and fails.`, minimum: 1 })),
     stderrLimit: Type.Optional(Type.Number({ description: `Byte budget of git's diagnostics (default ${DEFAULT_STDERR_LIMIT}). Past it the process is killed and the call fails.`, minimum: 1 })),
     isolated: Type.Optional(Type.Boolean({ description: 'Run in a fresh environment with the read-only arguments (default true).' })),
+    timeoutMs: Type.Optional(Type.Integer({ minimum: 1, maximum: MAX_TIMEOUT_MS, description: `A shorter limit for this read, in milliseconds (1 to ${MAX_TIMEOUT_MS}; it can only lower the fixed ${MAX_TIMEOUT_MS} ms limit).` })),
   }, { additionalProperties: false }),
   outputSchema: GitCatFileDataSchema,
 
@@ -62,9 +64,14 @@ export const gitCatFileTool: Tool = {
     const stdoutLimit = typeof input['stdoutLimit'] === 'number' ? Math.floor(input['stdoutLimit']) : DEFAULT_STDOUT_LIMIT;
     const stderrLimit = typeof input['stderrLimit'] === 'number' ? Math.floor(input['stderrLimit']) : DEFAULT_STDERR_LIMIT;
     const mode = exists || typeSize ? '--batch-check' : '--batch';
+    const requested = input['timeoutMs'];
+    if (requested !== undefined && (typeof requested !== 'number' || !Number.isInteger(requested) || requested < 1 || requested > MAX_TIMEOUT_MS)) {
+      return rejectInput('git_cat_file', `timeoutMs must be an integer from 1 to ${MAX_TIMEOUT_MS}`);
+    }
+    const timeoutMs = typeof requested === 'number' ? requested : MAX_TIMEOUT_MS;
 
     const res = await runShellBytes(['git', 'cat-file', mode], {
-      cwd, timeoutMs: 30_000, stdin: `${revs.join('\n')}\n`, isolate: input['isolated'] !== false,
+      cwd, timeoutMs, stdin: `${revs.join('\n')}\n`, isolate: input['isolated'] !== false,
       stdoutLimit, stderrLimit, ...(deps?.signal ? { signal: deps.signal } : {}),
     });
     if (res.spawnError) { return spawnFail('git_cat_file', res.stderr); }

@@ -3,7 +3,7 @@
  */
 
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { parseLsTree, parseNulList, parseOutput } from './parsers.js';
 import { GitLsTreeDataSchema } from './schemas.js';
@@ -21,7 +21,7 @@ export const gitLsTreeTool: Tool = {
   }, { additionalProperties: false }),
   outputSchema: GitLsTreeDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, deps?: ToolDeps): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const rev = str(input, 'rev');
     if (rev === undefined) { return rejectInput('git_ls_tree', 'missing rev'); }
@@ -36,7 +36,7 @@ export const gitLsTreeTool: Tool = {
     argv.push(rev);
     if (paths.length > 0) { argv.push('--', ...paths); }
 
-    const read = await readGit('git_ls_tree', argv, cwd, 30_000);
+    const read = await readGit('git_ls_tree', argv, cwd, 30_000, deps?.signal);
     if (!read.ok) { return read.failure; }
     if (nameOnly) {
       const names = parseOutput('git_ls_tree', read.r, parseNulList);

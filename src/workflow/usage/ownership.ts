@@ -36,7 +36,7 @@ function subjectValid(binding: UsageBinding, start: RequestStarted): boolean {
 
 /** Pure effective assignment state. Binding descriptors prove supplied membership;
  * per-call owner versions advance to committed event IDs, not to wall clocks. */
-export function resolveEffectiveOwner(start: RequestStarted, basis: ObservationRecord, records: ReadonlyMap<string, LedgerRecord>, scope: AccountingScope): OwnershipResult {
+export function resolveEffectiveOwner(start: RequestStarted, basis: ObservationRecord, records: ReadonlyMap<string, LedgerRecord>, scope: AccountingScope, closureComplete: boolean): OwnershipResult {
   const rows = [...records.values()].sort((a, b) => a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
   const bindings = new Map(scope.expectedBindings.map(binding => [key(binding.rootArtifactId, binding.artifactId), binding]));
   const watermarks = new Set(scope.evidence.rootWatermarkRefs.map(ref => ref.rootArtifactId));
@@ -55,6 +55,12 @@ export function resolveEffectiveOwner(start: RequestStarted, basis: ObservationR
   const unresolved = (state: 'conflict' | 'unavailable', notice: string): OwnershipResult => ({ owner: { ...trace(), state, rootArtifactId: null, artifactId: null, ownerVersion: null }, notices: [notice] });
   const grouped = new Map<string, TransferRecord[]>();
   for (const row of rows) if (isTransfer(row)) { const group = grouped.get(row.control.transferId) ?? []; group.push(row); grouped.set(row.control.transferId, group); }
+  // An incomplete set can omit a successor or competing commitment. Neither
+  // capture membership nor visible phase records prove the current assignment.
+  if (!closureComplete) {
+    provenance.push(...rows.filter(isTransfer).filter(row => row.control.originalObservationRef.callId === start.callId).map(row => row.eventId));
+    return unresolved('unavailable', 'transfer-closure-incomplete:/');
+  }
   const operations: Operation[] = [];
   for (const [transferId, group] of grouped) {
     if (!group.some(row => row.control.originalObservationRef.callId === start.callId)) continue;

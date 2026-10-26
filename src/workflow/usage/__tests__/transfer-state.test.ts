@@ -76,6 +76,19 @@ test('cross-root commitment requires matching phases and complete ownership proo
     assert.equal(invalidResult.knownTokens, '12', 'physical consumption is retained independently of unresolved assignment');
     assert.equal(unresolved.state, 'unavailable'); assert.equal(unresolved.rootArtifactId, null); assert.equal(unresolved.artifactId, null); assert.equal(unresolved.ownerVersion, null);
   }
+  const completeScope = evidence(rows);
+  const incompleteScopes: AccountingScope[] = [
+    { ...completeScope, closure: 'partial' },
+    { ...completeScope, closure: 'partial', evidence: { ...completeScope.evidence, coverageState: 'partial' } },
+    evidence([...rows, phase('transfer.prepared', 'omitted-successor', identity('successor', cross, third, 'commit'))]),
+  ];
+  for (const incomplete of incompleteScopes) {
+    const partial = await reduceGroupCore(stream(rows), incomplete), assignment = partial.effectiveOwners![0]!;
+    assert.equal(partial.knownTokens, '12');
+    assert.equal(assignment.state, 'unavailable');
+    assert.equal(assignment.rootArtifactId, null); assert.equal(assignment.artifactId, null); assert.equal(assignment.ownerVersion, null);
+    assert.ok(partial.quality.includes('unavailable'));
+  }
   const missingDestination = await reduceGroupCore(stream(rows), evidence(rows, [binding]));
   assert.equal(missingDestination.effectiveOwners![0]!.state, 'unavailable'); assert.equal(missingDestination.effectiveOwners![0]!.artifactId, null);
 });

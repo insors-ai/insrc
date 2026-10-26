@@ -114,11 +114,14 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   const scope = JSON.parse(canonicalData(input, USAGE_LIMITS.groupBytes)) as AccountingScope;
   const collected = await collectGroup(records, options.signal);
   const notices = new Set(collected.notices), quality = new Set<UsageQuality>();
+  let closureComplete = true;
   const actual = [...collected.eventIds].sort(), expected = [...scope.evidence.expectedEventIds].sort();
   if (actual.length !== scope.evidence.expectedRecordCount || eventSetDigest(actual) !== scope.evidence.eventSetDigest || canonicalData(actual, USAGE_LIMITS.groupBytes) !== canonicalData(expected, USAGE_LIMITS.groupBytes)) {
+    closureComplete = false;
     notices.add('closure-incomplete:/evidence/expectedEventIds'); quality.add('unavailable');
   }
   if (scope.closure !== 'complete-observed-group' || scope.evidence.coverageState !== 'observed') {
+    closureComplete = false;
     notices.add('closure-incomplete:/evidence'); quality.add('unavailable');
     if (scope.evidence.coverageState === 'legacy' || scope.evidence.coverageState === 'missing' || scope.evidence.coverageState === 'unsupported') quality.add(scope.evidence.coverageState);
   }
@@ -182,7 +185,7 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
       if (isEstimate) { estimated += amount.known; quality.add('estimated'); }
       else { known += amount.known; quality.add('reported'); }
       basis.push(end.eventId);
-      const ownership = resolveEffectiveOwner(start, end, collected.records, scope);
+      const ownership = resolveEffectiveOwner(start, end, collected.records, scope, closureComplete);
       owners.push(ownership.owner);
       for (const notice of ownership.notices) notices.add(notice);
       if (ownership.owner.state !== 'resolved') quality.add(ownership.owner.state);

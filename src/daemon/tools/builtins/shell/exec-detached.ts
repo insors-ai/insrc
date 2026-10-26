@@ -12,7 +12,7 @@
  */
 
 import { onUtf8Data } from '../../../../shared/utf8-stream.js';
-import { spawn } from 'node:child_process';
+import { spawnManaged } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { SHELL_EXEC_ACCESS } from './access-policies.js';
 
@@ -112,10 +112,38 @@ export const shellExecDetachedTool: Tool = {
     let stdoutBuffer = '';
     let stderrBuffer = '';
 
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
+    // What the tool reports once the process has ended (or never started): the same for an exit, an abort and a time-out.
+    const ended = (code: number | null, signal: string | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const data: ShellExecDetachedData = {
+        exitCode: code,
+        timedOut,
+        stdoutBytes,
+        stderrBytes,
+        durationMs,
+        ...(signal ? { signal } : {}),
+      };
+      const ok = code === 0 && !timedOut;
+      const body = [
+        ok ? `Process exited 0 after ${durationMs} ms.` : `Process ended${timedOut ? ' (timed out)' : ''} with code ${code} after ${durationMs} ms.`,
+        `Output: ${stdoutBytes} B stdout, ${stderrBytes} B stderr (streamed live).`,
+      ].join('\n');
+      return {
+        output: body,
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
+        data,
+      };
+    };
 
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted run gives.
+    const m = spawnManaged(cmd!, args, { cwd, env, timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
       const flushStdout = () => {
         if (stdoutBuffer) {
           deps.send({ id: deps.requestId, stream: 'progress', data: { message: stdoutBuffer } });
@@ -129,22 +157,14 @@ export const shellExecDetachedTool: Tool = {
         }
       };
 
-      const timer = setTimeout(() => {
-        timedOut = true;
-        child.kill('SIGKILL');
-      }, maxRuntimeMs);
-
-      const onAbort = () => { child.kill('SIGKILL'); };
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
-
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         stdoutBytes += chunkBytes;
         stdoutBuffer += decodedChunk;
         if (stdoutBuffer.length >= LINE_STREAM_FLUSH_CHARS || stdoutBuffer.includes('\n')) {
           flushStdout();
         }
       });
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => {
         stderrBytes += chunkBytes;
         stderrBuffer += decodedChunk;
         if (stderrBuffer.length >= LINE_STREAM_FLUSH_CHARS || stderrBuffer.includes('\n')) {
@@ -153,8 +173,6 @@ export const shellExecDetachedTool: Tool = {
       });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         flushStdout(); flushStderr();
         resolve({
           output: `[shell:exec-detached] spawn failed -- ${err.message}`,
@@ -164,31 +182,9 @@ export const shellExecDetachedTool: Tool = {
         });
       });
 
-      child.on('close', (code, signal) => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
+      void m.settled.then(exit => {
         flushStdout(); flushStderr();
-        const durationMs = Date.now() - started;
-        const data: ShellExecDetachedData = {
-          exitCode: code,
-          timedOut,
-          stdoutBytes,
-          stderrBytes,
-          durationMs,
-          ...(signal ? { signal } : {}),
-        };
-        const ok = code === 0 && !timedOut;
-        const body = [
-          ok ? `Process exited 0 after ${durationMs} ms.` : `Process ended${timedOut ? ' (timed out)' : ''} with code ${code} after ${durationMs} ms.`,
-          `Output: ${stdoutBytes} B stdout, ${stderrBytes} B stderr (streamed live).`,
-        ].join('\n');
-        resolve({
-          output: body,
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
-          data,
-        });
+        resolve(ended(exit.code, exit.signal, exit.timedOut));
       });
     });
   },

@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T18:16:56.853Z",
+    "updatedAt": "2026-10-26T18:35:22.559Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2687,8 +2687,8 @@
       },
       {
         "taskId": "t34",
-        "commit": "ac7576986",
-        "ranAt": "2026-10-26T18:16:56.853Z",
+        "commit": "11c4b50f7",
+        "ranAt": "2026-10-26T18:35:22.559Z",
         "testsPassed": false,
         "tests": [
           {
@@ -2699,7 +2699,7 @@
             "files": [],
             "reported": {
               "result": "fail",
-              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-report.json"
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-source-sweep.json"
             }
           }
         ],

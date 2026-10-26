@@ -707,10 +707,10 @@ Run at 2026-10-26T17:15:41.397Z on commit `51b3bdb11`. Tests check: **passed**. 
 
 ## t34
 
-Run at 2026-10-26T18:16:56.853Z on commit `ac7576986`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-26T18:35:22.559Z on commit `11c4b50f7`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 no test files to run; reported as failed by the builder: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates
 
 **smoke: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates**
 
-Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-report.json
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-source-sweep.json

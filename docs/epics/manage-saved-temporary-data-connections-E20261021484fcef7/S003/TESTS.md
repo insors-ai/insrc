@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 90 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 91 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -479,7 +479,7 @@ Run at 2026-10-26T08:27:38.643Z on commit `11d7d4a0e`. Tests check: **passed**. 
 
 ## t24
 
-Run at 2026-10-26T09:47:49.086Z on commit `7d47bfeba`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-26T10:11:31.210Z on commit `a4df478e8`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards**
 
@@ -491,14 +491,15 @@ Run at 2026-10-26T09:47:49.086Z on commit `7d47bfeba`. Tests check: **passed**. 
 | pass | memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
 | pass | admitted Session expiry during real structured validation prevents the next SDK retry | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
 | pass | memory-only adapter refuses internal helper substitution before native construction | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
 
 **live: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final source and compiled actual isolated Ollama runs both pass with zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt). Test: src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Covers actual native complete/completeStructured, callback policy/persistence denial, copied/wrong-instance proof, immutable model and private helper getter rejection, cancellation, expiry, normal daemon Saved marker, final output snapshots and actual server close. Configured production service remains pending; no release enabled.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final actual isolated Ollama source/compiled runs each pass zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt), using src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Actual complete/completeStructured, callback persistence denial, immutable method/profile proof, cancellation/expiry and private output snapshots through server close. Production configured-service proof stays pending; release disabled.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 5 | 0.8 s |  |
+| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 6 | 1.9 s |  |
 | `src/daemon/steps/__tests__/provider-admission.test.ts` | 0 | 2 | 0.7 s |  |

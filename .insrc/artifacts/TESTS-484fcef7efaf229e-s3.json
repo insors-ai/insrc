@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T09:47:49.086Z",
+    "updatedAt": "2026-10-26T10:11:31.210Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1688,8 +1688,8 @@
       },
       {
         "taskId": "t24",
-        "commit": "7d47bfeba",
-        "ranAt": "2026-10-26T09:47:49.086Z",
+        "commit": "a4df478e8",
+        "ranAt": "2026-10-26T10:11:31.210Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1726,6 +1726,11 @@
                 "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
                 "title": "memory-only adapter refuses internal helper substitution before native construction",
                 "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1738,7 +1743,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final source and compiled actual isolated Ollama runs both pass with zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt). Test: src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Covers actual native complete/completeStructured, callback policy/persistence denial, copied/wrong-instance proof, immutable model and private helper getter rejection, cancellation, expiry, normal daemon Saved marker, final output snapshots and actual server close. Configured production service remains pending; no release enabled."
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final actual isolated Ollama source/compiled runs each pass zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt), using src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Actual complete/completeStructured, callback persistence denial, immutable method/profile proof, cancellation/expiry and private output snapshots through server close. Production configured-service proof stays pending; release disabled."
             }
           }
         ],
@@ -1747,7 +1752,7 @@
             "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 771,
+            "durationMs": 1930,
             "titles": [
               {
                 "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
@@ -1768,6 +1773,10 @@
               {
                 "title": "memory-only adapter refuses internal helper substitution before native construction",
                 "result": "pass"
+              },
+              {
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1776,7 +1785,7 @@
             "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 706,
+            "durationMs": 746,
             "titles": [
               {
                 "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",

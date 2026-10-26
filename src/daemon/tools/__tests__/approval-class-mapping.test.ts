@@ -120,8 +120,11 @@ test('approval-class-mapping.test.ts: no builtin still declares requiresApproval
 test('approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite', () => {
 	// Every tool of the snapshot is still registered with the same input schema. Tools that later Stories
 	// add are not in the snapshot and are not compared.
+	// The two project item tools passed --project-id, a flag gh 2.46.0 lacks: they take the project number now (gh-compat.test.ts pins the corrected schemas).
+	const corrected = new Set(['gh:project:item-archive', 'gh:project:item-delete']);
 	for (const old of snapshot) {
 		assert.ok(live.has(old.id), `${old.id} is still registered`);
+		if (corrected.has(old.id)) { continue; }
 		assert.deepEqual(JSON.parse(JSON.stringify(live.get(old.id)!.inputSchema)), old.inputSchema, `${old.id} input schema`);
 	}
 });

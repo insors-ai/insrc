@@ -122,15 +122,37 @@ export async function runSetModelTier(deps: SetModelTierDeps): Promise<void> {
   }
 }
 
-/** The tier config.json holds, or undefined when it is unset or malformed. */
-function configuredTier(raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
+/** The fields of the tier config.json holds (any of them may be absent). */
+function configuredFields(raw: Record<string, unknown>, tier: Tier): Partial<TierValue> {
   const models = raw['models'];
   const tiers = typeof models === 'object' && models !== null ? (models as Record<string, unknown>)['tiers'] : undefined;
   const value = typeof tiers === 'object' && tiers !== null ? (tiers as Record<string, unknown>)[tier] : undefined;
-  if (typeof value !== 'object' || value === null) return undefined;
-  const { runner, model, effort } = value as Record<string, unknown>;
-  if (typeof runner !== 'string' || typeof model !== 'string') return undefined;
-  return { runner, model, effort: typeof effort === 'string' ? effort : '' };
+  if (typeof value !== 'object' || value === null) return {};
+  const fields: { runner?: string; model?: string; effort?: string } = {};
+  for (const key of ['runner', 'model', 'effort'] as const) {
+    const v = (value as Record<string, unknown>)[key];
+    if (typeof v === 'string' && (key === 'effort' || v !== '')) fields[key] = v;
+  }
+  return fields;
+}
+
+/**
+ * The tier's current value: the configured fields laid over the definitions' default for
+ * the tier — the configured family (else the default family), its tier default model when
+ * none is configured, and the configured effort (an explicit '' kept) else that default's.
+ */
+function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
+  const configured = configuredFields(raw, tier);
+  const family = familyOf(defs, configured.runner ?? defs.defaultFamily);
+  if (family === undefined) {
+    return configured.runner !== undefined && configured.model !== undefined
+      ? { runner: configured.runner, model: configured.model, effort: configured.effort ?? '' } : undefined;
+  }
+  const fallback = familyDefault(family, tier);
+  const model = configured.model ?? fallback?.model.id;
+  if (model === undefined) return undefined;
+  const effort = configured.effort ?? (configured.model === undefined ? fallback?.effort ?? '' : '');
+  return { runner: family.id, model, effort };
 }
 
 /** What a failed request means for this flow, as one message. */
@@ -159,11 +181,7 @@ async function runSetModelTierInner(deps: SetModelTierDeps): Promise<void> {
     await deps.notify(failureMessage(err, 'read the model definitions'));
     return;
   }
-  const configured = configuredTier(raw, tier);
-  const defaultFamily = familyOf(defs, defs.defaultFamily);
-  const fallback = defaultFamily !== undefined ? familyDefault(defaultFamily, tier) : undefined;
-  const current: TierValue | undefined = configured
-    ?? (defaultFamily !== undefined && fallback !== undefined ? { runner: defaultFamily.id, model: fallback.model.id, effort: fallback.effort } : undefined);
+  const current = currentTier(defs, raw, tier);
 
   // 3) Pick the family (current marked).
   const family = await pickFamily(deps, defs, current?.runner);

@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793035887045-z4tiav",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-26T17:31:27.468Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 1138956,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 121664,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "src/__tests__/no-default-tiers.test.ts",
+        "src/assets/models/cloud-model-catalog.json",
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/helpers/fake-services.ts",
+        "src/cli/__tests__/model-tiers.test.ts",
+        "src/cli/__tests__/s5-tests-typecheck.test.ts",
+        "src/cli/__tests__/services.test.ts",
+        "src/cli/__tests__/tui-models.test.ts",
+        "src/cli/__tests__/tui-shipped-registry.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/command.ts",
+        "src/cli/panes/ModelCheckScreen.tsx",
+        "src/cli/panes/ModelTiersPane.tsx",
+        "src/cli/panes/RepoModelsView.tsx",
+        "src/cli/panes/ReposPane.tsx",
+        "src/cli/panes/SetupPane.tsx",
+        "src/cli/panes/model-tiers.ts",
+        "src/cli/services/__tests__/review-resolve-role.test.ts",
+        "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+        "src/cli/services/config.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/models.ts",
+        "src/cli/services/setup.ts",
+        "src/cli/services/workflow.ts",
+        "src/cli/shipped-model-registry.ts",
+        "src/cli/ui/widgets.tsx",
+        "src/config/__tests__/config-catalog-defs.test.ts",
+        "src/config/__tests__/tier-defaults.test.ts",
+        "src/config/analyze.ts",
+        "src/config/model-defaults.ts",
+        "src/daemon/__tests__/config-write-models.test.ts",
+        "src/daemon/__tests__/model-catalog-asset.test.ts",
+        "src/daemon/__tests__/model-catalog.test.ts",
+        "src/daemon/__tests__/model-definitions.test.ts",
+        "src/daemon/__tests__/model-literal-scan.test.ts",
+        "src/daemon/__tests__/system-recommend.test.ts",
+        "src/daemon/config-write.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/model-catalog.ts",
+        "src/daemon/model-definitions.ts",
+        "src/shared/__tests__/ipc-client.test.ts",
+        "src/shared/__tests__/model-recommender.test.ts",
+        "src/shared/ipc-client.ts",
+        "src/shared/model-recommender.ts",
+        "src/workflow/review/__tests__/same-party-refusal.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/cli/services/models.ts:48",
+            "message": "Disconnected requests return down:false, so ModelTiersPane and RepoModelsView skip their daemon-down messages and show only the closed-connection explanation. Classify this condition so those panes display their required daemon-down message and recovery instruction.",
+            "expectationRef": "LLD error case 11: The daemon drops the connection while a request is outstanding (it exits, is restarted, or crashes mid-check)."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/__tests__/no-default-tiers.test.ts:52",
+            "message": "The declaration-export rule checks only the first declared name, so `export const other = 1, DEFAULT_TIERS = {};` passes the scan despite exporting a retired name. Extend detection to all declarators and add a regression case so the scan enforces t11's prohibition.",
+            "expectationRef": "PLAN task t11: Remove the temporary exports and widen the literal scan"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 71,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/panes/ModelCheckScreen.tsx:166",
+            "message": "The optional `tiers` property omits the documented explicit `| undefined`. Declare it as `tiers?: Record<string, ...> | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/panes/RepoModelsView.tsx:138",
+            "message": "The optional `color` property omits the documented explicit `| undefined`. Use `{ color?: 'cyan' | undefined }` for the helper's return type.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/cli/panes/RepoModelsView.tsx:107",
+            "message": "Correctness: r remains enabled during a pending write. Its reload can finish before the write lands and clear saving, allowing another whole-map edit from the old snapshot to overwrite the first edit. Keep the write lock until that write's own reload completes.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/cli/panes/ModelCheckScreen.tsx:127",
+            "message": "Avoidable complexity: restartThenSave merges restart failures and save failures into the same retry state. After a successful restart followed by a failed save, R unnecessarily restarts the daemon again. Track the completed restart separately so saving can be retried independently.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/cli/__tests__/command.test.ts:33",
+            "message": "Duplication: ctxWith maintains another complete Services fake alongside the shared fakeServices factory, including identical model answers and workflow stubs. Service-contract changes consequently require parallel maintenance. Build from the shared factory and override methods requiring spies.",
+            "counterpartRef": "src/cli/__tests__/helpers/fake-services.ts: fakeServices",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/cli/panes/ModelCheckScreen.tsx:169",
+            "message": "Unhandled error path: tierInConfig converts a failed config read into false. Following a disconnected write, this makes an unverifiable outcome display as 'the tier was not saved', even when it landed. Preserve an unknown outcome when readback fails and offer readback recovery.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "ux",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 4
+    }
+  }
+}

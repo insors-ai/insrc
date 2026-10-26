@@ -72,7 +72,7 @@ test('event and call identity conflicts cannot produce a trusted contribution or
   freeze(s); freeze(f);
   await reduceGroupCore(stream([f, s]), scoped([s, f]));
   assert.equal(JSON.stringify([s, f]), before);
-  assert.equal('effectiveOwners' in identity, false, 'unpublished t6 core does not claim completed ownership composition');
+  assert.deepEqual(identity.effectiveOwners, [], 'new results explicitly expose no selected contribution under a conflicting identity');
 });
 
 function cumulativeFrame(name: string, input: number, output: number, invocationId = 'invocation'): [RequestStarted, RequestFinished] {

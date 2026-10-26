@@ -3,9 +3,10 @@ import { canonicalData, canonicalSource, UsageInputError } from './canonical.js'
 import { validateAttribution } from './attribution.js';
 import { resolveObservationBasis } from './basis.js';
 import { cumulativeInterval } from './cumulative.js';
+import { resolveEffectiveOwner } from './ownership.js';
 import { eventSetDigest, validateRecord, validateScope } from './validation.js';
 import { USAGE_LIMITS } from './types.js';
-import type { AccountingScope, EffectiveAccounting, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
+import type { AccountingScope, EffectiveAccounting, EffectiveOwner, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
 
 export class UsageReductionError extends Error implements UsageDomainError {
   constructor(readonly code: 'resource-limit' | 'source-unavailable') { super(code); this.name = 'UsageReductionError'; }
@@ -100,12 +101,10 @@ function orderedNotices(notices: Iterable<string>): string[] {
   if (unique.size > USAGE_LIMITS.referenceItems) throw new UsageReductionError('resource-limit');
   return [...unique].sort();
 }
-const empty = (notices: readonly string[], quality: readonly UsageQuality[]): EffectiveAccounting => ({ knownTokens: '0', estimatedTokens: '0', quality: [...new Set(quality)].sort(), basisEventIds: [], notices: orderedNotices(notices) });
+const empty = (notices: readonly string[], quality: readonly UsageQuality[]): EffectiveAccounting => ({ knownTokens: '0', estimatedTokens: '0', quality: [...new Set(quality)].sort(), basisEventIds: [], notices: orderedNotices(notices), effectiveOwners: [] });
 
 /**
- * Internal t6 composition, intentionally absent from the public barrel while
- * ownership composition is built in t9.
- * Unhandled accounting controls are refused explicitly, never approximated.
+ * Internal composition; the qualified public barrel is published in t11.
  */
 export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, input: unknown, options: { readonly signal?: AbortSignal | undefined } = {}): Promise<EffectiveAccounting> {
   checkAbort(options.signal);
@@ -126,7 +125,6 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   if (collected.invalid) return empty([...notices], [...quality, 'conflict', 'unavailable']);
   const rows = [...collected.records.values()].sort((a, b) => a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
   if (collected.ambiguousControl) return empty([...notices], [...quality, 'conflict', 'unavailable']);
-  if (rows.some(row => row.recordKind.startsWith('transfer.'))) return empty([...notices, 'unsupported-control:/'], [...quality, 'unsupported', 'unavailable']);
   const starts = new Map<string, RequestStarted>(), startIdentity = new Map<string, string>(), badCalls = new Set(collected.conflictingCalls);
   const referenceOnly = new Set(scope.evidence.referenceOnlyEventIds);
   for (const row of rows) {
@@ -142,6 +140,7 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   for (const flag of resolved.quality) quality.add(flag);
   let known = 0n, estimated = 0n;
   const basis: string[] = [];
+  const owners: EffectiveOwner[] = [];
   const bindings = new Map(scope.expectedBindings.map(binding => [bindingKey(binding.rootArtifactId, binding.artifactId), binding]));
   const capabilities = new Map(scope.evidence.sourceCapabilities.map(capability => [capability.capabilityId, capability]));
   for (const [callId, start] of starts) {
@@ -183,11 +182,15 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
       if (isEstimate) { estimated += amount.known; quality.add('estimated'); }
       else { known += amount.known; quality.add('reported'); }
       basis.push(end.eventId);
+      const ownership = resolveEffectiveOwner(start, end, collected.records, scope);
+      owners.push(ownership.owner);
+      for (const notice of ownership.notices) notices.add(notice);
+      if (ownership.owner.state !== 'resolved') quality.add(ownership.owner.state);
     }
     if (observation.outcome !== 'success') notices.add(`${observation.outcome}:${end.eventId}`);
   }
   if (!starts.size) { quality.add('unavailable'); notices.add('usage-missing:/'); }
   if (collected.conflicts.size) quality.add('conflict');
   checkAbort(options.signal);
-  return { knownTokens: known.toString(), estimatedTokens: estimated.toString(), quality: [...quality].sort(), basisEventIds: basis.sort(), notices: orderedNotices(notices) };
+  return { knownTokens: known.toString(), estimatedTokens: estimated.toString(), quality: [...quality].sort(), basisEventIds: basis.sort(), notices: orderedNotices(notices), effectiveOwners: owners.sort((a, b) => a.callId < b.callId ? -1 : a.callId > b.callId ? 1 : 0) };
 }

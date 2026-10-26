@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -95,6 +96,7 @@ export const DOC_CONSTRAINTS_SCHEMA: StructuredSchema = {
 // ---------------------------------------------------------------------------
 
 export interface RunDocConstraintEnumerateArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly subject:     string;
 	readonly repoPath:    string;
 	readonly db:          DbClient;
@@ -116,6 +118,7 @@ export interface RunDocConstraintEnumerateArgs {
 export async function runSharedDocConstraintEnumerate(
 	args: RunDocConstraintEnumerateArgs,
 ): Promise<DocConstraintEnumerateOutput> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const prepared = await prepareDocConstraintEnumerate({
 		subject:    args.subject,
 		repoPath:   args.repoPath,
@@ -348,6 +351,7 @@ export async function runDocConstraintEnumerate(
 	const params = parseExplorationParams(exp);
 	const db = await getDb();
 	return runSharedDocConstraintEnumerate({
+		connectionExecution: ctx.connectionExecution,
 		subject:    params.subject,
 		repoPath:   ctx.repoPath,
 		db,

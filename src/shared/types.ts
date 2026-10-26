@@ -87,6 +87,7 @@ export interface LLMResponse {
 }
 
 export interface CompletionOpts {
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   maxTokens?: number;
   temperature?: number;
   tools?: ToolDefinition[] | undefined;
@@ -241,6 +242,7 @@ export interface LLMProvider {
 
 /** Options for {@link LLMProvider.runReviewSession}. */
 export interface ReviewSessionOpts {
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   /** The repo root the session reads. */
   readonly cwd:        string;
   /** Time allowed for the whole call, its one possible retry included. */
@@ -289,6 +291,7 @@ export interface ProviderCapabilities {
 export type StructuredSchema = Readonly<Record<string, unknown>>;
 
 export interface StructuredCompletionOpts {
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   readonly temperature?: number | undefined;
   readonly maxTokens?:   number | undefined;
   /** Default 3. The validation-feedback retry loop's cap. */

@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -73,6 +74,7 @@ export type CliKind = 'claude' | 'codex';
  *  directory and file-edit permissions, so `claude`/`codex` can actually
  *  modify files on disk during the turn. */
 export interface EditSessionOpts {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/** The repo root the CLI runs inside; its entire edit blast radius. */
 	readonly cwd:        string;
 	/** Per-session wall-clock cap. Defaults to the provider's `timeoutMs`. */
@@ -137,6 +139,7 @@ export function codexReviewSessionArgs(schemaPath: string, cwd: string, modelArg
 }
 
 export interface CliProviderOpts {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly kind: CliKind;
 	/** Default model name passed via `--model`. Optional; the CLI's own default applies when absent. */
 	readonly model?: string | undefined;
@@ -201,6 +204,7 @@ export class CliProvider implements LLMProvider {
 	readonly capabilities: ProviderCapabilities;
 
 	constructor(opts: CliProviderOpts) {
+		assertConnectionProviderAdmission(opts.connectionExecution);
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.inputBudgetChars;
 		this.defaultModel = opts.model;
@@ -226,6 +230,7 @@ export class CliProvider implements LLMProvider {
 	// -- complete -------------------------------------------------------
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
+		assertConnectionProviderAdmission(opts?.connectionExecution);
 		return this.withTransientRetry('complete', async () => {
 			const prompt = serialiseMessages(messages);
 			if (this.kind === 'claude') {
@@ -242,7 +247,7 @@ export class CliProvider implements LLMProvider {
 				text: agentText ?? '',
 				stopReason: 'end_turn' as const,
 			};
-		});
+		}, 3, opts?.connectionExecution);
 	}
 
 
@@ -253,12 +258,16 @@ export class CliProvider implements LLMProvider {
 	 *  succeeds. Deterministic failures (bad schema, non-transient exit) are
 	 *  re-thrown on the first attempt. Accuracy over cost: a long synthesize is
 	 *  worth re-running rather than failing the whole workflow. */
-	private async withTransientRetry<T>(label: string, op: () => Promise<T>, maxAttempts = 3): Promise<T> {
+	private async withTransientRetry<T>(label: string, op: () => Promise<T>, maxAttempts = 3, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): Promise<T> {
 		let lastErr: unknown;
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			assertConnectionProviderAdmission(execution);
 			try {
-				return await op();
+				const result = await op();
+				assertConnectionProviderAdmission(execution);
+				return result;
 			} catch (err) {
+				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
 				if (err instanceof InputTooLargeError) throw err;
@@ -285,6 +294,7 @@ export class CliProvider implements LLMProvider {
 		schema: StructuredSchema,
 		opts?: StructuredCompletionOpts,
 	): Promise<T> {
+		assertConnectionProviderAdmission(opts?.connectionExecution);
 		// Pre-flight the schema root BEFORE the retry wrapper is entered.
 		//
 		// The placement is load-bearing, not stylistic. `withTransientRetry`
@@ -310,7 +320,7 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
-		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3);
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3, opts?.connectionExecution);
 	}
 
 	private async completeStructuredOnce<T>(
@@ -386,6 +396,7 @@ export class CliProvider implements LLMProvider {
 	 * decision.
 	 */
 	async runEditSession(prompt: string, opts: EditSessionOpts): Promise<LLMResponse> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
 		return this.withTransientRetry('runEditSession', async () => {
 			const exec = { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs };
 			if (this.kind === 'claude') {
@@ -399,7 +410,7 @@ export class CliProvider implements LLMProvider {
 			const args = ['exec', '--json', '--full-auto', ...this.modelArgs()];
 			const { agentText } = await this.runCodex(args, prompt, exec);
 			return { text: agentText ?? '', stopReason: 'end_turn' as const };
-		});
+		}, 3, opts?.connectionExecution);
 	}
 
 
@@ -426,10 +437,12 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
 		const maxAttempts = opts.internalRetry === false ? 1 : 2;
 		for (let attempt = 1; ; attempt++) {
+			assertConnectionProviderAdmission(opts.connectionExecution);
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			try {

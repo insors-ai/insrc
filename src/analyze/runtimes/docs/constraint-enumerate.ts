@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -32,6 +33,7 @@ export const docsConstraintEnumerateRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		assertConnectionProviderAdmission(args.connectionExecution);
 		const params  = args.task.params as Record<string, unknown>;
 		const subject = params['subject'];
 		if (typeof subject !== 'string' || subject.trim().length === 0) {
@@ -49,6 +51,7 @@ export const docsConstraintEnumerateRuntime: TemplateRuntime = {
 
 		const db = await getDb();
 		const output = await runSharedDocConstraintEnumerate({
+			connectionExecution: args.connectionExecution,
 			subject:    subject.trim(),
 			repoPath,
 			db,

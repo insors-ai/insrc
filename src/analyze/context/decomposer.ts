@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -173,11 +174,11 @@ export interface DecomposeArgs {
  * intent. Tight prompt, small output, ~30s on qwen3.6:27b.
  */
 export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	if (args.connectionExecution?.mode === 'session-memory' && args.connectionExecution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile();
-	const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg, undefined, args.connectionExecution);
 
 	const messages = buildMessages(promptContent, args.intent, args.scope);
 

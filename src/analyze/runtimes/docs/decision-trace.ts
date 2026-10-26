@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -33,6 +34,7 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		assertConnectionProviderAdmission(args.connectionExecution);
 		const params = args.task.params as Record<string, unknown>;
 		const topic  = params['topic'];
 		if (typeof topic !== 'string' || topic.trim().length === 0) {
@@ -50,6 +52,7 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 
 		const db = await getDb();
 		const output = await runSharedDocDecisionTrace({
+			connectionExecution: args.connectionExecution,
 			topic:      topic.trim(),
 			repoPath,
 			db,

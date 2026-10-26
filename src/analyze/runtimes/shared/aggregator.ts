@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -51,6 +52,7 @@ const log = getLogger('analyze:runtimes:shared:aggregator');
 // ---------------------------------------------------------------------------
 
 export interface RunAggregatorArgs {
+	readonly connectionExecution?: import('../../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/** Path (relative to insrc root) to the per-target prompt .md file. */
 	readonly promptRelPath: string;
 	readonly target:        AnalyzeTarget;
@@ -98,10 +100,11 @@ export function aggregateReportCompleteness(): Completeness {
  * the full AggregateReport. Caller wraps it in TemplateExecuteResult.outputs.
  */
 export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateReport> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const cfg = loadAnalyzeConfig();
 
 	const promptContent = loadPromptFile(args.promptRelPath);
-	const provider = args.provider ?? resolveRoleProvider('analyze.aggregate', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.aggregate', cfg, undefined, args.connectionExecution);
 
 	const messages = buildMessages({
 		promptContent,

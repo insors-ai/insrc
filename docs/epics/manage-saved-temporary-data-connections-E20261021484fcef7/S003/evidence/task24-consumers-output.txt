@@ -1,0 +1,108 @@
+TAP version 13
+# Subtest: empty tiering → peripheral (mid) role resolves to the shipped mid default (claude sonnet), no clamp
+ok 1 - empty tiering → peripheral (mid) role resolves to the shipped mid default (claude sonnet), no clamp
+# Subtest: empty tiering → critical (core) role resolves to the shipped core default (claude opus), no clamp
+ok 2 - empty tiering → critical (core) role resolves to the shipped core default (claude opus), no clamp
+# Subtest: S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped
+ok 3 - S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped
+# Subtest: empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults
+ok 4 - empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults
+# Subtest: a configured cheap tier wins over the shipped cheap default
+ok 5 - a configured cheap tier wins over the shipped cheap default
+# Subtest: roleTiers assigns a peripheral role a cheap tier with a concrete model
+ok 6 - roleTiers assigns a peripheral role a cheap tier with a concrete model
+# Subtest: a mid CLI tier pins a concrete model (e.g. sonnet) that shaperModel alone cannot express
+ok 7 - a mid CLI tier pins a concrete model (e.g. sonnet) that shaperModel alone cannot express
+# Subtest: critical role assigned cheap is clamped UP to a core floor (clampedByFloor true) and uses the core tier model
+ok 8 - critical role assigned cheap is clamped UP to a core floor (clampedByFloor true) and uses the core tier model
+# Subtest: peripheral role assigned cheap is NEVER clamped even with a core floor
+ok 9 - peripheral role assigned cheap is NEVER clamped even with a core floor
+# Subtest: byRepo roleTiers overrides the global roleTiers for the same role
+ok 10 - byRepo roleTiers overrides the global roleTiers for the same role
+# Subtest: an unknown RoleId falls to the built-in default tier (mid), non-critical, no throw
+ok 11 - an unknown RoleId falls to the built-in default tier (mid), non-critical, no throw
+# Subtest: resolveShaperKind: roleResolved wins over global/client
+ok 12 - resolveShaperKind: roleResolved wins over global/client
+# Subtest: resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)
+ok 13 - resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)
+# Subtest: resolveShaperKind: legacy callers resolve identically (roleResolved absent)
+ok 14 - resolveShaperKind: legacy callers resolve identically (roleResolved absent)
+# Subtest: resolveProviderForRole memoizes per (role, repoPath) — repeated calls reuse the instance
+ok 15 - resolveProviderForRole memoizes per (role, repoPath) — repeated calls reuse the instance
+# Subtest: resolveProviderForRole attaches a resolution record with the resolved tier/runner/model
+ok 16 - resolveProviderForRole attaches a resolution record with the resolved tier/runner/model
+# Subtest: resolveSummariser follows the summariser config (cheap tier), not the shaper/role tiering
+ok 17 - resolveSummariser follows the summariser config (cheap tier), not the shaper/role tiering
+# Subtest: shaperProvider=ollama returns an OllamaProvider
+ok 18 - shaperProvider=ollama returns an OllamaProvider
+# Subtest: shaperProvider=cli-claude returns a CliProvider (claude kind)
+ok 19 - shaperProvider=cli-claude returns a CliProvider (claude kind)
+# Subtest: shaperProvider=cli-codex returns a CliProvider
+ok 20 - shaperProvider=cli-codex returns a CliProvider
+# Subtest: cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+ok 21 - cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+# Subtest: cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+ok 22 - cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+# Subtest: cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+ok 23 - cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+# Subtest: cli-claude + a role-tier model that is Ollama-shaped → also dropped
+ok 24 - cli-claude + a role-tier model that is Ollama-shaped → also dropped
+# Subtest: ollama path is unchanged: the Ollama model id is still used
+ok 25 - ollama path is unchanged: the Ollama model id is still used
+# Subtest: shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+ok 26 - shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+# Subtest: shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+ok 27 - shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+# Subtest: clientDefault picks the matching CLI when config does NOT pin a provider
+ok 28 - clientDefault picks the matching CLI when config does NOT pin a provider
+# Subtest: explicit config shaperProvider overrides the clientDefault
+ok 29 - explicit config shaperProvider overrides the clientDefault
+# Subtest: ambient runWithClientProviderContext supplies the default
+ok 30 - ambient runWithClientProviderContext supplies the default
+# Subtest: resolveShaperKind: explicit global wins over the per-run caller
+ok 31 - resolveShaperKind: explicit global wins over the per-run caller
+# Subtest: resolveShaperKind: per-run caller used when the global is unset
+ok 32 - resolveShaperKind: per-run caller used when the global is unset
+# Subtest: resolveShaperKind: the definitions' default family when all signals are unset
+ok 33 - resolveShaperKind: the definitions' default family when all signals are unset
+# Subtest: buildSummariserProvider: defaults to a local OllamaProvider
+ok 34 - buildSummariserProvider: defaults to a local OllamaProvider
+# Subtest: buildSummariserProvider: stays LOCAL even when shaperProvider is a cloud CLI (the decoupling)
+ok 35 - buildSummariserProvider: stays LOCAL even when shaperProvider is a cloud CLI (the decoupling)
+# Subtest: buildSummariserProvider: uses a CLI only when summariserProvider is explicitly cli-*
+ok 36 - buildSummariserProvider: uses a CLI only when summariserProvider is explicitly cli-*
+# Subtest: buildSummariserProvider: a CLI summariser pins the cheap tier's model, and replaces a model of another family with the family's summariser model
+ok 37 - buildSummariserProvider: a CLI summariser pins the cheap tier's model, and replaces a model of another family with the family's summariser model
+# Subtest: stripMetaFromSchema drops $id so ajv can compile it repeatedly
+ok 38 - stripMetaFromSchema drops $id so ajv can compile it repeatedly
+# Subtest: stripMetaFromSchema is cached: identical reference across calls
+ok 39 - stripMetaFromSchema is cached: identical reference across calls
+# Subtest: stripMetaFromSchema still drops the `meta` property + required entry
+ok 40 - stripMetaFromSchema still drops the `meta` property + required entry
+# Subtest: each of the five aggregate-report runtimes hands absentInputs to the aggregator
+ok 41 - each of the five aggregate-report runtimes hands absentInputs to the aggregator
+# Subtest: each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs
+ok 42 - each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs
+# Subtest: each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id
+ok 43 - each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id
+# Subtest: runtime exposes templateId = generic.aggregate.report
+ok 44 - runtime exposes templateId = generic.aggregate.report
+# Subtest: registerBuiltinRuntimes registers generic.aggregate.report
+ok 45 - registerBuiltinRuntimes registers generic.aggregate.report
+# Subtest: registerBuiltinRuntimes registers BOTH code + generic families (idempotent)
+ok 46 - registerBuiltinRuntimes registers BOTH code + generic families (idempotent)
+# Subtest: GENERIC_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 47 - GENERIC_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+# Subtest: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
+ok 48 - CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
+# Subtest: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused
+ok 49 - CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused
+1..49
+# tests 49
+# suites 0
+# pass 49
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 961.976959

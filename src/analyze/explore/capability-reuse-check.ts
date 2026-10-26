@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -124,6 +125,7 @@ export async function runCapabilityReuseCheck(
 	/** The model that judges the candidates; a test passes a stand-in. */
 	narrowProvider?: LLMProvider,
 ): Promise<CapabilityReuseCheckOutput> {
+	assertConnectionProviderAdmission(ctx.connectionExecution);
 	const prepared = await prepareCapabilityReuseCheck(exp, ctx);
 	if (prepared.kind === 'short-circuit') return prepared.shortCircuit;
 

@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -131,6 +132,7 @@ export function connectionCheckFor(
 }
 
 export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const { input, opts } = args;
 	const cfg = loadAnalyzeConfig();
@@ -147,7 +149,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>
 
 	// (2) Load classifier prompt + build messages.
 	const promptContent = loadPromptFile();
-	const provider = args.provider ?? resolveRoleProvider('analyze.classify', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.classify', cfg, undefined, args.connectionExecution);
 
 	let messages = buildInitialMessages(promptContent, bundleMd, input);
 

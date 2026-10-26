@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -79,7 +80,7 @@ export class ToolLoopDeadlineError extends Error {
  *  the caller decides what that means. Model errors propagate unchanged. */
 export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<ReadOnlyToolLoopResult> {
 	const execution = args.connectionExecution;
-	assertExplicitConnectionExecution(execution);
+	assertConnectionProviderAdmission(execution);
 	if (args.deps.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
 	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
 	const signals = [...new Set([execution?.lifetime.signal, args.signal, ...(execution ? [args.deps.signal] : [])].filter((value): value is AbortSignal => value !== undefined))];
@@ -181,7 +182,7 @@ export interface StructuredAnswerArgs {
  *  instruction, answered against `schema`. Model errors propagate unchanged. */
 export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promise<T> {
 	const execution = args.connectionExecution;
-	assertExplicitConnectionExecution(execution);
+	assertConnectionProviderAdmission(execution);
 	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
 	const signals = [...new Set([execution?.lifetime.signal, args.signal].filter((value): value is AbortSignal => value !== undefined))];
 	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];

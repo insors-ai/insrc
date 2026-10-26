@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -165,7 +166,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 	assertAnalysisConnectionExecution(execution);
 	// Provider proof is installed by t24. Unsupported execution must never reach
 	// a data-bearing message, injected provider, schema file or subprocess.
-	if (execution?.mode === 'session-memory' && execution.provider.mode !== 'verified-local' && structuredStage === undefined) throw new ConnectionExecutionError('unsupported-temporary');
+	if (structuredStage === undefined) assertConnectionProviderAdmission(execution);
 	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.input, execution); }
 	else assertSessionContinuationNow(args.input, execution);
 	assertSessionReuseNow(execution);

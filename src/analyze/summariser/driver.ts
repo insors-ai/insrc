@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -138,6 +139,7 @@ interface LlmDocSummary {
 // ---------------------------------------------------------------------------
 
 export interface SummariseDocArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly db:            DbClient;
 	readonly entity:        Entity;
 	/** Optional list of code identifiers in the workspace to help the
@@ -181,6 +183,7 @@ export interface SummariseDocResult {
  * rather than crashing the daemon.
  */
 export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDocResult> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const { db, entity } = args;
 
 	if (entity.kind !== 'document' && entity.kind !== 'section') {

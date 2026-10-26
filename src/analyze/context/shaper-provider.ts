@@ -1,3 +1,5 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -152,7 +154,9 @@ export function resolveRoleProvider(
 	role:            RoleId,
 	cfg:             AnalyzeConfig,
 	legacyFallback?: () => LLMProvider,
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const ctx = routingContextStorage.getStore();
 	if (ctx !== undefined) {
 		if (ctx.router === undefined || ctx.router === null) {
@@ -217,7 +221,9 @@ export function familyProvider(
 	family:   FamilyId,
 	model:    ResolvedModel | undefined,
 	opts:     { readonly effort?: EffortLevel | undefined; readonly cliTimeoutMs?: number | undefined } = {},
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const kind = registry.cliKind(family);
 	if (kind !== undefined) {
 		const effort = opts.effort !== undefined && model?.efforts.includes(opts.effort) === true ? opts.effort : undefined;
@@ -296,7 +302,9 @@ export function shaperModelLabel(cfg: AnalyzeConfig, overrides?: ShaperProviderO
 export function buildShaperProvider(
 	cfg:       AnalyzeConfig,
 	overrides?: ShaperProviderOverrides,
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	// Effective provider: tier runner (router) > explicit global config >
 	// per-run caller (arg or ambient client-provider context) > the default family.
 	// See resolveShaperKind and shaperSelection.
@@ -340,7 +348,8 @@ export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperP
 	return { registry, family, model, effort };
 }
 
-export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): LLMProvider {
+export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>, execution?: ConnectionExecutionContext): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const { registry, family, model, effort } = summariserSelection(cfg, overrides);
 	log.info({ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions');
 	return familyProvider(registry, family, model, { effort });

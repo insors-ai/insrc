@@ -1,3 +1,5 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -84,9 +86,9 @@ export interface RoleRouterDeps {
 /** The sc3 public surface. */
 export interface RoleRouter {
 	/** Resolve (and memoize per (role,repoPath)) the provider for a reasoning role. */
-	resolveProviderForRole(role: RoleId, cfg: AnalyzeConfig, repoPath?: string): ResolvedProvider;
+	resolveProviderForRole(role: RoleId, cfg: AnalyzeConfig, repoPath?: string, execution?: ConnectionExecutionContext): ResolvedProvider;
 	/** Resolve the background doc-summariser (follows the cheap tier, k-summariser). */
-	resolveSummariser(cfg: AnalyzeConfig): ResolvedProvider;
+	resolveSummariser(cfg: AnalyzeConfig, execution?: ConnectionExecutionContext): ResolvedProvider;
 }
 
 /** resolveRole's result plus the private tier-model signal materialize needs to
@@ -195,7 +197,8 @@ function materialize(internal: InternalResolution, cfg: AnalyzeConfig, deps: Rol
 export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 	const cache = new Map<string, ResolvedProvider>();
 	return {
-		resolveProviderForRole(role, cfg, repoPath) {
+		resolveProviderForRole(role, cfg, repoPath, execution) {
+			assertConnectionProviderAdmission(execution);
 			const key = `${role} ${repoPath ?? ''}`;
 			const hit = cache.get(key);
 			if (hit !== undefined) return hit;
@@ -203,7 +206,8 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 			cache.set(key, built);
 			return built;
 		},
-		resolveSummariser(cfg) {
+		resolveSummariser(cfg, execution) {
+			assertConnectionProviderAdmission(execution);
 			// Delegate to the summariser factory so the summariser's own provider
 			// rule (it follows the cheap tier) is wrapped, not re-implemented; stamp a resolution so
 			// summariser access is attributed like every other role.

@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -200,7 +201,9 @@ export class OllamaProvider implements LLMProvider {
     model?: string,
     host?: string,
     numCtx?: number,
+		execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
   ) {
+		assertConnectionProviderAdmission(execution);
     const d = localDefaults();
     this.model = model ?? d.coreModel;
     host = host ?? d.host;
@@ -297,6 +300,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
+		assertConnectionProviderAdmission(opts?.connectionExecution);
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
@@ -349,13 +353,17 @@ export class OllamaProvider implements LLMProvider {
     // failures; retrying is wasted latency and a noisier failure mode).
     let lastErr: unknown;
     for (let attempt = 0; attempt < MAX_TRANSIENT_RETRIES + 1; attempt++) {
+			assertConnectionProviderAdmission(opts.connectionExecution);
       try {
         // Always use streaming internally to avoid headers-timeout on slow
         // CPU inference. The non-streaming Ollama API waits for the entire
         // response before sending HTTP headers, which can exceed the timeout
         // for large-context calls on CPU-only machines.
-        return await this.completeStreaming(ollamaMessages, tools, opts);
+				const result = await this.completeStreaming(ollamaMessages, tools, opts);
+				assertConnectionProviderAdmission(opts.connectionExecution);
+				return result;
       } catch (err) {
+				assertConnectionProviderAdmission(opts.connectionExecution);
         // A cancelled call is AbortError whatever the fetch rejected with (an abort
         // with a custom reason rejects with that reason). Never retried.
         if (opts.signal?.aborted === true) throw abortError();
@@ -429,6 +437,7 @@ export class OllamaProvider implements LLMProvider {
     // maps to OpenAI-shape; whether the local model actually honors
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
+		assertConnectionProviderAdmission(opts.connectionExecution);
     const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: ollamaMessages,
@@ -460,6 +469,7 @@ export class OllamaProvider implements LLMProvider {
     let promptEvalCount: number | undefined;
     let evalCount: number | undefined;
     for await (const chunk of response) {
+			assertConnectionProviderAdmission(opts?.connectionExecution);
       if (chunk.message.content) {
         text += chunk.message.content;
         opts.onToken?.(chunk.message.content);
@@ -520,6 +530,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async embed(text: string): Promise<number[]> {
+		assertConnectionProviderAdmission();
     try {
       const result = await this.client.embed({ model: this.embeddingModel, input: text, keep_alive: this.embeddingKeepAlive });
       return result.embeddings[0] ?? [];
@@ -529,6 +540,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
     const ollamaMessages = toOllamaMessages(messages);
 
     try {
@@ -544,6 +556,7 @@ export class OllamaProvider implements LLMProvider {
       });
 
       for await (const chunk of response) {
+				assertConnectionProviderAdmission(opts?.connectionExecution);
         if (chunk.message.content) {
           yield chunk.message.content;
         }
@@ -572,6 +585,7 @@ export class OllamaProvider implements LLMProvider {
     schema:   StructuredSchema,
     opts?:    StructuredCompletionOpts,
   ): Promise<T> {
+		assertConnectionProviderAdmission(opts?.connectionExecution);
     const apiMessages = toOllamaMessages(messages);
     // plans/structured-output.md Phase C.5. Honour the caller's
     // `disableThinking: true` (Ollama specifically -- cloud providers
@@ -582,6 +596,7 @@ export class OllamaProvider implements LLMProvider {
 
     return withStructuredRetry<T>(
       async (extraSystemNote) => {
+				assertConnectionProviderAdmission(opts?.connectionExecution);
         const msgs = extraSystemNote !== undefined
           ? [...apiMessages, { role: 'user' as const, content: extraSystemNote }]
           : apiMessages;
@@ -610,6 +625,7 @@ export class OllamaProvider implements LLMProvider {
           let text = '';
           let doneReason: string | undefined;
           for await (const chunk of response) {
+						assertConnectionProviderAdmission(opts?.connectionExecution);
             const delta = chunk.message?.content ?? '';
             if (delta.length > 0) {
               text += delta;
@@ -660,6 +676,7 @@ export class OllamaProvider implements LLMProvider {
       (raw) => validateAgainstSchema<T>(schema, raw),
       // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
       opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
+			opts?.connectionExecution,
     );
   }
 
@@ -672,6 +689,7 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();
     const handle = setTimeout(() => timer.abort(), opts.deadlineMs);

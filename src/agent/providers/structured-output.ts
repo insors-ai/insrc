@@ -1,3 +1,6 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -188,7 +191,9 @@ export async function withStructuredRetry<T>(
 	call:         StructuredCall,
 	validate:     StructuredValidator<T>,
 	maxAttempts:  number,
+	execution?: ConnectionExecutionContext,
 ): Promise<T> {
+	assertConnectionProviderAdmission(execution);
 	if (maxAttempts < 1) {
 		throw new Error(`structured-output: maxAttempts must be >= 1; got ${maxAttempts}`);
 	}
@@ -202,6 +207,7 @@ export async function withStructuredRetry<T>(
 	// request the server rejected keeps its status).
 	let lastThrown: unknown;
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		assertConnectionProviderAdmission(execution);
 		const note = attempt === 1
 			? undefined
 			: buildRetryNote(lastErrors);
@@ -209,7 +215,10 @@ export async function withStructuredRetry<T>(
 		let raw: unknown;
 		try {
 			raw = await call(note);
+			assertConnectionProviderAdmission(execution);
 		} catch (err) {
+			assertConnectionProviderAdmission(execution);
+			if (err instanceof ConnectionExecutionError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.
 			if (err instanceof Error && err.name === 'AbortError') throw err;

@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -97,6 +98,7 @@ export const DOC_DECISIONS_SCHEMA: StructuredSchema = {
 // ---------------------------------------------------------------------------
 
 export interface RunDocDecisionTraceArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly topic:       string;
 	readonly repoPath:    string;
 	readonly db:          DbClient;
@@ -121,6 +123,7 @@ export interface RunDocDecisionTraceArgs {
 export async function runSharedDocDecisionTrace(
 	args: RunDocDecisionTraceArgs,
 ): Promise<DocDecisionTraceOutput> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const prepared = await prepareDocDecisionTrace({
 		topic:      args.topic,
 		repoPath:   args.repoPath,
@@ -370,6 +373,7 @@ export async function runDocDecisionTrace(
 	const params = parseExplorationParams(exp);
 	const db = await getDb();
 	return runSharedDocDecisionTrace({
+		connectionExecution: ctx.connectionExecution,
 		topic:      params.topic,
 		repoPath:   ctx.repoPath,
 		db,

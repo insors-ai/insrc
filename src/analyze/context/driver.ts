@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -483,7 +484,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
 	if (args.opts?.connectionExecution !== undefined && args.opts.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
-	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	assertConnectionProviderAdmission(execution);
 	await beginSessionReuse(execution);
 	assertSessionReuseNow(execution);
 	const cfg = loadAnalyzeConfig();
@@ -874,7 +875,7 @@ export async function runShaperToolLoop(
 ): Promise<ShaperToolLoopResult> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
-	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	assertConnectionProviderAdmission(execution);
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);

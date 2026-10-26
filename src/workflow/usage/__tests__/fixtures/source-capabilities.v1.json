@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "inspectedOn": "2026-10-26",
+  "evidenceKind": "repository-source-and-local-version-output",
+  "sources": [
+    {
+      "path": "src/agent/providers/ollama.ts",
+      "lastCommit": "7652ad702b1571f60aa1216e769ee0f61881902f",
+      "blob": "81ba5267db835e4ff74946c52faa7babe015ee64"
+    },
+    {
+      "path": "src/agent/providers/cli-provider.ts",
+      "lastCommit": "6b36ae00a5f623834cff3a4d929b873393d6cf0d",
+      "blob": "240a73ce90a48709551e7ad705da8d0a52abb9cc"
+    }
+  ],
+  "limitations": [
+    "No live native envelopes or host transcripts captured. CLI versions do not qualify native usage semantics.",
+    "Ollama source comments describe noncached prompt counts, but cache partition and reasoning inclusion remain unqualified. Only output mapping is qualified here.",
+    "All external-host envelopes below are synthetic contract cases, never native coverage evidence.",
+    "No estimates or zero backfill for absent reported metrics."
+  ],
+  "capabilities": [
+    {
+      "capabilityId": "ollama-current-wrapper",
+      "provider": "ollama",
+      "transport": "ollama-sdk",
+      "version": null,
+      "sourceRevision": "81ba5267db835e4ff74946c52faa7babe015ee64",
+      "evidenceRefs": [
+        "src/agent/providers/ollama.ts:453-495"
+      ],
+      "granularity": "model-call",
+      "physicalCallCoverage": "partial",
+      "observedModelIdentity": "requested-only",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [
+        "outputTokens"
+      ],
+      "baselineRequired": false,
+      "qualification": "source-inspected"
+    },
+    {
+      "capabilityId": "codex-current-wrapper",
+      "provider": "codex",
+      "transport": "cli",
+      "version": "0.164.0",
+      "sourceRevision": "240a73ce90a48709551e7ad705da8d0a52abb9cc",
+      "evidenceRefs": [
+        "src/agent/providers/cli-provider.ts:227-245",
+        "src/agent/providers/cli-provider.ts:563-593"
+      ],
+      "granularity": "unknown",
+      "physicalCallCoverage": "unknown",
+      "observedModelIdentity": "requested-only",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [],
+      "baselineRequired": false,
+      "qualification": "source-inspected"
+    },
+    {
+      "capabilityId": "claude-current-wrapper",
+      "provider": "claude",
+      "transport": "cli",
+      "version": "2.1.310",
+      "sourceRevision": "240a73ce90a48709551e7ad705da8d0a52abb9cc",
+      "evidenceRefs": [
+        "src/agent/providers/cli-provider.ts:227-245",
+        "src/agent/providers/cli-provider.ts:563-593"
+      ],
+      "granularity": "unknown",
+      "physicalCallCoverage": "unknown",
+      "observedModelIdentity": "requested-only",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [],
+      "baselineRequired": false,
+      "qualification": "source-inspected"
+    },
+    {
+      "capabilityId": "synthetic-external-invocation-total",
+      "provider": "synthetic-external-host",
+      "transport": "in-memory-fixture",
+      "version": "synthetic-v1",
+      "sourceRevision": null,
+      "evidenceRefs": [
+        "fixture:synthetic-only-no-native-observation"
+      ],
+      "granularity": "invocation-total",
+      "physicalCallCoverage": "unknown",
+      "observedModelIdentity": "unknown",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [],
+      "baselineRequired": false,
+      "qualification": "recorded-fixture"
+    },
+    {
+      "capabilityId": "synthetic-external-cumulative-snapshot",
+      "provider": "synthetic-external-host",
+      "transport": "in-memory-fixture",
+      "version": "synthetic-v1",
+      "sourceRevision": null,
+      "evidenceRefs": [
+        "fixture:synthetic-only-no-native-observation"
+      ],
+      "granularity": "cumulative-snapshot",
+      "physicalCallCoverage": "unknown",
+      "observedModelIdentity": "unknown",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [],
+      "baselineRequired": true,
+      "qualification": "recorded-fixture"
+    },
+    {
+      "capabilityId": "synthetic-external-model-call",
+      "provider": "synthetic-external-host",
+      "transport": "in-memory-fixture",
+      "version": "synthetic-v1",
+      "sourceRevision": null,
+      "evidenceRefs": [
+        "fixture:synthetic-only-no-native-observation"
+      ],
+      "granularity": "model-call",
+      "physicalCallCoverage": "unknown",
+      "observedModelIdentity": "unknown",
+      "inputConvention": "unknown",
+      "reasoningInOutput": "unknown",
+      "supportedCounterBuckets": [],
+      "baselineRequired": false,
+      "qualification": "recorded-fixture"
+    }
+  ],
+  "ollamaCases": [
+    {
+      "name": "final",
+      "chunk": {
+        "done": true,
+        "prompt_eval_count": 7,
+        "eval_count": 3
+      },
+      "expectedUsage": {
+        "inputTokens": 7,
+        "outputTokens": 3
+      }
+    },
+    {
+      "name": "missing-input",
+      "chunk": {
+        "done": true,
+        "eval_count": 3
+      },
+      "expectedUsage": null
+    },
+    {
+      "name": "missing-output",
+      "chunk": {
+        "done": true,
+        "prompt_eval_count": 7
+      },
+      "expectedUsage": null
+    },
+    {
+      "name": "warm-up",
+      "chunk": {
+        "done": true,
+        "done_reason": "load"
+      },
+      "expectedUsage": null
+    },
+    {
+      "name": "non-final",
+      "chunk": {
+        "done": false,
+        "prompt_eval_count": 7,
+        "eval_count": 3
+      },
+      "expectedUsage": null
+    },
+    {
+      "name": "reported-zero",
+      "chunk": {
+        "done": true,
+        "prompt_eval_count": 0,
+        "eval_count": 0
+      },
+      "expectedUsage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    }
+  ]
+}

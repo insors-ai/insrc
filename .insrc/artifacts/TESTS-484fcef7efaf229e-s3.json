@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T13:32:19.816Z",
+    "updatedAt": "2026-10-26T14:22:18.043Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2037,9 +2037,9 @@
       },
       {
         "taskId": "t30",
-        "commit": "e40c8c9f6",
-        "ranAt": "2026-10-26T13:32:19.816Z",
-        "testsPassed": false,
+        "commit": "64ae043a3",
+        "ranAt": "2026-10-26T14:22:18.043Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
@@ -2069,6 +2069,11 @@
               {
                 "file": "src/daemon/db/__tests__/session-probe.test.ts",
                 "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
                 "result": "pass"
               },
               {
@@ -2103,7 +2108,7 @@
             "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4157,
+            "durationMs": 6297,
             "titles": [
               {
                 "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
@@ -2120,7 +2125,7 @@
             "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1476,
+            "durationMs": 1352,
             "titles": [
               {
                 "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
@@ -2133,7 +2138,7 @@
             "file": "src/daemon/db/__tests__/session-owner.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 474,
+            "durationMs": 467,
             "titles": [
               {
                 "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
@@ -2186,10 +2191,14 @@
             "file": "src/daemon/db/__tests__/session-probe.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3303,
+            "durationMs": 9013,
             "titles": [
               {
                 "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
                 "result": "pass"
               }
             ],
@@ -2197,9 +2206,9 @@
           },
           {
             "file": "src/daemon/db/__tests__/session-resources.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1032,
+            "durationMs": 1634,
             "titles": [
               {
                 "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
@@ -2227,12 +2236,10 @@
               },
               {
                 "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
-                "result": "fail"
+                "result": "pass"
               }
             ],
-            "otherFailures": [
-              "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions"
-            ]
+            "otherFailures": []
           }
         ]
       }

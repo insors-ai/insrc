@@ -109,8 +109,13 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
   assert.equal(r.shown[3]!.find((x) => x.value === 'turbo')?.description, '(current)', 'the configured effort, not the default lo');
   assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, undefined);
-  r = await run({ picks: ['core', 'cli-codex', 'x-b'], raw: { models: { tiers: { core: { model: 'x-b' } } } } });
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], raw: { models: { tiers: { core: { model: 'x-b' } } } } });
   assert.equal(r.shown[2]!.find((x) => x.value === 'x-b')?.description, 'alias xb (current)');
+  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)', "no configured effort: the tier default's, which x-b takes");
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { model: 'x-a' } } } } });
+  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)', 'the default effort for a configured model');
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: { models: { tiers: { core: { model: 'x-a', effort: '' } } } } });
+  assert.equal(r.shown[3]!.find((x) => x.value === '')?.description, '(current)', "an explicit '' is kept");
   r = await run({ picks: ['core', 'cli-claude', 'c-big'], raw: { models: { tiers: { core: { runner: 'cli-claude' } } } } });
   assert.equal(r.shown[1]!.find((x) => x.value === 'cli-claude')?.description, 'cli-claude (current)');
   assert.equal(r.shown[2]!.find((x) => x.value === 'c-big')?.description, 'alias cb (current)', "the family's tier default");

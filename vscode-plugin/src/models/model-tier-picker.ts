@@ -139,7 +139,8 @@ function configuredFields(raw: Record<string, unknown>, tier: Tier): Partial<Tie
 /**
  * The tier's current value: the configured fields laid over the definitions' default for
  * the tier — the configured family (else the default family), its tier default model when
- * none is configured, and the configured effort (an explicit '' kept) else that default's.
+ * none is configured, and the configured effort (an explicit '' kept) else the tier default's
+ * effort when the model takes it — the daemon's own precedence.
  */
 function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
   const configured = configuredFields(raw, tier);
@@ -151,7 +152,8 @@ function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier:
   const fallback = familyDefault(family, tier);
   const model = configured.model ?? fallback?.model.id;
   if (model === undefined) return undefined;
-  const effort = configured.effort ?? (configured.model === undefined ? fallback?.effort ?? '' : '');
+  const defaultEffort = fallback?.effort ?? '';
+  const effort = configured.effort ?? (servedModel(family, model)?.efforts.includes(defaultEffort) === true ? defaultEffort : '');
   return { runner: family.id, model, effort };
 }
 

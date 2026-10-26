@@ -12,7 +12,7 @@
 
 | Severity | Location | Message |
 | --- | --- | --- |
-| MED | src/daemon/model-check.ts:258 | claudeUsage filters out non-object modelUsage entries before counting them. For an alias request with multiple keys, such as one canonical usage object and one null entry, it incorrectly treats the output as a single entry and publishes that canonical model's inputLimit. Count all keys before selecting an entry; ambiguous multi-entry output must omit inputLimit and log the keys. |
+| MED | src/daemon/model-check.ts:224 | The Codex parser silently discards malformed JSONL lines. An exit-0 response containing malformed output alongside a turn.completed event therefore produces runs:true and permits approval. Reject unreadable JSONL rather than treating partial parsing as successful completion. |
 
 ## conventions — 0 finding(s)
 

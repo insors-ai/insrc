@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793006955787-u3pey9",
+    "runId": "cr-1793007177563-c0s3r3",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-26T09:29:16.026Z",
+    "createdAt": "2026-10-26T09:32:57.815Z",
     "model": "codex:gpt-6.1-sol",
-    "elapsedMs": 170577,
+    "elapsedMs": 453638,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "ce99b72065d03b1b",
@@ -54,9 +54,9 @@
           {
             "dimension": "adherence",
             "severity": "MED",
-            "location": "src/daemon/model-check.ts:258",
-            "message": "claudeUsage filters out non-object modelUsage entries before counting them. For an alias request with multiple keys, such as one canonical usage object and one null entry, it incorrectly treats the output as a single entry and publishes that canonical model's inputLimit. Count all keys before selecting an entry; ambiguous multi-entry output must omit inputLimit and log the keys.",
-            "expectationRef": "LLD contractDetails.api[models.check].preconditions: use any key only when modelUsage has exactly one entry; with several entries, select the requested modelId or omit inputLimit and log the keys."
+            "location": "src/daemon/model-check.ts:224",
+            "message": "The Codex parser silently discards malformed JSONL lines. An exit-0 response containing malformed output alongside a turn.completed event therefore produces runs:true and permits approval. Reject unreadable JSONL rather than treating partial parsing as successful completion.",
+            "expectationRef": "LLD errorPaths.errorCases: CLI output cannot be parsed — a run with unreadable output must return runs:false with 'gave unreadable output'."
           }
         ]
       },

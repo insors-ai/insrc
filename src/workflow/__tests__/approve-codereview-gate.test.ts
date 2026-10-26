@@ -20,7 +20,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -30,6 +30,7 @@ import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 import { approveTarget } from './helpers/approve.js';
+import { validCodeReview } from './helpers/valid-code-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -64,7 +65,10 @@ function writeArtifact(
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'warn' | 'block' | 'corrupt'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
 	if (verdict === 'corrupt') { writeFileSync(json, '{ not valid json'); return; }
-	writeFileSync(json, JSON.stringify({ meta: {}, body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
+	// bound to the BUILD of the Story as it is now (an absent one, for a design artifact's Story, binds to nothing)
+	const buildJson = join(repo, '.insrc', 'artifacts', `BUILD-${HASH}-${storyId}.json`);
+	const build: unknown = existsSync(buildJson) ? JSON.parse(readFileSync(buildJson, 'utf8')) : {};
+	writeFileSync(json, JSON.stringify(validCodeReview(build, verdict), null, 2));
 }
 
 const isApproved = (jsonPath: string): boolean =>

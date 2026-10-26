@@ -12,7 +12,10 @@
  *   - Codex: `codex debug models` is the authority for a model's levels (a run
  *     at an unlisted level still succeeds, so a run proves nothing about it);
  *     one `codex exec` run decides whether the model runs.
- *   - Claude: added by t3.
+ *   - Claude: no CLI output shows whether a model supports a level, so a level
+ *     `claude --help` lists is only 'recognised-unconfirmed' (the user's approval
+ *     admits it); one `claude --print` run decides whether the model runs, and
+ *     its modelUsage gives the input limit.
  *
  * Every CLI call goes through one module-level chain, so at most one CLI child
  * of any check runs daemon-wide. Nothing is written: the result waits in a
@@ -201,6 +204,76 @@ async function checkCodex(ctx: Context, claimed: readonly EffortLevel[]): Promis
 	return { cliVersion, runs: true, efforts };
 }
 
+// ── the Claude procedure ────────────────────────────────────────────────────
+
+/** The --effort values `claude --help` lists, or undefined when they cannot be read. */
+function claudeEffortNames(r: ProcessGroupResult): string[] | undefined {
+	if (r.exitCode !== 0) return undefined;
+	const m = /--effort\b[^\n]*?\(([^)\n]*)\)/.exec(r.stdout);
+	const names = m?.[1]?.split(',').map(x => x.trim()).filter(x => x.length > 0) ?? [];
+	return names.length > 0 ? names : undefined;
+}
+
+/** The JSON envelope of a `claude --print --output-format json` run: the whole
+ *  stdout, else its last line that is a JSON object (a notice line may precede it). */
+function claudeEnvelope(stdout: string): Record<string, unknown> | undefined {
+	const whole = parseJson(stdout.trim());
+	if (isRecord(whole)) return whole;
+	const lines = stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).reverse();
+	for (const line of lines) { const v = parseJson(line); if (isRecord(v)) return v; }
+	return undefined;
+}
+
+/** The input limit from modelUsage: keyed by the model the CLI actually ran (its
+ *  canonical id, which can differ from the requested alias). One entry is used
+ *  whatever its key; with several, only the one keyed by the requested id. */
+function claudeInputLimit(ctx: Context, envelope: Record<string, unknown>): InputLimit | undefined {
+	const usage = envelope['modelUsage'];
+	const entries = isRecord(usage) ? Object.entries(usage).filter(([, v]) => isRecord(v)) as Array<[string, Record<string, unknown>]> : [];
+	const entry = entries.length === 1 ? entries[0]?.[1] : entries.find(([k]) => k === ctx.modelId)?.[1];
+	const max = entry?.['contextWindow'];
+	if (typeof max === 'number' && Number.isInteger(max) && max > 0) return { unit: 'tokens', max };
+	log.warn({ family: ctx.family, modelId: ctx.modelId, usageKeys: entries.map(([k]) => k) }, 'model check: no input limit in the CLI output');
+	return undefined;
+}
+
+async function checkClaude(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure> {
+	const notChecked = (why: string): EffortCheck[] => claimed.map(effort => ({ effort, verdict: 'rejected', evidence: why }));
+
+	const version = await call(ctx, ['--version']);
+	const down = unreachable(ctx, version);
+	if (down !== undefined) return { cliVersion: '', runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: down };
+	const cliVersion = version.exitCode === 0 ? version.stdout.trim() : '';
+
+	const help = await call(ctx, ['--help']);
+	const helpDown = unreachable(ctx, help);
+	if (helpDown !== undefined) return { cliVersion, runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: helpDown };
+	const names = claudeEffortNames(help);
+	const efforts: EffortCheck[] = claimed.map(effort => {
+		if (names === undefined) return { effort, verdict: 'rejected', evidence: "the CLI's --effort values could not be read" };
+		const listed = `\`claude --help\` lists --effort values: ${names.join(', ')}`;
+		return names.includes(effort)
+			? { effort, verdict: 'recognised-unconfirmed', evidence: `${listed}; no Claude CLI output shows whether ${ctx.modelId} supports ${effort}, so only your approval admits it` }
+			: { effort, verdict: 'rejected', evidence: `${listed}; ${effort} is not one of them` };
+	});
+
+	const run = await call(ctx, ['--print', '--output-format', 'json', '--model', ctx.modelId], PROBE_PROMPT);
+	const runDown = unreachable(ctx, run);
+	if (runDown !== undefined) return { cliVersion, runs: false, efforts, error: runDown };
+	const envelope = claudeEnvelope(run.stdout);
+	if (envelope?.['is_error'] === true) {
+		const result = envelope['result'];
+		const message = typeof result === 'string' && result.length > 0 ? result : `api error ${String(envelope['api_error_status'] ?? envelope['subtype'] ?? 'unknown')}`;
+		return { cliVersion, runs: false, efforts, error: `the ${ctx.kind} CLI refused the model: ${message}` };
+	}
+	const result = envelope?.['result'];
+	if (envelope === undefined || run.exitCode !== 0 || envelope['is_error'] !== false || envelope['subtype'] !== 'success' || typeof result !== 'string' || result.length === 0) {
+		return { cliVersion, runs: false, efforts, error: unreadable(ctx, run) };
+	}
+	const inputLimit = claudeInputLimit(ctx, envelope);
+	return { cliVersion, runs: true, efforts, ...(inputLimit !== undefined ? { inputLimit } : {}) };
+}
+
 // ── models.check ────────────────────────────────────────────────────────────
 
 function invalid(what: string): InvalidParams {
@@ -220,7 +293,6 @@ export async function checkModel(params: unknown, deps: ModelCheckDeps = {}): Pr
 	if (!Array.isArray(claimedRaw) || !claimedRaw.every(e => typeof e === 'string' && e.length > 0)) return invalid('claimedEfforts must be an array of non-empty strings');
 	const cliFamily = family as CliFamilyId;
 	if (registry.find(cliFamily, modelId) !== undefined) return invalid(`${modelId} is already a model or alias of ${cliFamily}`);
-	if (kind !== 'codex') return invalid(`checks through the ${kind} CLI are not available yet`);
 
 	const claimed = [...new Set(claimedRaw as string[])];
 	const ctx: Context = {
@@ -230,7 +302,7 @@ export async function checkModel(params: unknown, deps: ModelCheckDeps = {}): Pr
 		timeoutMs: deps.timeoutMs ?? DEFAULT_TIMEOUT_MS,
 		cwd:       deps.cwd ?? tmpdir(),
 	};
-	const outcome = await checkCodex(ctx, claimed);
+	const outcome = kind === 'codex' ? await checkCodex(ctx, claimed) : await checkClaude(ctx, claimed);
 	const result: ModelCheckResult = {
 		checkId: randomUUID(), family: cliFamily, modelId, runs: outcome.runs,
 		...(outcome.inputLimit !== undefined ? { inputLimit: outcome.inputLimit } : {}),

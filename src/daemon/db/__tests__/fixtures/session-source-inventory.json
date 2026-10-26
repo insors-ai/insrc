@@ -13236,11 +13236,15 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "9b979ca01be4eb4eb42c99b5654acfd25b7205aae98cf30a4d16d96b24045e8b",
-      "sourceDigest": "2afaa71454e5e9cd6e946efffee835890e235f4d0c19bd78d01b55c9249ade3b",
+      "siteCount": 6,
+      "sitesDigest": "180d2a852c745bee9114bd17bf93219db264f4223d8ab1f76e831606f9a6becd",
+      "sourceDigest": "948bb008531edda75231ca120863afa7d4501a96a4e4ce35948e852a318ea622",
       "boundaries": [
         "diagnostic",
         "serialization"

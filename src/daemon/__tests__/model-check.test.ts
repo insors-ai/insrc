@@ -59,6 +59,29 @@ process.stdin.on('end', async () => {
 });
 `;
 
+const FAKE_CLAUDE = `#!/usr/bin/env node
+const fs = require('fs');
+const cfg = JSON.parse(fs.readFileSync(process.env.FAKE_CLI_CONFIG, 'utf8'));
+const args = process.argv.slice(2);
+let stdin = '';
+process.stdin.on('data', d => { stdin += d; });
+process.stdin.on('end', () => {
+	fs.appendFileSync(cfg.log, JSON.stringify({ args, stdin, cwd: process.cwd(), start: Date.now(), end: Date.now() }) + '\\n');
+	let out = { exit: 0, stdout: '' };
+	if (args[0] === '--version') out = { exit: 0, stdout: '2.1.310 (Claude Code)\\n' };
+	else if (args[0] === '--help') out = { exit: cfg.helpExit || 0, stdout: cfg.help };
+	else if (args[0] === '--print') {
+		const m = args[args.indexOf('--model') + 1];
+		out = (cfg.run || {})[m] || cfg.runDefault;
+	}
+	process.stdout.write(out.stdout);
+	process.exitCode = out.exit;
+});
+`;
+
+const HELP = 'Usage: claude [options] [command] [prompt]\n\nOptions:\n  --model <model>   Model for the current session\n  --effort <level>  Effort level for the current session (low, medium, high, xhigh, max)\n  -h, --help        Display help\n';
+const envelope = (extra: Record<string, unknown> = {}): string => JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'OK', modelUsage: { 'claude-new-1': { contextWindow: 200000 } }, ...extra });
+
 const LIST = { models: [
 	{ slug: 'gpt-new', display_name: 'New', supported_reasoning_levels: [{ effort: 'low', description: '' }, { effort: 'medium', description: '' }, { effort: 'high', description: '' }] },
 ] };
@@ -66,6 +89,7 @@ const OK_STREAM = { exit: 0, lines: [{ type: 'thread.started' }, { type: 'item.c
 
 let dir: string;
 let bin: string;
+let claudeBin: string;
 let cwd: string;
 let logFile: string;
 let storeFile: string;
@@ -75,6 +99,9 @@ before(() => {
 	bin = join(dir, 'codex');
 	writeFileSync(bin, FAKE);
 	chmodSync(bin, 0o755);
+	claudeBin = join(dir, 'claude');
+	writeFileSync(claudeBin, FAKE_CLAUDE);
+	chmodSync(claudeBin, 0o755);
 	cwd = mkdtempSync(join(tmpdir(), 'model-check-cwd-'));
 	storeFile = join(dir, 'approved-models.json');
 	_setApprovedModelsPathForTests(storeFile);
@@ -92,15 +119,15 @@ let configN = 0;
 function fake(cfg: Record<string, unknown>): () => Array<{ args: string[]; stdin: string; cwd: string; start: number; end: number }> {
 	logFile = join(dir, `calls-${++configN}.jsonl`);
 	const file = join(dir, `config-${configN}.json`);
-	writeFileSync(file, JSON.stringify({ log: logFile, models: LIST, execDefault: OK_STREAM, ...cfg }));
+	writeFileSync(file, JSON.stringify({ log: logFile, models: LIST, execDefault: OK_STREAM, help: HELP, runDefault: { exit: 0, stdout: envelope() }, ...cfg }));
 	process.env['FAKE_CLI_CONFIG'] = file;
 	return () => (existsSync(logFile) ? readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)) : []);
 }
 
-const deps = (extra: Partial<ModelCheckDeps> = {}): ModelCheckDeps => ({ registry, bins: { codex: bin }, cwd, timeoutMs: 20_000, ...extra });
+const deps = (extra: Partial<ModelCheckDeps> = {}): ModelCheckDeps => ({ registry, bins: { codex: bin, claude: claudeBin }, cwd, timeoutMs: 20_000, ...extra });
 
-async function check(modelId: string, claimedEfforts: unknown, extra: Partial<ModelCheckDeps> = {}): Promise<ModelCheckResult> {
-	const r = await checkModel({ family: 'cli-codex', modelId, claimedEfforts }, deps(extra));
+async function check(modelId: string, claimedEfforts: unknown, extra: Partial<ModelCheckDeps> = {}, family = 'cli-codex'): Promise<ModelCheckResult> {
+	const r = await checkModel({ family, modelId, claimedEfforts }, deps(extra));
 	assert.ok('checkId' in r, JSON.stringify(r));
 	return r;
 }
@@ -239,4 +266,86 @@ test('model-check.test.ts: ModelCheckResult carries exactly the sc4 fields', asy
 	assert.equal(typeof results[1]!.error, 'string');
 	// models.check writes nothing: the approved-model store does not exist.
 	assert.equal(existsSync(storeFile), false);
+});
+
+const claude = (modelId: string, claimedEfforts: unknown, extra: Partial<ModelCheckDeps> = {}): Promise<ModelCheckResult> => check(modelId, claimedEfforts, extra, 'cli-claude');
+
+test('model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases', async () => {
+	const calls = fake({});
+	const r = await claude('claude-new-1', ['xhigh', 'ultra', 'low']);
+	assert.equal(r.runs, true);
+	assert.equal(r.error, undefined);
+	assert.deepEqual(r.inputLimit, { unit: 'tokens', max: 200000 });
+	assert.deepEqual(r.efforts.map(e => [e.effort, e.verdict]), [['xhigh', 'recognised-unconfirmed'], ['ultra', 'rejected'], ['low', 'recognised-unconfirmed']]);
+	assert.ok(!r.efforts.some(e => e.verdict === 'accepted'), 'no Claude effort is ever accepted');
+	assert.equal(r.efforts[0]!.evidence, '`claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether claude-new-1 supports xhigh, so only your approval admits it');
+	assert.equal(r.efforts[1]!.evidence, '`claude --help` lists --effort values: low, medium, high, xhigh, max; ultra is not one of them');
+	assert.deepEqual(calls().map(c => c.args[0]), ['--version', '--help', '--print']);
+
+	// An alias is answered under the canonical id: the single entry is used whatever its key.
+	fake({ run: { haiku: { exit: 0, stdout: envelope({ modelUsage: { 'claude-haiku-5-5': { contextWindow: 1000000 } } }) } } });
+	assert.deepEqual((await claude('haiku', [])).inputLimit, { unit: 'tokens', max: 1000000 });
+
+	// Several entries: only the one keyed by the requested id counts.
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ modelUsage: { 'claude-new-1': { contextWindow: 300000 }, 'claude-helper': { contextWindow: 100000 } } }) } } });
+	assert.deepEqual((await claude('claude-new-1', [])).inputLimit, { unit: 'tokens', max: 300000 });
+	fake({ run: { haiku: { exit: 0, stdout: envelope({ modelUsage: { 'claude-haiku-5-5': { contextWindow: 1000000 }, 'claude-helper': { contextWindow: 100000 } } }) } } });
+	const ambiguous = await claude('haiku', []);
+	assert.equal(ambiguous.runs, true);
+	assert.equal(ambiguous.inputLimit, undefined);
+
+	for (const modelUsage of [undefined, {}, { 'claude-new-1': {} }, { 'claude-new-1': { contextWindow: 0 } }]) {
+		fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ modelUsage }) } } });
+		const r2 = await claude('claude-new-1', []);
+		assert.equal(r2.runs, true, JSON.stringify(modelUsage));
+		assert.equal(r2.inputLimit, undefined, JSON.stringify(modelUsage));
+	}
+
+	// A notice line before the envelope does not hide it.
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: `[claude-code:notice] something\n${envelope()}\n` } } });
+	assert.equal((await claude('claude-new-1', [])).runs, true);
+});
+
+test("model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'", async () => {
+	const calls = fake({});
+	await claude('claude-new-1', []);
+	const run = calls().find(c => c.args[0] === '--print')!;
+	assert.deepEqual(run.args, ['--print', '--output-format', 'json', '--model', 'claude-new-1']);
+	assert.equal(run.stdin, PROBE_PROMPT);
+	for (const c of calls()) assert.equal(realpathSync(c.cwd), realpathSync(cwd));
+
+	fake({ run: { 'claude-gone': { exit: 1, stdout: `[claude-code:unrecognized_model]\n${JSON.stringify({ type: 'result', subtype: 'success', is_error: true, api_error_status: 404, result: 'There is an issue with the selected model (claude-gone).' })}\n` } } });
+	const refused = await claude('claude-gone', ['high']);
+	assert.equal(refused.runs, false);
+	assert.equal(refused.error, 'the claude CLI refused the model: There is an issue with the selected model (claude-gone).');
+	assert.equal(refused.efforts[0]?.verdict, 'recognised-unconfirmed', 'effort verdicts are still reported');
+
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ subtype: 'error_max_turns' }) } } });
+	const maxTurns = await claude('claude-new-1', []);
+	assert.equal(maxTurns.runs, false);
+	assert.match(maxTurns.error ?? '', /^the claude CLI gave unreadable output: exit 0: /);
+
+	fake({ run: { 'claude-new-1': { exit: 1, stdout: envelope() } } });
+	const exit1 = await claude('claude-new-1', []);
+	assert.equal(exit1.runs, false);
+	assert.match(exit1.error ?? '', /^the claude CLI gave unreadable output: exit 1: /);
+
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ result: '' }) } } });
+	assert.match((await claude('claude-new-1', [])).error ?? '', /gave unreadable output/, 'an empty result is not a completed run');
+
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: 'not json' } } });
+	assert.match((await claude('claude-new-1', [])).error ?? '', /gave unreadable output: exit 0: not json/);
+
+	fake({});
+	const missing = await claude('claude-new-1', ['high'], { bins: { claude: join(dir, 'no-such-claude') } });
+	assert.match(missing.error ?? '', /^the claude CLI could not be reached: .*ENOENT/);
+});
+
+test('model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected', async () => {
+	for (const cfg of [{ help: 'Usage: claude [options]\n  --model <model>\n' }, { help: HELP, helpExit: 1 }, { help: '' }]) {
+		fake(cfg);
+		const r = await claude('claude-new-1', ['high', 'max']);
+		assert.equal(r.runs, true, JSON.stringify(cfg));
+		assert.deepEqual(r.efforts.map(e => [e.verdict, e.evidence]), [['rejected', "the CLI's --effort values could not be read"], ['rejected', "the CLI's --effort values could not be read"]]);
+	}
 });

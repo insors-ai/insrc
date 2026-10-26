@@ -9,11 +9,10 @@
  */
 
 import { onUtf8Data } from '../../../../shared/utf8-stream.js';
-import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runShell } from '../../shell-helper.js';
+import { runShell, spawnManaged } from '../../shell-helper.js';
 import { registerTool } from '../../registry.js';
 import type {
   Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
@@ -438,15 +437,29 @@ export const testWatchTool: Tool = {
     let outBuf = '';
     let errBuf = '';
 
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, {
-        cwd, env, stdio: ['ignore', 'pipe', 'pipe'], shell: false,
-      });
-      let timedOut = false;
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGTERM');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const ok = code === 0 || (timedOut && code === null);
+      const data: TestWatchData = { framework, exitCode: code, durationMs, timedOut, stdoutBytes, stderrBytes };
+      return {
+        output: [
+          `Watch ended${timedOut ? ' (runtime cap hit)' : ''} after ${durationMs} ms.`,
+          `Streamed: ${stdoutBytes} B stdout, ${stderrBytes} B stderr (${framework}).`,
+        ].join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
+        data,
+      };
+    };
 
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted watch gives.
+    const m = spawnManaged(cmd!, args, { cwd, env, timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
       const flushOut = () => {
         if (outBuf) { deps.send({ id: deps.requestId, stream: 'progress', data: { message: outBuf } }); outBuf = ''; }
       };
@@ -454,40 +467,24 @@ export const testWatchTool: Tool = {
         if (errBuf) { deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + errBuf } }); errBuf = ''; }
       };
 
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         stdoutBytes += chunkBytes;
         outBuf += decodedChunk;
         if (outBuf.length >= LINE_FLUSH_CHARS || outBuf.includes('\n')) { flushOut(); }
       });
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => {
         stderrBytes += chunkBytes;
         errBuf += decodedChunk;
         if (errBuf.length >= LINE_FLUSH_CHARS || errBuf.includes('\n')) { flushErr(); }
       });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         flushOut(); flushErr();
         resolve(fail('test_watch', `spawn failed: ${err.message}`));
       });
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
+      void m.settled.then(exit => {
         flushOut(); flushErr();
-        const durationMs = Date.now() - started;
-        const ok = code === 0 || (timedOut && code === null);
-        const data: TestWatchData = { framework, exitCode: code, durationMs, timedOut, stdoutBytes, stderrBytes };
-        resolve({
-          output: [
-            `Watch ended${timedOut ? ' (runtime cap hit)' : ''} after ${durationMs} ms.`,
-            `Streamed: ${stdoutBytes} B stdout, ${stderrBytes} B stderr (${framework}).`,
-          ].join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
-          data,
-        });
+        resolve(ended(exit.code, exit.timedOut));
       });
     });
   },

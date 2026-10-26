@@ -7,8 +7,7 @@
  */
 
 import { onUtf8Data } from '../../../../../shared/utf8-stream.js';
-import { spawn } from 'node:child_process';
-import { runShell } from '../../../shell-helper.js';
+import { runShell, spawnManaged } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../../types.js';
 import { AWS_SCHEMA, awsAccess, awsArgv, awsFlags, awsScope, bool, num, str, tryParseJson } from './helpers.js';
 
@@ -99,52 +98,52 @@ export const awsLogsTailTool: Tool = {
     const started = Date.now();
     let buf = '';
     let bytes = 0;
+    let stderrCapture = '';
+
+    const flush = () => {
+      if (buf) {
+        deps.send({ id: deps.requestId, stream: 'progress', data: { message: buf } });
+        buf = '';
+      }
+    };
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const ok = code === 0 || (timedOut && code === null);
+      const data: AwsLogsTailData = { logGroup, follow: true, exitCode: code, bytes, durationMs, timedOut };
+      return {
+        output: [
+          `Log follow ended${timedOut ? ' (runtime cap)' : ''} after ${durationMs} ms.`,
+          `Streamed ${bytes} B from \`${logGroup}\`.`,
+          stderrCapture ? '\n**stderr tail**\n```\n' + stderrCapture.slice(-1000).replace(/\n+$/, '') + '\n```' : '',
+        ].filter(Boolean).join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: `exit ${code}` }),
+        data,
+      };
+    };
+
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted follow gives.
+    const m = spawnManaged(cmd!, args, { timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
 
     return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGTERM');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
-
-      const flush = () => {
-        if (buf) {
-          deps.send({ id: deps.requestId, stream: 'progress', data: { message: buf } });
-          buf = '';
-        }
-      };
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         bytes += chunkBytes;
         buf += decodedChunk;
         if (buf.length >= 512 || buf.includes('\n')) { flush(); }
       });
-      let stderrCapture = '';
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderrCapture += decodedChunk; });
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => { stderrCapture += decodedChunk; });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         flush();
         resolve(fail('cloud_aws_logs_tail', `spawn failed: ${err.message}`));
       });
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
+      void m.settled.then(exit => {
         flush();
-        const durationMs = Date.now() - started;
-        const ok = code === 0 || (timedOut && code === null);
-        const data: AwsLogsTailData = { logGroup, follow: true, exitCode: code, bytes, durationMs, timedOut };
-        resolve({
-          output: [
-            `Log follow ended${timedOut ? ' (runtime cap)' : ''} after ${durationMs} ms.`,
-            `Streamed ${bytes} B from \`${logGroup}\`.`,
-            stderrCapture ? '\n**stderr tail**\n```\n' + stderrCapture.slice(-1000).replace(/\n+$/, '') + '\n```' : '',
-          ].filter(Boolean).join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: `exit ${code}` }),
-          data,
-        });
+        resolve(ended(exit.code, exit.timedOut));
       });
     });
   },

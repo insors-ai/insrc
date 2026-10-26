@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T17:15:41.397Z",
+    "updatedAt": "2026-10-26T18:16:56.853Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2684,6 +2684,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t34",
+        "commit": "ac7576986",
+        "ranAt": "2026-10-26T18:16:56.853Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-report.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates"
       }
     ]
   }

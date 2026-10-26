@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 123 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 123 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -704,3 +704,13 @@ Run at 2026-10-26T17:15:41.397Z on commit `51b3bdb11`. Tests check: **passed**. 
 | `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 9.1 s |  |
 | `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 3 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.4 s |  |
+
+## t34
+
+Run at 2026-10-26T18:16:56.853Z on commit `ac7576986`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates
+
+**smoke: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-report.json

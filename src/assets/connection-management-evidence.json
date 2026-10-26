@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "boundary": "S003 t34, full sweeps completed; focused repairs after follow-up snapshot",
+  "boundary": "S003 t34 recorded full-sweep evidence; release remains disabled",
   "releaseReady": false,
   "inventory": {
     "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
@@ -1121,7 +1121,7 @@
       ]
     },
     "CM-S3-SWEEP": {
-      "status": "failed-follow-up-sweep",
+      "status": "full-sweep-recorded",
       "records": [
         {
           "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-report.json",

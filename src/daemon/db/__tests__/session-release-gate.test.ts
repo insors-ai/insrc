@@ -113,7 +113,7 @@ test('CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recor
 	for (const client of ['vscode', 'jetbrains']) { assert.equal(report.externalPrerequisites.S005.clients[client].status, 'pending'); assert.deepEqual(report.externalPrerequisites.S005.clients[client].evidence, []); }
 	assert.deepEqual(report.externalPrerequisites.S005.requiredPreAddCopy, { retain: ['panel-close', 'root-switch'], expire: ['workbench-end', 'lease-loss', 'daemon-restart'] });
 	for (const label of ['INVENTORY', 'AUTH', 'RECONNECT', 'STREAM', 'MEMORY', 'REPLAY', 'COLLISION', 'NAMESPACE', 'LEASE', 'ISOLATION', 'DRIVER-LOGS', 'FILES', 'COMPAT', 'MCP', 'CLIENT-EGRESS', 'CONTEXT', 'SCOPE', 'FREEFORM', 'CACHE', 'RECURSION', 'PROVIDER', 'CONSUMER-LOGS', 'EMBED-DENY', 'ADHERENCE-CACHE', 'EXPIRY', 'GATE']) assert.ok(report.proofs['CM-S3-' + label].records.length > 0, label);
-	assert.equal(report.proofs['CM-S3-SWEEP'].status, 'failed-follow-up-sweep');
+	assert.equal(report.proofs['CM-S3-SWEEP'].status, 'full-sweep-recorded');
 	const historical = JSON.parse(await readFile(new URL('docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task33-release-evidence.json', root), 'utf8'));
 	assert.equal(historical.proofs['CM-S3-SWEEP'].status, 'pending-t34');
 	for (const tree of ['src', 'out']) {

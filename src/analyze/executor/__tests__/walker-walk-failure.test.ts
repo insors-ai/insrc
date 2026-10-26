@@ -1,3 +1,4 @@
+import '../../orchestrator/__tests__/private-paths.js';
 /**
  * A failure outside a task's runtime fails that task, not the walk
  * (Story s7, task t11).

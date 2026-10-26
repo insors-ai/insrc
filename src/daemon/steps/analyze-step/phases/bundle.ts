@@ -1,3 +1,6 @@
+import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
+import { assertAnalysisAudience } from '../../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -59,11 +62,16 @@ const log = getLogger('mcp:analyze-step:bundle');
 
 export async function handleBundle(
 	input: StepInputBundle,
+	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputDone | StepOutputError> {
+	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = await decodeState(input.state);
+		state = await decodeState(input.state, execution);
+		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_bundle');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -129,7 +137,7 @@ export async function handleBundle(
 
 	// Run completed -- drop the state entry so a busy MCP subprocess
 	// doesn't accumulate finished-run payloads.
-	await releaseState(input.state);
+	await releaseState(input.state, execution);
 
 	return {
 		next:     'done',

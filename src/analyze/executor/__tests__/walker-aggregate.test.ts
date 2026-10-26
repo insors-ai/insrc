@@ -1,3 +1,4 @@
+import '../../orchestrator/__tests__/private-paths.js';
 /**
  * The aggregate-report task runs on the inputs that exist (Story s7, task t10).
  *

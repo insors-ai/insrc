@@ -302,6 +302,24 @@ function retiredRolePlaces(config: Record<string, unknown>, id: string): Array<{
 	return places;
 }
 
+/** How a removed per-repo tier is reported in `pruned`. */
+function repoTiersLabel(repo: string, tier?: string): string {
+	return `models.byRepo["${repo}"].tiers${tier !== undefined ? `.${tier}` : ''}`;
+}
+
+const REPO_TIER_LABEL = /^models\.byRepo\["(.*)"\]\.tiers(?:\.(.+))?$/;
+
+/** The per-repo tiers a reconcile removed, read back from its `pruned` list
+ *  (`tier` is undefined when the repo's tiers held no tier). */
+export function prunedRepoTiers(pruned: readonly string[]): Array<{ repo: string; tier: string | undefined }> {
+	const out: Array<{ repo: string; tier: string | undefined }> = [];
+	for (const label of pruned) {
+		const m = REPO_TIER_LABEL.exec(label);
+		if (m !== null) out.push({ repo: m[1]!, tier: m[2] });
+	}
+	return out;
+}
+
 // ---------------------------------------------------------------------------
 // Public entry point
 // ---------------------------------------------------------------------------
@@ -318,7 +336,9 @@ function retiredRolePlaces(config: Record<string, unknown>, id: string): Array<{
  * on the retired list". Idempotent: a second pass reports changed === false.
  *
  * The prune also strips the stored tier of each retired role id (see
- * RETIRED_ROLE_IDS), under `models.tasks` and per repo.
+ * RETIRED_ROLE_IDS), under `models.tasks` and per repo, and every per-repo
+ * `models.byRepo[repo].tiers` (reported per repo and tier; tasks and coreFloor
+ * are kept).
  *
  * @throws ConfigCatalogError if a retired role id is still in the role taxonomy,
  *         if a catalog row has an out-of-domain type or a
@@ -407,6 +427,22 @@ export function reconcileConfig(
 				deleteAt(config, owned, place.keys);
 				pruned.push(place.label);
 			}
+		}
+	}
+
+	// Per-repo tiers: a repo picks a tier for a role (tasks, coreFloor) but the
+	// model behind a tier is set on the global tiers only (Epic ce99b72065d03b1b
+	// s3). Each removed tier is reported as pruned.
+	const byRepo = readAt(config, ['models', 'byRepo']);
+	if (isPlainObject(byRepo)) {
+		for (const repo of Object.keys(byRepo)) {
+			const keys = ['models', 'byRepo', repo, 'tiers'];
+			if (!hasPath(config, keys)) continue;
+			const tiers = readAt(config, keys);
+			const names = isPlainObject(tiers) ? Object.keys(tiers) : [];
+			deleteAt(config, owned, keys);
+			if (names.length === 0) pruned.push(repoTiersLabel(repo));
+			for (const tier of names) pruned.push(repoTiersLabel(repo, tier));
 		}
 	}
 

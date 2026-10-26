@@ -767,6 +767,8 @@ export type Driver = RdbmsDriver | KvDriver | FileDriver;
  */
 /** Daemon construction authority. Never accepted as a renderer connection option. */
 export interface DriverFactoryContext {
+	/** Daemon-minted resource authority; serialized lookalikes are rejected. */
+	readonly runtimeLogPolicy?: 'temporary-quiet' | undefined;
 	readonly fileExecutionPolicy?: FileExecutionPolicy | undefined;
 }
 export type DriverFactory = (config: ConnectionConfig, context?: DriverFactoryContext | undefined) => Promise<Driver>;

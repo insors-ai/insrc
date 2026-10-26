@@ -1,3 +1,5 @@
+import { assertAnalysisAudience } from '../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -34,7 +36,8 @@ export function prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] 
 	readonly executed: ExecutedPlan;
 	/** The measure of the request, taken from what the lookups returned; it goes into the report of a failed turn. */
 	readonly measure?: RequestMeasure | undefined;
-}): AnswerTurn {
+}, execution?: ConnectionExecutionContext): AnswerTurn {
+	assertAnalysisAudience(execution);
 	const { measure, ...prepare } = args;
 	try {
 		return { ok: true, prepared: prepareSynthesize(prepare) };

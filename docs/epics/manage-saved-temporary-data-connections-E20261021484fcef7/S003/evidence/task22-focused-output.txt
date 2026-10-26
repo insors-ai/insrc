@@ -1,0 +1,157 @@
+Focused TAP results (runtime logging omitted):
+TAP version 13
+# Subtest: planDirFor: root plan -> ~/.insrc/analyze/<runId>
+ok 1 - planDirFor: root plan -> ~/.insrc/analyze/<runId>
+# Subtest: planDirFor: child plan for t02 -> tasks/t02
+ok 2 - planDirFor: child plan for t02 -> tasks/t02
+# Subtest: planDirFor: nested child plan for t02.t05 -> tasks/t02/tasks/t02.t05
+ok 3 - planDirFor: nested child plan for t02.t05 -> tasks/t02/tasks/t02.t05
+# Subtest: planDirFor: deeply nested t02.t05.t01 -> three nested tasks/ dirs
+ok 4 - planDirFor: deeply nested t02.t05.t01 -> three nested tasks/ dirs
+# Subtest: planFinalPathFor: root -> plan.json under run dir
+ok 5 - planFinalPathFor: root -> plan.json under run dir
+# Subtest: planAttemptPathFor + planFeedbackPathFor: zero-padded N-digit naming
+ok 6 - planAttemptPathFor + planFeedbackPathFor: zero-padded N-digit naming
+# Subtest: planAttemptPathFor: 10 doesn't zero-pad
+ok 7 - planAttemptPathFor: 10 doesn't zero-pad
+# Subtest: readPlanFinal: miss returns null
+ok 8 - readPlanFinal: miss returns null
+# Subtest: writePlanFinal then readPlanFinal round-trips an identical plan
+ok 9 - writePlanFinal then readPlanFinal round-trips an identical plan
+# Subtest: writePlanFinal overwrites a prior final (resume case)
+ok 10 - writePlanFinal overwrites a prior final (resume case)
+# Subtest: writeAttempt + writeFeedback land at zero-padded paths
+ok 11 - writeAttempt + writeFeedback land at zero-padded paths
+# Subtest: multiple attempts persist independently (no overwriting between attempts)
+ok 12 - multiple attempts persist independently (no overwriting between attempts)
+# Subtest: child plan persists under tasks/<parentTaskPath>/
+ok 13 - child plan persists under tasks/<parentTaskPath>/
+# Subtest: nested child plan (t02.t05) lands at the right depth
+ok 14 - nested child plan (t02.t05) lands at the right depth
+# Subtest: writePlanFinal leaves no .tmp- file behind
+ok 15 - writePlanFinal leaves no .tmp- file behind
+# Subtest: purgePlan removes plan.json + plan.attempts/ for the given slot
+ok 16 - purgePlan removes plan.json + plan.attempts/ for the given slot
+# Subtest: purgePlan: child plan purge does NOT affect root plan
+ok 17 - purgePlan: child plan purge does NOT affect root plan
+# Subtest: renderCatalog: empty catalog renders the no-templates marker
+ok 18 - renderCatalog: empty catalog renders the no-templates marker
+# Subtest: renderCatalog: single template renders id + target + family + description + produces
+ok 19 - renderCatalog: single template renders id + target + family + description + produces
+# Subtest: renderCatalog: aggregator template flags itself with INV-12 hint
+ok 20 - renderCatalog: aggregator template flags itself with INV-12 hint
+# Subtest: renderCatalog: catalog order is preserved
+ok 21 - renderCatalog: catalog order is preserved
+# Subtest: renderDepthPolicy: M scope reports 20-40 band
+ok 22 - renderDepthPolicy: M scope reports 20-40 band
+# Subtest: renderDepthPolicy: focused intent halves the lower bound only
+ok 23 - renderDepthPolicy: focused intent halves the lower bound only
+# Subtest: renderDepthPolicy: XS depth hint mentions detailed per-unit
+ok 24 - renderDepthPolicy: XS depth hint mentions detailed per-unit
+# Subtest: renderDepthPolicy: XL depth hint mentions structural breadth + child plans
+ok 25 - renderDepthPolicy: XL depth hint mentions structural breadth + child plans
+# Subtest: classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError
+ok 26 - classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError
+# Subtest: classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError
+ok 27 - classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError
+# Subtest: classifyError("Model not found") -> PlanBuilderLlmUnavailableError
+ok 28 - classifyError("Model not found") -> PlanBuilderLlmUnavailableError
+# Subtest: classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable
+ok 29 - classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable
+# Subtest: classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable
+ok 30 - classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable
+# Subtest: PlanBuilderLlmUnavailableError carries cause in message
+ok 31 - PlanBuilderLlmUnavailableError carries cause in message
+# Subtest: PlanBuilderSchemaUnrecoverable carries error list in message
+ok 32 - PlanBuilderSchemaUnrecoverable carries error list in message
+# Subtest: PlanBuilderPromptMissingError carries the absolute path
+ok 33 - PlanBuilderPromptMissingError carries the absolute path
+# Subtest: PlanBuilderExhausted carries attempts + failures + lastFailure
+ok 34 - PlanBuilderExhausted carries attempts + failures + lastFailure
+# Subtest: buildInitialMessages: emits 2 messages (system, user) with all the required sections
+ok 35 - buildInitialMessages: emits 2 messages (system, user) with all the required sections
+# Subtest: buildInitialMessages: child-plan parentTaskPath emits the warning note
+ok 36 - buildInitialMessages: child-plan parentTaskPath emits the warning note
+# Subtest: appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block
+ok 37 - appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block
+# Subtest: MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance
+ok 38 - MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance
+# Subtest: runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap
+ok 39 - runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap
+# Subtest: runPlanner: rootScope overrides intent.scope for the depth cap
+ok 40 - runPlanner: rootScope overrides intent.scope for the depth cap
+# Subtest: runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected
+ok 41 - runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected
+# Subtest: runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)
+ok 42 - runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)
+# Subtest: appendCorrectionTurn with failure.target renders the pointer
+ok 43 - appendCorrectionTurn with failure.target renders the pointer
+# Subtest: appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats
+ok 44 - appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats
+# Subtest: appendCorrectionTurn: no escalation banner when previous failure was a different invariant
+ok 45 - appendCorrectionTurn: no escalation banner when previous failure was a different invariant
+# Subtest: appendCorrectionTurn: no escalation banner when same invariant hits a different task
+ok 46 - appendCorrectionTurn: no escalation banner when same invariant hits a different task
+# Subtest: extractChildIntent: well-formed childIntent -> returns it
+ok 47 - extractChildIntent: well-formed childIntent -> returns it
+# Subtest: extractChildIntent: missing childIntent -> null
+ok 48 - extractChildIntent: missing childIntent -> null
+# Subtest: extractChildIntent: malformed childIntent (missing required field) -> null
+ok 49 - extractChildIntent: malformed childIntent (missing required field) -> null
+# Subtest: buildParentTaskPath: root parent (undefined) -> taskId verbatim
+ok 50 - buildParentTaskPath: root parent (undefined) -> taskId verbatim
+# Subtest: buildParentTaskPath: empty parent string -> taskId verbatim
+ok 51 - buildParentTaskPath: empty parent string -> taskId verbatim
+# Subtest: buildParentTaskPath: nested -> parent.taskId
+ok 52 - buildParentTaskPath: nested -> parent.taskId
+# Subtest: countNodes / countPlannerTasks / maxDepth on a single-node tree
+ok 53 - countNodes / countPlannerTasks / maxDepth on a single-node tree
+# Subtest: countNodes / countPlannerTasks / maxDepth on a 3-level tree
+ok 54 - countNodes / countPlannerTasks / maxDepth on a 3-level tree
+# Subtest: runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes
+ok 55 - runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes
+# Subtest: runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError
+ok 56 - runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError
+# Subtest: runRecursivePlanner: child plans inherit rootScope for the depth cap
+ok 57 - runRecursivePlanner: child plans inherit rootScope for the depth cap
+# Subtest: a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)
+ok 58 - a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)
+# Subtest: the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+ok 59 - the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+# Subtest: CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO
+ok 60 - CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO
+# Subtest: CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+ok 61 - CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+1..61
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3089.178667
+
+Inventory checks:
+TAP version 13
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 1 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  ---
+  duration_ms: 12008.026625
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 2 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+  ---
+  duration_ms: 459.807167
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13196.8245

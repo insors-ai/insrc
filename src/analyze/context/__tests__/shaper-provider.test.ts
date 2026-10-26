@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { AnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider, isOllamaModelId, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
+import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
 
 function makeCfg(overrides: Partial<AnalyzeConfig>): AnalyzeConfig {
 	return {
@@ -63,11 +63,6 @@ test('shaperProvider=cli-codex returns a CliProvider', () => {
 // class of bug — a mis-set `shaperProvider: cli-claude` + Ollama `shaperModel`).
 // ---------------------------------------------------------------------------
 
-test('isOllamaModelId is true for `:`-tagged ids, false for CLI model ids', () => {
-	for (const id of ['qwen3.6:35b-a3b', 'qwen3-embedding:0.6b', 'llama3:8b']) assert.equal(isOllamaModelId(id), true, id);
-	for (const id of ['opus', 'sonnet', 'claude-haiku-4-5', 'claude-opus-4-8', '']) assert.equal(isOllamaModelId(id), false, id);
-});
-
 test('cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)', () => {
 	// makeCfg's default shaperModel is the Ollama id `qwen3.6:35b-a3b`.
 	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }));
@@ -75,16 +70,18 @@ test('cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CL
 	assert.equal(p.defaultModel, undefined);   // dropped, not forwarded to the CLI
 });
 
-test('cli-claude + a real claude shaperModel → forwarded verbatim', () => {
-	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude', shaperModel: 'claude-haiku-4-5', shaperModelExplicit: true }));
+test('cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded', () => {
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude', shaperModel: 'claude-haiku-5-5', shaperModelExplicit: true }));
 	assert.ok(p instanceof CliProvider);
-	assert.equal(p.defaultModel, 'claude-haiku-4-5');
+	assert.equal(p.defaultModel, 'claude-haiku-5-5');
+	const unlisted = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude', shaperModel: 'claude-haiku-4-5', shaperModelExplicit: true }));
+	assert.equal((unlisted as CliProvider).defaultModel, undefined);
 });
 
-test('cli-claude + a role-tier claude model → forwarded (role model wins)', () => {
+test('cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)', () => {
 	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }), { roleModel: 'opus' });
 	assert.ok(p instanceof CliProvider);
-	assert.equal(p.defaultModel, 'opus');
+	assert.equal(p.defaultModel, 'claude-opus-5-5');
 });
 
 test('cli-claude + a role-tier model that is Ollama-shaped → also dropped', () => {
@@ -147,51 +144,33 @@ test('ambient runWithClientProviderContext supplies the default', async () => {
 	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
 	const p = await runWithClientProviderContext('cli-codex', async () => buildShaperProvider(cfg));
 	assert.ok(p instanceof CliProvider);
-	// outside the context, the config default (ollama) applies again
-	assert.ok(buildShaperProvider(cfg) instanceof OllamaProvider);
+	// outside the context, the definitions' default family (a CLI) is the floor
+	assert.equal((buildShaperProvider(cfg) as CliProvider).defaultModel, undefined, 'the Ollama core model is not forwarded to the default CLI');
+	assert.ok(buildShaperProvider(cfg) instanceof CliProvider);
 });
 
 // ---------------------------------------------------------------------------
-// Resolution chain: per-repo override > global config > per-run caller > ollama
+// Resolution chain: global config > per-run caller > ollama
 // ---------------------------------------------------------------------------
-
-test('resolveShaperKind: per-repo override wins over everything below it', () => {
-	assert.equal(
-		resolveShaperKind({ repoOverride: 'cli-codex', globalExplicit: 'cli-claude', clientDefault: 'cli-claude' }),
-		'cli-codex',
-	);
-});
 
 test('resolveShaperKind: explicit global wins over the per-run caller', () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: 'ollama', clientDefault: 'cli-claude' }),
+		resolveShaperKind({ globalExplicit: 'ollama', clientDefault: 'cli-claude' }),
 		'ollama',
 	);
 });
 
-test('resolveShaperKind: per-run caller used when repo + global are unset', () => {
+test('resolveShaperKind: per-run caller used when the global is unset', () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: 'cli-codex' }),
+		resolveShaperKind({ globalExplicit: undefined, clientDefault: 'cli-codex' }),
 		'cli-codex',
 	);
 });
 
-test('resolveShaperKind: ollama when all signals are unset', () => {
+test("resolveShaperKind: the definitions' default family when all signals are unset", () => {
 	assert.equal(
-		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: undefined }),
-		'ollama',
+		resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined }),
+		'cli-claude',
 	);
-});
-
-test('repoOverride beats an explicit global config in buildShaperProvider', () => {
-	// Global pins ollama, but the repo pins cli-claude → CliProvider.
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: true });
-	assert.ok(buildShaperProvider(cfg, { repoOverride: 'cli-claude' }) instanceof CliProvider);
-});
-
-test('repoOverride beats the clientDefault in buildShaperProvider', () => {
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
-	// repo pins ollama; a Claude Code invocation must still resolve to Ollama.
-	assert.ok(buildShaperProvider(cfg, { repoOverride: 'ollama', clientDefault: 'cli-claude' }) instanceof OllamaProvider);
 });
 

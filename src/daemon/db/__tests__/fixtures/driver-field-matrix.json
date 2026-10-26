@@ -2353,32 +2353,32 @@
   ],
   "sourceDigests": {
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
-    "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
-    "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
+    "src/daemon/db/drivers/cassandra.ts": "1080f50ff90ef930c9e34460396f538fd1bddcdfbc1bae04f84dedb9b4bfc7bd",
+    "src/daemon/db/drivers/clickhouse.ts": "5e9c6d9071fb1635b2ae29db30171f24fe0de5f75ea6d1e9f9f9ff5bc09253ab",
     "src/daemon/db/drivers/converters/avro.ts": "258bc855222f8a938b4688d5edf4f09ca1e765a9173d0580c148ca914930911e",
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
     "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",
     "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
-    "src/daemon/db/drivers/duckdb-file.ts": "76e62c1b004df46566c6f77ab4c4fb80f05fa40ee56804d36095df6703b85f40",
-    "src/daemon/db/drivers/dynamodb.ts": "a377a571eb482d672ed16857618c0483a9ef0d08b049bba04cdddb2ecb69aade",
-    "src/daemon/db/drivers/etcd.ts": "5ecfe742cda8c82b945c3c9701548ca5ac709e48c3fa6bd433e63e45bc261772",
+    "src/daemon/db/drivers/duckdb-file.ts": "53e9fc1c0d6b10e195e3f9e0810ae187509e17e33edff1cccdb3d650376a142a",
+    "src/daemon/db/drivers/dynamodb.ts": "19e94420eafc49b8a4b5f1b5c3c48d301819b59e848366fb549d9583e99c082a",
+    "src/daemon/db/drivers/etcd.ts": "e144c039dffcc036d48eb42bc03db0394fdceb2fca19fe86dc91edcca6f18fbe",
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
-    "src/daemon/db/drivers/memcached.ts": "92fde20fcb82d921162f493026fe96ff191f7baa1b6aa55625aa121cf1956861",
-    "src/daemon/db/drivers/mongodb.ts": "d6c13219d2a17ccedd049d2427442751e2527c0b70c6a4588bd1a7b371201659",
-    "src/daemon/db/drivers/mssql.ts": "479eb8e3566cf6350235291691e9960013d41f2cb20b6e377f13577e20cbe32b",
-    "src/daemon/db/drivers/mysql.ts": "7c8fa80ee6d9d485a71d70597b4d0f29dee530f5ed658475bbb3b2bf7ccb8582",
-    "src/daemon/db/drivers/nats.ts": "da7b4956ab0ebaad0868355b70d25901e00ab29c9d6d5b4667b97b944866ffef",
-    "src/daemon/db/drivers/oracle.ts": "1d9ed4082094eec408e04dec8eb5a949b382b04200dc01a5a388fbede5a64dc7",
-    "src/daemon/db/drivers/pg.ts": "f25e92672220bfee6335f3dc6376ec309c7e324b605f3c1020eb631ecfc429bf",
-    "src/daemon/db/drivers/redis.ts": "7c55da6f434833c2eaa6bb14da9f7eb31345cbef664a23b94883fdd66ea98710",
-    "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
-    "src/daemon/db/pool.ts": "7dcc2412a974f28c1ba9b88b5dc05bdf0947f3505fb04b3ca42581473e438346",
+    "src/daemon/db/drivers/memcached.ts": "a00515115e3ddd8f064931066d4e05529e1a49f2f0504a190477ce1cedd8db28",
+    "src/daemon/db/drivers/mongodb.ts": "853ac3a759a357a88aa831ed3291ff83d3ec9596cf3d088bc48a28e38ca61631",
+    "src/daemon/db/drivers/mssql.ts": "59acb8ec72c5dbecc07d198fbfe2988ef29d76ec9e6d514fcdb2fa34ade0673d",
+    "src/daemon/db/drivers/mysql.ts": "3b50a322dae6142b80218519593304c22cd666c3c4ee50e4db0d7a0d8da9741f",
+    "src/daemon/db/drivers/nats.ts": "976872f6516971caab3c3b5d48685f8ab86cdd16de75f047b954f0aea74bb50e",
+    "src/daemon/db/drivers/oracle.ts": "8d7c312b756e04dcc72580d45c8b529744105ceb78ddae68de2815833d6ddbb1",
+    "src/daemon/db/drivers/pg.ts": "76560b7c7a506f487ff406c19743c151c1f1575cb032f8aa6cb7c7fc8ec74ba2",
+    "src/daemon/db/drivers/redis.ts": "5fc3c23856d64fb7a5c3457e2d5b676060ece6e92078c0458ad23ad6ce3279dc",
+    "src/daemon/db/drivers/sqlite.ts": "343b358cf3d3136b5607f974679cdf4d24625919ec749d046636210358deed51",
+    "src/daemon/db/pool.ts": "a1e2a330d6a298dc4e01f3a9d9e13bd6a01566ca3221788b6e3c1d5747e1a32f",
     "src/daemon/db/secrets.ts": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",
-    "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
-    "src/shared/db-driver.ts": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
+    "src/daemon/tools/builtins/db/index.ts": "1554dc4a03d915b260efc43c5971d21fe294965c17b5f87849925b6e90af3fed",
+    "src/shared/db-driver.ts": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
-    "src/daemon/db-rpc.ts": "80d9603e8e85c4b91e811066a4da96a2b6362e487cbd18549c16a975339fc233",
-    "src/daemon/db/management.ts": "264e31035388ee47971948f9a528bebf3947713e737b9b4116b7c3b3abb6aa8f"
+    "src/daemon/db-rpc.ts": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",
+    "src/daemon/db/management.ts": "45ed592215c20cbe92adcfbe98739d869591d004c8c65e87657e62508566a708"
   },
   "classificationUpdates": [
     {
@@ -2541,5 +2541,6 @@
       "source": "src/daemon/db/drivers/converters/avro.ts",
       "reason": "Uses shared bounded inflater that pre-admits native output chunks, cap overshoot, concatenation and workspace, then retains the actual Buffer backing size; field and credential classifications unchanged."
     }
-  ]
+  ],
+  "reviewNotes": "S002 field-read review: minimal readonly probe operations add no public config fields; NATS URL username/password and explicit PostgreSQL/Memcached credential handling remain in existing credential slots. File probes select the first actual owned reader target without introducing worksheet options. Runtime path preparation, readonly metadata admission and legacy supervisor routing retain all existing field classifications. Release remains disabled pending combined S001/S002 evidence. S002 disposal correction: Cassandra, MongoDB, NATS, etcd and Memcached propagate actual cleanup failures; no config-field classifications changed. Legacy failure duration uses the same monotonic clock; no field classification change."
 }

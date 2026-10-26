@@ -40,11 +40,11 @@ test('buildSummariserProvider: uses a CLI only when summariserProvider is explic
 	}
 });
 
-test('buildSummariserProvider: a CLI summariser pins the cheap tier\'s model, and replaces an Ollama-style id with the built-in cheap model', () => {
+test('buildSummariserProvider: a CLI summariser pins the cheap tier\'s model, and replaces a model of another family with the family\'s summariser model', () => {
 	const pinned = buildSummariserProvider(cfg({ summariserProvider: 'cli-claude', summariserModel: 'haiku' }));
-	assert.equal((pinned as unknown as { defaultModel?: string }).defaultModel, 'haiku');
+	assert.equal((pinned as unknown as { defaultModel?: string }).defaultModel, 'claude-haiku-5-5', 'the alias runs as its canonical id');
 	const halfEdited = buildSummariserProvider(cfg({ summariserProvider: 'cli-claude', summariserModel: 'qwen3.6:27b' }));
-	assert.equal((halfEdited as unknown as { defaultModel?: string }).defaultModel, 'haiku', 'an Ollama id is not forwarded to a CLI; haiku is used, not the CLI default');
+	assert.equal((halfEdited as unknown as { defaultModel?: string }).defaultModel, 'claude-haiku-5-5', 'an Ollama id is not forwarded to a CLI; the summariser model is used, not the CLI default');
 	const codex = buildSummariserProvider(cfg({ summariserProvider: 'cli-codex', summariserModel: 'qwen3.6:27b' }));
 	assert.equal((codex as unknown as { defaultModel?: string }).defaultModel, 'gpt-6-luna');
 });

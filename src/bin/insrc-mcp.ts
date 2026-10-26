@@ -41,6 +41,8 @@ setLogMode('mcp');
 const log = getLogger('bin:insrc-mcp');
 
 async function main(): Promise<void> {
+	const bootstrap = await import('../mcp/session-bootstrap.js');
+	if (process.argv.includes(bootstrap.SESSION_BOOTSTRAP_FLAG)) bootstrap.initializePrivateSessionPipe();
 	const { runInsrcMcpStdio } = await import('../mcp/server.js');
 	await runInsrcMcpStdio();
 }

@@ -20,6 +20,7 @@
 import type { TSchema } from '@sinclair/typebox';
 import type { ApprovalRequest, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import type { TodosApi } from '../../shared/todos.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 
 
 // ---------------------------------------------------------------------------
@@ -125,6 +126,8 @@ export interface ConversionProviders {
 }
 
 export interface ToolDeps {
+	/** Daemon-only execution authority; never reconstructed from tool arguments. */
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	/** Active session id. Used by tools that maintain per-session state. */
 	sessionId: string;
 	/** Workspace root for the current invocation. */

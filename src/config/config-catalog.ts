@@ -21,11 +21,15 @@
  *     `tiers` is the ONLY place a model is named — shaper/summariser derive from it)
  *   - src/config/local.ts   → models.local.*  (the LIVE local/embedder surface:
  *     host / coreModel / embeddingModel / embeddingDim / charsPerToken)
- * plus the daemon-wide non-model keys (logLevel, ollama.host, permissions,
+ * plus the daemon-wide non-model keys (logLevel, ollama.host, daemonUpdate, tools.commonApproval,
  * routing, analyzer, classifier, memory). The boot reconcile
  * (src/daemon/index.ts step 2b) migrates legacy nesting, fills every catalog
  * default, then prunes retired paths.
  */
+
+import type { ModelDefinitionsFile } from '../daemon/model-catalog.js';
+import type { TierName } from './analyze.js';
+import { deriveModelDefaults, SHIPPED_DEFINITIONS } from './model-defaults.js';
 
 export interface ConfigOption {
 	readonly path:    string;        // dot-path into config.json
@@ -74,77 +78,94 @@ export interface ConfigMigration {
 	readonly transform?: (value: unknown) => unknown;
 }
 
-export const CONFIG_CATALOG: readonly ConfigOption[] = [
-	// ── main config (src/daemon/index.ts first-boot default + Config type) ──
-	{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)", enumValues: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'], group: 'General' },
-	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
-	{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\'s origin', group: 'General' },
-	{ path: 'daemonUpdate.branch',   type: 'string', default: '',                        desc: 'branch the daemon update follows; empty keeps the checkout\'s current branch', group: 'General' },
-	{ path: 'daemon.threads.enabled', type: 'boolean', default: true,                    desc: 'serve admin and indexing work on their own worker threads (Epic 86197ac6); false runs the daemon on one thread', group: 'General' },
-	// Idle maintenance (graph compaction) with daemon threads (Epic 86197ac6 s2).
-	{ path: 'daemon.maintenance.idleMs', type: 'number', default: 1_800_000,            desc: 'ms with no non-admin request and both indexing lanes idle before idle maintenance (graph compaction) is considered', group: 'General' },
-	{ path: 'daemon.maintenance.minReclaimablePct', type: 'number', default: 25,         desc: 'idle maintenance compacts only when at least this % of the graph file is reclaimable', group: 'General' },
-	{ path: 'daemon.maintenance.minReclaimableMb', type: 'number', default: 256,         desc: 'idle maintenance compacts only when at least this many MiB of the graph file are reclaimable', group: 'General' },
-	{ path: 'daemon.maintenance.pauseLimitMs', type: 'number', default: 600_000,         desc: 'ms maintenance waits for running requests to finish before it gives up for this time', group: 'General' },
-	// NOTE: the model config is a single flat models.* surface. The former
-	// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
-	// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
-	// shaperModel/summariser* keys) is stripped via RETIRED_PATHS on boot/update.
-	{ path: 'tools.commonApproval', type: 'enum',    default: 'auto',          desc: "whether a tool call that needs approval asks first: 'manual' and 'edit-auto' ask, 'auto' does not; a chat session's edits mode overrides it per call, and a destructive tool always asks", enumValues: ['manual', 'edit-auto', 'auto'], group: 'Workflow & review' },
-	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
-	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
-	{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },
-	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn', group: 'Workflow & review' },
-	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
-	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
-	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
-	{ path: 'codeReview.daemonReviewCeilingMs', type: 'number', default: 14400000, desc: 'max ms insrc_code_review_step waits in total for a daemon code review, progress or not', group: 'Workflow & review' },
-	{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
-	// Design-review template (src/workflow/review/template.ts). Provisional defaults —
-	// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
-	{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
-	{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
-	{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
+/**
+ * The settings catalog over a model definitions file: every row is fixed
+ * except the model rows, whose defaults and enums come from the definitions —
+ * tier runner (the default family, enum = the family ids), tier model (that
+ * family's tier default), tier effort (enum = '' plus every shipped model's
+ * efforts; default = the tier default's effort, '' when none) and the local
+ * coreModel (the ollama tool-loop model). Never throws (deriveModelDefaults).
+ */
+export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigOption[] {
+	const d = deriveModelDefaults(defs);
+	const runners = d.familyIds;
+	const efforts = ['', ...d.efforts];
+	const tierRows = (tier: TierName): ConfigOption[] => [
+		{ path: `models.tiers.${tier}.runner`, type: 'enum',   default: d.tiers[tier].runner, desc: `${tier}-tier backend: ${runners.map(r => `'${r}'`).join(' | ')}`, enumValues: runners, group: 'Models — tiers' },
+		{ path: `models.tiers.${tier}.model`,  type: 'string', default: d.tiers[tier].model,  desc: `${tier}-tier model id or alias (default from the model definitions)`, group: 'Models — tiers' },
+	];
+	const effortRow = (tier: TierName): ConfigOption =>
+		({ path: `models.tiers.${tier}.effort`, type: 'enum', default: d.tiers[tier].effort, desc: `${tier}-tier reasoning effort passed to the CLI ('' = the CLI's default)`, enumValues: efforts, group: 'Models — tiers' });
+	return [
+		// ── main config (src/daemon/index.ts first-boot default + Config type) ──
+		{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)", enumValues: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'], group: 'General' },
+		{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
+		{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\'s origin', group: 'General' },
+		{ path: 'daemonUpdate.branch',   type: 'string', default: '',                        desc: 'branch the daemon update follows; empty keeps the checkout\'s current branch', group: 'General' },
+		{ path: 'daemon.threads.enabled', type: 'boolean', default: true,                    desc: 'serve admin and indexing work on their own worker threads (Epic 86197ac6); false runs the daemon on one thread', group: 'General' },
+		// Idle maintenance (graph compaction) with daemon threads (Epic 86197ac6 s2).
+		{ path: 'daemon.maintenance.idleMs', type: 'number', default: 1_800_000,            desc: 'ms with no non-admin request and both indexing lanes idle before idle maintenance (graph compaction) is considered', group: 'General' },
+		{ path: 'daemon.maintenance.minReclaimablePct', type: 'number', default: 25,         desc: 'idle maintenance compacts only when at least this % of the graph file is reclaimable', group: 'General' },
+		{ path: 'daemon.maintenance.minReclaimableMb', type: 'number', default: 256,         desc: 'idle maintenance compacts only when at least this many MiB of the graph file are reclaimable', group: 'General' },
+		{ path: 'daemon.maintenance.pauseLimitMs', type: 'number', default: 600_000,         desc: 'ms maintenance waits for running requests to finish before it gives up for this time', group: 'General' },
+		// NOTE: the model config is a single flat models.* surface. The former
+		// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
+		// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
+		// shaperModel/summariser* keys) is stripped via RETIRED_PATHS on boot/update.
+		{ path: 'tools.commonApproval', type: 'enum',    default: 'auto',          desc: "whether a tool call that needs approval asks first: 'manual' and 'edit-auto' ask, 'auto' does not; a chat session's edits mode overrides it per call, and a destructive tool always asks", enumValues: ['manual', 'edit-auto', 'auto'], group: 'Workflow & review' },
+		{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
+		{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
+		{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },
+		{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn', group: 'Workflow & review' },
+		{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
+		{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
+		{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
+		{ path: 'codeReview.daemonReviewCeilingMs', type: 'number', default: 14400000, desc: 'max ms insrc_code_review_step waits in total for a daemon code review, progress or not', group: 'Workflow & review' },
+		{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
+		// Design-review template (src/workflow/review/template.ts). Provisional defaults —
+		// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
+		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
+		{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
+		{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
 
-	// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
-	// A (runner, model) pair is named ONLY here. The shaper + summariser providers
-	// are DERIVED, never stored: shaper ⟸ tiers.core, summariser ⟸ tiers.cheap.
-	{ path: 'models.tiers.core.runner',  type: 'enum',   default: 'cli-claude',     desc: "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
-	{ path: 'models.tiers.core.model',   type: 'string', default: '',               desc: 'core-tier model id (empty ⇒ CLI default, e.g. opus)', group: 'Models — tiers' },
-	{ path: 'models.tiers.mid.runner',   type: 'enum',   default: 'cli-claude',     desc: "mid-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
-	{ path: 'models.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)', group: 'Models — tiers' },
-	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'cli-claude',     desc: "cheap-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
-	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'haiku',       desc: 'cheap-tier model id (e.g. haiku)', group: 'Models — tiers' },
-	// Reasoning effort, global tiers only ('' = the CLI's own default); per-repo config only picks a tier.
-	{ path: 'models.tiers.core.effort',  type: 'enum',   default: '',            desc: "core-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
-	{ path: 'models.tiers.mid.effort',   type: 'enum',   default: '',            desc: "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
-	{ path: 'models.tiers.cheap.effort', type: 'enum',   default: '',            desc: "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)", enumValues: ['', 'low', 'medium', 'high', 'xhigh', 'max'], group: 'Models — tiers' },
-	{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
-	// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
-	// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
+		// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
+		// A (runner, model) pair is named ONLY here. The shaper + summariser providers
+		// are DERIVED, never stored: shaper ⟸ tiers.core, summariser ⟸ tiers.cheap.
+		...tierRows('core'),
+		...tierRows('mid'),
+		...tierRows('cheap'),
+		// Reasoning effort, global tiers only ('' = the CLI's own default); per-repo config only picks a tier.
+		...(['core', 'mid', 'cheap'] as const).map(effortRow),
+		{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
+		// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
+		// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
 
-	// ── shaper runtime knobs (NOT model specs) — models.shaper.* ──
-	{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper', group: 'Models — shaper' },
-	{ path: 'models.shaper.structuredOutputRetries', type: 'number', default: 3,     desc: 'structured-output retry count', group: 'Models — shaper' },
-	{ path: 'models.shaper.ollamaNumCtx',            type: 'number', default: 32768,  desc: 'shaper Ollama context window', group: 'Models — shaper' },
-	{ path: 'models.shaper.ollamaNumPredict',        type: 'number', default: 20480,  desc: 'shaper Ollama max output tokens', group: 'Models — shaper' },
-	{ path: 'models.maxPlanDepth.XS', type: 'number', default: 2, desc: 'max plan-tree depth — XS-scope roots', group: 'Models — plan depth' },
-	{ path: 'models.maxPlanDepth.S',  type: 'number', default: 3, desc: 'max plan-tree depth — S-scope roots', group: 'Models — plan depth' },
-	{ path: 'models.maxPlanDepth.M',  type: 'number', default: 4, desc: 'max plan-tree depth — M-scope roots', group: 'Models — plan depth' },
-	{ path: 'models.maxPlanDepth.L',  type: 'number', default: 5, desc: 'max plan-tree depth — L-scope roots', group: 'Models — plan depth' },
-	{ path: 'models.maxPlanDepth.XL', type: 'number', default: 6, desc: 'max plan-tree depth — XL-scope roots', group: 'Models — plan depth' },
+		// ── shaper runtime knobs (NOT model specs) — models.shaper.* ──
+		{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper', group: 'Models — shaper' },
+		{ path: 'models.shaper.structuredOutputRetries', type: 'number', default: 3,     desc: 'structured-output retry count', group: 'Models — shaper' },
+		{ path: 'models.shaper.ollamaNumPredict',        type: 'number', default: 20480,  desc: 'shaper Ollama max output tokens', group: 'Models — shaper' },
+		{ path: 'models.maxPlanDepth.XS', type: 'number', default: 2, desc: 'max plan-tree depth — XS-scope roots', group: 'Models — plan depth' },
+		{ path: 'models.maxPlanDepth.S',  type: 'number', default: 3, desc: 'max plan-tree depth — S-scope roots', group: 'Models — plan depth' },
+		{ path: 'models.maxPlanDepth.M',  type: 'number', default: 4, desc: 'max plan-tree depth — M-scope roots', group: 'Models — plan depth' },
+		{ path: 'models.maxPlanDepth.L',  type: 'number', default: 5, desc: 'max plan-tree depth — L-scope roots', group: 'Models — plan depth' },
+		{ path: 'models.maxPlanDepth.XL', type: 'number', default: 6, desc: 'max plan-tree depth — XL-scope roots', group: 'Models — plan depth' },
 
-	// ── local provider / embedder (src/config/local.ts → models.local.*) ──
-	{ path: 'models.local.host',           type: 'string', default: 'http://localhost:11434', desc: 'Ollama host for the embedder/local provider', group: 'Local & embeddings' },
-	{ path: 'models.local.embeddingModel', type: 'string', default: 'qwen3-embedding:0.6b',    desc: "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder", group: 'Local & embeddings' },
-	{ path: 'models.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder', group: 'Local & embeddings' },
-	{ path: 'models.local.coreModel',      type: 'string', default: 'qwen3.6:27b',              desc: 'local core / summariser model id used by the indexer embedder', group: 'Local & embeddings' },
-	{ path: 'models.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)', group: 'Local & embeddings' },
-	{ path: 'models.local.embeddingKeepAlive', type: 'string', default: '24h',                  desc: "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts", group: 'Local & embeddings' },
-];
+		// ── local provider / embedder (src/config/local.ts → models.local.*) ──
+		{ path: 'models.local.host',           type: 'string', default: 'http://localhost:11434', desc: 'Ollama host for the embedder/local provider', group: 'Local & embeddings' },
+		{ path: 'models.local.embeddingModel', type: 'string', default: 'qwen3-embedding:0.6b',    desc: "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder", group: 'Local & embeddings' },
+		{ path: 'models.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder', group: 'Local & embeddings' },
+		{ path: 'models.local.coreModel',      type: 'string', default: d.toolLoopModel,              desc: 'local core / summariser model id used by the indexer embedder', group: 'Local & embeddings' },
+		{ path: 'models.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)', group: 'Local & embeddings' },
+		{ path: 'models.local.embeddingKeepAlive', type: 'string', default: '24h',                  desc: "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts", group: 'Local & embeddings' },
+	];
+}
+
+/** The settings catalog over the shipped definitions (display and fill-in
+ *  defaults; the daemon reconciles with buildConfigCatalog(validateModelCatalog())). */
+export const CONFIG_CATALOG: readonly ConfigOption[] = buildConfigCatalog(SHIPPED_DEFINITIONS);
 
 /**
  * Declared-RETIRED model config paths — the legacy top-level model block that
@@ -172,9 +193,12 @@ export const RETIRED_PATHS: readonly RetiredPath[] = [
 	// migrated (they resolve from the tiers) and so are stripped here.
 	{ path: 'models.analyze',   prefix: true },
 	{ path: 'models.providers', prefix: true },
+	// The Ollama context window now comes from each model's inputLimit in the
+	// model definitions (Epic ce99b72065d03b1b, s3).
 	// permissions.mode ('validate' | 'auto-accept') was read by nothing; tools.commonApproval is the one
 	// tool-approval setting. Declared as a prefix so the emptied `permissions` object goes with it.
 	{ path: 'permissions', prefix: true },
+	{ path: 'models.shaper.ollamaNumCtx' },
 ];
 
 /**

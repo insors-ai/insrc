@@ -40,6 +40,8 @@ import { LookupFailedError } from './lookup-failed.js';
 import { measureRequestScope, measureResolvedScope } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
 import type { AnalyzeTarget } from '../../shared/analyze-types.js';
+import { requireConnectionExecution, ConnectionExecutionError } from '../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -86,11 +88,14 @@ function parseParams(exp: Exploration): FreeformProbeParams {
  * read as a path the index does not hold.
  */
 export function measureOwnRequest(
-	ctx:    Pick<ExplorationRunnerContext, 'scope' | 'repoPath'>,
+	ctx:    Pick<ExplorationRunnerContext, 'scope' | 'repoPath' | 'connectionExecution'>,
 	target: AnalyzeTarget,
 ): Promise<RequestMeasure> {
-	if (ctx.scope !== undefined) return measureResolvedScope(ctx.scope, target);
-	return measureRequestScope({ kind: 'repo', value: ctx.repoPath }, target);
+	assertAnalysisConnectionExecution(ctx.connectionExecution);
+	requireConnectionExecution(ctx.connectionExecution);
+	const options = { connectionExecution: ctx.connectionExecution, signal: ctx.connectionExecution.lifetime.signal };
+	if (ctx.scope !== undefined) return measureResolvedScope(ctx.scope, target, undefined, options);
+	return measureRequestScope({ kind: 'repo', value: ctx.repoPath }, target, undefined, options);
 }
 
 /**
@@ -109,6 +114,8 @@ export async function runFreeformProbe(
 	/** The tool loop; a test passes a stand-in. */
 	loop: typeof runShaperToolLoop = runShaperToolLoop,
 ): Promise<FreeformProbeOutput> {
+	assertAnalysisConnectionExecution(ctx.connectionExecution);
+	const connectionExecution = requireConnectionExecution(ctx.connectionExecution);
 	const params = parseParams(exp);
 	const promptPath = legacyShaperPromptPathFor(params.shaperId);
 
@@ -129,6 +136,7 @@ export async function runFreeformProbe(
 	// the plan measured the request and handed the size over; with none, the
 	// lookup measures for itself. It never takes a default.
 	const size = ctx.requestSize ?? (await measureOwnRequest(ctx, target)).size;
+	assertAnalysisConnectionExecution(connectionExecution);
 
 	// Reconstruct a run-mode input. The tool loop's buildMessages
 	// carries the intent verbatim, so the scope reference here is what
@@ -152,6 +160,7 @@ export async function runFreeformProbe(
 	let toolCallCount = 0;
 	try {
 		const result = await loop({
+			connectionExecution,
 			runId:          ctx.runId,
 			shaperId:       params.shaperId,
 			invocationMode: 'run',
@@ -159,9 +168,12 @@ export async function runFreeformProbe(
 			scope,
 			promptPath,
 		});
+		assertAnalysisConnectionExecution(connectionExecution);
 		rawBundle     = result.rawBundle;
 		toolCallCount = result.toolCallCount;
 	} catch (err) {
+		assertAnalysisConnectionExecution(connectionExecution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof ShaperToolLoopExhausted) {
 			// The search did not finish. That is a lookup that could not run, not
 			// one that found nothing: it fails, and what its tool calls had
@@ -182,6 +194,7 @@ export async function runFreeformProbe(
 		throw err;
 	}
 
+	assertAnalysisConnectionExecution(connectionExecution);
 	log.info(
 		{
 			runId:         ctx.runId,

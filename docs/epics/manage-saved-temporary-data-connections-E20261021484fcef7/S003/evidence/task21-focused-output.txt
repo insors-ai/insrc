@@ -1,0 +1,151 @@
+Focused TAP results (runtime logging omitted):
+TAP version 13
+# Subtest: hinted request: focused with the prompt as focus, unfocused with an empty prompt
+ok 1 - hinted request: focused with the prompt as focus, unfocused with an empty prompt
+# Subtest: hinted request: the validator's two checks are made, with the connection check it was given
+ok 2 - hinted request: the validator's two checks are made, with the connection check it was given
+# Subtest: hinted pairing the table refuses fails at 'classify' with a failed run record
+ok 3 - hinted pairing the table refuses fails at 'classify' with a failed run record
+# Subtest: hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'
+ok 4 - hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'
+# Subtest: hinted request with a valid pairing reaches the context builder and the planner
+ok 5 - hinted request with a valid pairing reaches the context builder and the planner
+# Subtest: hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection
+ok 6 - hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection
+# Subtest: the classifier receives a connection check from each caller
+ok 7 - the classifier receives a connection check from each caller
+# Subtest: connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported
+ok 8 - connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported
+# Subtest: an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)
+ok 9 - an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)
+# Subtest: a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)
+ok 10 - a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)
+# Subtest: with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)
+ok 11 - with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)
+# Subtest: a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite
+ok 12 - a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite
+# Subtest: the handler of an uncaught error leaves a record that already says how the run ended, and the record of another run still going under the same id
+ok 13 - the handler of an uncaught error leaves a record that already says how the run ended, and the record of another run still going under the same id
+# Subtest: classifyClassifierError: typed errors map to stable codes
+ok 14 - classifyClassifierError: typed errors map to stable codes
+# Subtest: plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten
+ok 15 - plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten
+# Subtest: classifyClassifierError: unrecognized error -> internal-error
+ok 16 - classifyClassifierError: unrecognized error -> internal-error
+# Subtest: classifyClassifierError: non-Error throws are stringified into internal-error
+ok 17 - classifyClassifierError: non-Error throws are stringified into internal-error
+# Subtest: classifyShaperError: ScopeNotIndexedError populates data
+ok 18 - classifyShaperError: ScopeNotIndexedError populates data
+# Subtest: classifyShaperError: typed shaper errors map to stable codes
+ok 19 - classifyShaperError: typed shaper errors map to stable codes
+# Subtest: classifyShaperError: unrecognized error -> internal-error
+ok 20 - classifyShaperError: unrecognized error -> internal-error
+# Subtest: classifyPlannerError: MaxPlanDepthExceededError populates data
+ok 21 - classifyPlannerError: MaxPlanDepthExceededError populates data
+# Subtest: classifyPlannerError: PlanBuilderExhausted -> plan-invariant-failed with lastFailure
+ok 22 - classifyPlannerError: PlanBuilderExhausted -> plan-invariant-failed with lastFailure
+# Subtest: classifyPlannerError: typed planner errors map to stable codes
+ok 23 - classifyPlannerError: typed planner errors map to stable codes
+# Subtest: classifyPlannerError: unrecognized error -> internal-error
+ok 24 - classifyPlannerError: unrecognized error -> internal-error
+# Subtest: writeRunRecord + readRunRecord: round-trip preserves the record
+ok 25 - writeRunRecord + readRunRecord: round-trip preserves the record
+# Subtest: readRunRecord: miss returns null
+ok 26 - readRunRecord: miss returns null
+# Subtest: runRecordPathFor: lands under ~/.insrc/analyze/<runId>/run.json
+ok 27 - runRecordPathFor: lands under ~/.insrc/analyze/<runId>/run.json
+# Subtest: purgeRunForTests on a missing slot is a silent no-op
+ok 28 - purgeRunForTests on a missing slot is a silent no-op
+# Subtest: purgeRun: missing run dir -> { ok:true, purged:false }
+ok 29 - purgeRun: missing run dir -> { ok:true, purged:false }
+# Subtest: purgeRun: status=ok run -> removes dir
+ok 30 - purgeRun: status=ok run -> removes dir
+# Subtest: purgeRun: status=failed run -> removes dir (no protection on failed)
+ok 31 - purgeRun: status=failed run -> removes dir (no protection on failed)
+# Subtest: purgeRun: status=in-progress without force -> refused
+ok 32 - purgeRun: status=in-progress without force -> refused
+# Subtest: onEvent: resume cache hit emits a single done event with the cached result
+ok 33 - onEvent: resume cache hit emits a single done event with the cached result
+# Subtest: onEvent: aborted signal -> done event with code="aborted"
+ok 34 - onEvent: aborted signal -> done event with code="aborted"
+# Subtest: onEvent: missing onEvent option -> no exception (no-op)
+ok 35 - onEvent: missing onEvent option -> no exception (no-op)
+# Subtest: onEvent: throwing callback does not crash the run
+ok 36 - onEvent: throwing callback does not crash the run
+# Subtest: purgeRun: status=in-progress with force=true -> removes dir
+ok 37 - purgeRun: status=in-progress with force=true -> removes dir
+# Subtest: resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-running
+ok 38 - resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-running
+# Subtest: resume: status=failed -> NOT short-circuited (would re-run)
+ok 39 - resume: status=failed -> NOT short-circuited (would re-run)
+# Subtest: resume: status=in-progress -> NOT short-circuited (stale record from crash)
+ok 40 - resume: status=in-progress -> NOT short-circuited (stale record from crash)
+# Subtest: resume: missing run.json -> NOT short-circuited (cold cache)
+ok 41 - resume: missing run.json -> NOT short-circuited (cold cache)
+# Subtest: runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)
+ok 42 - runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)
+# Subtest: a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+ok 43 - a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+# Subtest: the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+ok 44 - the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+# Subtest: run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)
+ok 45 - run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)
+# Subtest: run order: the same on the hinted-target branch
+ok 46 - run order: the same on the hinted-target branch
+# Subtest: run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message
+ok 47 - run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message
+# Subtest: run order: a request that passes the check still emits 'classified' with its measure, as before
+ok 48 - run order: a request that passes the check still emits 'classified' with its measure, as before
+# Subtest: runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')
+ok 49 - runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')
+# Subtest: runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key
+ok 50 - runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key
+# Subtest: a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line
+ok 51 - a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line
+# Subtest: a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources
+ok 52 - a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources
+# Subtest: a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)
+ok 53 - a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)
+# Subtest: a run record written without a report resumes with none and its text form carries the not-recorded line
+ok 54 - a run record written without a report resumes with none and its text form carries the not-recorded line
+# Subtest: a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text
+ok 55 - a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text
+# Subtest: the plan's and the run's tasksFailed and the daemon's response carry the code
+ok 56 - the plan's and the run's tasksFailed and the daemon's response carry the code
+# Subtest: a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)
+ok 57 - a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)
+# Subtest: runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error
+ok 58 - runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error
+# Subtest: both classifyShaperError functions map each of the five new error classes to its code
+ok 59 - both classifyShaperError functions map each of the five new error classes to its code
+# Subtest: one list of ten error classes gives the same code from the plan tree's and the daemon's mapping
+ok 60 - one list of ten error classes gives the same code from the plan tree's and the daemon's mapping
+# Subtest: an error neither mapping knows stays internal-error on both sides
+ok 61 - an error neither mapping knows stays internal-error on both sides
+# Subtest: the cause codes are declared in both lists
+ok 62 - the cause codes are declared in both lists
+# Subtest: classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings
+ok 63 - classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings
+# Subtest: classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings
+ok 64 - classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings
+# Subtest: both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'
+ok 65 - both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'
+# Subtest: both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran
+ok 66 - both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran
+# Subtest: one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)
+ok 67 - one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 68 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 69 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+# Subtest: CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO
+ok 70 - CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO
+1..70
+# tests 70
+# suites 0
+# pass 70
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14713.1635

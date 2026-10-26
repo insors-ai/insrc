@@ -32,7 +32,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { analysisConnectionContext } from '../../connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../../connection-access.js';
 
 import type {
 	FileDriver,
@@ -62,6 +62,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		assertAnalysisConnectionExecution(args.connectionExecution);
 		const scope        = await resolveDataScope(args, TEMPLATE_ID);
 		const repoPath     = scope.poolPath;
 		const connectionId = connectionWithinScope(scope, requireStringParam(args, 'connectionId', TEMPLATE_ID), TEMPLATE_ID);
@@ -69,7 +70,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';
 
-		const access = analysisConnectionContext(repoPath);
+		const access = analysisConnectionContext(repoPath, args.connectionExecution ?? savedAnalysisExecution(repoPath));
 		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
 

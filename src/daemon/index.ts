@@ -1,3 +1,5 @@
+import { connectionTestSupervisor } from './db/draft-test.js';
+import { connectionSessionRuntime } from './connection-session-rpc.js';
 import { UnderstandingService } from '../understanding/service.js';
 /**
  * Daemon entry point.
@@ -75,6 +77,10 @@ import { schedulePruneTimer } from './prune-timer.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import { ConfigStore } from '../config/store.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
+import { prunedRepoTiers } from '../config/reconcile.js';
+import { buildConfigCatalog } from '../config/config-catalog.js';
+import { resetLocalProviderConfigCache } from '../config/local.js';
+import { resetAnalyzeConfigCache } from '../config/analyze.js';
 import * as todosRpc from './todos-rpc.js';
 import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError, cleanupFailedPublication } from './run-file-ownership.js';
 import type { RunFileLease } from './run-file-ownership.js';
@@ -145,6 +151,15 @@ async function main(): Promise<void> {
 	mkdirSync(PATHS.conventions, { recursive: true });
 	mkdirSync(PATHS.logDir, { recursive: true });
 
+	// 2a. Validate the model definitions file (Epic ce99b720 s1) BEFORE the
+	//     settings reconcile, any worker or the listener: a missing, malformed or
+	//     rule-breaking file is a fail-fast startup refusal
+	//     (ModelCatalogValidationError re-raises to the top-level fatal handler),
+	//     so the daemon never reconciles settings, starts a worker or listens
+	//     with a bad file.
+	const { validateModelCatalog } = await import('./model-catalog.js');
+	const modelDefinitions = validateModelCatalog();
+
 	// 2b. Reconcile config.json against the catalog — the AUTHORITATIVE
 	//     reconcile point. UNCONDITIONAL (no existsSync short-circuit): reads
 	//     the current config, carries every value it can, and fills/repairs the
@@ -159,7 +174,13 @@ async function main(): Promise<void> {
 	//     shipped catalog) is logged distinguishably from a user-config or I/O
 	//     failure.
 	try {
-		const outcome = reconcileConfigFile();
+		// The catalog's model defaults come from the validated definitions.
+		const outcome = reconcileConfigFile({ catalog: buildConfigCatalog(modelDefinitions) });
+		if (outcome.kind === 'written') {
+			for (const { repo, tier } of prunedRepoTiers(outcome.result.pruned)) {
+				log.warn({ repo, tier }, 'removed a per-repo model tier: tiers are set globally; a repo only picks a tier for a role (models.byRepo[repo].tasks / coreFloor)');
+			}
+		}
 		switch (outcome.kind) {
 			case 'first-boot':
 				log.info('created default config.json (catalog defaults)');
@@ -196,6 +217,18 @@ async function main(): Promise<void> {
 		// must survive even a programmer error here.
 		log.warn({ err: err instanceof Error ? err.message : String(err) },
 			'config reconcile threw -- non-fatal, retry on next boot');
+	}
+	// Drop the settings read before the reconcile (e.g. at module load) so every
+	// later read — this thread's and every worker's — sees the reconciled file.
+	resetLocalProviderConfigCache();
+	resetAnalyzeConfigCache();
+	try {
+		// The local tool-loop model as the reconciled settings choose it (diagnostic).
+		const { localToolLoopModel } = await import('../analyze/context/driver.js');
+		const { loadAnalyzeConfig } = await import('../config/analyze.js');
+		log.info(localToolLoopModel(loadAnalyzeConfig()), 'local tool-loop model');
+	} catch (err) {
+		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'local tool-loop model: could not be resolved');
 	}
 
 	// 2c. One-shot Phase 0 agent-family rename migration (idempotent).
@@ -381,14 +414,6 @@ async function main(): Promise<void> {
 	const { validateAdaptiveCardsAsset } = await import('../workflow/artifacts/companion/adaptive-cards.js');
 	await validateAdaptiveCardsAsset();
 
-	// 6d″. Validate the curated cloud model catalog (cli-claude/cli-codex model
-	//      list, Epic ba132c185fe45860, S001). Mirrors the docgen validator: a
-	//      missing/malformed catalog asset is a fail-fast startup refusal
-	//      (ModelCatalogValidationError re-raises to the top-level fatal handler)
-	//      rather than a silent empty cloud model list at first list-models use.
-	const { validateModelCatalog } = await import('./model-catalog.js');
-	await validateModelCatalog();
-
 	// 6e. Register the analyze framework's task-template catalog
 	//     (design/analyze-plan-builder.md "Param resolution from
 	//     context"). The Plan Builder picks tasks from this catalog;
@@ -443,7 +468,9 @@ async function main(): Promise<void> {
 	// s2): routed classes go to their workers, everything else runs here.
 	const local = directDispatch(rpcHandlers, streamHandlers);
 	localForward = local;
-	const server = new IpcServer(router?.forward ?? local);
+	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
+	server.onConnectionClose(context => connectionSessionRuntime.disconnect(context));
+	connectionOwners.push({ close: () => connectionSessionRuntime.close() });
 	startupServer = server;
 	if (threadServices !== undefined && router !== undefined) {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
@@ -519,6 +546,8 @@ async function main(): Promise<void> {
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
+			connectionSessionRuntime.stopAdmission();
+			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
 			understandingRoutes.stop();
 			clearInterval(pruneTimer);
@@ -533,6 +562,7 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
+			await connectionTestSupervisor.shutdown();
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();
 			await serverClosing;

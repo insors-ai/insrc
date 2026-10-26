@@ -29,17 +29,11 @@
     "coreFloor": "mid",
     "byRepo": {
       "/Users/redacted/work/projects/example/repo": {
-        "coreFloor": "core",
-        "tiers": {
-          "core": {
-            "runner": "cli-claude"
-          }
-        }
+        "coreFloor": "core"
       }
     },
     "shaper": {
       "maxToolTurns": 40,
-      "ollamaNumCtx": 32768,
       "structuredOutputRetries": 3,
       "ollamaNumPredict": 20480
     },

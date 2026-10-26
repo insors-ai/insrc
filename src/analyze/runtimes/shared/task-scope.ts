@@ -27,6 +27,8 @@
  * path. A symbol scope is resolved by `resolveScope`, which decides for itself.
  */
 
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../../connection-access.js';
 import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import { TARGET_TO_KINDS } from '../../classifier/validate.js';
 import { ensureNonEmptyClosure, ensureRepoQueryable, ScopeKindTargetMismatchError } from '../../context/invariants.js';
@@ -65,17 +67,20 @@ export async function resolveTaskScope(
 	deps?:         ScopeDeps,
 	/** A stand-in for the classifier's table, for a test; never passed in production. */
 	table:         KindsPerTarget = TARGET_TO_KINDS,
+	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
 	const readers = deps ?? depsForTest;
 	let scope: ResolvedScope;
 	try {
-		scope = await resolveScopeForTarget(scopeRef, family, readers, table);
+		scope = await resolveScopeForTarget(scopeRef, family, readers, table, execution);
 	} catch (err) {
 		// Say which template refused; the class, and so the code, is unchanged.
 		if (err instanceof ScopeKindTargetMismatchError) err.message = `${templateLabel}: ${err.message}`;
 		throw err;
 	}
 	await ensureScopeQueryable(scope, family, readers);
+	assertAnalysisConnectionExecution(execution);
 	return scope;
 }
 

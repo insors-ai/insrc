@@ -5,6 +5,7 @@
  * we only exercise the reject branches.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -13,6 +14,7 @@ import type { Exploration, ExplorationRunnerContext } from '../types.js';
 import { permissiveIgnoreFilter } from '../../context/repo-ignore-filter.js';
 
 const CTX: ExplorationRunnerContext = {
+	connectionExecution: savedAnalysisExecution('/tmp/does-not-exist-phase6-root'),
 	runId:        'test-run',
 	repoPath:     '/tmp/does-not-exist-phase6-root',
 	closureRepos: ['/tmp/does-not-exist-phase6-root'],

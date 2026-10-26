@@ -2,8 +2,30 @@
 import type { ConnectionConfig, Driver, DriverFamily } from './db-driver.js';
 
 export type ConnectionScope = 'saved' | 'temporary';
+export interface SessionResume { readonly sessionHandle: string; readonly capability: string; readonly daemonEpoch: string }
+export interface OpenConnectionSessionResult extends SessionResume { readonly heartbeatMs: 30000; readonly leaseMs: 90000 }
+export type ConnectionSessionAudience = 'workbench-ui' | 'mcp-unverified';
+export interface SessionDataAttach extends SessionResume { readonly repoRoot: string }
+export interface SessionOpen { readonly repoRoot: string }
+export interface SessionDelegate { readonly repoRoot: string; readonly audience: ConnectionSessionAudience }
+export const CONNECTION_SESSION_METHODS = [
+ 'db.connections.v2.session.open', 'db.connections.v2.session.resume', 'db.connections.v2.session.attach',
+ 'db.connections.v2.session.delegate', 'db.connections.v2.session.heartbeat', 'db.connections.v2.session.end',
+] as const;
+export type ConnectionSessionMethod = typeof CONNECTION_SESSION_METHODS[number];
 export interface ConnectionKey { readonly repoRoot: string; readonly scope: ConnectionScope; readonly id: string }
 export type CredentialPatch = { readonly action: 'keep' } | { readonly action: 'replace'; readonly value: string } | { readonly action: 'clear' };
+export interface DraftTestRequest {
+ readonly requestId: string; readonly draftRevision: number; readonly key: ConnectionKey;
+ readonly expectedRevision?: string | undefined; readonly publicPatch: Readonly<Record<string, unknown>>;
+ readonly credentials: Readonly<Record<string, CredentialPatch>>;
+}
+export interface DraftTestResult {
+ readonly requestId: string; readonly draftRevision: number; readonly repoRoot: string; readonly daemonEpoch: string;
+ readonly status: 'reachable' | 'failed' | 'timeout' | 'canceled'; readonly tookMs: number;
+ readonly safeMessage?: string | undefined;
+}
+export interface TestCancellation { readonly requestId: string }
 export interface SafeConnection {
  readonly key: ConnectionKey; readonly revision: string; readonly kind: string; readonly family: DriverFamily;
  readonly label?: string | undefined; readonly publicConfig: Readonly<Record<string, unknown>>;
@@ -60,7 +82,7 @@ export interface ConnectionAccessContext {
 }
 /** This context is provided by server transport, never deserialized from a draft. */
 export interface ManagementRequestContext { readonly connectionIdentity: string; readonly access: ConnectionAccessContext }
-export interface ConnectionLease { readonly key: ConnectionKey; readonly revision: string; release(): Promise<void> }
+export interface ConnectionLease { readonly key: ConnectionKey; readonly revision: string; retainWork?(work: Promise<unknown>): void; release(): Promise<void> }
 export interface ConnectionResolver {
  list(context: ConnectionAccessContext): Promise<readonly SafeConnection[]>;
  lease(context: ConnectionAccessContext, id: string): Promise<ConnectionLease>;

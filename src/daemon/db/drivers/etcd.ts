@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * etcd v3 driver (kind: `etcd`).
  *
@@ -14,7 +16,6 @@
 import { Etcd3 } from 'etcd3';
 import type { IOptions as Etcd3Options } from 'etcd3';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -35,10 +36,10 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-etcd');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class EtcdDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'etcd';
 
@@ -48,8 +49,14 @@ export class EtcdDriver implements KvDriver {
 		readonly id: string,
 		etcdOpts: Etcd3Options,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-etcd', context);
 		this.client = new Etcd3(etcdOpts);
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.client.kv.range({ key: Buffer.from([0]), range_end: Buffer.from([0]), limit: '1', keys_only: true }, { deadline: Date.now() + SCAN_TIMEOUT_MS });
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
@@ -105,8 +112,7 @@ export class EtcdDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		try { this.client.close(); }
-		catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'etcd close failed'); }
+		this.client.close();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
@@ -159,7 +165,7 @@ export class EtcdDriver implements KvDriver {
 registerDriver({
 	kind: 'etcd',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const hosts = Array.isArray(opts['hosts'])
 			? opts['hosts'].filter((x): x is string => typeof x === 'string')
@@ -176,6 +182,6 @@ registerDriver({
 				password: opts['password'],
 			};
 		}
-		return new EtcdDriver(config.id, etcdOpts, config);
+		return new EtcdDriver(config.id, etcdOpts, config, context);
 	},
-});
+}, 'resource-context');

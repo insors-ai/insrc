@@ -26,11 +26,10 @@ import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import type { AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 
 import { handleDocgen } from './docgen/handler.js';
-import { stepClientOf } from '../shared/step-context.js';
+import type { StepClient } from '../shared/step-context.js';
 import type { StepToolName } from '../shared/step-context.js';
 import { repoSchemaRefusal, repoSchemaRefusalOfInput } from '../daemon/repo-schema-guard.js';
 import { errorEnvelope, forwardStep } from './forward-step.js';
@@ -217,7 +216,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 		// an artifact tool refuses an unconverted repository here; insrc_analyze reads no artifact and goes on
 		const refusal = tool === 'insrc_analyze' ? undefined : repoSchemaRefusalOfInput(rawArgs);
 		if (refusal !== undefined) return Promise.resolve(errorEnvelope('repo-schema-unconverted', 'RepoSchemaError', refusal, false));
-		const client = stepClientOf(detectClientProvider(server.server.getClientVersion()?.name));
+		const client = detectClient(server.server.getClientVersion()?.name);
 		const token  = extra._meta?.progressToken;
 		const sink   = token !== undefined
 			? mcpProgressSink((n) => extra.sendNotification(n as never), token)
@@ -921,13 +920,12 @@ export function buildInsrcMcpServerWithRegistry(): {
 			},
 		},
 		async (rawArgs) => {
-			// Infer the per-run caller from the invoking MCP client so a config
-			// with NO explicit shaperProvider (and no per-repo override) falls
-			// back to that CLI (Claude Code → claude, Codex → codex) instead of
-			// Ollama. Threaded into the START path only; per-repo + global config
-			// still take precedence downstream (buildShaperProvider).
-			const kind   = detectClientProvider(server.server.getClientVersion()?.name);
-			const client = stepClientOf(kind);
+			// Forward the invoking MCP client's identity so a config with NO
+			// explicit shaperProvider falls back to that client's CLI family (the
+			// daemon maps the identity to a family). Threaded into the START path
+			// only; the global config still takes precedence downstream
+			// (buildShaperProvider).
+			const client = detectClient(server.server.getClientVersion()?.name);
 			return handleWorkflowRun(rawArgs, {}, client);
 		},
 	);
@@ -1379,15 +1377,14 @@ function progressEventOf(data: unknown): ProgressEvent {
 	return { kind: 'stage', operation: 'workflow.run', stageId: 'step', stageLabel: label, index: 0, total: null };
 }
 
-/** Map an MCP client's initialize `clientInfo.name` to the CLI shaper
- *  provider it implies: Claude Code → 'cli-claude', Codex → 'cli-codex'.
- *  Undefined for unknown clients (analyze then uses the config default).
- *  An explicit `models.tiers.core.runner` overrides this downstream. */
-function detectClientProvider(name: string | undefined): AnalyzeShaperProviderKind | undefined {
+/** The calling client's identity from its MCP initialize `clientInfo.name`:
+ *  Claude Code → 'claude', Codex → 'codex'; undefined for any other client.
+ *  Only the identity is forwarded; the daemon maps it to a model family. */
+function detectClient(name: string | undefined): StepClient | undefined {
 	if (name === undefined) return undefined;
 	const n = name.toLowerCase();
-	if (n.includes('codex'))  return 'cli-codex';
-	if (n.includes('claude')) return 'cli-claude';
+	if (n.includes('codex'))  return 'codex';
+	if (n.includes('claude')) return 'claude';
 	return undefined;
 }
 

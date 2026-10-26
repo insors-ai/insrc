@@ -99,6 +99,12 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['conversation.stats', 'session', false],
 	['dataAnalyzer.clearCache', 'session', false],
 	['dataAnalyzer.diffRuns', 'session', false],
+	['db.connections.v2.session.open', 'session', false],
+	['db.connections.v2.session.resume', 'session', false],
+	['db.connections.v2.session.attach', 'session', false],
+	['db.connections.v2.session.delegate', 'session', false],
+	['db.connections.v2.session.heartbeat', 'session', false],
+	['db.connections.v2.session.end', 'session', false],
 	['db.connections.v2.activate', 'session', false],
 	['db.connections.v2.capabilities', 'session', false],
 	['db.connections.v2.drivers', 'session', false],
@@ -106,6 +112,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['db.connections.v2.mutate', 'session', false],
 	['db.connections.v2.read', 'session', false],
 	['db.connections.v2.status', 'session', false],
+	['db.connections.v2.test', 'session', false],
+	['db.connections.v2.cancelTest', 'session', false],
 	['db.connections.v2.ticket', 'session', false],
 	['db.deleteConnection', 'session', false],
 	['db.listConnections', 'session', false],
@@ -145,6 +153,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['prefs.list', 'session', false],
 	['providers.check', 'session', false],
 	['providers.getConfig', 'session', false],
+	['models.definitions', 'session', false],
+	['models.resolveRole', 'session', false],
 	['providers.listModels', 'session', false],
 	['providers.setConfig', 'session', false],
 	['providers.testKey', 'session', false],
@@ -255,3 +265,13 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 	classOf: (method: string): MethodClass | undefined => BY_METHOD.get(method)?.cls,
 	entries: (): readonly MethodClassEntry[] => ENTRIES,
 });
+
+/** These operations own process-local admission and transport lifetimes. */
+export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
+ 'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',
+ 'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
+ 'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',
+ 'db.connections.v2.test','db.connections.v2.cancelTest',
+ 'db.connections.v2.session.open','db.connections.v2.session.resume','db.connections.v2.session.attach',
+ 'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
+]);

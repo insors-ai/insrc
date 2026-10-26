@@ -316,10 +316,12 @@ test('captured legacy config → migrated to the flat models.* surface, residue 
 	for (const k of ['tiers', 'tasks', 'coreFloor', 'byRepo', 'shaper', 'maxPlanDepth', 'local']) {
 		assert.deepEqual(models[k], bModels[k], `models.${k} must match baseline`);
 	}
-	// the legacy per-repo shaper pin folded into tiers.core.runner; roleTiers→tasks
+	// roleTiers→tasks; the legacy per-repo shaper pin folds into tiers.core, and the
+	// per-repo tiers are then removed (tiers are global only, Epic ce99b720 s3)
 	assert.deepEqual(models['tasks'], { 'design.hld.synthesize': 'core', 'review.claims.enumerate': 'mid', 'tracker.render': 'cheap' });
 	const byRepo = models['byRepo'] as Record<string, Record<string, unknown>>;
-	assert.deepEqual(byRepo['/Users/redacted/work/projects/example/repo'], { coreFloor: 'core', tiers: { core: { runner: 'cli-claude' } } });
+	assert.deepEqual(byRepo['/Users/redacted/work/projects/example/repo'], { coreFloor: 'core' });
+	assert.ok(r.pruned.includes('models.byRepo["/Users/redacted/work/projects/example/repo"].tiers.core'));
 	// the top-level orphan key (not on the retired list) survives
 	assert.equal(r.config['legacyOrphanKey'], 'kept-blindly');
 	assert.equal(r.migrated.length, 7);

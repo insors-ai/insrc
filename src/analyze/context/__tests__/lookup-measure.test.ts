@@ -1,3 +1,5 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
+import { executeSavedPlan as executePlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,6 +14,7 @@
  * The free-form lookup is run with a stand-in tool loop. No model.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, readFileSync, rmSync } from 'node:fs';
@@ -27,12 +30,12 @@ import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../../s
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { buildCompleteness, renderCompletenessLine, renderMeasureLine } from '../../completeness.js';
-import { executePlan, _getRunnersForTest, _overrideRunnerForTest } from '../../explore/executor.js';
+import {  _getRunnersForTest, _overrideRunnerForTest } from '../../explore/executor.js';
 import { measureOwnRequest, runFreeformProbe } from '../../explore/freeform-probe.js';
 import type { ExecutedPlan, Exploration, ExplorationPlan, ExplorationRunnerContext } from '../../explore/types.js';
 import type { RequestMeasure } from '../../measure.js';
 import { renderBundleAsMarkdown } from '../../../daemon/steps/bundle-md.js';
-import { runShaper, _computeCacheKeyForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
+import {  _computeCacheKeyForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
 import { resolveScope } from '../scope.js';
 import type { AnalyzeContextBundle, RunShapeInput } from '../types.js';
 
@@ -233,7 +236,7 @@ test("the builder's cache key leaves out the intent's size and the size hint: a 
 test('the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default', async () => {
 	const exp: Exploration = { id: 'e1', type: 'freeform.probe', purpose: 'p', params: { purpose: 'how are charges made', shaperId: 'code' } } as unknown as Exploration;
 	const ctxOf = (extra: Partial<ExplorationRunnerContext>): ExplorationRunnerContext =>
-		({ runId: 'r1', repoPath: repo, closureRepos: [repo], readDep: () => undefined, ...extra }) as unknown as ExplorationRunnerContext;
+		({ connectionExecution: savedAnalysisExecution(repo), runId: 'r1', repoPath: repo, closureRepos: [repo], readDep: () => undefined, ...extra }) as unknown as ExplorationRunnerContext;
 	/** Run the lookup with a stand-in loop; the size the loop was told. */
 	async function sizeTold(ctx: ExplorationRunnerContext): Promise<unknown> {
 		let told: unknown;
@@ -251,20 +254,20 @@ test('the free-form lookup uses the request size its runner context carries and,
 
 	// No size in the context, a resolved scope: that scope is measured (one file: XS).
 	assert.equal(await sizeTold(ctxOf({ scope: moduleScope })), 'XS');
-	assert.deepEqual([(await measureOwnRequest({ scope: moduleScope, repoPath: repo }, 'code')).files, (await measureOwnRequest({ scope: moduleScope, repoPath: repo }, 'code')).determined], [1, true]);
+	assert.deepEqual([(await measureOwnRequest({ scope: moduleScope, repoPath: repo, connectionExecution: savedAnalysisExecution(repo) }, 'code')).files, (await measureOwnRequest({ scope: moduleScope, repoPath: repo, connectionExecution: savedAnalysisExecution(repo) }, 'code')).determined], [1, true]);
 
 	// No size and no scope (a plan executed on a bare repo path): a repo scope at that path is measured, so the
 	// registered repo is found (five files: S). The scope the lookup builds for itself has no repo and would
 	// always read as a path the index does not hold, which is the largest size.
 	assert.equal(await sizeTold(ctxOf({})), 'S');
-	const own = await measureOwnRequest({ repoPath: repo }, 'code');
+	const own = await measureOwnRequest({ repoPath: repo, connectionExecution: savedAnalysisExecution(repo) }, 'code');
 	assert.deepEqual([own.source, own.items, own.files, own.size, own.determined], ['named-area', 10, 5, 'S', true]);
 
 	// The same for a bare path INSIDE the registered repo: the repo that contains it is found and the area under
 	// the path is counted (one file: XS). Measured as the workspace scope with no repo that the lookup builds, it
 	// would read as holding no registered repo.
 	assert.equal(await sizeTold(ctxOf({ repoPath: join(repo, 'src', 'one') })), 'XS');
-	const inside = await measureOwnRequest({ repoPath: join(repo, 'src', 'one') }, 'code');
+	const inside = await measureOwnRequest({ repoPath: join(repo, 'src', 'one'), connectionExecution: savedAnalysisExecution(join(repo, 'src', 'one')) }, 'code');
 	assert.deepEqual([inside.items, inside.files, inside.determined], [2, 1, true]);
 
 	// The executor hands a lookup the request size it was given, and none when it was given none.
@@ -285,7 +288,7 @@ test('the free-form lookup uses the request size its runner context carries and,
 	const elsewhere = join(sandbox, 'elsewhere');
 	mkdirSync(elsewhere);
 	assert.equal(await sizeTold(ctxOf({ repoPath: elsewhere })), 'XL');
-	assert.equal((await measureOwnRequest({ repoPath: elsewhere }, 'code')).determined, false);
+	assert.equal((await measureOwnRequest({ repoPath: elsewhere, connectionExecution: savedAnalysisExecution(elsewhere) }, 'code')).determined, false);
 });
 
 test("the bundle cache key is the same with and without a handed measure", () => {

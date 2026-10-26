@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Redis driver (kind: `redis`).
  *
@@ -12,7 +14,6 @@
 
 import { Redis } from 'ioredis';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -34,10 +35,10 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-redis');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class RedisDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind: string;
 
@@ -48,17 +49,26 @@ export class RedisDriver implements KvDriver {
 		kind: 'redis' | 'valkey' | 'keydb',
 		url: string,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-redis', context);
 		this.kind = kind;
 		this.client = new Redis(url, {
 			lazyConnect: true,
+			...(this.#runtimeLog.quiet ? { enableReadyCheck: false } : {}),
 			maxRetriesPerRequest: 1,
 			enableOfflineQueue: false,
 			connectTimeout: SCAN_TIMEOUT_MS,
+			commandTimeout: SCAN_TIMEOUT_MS,
 		});
 		this.client.on('error', (err: Error) => {
-			log.warn({ id, err: err.message }, 'redis client error');
+			this.#runtimeLog.emit('warn', () => ({ fields: { id, err: err.message }, message: 'redis client error' }));
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		if (this.client.status === 'wait') await this.client.connect();
+		await this.client.ping();
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
@@ -128,7 +138,10 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		await this.client.quit();
+		if (this.client.status === 'wait' || this.client.status === 'end') { this.client.disconnect(); return; }
+		try { await this.client.quit(); }
+		catch { /* A silent/disconnected server cannot prevent local disposal. */ }
+		finally { this.client.disconnect(); }
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
@@ -215,14 +228,14 @@ function classifyValue(key: string, raw: string | null): KvValue {
 // ---------------------------------------------------------------------------
 
 function makeFactory(kind: 'redis' | 'valkey' | 'keydb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${kind} connection '${config.id}' missing url`);
 		}
-		return new RedisDriver(config.id, kind, config.url, config);
+		return new RedisDriver(config.id, kind, config.url, config, context);
 	};
 }
 
-registerDriver({ kind: 'redis',  family: 'kv', factory: makeFactory('redis') });
-registerDriver({ kind: 'valkey', family: 'kv', factory: makeFactory('valkey') });
-registerDriver({ kind: 'keydb',  family: 'kv', factory: makeFactory('keydb') });
+registerDriver({ kind: 'redis',  family: 'kv', factory: makeFactory('redis') }, 'resource-context');
+registerDriver({ kind: 'valkey', family: 'kv', factory: makeFactory('valkey') }, 'resource-context');
+registerDriver({ kind: 'keydb',  family: 'kv', factory: makeFactory('keydb') }, 'resource-context');

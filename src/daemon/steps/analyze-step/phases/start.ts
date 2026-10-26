@@ -1,3 +1,6 @@
+import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
+import { assertAnalysisAudience } from '../../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -39,7 +42,11 @@ const log = getLogger('mcp:analyze-step:start');
 
 export async function handleStart(
 	input: StepInputStart,
+	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitPlan | StepOutputDone> {
+	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
@@ -61,7 +68,7 @@ export async function handleStart(
 
 	// Check the pairing and resolve the scope before anything is
 	// minted: a refused pairing throws here, so no state exists for it.
-	const resolvedScope = await stepScope(unsized);
+	const resolvedScope = await stepScope(unsized, undefined, execution);
 
 	// The size the planning prompt is given: counted from the area the scope
 	// names. A size the caller stated is a hint, carried in the state to the
@@ -128,7 +135,7 @@ export async function handleStart(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    await encodeState(state),
+		state:    await encodeState(state, execution),
 	};
 }
 

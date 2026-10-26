@@ -1,6 +1,6 @@
 import { daemonRunFiles } from './run-file-ownership.js';
 import {
-  EMBEDDING_DIM,
+  embeddingDim,
   ensureEmbeddingModel,
   isConfiguredEmbeddingModelInstalled,
   isOllamaAvailable,
@@ -107,11 +107,11 @@ export async function bootstrapEmbeddingModel(): Promise<void> {
     return;
   }
 
-  // ONNX loaded. Reconcile against the Lance schema dim baked in from
-  // config at module init time. Existing Lance tables carry that dim.
-  if (EMBEDDING_DIM !== ONNX_EMBEDDING_DIM) {
+  // ONNX loaded. Reconcile against the configured embedding dim (the Lance
+  // schema dim). Existing Lance tables carry that dim.
+  if (embeddingDim() !== ONNX_EMBEDDING_DIM) {
     const reason =
-      `ONNX fallback picked but config embeddingDim=${EMBEDDING_DIM} != ` +
+      `ONNX fallback picked but config embeddingDim=${embeddingDim()} != ` +
       `${ONNX_EMBEDDING_MODEL}'s ${ONNX_EMBEDDING_DIM}. ` +
       `Vector search + writes DISABLED. To enable: either (a) start Ollama with the ` +
       `configured model, or (b) update ~/.insrc/config.json ` +
@@ -120,7 +120,7 @@ export async function bootstrapEmbeddingModel(): Promise<void> {
       `rm -rf ~/.insrc/lance, and re-add repos.`;
     setActiveEmbedderBackend('disabled');
     modelState = { status: 'disabled', backend: 'disabled', reason };
-    log.error({ configDim: EMBEDDING_DIM, onnxDim: ONNX_EMBEDDING_DIM }, reason);
+    log.error({ configDim: embeddingDim(), onnxDim: ONNX_EMBEDDING_DIM }, reason);
     return;
   }
 

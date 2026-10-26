@@ -20,6 +20,7 @@ import { DEFAULT_TIERS, resolveTier, TIER_EFFORTS } from '../../config/analyze.j
 import type { Criticality } from '../../config/role-taxonomy.js';
 import { reasoningRoleTaxonomy } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
+import { shippedModelRegistry } from '../shipped-model-registry.js';
 
 /** The coreFloor applied when none is configured — mirrors the guard's built-in default. */
 export const DEFAULT_CORE_FLOOR: TierName = 'mid';
@@ -60,7 +61,7 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
 	const tierSource: Record<TierName, 'config' | 'default'> = { core: 'default', mid: 'default', cheap: 'default' };
 	for (const t of TIER_NAMES) {
 		// The same fallback the config applies: a default tier keeps its configured effort.
-		tiers[t] = resolveTier(tiering, t);
+		tiers[t] = resolveTier(tiering, t, shippedModelRegistry());
 		if (tiering.tiers?.[t] !== undefined) tierSource[t] = 'config';
 	}
 

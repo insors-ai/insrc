@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * ClickHouse driver (kind: `clickhouse`).
  *
@@ -13,10 +15,9 @@
  * RDBMS describe output.
  */
 
-import { createClient } from '@clickhouse/client';
+import { createClient, ClickHouseLogLevel } from '@clickhouse/client';
 import type { ClickHouseClient } from '@clickhouse/client';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -41,10 +42,10 @@ import {
 } from './rdbms-common.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-clickhouse');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class ClickHouseDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'clickhouse';
 
@@ -53,10 +54,12 @@ export class ClickHouseDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-clickhouse', context);
 		const u = new URL(url);
 		this.defaultDatabase = u.pathname === '' || u.pathname === '/' ? 'default' : u.pathname.slice(1);
 		this.client = createClient({
+			...(this.#runtimeLog.quiet || process.env['INSRC_MODE'] === 'probe-worker' ? { log: { level: ClickHouseLogLevel.OFF } } : {}),
 			url: `${u.protocol}//${u.host}`,
 			...(u.username !== '' ? { username: decodeURIComponent(u.username) } : {}),
 			...(u.password !== '' ? { password: decodeURIComponent(u.password) } : {}),
@@ -64,6 +67,10 @@ export class ClickHouseDriver implements RdbmsDriver {
 			request_timeout: SAMPLE_TIMEOUT_MS,
 		});
 		this.prismaPath = prismaPath;
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.runRows('SELECT 1', []);
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -96,7 +103,7 @@ export class ClickHouseDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, CLICKHOUSE_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const rows = await withTimeout(this.runRows(text, values), SAMPLE_TIMEOUT_MS);
 		const limit = Math.min(opts.limit, 50);
@@ -262,13 +269,13 @@ function splitTarget(target: string, defaultDb: string): { database: string; tab
 registerDriver({
 	kind: 'clickhouse',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: clickhouse connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma'
 			? config.schemaSource.path
 			: undefined;
-		return new ClickHouseDriver(config.id, config.url, prismaPath);
+		return new ClickHouseDriver(config.id, config.url, prismaPath, context);
 	},
-});
+}, 'resource-context');

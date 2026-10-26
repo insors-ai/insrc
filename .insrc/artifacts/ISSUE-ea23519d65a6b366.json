@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792908255676-ny9wlk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T06:04:55.306Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 39598,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "ea23519d65a6b366",
+    "epicSlug": "render-story-ids-hld-lld-plan",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Render Story ids in HLD, LLD and PLAN documents from the Epic's creation date",
+    "reproduction": "Create an Epic's Define on one day and write its HLD (or a Story's LLD or PLAN) on a later day. Observed: the HLD's Story headings, and the LLD and PLAN titles, show a Story id dated on the day that document was written, e.g. `E20261025ce99b720:S001` in docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md. Expected: the same id the Define uses for that Story, `E20261023ce99b720:S001` in docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, matching the Epic folder name. Readers and reviewers see two ids for one Story, and a reviewer flags it as a mismatch.",
+    "rootCause": "A Story id carries the date of the Epic it belongs to: storyWorkflowId takes a creation date and uses its UTC day (src/workflow/id.ts:150-153). The Define renderer passes the Define's own creation date, which is correct because the Define is the Epic's anchor (src/workflow/artifacts/define.ts:125). The HLD, LLD and PLAN renderers pass their own document's creation date instead (src/workflow/artifacts/hld.ts:169, src/workflow/artifacts/lld.ts:331, src/workflow/artifacts/plan.ts:116), so their ids drift whenever the document is written on a later day than the Epic. Other places already anchor correctly: the tracker uses the Define's creation date (src/workflow/tracker-auto.ts:207) and the companion header uses an anchor date (src/workflow/artifacts/companion/header.ts:134).",
+    "fixIntent": "The HLD, LLD and PLAN renderers mint every Story id from the Epic's anchor date (the Define's creation date) rather than from their own document's creation date, so a Story has one id across every document; standalone Stories keep their own anchor. Re-rendering an existing document corrects its ids. Regression tests render each document with a creation date later than its Epic's and check the ids match the Define's."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/id.ts:150",
+      "quotedText": "export function storyWorkflowId(epicHash: string, createdAtISO: string, storyId: string): WorkflowId {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/hld.ts:169",
+      "quotedText": "const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, sb.storyId)) : undefined;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts:331",
+      "quotedText": "const lldSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/plan.ts:116",
+      "quotedText": "const planSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/define.ts:125",
+      "quotedText": "const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, s.id)) : undefined;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/tracker-auto.ts:207",
+      "quotedText": "const storyWid = safeCanonical(() => storyWorkflowId(epicHash, define.meta.createdAt, storyId));"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/header.ts:134",
+      "quotedText": "return safeCanonical(() => storyWorkflowId(source.epicHash, source.anchorCreatedAt, source.storyId)) ?? source.storyId;"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "insrc_review_step HLD-ce99b72065d03b1b 2026-10-25T05:45:26Z",
+      "quotedText": "Every HLD Story heading instead uses 'E20261025ce99b720:S001' through S007, although the artifact and directory still reference the original Epic."
+    }
+  ]
+}

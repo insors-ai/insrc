@@ -24,6 +24,9 @@
  * responsibility to emit a valid topological ordering).
  */
 
+import { assertSessionReuseNow, beginSessionReuse, sessionReuseWindow, assertSessionReuse, assertSessionContinuation, rememberSessionContinuation } from '../session-reuse.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -127,6 +130,8 @@ const NON_CACHEABLE: ReadonlySet<ExplorationType> = new Set([
 // ---------------------------------------------------------------------------
 
 export interface ExecutePlanArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:            string;
 	readonly repoPath:         string;
 	readonly closureRepos:     readonly string[];
@@ -143,6 +148,10 @@ export interface ExecutePlanArgs {
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	const start = Date.now();
 	const results: ExecutedExploration[] = [];
 	const outputsById = new Map<string, ExplorationOutput>();
@@ -168,6 +177,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 		// runner cleanly instead of letting it throw a generic
 		// "required" error. That keeps the Diagnostics section
 		// readable: "prerequisite empty" vs "runtime failure".
+		if (execution.mode === 'session-memory') sessionReuseWindow(execution).check();
 		const { exp, unmetPrerequisites } = substitutePlaceholders(originalExp, outputsById);
 
 		let output: ExplorationOutput = {
@@ -202,10 +212,10 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 					`The dependent exploration produced no data for these accessors.`,
 			};
 		} else {
-			const cacheable = !NON_CACHEABLE.has(exp.type);
+			const cacheable = execution.mode !== 'session-memory' && !NON_CACHEABLE.has(exp.type);
 			if (cacheable) {
 				const hit = await getCachedExploration(
-					args.repoPath, args.repoLastIndexedAtMs, exp,
+					args.repoPath, args.repoLastIndexedAtMs, exp, execution,
 				);
 				if (hit !== null) {
 					output = hit;
@@ -216,10 +226,11 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 			if (!cached) {
 				try {
 					const ctx: ExplorationRunnerContext = {
+						connectionExecution: execution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,
-						readDep:      (id: string) => outputsById.get(id),
+						readDep:      (id: string) => { if (execution.mode === 'session-memory') sessionReuseWindow(execution).check(); return outputsById.get(id); },
 						ignoreFilter,
 						repoCompleteness,
 						scope:        args.scope,
@@ -228,10 +239,12 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 					output = await runner(exp, ctx);
 					if (cacheable) {
 						await putCachedExploration(
-							args.repoPath, args.repoLastIndexedAtMs, exp, output,
+							args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
 						);
 					}
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'exploration failed',
@@ -242,6 +255,8 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 		}
 
 		const elapsedMs = Date.now() - runnerStart;
+		await assertSessionReuse(execution);
+		assertSessionReuseNow(execution);
 		outputsById.set(exp.id, output);
 		results.push({ exploration: exp, output, cached, elapsedMs });
 	}
@@ -260,6 +275,8 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 		'plan executed',
 	);
 
+	await assertSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	return {
 		plan:        args.plan,
 		results,
@@ -460,6 +477,10 @@ export async function stepPlan(
 		readonly resumeState?: StepPlanResumeState;
 	},
 ): Promise<StepPlanResult> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	const runStart = Date.now();
 	const outputsById = new Map<string, ExplorationOutput>();
 	const results: ExecutedExploration[] = [];
@@ -467,6 +488,8 @@ export async function stepPlan(
 	let priorMs = 0;
 
 	if (args.resumeState !== undefined) {
+		await assertSessionContinuation(args.resumeState, execution);
+		assertSessionReuseNow(execution);
 		for (const { id, output } of args.resumeState.outputs) {
 			outputsById.set(id, output);
 		}
@@ -485,6 +508,7 @@ export async function stepPlan(
 		if (outputsById.has(originalExp.id)) continue;
 
 		const runnerStart = Date.now();
+		if (execution.mode === 'session-memory') sessionReuseWindow(execution).check();
 		const { exp, unmetPrerequisites } = substitutePlaceholders(originalExp, outputsById);
 
 		let output: ExplorationOutput = {
@@ -515,8 +539,8 @@ export async function stepPlan(
 		} else if (NARROW_LLM_TYPES.has(exp.type) && NARROW_RUNNERS[exp.type] !== undefined) {
 			// Narrow-LLM exploration: try cache first (same key as
 			// executePlan), else prepare + pause.
-			const hit = await getCachedExploration(
-				args.repoPath, args.repoLastIndexedAtMs, exp,
+			const hit = execution.mode === 'session-memory' ? null : await getCachedExploration(
+				args.repoPath, args.repoLastIndexedAtMs, exp, execution,
 			);
 			if (hit !== null) {
 				output = hit;
@@ -525,10 +549,11 @@ export async function stepPlan(
 			} else {
 				const narrow = NARROW_RUNNERS[exp.type]!;
 				const ctx: ExplorationRunnerContext = {
+						connectionExecution: execution,
 					runId:        args.runId,
 					repoPath:     args.repoPath,
 					closureRepos: args.closureRepos,
-					readDep:      (id: string) => outputsById.get(id),
+					readDep:      (id: string) => { if (execution.mode === 'session-memory') sessionReuseWindow(execution).check(); return outputsById.get(id); },
 					ignoreFilter,
 					repoCompleteness,
 					scope:        args.scope,
@@ -540,7 +565,11 @@ export async function stepPlan(
 				let prep: NarrowPrepareResult | undefined;
 				try {
 					prep = await narrow.prepare(exp, ctx);
+					await assertSessionReuse(execution);
+					assertSessionReuseNow(execution);
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'multi-turn exploration failed in prepare',
@@ -551,8 +580,8 @@ export async function stepPlan(
 					// failed above: fall through to record the output
 				} else if (prep.kind === 'short-circuit') {
 					output = prep.shortCircuit;
-					await putCachedExploration(
-						args.repoPath, args.repoLastIndexedAtMs, exp, output,
+					if (execution.mode !== 'session-memory') await putCachedExploration(
+						args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
 					);
 				} else {
 					// PAUSE: return the prompt + schema, encode enough
@@ -566,20 +595,20 @@ export async function stepPlan(
 						userTurn:        prep.userTurn,
 						schema:          prep.schema,
 						preparedBlob:    prep.prepared,
-						resumeState: {
+						resumeState: await rememberSessionContinuation({
 							results,
 							outputs: [...outputsById.entries()].map(([id, out]) => ({ id, output: out })),
 							totalCached,
 							totalMsSoFar: priorMs + (Date.now() - runStart),
-						},
+						}, execution),
 						elapsedForPause,
 					};
 				}
 			}
 		} else {
 			// Deterministic path -- identical to executePlan.
-			const hit = await getCachedExploration(
-				args.repoPath, args.repoLastIndexedAtMs, exp,
+			const hit = execution.mode === 'session-memory' ? null : await getCachedExploration(
+				args.repoPath, args.repoLastIndexedAtMs, exp, execution,
 			);
 			if (hit !== null) {
 				output = hit;
@@ -588,20 +617,23 @@ export async function stepPlan(
 			} else {
 				try {
 					const ctx: ExplorationRunnerContext = {
+						connectionExecution: execution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,
-						readDep:      (id: string) => outputsById.get(id),
+						readDep:      (id: string) => { if (execution.mode === 'session-memory') sessionReuseWindow(execution).check(); return outputsById.get(id); },
 						ignoreFilter,
 						repoCompleteness,
 						scope:        args.scope,
 						requestSize:  args.requestSize,
 					};
 					output = await runner(exp, ctx);
-					await putCachedExploration(
-						args.repoPath, args.repoLastIndexedAtMs, exp, output,
+					if (execution.mode !== 'session-memory') await putCachedExploration(
+						args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
 					);
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'multi-turn exploration failed',
@@ -612,6 +644,8 @@ export async function stepPlan(
 		}
 
 		const elapsedMs = Date.now() - runnerStart;
+		await assertSessionReuse(execution);
+		assertSessionReuseNow(execution);
 		outputsById.set(exp.id, output);
 		results.push({ exploration: exp, output, cached, elapsedMs });
 	}
@@ -630,6 +664,8 @@ export async function stepPlan(
 		'stepPlan: multi-turn plan executed',
 	);
 
+	await assertSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	return {
 		kind: 'done',
 		executed: {

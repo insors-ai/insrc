@@ -38,6 +38,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
+import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definitions.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -71,7 +72,8 @@ import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
 import { basename } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
-import { setConfigAtPath } from '../config/write-path.js';
+import { applyConfigWrite } from './config-write.js';
+import { getModelRegistry } from './model-registry.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 import { createRepoSettingsHandlers } from './repo-settings.js';
@@ -1232,33 +1234,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return data['models'] ?? [];
 		},
 
-		// Claude model listing
-		'claude.models': async () => {
-			const { getKey } = await import('../shared/keystore.js');
-			const key = await getKey('ANTHROPIC_API_KEY');
-			if (key) {
-				try {
-					const Anthropic = (await import('@anthropic-ai/sdk')).default;
-					const client = new Anthropic({ apiKey: key });
-					const models = await client.models.list();
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					return models.data.map((m: any) => ({
-						id: m.id,
-						displayName: m.display_name ?? m.id,
-						createdAt: m.created_at ?? '',
-					}));
-				} catch (err) {
-					log.warn({ error: String(err) }, 'failed to list Claude models via API');
-				}
-			}
-			// Fallback: static catalog
-			return [
-				{ id: 'claude-haiku-4-5', displayName: 'Claude Haiku 4.5', createdAt: '' },
-				{ id: 'claude-sonnet-4-5', displayName: 'Claude Sonnet 4.5', createdAt: '' },
-				{ id: 'claude-sonnet-4-6', displayName: 'Claude Sonnet 4.6', createdAt: '' },
-				{ id: 'claude-opus-4-6', displayName: 'Claude Opus 4.6', createdAt: '' },
-			];
-		},
+		// Claude model listing: the served models of the family the claude CLI
+		// runs, from the model definitions (no cloud REST call, DEF k1).
+		'claude.models': async () => claudeModels(),
 
 		// Phase 1 cleanup: agent step bindings RPC gone with the agent
 		// framework. IDE Model Providers pane no longer surfaces per-step
@@ -1303,19 +1281,18 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				config = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
 			} catch { /* start fresh */ }
 
-			try {
-				setConfigAtPath(config, path, value);
-			} catch (err) {
-				// Invalid path (empty / empty segment) — refuse loudly rather than
-				// mis-write; the caller sees ok:false and surfaces a save failure.
-				log.warn({ path, err: (err as Error).message }, 'config.write: invalid path — refused');
-				return { ok: false };
+			// Applied to a candidate first: an invalid path, or a tier set to a model
+			// the user rejected, is refused and config.json is left as it is.
+			const { result, candidate } = applyConfigWrite(config, path, value, getModelRegistry());
+			if (!result.ok || candidate === undefined) {
+				log.warn({ path, reason: result.ok ? undefined : result.reason, detail: result.ok ? undefined : result.detail }, 'config.write: refused');
+				return result;
 			}
 
-			writeFileSync(PATHS.config, JSON.stringify(config, null, 2), 'utf-8');
+			writeFileSync(PATHS.config, JSON.stringify(candidate, null, 2), 'utf-8');
 			await reloadChatConfig();
-			log.info({ path, value }, 'config.write');
-			return { ok: true };
+			log.info({ path, value, restartRequired: result.restartRequired === true }, 'config.write');
+			return result;
 		},
 
 		'config.reload': async () => {
@@ -1444,6 +1421,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// IDE gets a slimmer surface in Phase 6 (Ollama + claude/codex
 		// CLI auth status). Until then these return offline so the pane
 		// shows a clean error and the user can switch panes.
+		'models.resolveRole':   async (params) => resolveRoleWire(params),   // sc5 (Epic ce99b72065d03b1b, s3): a role's tier, model and provider settings
+		'models.definitions':   () => modelDefinitions(),          // sc3 (Epic ce99b72065d03b1b, s2): read-only model definitions
 		'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002): revived read-only model-list dispatch
 		'providers.testKey':    offlineRpc('providers.testKey'),
 		'providers.getConfig':  offlineRpc('providers.getConfig'),
@@ -1524,9 +1503,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const mod = await import('./db-rpc.js');
 			return mod.deleteConnectionRpc(params as { repoRoot?: unknown; id?: unknown }, context);
 		},
-		'db.testConnection': async (params) => {
+		'db.testConnection': async (params, context) => {
 			const mod = await import('./db-rpc.js');
-			return mod.testConnectionRpc(params as { repoRoot?: unknown; config?: unknown });
+			return mod.testConnectionRpc(params as { repoRoot?: unknown; config?: unknown }, context);
 		},
 
 		// ----- analyze.context.* IPCs (analyze framework Context Builder) -----

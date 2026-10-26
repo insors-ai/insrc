@@ -1,0 +1,20 @@
+{
+  "scope": "t7 actual ClickHouse service plus quiet source/compiled workers after the recorded full sweep",
+  "tests": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0,
+    "log": "t19-clickhouse-followup.log",
+    "sha256": "d73e10e9bee3ce1fce71065b1d18873e0d540de98ecec931b16c0153ba798cac"
+  },
+  "build": {
+    "passed": true,
+    "log": "t19-clickhouse-build.log",
+    "sha256": "4c5da931223772ce63b3fc91a782bbc47349c60e2de0b348ef275895fd4dcde9"
+  },
+  "fullSweepRepeated": false,
+  "SQLServer": "Pending explicit container EULA authorization",
+  "releaseReady": false,
+  "fixtureReference": "https://github.com/ClickHouse/ClickHouse/blob/master/docker/server/README.md"
+}

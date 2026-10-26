@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * DynamoDB driver (kind: `dynamodb`).
  *
@@ -29,9 +31,9 @@ import {
 	ListTablesCommand,
 	ScanCommand,
 } from '@aws-sdk/client-dynamodb';
-import { fromIni } from '@aws-sdk/credential-providers';
-
-import { getLogger } from '../../../shared/logger.js';
+import { getLogMode } from '../../../shared/logger.js';
+import { dynamoIdentityProvider, dynamoSnapshotIdentity } from '../dynamo-identity.js';
+import type { DynamoRuntimeAuth } from '../draft-probe.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -46,12 +48,12 @@ import type {
 import { registerDriver } from '../registry.js';
 import {
 	assertNamespaceAllowed,
+	SCAN_TIMEOUT_MS,
 	clampSampleShapeLimit,
 	clampScanLimit,
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-dynamodb');
 
 const TABLE_NAME_RE = /^[A-Za-z0-9_.-]{3,255}$/;
 
@@ -62,6 +64,7 @@ interface TableMeta {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class DynamoDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'dynamodb';
 
@@ -74,12 +77,25 @@ export class DynamoDriver implements KvDriver {
 		profile: string | undefined,
 		endpoint: string | undefined,
 		private readonly config: ConnectionConfig,
+		runtimeAuth?: DynamoRuntimeAuth,
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-dynamodb', context);
+		if (getLogMode() === 'probe-worker' && runtimeAuth === undefined) throw new Error('Connection credentials are unavailable.');
+		const source = runtimeAuth ? async () => dynamoSnapshotIdentity(runtimeAuth) : dynamoIdentityProvider({ ...config, options: { ...config.options, ...(profile !== undefined ? {profile} : {}) } });
 		this.client = new DynamoDBClient({
+			...(this.#runtimeLog.quiet ? { logger: { trace() {}, debug() {}, info() {}, warn() {}, error() {} } } : {}),
 			region,
-			...(profile !== undefined ? { credentials: fromIni({ profile }) } : {}),
+			credentials: async () => {
+				const value = await source();
+				return { accessKeyId: value.accessKeyId, secretAccessKey: value.secretAccessKey, ...(value.sessionToken !== undefined ? {sessionToken:value.sessionToken}:{}), ...(value.expiration !== undefined ? {expiration:value.expiration}:{} ) };
+			},
 			...(endpoint !== undefined ? { endpoint } : {}),
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.client.send(new ListTablesCommand({ Limit: 1 }), { abortSignal: AbortSignal.timeout(SCAN_TIMEOUT_MS) });
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
@@ -228,7 +244,7 @@ export class DynamoDriver implements KvDriver {
 			? { partitionKey: partition, sortKey: sort }
 			: { partitionKey: partition };
 		this.tableMetaCache.set(table, meta);
-		log.debug({ id: this.id, table, meta }, 'cached table meta');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, table, meta }, message: 'cached table meta' }));
 		return meta;
 	}
 }
@@ -293,7 +309,7 @@ function requireTableName(opts: ScanOpts): string {
 registerDriver({
 	kind: 'dynamodb',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const region = typeof opts['region'] === 'string' ? opts['region'] : undefined;
 		if (region === undefined) {
@@ -303,6 +319,6 @@ registerDriver({
 		}
 		const profile = typeof opts['profile'] === 'string' ? opts['profile'] : undefined;
 		const endpoint = typeof opts['endpoint'] === 'string' ? opts['endpoint'] : undefined;
-		return new DynamoDriver(config.id, region, profile, endpoint, config);
+		return new DynamoDriver(config.id, region, profile, endpoint, config, undefined, context);
 	},
-});
+}, 'resource-context');

@@ -72,6 +72,7 @@ import { getLogger } from '../../shared/logger.js';
 import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
+import { shippedModelRegistry } from '../shipped-model-registry.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { readReviewRecordOf } from '../../workflow/review/report-file.js';
 import { rpc } from '../client.js';
@@ -326,12 +327,14 @@ export async function reviewArtifact(
 	artifactPath: string,
 	reviewFile: typeof reviewArtifactFile = reviewArtifactFile,
 ): Promise<ReviewArtifactResult> {
-	const router = createRoleRouter({});
+	// The TUI resolves from the shipped definitions only (never the user's store) until s5.
+	const registry = shippedModelRegistry();
+	const router = createRoleRouter({ registry });
 	// Establish the sc6 routing seam so the review resolves through the same
 	// choke point as the workflow runner, and any deep reasoning it triggers is
 	// tiered per-role rather than falling through to the legacy provider.
 	return runWithRoutingContext({ router, repoPath }, async () => {
-		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
+		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(registry), repoPath);
 		return reviewFile({
 			mdPath:     artifactPath,
 			jsonPath:   jsonPathForMd(artifactPath),

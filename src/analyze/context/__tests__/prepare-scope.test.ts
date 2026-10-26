@@ -6,6 +6,7 @@
  * Stand-in readers -- no LMDB, no LLM.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -188,7 +189,7 @@ test("tool loop's path for classification and task modes is the resolved lookupP
 		const forClassification = await prepareScope('classification', classInput(c.ref), deps());
 		const forTask           = await prepareScope('task', taskInput('generic', c.ref), deps());
 		for (const [mode, scope] of [['classification', forClassification], ['task', forTask]] as const) {
-			const toolDeps = _buildToolDepsForTest({ runId: 'r1', shaperId: 'generic', invocationMode: mode, scope, provider });
+			const toolDeps = _buildToolDepsForTest({ connectionExecution: savedAnalysisExecution(scope.lookupPath), runId: 'r1', shaperId: 'generic', invocationMode: mode, scope, provider });
 			assert.equal(toolDeps.repoPath, c.path, `${mode} ${c.ref.kind}`);
 			assert.deepEqual(toolDeps.closureRepos, [c.path], `${mode} ${c.ref.kind}`);
 			assert.notEqual(toolDeps.repoPath, process.cwd(), `${mode} ${c.ref.kind}: not the working directory`);

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792949885923-d3kdhm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T17:38:06.071Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 70248,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 120601,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/__tests__/list-models.test.ts",
+        "src/daemon/__tests__/model-catalog.test.ts",
+        "src/daemon/__tests__/model-definitions.test.ts",
+        "src/daemon/__tests__/model-registry.test.ts",
+        "src/daemon/__tests__/models-definitions-daemon.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/list-models.ts",
+        "src/daemon/model-catalog.ts",
+        "src/daemon/model-definitions.ts",
+        "src/daemon/threads/method-class.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ],
+      "excludedFromScope": [
+        "src/daemon/db/management-enablement.ts",
+        "src/daemon/db/session-owner.ts",
+        "src/daemon/request-context.ts",
+        "src/daemon/server.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/router.ts",
+        "src/shared/connection-management-wire.ts",
+        "src/shared/connection-management.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/model-definitions.ts:78",
+            "message": "The new module constructs OllamaProvider and calls listLocalModels, moving the provider boundary sites previously classified under list-models.ts. The inventory change removes that old classification without adding model-definitions.ts, leaving these boundary sites unclassified.",
+            "expectationRef": "PLAN t1: refresh the source-inventory digests and classify model-definitions.ts if it has boundary sites; session-source-inventory.test.ts must pass."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

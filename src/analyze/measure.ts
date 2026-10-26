@@ -29,7 +29,7 @@
 
 import { resolve } from 'node:path';
 import { createConnectionResolver } from '../daemon/db/pool-cache.js';
-import { analysisConnectionContext } from './connection-access.js';
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from './connection-access.js';
 import { dataSourceListingTimeoutMs } from '../config/analyze.js';
 import { listFilesForConnection } from '../daemon/db/list-files.js';
 import { findEntitiesByFile, getEntity, listEntitiesForRepo } from '../db/entities.js';
@@ -44,7 +44,7 @@ import type { ResolvedScope, ScopeDeps } from './context/scope.js';
 import { isCompletenessRecord } from './completeness.js';
 import { filesNamedBy } from './explore/types.js';
 import type { ExecutedExploration } from './explore/types.js';
-import { acquireDataPool, dataScopeOf } from './runtimes/data/_shared.js';
+import { acquireDataPool, dataConnectionResolver, dataScopeOf } from './runtimes/data/_shared.js';
 import type { DataScope } from './runtimes/data/_shared.js';
 import { walkFiles } from './runtimes/infra/_shared.js';
 import { liesUnder } from './runtimes/shared/source-modules.js';
@@ -266,6 +266,8 @@ export interface MeasureDeps {
 
 /** What a caller may pass to the measuring pass. */
 export interface MeasureOptions {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/** The request's cancellation signal: once it fires, the pass stops and the measure is not determined. */
 	readonly signal?:          AbortSignal | undefined;
 	/**
@@ -335,15 +337,17 @@ export async function measureRequestScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	assertAnalysisConnectionExecution(options?.connectionExecution);
 	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scopeRef.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
 	let scope: ResolvedScope;
 	try {
 		scope = target === 'generic'
-			? await resolveScopeForTarget(scopeRef, 'generic', depsForTest?.scope)
-			: await resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope);
+			? await resolveScopeForTarget(scopeRef, 'generic', depsForTest?.scope, undefined, options?.connectionExecution)
+			: await resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope, undefined, options?.connectionExecution);
 	} catch (err) {
+		if (options?.connectionExecution?.mode === 'session-memory') return notDetermined(sourceFor(scopeRef.kind, target), 'The connection scope is unavailable.', sizeHint);
 		const scoped = scopeErrorMapping(err);
 		const note = scoped !== undefined
 			? scoped.message
@@ -370,6 +374,7 @@ export async function measureResolvedScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	assertAnalysisConnectionExecution(options?.connectionExecution);
 	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scope.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
@@ -379,7 +384,7 @@ export async function measureResolvedScope(
 		if (target === 'infra') return await measureInfraDirectory(scope.lookupPath, sizeHint);
 		return await measureStoredArea(scope, sizeHint);
 	} catch (err) {
-		return notDetermined(sourceFor(scope.kind, target), `the count could not be taken (${reasonOf(err)})`, sizeHint);
+		return notDetermined(sourceFor(scope.kind, target), options?.connectionExecution?.mode === 'session-memory' ? 'The connection measure is unavailable.' : `the count could not be taken (${reasonOf(err)})`, sizeHint);
 	}
 }
 
@@ -512,9 +517,11 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
  * connections file and closes the drivers of connections removed from it.
  */
 export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
+	assertAnalysisConnectionExecution(options?.connectionExecution);
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
 	if (isCancelled(options)) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
+	if (options?.connectionExecution?.mode === 'session-memory') return measureConnection(undefined, scope.poolPath, id, sizeHint, options);
 	let pool: DataPool;
 	try {
 		pool = await acquireDataPool(scope.poolPath);
@@ -604,6 +611,9 @@ interface PendingListing { work: Promise<RequestMeasure>; abandoned: boolean }
  * not pile up. An entry is removed when its call ends, whatever its result.
  */
 const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
+/** Only active keys, never results or promises shared across requests. Removed on actual settle. */
+const ownerMeasureSlots = new Map<string, Set<string>>();
+const MAX_OWNER_MEASURES = 64;
 
 /**
  * The measure of one connection of a pool that is already loaded.
@@ -615,7 +625,7 @@ const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
  * its late result is dropped.
  */
 async function measureConnection(
-	pool:     DataPool,
+	pool:     DataPool | undefined,
 	poolPath: string,
 	id:       string,
 	sizeHint: AnalyzeScope | undefined,
@@ -627,32 +637,56 @@ async function measureConnection(
 
 	// A source whose listing is a sample of keys is known by its kind, which the
 	// pool's own list gives: it is not connected to only to be declared uncountable.
-	const declaredKind = pool.safeList().find(c => c.key.id === id)?.kind;
+	const execution = options?.connectionExecution ?? savedAnalysisExecution(poolPath);
+	const access = analysisConnectionContext(poolPath, execution);
+	const session = execution.mode === 'session-memory';
+	const resolver = pool ? createConnectionResolver({ poolSource: async () => pool }) : dataConnectionResolver;
+	const metadata = session ? (await resolver.list(access)).find(c => c.key.id === id) : pool!.safeList().find(c => c.key.id === id);
+	assertAnalysisConnectionExecution(execution);
+	if (session && !metadata) return nd('The connection measure is unavailable.');
+	const declaredKind = metadata?.kind;
 	if (declaredKind !== undefined && SAMPLED_KINDS.has(declaredKind)) {
 		return nd(`the source '${id}' (${declaredKind}) has no namespaces to count; its listing is a sample of keys`);
 	}
 
 	const limitMs = sourceLimitMs(options);
 	const late = (what: string, err: unknown): void => {
+		if (session) return; // The owner-local quiet policy outlives the bounded waiter and authority.
 		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
 	};
-	// The call that is already out for this connection, or a new one.
-	let out = pendingListings.get(pool);
-	if (out === undefined) { out = new Map(); pendingListings.set(pool, out); }
-	const pendingKey = JSON.stringify([poolPath, id]);
-	let pending = out.get(pendingKey);
-	if (pending === undefined) {
-		// The callback lease belongs to this shared work, not to any bounded waiter.
-		// The call reads the entry's own flag, so the entry exists before the call starts.
+	let pending: PendingListing;
+	if (session) {
+		const ownerKey = JSON.stringify([access.daemonEpoch, access.sessionHandle]);
+		const slotKey = JSON.stringify([poolPath, id, metadata!.revision]);
+		let slots = ownerMeasureSlots.get(ownerKey);
+		if (slots?.has(slotKey) || (slots?.size ?? 0) >= MAX_OWNER_MEASURES) return nd('The connection measure is busy.');
+		if (!slots) { slots = new Set(); ownerMeasureSlots.set(ownerKey, slots); }
+		slots.add(slotKey);
+		const active = slots;
+		const clear = () => { active.delete(slotKey); if (active.size === 0 && ownerMeasureSlots.get(ownerKey) === active) ownerMeasureSlots.delete(ownerKey); };
+		let admitted = false;
 		const entry = { abandoned: false } as PendingListing;
-		entry.work = reachAndList(entry);
-		const calls = out;
-		const clear = (): void => { if (calls.get(pendingKey) === entry) calls.delete(pendingKey); };
+		entry.work = Promise.resolve().then(() => admitted ? reachAndList(entry) : nd('The connection measure is unavailable.'));
 		void entry.work.then(clear, clear);
-		out.set(pendingKey, entry);
+		try { execution.lifetime.registerDrain(entry.work); admitted = true; }
+		catch { return nd('The connection measure is unavailable.'); }
+		pending = entry;
+	} else {
+		// Saved-only callers retain the existing shared pending work semantics.
+		let out = pendingListings.get(pool!);
+		if (out === undefined) { out = new Map(); pendingListings.set(pool!, out); }
+		const pendingKey = JSON.stringify([poolPath, id]);
+		let entry = out.get(pendingKey);
+		if (entry === undefined) {
+			entry = { abandoned: false } as PendingListing;
+			entry.work = reachAndList(entry);
+			const current = entry, calls = out;
+			const clear = (): void => { if (calls.get(pendingKey) === current) calls.delete(pendingKey); };
+			void entry.work.then(clear, clear); out.set(pendingKey, entry);
+		}
 		pending = entry;
 	}
-	const outcome = await withinLimit(pending.work, limitMs, options?.signal, err => late('call', err));
+	const outcome = await withinLimit(pending.work, limitMs, session ? AbortSignal.any([execution.lifetime.signal, ...(options?.signal ? [options.signal] : [])]) : options?.signal, err => late('call', err));
 	if (outcome.kind === 'done') return hinted(outcome.value);
 	// What the call does after this is late.
 	pending.abandoned = true;
@@ -667,9 +701,13 @@ async function measureConnection(
 	async function reachAndList(state: { readonly abandoned: boolean }): Promise<RequestMeasure> {
 		const nd = (note: string): RequestMeasure => notDetermined('data-source', note);
 		const sizeHint = undefined;
+		let pin: Awaited<ReturnType<typeof resolver.lease>> | undefined;
 		try {
-			const resolver = createConnectionResolver({ poolSource: async () => pool });
-			return await resolver.withConnection(analysisConnectionContext(poolPath), id, async driver => {
+			if (session) {
+				pin = await resolver.lease(access, id);
+				if (pin.revision !== metadata!.revision) return nd('The connection changed before it could be measured.');
+			}
+			return await resolver.withConnection(access, id, async driver => {
 
 				try {
 					switch (driver.family) {
@@ -692,7 +730,7 @@ async function measureConnection(
 							return dataMeasure(listing.namespaces.length, 0, sizeHint);
 						}
 						case 'file': {
-							const config = pool.safeList().find(c => c.key.id === id);
+							const config = session ? metadata : pool!.safeList().find(c => c.key.id === id);
 							const path = config?.publicConfig['path'];
 							if (config === undefined || typeof path !== 'string') return nd(`the file connection '${id}' has no path`);
 							const listing = await listFilesForConnection(resolve(poolPath, path), { recursive: config.publicConfig['recursive'] === true });
@@ -704,14 +742,13 @@ async function measureConnection(
 					}
 				} catch (err) {
 					if (state.abandoned) late('listing', err);
-					return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+					return nd(session ? 'The connection listing is unavailable.' : `the listing of '${id}' failed (${reasonOf(err)})`);
 				}
 			});
 		} catch (err) {
 			if (state.abandoned) late('connection', err);
-			return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
-		}
-
+			return nd(session ? 'The connection measure is unavailable.' : `the source '${id}' cannot be reached (${reasonOf(err)})`);
+		} finally { await pin?.release(); }
 	}
 }
 
@@ -725,9 +762,12 @@ async function measureConnection(
  * before each one: once it has fired the rest are not asked.
  */
 async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined, options?: MeasureOptions): Promise<RequestMeasure> {
-	const pool = await acquireDataPool(poolPath);
-	await pool.reload();
-	const ids = pool.safeList().map(c => c.key.id);
+	const execution = options?.connectionExecution;
+	const pool = execution?.mode === 'session-memory' ? undefined : await acquireDataPool(poolPath);
+	if (pool) await pool.reload();
+	const ids = execution?.mode === 'session-memory'
+		? (await dataConnectionResolver.list(analysisConnectionContext(poolPath, execution))).map(c => c.key.id)
+		: pool!.safeList().map(c => c.key.id);
 
 	let objects = 0;
 	let files = 0;

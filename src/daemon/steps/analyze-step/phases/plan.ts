@@ -1,3 +1,7 @@
+import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
+import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
+import { assertAnalysisAudience } from '../../analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -61,11 +65,16 @@ const log = getLogger('mcp:analyze-step:plan');
 
 export async function handlePlan(
 	input: StepInputPlan,
+	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitBundle | StepOutputEmitNarrow | StepOutputError> {
+	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = await decodeState(input.state);
+		state = await decodeState(input.state, execution);
+		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_plan');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -109,8 +118,9 @@ export async function handlePlan(
 	// emit_narrow envelope so the outer client's LLM produces the
 	// narrow output.
 	// The token carries the intent, not a resolved scope: resolve it again.
-	const scope = await stepScope(state.intent);
+	const scope = await stepScope(state.intent, undefined, execution);
 	const step = await stepPlan({
+		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,
 		repoPath:            scope.lookupPath,
 		closureRepos:        [scope.lookupPath],
@@ -170,7 +180,7 @@ export async function handlePlan(
 			prompt:          step.systemPrompt,
 			userTurn:        step.userTurn,
 			schema:          step.schema as unknown as Record<string, unknown>,
-			state:           await reencodeState(input.state, pauseState),
+			state:           await reencodeState(input.state, pauseState, execution),
 			explorationId:   step.explorationId,
 			explorationType: step.explorationType,
 		};
@@ -189,7 +199,7 @@ export async function handlePlan(
 		executed,
 		measure,
 		target:   synthesizerKey,
-	});
+	}, execution);
 	// Not retryable: the file will still be missing on the next call.
 	if (!turn.ok) return errorResult(turn.code, turn.message, false, turn.data);
 	const prepared = turn.prepared;
@@ -229,7 +239,7 @@ export async function handlePlan(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    await reencodeState(input.state, nextState),
+		state:    await reencodeState(input.state, nextState, execution),
 	};
 }
 

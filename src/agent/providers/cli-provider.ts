@@ -151,6 +151,9 @@ export interface CliProviderOpts {
 	/** Reasoning effort for every call: claude `--effort <e>`, codex `-c model_reasoning_effort=<e>`.
 	 *  Absent: the CLI's own default. */
 	readonly effort?: TierEffort | undefined;
+	/** The model's input limit in characters, from the model definitions
+	 *  (codex states its limit; claude's size refusal decides when absent). */
+	readonly inputBudgetChars?: number | undefined;
 }
 
 
@@ -177,13 +180,11 @@ export class CliStallError extends Error {
 	}
 }
 
-/** codex's input limit in characters, as its own refusal states it (input_too_large, max_chars). */
-export const CODEX_INPUT_BUDGET_CHARS = 1_048_576;
-
 export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;
-	/** codex states its limit (CODEX_INPUT_BUDGET_CHARS); claude's is not known in
-	 *  advance, so its size refusal decides (ISSUE-aef82b03). */
+	/** The model's input limit in characters, as the model definitions give it
+	 *  (codex states its limit); absent, the CLI's size refusal decides
+	 *  (ISSUE-aef82b03). */
 	readonly inputBudgetChars: number | undefined;
 
 	private readonly kind: CliKind;
@@ -201,7 +202,7 @@ export class CliProvider implements LLMProvider {
 
 	constructor(opts: CliProviderOpts) {
 		this.kind = opts.kind;
-		this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined;
+		this.inputBudgetChars = opts.inputBudgetChars;
 		this.defaultModel = opts.model;
 		this.effort = opts.effort;
 		this.binPath = opts.binPath ?? opts.kind;

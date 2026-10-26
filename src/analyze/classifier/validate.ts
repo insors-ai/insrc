@@ -23,6 +23,10 @@
  * See: design/analyze-framework.md "Flow / 2. Classify"
  */
 
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { connectionIsRegistered } from '../context/scope.js';
 import { existsSync, statSync } from 'node:fs';
 
 import type {
@@ -91,11 +95,18 @@ export interface ValidationFailure {
 export async function validateIntentSemantics(
 	intent: UnsizedIntent,
 	connectionExists?: (id: string) => Promise<boolean>,
+	execution?: ConnectionExecutionContext,
 ): Promise<ValidationFailure | null> {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') {
+		if (intent.target === 'data' && intent.scopeRef.kind !== 'connection' && intent.scopeRef.value !== execution.connectionAccess.lookupRoot) throw new ConnectionExecutionError('session-expired');
+		connectionExists = id => connectionIsRegistered(id, undefined, execution);
+	}
 	const kindMismatch = checkKindTargetMatch(intent.target, intent.scopeRef.kind);
 	if (kindMismatch !== null) return kindMismatch;
 
 	const resolution = await checkScopeRefResolves(intent.scopeRef, connectionExists);
+	assertAnalysisConnectionExecution(execution);
 	if (resolution !== null) return resolution;
 
 	return null;

@@ -116,6 +116,8 @@ export type BundleLayerName =
 
 /** Options every shaper call accepts. */
 export interface ShapeOpts {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId: string;
 	/** Force-rebuild even if cache hits. Tests only -- no CLI surface. */
 	readonly bypassCache?: boolean;

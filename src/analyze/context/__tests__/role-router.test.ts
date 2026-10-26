@@ -15,7 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { AnalyzeConfig, AnalyzeTiering } from '../../../config/analyze.js';
+import { assembleConfig, type AnalyzeConfig, type AnalyzeTiering } from '../../../config/analyze.js';
 import { resolveRole, createRoleRouter } from '../role-router.js';
 import { resolveShaperKind } from '../shaper-provider.js';
 
@@ -38,21 +38,24 @@ function cfg(tiering: AnalyzeTiering = {}, over: Partial<AnalyzeConfig> = {}): A
 const CRITICAL = 'design.contract.detail'; // taxonomy: critical → core
 const PERIPH   = 'synthesize';             // taxonomy: peripheral → mid
 
-// ── resolveRole: empty tiering → built-in DEFAULT_TIERS apply ────────────────
+/** A config as loadAnalyzeConfig builds it: every tier resolved through the registry. */
+const loaded = (tiering: AnalyzeTiering = {}): AnalyzeConfig => assembleConfig(tiering, cfg().shaper, cfg().maxPlanDepth);
 
-test('empty tiering → peripheral (mid) role resolves to the built-in mid default (claude sonnet), no clamp', () => {
-	const r = resolveRole(PERIPH, cfg(), undefined);
+// ── resolveRole: empty tiering → the definitions' tier defaults apply ────────
+
+test('empty tiering → peripheral (mid) role resolves to the shipped mid default (claude sonnet), no clamp', () => {
+	const r = resolveRole(PERIPH, loaded(), undefined);
 	assert.equal(r.tier, 'mid'); // synthesize defaultTier
 	assert.equal(r.runner, 'cli-claude');
-	assert.equal(r.model, 'sonnet');
+	assert.equal(r.model, 'claude-sonnet-5');
 	assert.equal(r.clampedByFloor, false);
 });
 
-test('empty tiering → critical (core) role resolves to the built-in core default (claude opus), no clamp', () => {
-	const r = resolveRole(CRITICAL, cfg(), undefined);
+test('empty tiering → critical (core) role resolves to the shipped core default (claude opus), no clamp', () => {
+	const r = resolveRole(CRITICAL, loaded(), undefined);
 	assert.equal(r.tier, 'core');
 	assert.equal(r.runner, 'cli-claude');
-	assert.equal(r.model, 'opus');
+	assert.equal(r.model, 'claude-opus-5-5');
 	assert.equal(r.clampedByFloor, false);
 });
 
@@ -67,16 +70,16 @@ test('S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-cla
 test('empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults', () => {
 	const r = resolveRole(PERIPH, cfg({}, { shaperProvider: 'cli-codex', shaperProviderExplicit: true }), undefined,
 		{ clientDefault: undefined });
-	assert.equal(r.runner, 'cli-codex'); // legacy explicit beats DEFAULT_TIERS
+	assert.equal(r.runner, 'cli-codex'); // a config without resolved tiers falls to the legacy chain
 });
 
-test('a configured cheap tier wins over the built-in cheap default', () => {
+test('a configured cheap tier wins over the shipped cheap default', () => {
 	const NARROW = 'analyze.narrow'; // taxonomy: peripheral → cheap
-	const builtIn = resolveRole(NARROW, cfg(), undefined);
+	const builtIn = resolveRole(NARROW, loaded(), undefined);
 	assert.equal(builtIn.tier, 'cheap');
 	assert.equal(builtIn.runner, 'cli-claude');
-	assert.equal(builtIn.model, 'haiku');
-	const configured = resolveRole(NARROW, cfg({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }), undefined);
+	assert.equal(builtIn.model, 'claude-haiku-5-5');
+	const configured = resolveRole(NARROW, loaded({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }), undefined);
 	assert.equal(configured.runner, 'ollama');
 	assert.equal(configured.model, 'qwen3.6:27b');
 });
@@ -142,18 +145,18 @@ test('an unknown RoleId falls to the built-in default tier (mid), non-critical, 
 
 // ── resolveShaperKind: roleResolved admission (k1/ac2) ───────────────────────
 
-test('resolveShaperKind: roleResolved wins over repo/global/client', () => {
-	assert.equal(resolveShaperKind({ repoOverride: 'ollama', globalExplicit: 'cli-codex', clientDefault: 'ollama', roleResolved: 'cli-claude' }), 'cli-claude');
+test('resolveShaperKind: roleResolved wins over global/client', () => {
+	assert.equal(resolveShaperKind({ globalExplicit: 'cli-codex', clientDefault: 'ollama', roleResolved: 'cli-claude' }), 'cli-claude');
 });
 
 test('resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)', () => {
-	assert.equal(resolveShaperKind({ repoOverride: 'cli-codex', globalExplicit: undefined, clientDefault: undefined, roleResolved: 'openai' as never }), 'cli-codex');
-	assert.equal(resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: undefined, roleResolved: 'openai' as never }), 'ollama');
+	assert.equal(resolveShaperKind({ globalExplicit: 'cli-codex', clientDefault: undefined, roleResolved: 'openai' as never }), 'cli-codex');
+	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined, roleResolved: 'openai' as never }), 'cli-claude', "the floor is the definitions' default family");
 });
 
-test('resolveShaperKind: legacy three-input callers resolve identically (roleResolved absent)', () => {
-	assert.equal(resolveShaperKind({ repoOverride: undefined, globalExplicit: 'cli-claude', clientDefault: undefined }), 'cli-claude');
-	assert.equal(resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: undefined }), 'ollama');
+test('resolveShaperKind: legacy callers resolve identically (roleResolved absent)', () => {
+	assert.equal(resolveShaperKind({ globalExplicit: 'cli-claude', clientDefault: undefined }), 'cli-claude');
+	assert.equal(resolveShaperKind({ globalExplicit: undefined, clientDefault: undefined }), 'cli-claude');
 });
 
 // ── router surface: memoization + summariser-stays-local ─────────────────────

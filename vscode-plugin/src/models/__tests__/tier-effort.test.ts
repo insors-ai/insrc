@@ -57,7 +57,7 @@ test("VS Code manifest declares insrc.models.tiers.<tier>.effort matching the ca
   const values = new Map<string, unknown>([['models.tiers.core.runner', 'cli-codex'], ['models.tiers.core.model', 'gpt-6.1-sol'], ['models.tiers.core.effort', 'medium']]);
   const cli = await run(values, ['core', 'cli-codex', 'gpt-6.1-sol', 'high']);
   const effortStep = cli.shown[3]!;
-  assert.deepEqual(effortStep.map((x) => x.label), ['CLI default', 'low', 'medium', 'high', 'xhigh', 'max']);
+  assert.deepEqual(effortStep.map((x) => x.label), ['CLI default', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
   assert.equal(effortStep.find((x) => x.value === 'medium')?.description, '(current)');
   assert.deepEqual(cli.writes, [{ segments: ['models', 'tiers', 'core', 'effort'], value: 'high' }]);
 

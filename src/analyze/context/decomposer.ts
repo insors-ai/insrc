@@ -22,6 +22,8 @@
  * dispatch.
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -158,6 +160,7 @@ export const DECOMPOSE_SCHEMA: StructuredSchema = {
 // ---------------------------------------------------------------------------
 
 export interface DecomposeArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly intent:   ClassifiedIntent;
 	readonly runId:    string;
 	/** The intent's scope, already resolved (resolveScope). */
@@ -170,6 +173,8 @@ export interface DecomposeArgs {
  * intent. Tight prompt, small output, ~30s on qwen3.6:27b.
  */
 export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	if (args.connectionExecution?.mode === 'session-memory' && args.connectionExecution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile();
 	const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg);

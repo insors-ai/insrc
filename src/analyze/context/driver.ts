@@ -46,6 +46,7 @@
  *      docs/plans/analyze-context-builder.md Phase 3
  */
 
+import { ConnectionExecutionError, assertExplicitConnectionExecution, requireConnectionExecution } from '../../shared/step-context.js';
 import { emitStructuredAnswer, runReadOnlyToolLoop, type ReadOnlyToolLoopResult } from '../../agent/read-only-tool-loop.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -56,6 +57,7 @@ import { fileURLToPath } from 'node:url';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { loadAnalyzeConfig, type AnalyzeConfig } from '../../config/analyze.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
+import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
@@ -78,6 +80,8 @@ import {
 	type CacheKey,
 } from './cache.js';
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
+import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -126,6 +130,8 @@ const BUNDLE_LAYERS: readonly BundleLayerName[] = Object.freeze([
 // ---------------------------------------------------------------------------
 
 export interface RunShaperArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly promptPath:     string;
 	readonly invocationMode: ShaperMode;
 	readonly shaperId:       ShaperId;
@@ -407,11 +413,12 @@ async function servedFromCache(
 	return current === undefined || !isStaleByIndexer(bundle, current);
 }
 
-export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
-	const cfg = loadAnalyzeConfig();
+type ShaperEntryArgs = Omit<RunShaperArgs, 'connectionExecution'>;
+
+/** One cache implementation shared by a strict invocation and the unattached saved entry. */
+async function prepareShaperCache(args: ShaperEntryArgs, execution?: import('../../shared/step-context.js').ConnectionExecutionContext) {
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
-
 	// (1) Load prompt content; we need its hash for the cache key.
 	const promptContent = loadPromptFile(promptPath);
 
@@ -440,7 +447,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// (3) Cache lookup, BEFORE the scope is resolved: the key does not depend
 	// on the resolved scope, so a hit needs none of it. A failure to resolve
 	// something the cache does not depend on cannot make a hit unreachable.
-	const cached = readBundle(runId, cacheKey, opts);
+	const cached = execution?.mode === 'session-memory' ? null : readBundle(runId, cacheKey, { ...opts, connectionExecution: execution ?? opts.connectionExecution });
 	if (cached !== null) {
 		const scopeCheck = checksScopeState(invocationMode, shaperId, opts)
 			? (scope: ResolvedScope) => checkScopeState(shaperId, scope)
@@ -451,10 +458,35 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
 				'shaper cache hit',
 			);
-			return withCurrentHint(cached, inputs);
+			return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: withCurrentHint(cached, inputs) };
 		}
-		invalidateBundle(runId, cacheKey);
+		invalidateBundle(runId, cacheKey, execution);
 	}
+
+	return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: null };
+}
+
+/** Cache-only saved front door: never constructs a provider or resolves a source on a hit. */
+export async function readUnattachedSavedShaperCache(args: ShaperEntryArgs): Promise<AnalyzeContextBundle | null> {
+	assertExplicitConnectionExecution(undefined);
+	if (args.opts.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
+	loadAnalyzeConfig();
+	return (await prepareShaperCache(args)).cachedBundle;
+}
+
+export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	if (args.opts?.connectionExecution !== undefined && args.opts.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
+	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
+	const cfg = loadAnalyzeConfig();
+	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
+	const runId = opts.runId;
+
+	const { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle } = await prepareShaperCache(args, execution);
+	if (cachedBundle !== null) return cachedBundle;
 
 	// (4) A miss. Resolve the scope ONCE, for every mode. Everything below
 	// that needs the scope's repo, its lookup directory, its entity or
@@ -462,7 +494,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// the scope's kind with the kind of source is checked first: a
 	// request can arrive with a ready-made intent that no classifier
 	// validated.
-	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps);
+	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps, opts.connectionExecution ?? args.connectionExecution);
 
 	// (4.5) Before any model call, unless the caller made these checks
 	// already (runAnalyze, before it measured):
@@ -484,7 +516,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// bundle, or the one cause for which it did not proceed, or
 	// 'not-applicable' for a mode it does not serve.
 	const outcome = await tryExplorationPipeline(
-		{ invocationMode, shaperId, inputs, runId, scope },
+		{ invocationMode, shaperId, inputs, runId, scope, connectionExecution: execution },
 		steps,
 	);
 	// A cause the pipeline names becomes its own typed error here, in
@@ -508,7 +540,9 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		},
 	}));
 	if (pipelineBundle !== null) {
-		writeBundle(runId, cacheKey, pipelineBundle.bundle);
+		await assertSessionReuse(execution);
+		assertSessionReuseNow(execution);
+		if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, pipelineBundle.bundle, execution);
 		log.info(
 			{
 				runId,
@@ -528,13 +562,14 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	const messages = buildMessages(promptContent, inputs, invocationMode, shaperId);
 
 	// (5) Resolve provider + tool deps.
-	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildLocalToolLoopProvider(cfg);
 	const toolDeps = buildToolDeps({
 		runId,
 		shaperId,
 		invocationMode,
 		scope,
 		provider,
+		connectionExecution: execution,
 	});
 
 	// (6) Run the tool-loop + final structured emit.
@@ -553,6 +588,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		cfg.shaper.structuredOutputRetries,
 		cfg.shaper.ollamaNumPredict,
 		onTrace,
+		execution,
 	);
 
 	// (7) Stamp meta + validate. `repoLastIndexedAt` carries the registry
@@ -582,7 +618,9 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	}
 
 	// (8) Persist + return.
-	writeBundle(runId, cacheKey, bundle);
+	await assertSessionReuse(execution);
+	assertSessionReuseNow(execution);
+	if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, bundle, execution);
 	log.info(
 		{ runId, mode: invocationMode, shaperId, toolCalls: toolCallCount },
 		'shaper invocation complete',
@@ -794,6 +832,8 @@ export interface ShaperToolLoopResult {
 }
 
 export interface RunShaperToolLoopArgs {
+	/** Required normalized tuple, including explicit saved authority for legacy callers. */
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
@@ -827,16 +867,20 @@ export interface RunShaperToolLoopArgs {
 export async function runShaperToolLoop(
 	args: RunShaperToolLoopArgs,
 ): Promise<ShaperToolLoopResult> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
-	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildLocalToolLoopProvider(cfg);
 	const toolDeps = buildToolDeps({
 		runId:          args.runId,
 		shaperId:       args.shaperId,
 		invocationMode: args.invocationMode,
 		scope:          args.scope,
 		provider,
+		connectionExecution: execution,
 	});
 	const { messages: finalMessages, toolCallCount } = await runToolLoop(
 		provider,
@@ -851,7 +895,9 @@ export async function runShaperToolLoop(
 		cfg.shaper.structuredOutputRetries,
 		cfg.shaper.ollamaNumPredict,
 		args.onTrace,
+		execution,
 	);
+	assertAnalysisConnectionExecution(execution);
 	return { rawBundle, toolCallCount };
 }
 
@@ -870,9 +916,11 @@ async function runToolLoop(
 	maxToolTurns: number,
 	onTrace?:     ((event: ShaperTraceEvent) => void) | undefined,
 ): Promise<ToolLoopResult> {
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	let result: ReadOnlyToolLoopResult;
 	try {
 		result = await runReadOnlyToolLoop({
+			connectionExecution: deps.connectionExecution,
 			provider,
 			messages,
 			tools:    getReadOnlyTools(),
@@ -892,8 +940,11 @@ async function runToolLoop(
 			},
 		});
 	} catch (err) {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		throw classifyOllamaError(err, 'tool loop');
 	}
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	if (result.done) return { messages: result.messages, toolCallCount: result.toolCallCount };
 
 	// The results are written to a file in full; the error's message names it.
@@ -910,7 +961,9 @@ async function runFinalStructuredEmit(
 	structuredOutputRetries: number,
 	maxOutputTokens:         number,
 	onTrace?:                ((event: ShaperTraceEvent) => void) | undefined,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<AnalyzeContextBundle> {
+	assertAnalysisConnectionExecution(execution);
 	// Per feedback_prompt_structure: structural reference goes trailing.
 	// The final user turn carries the explicit schema reminder so the
 	// model's recency-weighted attention lands on the required-fields
@@ -968,6 +1021,7 @@ async function runFinalStructuredEmit(
 
 	try {
 		const raw = await emitStructuredAnswer<AnalyzeContextBundle>({
+			connectionExecution: execution,
 			provider,
 			messages,
 			instruction,
@@ -984,6 +1038,8 @@ async function runFinalStructuredEmit(
 		});
 		return raw;
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		const errClass = classifyOllamaError(err, 'final structured emit');
 		// classifyOllamaError returns either a ShaperLlmUnavailableError or
 		// the original error; if it's the original, treat it as a schema
@@ -1086,24 +1142,35 @@ function deriveEmptyLayers(bundle: AnalyzeContextBundle): BundleLayerName[] {
  * everything reachable via `buildShaperProvider(cfg)`. Tool-loop
  * callers stay on Ollama regardless of shaperProvider.
  */
-function buildProvider(modelId: string, numCtx: number): LLMProvider {
+function buildLocalToolLoopProvider(cfg: AnalyzeConfig): LLMProvider {
+	const { model, numCtx } = localToolLoopModel(cfg);
 	const local = loadLocalProviderConfig();
-	return new OllamaProvider(modelId, local.host, numCtx);
+	return new OllamaProvider(model, local.host, numCtx);
 }
 
 /** The local Ollama model for the tool-loop path (classification / task modes),
- *  which REQUIRES an Ollama provider (`CliProvider.supportsTools === false`).
- *  Derives from the cheap tier when it is an Ollama runner, else the local
- *  `coreModel` — never a CLI-only model id (which would break OllamaProvider).
- *  Replaces the old direct read of the (now derived) `cfg.shaperModel`, which
- *  can resolve to a CLI model id (e.g. opus) that OllamaProvider cannot honor. */
-function localToolLoopModel(cfg: AnalyzeConfig): string {
-	const cheap = cfg.tiering.tiers?.cheap;
-	if (cheap?.runner === 'ollama' && cheap.model.length > 0) return cheap.model;
-	return loadLocalProviderConfig().coreModel;
+ *  which REQUIRES an Ollama provider (`CliProvider.supportsTools === false`),
+ *  and its context window (the model's token inputLimit). In order: the cheap
+ *  tier's model when that tier resolved to the ollama family; else the local
+ *  `coreModel` when the ollama family lists it; else the definitions'
+ *  tool-loop model (logged when a coreModel was set but is not listed) —
+ *  never a CLI-only model id (which would break OllamaProvider). */
+export function localToolLoopModel(cfg: AnalyzeConfig, registry: ModelRegistry = getModelRegistry()): { model: string; numCtx: number } {
+	const cheap = cfg.tierResolutions?.cheap;
+	const coreModel = loadLocalProviderConfig().coreModel;
+	let chosen: ResolvedModel | undefined;
+	if (cheap !== undefined && registry.cliKind(cheap.family) === undefined) chosen = cheap.model;
+	// The local family is the tool-loop model's.
+	chosen ??= registry.find(registry.toolLoopModel().family, coreModel);
+	if (chosen === undefined) {
+		chosen = registry.toolLoopModel();
+		if (coreModel !== '') log.warn({ requested: coreModel, model: chosen.id }, `models.local.coreModel '${coreModel}' is not a listed Ollama model; the tool loop runs ${chosen.id}`);
+	}
+	return { model: chosen.id, numCtx: chosen.inputLimit?.max ?? 0 };
 }
 
 interface BuildToolDepsArgs {
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
@@ -1112,6 +1179,8 @@ interface BuildToolDepsArgs {
 }
 
 function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	requireConnectionExecution(args.connectionExecution);
 	const sessionId = `analyze-shaper-${args.runId}-${args.invocationMode}-${args.shaperId}`;
 	// The directory the tools run in: the scope's own directory for a
 	// repo / module / manifest directory / workspace; the containing
@@ -1120,6 +1189,8 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	return {
 		sessionId,
 		repoPath,
+		connectionExecution: args.connectionExecution,
+		signal: args.connectionExecution.lifetime.signal,
 		// V1 shaper closure = the scope's containing repo only.
 		// docs/plans/docs-module.md Section 6.3 pins the docs retriever to
 		// this policy; graph_search + docs_* tools use this to bound
@@ -1157,13 +1228,15 @@ export async function prepareScope(
 	invocationMode: ShaperMode,
 	inputs:         RunShaperArgs['inputs'],
 	deps?:          ScopeDeps,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
 	const ref = scopeRefOf(inputs);
-	if (invocationMode === 'run' && 'intent' in inputs) {
+	if ('intent' in inputs && (invocationMode === 'run' || (execution?.mode === 'session-memory' && inputs.intent.target === 'data'))) {
 		const target = (inputs as RunShapeInput).intent.target;
-		return resolveScopeForTarget(ref, target, deps);
+		return resolveScopeForTarget(ref, target, deps, undefined, execution);
 	}
-	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
+	return resolveScope(ref, deps, execution);
 }
 
 /**
@@ -1382,6 +1455,7 @@ function didNotProceed(cause: PipelineCause, message: string, extra: PipelineCau
  */
 async function tryExplorationPipeline(
 	args: {
+		connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 		invocationMode: ShaperMode;
 		shaperId:       ShaperId;
 		inputs:         RunShaperArgs['inputs'];
@@ -1391,6 +1465,8 @@ async function tryExplorationPipeline(
 	},
 	steps: PipelineSteps = REAL_PIPELINE_STEPS,
 ): Promise<PipelineOutcome> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
 	if (args.invocationMode !== 'run') return { kind: 'not-applicable' };
 	// Every run-mode shaper flows through the exploration pipeline
 	// (docs/plans/exploration-based-context-build.md Phase 6). Recipe-less
@@ -1422,7 +1498,8 @@ async function tryExplorationPipeline(
 	const reused = handed !== undefined && handed.source !== 'lookup-results';
 	const area = reused
 		? handed
-		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);
+		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint, { connectionExecution: execution, signal: execution.lifetime.signal });
+	assertAnalysisConnectionExecution(execution);
 	const intent: ClassifiedIntent = { ...unsized, scope: area.size };
 	log.info(
 		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note, reused },
@@ -1438,8 +1515,11 @@ async function tryExplorationPipeline(
 	let plan: ExplorationPlan;
 	let usedFallback = false;
 	try {
-		plan = await steps.decompose({ intent, runId: args.runId, scope: args.scope });
+		plan = await steps.decompose({ intent, runId: args.runId, scope: args.scope, connectionExecution: execution });
+		assertAnalysisConnectionExecution(execution);
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof DecomposerLlmUnavailableError) {
 			log.info(
 				{ runId: args.runId, err: err.message },
@@ -1513,12 +1593,15 @@ async function tryExplorationPipeline(
 	try {
 		lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		return didNotProceed('index-state-read-failed', errorText(err));
 	}
 	const lastIndexedBigInt = BigInt(lastIndexedMs ?? 0);
 	let executed: Awaited<ReturnType<PipelineSteps['executePlan']>>;
 	try {
 		executed = await steps.executePlan({
+			connectionExecution: execution,
 			runId:            args.runId,
 			repoPath,
 			closureRepos:     [repoPath],
@@ -1529,9 +1612,12 @@ async function tryExplorationPipeline(
 			requestSize:      area.size,
 		});
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		return didNotProceed('lookup-failed', errorText(err));
 	}
 
+	assertAnalysisConnectionExecution(execution);
 	// (c.0) The answer report, derived from the lookups' own records before any
 	// answer is written. It does not depend on the answer. A lookup output
 	// that states nothing about its completeness is a defect of that lookup:
@@ -1595,11 +1681,13 @@ async function tryExplorationPipeline(
 							: 'code';
 	try {
 		const raw = await steps.synthesize({
+			connectionExecution: execution,
 			runId:    args.runId,
 			intent:   answerIntent,
 			executed,
 			target:   synthesizeTarget,
 		});
+		assertAnalysisConnectionExecution(execution);
 		return {
 			kind:             'bundle',
 			raw,
@@ -1607,6 +1695,8 @@ async function tryExplorationPipeline(
 			found,
 		};
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof SynthesizerLlmUnavailableError) {
 			log.info(
 				{ runId: args.runId, err: err.message },

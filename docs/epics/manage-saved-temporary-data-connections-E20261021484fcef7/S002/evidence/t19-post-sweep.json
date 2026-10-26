@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-25T07:01:02.055Z",
+  "commit": "5758f5fbc1ccfc6d1129e210f0f9d5ac8d3102e2",
+  "fullSweepRepeated": false,
+  "originalFullSweep": {
+    "report": "t19-regression.json",
+    "counts": {
+      "tests": 6492,
+      "pass": 6350,
+      "fail": 6,
+      "cancelled": 1,
+      "skipped": 132,
+      "todo": 3
+    },
+    "checksPassed": false,
+    "sourceDrift": [],
+    "appliesToCommit": "98525b96703b8b7219dd24e56432cd49d37e3675"
+  },
+  "build": {
+    "passed": true,
+    "log": "t19-final-build.log",
+    "sha256": "4c5da931223772ce63b3fc91a782bbc47349c60e2de0b348ef275895fd4dcde9"
+  },
+  "focusedFollowUps": [
+    {
+      "name": "feature-focused",
+      "scope": "Before final preparation/SDK disposal corrections",
+      "counts": {
+        "tests": 89,
+        "pass": 89,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "t19-feature-focused.log",
+      "sha256": "90cc5aa4812bb7957897451b59ca2696a1b2ede404d14a377adf8e678daa02c6"
+    },
+    {
+      "name": "compatibility",
+      "scope": "Frozen trusted context, method catalog, path errors, legacy lookup and release evidence",
+      "counts": {
+        "tests": 31,
+        "pass": 31,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "t19-compatibility.log",
+      "sha256": "d69d423ce407a338db8b0bd5ad0c72c061b776fe779b27d5f254c04ed4723b9f"
+    },
+    {
+      "name": "final-corrections",
+      "scope": "Final affected live KV, disposal, supervisor, RPC, composed canary and field-audit checks",
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "t19-final-corrections.log",
+      "sha256": "3980f066ed180b5cc1c93500036683f8caaac02cd6d0299c344cf5b7551286c0"
+    },
+    {
+      "name": "auth-no-fallback",
+      "scope": "Functional endpoint with valid control; invalid private auth sends zero requests",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "t19-auth-no-fallback.log",
+      "sha256": "284f66151f0d045c57f1eef6c375664a1c260ec66cd2a0951de82a8e0f00c117"
+    },
+    {
+      "name": "composed-runtime",
+      "scope": "Same unsaved credentials before Test and Save; public SQL/KV/native/converted IPC and captured logs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "t19-composed-runtime.log",
+      "sha256": "ce3c6465a3bba5633de6c70bcdce3d29416ca1ece55b85f5bff49a3945ba0148"
+    }
+  ],
+  "correctedSweepRegressions": [
+    "Frozen trusted request context",
+    "RPC method catalog includes test/cancelTest",
+    "Compatible repository path-escape error"
+  ],
+  "remainingSweepAreas": [
+    {
+      "area": "threads-boot shutdown",
+      "priorEvidence": "../../S001/evidence/t23-follow-up-results.json",
+      "status": "Also recorded in S001; not claimed as passing"
+    },
+    {
+      "area": "file live-store refusal",
+      "priorEvidence": "../../S001/evidence/t23-follow-up-results.json",
+      "status": "Also recorded in S001; not claimed as passing"
+    },
+    {
+      "area": "worker-stores",
+      "priorEvidence": "../../S001/evidence/t23-test-timeouts.json",
+      "status": "Full sweep timed out/canceled; not a passing test"
+    }
+  ],
+  "coverageLimits": [
+    "SQL Server actual-service coverage pending Linux x64 CI or remote host; deferral explicitly accepted by user on 2026-10-25; no CI run or local EULA acceptance",
+    "Arrow/Feather local reader unavailable: valid inputs fail unsupported-temporary; no automatic INSTALL",
+    "Full sweep retains 132 skips and 3 TODOs; live LLM services disabled"
+  ],
+  "S001Review": "Deferred by user; untouched",
+  "S002CodeReview": "WARN after round 2: 0 high, 1 medium coverage warning for failed/unverified full sweep; no adherence, conventions or quality findings",
+  "releaseReady": false,
+  "shippedGateReady": false,
+  "buildApproval": "Approved explicitly by user on 2026-10-25 with recorded MSSQL deferral and full-sweep warning",
+  "currentSourceChangedAfterSweep": true,
+  "codeReviewPath": "../CR.md",
+  "taskGates": {
+    "passed": 17,
+    "total": 19,
+    "pending": {
+      "t7": "MSSQL actual-service coverage pending Linux x64 CI/remote verification; user-approved deferral, not a passing test",
+      "t19": "Original full sweep failed; final source has focused follow-ups, not a passing final full sweep"
+    }
+  },
+  "additionalEvidence": "t19-clickhouse-followup.json",
+  "task16Scope": "Passed after executing and recording legacy compatibility coverage; additive attribution correction preserves history",
+  "SQLServerDeferral": {
+    "status": "pending",
+    "acceptedBy": "user",
+    "acceptedOn": "2026-10-25",
+    "target": "Linux x64 CI runner or remote x64 Linux host",
+    "ciProvisioned": false,
+    "actualServiceVerified": false,
+    "localEulaAccepted": false,
+    "evidenceRequired": [
+      "authenticated SELECT 1",
+      "bad authentication rejection",
+      "unavailable service rejection",
+      "connection disposal and fixture removal"
+    ],
+    "details": "../LIVE_DATABASE_FIXTURES.md"
+  },
+  "approvedAt": "2026-10-25T08:51:02.850Z"
+}

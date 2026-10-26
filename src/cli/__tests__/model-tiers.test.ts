@@ -24,11 +24,11 @@ const role = (eff: ReturnType<typeof computeEffectiveTiers>, id: string) => eff.
 
 // ── empty tiering → built-in defaults ───────────────────────────────────────
 
-test('empty tiering: tiers = DEFAULT_TIERS (source default), coreFloor = mid (default)', () => {
+test('empty tiering: tiers = the definitions\' tier defaults as canonical ids (source default), coreFloor = mid (default)', () => {
 	const eff = computeEffectiveTiers({});
-	assert.deepEqual(eff.tiers.core, { runner: 'cli-claude', model: 'opus' });
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'sonnet' });
-	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-claude', model: 'haiku' });
+	assert.deepEqual(eff.tiers.core, { runner: 'cli-claude', model: 'claude-opus-5-5' });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'claude-sonnet-5' });
+	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-claude', model: 'claude-haiku-5-5' });
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.coreFloor, 'mid');
 	assert.equal(eff.coreFloorSource, 'default');
@@ -163,7 +163,7 @@ test("computeEffectiveTiers shows a tier's effort, including tiering.efforts on 
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.tiers.mid.effort, 'medium');
 	assert.equal(eff.tiers.cheap.effort, undefined);
-	// The pane's cycle: CLI default → low → medium → high → xhigh → max → CLI default.
-	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max']);
-	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', '']);
+	// The pane's cycle: CLI default → each shipped effort level → CLI default.
+	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
+	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', 'ultra', '']);
 });

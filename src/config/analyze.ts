@@ -11,13 +11,13 @@
  * from `tiers.core`, the background summariser from `tiers.cheap`. This loader
  * reads the flat `models.*` surface:
  *   - models.tiers / models.tasks / models.coreFloor / models.byRepo — tiering
- *   - models.shaper.maxToolTurns / .structuredOutputRetries / .ollamaNumCtx /
+ *   - models.shaper.maxToolTurns / .structuredOutputRetries /
  *     .ollamaNumPredict  -- shaper runtime knobs (NOT model specs)
  *   - models.maxPlanDepth.{XS,S,M,L,XL}
  *
  * Read from `~/.insrc/config.json` if present, else fall back to defaults
- * declared below. Cached in-process for the daemon's lifetime; the cache
- * is reset only via `_resetAnalyzeConfigCacheForTests()`.
+ * declared below. Cached in-process for the daemon's lifetime; main() drops
+ * the cache once, right after the boot reconcile (`resetAnalyzeConfigCache()`).
  *
  * See: design/analyze-context-builder.md "Configuration"
  *      docs/plans/analyze-context-builder.md Phase 3
@@ -27,13 +27,15 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
+import type { EffortLevel, FamilyId } from '../daemon/model-catalog.js';
+import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
+import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 
 const log = getLogger('config:analyze');
 
 export interface AnalyzeShaperConfig {
 	readonly maxToolTurns:            number;
 	readonly structuredOutputRetries: number;
-	readonly ollamaNumCtx:            number;
 	/**
 	 * Max output tokens (num_predict) for the shaper's structured-output
 	 * call. The Ollama provider's default is 8192, which the code +
@@ -45,7 +47,8 @@ export interface AnalyzeShaperConfig {
 	 * with retries exhausted -> shaper-schema-unrecoverable.
 	 *
 	 * 20480 gives the model ~2.5x headroom over 8192 without eating into
-	 * the prompt half of ollamaNumCtx (32768 total - prompt budget).
+	 * the prompt half of the model's context window (its token inputLimit in
+	 * the model definitions).
 	 * Bump higher via config.json `models.shaper.ollamaNumPredict`
 	 * for XL-scope runs on large workspaces.
 	 */
@@ -85,7 +88,7 @@ export interface MaxPlanDepthMap {
  * false`. Those code paths continue to build their own Ollama
  * provider regardless of this setting.
  */
-export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
+export type AnalyzeShaperProviderKind = FamilyId;
 
 // ---------------------------------------------------------------------------
 // Per-role model tiering (Epic per-role-per-step, Story S001 — sc1).
@@ -111,37 +114,42 @@ export interface TierModel {
 	readonly effort?: TierEffort | undefined;
 }
 
-/** The reasoning efforts both CLIs accept (claude --effort; codex model_reasoning_effort). */
-export const TIER_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type TierEffort = typeof TIER_EFFORTS[number];
-export function isTierEffort(x: unknown): x is TierEffort {
-	return typeof x === 'string' && (TIER_EFFORTS as readonly string[]).includes(x);
-}
+/** The efforts of the shipped model definitions (de-duplicated); whether a model
+ *  accepts one is decided per model by the registry. Temporary export: only
+ *  src/cli may import it (s5 removes it). */
+export const TIER_EFFORTS: readonly string[] = SHIPPED_MODEL_DEFAULTS.efforts;
+/** An effort level name (the definitions file is the authority for level names). */
+export type TierEffort = EffortLevel;
 
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
 export type RoleTierAssignment = Readonly<Record<string, TierName>>;
 
 /**
- * Built-in tier → model defaults (Epic per-role-per-step). Applied by the
- * RoleRouter when a tier is configured NEITHER globally, per-repo, NOR via the
- * legacy `shaperProvider` key — so tiering works out of the box: critical roles
- * (design/review/build/validate) get the high CLI model, mid roles a cheaper CLI
- * model, peripheral roles the cheapest CLI model (haiku), so no machine needs a
- * local model to work. Defaults to CLAUDE (the primary CLI); the installer
- * rewrites `models.tiers` for a Codex user (core `gpt-6-astra` / mid
- * `gpt-6.1-sol` / cheap `gpt-6-luna`), and any config value overrides these.
+ * Built-in tier → model defaults: the shipped definitions' default family and
+ * its tier defaults (Epic ce99b72065d03b1b, s3). Temporary export: only src/cli
+ * may import it (s5 removes it); the daemon resolves tiers through the registry.
  */
 export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
-	core:  { runner: 'cli-claude', model: 'opus' },
-	mid:   { runner: 'cli-claude', model: 'sonnet' },
-	cheap: { runner: 'cli-claude', model: 'haiku' },
+	core:  shippedTier('core'),
+	mid:   shippedTier('mid'),
+	cheap: shippedTier('cheap'),
 };
 
-/** The tiering knobs that may appear globally or under a byRepo entry. */
-export interface TieringOverride {
-	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
+function shippedTier(tier: TierName): TierModel {
+	const d = SHIPPED_MODEL_DEFAULTS.tiers[tier];
+	return { runner: d.runner as AnalyzeShaperProviderKind, model: d.model, ...(d.effort !== '' ? { effort: d.effort } : {}) };
+}
+
+/** What a repo may choose (models.byRepo[repo]): the tier for a role and the
+ *  core floor — never the model behind a tier. */
+export interface RepoTiering {
 	readonly roleTiers?: RoleTierAssignment | undefined;
 	readonly coreFloor?: TierName | undefined;
+}
+
+/** The global tiering knobs: the tiers (set globally only) plus what a repo may also choose. */
+export interface TieringOverride extends RepoTiering {
+	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
 	/** Global scope only: each tier entry's valid effort, kept even when the tier
 	 *  itself was dropped (an empty or invalid model), so a DEFAULT_TIERS fallback
 	 *  still runs at the configured effort. */
@@ -152,21 +160,7 @@ export interface TieringOverride {
  *  AnalyzeConfig; empty (all fields absent) when no tiering config is set, in
  *  which case resolution is identical to the legacy single-provider path. */
 export interface AnalyzeTiering extends TieringOverride {
-	readonly byRepo?: Readonly<Record<string, TieringOverride>> | undefined;
-}
-
-/**
- * Per-repo shaper override, DERIVED from `models.byRepo[repoPath].tiers.core`
- * in `~/.insrc/config.json` — a repo pins its own core-tier runner (and
- * optionally model) and this is the HIGHEST-priority signal in the resolution
- * chain (per-repo > global config > per-run caller > ollama). Read FRESH per
- * lookup (see `resolveRepoShaperProvider`) rather than folded into the cached
- * `AnalyzeConfig`, so a per-repo edit is picked up without poisoning — or being
- * poisoned by — the global cache.
- */
-export interface RepoShaperOverride {
-	readonly shaperProvider?: AnalyzeShaperProviderKind | undefined;
-	readonly shaperModel?:    string | undefined;
+	readonly byRepo?: Readonly<Record<string, RepoTiering>> | undefined;
 }
 
 export interface AnalyzeConfig {
@@ -201,19 +195,21 @@ export interface AnalyzeConfig {
 	 *  override merged over DEFAULT_TIERS) so the RoleRouter resolves a concrete
 	 *  tier for every role. */
 	readonly tiering:        AnalyzeTiering;
+	/** Each global tier's resolution through the model registry, including any
+	 *  fallback (decision A) and dropped effort, for the router and
+	 *  models.resolveRole to report. */
+	readonly tierResolutions: Readonly<Record<TierName, TierResolution>>;
 }
 
 /**
  * Defaults sit at sane v1 starting points. `maxToolTurns: 40` matches
  * the design doc; `structuredOutputRetries: 3` matches the Ollama
- * provider's own default; `ollamaNumCtx: 32768` is the standard
- * shaper-context size (large enough to fit an XL-scope bundle without
- * truncation, but not so large the model OOMs).
+ * provider's own default. An Ollama model's context window is its token
+ * inputLimit in the model definitions.
  */
 const DEFAULT_SHAPER: AnalyzeShaperConfig = {
 	maxToolTurns:            40,
 	structuredOutputRetries: 3,
-	ollamaNumCtx:            32_768,
 	ollamaNumPredict:        20_480,
 };
 
@@ -233,25 +229,47 @@ const DEFAULT_MAX_PLAN_DEPTH: MaxPlanDepthMap = {
 
 let cached: AnalyzeConfig | undefined;
 
-/**
- * Fully-resolved tiers = the parsed override merged over DEFAULT_TIERS. The
- * `tiers` block is the SINGLE place a model is named; every derived field below
- * reads from it. Always returns all three tiers populated, so the RoleRouter
- * resolves a concrete tier for every role (no legacy cross-tier fallback).
- */
-function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
-	return {
-		core:  resolveTier(tiering, 'core'),
-		mid:   resolveTier(tiering, 'mid'),
-		cheap: resolveTier(tiering, 'cheap'),
-	};
+/** The setting the registry resolves for a tier: the configured runner and
+ *  model, else (an unset tier, or one whose model is '') the default family's
+ *  tier default with its effort. A configured effort wins over the default's;
+ *  '' asks for the CLI's own default (no effort). */
+function tierSetting(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierSetting {
+	const configured = tiering.tiers?.[tier];
+	// The efforts entry ('' included) wins; else the tier's own effort.
+	const effort = tiering.efforts?.[tier] ?? configured?.effort;
+	if (configured !== undefined) {
+		return { runner: configured.runner, model: configured.model, ...(effort ? { effort } : {}) };
+	}
+	const family = registry.defaultFamily();
+	const def = registry.tierDefault(family, tier);
+	const chosen = effort ?? def.effort;
+	return { runner: family, model: def.model, ...(chosen ? { effort: chosen } : {}) };
 }
 
-/** The configured tier, else DEFAULT_TIERS[tier] at the tier's configured effort
- *  (so an effort set beside an empty or invalid model still applies). */
-export function resolveTier(tiering: TieringOverride, tier: TierName): TierModel {
-	const effort = tiering.efforts?.[tier];
-	return tiering.tiers?.[tier] ?? { ...DEFAULT_TIERS[tier], ...(effort !== undefined ? { effort } : {}) };
+/** Resolve one global tier through the registry, logging a dropped effort and a
+ *  fallback (decision A). */
+export function resolveTierWith(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierResolution {
+	const resolution = registry.resolveTier(tier, tierSetting(tiering, tier, registry));
+	if (resolution.droppedEffort !== undefined) {
+		log.warn({ tier, model: resolution.model.id, effort: resolution.droppedEffort },
+			`models.tiers.${tier}: model ${resolution.model.id} does not accept effort '${resolution.droppedEffort}'; running at the CLI's default effort`);
+	}
+	if (resolution.fallback !== undefined) {
+		log.warn({ tier, requested: resolution.fallback.requested, reason: resolution.fallback.reason, model: resolution.model.id },
+			`models.tiers.${tier}: model '${resolution.fallback.requested}' is ${resolution.fallback.reason === 'rejected-model' ? 'rejected' : 'not listed'} (${resolution.fallback.reason}); using the tier default ${resolution.model.id}`);
+	}
+	return resolution;
+}
+
+function tierModelOf(r: TierResolution): TierModel {
+	return { runner: r.family, model: r.model.id, ...(r.effort !== undefined ? { effort: r.effort } : {}) };
+}
+
+/** The tier as the registry resolves it (canonical model id, accepted effort).
+ *  `registry` defaults to the daemon thread's registry; a client process passes
+ *  its own (the TUI's shipped-only registry). */
+export function resolveTier(tiering: TieringOverride, tier: TierName, registry: ModelRegistry = getModelRegistry()): TierModel {
+	return tierModelOf(resolveTierWith(tiering, tier, registry));
 }
 
 /**
@@ -267,8 +285,18 @@ export function assembleConfig(
 	tiering:      AnalyzeTiering,
 	shaper:       AnalyzeShaperConfig,
 	maxPlanDepth: MaxPlanDepthMap,
+	registry:     ModelRegistry = getModelRegistry(),
 ): AnalyzeConfig {
-	const tiers = resolveTiers(tiering);
+	const tierResolutions: Record<TierName, TierResolution> = {
+		core:  resolveTierWith(tiering, 'core', registry),
+		mid:   resolveTierWith(tiering, 'mid', registry),
+		cheap: resolveTierWith(tiering, 'cheap', registry),
+	};
+	const tiers: Record<TierName, TierModel> = {
+		core:  tierModelOf(tierResolutions.core),
+		mid:   tierModelOf(tierResolutions.mid),
+		cheap: tierModelOf(tierResolutions.cheap),
+	};
 	return {
 		shaperProvider:          tiers.core.runner,
 		shaperProviderExplicit:  tiering.tiers?.core !== undefined,
@@ -281,17 +309,24 @@ export function assembleConfig(
 		shaper,
 		maxPlanDepth,
 		tiering: { ...tiering, tiers },
+		tierResolutions,
 	};
 }
 
-export function loadAnalyzeConfig(): AnalyzeConfig {
-	if (cached !== undefined) {
-		return cached;
-	}
+/**
+ * The analyze config, with every global tier resolved through `registry`
+ * (default: this daemon thread's registry, cached; an explicit registry — the
+ * TUI's shipped-only one — gets a fresh, uncached read).
+ */
+export function loadAnalyzeConfig(registry?: ModelRegistry): AnalyzeConfig {
+	if (registry !== undefined) return readAnalyzeConfig(registry);
+	cached ??= readAnalyzeConfig(getModelRegistry());
+	return cached;
+}
 
+function readAnalyzeConfig(registry: ModelRegistry): AnalyzeConfig {
 	if (!existsSync(PATHS.config)) {
-		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
-		return cached;
+		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 
 	try {
@@ -313,10 +348,6 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 				typeof shaperObj['structuredOutputRetries'] === 'number'
 					? (shaperObj['structuredOutputRetries'] as number)
 					: DEFAULT_SHAPER.structuredOutputRetries,
-			ollamaNumCtx:
-				typeof shaperObj['ollamaNumCtx'] === 'number'
-					? (shaperObj['ollamaNumCtx'] as number)
-					: DEFAULT_SHAPER.ollamaNumCtx,
 			ollamaNumPredict:
 				typeof shaperObj['ollamaNumPredict'] === 'number'
 					? (shaperObj['ollamaNumPredict'] as number)
@@ -330,15 +361,13 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			XL: typeof depthObj['XL'] === 'number' ? (depthObj['XL'] as number) : DEFAULT_MAX_PLAN_DEPTH.XL,
 		};
 
-		cached = assembleConfig(parseTiering(models), shaper, maxPlanDepth);
-		return cached;
+		return assembleConfig(parseTiering(models), shaper, maxPlanDepth, registry);
 	} catch (err) {
 		log.warn(
 			{ err: (err as Error).message },
 			'failed to parse config.json; using analyze defaults',
 		);
-		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
-		return cached;
+		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 }
 
@@ -358,44 +387,44 @@ const TIER_NAMES: readonly TierName[] = ['core', 'mid', 'cheap'];
 function isTierName(x: unknown): x is TierName {
 	return typeof x === 'string' && (TIER_NAMES as readonly string[]).includes(x);
 }
+/** A model family id (the shipped definitions' families). */
 function isRunner(x: unknown): x is AnalyzeShaperProviderKind {
-	return x === 'ollama' || x === 'cli-claude' || x === 'cli-codex';
+	return typeof x === 'string' && SHIPPED_MODEL_DEFAULTS.familyIds.includes(x);
 }
 
-/** A tier entry's effort: a valid one on the global tiers; '' or absent is none. An
- *  invalid value, or any effort on a per-repo tier, is dropped with a warning. */
-function effortOf(raw: unknown, where: string, tier: TierName): TierEffort | undefined {
-	if (raw === undefined || raw === '') return undefined;
-	if (where !== 'global') {
-		log.warn({ where, tier, effort: raw }, 'models.byRepo[repo].tiers[tier].effort: effort is set on the global model tiers only; ignored');
-		return undefined;
-	}
-	if (isTierEffort(raw)) return raw;
-	log.warn({ where, tier, effort: raw }, `models.tiers[tier].effort: expected one of ${TIER_EFFORTS.join('|')}; ignored`);
+/** A global tier entry's effort: any level name ('' asks for the CLI's own
+ *  default); absent is none. Whether the tier's model accepts it is decided at
+ *  resolution by the registry. A non-string is dropped with a warning. */
+function effortOf(raw: unknown, tier: TierName): TierEffort | undefined {
+	if (raw === undefined || typeof raw === 'string') return raw;
+	log.warn({ tier, effort: raw }, 'models.tiers[tier].effort: expected an effort level name; ignored');
 	return undefined;
 }
 
-/** Parse one TieringOverride (tiers / tasks / coreFloor) from a config object.
- *  Note: the on-disk key is `tasks`; the internal AnalyzeTiering field is
- *  `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
+/** Parse one TieringOverride from a config object: tiers (global only — a
+ *  repo picks a tier for a role but never sets the model behind it), tasks and
+ *  coreFloor. Note: the on-disk key is `tasks`; the internal AnalyzeTiering
+ *  field is `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
 function parseTieringOverride(src: Record<string, unknown>, where: string): TieringOverride {
 	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName; efforts?: Partial<Record<TierName, TierEffort>> } = {};
 
-	if (isObject(src['tiers'])) {
+	if (where === 'global' && isObject(src['tiers'])) {
 		const tiers: Partial<Record<TierName, TierModel>> = {};
 		const efforts: Partial<Record<TierName, TierEffort>> = {};
 		for (const [tier, val] of Object.entries(src['tiers'])) {
 			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.tiers: unknown tier name; ignored'); continue; }
 			const runner = isObject(val) ? val['runner'] : undefined;
 			const model  = isObject(val) ? val['model']  : undefined;
-			// The effort belongs to the global tiers only; a per-repo tier chooses runner and model.
-			const effort = effortOf(isObject(val) ? val['effort'] : undefined, where, tier);
+			// Kept even when the tier itself is dropped, so the tier default runs at it.
+			const effort = effortOf(isObject(val) ? val['effort'] : undefined, tier);
 			if (effort !== undefined) efforts[tier] = effort;
-			if (!isRunner(runner) || typeof model !== 'string' || model.length === 0) {
-				log.warn({ where, tier }, 'models.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
+			// A '' model leaves the tier unset: it resolves to the tier default.
+			if (model === '') continue;
+			if (!isRunner(runner) || typeof model !== 'string') {
+				log.warn({ where, tier }, `models.tiers[tier]: expected { runner: ${SHIPPED_MODEL_DEFAULTS.familyIds.join('|')}, model: string }; ignored`);
 				continue;
 			}
-			tiers[tier] = { runner, model, ...(effort !== undefined ? { effort } : {}) };
+			tiers[tier] = { runner, model, ...(effort ? { effort } : {}) };
 		}
 		if (Object.keys(tiers).length > 0) out.tiers = tiers;
 		if (Object.keys(efforts).length > 0) out.efforts = efforts;
@@ -420,93 +449,32 @@ function parseTieringOverride(src: Record<string, unknown>, where: string): Tier
 }
 
 /** Parse the full flat models.* tiering shape: the global override (tiers /
- *  tasks / coreFloor) plus per-repo `models.byRepo` overrides. Returns {} when
- *  no tiering keys are set. The per-repo shaper-backend override is derived
- *  separately from `byRepo[repo].tiers.core` by readRepoOverride. */
+ *  tasks / coreFloor) plus per-repo `models.byRepo` overrides (tasks and
+ *  coreFloor only). Returns {} when no tiering keys are set. */
 export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 	const global = parseTieringOverride(models, 'global');
-	let byRepo: Record<string, TieringOverride> | undefined;
+	let byRepo: Record<string, RepoTiering> | undefined;
 	if (isObject(models['byRepo'])) {
-		const acc: Record<string, TieringOverride> = {};
+		const acc: Record<string, RepoTiering> = {};
 		for (const [repoPath, entry] of Object.entries(models['byRepo'])) {
 			if (!isObject(entry)) continue;
 			const ov = parseTieringOverride(entry, `byRepo[${repoPath}]`);
-			if (ov.tiers !== undefined || ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
+			if (ov.roleTiers !== undefined || ov.coreFloor !== undefined) {
+				acc[repoPath] = { ...(ov.roleTiers !== undefined ? { roleTiers: ov.roleTiers } : {}), ...(ov.coreFloor !== undefined ? { coreFloor: ov.coreFloor } : {}) };
+			}
 		}
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}
 	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}) };
 }
 
-/**
- * Read the `models.byRepo[repoPath]` override entry FRESH from disk and derive
- * the per-repo shaper backend from its `tiers.core` (the flattened surface's
- * equivalent of the old byRepo shaperProvider/shaperModel pins).
- *
- * Deliberately NOT cached (and NOT routed through `loadAnalyzeConfig`'s cache):
- * per-repo overrides are consulted at run-resolve time and must reflect the
- * current on-disk config, and reading them must not populate / read the global
- * cache. Tolerates a missing file / missing section (returns `undefined`).
- *
- * `configPath` defaults to the global `~/.insrc/config.json`; it exists as a
- * test seam so a case can point at a temp config without touching the real
- * user config.
- */
-function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverride | undefined {
-	if (!existsSync(configPath)) return undefined;
-	try {
-		const raw    = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
-		const models = isObject(raw['models'])    ? (raw['models'] as Record<string, unknown>)    : {};
-		const byRepo = isObject(models['byRepo']) ? (models['byRepo'] as Record<string, unknown>) : {};
-		const entry  = byRepo[repoPath];
-		if (!isObject(entry)) return undefined;
-		const tiers = isObject(entry['tiers']) ? (entry['tiers'] as Record<string, unknown>) : {};
-		const core  = isObject(tiers['core'])  ? (tiers['core'] as Record<string, unknown>)  : undefined;
-		const provider = core?.['runner'];
-		const model    = core?.['model'];
-		return {
-			...(provider === 'ollama' || provider === 'cli-claude' || provider === 'cli-codex'
-				? { shaperProvider: provider }
-				: {}),
-			...(typeof model === 'string' && model.length > 0 ? { shaperModel: model } : {}),
-		};
-	} catch (err) {
-		log.warn(
-			{ err: (err as Error).message, repoPath },
-			'failed to read models.byRepo; ignoring per-repo override',
-		);
-		return undefined;
-	}
-}
-
-/**
- * Resolve a repo-scoped `shaperProvider` override (highest priority in the
- * client/shaper resolution chain). Returns the pinned kind for `repoPath`, or
- * `undefined` when the repo has no override / the config / section is absent.
- * Reads the config file FRESH (never the cached global).
- */
-export function resolveRepoShaperProvider(
-	repoPath:   string,
-	configPath: string = PATHS.config,
-): AnalyzeShaperProviderKind | undefined {
-	return readRepoOverride(repoPath, configPath)?.shaperProvider;
-}
-
-/**
- * Symmetric to `resolveRepoShaperProvider`: a repo may also pin a model
- * (`models.byRepo[repoPath].tiers.core.model`). Returns it fresh from disk,
- * or `undefined` when unset. Read FRESH (never the cached global).
- */
-export function resolveRepoShaperModel(
-	repoPath:   string,
-	configPath: string = PATHS.config,
-): string | undefined {
-	return readRepoOverride(repoPath, configPath)?.shaperModel;
-}
-
-export function _resetAnalyzeConfigCacheForTests(): void {
+/** Drop the cached config so the next read sees config.json as it is now.
+ *  main() calls it once, right after the boot reconcile. */
+export function resetAnalyzeConfigCache(): void {
 	cached = undefined;
 }
+
+export const _resetAnalyzeConfigCacheForTests = resetAnalyzeConfigCache;
 
 /** The time one live data source is given to answer when a request is measured, when the setting gives none. */
 export const DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS = 120_000;

@@ -14,7 +14,7 @@
  *   npx tsx --test src/insrc/analyze/context/__tests__/cache.test.ts
  */
 
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,6 +28,13 @@ import {
 	type CacheKey,
 } from '../cache.js';
 import type { AnalyzeContextBundle, ShapeOpts } from '../types.js';
+
+// Keep real cache I/O inside this test process's private fixture.
+import { PATHS } from '../../../shared/paths.js';
+const cacheDirectory = mkdtempSync(join(tmpdir(), 'cm-context-cache-'));
+const originalAnalyzeContext = PATHS.analyzeContext;
+PATHS.analyzeContext = runId => join(cacheDirectory, 'analyze', runId, 'context');
+after(() => { PATHS.analyzeContext = originalAnalyzeContext; rmSync(cacheDirectory, { recursive: true, force: true }); });
 
 // ---------------------------------------------------------------------------
 // Fixture

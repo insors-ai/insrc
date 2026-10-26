@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Cassandra driver (kind: `cassandra`).
  *
@@ -14,7 +16,6 @@
 import { Client } from 'cassandra-driver';
 import type { ClientOptions } from 'cassandra-driver';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -35,7 +36,6 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-cassandra');
 
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -69,6 +69,7 @@ function parseTarget(raw: string, defaultKs: string | undefined): Target {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class CassandraDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'cassandra';
 
@@ -81,10 +82,18 @@ export class CassandraDriver implements KvDriver {
 		readonly id: string,
 		clientOpts: ClientOptions,
 		private readonly config: ConnectionConfig,
+		context?: DriverFactoryContext,
 	) {
-		this.client = new Client(clientOpts);
+		this.#runtimeLog = driverResourceLog('db-cassandra', context);
+		const options = this.#runtimeLog.quiet ? { ...clientOpts, logEmitter: () => {} } : clientOpts;
+		this.client = new Client(options);
 		const ksOpt = (config.options ?? {})['keyspace'];
 		this.defaultKs = typeof ksOpt === 'string' ? ksOpt : undefined;
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.client.connect();
+		await this.client.execute('SELECT release_version FROM system.local');
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
@@ -150,9 +159,7 @@ export class CassandraDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		await this.client.shutdown().catch((err: Error) => {
-			log.warn({ id: this.id, err: err.message }, 'cassandra shutdown failed');
-		});
+		await this.client.shutdown();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {
@@ -259,7 +266,7 @@ function requireTargetFromOpts(opts: ScanOpts): string {
 registerDriver({
 	kind: 'cassandra',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const contactPoints = Array.isArray(opts['contactPoints'])
 			? opts['contactPoints'].filter((x): x is string => typeof x === 'string')
@@ -281,6 +288,6 @@ registerDriver({
 		if (typeof opts['keyspace'] === 'string') {
 			clientOpts.keyspace = opts['keyspace'];
 		}
-		return new CassandraDriver(config.id, clientOpts, config);
+		return new CassandraDriver(config.id, clientOpts, config, context);
 	},
-});
+}, 'resource-context');

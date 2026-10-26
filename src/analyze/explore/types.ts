@@ -6,6 +6,7 @@
 import type { Completeness, PartialFinding } from '../completeness.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 
 /**
  * Exploration types -- the vocabulary the decomposer emits and the
@@ -878,6 +879,8 @@ export interface ExecutedPlan {
  * failures, LMDB txn errors) still throw as usual.
  */
 export interface ExplorationRunnerContext {
+	/** Required normalized authority; trusted saved entries supply explicit saved execution. */
+	readonly connectionExecution: ConnectionExecutionContext;
 	readonly runId:       string;
 	readonly repoPath:    string;
 	readonly closureRepos: readonly string[];

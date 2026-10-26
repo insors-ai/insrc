@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792913923286-r6y8pr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-25T07:38:43.287Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 80274,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/db/draft-probe.ts",
+        "src/shared/__tests__/draft-test-wire.test.ts",
+        "src/shared/connection-management-wire.ts",
+        "src/shared/connection-management.ts",
+        "src/shared/__tests__/fixtures/probe-logger-child.ts",
+        "src/shared/__tests__/probe-worker-logger.test.ts",
+        "src/shared/logger.ts",
+        "src/daemon/db/__tests__/runtime-config.test.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/db/runtime-config.ts",
+        "src/daemon/db-rpc.ts",
+        "src/daemon/db/__tests__/draft-preparation.test.ts",
+        "src/daemon/db/management-startup.ts",
+        "src/daemon/db/management.ts",
+        "src/daemon/db/__tests__/dynamo-identity.test.ts",
+        "src/daemon/db/drivers/dynamodb.ts",
+        "src/daemon/db/dynamo-identity.ts",
+        "src/daemon/db/__tests__/fixtures/sql-probe-servers.ts",
+        "src/daemon/db/__tests__/sql-draft-probes.test.ts",
+        "src/daemon/db/drivers/mysql.ts",
+        "src/daemon/db/drivers/pg.ts",
+        "src/daemon/db/__tests__/remaining-sql-probes.test.ts",
+        "src/daemon/db/drivers/clickhouse.ts",
+        "src/daemon/db/drivers/mssql.ts",
+        "src/daemon/db/drivers/oracle.ts",
+        "src/daemon/db/drivers/sqlite.ts",
+        "src/daemon/db/__tests__/fixtures/docker-database.ts",
+        "src/daemon/db/__tests__/redis-mongo-probes.test.ts",
+        "src/daemon/db/drivers/mongodb.ts",
+        "src/daemon/db/drivers/redis.ts",
+        "src/daemon/db/__tests__/file-draft-probes.test.ts",
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/daemon/__tests__/request-lifetime.test.ts",
+        "src/daemon/request-context.ts",
+        "src/daemon/server.ts",
+        "src/daemon/threads/__tests__/local-lifetime.test.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/maintenance-entry.ts",
+        "src/daemon/threads/router.ts",
+        "src/daemon/db/__tests__/other-kv-probes.test.ts",
+        "src/daemon/db/drivers/cassandra.ts",
+        "src/daemon/db/drivers/etcd.ts",
+        "src/daemon/db/drivers/memcached.ts",
+        "src/daemon/db/drivers/nats.ts",
+        "src/bin/insrc-connection-test.ts",
+        "src/daemon/db/__tests__/probe-worker.test.ts",
+        "src/daemon/db/probe-kinds.ts",
+        "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+        "src/daemon/db/draft-test.ts",
+        "src/daemon/connection-management-rpc.ts",
+        "src/daemon/db/__tests__/draft-test-routes.test.ts",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/threads/method-class.ts",
+        "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+        "src/daemon/db/management-enablement.ts",
+        "src/daemon/index.ts",
+        "src/daemon/db/__tests__/oracle-live-probe.test.ts",
+        "src/daemon/db/__tests__/fixtures/probe-lifecycle-child.ts",
+        "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+        "src/daemon/db/__tests__/driver-field-audit.test.ts",
+        "src/daemon/db/__tests__/fixtures/connection-source-inventory.json",
+        "src/daemon/db/__tests__/fixtures/driver-field-matrix.json",
+        "src/daemon/db/__tests__/owned-file-driver.test.ts",
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/db/__tests__/fixtures/probe-close-hook.mjs",
+        "src/daemon/db/__tests__/probe-disposal.test.ts",
+        "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+        "scripts/connection-test-regression.mjs",
+        "src/daemon/db/__tests__/clickhouse-live-probe.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "scripts/connection-test-regression.mjs:1",
+            "message": "The final build and full test sweep is present but failing/unverified: its result is reported as fail by the builder. The gate did not run this sweep; the individually passing test files do not establish a passing full sweep.",
+            "expectationRef": "CM-S2-SWEEP: after all S002 tasks are built run final build and full test sweep; record actual failures skips and timeouts and keep release disabled for unmet prerequisites.",
+            "confidence": "observation",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

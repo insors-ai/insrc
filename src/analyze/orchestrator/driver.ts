@@ -27,9 +27,11 @@
  *     the RPC layer is one wrapper call away)
  */
 
+import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { classify } from '../classifier/index.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { validateIntentSemantics } from '../classifier/validate.js';
 import { connectionIsRegistered } from '../context/scope.js';
 import {
@@ -77,8 +79,11 @@ import {
 import { measureRequestScope } from '../measure.js';
 import type { RequestMeasure, UnsizedIntent } from '../measure.js';
 
-import { liveRunCount, lowerRunLive, raiseRunLive } from './live-runs.js';
-import { readRunRecord, writeRunRecord } from './persistence.js';
+import { liveRunCount, trackRunLive } from './live-runs.js';
+import { createRunRecordPort, assertRunRecordPort, assertRunRecordSource } from './persistence.js';
+import type { RunRecordPort } from './persistence.js';
+import { beginSessionReuse, assertSessionReuseNow } from '../session-reuse.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type {
 	AnalyzeRunEvent,
 	RunAnalyzeArgs,
@@ -95,7 +100,8 @@ import type {
 	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
 
-const log = getLogger('analyze:orchestrator:driver');
+const savedRunLog = getLogger('analyze:orchestrator:driver');
+const quietRunLog = { info: (..._args: unknown[]) => { }, warn: (..._args: unknown[]) => { }, error: (..._args: unknown[]) => { } };
 
 // ---------------------------------------------------------------------------
 // runAnalyze -- public entry point
@@ -105,6 +111,17 @@ export async function runAnalyze(
 	args: RunAnalyzeArgs,
 	opts: RunAnalyzeOpts = {},
 ): Promise<RunAnalyzeResult> {
+	assertExplicitConnectionExecution(opts.connectionExecution ?? args.connectionExecution);
+	if (args.connectionExecution !== undefined) assertExplicitConnectionExecution(args.connectionExecution);
+	const execution = opts.connectionExecution ?? args.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	if (opts.connectionExecution !== undefined && args.connectionExecution !== undefined && opts.connectionExecution !== args.connectionExecution) throw new ConnectionExecutionError('session-expired');
+	if (execution?.mode === 'session-memory') {
+		await beginSessionReuse(execution);
+		assertSessionReuseNow(execution);
+		opts = { ...opts, connectionExecution: execution, signal: opts.signal ? AbortSignal.any([opts.signal, execution.lifetime.signal]) : execution.lifetime.signal };
+	}
+	const log = execution?.mode === 'session-memory' ? quietRunLog : savedRunLog;
 	const start = Date.now();
 	const runId = args.runId;
 
@@ -113,10 +130,11 @@ export async function runAnalyze(
 	// only one the orchestrator GUARANTEES fires; intermediate events
 	// are best-effort observers.
 	const emit = (event: AnalyzeRunEvent): void => {
+		assertSessionReuseNow(execution);
 		if (opts.onEvent === undefined) return;
 		try { opts.onEvent(event); }
 		catch (err) {
-			log.warn({ runId, eventType: event.type, err: (err as Error).message },
+			log.warn({ runId, eventType: event.type, err: execution?.mode === 'session-memory' ? 'Observer failed.' : (err as Error).message },
 				'runAnalyze: onEvent callback threw; ignoring');
 		}
 	};
@@ -137,14 +155,19 @@ export async function runAnalyze(
 
 	// The run is live from here, before its first read of a record, until it
 	// returns or throws.
-	raiseRunLive(runId);
+	const records = createRunRecordPort(runId, execution);
+	const releaseLive = trackRunLive(runId, execution);
 	try {
-		return await runStages(args, opts, { start, emit, emitDoneAndReturn, reached });
+		const result = await runStages(args, opts, { start, emit, emitDoneAndReturn, reached, records, execution, log });
+		assertSessionReuseNow(execution);
+		return result;
 	} catch (err) {
 		// An error no stage's own handler caught. The run does not leave as a
 		// rejection: its record says failed at the stage reached, and that
 		// failure is returned.
-		const failure: RunFailure = { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };
+		const failure: RunFailure = execution?.mode === 'session-memory'
+			? { code: err instanceof ConnectionExecutionError ? err.code === 'upgrade-required' ? 'unsupported-temporary' : err.code : 'internal-error', message: 'Analysis is unavailable.' }
+			: { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };
 		log.error({ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed');
 		try {
 			// The record is marked failed only when it is this run's to mark:
@@ -152,10 +175,10 @@ export async function runAnalyze(
 			//     left as it is, also when the error was raised after that write;
 			//   - while another run is going under the same id the record is shared
 			//     and the run still going writes it, so this run leaves it alone.
-			const onDisk = readRunRecord(runId);
+			const onDisk = records.read();
 			if (onDisk !== null && onDisk.status !== 'in-progress') {
 				log.warn({ runId, status: onDisk.status, stage: onDisk.stage }, 'runAnalyze: the run record already says how the run ended; it is left as it is');
-			} else if (liveRunCount(runId) > 1) {
+			} else if (execution?.mode !== 'session-memory' && liveRunCount(runId, execution) > 1) {
 				log.warn({ runId }, 'runAnalyze: another run is going under this id; the shared run record is left to it');
 			} else {
 				const base: RunRecord = reached.record ?? {
@@ -163,7 +186,7 @@ export async function runAnalyze(
 					userPrompt: args.userPrompt, initialScopeRef: args.scopeRef,
 					stage: reached.stage, status: 'in-progress',
 				};
-				writeRunRecord(patch(base, {
+				records.write(patch(base, {
 					stage: reached.stage, status: 'failed', error: failure,
 					...(reached.intent !== undefined ? { intent: reached.intent } : {}),
 				}));
@@ -171,11 +194,17 @@ export async function runAnalyze(
 		} catch (writeErr) {
 			// The disk may be the very cause of the first error. The record is left
 			// as it was; the run is no longer live, so a reader corrects it.
-			log.error({ runId, err: (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written');
+			log.error({ runId, err: execution?.mode === 'session-memory' ? 'Repair unavailable.' : (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written');
+		}
+		if (execution?.mode === 'session-memory') {
+			const result = failResult(reached.stage, failure, undefined, start, runId);
+			try { emit({ type: 'done', result }); } catch { /* expired owner gets only the fixed return envelope */ }
+			return result;
 		}
 		return emitDoneAndReturn(failResult(reached.stage, failure, reached.intent, start, runId));
 	} finally {
-		lowerRunLive(runId);
+		records.close();
+		releaseLive();
 	}
 }
 
@@ -187,6 +216,9 @@ interface RunReached {
 }
 
 interface RunStagesContext {
+	readonly records: RunRecordPort;
+	readonly execution: ConnectionExecutionContext | undefined;
+	readonly log: typeof savedRunLog | typeof quietRunLog;
 	readonly start:             number;
 	readonly emit:              (event: AnalyzeRunEvent) => void;
 	readonly emitDoneAndReturn: (result: RunAnalyzeResult) => RunAnalyzeResult;
@@ -203,13 +235,14 @@ async function runStages(
 	opts: RunAnalyzeOpts,
 	ctx:  RunStagesContext,
 ): Promise<RunAnalyzeResult> {
-	const { start, emit, emitDoneAndReturn, reached } = ctx;
+	const { start, emit, emitDoneAndReturn, reached, records, execution, log } = ctx;
+	assertRunRecordPort(records, execution);
 	const { runId, userPrompt, scopeRef: initialScopeRef } = args;
 
 	// Every write of the run record by a stage goes through here, so the
 	// handler knows the record last written and the stage the run is in.
 	const saveRunRecord = (r: RunRecord): string => {
-		const path = writeRunRecord(r);
+		const path = records.write(r);
 		reached.record = r;
 		if (r.status === 'in-progress' && r.stage !== 'done') reached.stage = r.stage;
 		if (r.intent !== undefined) reached.intent = r.intent;
@@ -220,7 +253,7 @@ async function runStages(
 	// (status='ok' + stage='done' + intent + finalReport all present),
 	// short-circuit and return the cached result. See O3 commit for
 	// the full rationale on which records DO and DON'T short-circuit.
-	const cached = readRunRecord(runId);
+	const cached = records.read();
 	if (
 		cached !== null
 		&& cached.status === 'ok'
@@ -279,7 +312,8 @@ async function runStages(
 		// Make its two checks here, before any model call: the pairing of
 		// the scope's kind with the hinted kind of source, and that the
 		// scope resolves.
-		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef);
+		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef, undefined, opts.connectionExecution ?? args.connectionExecution);
+		assertSessionReuseNow(execution);
 		if (!hinted.ok) {
 			record = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });
 			saveRunRecord(record);
@@ -296,9 +330,11 @@ async function runStages(
 			unsized = await classifyImpl({
 				input: { userPrompt, scopeRef: initialScopeRef },
 				opts: { runId },
+				connectionExecution: opts.connectionExecution ?? args.connectionExecution,
 			});
 		} catch (err) {
-			const failure = classifyClassifierError(err);
+			if (err instanceof ConnectionExecutionError) throw err;
+			const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Classification failed.' } : classifyClassifierError(err);
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
 			saveRunRecord(record);
 			log.warn({ runId, code: failure.code }, 'runAnalyze: classify failed');
@@ -313,11 +349,13 @@ async function runStages(
 	// sources it is the indexed check; for every source it also refuses a
 	// repository being indexed or whose last index failed. A generic intent
 	// has no family row and is not checked.
+	assertSessionReuseNow(execution);
 	const scopeChecked = unsized.target !== 'generic';
 	if (scopeChecked) {
 		try {
-			await resolveTaskScope(unsized.scopeRef, unsized.target as Exclude<typeof unsized.target, 'generic'>, 'the run');
+			await resolveTaskScope(unsized.scopeRef, unsized.target as Exclude<typeof unsized.target, 'generic'>, 'the run', undefined, undefined, opts.connectionExecution ?? args.connectionExecution);
 		} catch (err) {
+			if (execution?.mode === 'session-memory') throw err;
 			const scoped = scopeErrorMapping(err);
 			// Anything that is not a refused scope goes to runAnalyze's handler.
 			if (scoped === undefined) throw err;
@@ -343,7 +381,8 @@ async function runStages(
 	});
 	// The run's signal goes with it: a cancelled run does not wait on a live
 	// data source, and the abort check below then ends the run.
-	const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint, { signal: opts.signal });
+	const measure = await measureRequestScopeImpl(unsized.scopeRef, unsized.target, args.scopeHint, { signal: opts.signal, connectionExecution: execution });
+	assertSessionReuseNow(execution);
 	const intent: ClassifiedIntent = { ...unsized, scope: measure.size };
 	log.info(
 		{ runId, size: measure.size, determined: measure.determined, files: measure.files, items: measure.items, sizeHint: measure.sizeHint, note: measure.note },
@@ -380,13 +419,15 @@ async function runStages(
 			{ intent, measure },
 			{
 				runId,
+				connectionExecution: execution,
 				onTrace: (traceEvent) => forwardShaperTrace('plan', traceEvent, emit),
 				// The checks above were made: the builder does not make them again.
 				scopeChecked,
 			},
 		);
 	} catch (err) {
-		const failure = classifyShaperError(err);
+		if (err instanceof ConnectionExecutionError) throw err;
+		const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Context build failed.' } : classifyShaperError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
 		saveRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');
@@ -401,7 +442,7 @@ async function runStages(
 
 	let tree;
 	try {
-		tree = await runRecursivePlanner({
+		tree = await recursivePlannerImpl({
 			input: {
 				intent,
 				contextBundle,
@@ -409,6 +450,7 @@ async function runStages(
 			},
 			opts: {
 				runId,
+				connectionExecution: execution,
 				onLlmToken: (preview) => emit({
 					type:    'llm-token',
 					stage:   'plan',
@@ -420,12 +462,14 @@ async function runStages(
 			},
 		});
 	} catch (err) {
-		const failure = classifyPlannerError(err);
+		if (err instanceof ConnectionExecutionError) throw err;
+		const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Planning failed.' } : classifyPlannerError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
 		saveRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: plan build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
+	assertSessionReuseNow(execution);
 	emit({
 		type: 'plan-accepted',
 		taskCount: tree.plan.tasks.length,
@@ -446,10 +490,11 @@ async function runStages(
 	// task-started / task-completed variants 1:1; we just pass them
 	// through. parentTaskPath threads naturally for tasks inside child
 	// plans dispatched by planner-template tasks.
-	const execResult = await runExecutor({
+	const execResult = await executorImpl({
 		tree,
 		intent,
 		runId,
+		connectionExecution: execution,
 		onTaskEvent: (event) => {
 			if (event.type === 'task-started') {
 				emit({
@@ -470,6 +515,7 @@ async function runStages(
 			}
 		},
 	});
+	assertSessionReuseNow(execution);
 	const rootPlan = execResult.root;
 
 	if (rootPlan.finalReport === undefined) {
@@ -496,7 +542,21 @@ async function runStages(
 	// ----- (done) -----
 	// The answer report, derived by code from the run context's report and
 	// from each plan task's own record; its line heads the final report's text.
-	return emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, measure, start }));
+	return emitDoneAndReturn(completeRun({ connectionExecution: execution, recordPort: records, record, intent, tree, executed: execResult, contextReport: contextBundle.report, measure, start }));
+}
+
+// Deterministic stage seams used to verify the real root lifecycle without a model.
+let measureRequestScopeImpl = measureRequestScope;
+let recursivePlannerImpl = runRecursivePlanner;
+let executorImpl = runExecutor;
+export function _setOrchestratorStagesForTest(stages?: {
+	readonly measure?: typeof measureRequestScope;
+	readonly planner?: typeof runRecursivePlanner;
+	readonly executor?: typeof runExecutor;
+}): void {
+	measureRequestScopeImpl = stages?.measure ?? measureRequestScope;
+	recursivePlannerImpl = stages?.planner ?? runRecursivePlanner;
+	executorImpl = stages?.executor ?? runExecutor;
 }
 
 /** The classifier a run calls. Its own context build is a tool loop on a local model, so a test stands one in. */
@@ -576,6 +636,8 @@ export function concludeRun(
  * report, so a run resumed from the record returns what the run returned.
  */
 export function completeRun(args: {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
+	readonly recordPort?: RunRecordPort | undefined;
 	readonly record:        RunRecord;
 	readonly intent:        ClassifiedIntent;
 	readonly tree:          PlanTreeNode;
@@ -587,10 +649,17 @@ export function completeRun(args: {
 	/** When the run started, in milliseconds. */
 	readonly start:         number;
 }): RunAnalyzeResult {
+	const execution = args.connectionExecution;
+	assertSessionReuseNow(execution);
+	if (execution?.mode === 'session-memory' && !args.recordPort) throw new ConnectionExecutionError('session-expired');
+	assertRunRecordSource(args.record, execution);
+	const records = args.recordPort ?? createRunRecordPort(args.record.runId, execution);
+	assertRunRecordPort(records, execution);
+	const log = execution?.mode === 'session-memory' ? quietRunLog : savedRunLog;
 	const { record, intent, tree, executed } = args;
 	const rootPlan = executed.root;
 	const concluded = concludeRun(tree, executed, args.contextReport, args.measure);
-	writeRunRecord(patch(record, {
+	records.write(patch(record, {
 		stage: 'done',
 		status: 'ok',
 		finalReport: concluded.finalReport,
@@ -661,20 +730,23 @@ export async function hintedIntentBase(
 	userPrompt:  string,
 	scopeRef:    AnalyzeScopeRef,
 	connectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }> {
+	assertAnalysisConnectionExecution(execution);
 	const focus = userPrompt.trim();
 	const base: HintedIntentBase = focus.length > 0
 		? { target, focused: true, focus, scopeRef }
 		: { target, focused: false, scopeRef };
 	let failure: Awaited<ReturnType<typeof validateIntentSemantics>>;
 	try {
-		failure = await validateIntentSemantics({ ...base, reasoning: '' }, connectionExists);
+		failure = await validateIntentSemantics({ ...base, reasoning: '' }, connectionExists, execution);
 	} catch (err) {
 		// The connection check can throw (an unreadable connections file,
 		// a registry that cannot be read). That is a failure of this
 		// stage like any other: it gets a code and a failed run record,
 		// not an unhandled rejection that leaves the record in progress.
-		return { ok: false, failure: classifyShaperError(err) };
+		if (err instanceof ConnectionExecutionError) throw err;
+		return { ok: false, failure: execution?.mode === 'session-memory' ? { code: 'internal-error', message: 'Scope validation failed.' } : classifyShaperError(err) };
 	}
 	if (failure !== null) {
 		return {

@@ -503,7 +503,7 @@ test('the TUI tests run with fakeServices carrying the team entry', () => {
 	assert.equal(typeof svc.team.teamRefresh, 'function');
 });
 
-test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort', async () => {
+test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max/ultra and writes models.tiers.<tier>.effort', async () => {
 	const svc = fakeServices();
 	const writes: Array<[string, unknown]> = [];
 	let tiers: Record<string, unknown> = {
@@ -531,7 +531,9 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	stdin.write('e'); await settle();
 	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'max']);
 	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'max wraps to the CLI default');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'ultra'], 'the cycle offers every shipped effort level');
+	stdin.write('e'); await settle();
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'the last level wraps to the CLI default');
 	stdin.write('e'); await settle();
 	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'low']);
 
@@ -539,5 +541,19 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	for (let i = 0; i < 7; i++) { stdin.write('j'); await settle(); }
 	stdin.write('e'); await settle();
 	assert.match(lastFrame() ?? '', /coreFloor \(core\/mid\/cheap\):/);
+	unmount();
+});
+
+test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)", async () => {
+	const svc = fakeServices();
+	svc.config.show = async () => ({});
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('5');          // → Model Tiers pane
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /core\s+.*cli-claude.*claude-opus-5-5/);
+	assert.match(frame, /mid\s+.*cli-claude.*claude-sonnet-5/);
+	assert.match(frame, /cheap\s+.*cli-claude.*claude-haiku-5-5/);
 	unmount();
 });

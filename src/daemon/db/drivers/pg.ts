@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * Postgres driver (kind: `postgres`).
@@ -11,7 +13,6 @@ import { allDriverWork } from '../driver-work.js';
 
 import pgMod from 'pg';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -71,7 +72,6 @@ import { prismaSchemaDescription } from './rdbms-prisma.js';
 
 const { Pool } = pgMod;
 
-const log = getLogger('db-pg');
 
 const POOL_MAX = 3;
 
@@ -87,6 +87,7 @@ const IDLE_TIMEOUT_MS = 30_000;
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class PostgresDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'postgres';
 
@@ -97,17 +98,29 @@ export class PostgresDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-pg', context);
 		this.prismaPath = prismaPath;
+		// pg turns an empty URL password into null, then reads ~/.pgpass.
+		// Keep a cleared password explicit in activation and isolated probes.
+		const password = decodeURIComponent(new URL(url).password);
+		class ConfiguredClient extends pgMod.Client {
+			constructor(config?: pgMod.ClientConfig) { super(config); this.password = password; }
+		}
 		this.pool = new Pool({
+			Client: ConfiguredClient,
 			connectionString: url,
 			max: POOL_MAX,
 			idleTimeoutMillis: IDLE_TIMEOUT_MS,
 			connectionTimeoutMillis: SAMPLE_TIMEOUT_MS,
 		});
 		this.pool.on('error', (err) => {
-			log.warn({ id, err: err.message }, 'pool error');
+			this.#runtimeLog.emit('warn', () => ({ fields: { id, err: err.message }, message: 'pool error' }));
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.pool.query('SELECT 1');
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -157,7 +170,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, POSTGRES_DIALECT);
 
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 		const res = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -177,7 +190,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const res = await withTimeout(
 			this.pool.query(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -190,7 +203,7 @@ export class PostgresDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, distinctCountSql: compiled.distinctCountSql, topValuesSql: compiled.topValuesSql }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, distinctCountSql: compiled.distinctCountSql, topValuesSql: compiled.topValuesSql }, message: 'distinct query' }));
 		const [countRes, valuesRes] = await allDriverWork([
 			withTimeout(this.pool.query(compiled.distinctCountSql), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.pool.query(compiled.topValuesSql), SAMPLE_TIMEOUT_MS),
@@ -349,7 +362,7 @@ export class PostgresDriver implements RdbmsDriver {
 			? { limit: SAMPLE_LIMIT, where: queryAst.where }
 			: { limit: SAMPLE_LIMIT };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, POSTGRES_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const res = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -455,16 +468,16 @@ function splitTarget(target: string): { schema: string | null; table: string } {
 // in db:list_connections + db:list_driver_kinds, but factory +
 // behaviour are identical.
 function postgresFactory(connKind: 'postgres' | 'cockroachdb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${connKind} connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma'
 			? config.schemaSource.path
 			: undefined;
-		return new PostgresDriver(config.id, config.url, prismaPath);
+		return new PostgresDriver(config.id, config.url, prismaPath, context);
 	};
 }
 
-registerDriver({ kind: 'postgres',    family: 'rdbms', factory: postgresFactory('postgres') });
-registerDriver({ kind: 'cockroachdb', family: 'rdbms', factory: postgresFactory('cockroachdb') });
+registerDriver({ kind: 'postgres',    family: 'rdbms', factory: postgresFactory('postgres') }, 'resource-context');
+registerDriver({ kind: 'cockroachdb', family: 'rdbms', factory: postgresFactory('cockroachdb') }, 'resource-context');

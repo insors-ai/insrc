@@ -1,0 +1,819 @@
+TAP version 13
+# Subtest: isStaleByIndexer returns true when registry watermark is newer than the bundle
+ok 1 - isStaleByIndexer returns true when registry watermark is newer than the bundle
+  ---
+  duration_ms: 0.775125
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer returns false when registry watermark equals the bundle
+ok 2 - isStaleByIndexer returns false when registry watermark equals the bundle
+  ---
+  duration_ms: 0.073167
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer returns false when registry watermark is older than the bundle
+ok 3 - isStaleByIndexer returns false when registry watermark is older than the bundle
+  ---
+  duration_ms: 0.21225
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer treats bundles with no repoLastIndexedAt stamp as stale (conservative)
+ok 4 - isStaleByIndexer treats bundles with no repoLastIndexedAt stamp as stale (conservative)
+  ---
+  duration_ms: 0.142583
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer treats bundles with no meta at all as stale
+ok 5 - isStaleByIndexer treats bundles with no meta at all as stale
+  ---
+  duration_ms: 0.124792
+  type: 'test'
+  ...
+# Subtest: readBundle returns the bundle when stamp is fresh against the registry watermark
+ok 6 - readBundle returns the bundle when stamp is fresh against the registry watermark
+  ---
+  duration_ms: 4.476916
+  type: 'test'
+  ...
+# Subtest: readBundle invalidates + returns null when registry watermark advanced
+ok 7 - readBundle invalidates + returns null when registry watermark advanced
+  ---
+  duration_ms: 1.608708
+  type: 'test'
+  ...
+# Subtest: readBundle skips the freshness check when currentLastIndexedAt is undefined
+ok 8 - readBundle skips the freshness check when currentLastIndexedAt is undefined
+  ---
+  duration_ms: 1.045834
+  type: 'test'
+  ...
+# Subtest: readBundle invalidates a bundle missing repoLastIndexedAt when a watermark is supplied
+ok 9 - readBundle invalidates a bundle missing repoLastIndexedAt when a watermark is supplied
+  ---
+  duration_ms: 0.696458
+  type: 'test'
+  ...
+# Subtest: readBundle: bypassCache=true short-circuits BEFORE the freshness check
+ok 10 - readBundle: bypassCache=true short-circuits BEFORE the freshness check
+  ---
+  duration_ms: 0.8055
+  type: 'test'
+  ...
+# Subtest: write-then-advance-then-read pattern: bundle is invalidated by the advanced watermark
+ok 11 - write-then-advance-then-read pattern: bundle is invalidated by the advanced watermark
+  ---
+  duration_ms: 0.641292
+  type: 'test'
+  ...
+# [06:05:03] DEBUG: [analyze:context:cache] cached bundle stale (registry lastIndexedAt advanced); discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-pNJYfn/analyze/cache-invalid-stale-fcc49d2/context/run-bundle.json"
+#     cached: 1000
+#     registry: 5000
+# [06:05:03] DEBUG: [analyze:context:cache] cached bundle stale (registry lastIndexedAt advanced); discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-pNJYfn/analyze/cache-invalid-missing-stamp-2411808a/context/run-bundle.json"
+#     registry: 1000
+# [06:05:03] DEBUG: [analyze:context:cache] cached bundle stale (registry lastIndexedAt advanced); discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-pNJYfn/analyze/cache-invalid-e2e-331efbda/context/run-bundle.json"
+#     cached: 1700000000000
+#     registry: 1700000060000
+# Subtest: cacheFilePathFor (mode=classification) yields classification.json
+ok 12 - cacheFilePathFor (mode=classification) yields classification.json
+  ---
+  duration_ms: 1.797
+  type: 'test'
+  ...
+# Subtest: cacheFilePathFor (mode=run) yields run-bundle.json
+ok 13 - cacheFilePathFor (mode=run) yields run-bundle.json
+  ---
+  duration_ms: 0.225084
+  type: 'test'
+  ...
+# Subtest: cacheFilePathFor (mode=task, with taskId) yields <taskId>.bundle.json
+ok 14 - cacheFilePathFor (mode=task, with taskId) yields <taskId>.bundle.json
+  ---
+  duration_ms: 0.174583
+  type: 'test'
+  ...
+# Subtest: cacheFilePathFor (mode=task, no taskId) throws TypeError
+ok 15 - cacheFilePathFor (mode=task, no taskId) throws TypeError
+  ---
+  duration_ms: 1.313208
+  type: 'test'
+  ...
+# Subtest: writeBundle then readBundle round-trips an identical body (run mode)
+ok 16 - writeBundle then readBundle round-trips an identical body (run mode)
+  ---
+  duration_ms: 1.7695
+  type: 'test'
+  ...
+# Subtest: writeBundle then readBundle round-trips an identical body (task mode)
+ok 17 - writeBundle then readBundle round-trips an identical body (task mode)
+  ---
+  duration_ms: 1.719791
+  type: 'test'
+  ...
+# Subtest: readBundle on a missing slot returns null (no throw)
+ok 18 - readBundle on a missing slot returns null (no throw)
+  ---
+  duration_ms: 0.13475
+  type: 'test'
+  ...
+# Subtest: readBundle with bypassCache=true returns null even when the file exists
+ok 19 - readBundle with bypassCache=true returns null even when the file exists
+  ---
+  duration_ms: 0.704
+  type: 'test'
+  ...
+# Subtest: readBundle discards the file when the stored key does not match the request key
+ok 20 - readBundle discards the file when the stored key does not match the request key
+  ---
+  duration_ms: 1.569583
+  type: 'test'
+  ...
+# Subtest: readBundle discards an invalid-JSON file and returns null
+ok 21 - readBundle discards an invalid-JSON file and returns null
+  ---
+  duration_ms: 3.04075
+  type: 'test'
+  ...
+# Subtest: readBundle discards a JSON file with wrong shape (missing key field)
+ok 22 - readBundle discards a JSON file with wrong shape (missing key field)
+  ---
+  duration_ms: 1.744125
+  type: 'test'
+  ...
+# Subtest: writeBundle leaves no .tmp- file behind after a successful write
+ok 23 - writeBundle leaves no .tmp- file behind after a successful write
+  ---
+  duration_ms: 1.784292
+  type: 'test'
+  ...
+# Subtest: invalidateBundle on a missing slot is a silent no-op
+ok 24 - invalidateBundle on a missing slot is a silent no-op
+  ---
+  duration_ms: 0.325834
+  type: 'test'
+  ...
+# Subtest: writeBundle places the file under PATHS.analyzeContext(runId)
+ok 25 - writeBundle places the file under PATHS.analyzeContext(runId)
+  ---
+  duration_ms: 2.035458
+  type: 'test'
+  ...
+# Subtest: node:os tmpdir + mkdtempSync are usable from this module
+ok 26 - node:os tmpdir + mkdtempSync are usable from this module
+  ---
+  duration_ms: 1.386875
+  type: 'test'
+  ...
+# [06:05:03] DEBUG: [analyze:context:cache] cache key mismatch; discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-4dCMUh/analyze/test-cache-mismatch-26a5eac1/context/run-bundle.json"
+#     expected: "v2"
+#     found: "v1"
+# [06:05:03] WARN: [analyze:context:cache] cache file is not valid JSON; discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-4dCMUh/analyze/test-cache-corrupt-2eeab4cd/context/run-bundle.json"
+#     err: "Unexpected token 'o', \\"not json at all\\" is not valid JSON"
+# [06:05:03] WARN: [analyze:context:cache] cache file has unexpected shape; discarding
+#     module: "analyze:context:cache"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-context-cache-4dCMUh/analyze/test-cache-shape-190bf709/context/run-bundle.json"
+# [06:05:07] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 2968
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-HhuM3V/graph.lmdb"
+# [06:05:08] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: executor dispatches to the registered runner
+ok 27 - executor dispatches to the registered runner
+  ---
+  duration_ms: 3145.708791
+  type: 'test'
+  ...
+# [06:05:08] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 13
+# [06:05:09] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 1214
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-IWpy4t/graph.lmdb"
+# [06:05:09] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# [06:05:09] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 15
+# [06:05:09] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: executor hands the request's resolved scope to the runner; without one the runner gets none
+ok 28 - executor hands the request's resolved scope to the runner; without one the runner gets none
+  ---
+  duration_ms: 1275.6255
+  type: 'test'
+  ...
+# [06:05:09] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 17
+# [06:05:09] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 574
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-zmx1r3/graph.lmdb"
+# [06:05:09] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: stepPlan hands the resolved scope to the runner too
+ok 29 - stepPlan hands the resolved scope to the runner too
+  ---
+  duration_ms: 627.827375
+  type: 'test'
+  ...
+# [06:05:09] INFO: [analyze:explore:executor] stepPlan: multi-turn plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 8
+# [06:05:10] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 559
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-Qry0fO/graph.lmdb"
+# [06:05:10] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/repo/alpha"
+#     repo: "/repo/alpha"
+#     entityCount: 1
+# [06:05:10] INFO: [mcp:analyze-step:start] insrc_analyze_step[start]: emitting decomposer prompt
+#     module: "mcp:analyze-step:start"
+#     runId: "mcp-step-1792994710570-yby0p2"
+#     repoPath: "/repo/alpha"
+#     target: "code"
+#     scope: "XS"
+#     focus: "plan-phase scope 1792994710569"
+#     synthesizerKey: "code"
+# [06:05:10] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/repo/alpha"
+#     repo: "/repo/alpha"
+#     entityCount: 1
+# [06:05:10] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: the step tool's plan phase resolves the scope from the token and runs the lookups there
+ok 30 - the step tool's plan phase resolves the scope from the token and runs the lookups there
+  ---
+  duration_ms: 1416.782666
+  type: 'test'
+  ...
+# [06:05:11] INFO: [analyze:explore:executor] stepPlan: multi-turn plan executed
+#     module: "analyze:explore:executor"
+#     runId: "mcp-step-1792994710570-yby0p2"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 202
+# [06:05:11] INFO: [mcp:analyze-step:plan] insrc_analyze_step[plan]: executed; emitting synthesizer prompt
+#     module: "mcp:analyze-step:plan"
+#     runId: "mcp-step-1792994710570-yby0p2"
+#     answerType: "structural-map"
+#     explorationCount: 1
+#     synthesizerKey: "code"
+#     totalMs: 202
+# [06:05:12] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 951
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-jUP9SJ/graph.lmdb"
+# Subtest: unsupported exploration type produces a diagnostic output
+ok 31 - unsupported exploration type produces a diagnostic output
+  ---
+  duration_ms: 994.8945
+  type: 'test'
+  ...
+# [06:05:12] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# [06:05:12] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 1
+#     totalMs: 1
+# [06:05:12] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 512
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-XxbZwC/graph.lmdb"
+# [06:05:12] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# [06:05:12] WARN: [analyze:explore:executor] exploration failed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     explorationId: "e1"
+#     type: "concept.resolve"
+#     err: "boom: something in the params is required"
+# Subtest: runner throw produces a `failed` output; does not stop the plan
+ok 32 - runner throw produces a `failed` output; does not stop the plan
+  ---
+  duration_ms: 550.40425
+  type: 'test'
+  ...
+# [06:05:12] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "test"
+#     answerType: "structural-map"
+#     total: 2
+#     cached: 0
+#     failed: 1
+#     unsupported: 0
+#     totalMs: 19
+# [06:05:13] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 359
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-0d9md9/graph.lmdb"
+# [06:05:13] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: deterministic exploration is cached across executions
+ok 33 - deterministic exploration is cached across executions
+  ---
+  duration_ms: 376.514291
+  type: 'test'
+  ...
+# [06:05:13] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "r1"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 6
+# [06:05:13] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# [06:05:13] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "r2"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 1
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 0
+# [06:05:13] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 171
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-KK22Xl/graph.lmdb"
+# [06:05:13] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# [06:05:13] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "r1"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 9
+# [06:05:13] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: lastIndexedAt bump invalidates the cache
+ok 34 - lastIndexedAt bump invalidates the cache
+  ---
+  duration_ms: 201.651917
+  type: 'test'
+  ...
+# [06:05:13] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "r2"
+#     answerType: "structural-map"
+#     total: 1
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 12
+# [06:05:13] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 190
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-explore-executor-P4MgSv/graph.lmdb"
+# [06:05:13] DEBUG: [analyze:repo-ignore-filter] not a git repo; using permissive filter
+#     module: "analyze:repo-ignore-filter"
+#     repo: "/repo/alpha"
+# Subtest: readDep exposes prior exploration outputs to later runners
+ok 35 - readDep exposes prior exploration outputs to later runners
+  ---
+  duration_ms: 208.276375
+  type: 'test'
+  ...
+# [06:05:13] INFO: [analyze:explore:executor] plan executed
+#     module: "analyze:explore:executor"
+#     runId: "r"
+#     answerType: "structural-map"
+#     total: 2
+#     cached: 0
+#     failed: 0
+#     unsupported: 0
+#     totalMs: 10
+# (node:13465) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:05:04] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "postgres"
+#     family: "rdbms"
+# [06:05:04] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cockroachdb"
+#     family: "rdbms"
+# [06:05:04] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mysql"
+#     family: "rdbms"
+# [06:05:04] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mariadb"
+#     family: "rdbms"
+# [06:05:04] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "sqlite"
+#     family: "rdbms"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mssql"
+#     family: "rdbms"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "oracle"
+#     family: "rdbms"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "clickhouse"
+#     family: "rdbms"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "redis"
+#     family: "kv"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "valkey"
+#     family: "kv"
+# [06:05:05] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "keydb"
+#     family: "kv"
+# [06:05:06] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mongodb"
+#     family: "kv"
+# [06:05:06] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cassandra"
+#     family: "kv"
+# [06:05:06] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "nats"
+#     family: "kv"
+# [06:05:07] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "dynamodb"
+#     family: "kv"
+# [06:05:07] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "etcd"
+#     family: "kv"
+# [06:05:07] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "memcached"
+#     family: "kv"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "csv"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "tsv"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "jsonl"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "ndjson"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "json"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "parquet"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "arrow"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "feather"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "avro"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "bson"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "fixed-width"
+#     family: "file"
+# [06:05:08] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "xlsx"
+#     family: "file"
+# [06:05:09] DEBUG: [db-config] saved db-connections
+#     module: "db-config"
+#     repoPath: "/synthetic/audit"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-field-roundtrip-mxMDmh/repos/e8900d015a21856a2e91fc7e48026ff9/db-connections.json"
+# [06:05:09] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/synthetic/audit"
+#     count: 29
+# [06:05:09] DEBUG: [db-config] saved db-connections
+#     module: "db-config"
+#     repoPath: "/synthetic/audit"
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-field-roundtrip-mxMDmh/repos/e8900d015a21856a2e91fc7e48026ff9/db-connections.json"
+# Subtest: CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+ok 36 - CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+  ---
+  duration_ms: 715.004917
+  type: 'test'
+  ...
+# Subtest: CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+ok 37 - CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+  ---
+  duration_ms: 10185.840917
+  type: 'test'
+  ...
+# Subtest: SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+ok 38 - SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+  ---
+  duration_ms: 12.301209
+  type: 'test'
+  ...
+# [06:05:09] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/synthetic/audit"
+#     count: 29
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 39 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  ---
+  duration_ms: 19861.493375
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 40 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+  ---
+  duration_ms: 1254.084208
+  type: 'test'
+  ...
+# Subtest: encodeState + decodeState round-trip preserves every field
+ok 41 - encodeState + decodeState round-trip preserves every field
+  ---
+  duration_ms: 7.344333
+  type: 'test'
+  ...
+# Subtest: encodeState mints a short URL-safe base64 token (22 chars, no padding)
+ok 42 - encodeState mints a short URL-safe base64 token (22 chars, no padding)
+  ---
+  duration_ms: 0.52975
+  type: 'test'
+  ...
+# Subtest: decodeState rejects a bogus token with StepStateDecodeError
+ok 43 - decodeState rejects a bogus token with StepStateDecodeError
+  ---
+  duration_ms: 0.609208
+  type: 'test'
+  ...
+# Subtest: decodeState rejects a token of the wrong shape (too short)
+ok 44 - decodeState rejects a token of the wrong shape (too short)
+  ---
+  duration_ms: 0.331417
+  type: 'test'
+  ...
+# Subtest: assertStage passes for a matching stage
+ok 45 - assertStage passes for a matching stage
+  ---
+  duration_ms: 0.127875
+  type: 'test'
+  ...
+# Subtest: assertStage throws on a stage mismatch
+ok 46 - assertStage throws on a stage mismatch
+  ---
+  duration_ms: 0.103333
+  type: 'test'
+  ...
+# Subtest: releaseState drops the entry so a subsequent decodeState fails
+ok 47 - releaseState drops the entry so a subsequent decodeState fails
+  ---
+  duration_ms: 0.771583
+  type: 'test'
+  ...
+# Subtest: token round-trips a state with an executed plan attached
+ok 48 - token round-trips a state with an executed plan attached
+  ---
+  duration_ms: 1.929125
+  type: 'test'
+  ...
+# Subtest: analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+ok 49 - analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+  ---
+  duration_ms: 21.79775
+  type: 'test'
+  ...
+# Subtest: analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+ok 50 - analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+  ---
+  duration_ms: 0.701125
+  type: 'test'
+  ...
+# Subtest: analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+ok 51 - analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+  ---
+  duration_ms: 2.518
+  type: 'test'
+  ...
+# Subtest: CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+ok 52 - CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+  ---
+  duration_ms: 9321.943958
+  type: 'test'
+  ...
+# [06:05:04] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 1017
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-2gzmLv/graph.lmdb"
+# Subtest: put + get round-trip
+ok 53 - put + get round-trip
+  ---
+  duration_ms: 1041.521292
+  type: 'test'
+  ...
+# [06:05:04] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 291
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-e85mLT/graph.lmdb"
+# Subtest: get returns null on cache miss (never written)
+ok 54 - get returns null on cache miss (never written)
+  ---
+  duration_ms: 312.502708
+  type: 'test'
+  ...
+# [06:05:05] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 575
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-3KRzhW/graph.lmdb"
+# Subtest: same exploration params produce the same hash
+ok 55 - same exploration params produce the same hash
+  ---
+  duration_ms: 668.805334
+  type: 'test'
+  ...
+# [06:05:08] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 2837
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-g1O9fB/graph.lmdb"
+# Subtest: different exploration types produce distinct hashes
+ok 56 - different exploration types produce distinct hashes
+  ---
+  duration_ms: 2982.483417
+  type: 'test'
+  ...
+# [06:05:09] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 1234
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-On4fYA/graph.lmdb"
+# Subtest: nested params still canonicalise deterministically
+ok 57 - nested params still canonicalise deterministically
+  ---
+  duration_ms: 1480.440584
+  type: 'test'
+  ...
+# [06:05:10] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 555
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-RBilGI/graph.lmdb"
+# Subtest: different lastIndexedAt produces cache miss
+ok 58 - different lastIndexedAt produces cache miss
+  ---
+  duration_ms: 635.705625
+  type: 'test'
+  ...
+# [06:05:12] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 1755
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-PbCRkj/graph.lmdb"
+# Subtest: repo scoping: repo A row is not visible to repo B lookup
+ok 59 - repo scoping: repo A row is not visible to repo B lookup
+  ---
+  duration_ms: 1857.056542
+  type: 'test'
+  ...
+# [06:05:12] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 400
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-wqIVMz/graph.lmdb"
+# Subtest: deleteCachedExplorationsForRepo drops every row for the repo
+ok 60 - deleteCachedExplorationsForRepo drops every row for the repo
+  ---
+  duration_ms: 537.057875
+  type: 'test'
+  ...
+# [06:05:13] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 429
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-exploration-cache-Aqppfp/graph.lmdb"
+# Subtest: put + get on unregistered repo is a no-op / null
+ok 61 - put + get on unregistered repo is a no-op / null
+  ---
+  duration_ms: 461.839958
+  type: 'test'
+  ...
+1..61
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22490.782

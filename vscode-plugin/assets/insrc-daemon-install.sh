@@ -276,9 +276,27 @@ esac
 #   The RoleRouter routes each operation to a capability tier: core (high) for
 #   design/review/build, mid for synthesis/grounding, cheap (the cheapest CLI model) for
 #   classification/probes/summaries. Preconfigure the tier->model map for the
-#   chosen CLI. Absent this, the daemon's built-in defaults apply (claude
-#   opus/sonnet/haiku); a Codex user wants the map rewritten below.
+#   chosen CLI from the model definitions file cloned and built in steps 2-3
+#   (src/assets/models/cloud-model-catalog.json): the tier defaults of the
+#   family that CLI runs, and the Ollama tool-loop model as the local coreModel.
 # ---------------------------------------------------------------------------
+MODEL_DEFS="$DAEMON_SRC/src/assets/models/cloud-model-catalog.json"
+[ -f "$MODEL_DEFS" ] || die "model definitions not found at $MODEL_DEFS -- was the build incomplete?" 3
+# model_defs <cli kind> <tiers|summary|toolloop>: read the definitions file.
+model_defs() {
+	node -e '
+const [file, kind, what] = process.argv.slice(1);
+const defs = JSON.parse(require("fs").readFileSync(file, "utf8"));
+if (what === "toolloop") { process.stdout.write(defs.families.find(f => f.cliKind === undefined).toolLoopModel); process.exit(0); }
+const def = defs.families.find(f => f.id === defs.defaultFamily);
+const fam = def !== undefined && def.cliKind === kind ? def : defs.families.find(f => f.cliKind === kind);
+if (fam === undefined) { process.stderr.write("no model family in " + file + " runs the " + kind + " CLI\n"); process.exit(3); }
+const t = fam.tierDefaults;
+if (what === "summary") { process.stdout.write(["core", "mid", "cheap"].map(n => n + "=" + t[n].model).join(", ")); process.exit(0); }
+const tier = n => JSON.stringify({ runner: fam.id, model: t[n].model, ...(t[n].effort !== undefined ? { effort: t[n].effort } : {}) });
+process.stdout.write("\"coreFloor\": \"core\",\n\t\t\"tiers\": {\n" + ["core", "mid", "cheap"].map(n => "\t\t\t\"" + n + "\": " + tier(n)).join(",\n") + "\n\t\t},");
+' "$MODEL_DEFS" "$1" "$2"
+}
 CLI_CHOICE="claude"
 if [ "$ASSUME_YES" -eq 0 ]; then
 	printf '%s? Preferred CLI for reasoning (core=high / mid models)? [claude/codex] %s' "$C_BOLD" "$C_RESET"
@@ -288,23 +306,10 @@ if [ "$ASSUME_YES" -eq 0 ]; then
 		*)                     CLI_CHOICE="claude" ;;
 	esac
 fi
-if [ "$CLI_CHOICE" = "codex" ]; then
-	ok "CLI: codex (core=gpt-6-astra, mid=gpt-6.1-sol, cheap=gpt-6-luna)"
-	ANALYZE_TIERS_JSON='"coreFloor": "core",
-		"tiers": {
-			"core":  { "runner": "cli-codex", "model": "gpt-6-astra" },
-			"mid":   { "runner": "cli-codex", "model": "gpt-6.1-sol" },
-			"cheap": { "runner": "cli-codex", "model": "gpt-6-luna" }
-		},'
-else
-	ok "CLI: claude (core=opus, mid=sonnet, cheap=haiku)"
-	ANALYZE_TIERS_JSON='"coreFloor": "core",
-		"tiers": {
-			"core":  { "runner": "cli-claude", "model": "opus" },
-			"mid":   { "runner": "cli-claude", "model": "sonnet" },
-			"cheap": { "runner": "cli-claude", "model": "haiku" }
-		},'
-fi
+CLI_SUMMARY="$(model_defs "$CLI_CHOICE" summary)" || die "no model family in $MODEL_DEFS runs the $CLI_CHOICE CLI -- choose another CLI or fix the definitions file" 3
+ok "CLI: $CLI_CHOICE ($CLI_SUMMARY)"
+ANALYZE_TIERS_JSON="$(model_defs "$CLI_CHOICE" tiers)"
+LOCAL_CORE_MODEL="$(model_defs "$CLI_CHOICE" toolloop)"
 
 if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 	if [ ! -f "$CONFIG_FILE" ]; then
@@ -321,7 +326,7 @@ if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 			"host":           "http://localhost:11434",
 			"embeddingModel": "nomic-ai/nomic-embed-text-v1.5",
 			"embeddingDim":   768,
-			"coreModel":      "qwen3.6:27b",
+			"coreModel":      "${LOCAL_CORE_MODEL}",
 			"charsPerToken":  3
 		}
 	}
@@ -348,7 +353,7 @@ elif [ "$RESOLVED_EMBEDDER" = "ollama" ]; then
 			"host":           "http://localhost:11434",
 			"embeddingModel": "qwen3-embedding:0.6b",
 			"embeddingDim":   1024,
-			"coreModel":      "qwen3.6:27b",
+			"coreModel":      "${LOCAL_CORE_MODEL}",
 			"charsPerToken":  3
 		}
 	}

@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * NATS JetStream KV driver (kind: `nats`).
  *
@@ -12,7 +14,6 @@ import type { NatsConnection } from '@nats-io/nats-core';
 import { Kvm } from '@nats-io/kv';
 import type { KV } from '@nats-io/kv';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KeyList,
@@ -32,10 +33,10 @@ import {
 } from './kv-common.js';
 import { inferShape } from './shape-common.js';
 
-const log = getLogger('db-nats');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class NatsKvDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'nats';
 
@@ -47,7 +48,20 @@ export class NatsKvDriver implements KvDriver {
 		private readonly servers: readonly string[],
 		private readonly bucket: string,
 		private readonly config: ConnectionConfig,
-	) { }
+		context?: DriverFactoryContext,
+	) {
+		this.#runtimeLog = driverResourceLog('db-nats', context);
+	}
+
+	async probeReachability(): Promise<void> {
+		const nc = await this.nc();
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		try {
+			await Promise.race([nc.flush(), new Promise<never>((_, reject) => {
+				timer = setTimeout(() => { void nc.close(); reject(new Error('NATS probe timed out')); }, SCAN_TIMEOUT_MS);
+			})]);
+		} finally { if (timer) clearTimeout(timer); }
+	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
@@ -96,10 +110,11 @@ export class NatsKvDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		if (this.ncPromise !== null) {
-			try { await (await this.ncPromise).close(); }
-			catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'nats close failed'); }
-		}
+		if (this.ncPromise === null) return;
+		let connection: NatsConnection;
+		try { connection = await this.ncPromise; }
+		catch { return; } // Failed initialization produced no owned connection.
+		await connection.close();
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {
@@ -151,8 +166,14 @@ export class NatsKvDriver implements KvDriver {
 	private nc(): Promise<NatsConnection> {
 		let p = this.ncPromise;
 		if (p === null) {
+			const urls = this.servers.map(server => new URL(server.includes('://') ? server : 'nats://' + server));
+			const user = decodeURIComponent(urls[0]!.username), pass = decodeURIComponent(urls[0]!.password);
+			if (urls.some(url => decodeURIComponent(url.username) !== user || decodeURIComponent(url.password) !== pass))
+				throw new Error('Inconsistent NATS server identities');
+			for (const url of urls) { url.username = ''; url.password = ''; }
 			p = connect({
-				servers: [...this.servers],
+				servers: urls.map(url => url.toString()),
+				...(user ? { user, pass } : {}),
 				timeout: SCAN_TIMEOUT_MS,
 			});
 			this.ncPromise = p;
@@ -205,7 +226,7 @@ function classifyBinary(key: string, bytes: Uint8Array): KvValue {
 registerDriver({
 	kind: 'nats',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const servers = Array.isArray(opts['servers'])
 			? opts['servers'].filter((x): x is string => typeof x === 'string')
@@ -221,6 +242,6 @@ registerDriver({
 				`data-driver: nats connection '${config.id}' needs options.bucket: string`,
 			);
 		}
-		return new NatsKvDriver(config.id, servers, bucket, config);
+		return new NatsKvDriver(config.id, servers, bucket, config, context);
 	},
-});
+}, 'resource-context');

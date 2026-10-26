@@ -34,6 +34,7 @@
  *     surfaces field inconsistencies for those cases.
  */
 
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../../../../analyze/connection-access.js';
 import { resolve as resolvePath, isAbsolute } from 'node:path';
 import { getLogger } from '../../../../shared/logger.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
@@ -115,6 +116,7 @@ export const dataSchemaDriftTool: Tool = {
 	},
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		// Cross-agent depth check (Phase 4 of docs/plans/analyzers/data-analyzer.md).
 		// Same envelope as data_lineage; the cap is strict at depth>=1.
 		const depth = readCrossAgentDepth(input);
@@ -140,7 +142,7 @@ export const dataSchemaDriftTool: Tool = {
 			return fail('session has no active repo; cannot resolve the connection');
 		}
 
-		const access = { lookupRoot: repoPath, daemonEpoch: 'saved-db-tools' };
+		const access = analysisConnectionContext(repoPath, deps.connectionExecution ?? savedAnalysisExecution(repoPath));
 		const conn = (await savedConnectionResolver.list(access)).find(c => c.key.id === connectionId);
 		if (conn === undefined) {
 			return fail(`unknown connection '${connectionId}'`);

@@ -31,10 +31,11 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
-import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
+import { buildShaperProvider, shaperModelLabel, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
 import type { RoleId } from '../config/role-taxonomy.js';
-import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
+import { familyForClient } from './model-registry.js';
+import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { resolveStageFocus } from '../workflow/seed-focus.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
@@ -432,19 +433,16 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	const intent: WorkflowIntent = { workflow: p.workflow, focus: resolvedFocus, repoPath, repoIndexedAt: null, params };
 
 	const cfg = loadAnalyzeConfig();
-	const clientDefault: AnalyzeShaperProviderKind | undefined =
-		p.client === 'claude' ? 'cli-claude' : p.client === 'codex' ? 'cli-codex' : undefined;
-	// Resolution chain: per-repo override > global config > per-run caller >
-	// ollama. `repoOverride` is read FRESH from disk (never the global cache).
-	const repoOverride = resolveRepoShaperProvider(repoPath);
+	const clientDefault: AnalyzeShaperProviderKind | undefined = familyForClient(p.client);
+	// Resolution chain: global config > per-run caller > ollama.
 	// Workflow synthesize generates a whole artifact — well past the CLI's
 	// 120 s default — so give CLI providers a generous timeout (Ollama ignores it).
-	const provider   = buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
-	const modelLabel = modelLabelFor(cfg, repoOverride, clientDefault);
-	// S003: the per-role router shares the run's resolution deps (fresh repo
-	// override, client default, CLI timeout). The scalar provider/modelLabel above
-	// stay populated from the driver role's path for back-compat until sc5 lands.
-	const router = createRoleRouter({ repoOverride, clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
+	const provider   = buildShaperProvider(cfg, { clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
+	const modelLabel = modelLabelFor(cfg, clientDefault);
+	// S003: the per-role router shares the run's resolution deps (client
+	// default, CLI timeout). The scalar provider/modelLabel above stay populated
+	// from the driver role's path for back-compat until sc5 lands.
+	const router = createRoleRouter({ clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
 	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review, router, cfg, repoPath };
 }
 
@@ -652,21 +650,12 @@ export const _groundingForTest = groundingFor;
 export const _groundingIntentForTest = classifiedIntent;
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the
- *  chosen provider along the chain: per-repo override > explicit config >
- *  invoking CLI > Ollama. */
+ *  chosen provider along the chain: explicit config > invoking CLI > Ollama. */
 function modelLabelFor(
 	cfg:           AnalyzeConfig,
-	repoOverride:  AnalyzeShaperProviderKind | undefined,
 	clientDefault: AnalyzeShaperProviderKind | undefined,
 ): string {
-	const effective = resolveShaperKind({
-		repoOverride,
-		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
-		clientDefault,
-	});
-	if (effective === 'ollama') return `ollama:${cfg.shaperModel}`;
-	const cli = effective === 'cli-claude' ? 'claude' : 'codex';
-	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
+	return shaperModelLabel(cfg, clientDefault !== undefined ? { clientDefault } : undefined);
 }
 
 function formatFailure(f: { readonly ok: boolean; readonly message?: string; readonly details?: readonly string[] }): string {

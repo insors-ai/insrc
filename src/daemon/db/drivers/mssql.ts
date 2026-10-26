@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * MSSQL driver (kind: `mssql`).
@@ -20,7 +22,6 @@ interface ColumnValue {
 	readonly value: unknown;
 }
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -76,7 +77,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-mssql');
 
 function clampMssqlListLimit(n: number | undefined): number {
 	if (typeof n !== 'number' || !Number.isFinite(n)) return 500;
@@ -121,6 +121,7 @@ function buildConnectionConfig(p: MssqlParams): ConnectionConfiguration {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class MssqlDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'mssql';
 
@@ -128,12 +129,14 @@ export class MssqlDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-mssql', context);
 		this.prismaPath = prismaPath;
 		const cfg = buildConnectionConfig(parseUrl(url));
 		this.pool = new Pool<Connection>({
 			create: () => new Promise((resolveConn, rejectConn) => {
 				const conn = new Connection(cfg);
+				conn.on('error', err => this.#runtimeLog.emit('warn', () => ({ fields: { id: this.id, err: err.message }, message: 'connection error' })));
 				conn.on('connect', (err) => {
 					if (err !== undefined && err !== null) { rejectConn(err); return; }
 					resolveConn(conn);
@@ -149,6 +152,10 @@ export class MssqlDriver implements RdbmsDriver {
 			max: 3,
 			idleTimeoutMillis: 30_000,
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.run('SELECT 1', []);
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -179,7 +186,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 		const rows = await withTimeout(
 			this.run(text, values),
 			SAMPLE_TIMEOUT_MS,
@@ -201,7 +208,7 @@ export class MssqlDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildSampleSql(queryAst.target, opts, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		// MSSQL EXPLAIN equivalent: SHOWPLAN_TEXT ON makes the next
 		// SELECT return the plan as text rows instead of executing.
 		// Run as a session-scoped pair so the SELECT doesn't pollute
@@ -219,7 +226,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const rows = await withTimeout(
 			this.run(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -231,7 +238,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MSSQL_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const [countRows, valueRows] = await allDriverWork([
 			withTimeout(this.run(compiled.distinctCountSql, []), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.run(compiled.topValuesSql,    []), SAMPLE_TIMEOUT_MS),
@@ -491,11 +498,11 @@ function splitTarget(target: string): { schema: string | null; table: string } {
 registerDriver({
 	kind: 'mssql',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: mssql connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new MssqlDriver(config.id, config.url, prismaPath);
+		return new MssqlDriver(config.id, config.url, prismaPath, context);
 	},
-});
+}, 'resource-context');

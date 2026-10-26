@@ -17,6 +17,8 @@
  * can pick them up) but refuse to run until configured.
  */
 
+import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from '../../../../analyze/connection-access.js';
+import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { registerTool } from '../../registry.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
@@ -92,14 +94,16 @@ async function fileAccessExtract(
 	input: Record<string, unknown>,
 	ctx: AccessPolicyContext,
 ): Promise<string | undefined> {
+	assertAnalysisConnectionExecution(ctx.connectionExecution);
 	const connectionId = input['connectionId'];
 	if (typeof connectionId !== 'string' || connectionId.length === 0) return undefined;
 	if (typeof ctx.repoPath !== 'string' || ctx.repoPath.length === 0) return undefined;
 	try {
-		const config = (await savedConnectionResolver.list(toolAccess(ctx.repoPath))).find(c => c.key.id === connectionId);
+		const config = (await savedConnectionResolver.list(toolAccess(ctx.repoPath, ctx.connectionExecution))).find(c => c.key.id === connectionId);
 		const p = config?.publicConfig['path'];
 		return typeof p === 'string' && p.length > 0 ? resolve(ctx.repoPath, p) : undefined;
-	} catch {
+	} catch (error) {
+		if (ctx.connectionExecution) throw error;
 		return undefined;
 	}
 }
@@ -138,14 +142,14 @@ async function requireRepoPath(
 	return repoPath;
 }
 
-function toolAccess(repoPath: string): ConnectionAccessContext {
-	return { lookupRoot: repoPath, daemonEpoch: 'saved-db-tools' };
+function toolAccess(repoPath: string, execution?: ConnectionExecutionContext): ConnectionAccessContext {
+	return analysisConnectionContext(repoPath, execution ?? savedAnalysisExecution(repoPath));
 }
 async function withDriver(toolId: string, deps: ToolDeps, connectionId: string, expected: 'rdbms' | 'kv' | 'file', use: (driver: Driver) => Promise<ToolResult>): Promise<ToolResult> {
 	const repoPath = await requireRepoPath(toolId, deps);
 	if (typeof repoPath !== 'string')
 		return repoPath;
-	const access = toolAccess(repoPath);
+	const access = toolAccess(repoPath, deps.connectionExecution);
 	const configured = await savedConnectionResolver.list(access);
 	if (configured.length === 0)
 		return fail(toolId, 'No data-driver connections configured for this repo. Use the Data Sources pane / insrc.addDbConnection to add one.', 'NO_CONNECTIONS_CONFIGURED');
@@ -222,10 +226,11 @@ const listConnectionsTool: Tool = {
 		'db:sql:* / db:kv:* / db:file:* calls are available and what connectionId to pass.',
 	inputSchema: { type: 'object', additionalProperties: false, properties: {} },
 	async execute(_input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const repoPath = await requireRepoPath(this.id, deps);
 		if (typeof repoPath !== 'string') { return repoPath; }
 		try {
-			const list = (await savedConnectionResolver.list(toolAccess(repoPath))).map(summaryOf);
+			const list = (await savedConnectionResolver.list(toolAccess(repoPath, deps.connectionExecution))).map(summaryOf);
 			return ok(
 				summariseConnections(list),
 				list.map(c => ({
@@ -267,6 +272,7 @@ const sqlDescribeTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') {
@@ -323,6 +329,7 @@ const sqlExplainTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		const rawAst = input['queryAst'];
@@ -373,6 +380,7 @@ const sqlSampleTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') {
@@ -559,6 +567,7 @@ const sqlAggregateTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') {
@@ -647,6 +656,7 @@ const sqlDistinctTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') {
@@ -684,6 +694,7 @@ const fileDistinctTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildDistinctRequest(input);
@@ -727,11 +738,12 @@ const fileListFilesTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const repoPath = await requireRepoPath(this.id, deps);
 		if (typeof repoPath !== 'string') return repoPath;
-		const access = toolAccess(repoPath);
+		const access = toolAccess(repoPath, deps.connectionExecution);
 		const config = (await savedConnectionResolver.list(access)).find(c => c.key.id === connectionId);
 		const path = config?.publicConfig['path'];
 		if (config === undefined) {
@@ -747,11 +759,20 @@ const fileListFilesTool: Tool = {
 		try {
 			if (pin.revision !== config.revision) return fail(this.id, 'The connection changed; retry to check its current resource.', 'CONNECTION_CHANGED');
 			const { listFilesForConnection } = await import('../../../db/list-files.js');
-			const result = await listFilesForConnection(resolve(repoPath, path), {
-				recursive: config.publicConfig['recursive'] === true,
-				...(pattern !== undefined ? { pattern } : {}),
-				limit,
-			});
+            let admitted = false;
+            const work = Promise.resolve().then(() => {
+                if (!admitted) throw new Error('Connection session is unavailable.');
+                assertAnalysisConnectionExecution(deps.connectionExecution);
+                return listFilesForConnection(resolve(repoPath, path), {
+                    recursive: config.publicConfig['recursive'] === true,
+                    ...(pattern !== undefined ? { pattern } : {}), limit,
+                });
+            });
+            void work.catch(() => {});
+            pin.retainWork?.(work);
+            admitted = true;
+            const result = await work;
+			assertAnalysisConnectionExecution(deps.connectionExecution);
 			const lines: string[] = [
 				`**${connectionId}** -- ${result.files.length} file${result.files.length === 1 ? '' : 's'}` +
 					(result.truncated ? ` (truncated at ${limit})` : ''),
@@ -794,6 +815,7 @@ const fileAggregateTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildAggregateRequest(input);
@@ -838,6 +860,7 @@ const sqlListTablesTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
@@ -884,6 +907,7 @@ const sqlListIndexesTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
@@ -936,6 +960,7 @@ const sqlAntiJoinTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const leftTarget = String(input['leftTarget'] ?? '');
 		const leftColumn = String(input['leftColumn'] ?? '');
@@ -995,6 +1020,7 @@ const sqlFunctionalDependencyTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		const fromColumn = String(input['fromColumn'] ?? '');
@@ -1112,6 +1138,7 @@ const sqlHistogramTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
@@ -1150,6 +1177,7 @@ const fileHistogramTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildHistogramRequest(input);
@@ -1241,6 +1269,7 @@ const sqlCorrelationMatrixTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
@@ -1278,6 +1307,7 @@ const fileCorrelationMatrixTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildCorrelationRequest(input);
@@ -1384,6 +1414,7 @@ const sqlOutliersTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
@@ -1420,6 +1451,7 @@ const fileOutliersTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildOutlierRequest(input);
@@ -1498,6 +1530,7 @@ const sqlTemporalTrendTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
@@ -1536,6 +1569,7 @@ const fileTemporalTrendTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildTemporalTrendRequest(input);
@@ -1583,6 +1617,7 @@ const sqlDickeyFullerTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		const valueColumn = String(input['valueColumn'] ?? '');
@@ -1643,6 +1678,7 @@ const sqlTemporalGapStatsTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		const timestampColumn = String(input['timestampColumn'] ?? '');
@@ -1711,6 +1747,7 @@ const kvListNamespacesTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
@@ -1758,6 +1795,7 @@ const kvDescribeNamespaceTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		const namespace = String(input['namespace'] ?? '');
 		if (connectionId === '' || namespace === '') return fail(this.id, 'connectionId and namespace are required');
@@ -1813,6 +1851,7 @@ const kvScanTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
@@ -1853,6 +1892,7 @@ const kvGetTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		const rawKey = input['key'];
@@ -1890,6 +1930,7 @@ const kvSampleShapeTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
@@ -1933,6 +1974,7 @@ const fileDescribeTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		return withDriver(this.id, deps, connectionId, 'file', async driver => {
@@ -1980,6 +2022,7 @@ const fileSampleTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		return withDriver(this.id, deps, connectionId, 'file', async driver => {
@@ -2017,6 +2060,7 @@ const fileSampleShapeTool: Tool = {
 		},
 	},
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		return withDriver(this.id, deps, connectionId, 'file', async driver => {

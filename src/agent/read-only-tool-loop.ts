@@ -15,6 +15,8 @@
  * never executed; the model is told the tool is not available.
  */
 
+import { assertExplicitConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { isAbsolute, resolve } from 'node:path';
 
 import { executeTool } from '../daemon/tools/executor.js';
@@ -38,6 +40,7 @@ export interface GatheredToolOutput {
 }
 
 export interface ReadOnlyToolLoopArgs {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider: LLMProvider;
 	readonly messages: readonly LLMMessage[];
 	/** The tools advertised to the model. */
@@ -75,9 +78,15 @@ export class ToolLoopDeadlineError extends Error {
 /** Run the loop. Returns `done: false` with everything gathered when the turns run out;
  *  the caller decides what that means. Model errors propagate unchanged. */
 export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<ReadOnlyToolLoopResult> {
+	const execution = args.connectionExecution;
+	assertExplicitConnectionExecution(execution);
+	if (args.deps.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
+	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
+	const signals = [...new Set([execution?.lifetime.signal, args.signal, ...(execution ? [args.deps.signal] : [])].filter((value): value is AbortSignal => value !== undefined))];
+	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
 	const execute = args.execute ?? ((name: string, input: unknown, deps: ToolDeps) => executeTool(name, input as never, deps));
 	// A tool that runs long sees the loop's cancellation too.
-	const deps: ToolDeps = args.signal !== undefined ? { ...args.deps, signal: args.signal } : args.deps;
+	const deps: ToolDeps = signal !== undefined ? { ...args.deps, signal } : args.deps;
 	const now = args.now ?? Date.now;
 	const convo: LLMMessage[] = [...args.messages];
 	const gathered: GatheredToolOutput[] = [];
@@ -87,6 +96,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 	// is never executed. A name nothing is registered under gets the executor's
 	// own answer (it can run nothing).
 	const dispatch = async (name: string, input: unknown): Promise<ToolResult> => {
+		assertExplicitConnectionExecution(execution);
 		const tool = getTool(name);
 		if (tool === undefined) return unknownTool(name);
 		if (!args.allow.has(tool.id)) return refused(name, tool.id);
@@ -94,19 +104,23 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 	};
 
 	for (let turn = 0; turn < args.maxTurns; turn++) {
-		throwIfAborted(args.signal);
+		throwIfAborted(signal);
+		assertExplicitConnectionExecution(execution);
 		if (args.deadlineAt !== undefined && now() >= args.deadlineAt) throw new ToolLoopDeadlineError(args.deadlineAt);
 
 		// disableThinking: true is critical for the qwen3.6 family -- without
 		// `think: false` the model emits empty bodies (memory: qwen3_6_needs_think_false).
 		// The signal goes into the call AND bounds the wait for it, so a provider
 		// that is between attempts (a retry backoff) cannot hold the loop past it.
-		const response: LLMResponse = await untilAborted(args.provider.complete(convo, {
+		const work = args.provider.complete(convo, {
 			tools:           [...args.tools],
 			toolChoice:      'auto',
 			disableThinking: true,
-			...(args.signal !== undefined ? { signal: args.signal } : {}),
-		}), args.signal);
+			...(signal !== undefined ? { signal } : {}),
+		});
+		execution?.lifetime.registerDrain(work);
+		const response: LLMResponse = await untilAborted(work, signal);
+		assertExplicitConnectionExecution(execution);
 
 		const toolCalls = response.toolCalls ?? [];
 		if (response.stopReason !== 'tool_use' || toolCalls.length === 0) {
@@ -125,12 +139,18 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		// Serial, like every provider call in this codebase.
 		const resultBlocks: ContentBlock[] = [];
 		for (const call of toolCalls) {
-			throwIfAborted(args.signal);
+			throwIfAborted(signal);
+			assertExplicitConnectionExecution(execution);
 			toolCallCount += 1;
 			args.onTrace?.({ type: 'tool-call', tool: call.name, input: call.input });
 			// Raced against the signal: a tool that ignores cancellation (a git
 			// command's own timeout, a blocked read) cannot hold the loop past it.
-			const result = await untilAborted(dispatch(call.name, call.input), args.signal);
+			assertExplicitConnectionExecution(execution);
+			throwIfAborted(signal);
+			const work = dispatch(call.name, call.input);
+			execution?.lifetime.registerDrain(work);
+			const result = await untilAborted(work, signal);
+			assertExplicitConnectionExecution(execution);
 			args.onTrace?.({ type: 'tool-response', tool: call.name, ok: result.success !== false, output: result.output });
 			resultBlocks.push({ type: 'tool_result', tool_use_id: call.id, content: result.output, isError: result.success === false });
 			gathered.push({ tool: call.name, input: call.input, output: result.output });
@@ -141,6 +161,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 }
 
 export interface StructuredAnswerArgs {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider:    LLMProvider;
 	/** The conversation so far (typically a tool loop's messages). */
 	readonly messages:    readonly LLMMessage[];
@@ -159,17 +180,26 @@ export interface StructuredAnswerArgs {
 /** Ask for the loop's structured answer: the conversation plus one closing
  *  instruction, answered against `schema`. Model errors propagate unchanged. */
 export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promise<T> {
-	throwIfAborted(args.signal);
+	const execution = args.connectionExecution;
+	assertExplicitConnectionExecution(execution);
+	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
+	const signals = [...new Set([execution?.lifetime.signal, args.signal].filter((value): value is AbortSignal => value !== undefined))];
+	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
+	throwIfAborted(signal);
 	const messages: LLMMessage[] = [...args.messages, { role: 'user', content: args.instruction }];
-	return untilAborted(args.provider.completeStructured<T>(messages, args.schema, {
+	const work = args.provider.completeStructured<T>(messages, args.schema, {
 		// Critical for qwen3.6 (memory: qwen3_6_needs_think_false); harmless elsewhere.
 		disableThinking: true,
 		...(args.maxAttempts !== undefined ? { maxAttempts: args.maxAttempts } : {}),
 		...(args.internalRetry !== undefined ? { internalRetry: args.internalRetry } : {}),
 		...(args.maxTokens !== undefined ? { maxTokens: args.maxTokens } : {}),
-		...(args.signal !== undefined ? { signal: args.signal } : {}),
-		...(args.onToken !== undefined ? { onToken: args.onToken } : {}),
-	}), args.signal);
+		...(signal !== undefined ? { signal } : {}),
+		...(args.onToken !== undefined ? { onToken: (delta: string) => { assertExplicitConnectionExecution(execution); args.onToken!(delta); } } : {}),
+	});
+	execution?.lifetime.registerDrain(work);
+	const result = await untilAborted(work, signal);
+	assertExplicitConnectionExecution(execution);
+	return result;
 }
 
 /**

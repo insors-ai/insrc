@@ -1,6 +1,10 @@
 {
   "purpose": "Current-source classification, not proof of enablement. Typed pool and v2 resolver aliases/members remain in the exact AST site multiset; every source owner has an explicit lease or metadata rationale.",
   "files": {
+    "src/analyze/context/scope.ts": {
+      "classification": "metadata-only",
+      "rationale": "S003 t17: session connection scope/check reads only safe visible entries through the exact-root bound resolver; no driver acquisition or cross-root saved enumeration. Unattached saved enumeration and ambiguity are preserved."
+    },
     "src/analyze/explore/db-connections-list.ts": {
       "classification": "metadata-only",
       "rationale": "t10: safe list through injected resolver; no driver use"
@@ -15,7 +19,7 @@
     },
     "src/analyze/measure.ts": {
       "classification": "full-use-lease",
-      "rationale": "t11: metadata snapshots separate; underlying late listings retain shared lease beyond bounded wait"
+      "rationale": "S003 t18: session metadata comes from the exact-root resolver; active owner/root/id/revision keys contain no shared results and stay occupied until full callback/pin work settles. Saved-only pendingListings retains existing shared waiter semantics."
     },
     "src/analyze/runtimes/data/_shared.ts": {
       "classification": "resolver-port",
@@ -33,9 +37,21 @@
       "classification": "full-use-lease",
       "rationale": "t10: retain lease through describe"
     },
-    "src/daemon/db-rpc.ts": {
+    "src/bin/insrc-connection-test.ts": {
       "classification": "bounded-private-probe",
-      "rationale": "t21: bounded private profile-materialized probe receives daemon memory-only authority and awaits cleanup; legacy writes require transport identity and the shared root gate, and responses use safe projections. S002 owns worker orchestration."
+      "rationale": "S002 t14: one-shot private IPC child admits exact kinds, uses memory-only file authority, awaits explicit readonly reachability and close, and exits. No pool registration or live store access."
+    },
+    "src/daemon/connection-management-rpc.ts": {
+      "classification": "metadata-only",
+      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "classification": "private-transport-resolver",
+      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits."
+    },
+    "src/daemon/db/driver-log-policy.ts": {
+      "classification": "resource-local-authority",
+      "rationale": "S003 t10: immutable owner/root/revision context and tagged factory identity gate plaintext config before construction; lazy per-resource quiet sink does not evaluate diagnostics. Concrete SDK closure remains t11."
     },
     "src/daemon/db/drivers/mssql.ts": {
       "classification": "driver-internal-library-pool",
@@ -45,9 +61,21 @@
       "classification": "resolver-port",
       "rationale": "t9/t23: barrel exports cannot preserve an unaudited bypass"
     },
+    "src/daemon/db/management-adoption.ts": {
+      "classification": "non-driver-lock",
+      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
+    },
+    "src/daemon/db/management-startup.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
+    },
+    "src/daemon/db/management.ts": {
+      "classification": "management-owner",
+      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
+    },
     "src/daemon/db/pool-cache.ts": {
-      "classification": "pool-owner",
-      "rationale": "t9: canonical-root cache, active lease-aware reload and close"
+      "classification": "explicit-resolver-binding",
+      "rationale": "S003 t9: frozen exact-object session access binds a lazy private resolver through WeakMap identity. Copies and bare handles refuse before saved lookup; unattached saved behavior stays unchanged."
     },
     "src/daemon/db/pool.ts": {
       "classification": "pool-owner",
@@ -56,6 +84,14 @@
     "src/daemon/db/registry.ts": {
       "classification": "factory-metadata",
       "rationale": "t19/t23: metadata declaration; getFactory consumers audited independently"
+    },
+    "src/daemon/db/session-entries.ts": {
+      "classification": "private-revision-lease",
+      "rationale": "S003 t9: private resolver spans full callback and late work with revision leases, guarded views and authority rechecks before result publication."
+    },
+    "src/daemon/db/session-resources.ts": {
+      "classification": "private-owner-resource",
+      "rationale": "S003 t9/t12: private session/root/revision construction uses branded factory context, retains file engines before driver publication and interrupts/drains them on owner end or late constructor refusal. No saved pool or credential acquisition."
     },
     "src/daemon/tools/builtins/data/schema-drift.ts": {
       "classification": "full-use-lease",
@@ -69,36 +105,49 @@
       "classification": "unrelated-lock",
       "rationale": "StoreGuard acquire is a storage-lock slot, not DriverPool"
     },
-    "src/shared/locks/lock-manager.ts": {
-      "classification": "unrelated-lock",
-      "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
+    "src/shared/connection-management.ts": {
+      "classification": "protocol-declarations",
+      "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
     },
     "src/shared/db-driver.ts": {
       "classification": "factory-contract",
       "rationale": "t2/t19: shared factory type declaration, no actual construction"
     },
-    "src/daemon/db/management.ts": {
-      "classification": "management-owner",
-      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
+    "src/shared/locks/lock-manager.ts": {
+      "classification": "unrelated-lock",
+      "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
     },
-    "src/shared/connection-management.ts": {
-      "classification": "protocol-declarations",
-      "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
-    },
-    "src/daemon/connection-management-rpc.ts": {
+    "src/analyze/session-reuse.ts": {
       "classification": "metadata-only",
-      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
-    },
-    "src/daemon/db/management-adoption.ts": {
-      "classification": "non-driver-lock",
-      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
-    },
-    "src/daemon/db/management-startup.ts": {
-      "classification": "full-use-lease",
-      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
+      "rationale": "S003 t20: exact branded owner/root revision vectors only; no source result, configuration or credential cache. Synchronous registry/overlay recheck precedes continuation payload access."
     }
   },
   "sites": [
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
     {
       "file": "src/analyze/explore/db-connections-list.ts",
       "expression": "acquirePool",
@@ -251,7 +300,37 @@
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.reload",
+      "expression": "dataConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
       "boundary": "pool-member"
     },
     {
@@ -261,18 +340,18 @@
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
+      "expression": "pool.reload",
       "boundary": "pool-member"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
-      "boundary": "pool-member"
+      "expression": "resolver.lease",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
-      "boundary": "pool-member"
+      "expression": "resolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/analyze/measure.ts",
@@ -390,6 +469,26 @@
       "boundary": "symbol:dataConnectionResolver"
     },
     {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/bin/insrc-connection-test.ts",
+      "expression": "factory(start.config,familyOf(start.config.kind)==='file'?{fileExecutionPolicy:fileExecutionPolicy(start.config,{lookupRoot:start.lookupRoot,ownerId:'probe',revision:start.nonce,persistence:'memory-only'})}:undefined)",
+      "boundary": "driver-port-call"
+    },
+    {
       "file": "src/daemon/connection-management-rpc.ts",
       "expression": "savedConnectionResolver.list",
       "boundary": "resolver-member"
@@ -405,19 +504,64 @@
       "boundary": "symbol:savedConnectionResolver"
     },
     {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t\t}) } : undefined)",
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "overlay.resolver(access, { assertActive, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "overlay.resolver(current.access, { assertActive: assertRequest, signal, ...(context.registerDrain ? { registerDrain: context.registerDrain } : {}) })",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "privateResolver.withConnection",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "factory(config, context)",
       "boundary": "driver-port-call"
     },
     {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "getFactory",
-      "boundary": "symbol:getFactory"
-    },
-    {
-      "file": "src/daemon/db-rpc.ts",
-      "expression": "getFactory",
-      "boundary": "symbol:getFactory"
+      "file": "src/daemon/db/driver-log-policy.ts",
+      "expression": "factory(config, context)",
+      "boundary": "driver-port-call"
     },
     {
       "file": "src/daemon/db/drivers/mssql.ts",
@@ -531,21 +675,6 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).lease",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).safeList",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "(await pool(context)).withConnection",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "(ports.poolSource ?? acquirePool)(context.lookupRoot)",
       "boundary": "pool-port-call"
     },
@@ -561,8 +690,23 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
+      "expression": "CACHE.get(access.lookupRoot)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
       "expression": "CACHE.get(repoPath)",
       "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
@@ -636,16 +780,6 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "overlay(context)",
-      "boundary": "resolver-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "overlay(context)",
-      "boundary": "resolver-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "pool.closeAll",
       "boundary": "pool-member"
     },
@@ -666,18 +800,43 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
-      "expression": "pool(context)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
-      "expression": "pool(context)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/daemon/db/pool-cache.ts",
       "expression": "ports.sessionOverlay(context)",
       "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "resolve.resolve()",
+      "boundary": "resolver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.withConnection",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.withConnection",
+      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
@@ -687,6 +846,11 @@
     {
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "session.lease",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "session.list",
       "boundary": "resolver-member"
     },
     {
@@ -1133,6 +1297,56 @@
       "file": "src/daemon/db/registry.ts",
       "expression": "getFactory",
       "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "ConnectionResolver",
+      "boundary": "symbol:ConnectionResolver"
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "expression": "this.#resources.acquire(entry.config, entry.revision)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "getFactory",
+      "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "invokeTemporaryFactory(factory, config, context)",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
+      "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
+      "boundary": "driver-port-call"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",

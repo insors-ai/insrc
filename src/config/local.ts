@@ -19,13 +19,15 @@
  *   - Chars-per-token approximation (chunkers + budget calcs)
  *
  * Read from `~/.insrc/config.json` if present, else fall back to defaults.
- * Cached in-process for the daemon's lifetime; the cache is reset only
- * via `_resetLocalProviderConfigCacheForTests()`.
+ * Cached in-process for the daemon's lifetime; main() drops the cache once,
+ * right after the boot reconcile (`resetLocalProviderConfigCache()`), so a read
+ * made at module load cannot keep pre-reconcile values.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
+import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 
 const log = getLogger('config:local');
 
@@ -45,12 +47,13 @@ export interface LocalProviderInfraConfig {
 
 // Defaults mirror what the old `agent/config.ts` ships as DEFAULT_LOCAL_*.
 // qwen3-embedding:0.6b is the v1 default for the LMDB+Lance substrate;
-// users can override via the Model Providers pane (Local tab).
+// users can override via the Model Providers pane (Local tab). coreModel's
+// default is the shipped definitions' ollama tool-loop model.
 const DEFAULTS: LocalProviderInfraConfig = {
 	host:               'http://localhost:11434',
 	embeddingModel:     'qwen3-embedding:0.6b',
 	embeddingDim:       1024,
-	coreModel:          'qwen3.6:27b',
+	coreModel:          SHIPPED_MODEL_DEFAULTS.toolLoopModel,
 	charsPerToken:      3,
 	embeddingKeepAlive: '24h',
 };
@@ -101,6 +104,10 @@ function isObject(x: unknown): x is Record<string, unknown> {
 }
 
 
-export function _resetLocalProviderConfigCacheForTests(): void {
+/** Drop the cached config so the next read sees config.json as it is now.
+ *  main() calls it once, right after the boot reconcile. */
+export function resetLocalProviderConfigCache(): void {
 	cached = undefined;
 }
+
+export const _resetLocalProviderConfigCacheForTests = resetLocalProviderConfigCache;

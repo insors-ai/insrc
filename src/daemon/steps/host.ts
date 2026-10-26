@@ -19,9 +19,11 @@
 
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
-import { runInStepContext } from '../../shared/step-context.js';
-import type { StepCallContext, StepToolName } from '../../shared/step-context.js';
+import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
+import type { StepCallContext, StepClient, StepToolName, ConnectionExecutionContext } from '../../shared/step-context.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
+import { familyForClient } from '../model-registry.js';
+import { runWithClientProviderContext } from '../../analyze/context/shaper-provider.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from './code-review-step/handler.js';
@@ -47,7 +49,7 @@ export interface StepEnvelope {
 }
 
 /** `progress`: report progress, sent as a 'progress' frame before the reply. */
-export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void) => Promise<StepEnvelope>;
+export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void, execution?: ConnectionExecutionContext) => Promise<StepEnvelope>;
 
 export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
@@ -72,8 +74,8 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 	registerSignoff();
 	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
-		insrc_analyze:          (args) => runAnalyzeOneShot(args),
-		insrc_analyze_step:     (args) => handleAnalyzeStep(args),
+		insrc_analyze:          (args, _signal, _progress, execution) => runAnalyzeOneShot(args, {}, execution),
+		insrc_analyze_step:     (args, _signal, _progress, execution) => handleAnalyzeStep(args, execution),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
 		insrc_review_step:      (args, signal, progress) => handleReviewStep(args, { ...opts.reviewDeps, signal, ...(progress !== undefined ? { progress } : {}) }),
@@ -89,26 +91,35 @@ function contextOf(raw: unknown): StepCallContext | string {
 	const c = raw as Record<string, unknown>;
 	if (typeof c['cwd'] !== 'string' || c['cwd'].length === 0) return '`context.cwd` (non-empty string) is required';
 	if (c['envRepo'] !== undefined && typeof c['envRepo'] !== 'string') return '`context.envRepo` must be a string';
+	// The client's identity; the daemon maps it to a model family where a family is
+	// needed (familyForClient), so a client no family runs still reaches its tools.
 	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex') return "`context.client` must be 'claude' or 'codex'";
 	return {
 		cwd: c['cwd'],
 		...(typeof c['envRepo'] === 'string' ? { envRepo: c['envRepo'] } : {}),
-		...(c['client'] !== undefined ? { client: c['client'] as 'claude' | 'codex' } : {}),
+		...(c['client'] !== undefined ? { client: c['client'] as StepClient } : {}),
 	};
 }
 
 /** The `step.call` stream handler over `table`. */
 export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable()): StreamHandler {
-	return async (params, send, signal) => {
-		const fail = (code: 'step-unknown-tool' | 'step-failed', error: string): void => {
+	return async (params, send, signal, trusted) => {
+        const execution = trusted?.connectionExecution;
+        const bound = trusted?.connectionSession !== undefined || execution?.mode === 'session-memory';
+		const fail = (code: 'step-unknown-tool' | 'step-failed' | 'session-expired' | 'upgrade-required' | 'unsupported-temporary', error: string): void => {
 			send({ id: 0, stream: 'error', data: { code, error, recoverable: false } });
 		};
+        if (bound) {
+         try { requireConnectionExecution(execution); } catch { fail('session-expired', 'Connection session is unavailable.'); return; }
+         if (execution?.mode !== 'session-memory' || execution.audience !== 'workbench-ui') { fail('unsupported-temporary', 'Temporary connections are unavailable for this operation.'); return; }
+        }
 		const p = (typeof params === 'object' && params !== null ? params : {}) as { tool?: unknown; args?: unknown; context?: unknown };
 		if (typeof p.tool !== 'string' || !Object.hasOwn(table, p.tool)) {
 			fail('step-unknown-tool', `step.call: this daemon has no tool '${String(p.tool)}'. Update the daemon and restart it.`);
 			return;
 		}
-		const ctx = contextOf(p.context);
+        if (bound && !['insrc_analyze', 'insrc_analyze_step'].includes(String(p.tool))) { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
+		const ctx = bound && execution ? { cwd: execution.connectionAccess.lookupRoot, envRepo: execution.connectionAccess.lookupRoot, connectionExecution: execution } : contextOf(p.context);
 		if (typeof ctx === 'string') {
 			fail('step-failed', `step.call: ${ctx}`);
 			return;
@@ -119,23 +130,29 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 		let answered = false;
 		const progress = (data: unknown): void => {
 			if (answered) return;
+            if (execution) { try { execution.assertActive(); } catch { return; } }
 			try {
 				send({ id: 0, stream: 'progress', data });
 			} catch (err) {
-				log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
+				if (!bound) log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
 			}
 		};
 		let envelope: StepEnvelope;
 		try {
-			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress));
+			// The step runs in the client provider context of the family the calling
+			// client implies (Claude Code → the family running claude), as an MCP call did.
+			const family = familyForClient((ctx as StepCallContext).client);
+			const call = (): Promise<StepEnvelope> => run(p.args, signal, progress, execution);
+			envelope = await runInStepContext(ctx, () => family !== undefined ? runWithClientProviderContext(family, call) : call());
 		} catch (err) {
 			answered = true;
-			const message = err instanceof Error ? err.message : String(err);
-			log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
+			const message = bound ? 'Connection session operation failed.' : err instanceof Error ? err.message : String(err);
+			if (!bound) log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
 			fail('step-failed', message);
 			return;
 		}
 		answered = true;
+        if (execution) { try { execution.assertActive(); } catch { fail('session-expired', 'Connection session is unavailable.'); return; } }
 		send({ id: 0, stream: 'done', data: envelope });
 	};
 }

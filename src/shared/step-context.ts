@@ -17,6 +17,100 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { ConnectionAccessContext, ConnectionScope } from './connection-management.js';
+
+/** Internal, explicit execution tuple. Never accepted from JSON or serialized into a run. */
+export interface ConnectionExecutionLifetime {
+	readonly signal: AbortSignal;
+	readonly registerDrain: (work: PromiseLike<unknown>) => void;
+}
+export interface ConnectionExecutionRevision {
+	readonly id: string;
+	readonly scope: ConnectionScope;
+	readonly revision: string;
+}
+export interface ConnectionExecutionDiagnostics {
+	/** Lazy: a quiet sink must never evaluate source-bearing formatting. */
+	readonly emit: (level: 'trace' | 'debug' | 'info' | 'warn' | 'error', format: () => unknown) => void;
+}
+interface ConnectionExecutionBase {
+	readonly connectionAccess: Readonly<ConnectionAccessContext>;
+	readonly lifetime: ConnectionExecutionLifetime;
+	readonly revisions: readonly ConnectionExecutionRevision[];
+	readonly diagnostics: ConnectionExecutionDiagnostics;
+	/** Revalidate authority after awaits, before reuse and before every provider attempt. */
+	readonly assertActive: () => void;
+}
+export interface SavedConnectionExecution extends ConnectionExecutionBase {
+	readonly mode: 'saved';
+	readonly provider: { readonly mode: 'saved-default' };
+}
+export interface SessionConnectionExecution extends ConnectionExecutionBase {
+	readonly mode: 'session-memory';
+	readonly bindingId: string;
+	readonly audience: 'workbench-ui' | 'mcp-unverified';
+	readonly controlGeneration: number;
+	readonly provider: { readonly mode: 'verified-local'; readonly modelId: string; readonly evidenceDigest: string }
+		| { readonly mode: 'unsupported' };
+}
+export type ConnectionExecutionContext = SavedConnectionExecution | SessionConnectionExecution;
+
+export class ConnectionExecutionError extends Error {
+	constructor(readonly code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit') {
+		super(code);
+		this.name = 'ConnectionExecutionError';
+	}
+}
+
+const savedExecutions = new WeakSet<object>();
+const sessionExecutions = new WeakSet<object>();
+
+/** Only trusted unattached entry points may explicitly choose saved execution. */
+export function savedConnectionExecution(
+	access: ConnectionAccessContext,
+	lifetime: ConnectionExecutionLifetime,
+	diagnostics: ConnectionExecutionDiagnostics,
+): SavedConnectionExecution {
+	// A bound request cannot mint replacement saved authority after losing its tuple.
+	if (currentStepContext()?.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
+	if (access.sessionHandle !== undefined || !access.lookupRoot || !access.daemonEpoch) {
+		throw new ConnectionExecutionError('session-expired');
+	}
+	const signal = lifetime.signal;
+	const execution: SavedConnectionExecution = {
+		mode: 'saved', connectionAccess: Object.freeze({ ...access }),
+		lifetime: Object.freeze({ signal: lifetime.signal, registerDrain: lifetime.registerDrain }),
+		revisions: Object.freeze([]), diagnostics: Object.freeze({ emit: diagnostics.emit }),
+		provider: Object.freeze({ mode: 'saved-default' }),
+		assertActive: () => { if (signal.aborted) throw new ConnectionExecutionError('session-expired'); },
+	};
+	Object.defineProperty(execution, 'toJSON', { value: () => { throw new ConnectionExecutionError('upgrade-required'); } });
+	savedExecutions.add(execution);
+	return Object.freeze(execution);
+}
+
+/** Called only by the authenticated daemon owner; caller JSON is never a construction input. */
+export function sessionConnectionExecution(access: Readonly<ConnectionAccessContext>, authority: {
+ readonly bindingId: string; readonly audience: SessionConnectionExecution['audience']; readonly controlGeneration: number;
+ readonly lifetime: ConnectionExecutionLifetime; readonly assertActive: () => void;
+}): SessionConnectionExecution {
+ if (currentStepContext()?.connectionExecution || !Object.isFrozen(access) || !access.sessionHandle || !access.lookupRoot || !access.daemonEpoch) throw new ConnectionExecutionError('session-expired');
+ const signal = authority.lifetime.signal, assertOwner = authority.assertActive;
+ const assertActive = () => { if (signal.aborted) throw new ConnectionExecutionError('session-expired'); try { assertOwner(); } catch { throw new ConnectionExecutionError('session-expired'); } };
+ assertActive();
+ const execution: SessionConnectionExecution = { mode: 'session-memory', connectionAccess: access, bindingId: authority.bindingId, audience: authority.audience,
+  controlGeneration: authority.controlGeneration, lifetime: Object.freeze({ ...authority.lifetime }), revisions: Object.freeze([]), diagnostics: Object.freeze({ emit: () => {} }),
+  provider: Object.freeze({ mode: 'unsupported' }), assertActive };
+ Object.defineProperty(execution, 'toJSON', { value: () => { throw new ConnectionExecutionError('upgrade-required'); } });
+ sessionExecutions.add(execution); return Object.freeze(execution);
+}
+
+/** No missing-policy fallback. Only exact daemon-minted execution objects are admitted. */
+export function requireConnectionExecution(value: ConnectionExecutionContext | undefined): ConnectionExecutionContext {
+	if (value === undefined || (!savedExecutions.has(value) && !sessionExecutions.has(value))) throw new ConnectionExecutionError('session-expired');
+	value.assertActive();
+	return value;
+}
 
 /** The calling client in its one form. The one-shot analyze converts it to
  *  'cli-claude' | 'cli-codex' for runWithClientProviderContext. */
@@ -26,18 +120,32 @@ export interface StepCallContext {
 	readonly cwd:      string;
 	readonly envRepo?: string | undefined;
 	readonly client?:  StepClient | undefined;
+	/** Out-of-band trusted carrier; the host must never read this from caller JSON. */
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 }
 
 const storage = new AsyncLocalStorage<StepCallContext>();
 
 /** Run `fn` with `ctx` as the step context of everything it awaits. */
 export function runInStepContext<T>(ctx: StepCallContext, fn: () => Promise<T>): Promise<T> {
-	return storage.run(ctx, fn);
+	const outer = storage.getStore()?.connectionExecution;
+	if (outer !== undefined && ctx.connectionExecution !== outer) return Promise.reject(new ConnectionExecutionError('session-expired'));
+	return storage.run(Object.freeze({ ...ctx }), fn);
 }
 
 /** The step context of the current call, or undefined outside a step call. */
 export function currentStepContext(): StepCallContext | undefined {
 	return storage.getStore();
+}
+
+/** Denial-only loss guard. Never infer or return authority from the call context.
+ * A trusted attached host binds its tuple for the request; relays still pass that
+ * exact tuple explicitly. Only genuinely unbound legacy entry points may omit it.
+ */
+export function assertExplicitConnectionExecution(value: ConnectionExecutionContext | undefined): void {
+	const bound = storage.getStore()?.connectionExecution;
+	if (bound !== undefined && value !== bound) throw new ConnectionExecutionError('session-expired');
+	if (value !== undefined) requireConnectionExecution(value);
 }
 
 /** The caller's working directory inside a step call, process.cwd() outside one. */
@@ -56,16 +164,6 @@ export function stepEnvRepo(): string | undefined {
 /** The calling client inside a step call; undefined outside one. */
 export function stepClient(): StepClient | undefined {
 	return storage.getStore()?.client;
-}
-
-/** The shaper provider kind a client implies, for runWithClientProviderContext. */
-export function clientProviderKind(client: StepClient | undefined): 'cli-claude' | 'cli-codex' | undefined {
-	return client === 'claude' ? 'cli-claude' : client === 'codex' ? 'cli-codex' : undefined;
-}
-
-/** The client a shaper provider kind names: the inverse of clientProviderKind. */
-export function stepClientOf(kind: string | undefined): StepClient | undefined {
-	return kind === 'cli-claude' ? 'claude' : kind === 'cli-codex' ? 'codex' : undefined;
 }
 
 /** The tools the daemon's `step.call` request runs (the MCP server forwards them). */

@@ -1,0 +1,590 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s1",
+    "createdAt": "2026-10-25T14:58:56.690Z",
+    "updatedAt": "2026-10-25T15:11:02.264Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b5a5864cb",
+        "ranAt": "2026-10-25T14:58:56.690Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog.test.ts: getCuratedCatalog().modelsFor projects each CLI family's listed models in file order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: getCuratedCatalog().modelsFor projects each CLI family's listed models in file order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases, and its tier defaults and summariser models equal DEFAULT_TIERS, the installer Codex block and SUMMARISER_CLI_FALLBACK",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases, and its tier defaults and summariser models equal DEFAULT_TIERS, the installer Codex block and SUMMARISER_CLI_FALLBACK",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "list-models.test.ts: existing suite passes unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/list-models.test.ts",
+                "title": "listModels('cli-claude') -> curated list mapped from CatalogModel, available:true",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/list-models.test.ts",
+                "title": "listModels('cli-codex') -> the cli-codex curated list, available:true",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/list-models.test.ts",
+                "title": "integration: listModels(cloud) sources from the REAL getCuratedCatalog after validateModelCatalog",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/list-models.test.ts",
+                "title": "handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/list-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 649,
+            "titles": [
+              {
+                "title": "listModels('cli-claude') -> curated list mapped from CatalogModel, available:true",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('cli-codex') -> the cli-codex curated list, available:true",
+                "result": "pass"
+              },
+              {
+                "title": "cloud branch: an empty curated array stays available:true + []",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: the ollama lister is NEVER called for a cloud provider (no HTTP path)",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('ollama') success -> available:true + mapped models",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('ollama') with a REJECTING lister (unreachable) -> available:false + []",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('ollama') with a lister that rejects on timeout -> available:false + []",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('ollama') with a lister that rejects on malformed -> available:false + []",
+                "result": "pass"
+              },
+              {
+                "title": "listModels('ollama') reachable-but-zero -> available:true + [] (distinct from failure)",
+                "result": "pass"
+              },
+              {
+                "title": "unknown/missing provider -> invalid-params error result, no throw, no mutation",
+                "result": "pass"
+              },
+              {
+                "title": "read-only: the injected deps expose only read methods (no config-write path reachable)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: listModels(cloud) sources from the REAL getCuratedCatalog after validateModelCatalog",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 589,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases, and its tier defaults and summariser models equal DEFAULT_TIERS, the installer Codex block and SUMMARISER_CLI_FALLBACK",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 602,
+            "titles": [
+              {
+                "title": "model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: a valid fixture whose tier default names its model by alias and carries an accepted effort validates",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: getCuratedCatalog().modelsFor projects each CLI family's listed models in file order",
+                "result": "pass"
+              },
+              {
+                "title": "getCuratedCatalog before validateModelCatalog populated the cache → throws the boot-ordering Error",
+                "result": "pass"
+              },
+              {
+                "title": "modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR",
+                "result": "pass"
+              },
+              {
+                "title": "smoke: the built out/assets/models stages the catalog JSON, non-empty",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1bf924c76",
+        "ranAt": "2026-10-25T15:03:14.144Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and getCuratedCatalog()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and getCuratedCatalog()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 658,
+            "titles": [
+              {
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and getCuratedCatalog()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e171c119f",
+        "ranAt": "2026-10-25T15:08:22.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "worker-model-registry.test.ts: a worker started with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy fails its start with ModelCatalogValidationError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-model-registry.test.ts",
+                "title": "worker-model-registry.test.ts: a worker started with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy fails its start with ModelCatalogValidationError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker-model-registry.test.ts: a worker started after the asset copy and store changed reports the new models while the main thread's registry keeps the old ones",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-model-registry.test.ts",
+                "title": "worker-model-registry.test.ts: a worker started after the asset copy and store changed reports the new models while the main thread's registry keeps the old ones",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker-stores, supervisor and threads-boot suites pass unchanged with the shipped asset",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a daemon worker and the main thread contend for the same named lock",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10421,
+            "titles": [
+              {
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15346,
+            "titles": [
+              {
+                "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/worker-model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 933,
+            "titles": [
+              {
+                "title": "worker-model-registry.test.ts: a worker started with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy fails its start with ModelCatalogValidationError",
+                "result": "pass"
+              },
+              {
+                "title": "worker-model-registry.test.ts: a worker started after the asset copy and store changed reports the new models while the main thread's registry keeps the old ones",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2642,
+            "titles": [
+              {
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "a daemon worker and the main thread contend for the same named lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5aa9be4be",
+        "ranAt": "2026-10-25T15:11:02.264Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy exits non-zero with the error naming the entry, writes no config.json and never creates the socket",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/boot-model-catalog.test.ts",
+                "title": "boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy exits non-zero with the error naming the entry, writes no config.json and never creates the socket",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "boot-model-catalog.test.ts: with the shipped asset the daemon boots and listens",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/boot-model-catalog.test.ts",
+                "title": "boot-model-catalog.test.ts: with the shipped asset the daemon boots and listens",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/boot-model-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2966,
+            "titles": [
+              {
+                "title": "boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy exits non-zero with the error naming the entry, writes no config.json and never creates the socket",
+                "result": "pass"
+              },
+              {
+                "title": "boot-model-catalog.test.ts: with the shipped asset the daemon boots and listens",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

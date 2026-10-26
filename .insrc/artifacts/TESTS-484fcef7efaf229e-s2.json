@@ -1,0 +1,1394 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s2",
+    "createdAt": "2026-10-24T19:41:27.785Z",
+    "updatedAt": "2026-10-25T08:29:29.792Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "dcce991fd",
+        "ranAt": "2026-10-24T19:47:18.477Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A1: strict public and private test payloads reject malformed unknown oversized and spoofed identity or runtimeAuth fields; exact sanitized correlation shape.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/draft-test-wire.test.ts",
+                "title": "CM-S2-A1: strict public test requests reject malformed oversized and forged fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/draft-test-wire.test.ts",
+                "title": "CM-S2-A1: private worker messages validate auth and exact nonce correlation without raw errors",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/draft-test-wire.test.ts",
+                "title": "CM-S2-A1: result validator admits only fixed sanitized response shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/draft-test-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 639,
+            "titles": [
+              {
+                "title": "CM-S2-A1: strict public test requests reject malformed oversized and forged fields",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A1: private worker messages validate auth and exact nonce correlation without raw errors",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A1: result validator admits only fixed sanitized response shapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "330f3e107",
+        "ranAt": "2026-10-25T05:57:35.948Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A2: fresh compiled and tsx worker logging bootstrap performs zero directory config log or output writes with canaries, preserving standard logger modes.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/probe-worker-logger.test.ts",
+                "title": "CM-S2-A2: fresh compiled and tsx probe loggers perform no config directory or output writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13791,
+            "titles": [
+              {
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/probe-worker-logger.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2427,
+            "titles": [
+              {
+                "title": "CM-S2-A2: fresh compiled and tsx probe loggers perform no config directory or output writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1a97d3cd4",
+        "ranAt": "2026-10-24T19:54:39.027Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-E1: activation and probes resolve relative file SQLite URL and schema paths from another cwd identically; reject outside-root or missing paths without writes.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/runtime-config.test.ts",
+                "title": "CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/runtime-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1551,
+            "titles": [
+              {
+                "title": "CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "08ac7fa6a",
+        "ranAt": "2026-10-24T19:59:45.522Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-F1: production metadata admission rejects missing stale duplicate and drifted drafts before any keychain call; valid Keep Replace Clear only reads owned target with zero pool reload or persistence.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/draft-preparation.test.ts",
+                "title": "CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/draft-preparation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1762,
+            "titles": [
+              {
+                "title": "CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5758f5fbc",
+        "ranAt": "2026-10-25T06:58:09.501Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-E2: Dynamo test and activation use same environment session-token and profile identity through private auth IPC; late expired rejected or malformed auth cannot fall back or leak.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+                "title": "CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32121,
+            "titles": [
+              {
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1406,
+            "titles": [
+              {
+                "title": "CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18572,
+            "titles": [
+              {
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c12a0d16a",
+        "ranAt": "2026-10-24T20:05:26.850Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A3: postgres cockroachdb mysql mariadb await SELECT1 and fail unreachable or bad-auth after successful lazy construction; close completes without schema discovery.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/sql-draft-probes.test.ts",
+                "title": "CM-S2-A3: registered SQL probes authenticate and await SELECT1 rather than lazy construction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/sql-draft-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 702,
+            "titles": [
+              {
+                "title": "CM-S2-A3: registered SQL probes authenticate and await SELECT1 rather than lazy construction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "a26c1b89b",
+        "ranAt": "2026-10-25T07:30:23.557Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A4: sqlite mssql oracle clickhouse perform actual read-only probes, refuse unavailable sources, and dispose; SQLite never creates a missing database.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/remaining-sql-probes.test.ts",
+                "title": "CM-S2-A4: SQLite and ClickHouse await readonly probes and reject missing or inaccessible sources",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/remaining-sql-probes.test.ts",
+                "title": "CM-S2-A4: MSSQL and Oracle SDK-boundary probes await execution and release connections on failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/oracle-live-probe.test.ts",
+                "title": "CM-S2-A4: Oracle actual service authenticates SELECT1 and closes without exposing database rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/clickhouse-live-probe.test.ts",
+                "title": "CM-S2-A4: ClickHouse actual service authenticates SELECT1 and rejects invalid or unavailable connections",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/clickhouse-live-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5093,
+            "titles": [
+              {
+                "title": "CM-S2-A4: ClickHouse actual service authenticates SELECT1 and rejects invalid or unavailable connections",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/oracle-live-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 24296,
+            "titles": [
+              {
+                "title": "CM-S2-A4: Oracle actual service authenticates SELECT1 and closes without exposing database rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/remaining-sql-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1042,
+            "titles": [
+              {
+                "title": "CM-S2-A4: SQLite and ClickHouse await readonly probes and reject missing or inaccessible sources",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A4: MSSQL and Oracle SDK-boundary probes await execution and release connections on failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "5599a6365",
+        "ranAt": "2026-10-25T04:54:59.098Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A5: redis valkey keydb explicitly connect and ping and MongoDB pings; construction alone cannot succeed unreachable or bad credentials.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/redis-mongo-probes.test.ts",
+                "title": "CM-S2-A5: Redis aliases and MongoDB authenticate real readonly probes and reject bad credentials or closed ports",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/redis-mongo-probes.test.ts",
+                "title": "CM-S2-A5: an established silent Redis endpoint cannot hang PING or QUIT cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/redis-mongo-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 25741,
+            "titles": [
+              {
+                "title": "CM-S2-A5: Redis aliases and MongoDB authenticate real readonly probes and reject bad credentials or closed ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A5: an established silent Redis endpoint cannot hang PING or QUIT cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "9215532f4",
+        "ranAt": "2026-10-25T06:20:41.814Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A7: all native and converted file kinds load actual private readers before reachable; malformed sources fail and empty valid sheets succeed without cache spill INSTALL logs or source writes.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/file-draft-probes.test.ts",
+                "title": "CM-S2-A7: all file probe aliases load owned readers with actual targets and no persistent effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/file-draft-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1419,
+            "titles": [
+              {
+                "title": "CM-S2-A7: all file probe aliases load owned readers with actual targets and no persistent effects",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19205,
+            "titles": [
+              {
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "330f3e107",
+        "ranAt": "2026-10-25T05:59:31.026Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A6: cassandra nats dynamodb etcd memcached await minimal actual operations with failure sanitization, no writes or exposed data, and deterministic close.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/other-kv-probes.test.ts",
+                "title": "CM-S2-A6: Cassandra NATS etcd and Memcached perform actual readonly server probes and close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/other-kv-probes.test.ts",
+                "title": "CM-S2-A6: Dynamo probe sends only authenticated ListTables Limit1 and exposes no table data",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/other-kv-probes.test.ts",
+                "title": "CM-S2-A6: Memcached absent credentials stay cleared despite ambient SDK environment",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1705,
+            "titles": [
+              {
+                "title": "CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/other-kv-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 70279,
+            "titles": [
+              {
+                "title": "CM-S2-A6: Cassandra NATS etcd and Memcached perform actual readonly server probes and close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A6: Dynamo probe sends only authenticated ListTables Limit1 and exposes no table data",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A6: Memcached absent credentials stay cleared despite ambient SDK environment",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "330f3e107",
+        "ranAt": "2026-10-25T05:53:26.114Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-F2: unary complete seal and drain are once-only; registered pending work survives timeout reply and signal abort until cleanup, with internal-only completion.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/request-lifetime.test.ts",
+                "title": "CM-S2-F2: completion seals once while aborted admitted work retains drain until cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/request-lifetime.test.ts",
+                "title": "CM-S2-F2: direct unary dispatch preserves internal completion after disconnect and delivery failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/request-lifetime.test.ts",
+                "title": "CM-S2-F2: a timeout reply completes while registered cleanup remains pending after abort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/request-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 590,
+            "titles": [
+              {
+                "title": "CM-S2-F2: completion seals once while aborted admitted work retains drain until cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-F2: direct unary dispatch preserves internal completion after disconnect and delivery failure",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-F2: a timeout reply completes while registered cleanup remains pending after abort",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "330f3e107",
+        "ranAt": "2026-10-25T05:54:10.229Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-G1: local lifecycle projects to cloneable channel identity without promises signals callbacks; remote completion and stream behavior remain compatible.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+                "title": "CM-S2-G1: production router projects cloneable identity and completes remote reply error and queued cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+                "title": "CM-S2-G1: routed streams retain frame cancellation behavior and crashed unary lifetimes complete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 841,
+            "titles": [
+              {
+                "title": "CM-S2-G1: production router projects cloneable identity and completes remote reply error and queued cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G2: real maintenance ownership and activity retain admitted drain and release every non-admitted path",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G1: routed streams retain frame cancellation behavior and crashed unary lifetimes complete",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G2: real socket disconnect after admission retains timeout cleanup maintenance and activity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "330f3e107",
+        "ranAt": "2026-10-25T05:55:10.707Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-G2: production maintenance holds and router activity span completed plus drained; timeout disconnect refusal queued cancel acquisition failure and unknown handler release exactly once.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+                "title": "CM-S2-G2: real maintenance ownership and activity retain admitted drain and release every non-admitted path",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+                "title": "CM-S2-G2: real socket disconnect after admission retains timeout cleanup maintenance and activity",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/request-lifetime.test.ts",
+                "title": "CM-S2-F2: a timeout reply completes while registered cleanup remains pending after abort",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/request-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 699,
+            "titles": [
+              {
+                "title": "CM-S2-F2: completion seals once while aborted admitted work retains drain until cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-F2: direct unary dispatch preserves internal completion after disconnect and delivery failure",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-F2: a timeout reply completes while registered cleanup remains pending after abort",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/local-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "CM-S2-G1: production router projects cloneable identity and completes remote reply error and queued cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G2: real maintenance ownership and activity retain admitted drain and release every non-admitted path",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G1: routed streams retain frame cancellation behavior and crashed unary lifetimes complete",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-G2: real socket disconnect after admission retains timeout cleanup maintenance and activity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "5758f5fbc",
+        "ranAt": "2026-10-25T06:59:47.613Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A8: fresh compiled and development one-shot workers admit exactly29 probe kinds through private IPC, await actual probe and cleanup, and reject malformed startup without logging credentials.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+                "title": "CM-S2-A8: admitted KV drivers propagate SDK disposal failures instead of reporting successful cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 836,
+            "titles": [
+              {
+                "title": "CM-S2-A8: admitted KV drivers propagate SDK disposal failures instead of reporting successful cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18885,
+            "titles": [
+              {
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "9215532f4",
+        "ranAt": "2026-10-25T06:24:41.279Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-B1: parent10s deadline spans preparation spawn init and close; cancel250ms grace forcibly reaps owned child, rejects repeats or over4 capacity and suppresses late spawn/replies while registered drain retains ownership.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32373,
+            "titles": [
+              {
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "a26c1b89b",
+        "ranAt": "2026-10-25T07:36:17.454Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-C1: actual v2 and legacy IPC routes share trusted supervisor context and exact safe projections; owner cancellation isolated, main-daemon classification and saved-local compatibility preserved.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+                "title": "CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+                "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/owned-file-driver.test.ts",
+                "title": "CM-S1-T: legacy transient construction uses profile materialization memory policy and awaited private cleanup without writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/owned-file-driver.test.ts",
+                "title": "CM-S1-T: transient drafts cannot read another credential reference and nested owned credentials use read-only materialization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3867,
+            "titles": [
+              {
+                "title": "CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3543,
+            "titles": [
+              {
+                "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2090,
+            "titles": [
+              {
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/owned-file-driver.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1540,
+            "titles": [
+              {
+                "title": "CM-S1-T: every file driver query uses its owned private resource and close disposes it without cache or source-path output",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-H: converted driver memory reads cannot enter persistent conversion and workbook schema selection never crosses sheets",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-T: directory memory readers retain every matching file and single-quote CSV configuration is escaped",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-T: legacy transient construction uses profile materialization memory policy and awaited private cleanup without writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-T: transient drafts cannot read another credential reference and nested owned credentials use read-only materialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-T: private native and converted driver initialization issues zero INSTALL calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "5758f5fbc",
+        "ranAt": "2026-10-25T07:03:38.521Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-C2: supervisor startup shutdown and disconnect stop admission cancel and drain owned work; capability remains disabled for absent S001 or S002 evidence and no live daemon operations run.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+                "title": "release evidence remains disabled until the completed build supplies verified gates",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2907,
+            "titles": [
+              {
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32111,
+            "titles": [
+              {
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 814,
+            "titles": [
+              {
+                "title": "maintenance metadata is protected and partial adoption blocks legacy writers",
+                "result": "pass"
+              },
+              {
+                "title": "exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities",
+                "result": "pass"
+              },
+              {
+                "title": "target filesystem denies legacy subprocess writes and isolates detached descriptors",
+                "result": "pass"
+              },
+              {
+                "title": "release evidence remains disabled until the completed build supplies verified gates",
+                "result": "pass"
+              },
+              {
+                "title": "signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "7910b8088",
+        "ranAt": "2026-10-25T07:23:32.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S2-A9: composed actual-process SQL KV and native/converted fixtures prove Save/Test parity, zero persistent drafts, sanitized canaries, bounded cancellation and zero residual resources under real IPC and maintenance locks.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+                "title": "CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+                "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4193,
+            "titles": [
+              {
+                "title": "CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3888,
+            "titles": [
+              {
+                "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32082,
+            "titles": [
+              {
+                "title": "CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/dynamo-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1576,
+            "titles": [
+              {
+                "title": "CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19610,
+            "titles": [
+              {
+                "title": "CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "d63ce2686",
+        "ranAt": "2026-10-25T08:29:29.792Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S2-SWEEP: after all S002 tasks are built run final build and full test sweep; record actual failures skips and timeouts and keep release disabled for unmet prerequisites.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/evidence/t19-post-sweep.json; t19-regression.json; t19-clickhouse-followup.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S2-SWEEP: after all S002 tasks are built run final build and full test sweep; record actual failures skips and timeouts and keep release disabled for unmet prerequisites."
+      }
+    ]
+  }
+}

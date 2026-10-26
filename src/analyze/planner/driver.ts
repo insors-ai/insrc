@@ -31,6 +31,9 @@
  * See: design/analyze-plan-builder.md
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,7 +66,8 @@ import type {
 } from './types.js';
 import { validatePlan, type PlanValidationFailure } from './validate.js';
 
-const log = getLogger('analyze:planner');
+const savedLog = getLogger('analyze:planner');
+const quietLog = { info: (..._args: unknown[]) => { } };
 
 const PLANNER_PROMPT_REL = 'prompts/analyze/planner.system.md';
 
@@ -142,9 +146,33 @@ export interface RunPlannerArgs {
 	readonly provider?: LLMProvider | undefined;
 }
 
+interface PlannerStructuredTestArgs {
+	readonly input: PlanBuilderInput;
+	readonly opts: PlanBuilderOpts;
+	readonly wire: PlannerWireSchema;
+	readonly attempt: number;
+	readonly failures: readonly PlanValidationFailure[];
+}
+let structuredStageForTest: ((args: PlannerStructuredTestArgs) => Promise<PlanTask>) | undefined;
+/** Replace only model I/O for deterministic tests of the production retry loop.
+ * This never supplies provider proof or calls a provider in fixture mode. */
+export function _setPlannerStructuredForTest(stage?: typeof structuredStageForTest): void { structuredStageForTest = stage; }
+
 export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
+	const structuredStage = structuredStageForTest;
+	const sourceOpts = args.opts;
+	const execution = sourceOpts.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	// Provider proof is installed by t24. Unsupported execution must never reach
+	// a data-bearing message, injected provider, schema file or subprocess.
+	if (execution?.mode === 'session-memory' && execution.provider.mode !== 'verified-local' && structuredStage === undefined) throw new ConnectionExecutionError('unsupported-temporary');
+	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.input, execution); }
+	else assertSessionContinuationNow(args.input, execution);
+	assertSessionReuseNow(execution);
+	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
 	const cfg = loadAnalyzeConfig();
-	const { input, opts } = args;
+	const input = args.input;
+	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal && sourceOpts.signal !== execution.lifetime.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
 	const { intent, contextBundle, parentTaskPath, catalog: catalogArg } = input;
 
 	// (0) Depth cap. The Plan Builder refuses to invoke when
@@ -168,21 +196,21 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 	const wire = plannerWireSchema(catalog);
 
 	// (2) Prompt load.
-	const promptContent = loadPromptFile();
+	const promptContent = structuredStage === undefined ? loadPromptFile() : '';
 
 	// (3) Provider.
-	const provider = args.provider ?? resolveRoleProvider('analyze.plan', cfg);
+	const provider = structuredStage === undefined ? args.provider ?? resolveRoleProvider('analyze.plan', cfg) : undefined;
 
 	// (4) Initial messages.
 	const bundleMd = assembleMarkdown(contextBundle);
-	let messages = buildInitialMessages({
+	let messages = structuredStage === undefined ? buildInitialMessages({
 		promptContent,
 		bundleMd,
 		intent,
 		catalog,
 		wire,
 		parentTaskPath,
-	});
+	}) : [];
 
 	const attempts: PlanTask[] = [];
 	const failures: PlanValidationFailure[] = [];
@@ -215,7 +243,9 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		acc = ''; lastEmit = 0; lastEmitLen = 0;  // reset preview per attempt
 		let raw: PlanTask;
 		try {
-			raw = await provider.completeStructured<PlanTask>(
+			raw = structuredStage !== undefined
+				? await structuredStage({ input, opts, wire, attempt, failures: Object.freeze([...failures]) })
+				: await provider!.completeStructured<PlanTask>(
 				messages,
 				wire.schema as Record<string, unknown>,
 				{
@@ -229,9 +259,13 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 				},
 			);
 		} catch (err) {
+			if (err instanceof ConnectionExecutionError) throw err;
+			assertSessionReuseNow(execution);
+			if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 			throw classifyError(err);
 		}
 
+		assertSessionReuseNow(execution);
 		// Back to the templates' own params: wire nulls removed, JSON-string slots parsed.
 		const decoded = decodePlanParams(raw, wire, catalog);
 		if (!decoded.ok) throw new PlanBuilderSchemaUnrecoverable(decoded.errors);
@@ -262,7 +296,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		// Persist this attempt to the audit trail BEFORE the validator
 		// runs -- so a mid-validation crash still leaves the attempt on
 		// disk for diagnosis.
-		writeAttempt(persistArgs, attempt + 1, stamped);
+		if (execution?.mode !== 'session-memory') writeAttempt(persistArgs, attempt + 1, stamped, execution);
 
 		// Semantic invariants.
 		const failure = validatePlan(stamped, catalog, {
@@ -271,7 +305,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		});
 		if (failure === null) {
 			// Promote the accepted attempt to the final slot.
-			writePlanFinal(persistArgs, stamped);
+			if (execution?.mode !== 'session-memory') writePlanFinal(persistArgs, stamped, execution);
 			log.info(
 				{
 					runId:       opts.runId,
@@ -283,7 +317,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 				},
 				'Plan Builder accepted',
 			);
-			return stamped;
+			return rememberSessionContinuation(stamped, execution);
 		}
 
 		// Snapshot the prior-failure history BEFORE pushing the new one
@@ -293,12 +327,14 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		// note wording so qwen3.6 treats it as "change approach"
 		// rather than "try again".
 		const priorFailures = [...failures];
+		await rememberSessionContinuation(stamped, execution);
+		await rememberSessionContinuation(failure, execution);
 		attempts.push(stamped);
 		failures.push(failure);
 
 		// Persist the validator feedback alongside the rejected attempt
 		// so the audit trail has both halves of the round-trip.
-		writeFeedback(persistArgs, attempt + 1, failure);
+		if (execution?.mode !== 'session-memory') writeFeedback(persistArgs, attempt + 1, failure, execution);
 
 		log.info(
 			{

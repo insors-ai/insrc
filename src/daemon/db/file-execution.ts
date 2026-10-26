@@ -389,8 +389,8 @@ export function savedFileExecution(policy: FileExecutionPolicy): OwnedFileExecut
 function safeExecutionError(error: unknown): Error {
 	const message = error instanceof Error ? error.message : '';
 	if (['resource-limit', 'unsupported-temporary', 'Converted schema version mismatch', 'Converted row schema mismatch', 'Unknown converted target', 'Incompatible converted target schemas', 'File execution closed'].includes(message))
-		return new Error(message);
+		return Object.assign(new Error(message), ['resource-limit', 'unsupported-temporary'].includes(message) ? { code: message } : {});
 	if (/out of memory|memory limit|memory budget|failed to pin|failed to allocate/i.test(message))
-		return new Error('resource-limit');
+		return Object.assign(new Error('resource-limit'), { code: 'resource-limit' });
 	return new Error('Temporary file execution failed');
 }

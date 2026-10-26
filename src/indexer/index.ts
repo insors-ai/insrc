@@ -1018,7 +1018,7 @@ export class IndexerService {
   private async reembed(repoPath: string): Promise<void> {
     // Loaded lazily to avoid a circular import with db/entities
     const { listUnembeddedEntities, updateEmbedding } = await import('../db/entities.js');
-    const { EMBEDDING_MODEL }                          = await import('./embedder.js');
+    const { embeddingModel }                           = await import('./embedder.js');
     const { Ollama }                                   = await import('ollama');
 
     const entities = await listUnembeddedEntities(this.db, repoPath);
@@ -1037,7 +1037,7 @@ export class IndexerService {
     let updated = 0;
     for (const e of entities) {
       if (e.embedding.length > 0) {
-        await updateEmbedding(this.db, e.id, e.embedding, EMBEDDING_MODEL);
+        await updateEmbedding(this.db, e.id, e.embedding, embeddingModel());
         updated++;
       }
     }

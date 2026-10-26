@@ -34,6 +34,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
+import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
+import type { CliFamilyId, EffortLevel, FamilyId } from '../../daemon/model-catalog.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
@@ -48,16 +50,11 @@ const log = getLogger('analyze:context:shaper-provider');
  * Optional per-request overrides of the configured provider.
  */
 export interface ShaperProviderOverrides {
-	/** Highest-priority signal: a repo-scoped provider pinned via
-	 *  `models.byRepo[repoPath].shaperProvider` (resolved by the caller
-	 *  through `resolveRepoShaperProvider`). Wins over the global config default
-	 *  and the per-run `clientDefault`. */
-	readonly repoOverride?: AnalyzeShaperProviderKind | undefined;
-	/** Provider to use when NEITHER a per-repo override NOR an explicit global
-	 *  `cfg.shaperProvider` is set — the per-run caller, set by the MCP server
-	 *  from the invoking client (Claude Code → 'cli-claude', Codex →
-	 *  'cli-codex'). Falls back to the ambient client-provider context (below).
-	 *  A per-repo override or an explicit `cfg.shaperProvider` always wins. */
+	/** Provider to use when no explicit global `cfg.shaperProvider` is set —
+	 *  the per-run caller, set by the MCP server from the invoking client
+	 *  (Claude Code → 'cli-claude', Codex → 'cli-codex'). Falls back to the
+	 *  ambient client-provider context (below). An explicit
+	 *  `cfg.shaperProvider` always wins. */
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 	/** Override the CLI subprocess timeout (ms) when the resolved provider is
 	 *  `cli-claude`/`cli-codex`. The default (120 s) is fine for analyze's
@@ -79,6 +76,9 @@ export interface ShaperProviderOverrides {
 	 *  call: a value, or null when the role's tier has none. Absent for callers
 	 *  outside the router, which run at the core tier's effort (cfg.shaperEffort). */
 	readonly roleEffort?: TierEffort | null | undefined;
+	/** The registry provider settings come from (default: the daemon thread's
+	 *  getModelRegistry()); the TUI passes its shipped-only registry. */
+	readonly registry?: ModelRegistry | undefined;
 }
 
 /**
@@ -166,7 +166,7 @@ export function resolveRoleProvider(
 /**
  * Pure resolution of the effective shaper KIND, in strict priority order:
  *
- *   per-repo override > explicit global config > per-run caller > 'ollama'
+ *   tier runner (router) > explicit global config > per-run caller > 'ollama'
  *
  * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
  * set `models.tiers.core.runner` (i.e. `cfg.shaperProviderExplicit`);
@@ -175,7 +175,6 @@ export function resolveRoleProvider(
  * in isolation from provider construction.
  */
 export function resolveShaperKind(inputs: {
-	readonly repoOverride:   AnalyzeShaperProviderKind | undefined;
 	readonly globalExplicit: AnalyzeShaperProviderKind | undefined;
 	readonly clientDefault:  AnalyzeShaperProviderKind | undefined;
 	/** Optional HIGHEST-priority signal (S003 RoleRouter): the tier-resolved
@@ -183,25 +182,104 @@ export function resolveShaperKind(inputs: {
 	 *  signal; a non-union value is coerced to `undefined` so it falls through
 	 *  the chain to the `?? 'ollama'` floor (no direct-REST path can slip in). */
 	readonly roleResolved?:  AnalyzeShaperProviderKind | undefined;
+	/** The model families (default: the daemon thread's registry). */
+	readonly registry?:      ModelRegistry | undefined;
 }): AnalyzeShaperProviderKind {
-	const roleResolved = isShaperKind(inputs.roleResolved) ? inputs.roleResolved : undefined;
-	return roleResolved ?? inputs.repoOverride ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
+	const registry = inputs.registry ?? getModelRegistry();
+	const roleResolved = isFamily(registry, inputs.roleResolved) ? inputs.roleResolved : undefined;
+	return roleResolved ?? inputs.globalExplicit ?? inputs.clientDefault ?? registry.defaultFamily();
 }
 
-/** Type-guard the CLI/Ollama union — the structural gate that keeps a hand-edited
- *  or stale runner string (e.g. `'openai'`, a typo'd `'cli-claud'`) from reaching
+/** Type-guard a model family id — the structural gate that keeps a hand-edited
+ *  or stale runner string (e.g. `'openai'`, a typo'd family) from reaching
  *  provider construction. */
-function isShaperKind(v: unknown): v is AnalyzeShaperProviderKind {
-	return v === 'ollama' || v === 'cli-claude' || v === 'cli-codex';
+function isFamily(registry: ModelRegistry, v: unknown): v is AnalyzeShaperProviderKind {
+	return registry.families().some(f => f.id === v);
 }
 
-/** True for an Ollama-style model id — one carrying a `:` version tag
- *  (`qwen3.6:27b`, `qwen3-embedding:0.6b`). CLI model ids (`opus`,
- *  `sonnet`, `claude-haiku-4-5`) never contain a `:`. Used to keep a mis-set
- *  Ollama model from being forwarded to the claude/codex CLI, where it would
- *  fail with an api_error. */
-export function isOllamaModelId(model: string): boolean {
-	return model.includes(':');
+/** An Ollama model's context window: its token inputLimit, else the tool-loop
+ *  model's (a model the definitions do not list). */
+export function ollamaContextWindow(registry: ModelRegistry, model: ResolvedModel | undefined): number {
+	const limit = model?.inputLimit ?? registry.toolLoopModel().inputLimit;
+	return limit?.max ?? 0;
+}
+
+/**
+ * The provider for one model of a family, built from the registry. A CLI family
+ * gets a CliProvider with the family's CLI kind, the model's canonical id, the
+ * effort only when the model accepts it, and the model's `chars` input budget;
+ * `model` undefined lets the CLI run its own default model (no effort, no
+ * budget). The ollama family gets an OllamaProvider for the model, or the
+ * definitions' tool-loop model when none is given; num_ctx is its token limit.
+ */
+export function familyProvider(
+	registry: ModelRegistry,
+	family:   FamilyId,
+	model:    ResolvedModel | undefined,
+	opts:     { readonly effort?: EffortLevel | undefined; readonly cliTimeoutMs?: number | undefined } = {},
+): LLMProvider {
+	const kind = registry.cliKind(family);
+	if (kind !== undefined) {
+		const effort = opts.effort !== undefined && model?.efforts.includes(opts.effort) === true ? opts.effort : undefined;
+		if (opts.effort !== undefined && effort === undefined) {
+			log.warn({ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort');
+		}
+		const inputBudgetChars = model?.inputLimit?.unit === 'chars' ? model.inputLimit.max : undefined;
+		return new CliProvider({
+			kind,
+			...(model !== undefined ? { model: model.id } : {}),
+			...(effort !== undefined ? { effort } : {}),
+			...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}),
+			...(opts.cliTimeoutMs !== undefined ? { timeoutMs: opts.cliTimeoutMs } : {}),
+		});
+	}
+	const local = loadLocalProviderConfig();
+	const chosen = model ?? registry.toolLoopModel();
+	return new OllamaProvider(chosen.id, local.host, ollamaContextWindow(registry, chosen));
+}
+
+/** What buildShaperProvider builds: the effective family, the model of that
+ *  family it runs (undefined: a CLI's own default), and the effort asked for. */
+export interface ShaperSelection {
+	readonly registry: ModelRegistry;
+	readonly family:   FamilyId;
+	readonly model:    ResolvedModel | undefined;
+	readonly effort:   EffortLevel | undefined;
+	readonly source:   'role' | 'config' | 'client';
+}
+
+/**
+ * The shaper's family and model. Only a model of the effective family is used:
+ * a model of another family (e.g. an Ollama core model when the invoking CLI
+ * decides the runner, or a CLI model when Ollama does) is not forwarded — a CLI
+ * runs its own default model, Ollama the definitions' tool-loop model.
+ */
+export function shaperSelection(cfg: AnalyzeConfig, overrides?: ShaperProviderOverrides): ShaperSelection {
+	const registry      = overrides?.registry ?? getModelRegistry();
+	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
+	const roleRunner    = overrides?.roleRunner;
+	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
+	const family = resolveShaperKind({ globalExplicit, clientDefault, roleResolved: roleRunner, registry });
+	// A RoleRouter-resolved tier model (S003) is preferred over cfg.shaperModel.
+	const roleModel = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : undefined;
+	const requested = roleModel ?? cfg.shaperModel;
+	let model = registry.find(family, requested);
+	if (model === undefined && registry.cliKind(family) === undefined) {
+		model = registry.toolLoopModel();
+		if (requested !== '') log.warn({ family, requested, model: model.id }, 'shaper provider: the model is not a listed local model; running the tool-loop model');
+	}
+	const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
+	const source = roleRunner !== undefined ? 'role' : globalExplicit !== undefined ? 'config' : 'client';
+	return { registry, family, model, effort, source };
+}
+
+/** The `meta.model` label for what buildShaperProvider builds with the same
+ *  inputs: `<cli kind>[:<model>]` for a CLI family, `<family>:<model>` otherwise. */
+export function shaperModelLabel(cfg: AnalyzeConfig, overrides?: ShaperProviderOverrides): string {
+	const s = shaperSelection(cfg, overrides);
+	const cli = s.registry.cliKind(s.family);
+	if (cli === undefined) return `${s.family}:${s.model!.id}`;
+	return s.model !== undefined ? `${cli}:${s.model.id}` : cli;
 }
 
 /**
@@ -209,7 +287,7 @@ export function isOllamaModelId(model: string): boolean {
  * should use for its structured-output calls.
  *
  * The effective KIND via `resolveShaperKind`:
- *        per-repo override > explicit global config > per-run caller > 'ollama'
+ *        tier runner (router) > explicit global config > per-run caller > 'ollama'
  *      cli-claude / cli-codex -> `CliProvider`; 'ollama' -> `OllamaProvider`.
  *
  * Cheap; call per invocation rather than caching because config
@@ -219,56 +297,16 @@ export function buildShaperProvider(
 	cfg:       AnalyzeConfig,
 	overrides?: ShaperProviderOverrides,
 ): LLMProvider {
-	// Effective provider: per-repo override > explicit global
-	// config > per-run caller (arg or ambient client-provider context) >
-	// 'ollama'. See resolveShaperKind.
-	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
-	const repoOverride  = overrides?.repoOverride;
-	const roleRunner    = overrides?.roleRunner;
-	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
-	const effective = resolveShaperKind({ repoOverride, globalExplicit, clientDefault, roleResolved: roleRunner });
-
-	// A RoleRouter-resolved tier model (S003) is preferred over cfg.shaperModel.
-	const roleModel = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : undefined;
-
-	if (effective === 'cli-claude' || effective === 'cli-codex') {
-		const kind = effective === 'cli-claude' ? 'claude' : 'codex';
-		// Prefer an explicit tier model (roleModel), then an explicitly-set
-		// `shaperModel` (e.g. `claude-haiku-4-5` for cost-sensitive inner calls);
-		// otherwise use the CLI's own default.
-		const candidate = roleModel ?? (cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined);
-		// Never forward an Ollama-shaped id (a version tag like `:35b-a3b`) to a
-		// CLI: the claude/codex CLI can't honor it and terminates with an
-		// api_error (falling back to some other model). A mis-set config —
-		// `shaperProvider: cli-claude` paired with an Ollama `shaperModel` — must
-		// degrade to the CLI's own default here, not to a broken subprocess.
-		const model = candidate !== undefined && !isOllamaModelId(candidate) ? candidate : undefined;
-		const source = roleRunner !== undefined ? 'role' : repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
-		const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
-		log.info(
-			{ kind, model: model ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
-			'shaper provider: routing through CliProvider',
-		);
-		return new CliProvider({
-			kind,
-			...(model !== undefined ? { model } : {}),
-			...(effort !== undefined ? { effort } : {}),
-			...(overrides?.cliTimeoutMs !== undefined ? { timeoutMs: overrides.cliTimeoutMs } : {}),
-		});
-	}
-	// Default + explicit 'ollama'. A cheap-tier roleModel may pin a specific
-	// local model; otherwise use cfg.shaperModel.
-	const ollamaModel = roleModel ?? cfg.shaperModel;
+	// Effective provider: tier runner (router) > explicit global config >
+	// per-run caller (arg or ambient client-provider context) > the default family.
+	// See resolveShaperKind and shaperSelection.
+	const { registry, family, model, effort, source } = shaperSelection(cfg, overrides);
 	log.info(
-		{ model: ollamaModel, numCtx: cfg.shaper.ollamaNumCtx },
-		'shaper provider: routing through OllamaProvider',
+		{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
+		'shaper provider: built from the model definitions',
 	);
-	const local = loadLocalProviderConfig();
-	return new OllamaProvider(ollamaModel, local.host, cfg.shaper.ollamaNumCtx);
+	return familyProvider(registry, family, model, { effort, cliTimeoutMs: overrides?.cliTimeoutMs });
 }
-
-/** The built-in cheap model for each CLI, used when the configured cheap model cannot go to it. */
-const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-luna' } as const;
 
 /**
  * Provider for BACKGROUND doc-summarisation (analyze/summariser/driver.ts).
@@ -283,22 +321,27 @@ const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-lun
  * summariser costs one serial subprocess per doc, so it always pins the cheap
  * tier's model and never runs on the CLI's own default model.
  */
-export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
-	const kind = cfg.summariserProvider;
-	if (kind === 'cli-claude' || kind === 'cli-codex') {
-		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
-		// Pin the cheap tier's model, but never forward an Ollama-shaped id (a config
-		// left half-edited from the old local default, e.g. cli-claude with
-		// `qwen3.6:27b`): the CLI can't honor it, so the built-in cheap model for
-		// that CLI is used instead, and the CLI's own default model never runs.
-		const configured = cfg.summariserModel;
-		const usable = configured !== '' && !isOllamaModelId(configured);
-		const model = usable ? configured : SUMMARISER_CLI_FALLBACK[kind];
-		if (!usable) log.warn({ kind: cliKind, configured, model }, 'summariser provider: the cheap tier model is not a CLI model id; using the built-in cheap model');
-		log.info({ kind: cliKind, model }, 'summariser provider: routing through CliProvider');
-		return new CliProvider({ kind: cliKind, model, ...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}) });
+/** The summariser's family, model and effort: the cheap tier's model when it
+ *  is a model of its family, else the family's summariser model (a CLI) or the
+ *  tool-loop model (Ollama) — never a CLI's own default; the cheap tier's
+ *  effort only when that model accepts it. */
+export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): { registry: ModelRegistry; family: FamilyId; model: ResolvedModel; effort: EffortLevel | undefined } {
+	const registry = overrides?.registry ?? getModelRegistry();
+	const family = cfg.summariserProvider;
+	let model = registry.find(family, cfg.summariserModel);
+	if (model === undefined) {
+		const cli = registry.cliKind(family) !== undefined;
+		model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
+		log.warn({ family, configured: cfg.summariserModel, model: model.id }, cli
+			? "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model"
+			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model');
 	}
-	log.info({ model: cfg.summariserModel, numCtx: cfg.shaper.ollamaNumCtx }, 'summariser provider: routing through OllamaProvider (local)');
-	const local = loadLocalProviderConfig();
-	return new OllamaProvider(cfg.summariserModel, local.host, cfg.shaper.ollamaNumCtx);
+	const effort = cfg.summariserEffort !== undefined && model.efforts.includes(cfg.summariserEffort) ? cfg.summariserEffort : undefined;
+	return { registry, family, model, effort };
+}
+
+export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): LLMProvider {
+	const { registry, family, model, effort } = summariserSelection(cfg, overrides);
+	log.info({ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions');
+	return familyProvider(registry, family, model, { effort });
 }

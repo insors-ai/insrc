@@ -1,0 +1,103 @@
+{
+  "stage": "design, not implementation",
+  "sourceInventory": "evidence/consumer-sites-before.json",
+  "reviewCorrections": [
+    "Entire session-bound execution bypasses persistent exploration/bundle/planner/task/run/history/trace caches and validates owner before memory continuation reuse",
+    "Production file budget corrected to 256 MiB",
+    "Concrete per-site context/transport/cache/serializer migration map and proving tests"
+  ],
+  "companions": [
+    {
+      "file": "er-model.html",
+      "exists": true,
+      "sourceInspected": true,
+      "renderingVerified": false,
+      "limitation": "Browser rendering unavailable; do not claim visual verification",
+      "sha256": "4ae9f154ce248a564e0f480cb8bfc85ac17d7c715896ffaed862be71a8844e56"
+    },
+    {
+      "file": "sequence-diagram.html",
+      "exists": true,
+      "sourceInspected": true,
+      "renderingVerified": false,
+      "limitation": "Browser rendering unavailable; do not claim visual verification",
+      "sha256": "6ceda706787226119da0c2e71acfbcf858d4f0b4911aec0768385bd7db716ea2"
+    }
+  ],
+  "latestReview": {
+    "verdict": "warn",
+    "reviewedAt": "2026-10-25T11:06:14.571Z",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 13,
+      "unverified": 1
+    },
+    "transportTimedOut": true,
+    "resultRecoveredFromDaemonArtifact": true,
+    "remainingBlockers": [],
+    "unverified": [
+      {
+        "item": "change-sites",
+        "premise": "The linked ER and sequence companions render correctly and remain visually consistent with their source.",
+        "action": "Render both companions in an available browser and inspect them; request author regeneration if rendering or layout is defective."
+      }
+    ]
+  },
+  "reviewCallsThisCycle": {
+    "cycle": 3,
+    "startupError": 0,
+    "completed": 3,
+    "transportTimeouts": 3,
+    "daemonResultsRecovered": 3,
+    "additionalCycleRequiresUserConfirmation": true
+  },
+  "reviewCycle2": {
+    "authorizedBy": "user",
+    "status": "complete: three independent reviews; two HIGH findings remain, awaiting user authorization for another cycle",
+    "changes": [
+      "root-bound connection scope checks and all discovered callers",
+      "holdingForward holds maintenance through handler settlement AND drains",
+      "runStages/completeRun/outer repair and recursive planner explicit propagation",
+      "provider factory/direct/injected admission and per-attempt guard, no model downgrade",
+      "separate control vs data delegation authority"
+    ],
+    "round1RecoveredResult": "Block: independent adherence record cache, direct embedding closure, ER inverse cardinality and S005 lifetime-copy proving test",
+    "round2Corrections": [
+      "adherence cache denied before record access for session topic route",
+      "direct query embeddings and hybrid retrieval/lineage routes explicitly refused before SDK/ONNX submission",
+      "delegation owns zero-to-many data transports, separate control attachment",
+      "explicit CM-S5-LIFETIME-COPY pending external release dependency"
+    ],
+    "round2RecoveredResult": "Block: one HIGH unmanaged legacy saved-write reservation bypass; no MED findings",
+    "round3Corrections": [
+      "shared reservation check in adopted legacyUpsert and unmanaged saveConnectionRpc before credentials/registry writes",
+      "unattached legacy and complete connection owner RPC catalog forced main-daemon routing",
+      "canonical root/alias lock identity and production race matrix across adopted/unadopted roots"
+    ],
+    "round3RecoveredResult": "Legacy saved-writer collision closed. New blockers: unverified client reasoning prompt egress and asynchronous runtime driver logs bypass admission/sanitization."
+  },
+  "reviewCycle3": {
+    "authorizedBy": "user",
+    "status": "complete: three independent reviews; no blocking findings; awaiting explicit S003 LLD approval",
+    "changes": [
+      "enforced workbench-ui vs mcp-unverified delegation audience",
+      "all client-authored multi-turn and one-shot MCP temporary output refused before state/prompt/error evidence",
+      "all runtime driver factories carry immutable resource quiet policy through async SDK events and disposal",
+      "admitted provider and structured-output inner retry diagnostics quiet per run, saved logging unaffected"
+    ],
+    "round1RecoveredResult": "Previous client egress and resource logging findings resolved; two HIGH findings: freeform relay and consumer diagnostics",
+    "round2Corrections": [
+      "required normalized execution tuple at freeform and legacy loop entry, both measureOwnRequest branches",
+      "immutable execution-local quiet diagnostics across all consumer success/error/late paths, before source-bearing formatters",
+      "63-file production logger candidate inventory with bootstrap/background classifications and captured-sink proving requirements"
+    ],
+    "round2RecoveredResult": "Freeform and consumer diagnostics closed; one HIGH finding for incorrect physical-alias collision promise",
+    "round3Corrections": [
+      "exact saved target identity defines visible root namespace, not filesystem directory alone",
+      "new noncanonical alias upserts resolving to enrolled registered roots refuse before target access/writes",
+      "preexisting alias saved-only targets remain separate/readable with no temporary overlay or implicit migration; incorrect cross-namespace rejection promise removed"
+    ],
+    "round3RecoveredResult": "All blocking findings cleared. Revised exact-path namespace and explicit alias refusal accepted; diagram rendering remains unverified. Planned tests and external/provider evidence remain pending implementation."
+  }
+}

@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { LLMProvider } from '../shared/types.js';
+import type { FamilyId } from '../daemon/model-catalog.js';
 import type { ReviewReport } from './review/types.js';
 import type { BugfixMagnitude, SizeClass } from './triage/types.js';
 
@@ -282,7 +283,7 @@ export interface OutputModelStamp {
 	 *  `design.contract.detail`), or `(legacy)` on a shim-synthesized stamp. */
 	readonly role:   string;
 	readonly tier:   'core' | 'mid' | 'cheap';
-	readonly runner: 'ollama' | 'cli-claude' | 'cli-codex';
+	readonly runner: FamilyId;
 	readonly model:  string;
 }
 

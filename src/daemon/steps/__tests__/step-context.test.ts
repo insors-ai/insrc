@@ -17,13 +17,12 @@ import { resolveScope } from '../../../analyze/context/scope.js';
 import type { ScopeDeps } from '../../../analyze/context/scope.js';
 import { currentClientProviderKind } from '../../../analyze/context/shaper-provider.js';
 import {
-	clientProviderKind,
 	currentStepContext,
 	runInStepContext,
 	stepClient,
-	stepClientOf,
 	stepCwd,
 } from '../../../shared/step-context.js';
+import { familyForClient } from '../../model-registry.js';
 import type { StepCallContext } from '../../../shared/step-context.js';
 import { runAnalyzeOneShot } from '../analyze-oneshot.js';
 import { DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from '../code-review-step/handler.js';
@@ -108,15 +107,10 @@ test("scope directoryOf: a bare file name inside a step call resolves against th
 	assert.equal(nested.lookupPath, 'docs');
 });
 
-test("client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'", async () => {
-	// The forwarder's conversion from the detected provider kind.
-	assert.equal(stepClientOf('cli-claude'), 'claude');
-	assert.equal(stepClientOf('cli-codex'), 'codex');
-	assert.equal(stepClientOf(undefined), undefined);
-	assert.equal(stepClientOf('ollama'), undefined);
-
+test("client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze runs in the family it implies ('cli-claude' / 'cli-codex')", async () => {
+	assert.equal(familyForClient(undefined), undefined);
 	for (const [client, kind] of [['claude', 'cli-claude'], ['codex', 'cli-codex']] as const) {
-		assert.equal(clientProviderKind(client), kind);
+		assert.equal(familyForClient(client), kind);
 		const ctx: StepCallContext = { cwd: CALLER_CWD, client };
 
 		// Code review: as it is.

@@ -14,6 +14,7 @@
  * approval broker, which no caller can replace.
  */
 
+import { assertAnalysisConnectionExecution } from '../../analyze/connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -78,6 +79,7 @@ export async function executeTool(
 	input: ToolInput,
 	deps: ToolDeps,
 ): Promise<ToolResult> {
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	const tool = getTool(toolId);
 	if (!tool) {
 		log.error({ toolId }, 'unknown tool');
@@ -142,6 +144,7 @@ export async function executeTool(
 
 	try {
 		const result = await tool.execute(input, deps);
+		assertAnalysisConnectionExecution(deps.connectionExecution);
 		if (!result.success) return result;
 		if (outputSchema === undefined) return await withHooks(tool, input, deps, result);
 		if (result.data === undefined) {
@@ -157,6 +160,7 @@ export async function executeTool(
 		log.warn({ id: tool.id }, 'tool data does not fit its output schema');
 		return failed('schema-mismatch', `tool ${tool.id} returned data that does not fit its output schema: ${dataCheck.errors.join('; ')}`, result.output);
 	} catch (err) {
+		if (deps.connectionExecution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		const errMsg = err instanceof Error ? err.message : String(err);
 		log.error({ id: tool.id, err: errMsg }, 'tool execution failed');
 		return {

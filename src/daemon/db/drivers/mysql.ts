@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * MySQL / MariaDB driver (kind: `mysql`, `mariadb`).
@@ -11,7 +13,6 @@ import { allDriverWork } from '../driver-work.js';
 import { createPool } from 'mysql2/promise';
 import type { Pool, PoolOptions } from 'mysql2/promise';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -68,7 +69,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-mysql');
 
 const POOL_MAX = 3;
 
@@ -79,6 +79,7 @@ function clampListLimit(n: number | undefined): number {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class MysqlDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind: string;
 
@@ -86,15 +87,21 @@ export class MysqlDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, kind: 'mysql' | 'mariadb', url: string, prismaPath?: string) {
+	constructor(readonly id: string, kind: 'mysql' | 'mariadb', url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-mysql', context);
 		this.kind = kind;
 		this.prismaPath = prismaPath;
 		const opts = parseUrlToPoolOptions(url);
 		this.pool = createPool({
 			...opts,
+			...(this.#runtimeLog.quiet ? { debug: false, trace: false } : {}),
 			connectionLimit: POOL_MAX,
 			connectTimeout: SAMPLE_TIMEOUT_MS,
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		await this.pool.query('SELECT 1');
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -130,7 +137,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const [rows, fields] = await withTimeout(
 			this.pool.query(text, values as unknown[]),
@@ -154,7 +161,7 @@ export class MysqlDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const [rows] = await withTimeout(
 			this.pool.query(text, values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -166,7 +173,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const [rows] = await withTimeout(
 			this.pool.query(compiled.text, compiled.values as unknown[]),
 			SAMPLE_TIMEOUT_MS,
@@ -178,7 +185,7 @@ export class MysqlDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MYSQL_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const [[countRows], [valueRows]] = await allDriverWork([
 			withTimeout(
 				this.pool.query(compiled.distinctCountSql),
@@ -444,14 +451,14 @@ function parseUrlToPoolOptions(url: string): PoolOptions {
 // ---------------------------------------------------------------------------
 
 function makeFactory(kind: 'mysql' | 'mariadb') {
-	return async (config: ConnectionConfig) => {
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: ${kind} connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new MysqlDriver(config.id, kind, config.url, prismaPath);
+		return new MysqlDriver(config.id, kind, config.url, prismaPath, context);
 	};
 }
 
-registerDriver({ kind: 'mysql',   family: 'rdbms', factory: makeFactory('mysql') });
-registerDriver({ kind: 'mariadb', family: 'rdbms', factory: makeFactory('mariadb') });
+registerDriver({ kind: 'mysql',   family: 'rdbms', factory: makeFactory('mysql') }, 'resource-context');
+registerDriver({ kind: 'mariadb', family: 'rdbms', factory: makeFactory('mariadb') }, 'resource-context');

@@ -70,3 +70,32 @@ git show <tree>:<path>                                                   # a fil
 git log --oneline $(git merge-base HEAD origin/main)..origin/main -- <path>   # what main did to it
 git log --oneline $(git merge-base HEAD origin/main)..HEAD -- <path>          # what v2 did to it
 ```
+
+## Result (merged 2026-10-26)
+
+Merged with `git merge --no-ff` as the order above says. The 8 conflicts were resolved as proposed; `tsc` was clean after the small ones.
+
+### Decisions beyond the proposal
+
+- **`config-catalog-contract.test.ts`**: the row count is **49** (main's 47, plus `daemonUpdate.repoUrl`, `daemonUpdate.branch`, `tools.commonApproval`, minus `permissions.mode`), found by running the test.
+- **`check-model-definitions.test.ts`** pinned the whole `build` string; it now asserts the order `tsc` < `check-model-definitions` < `copy-assets`, because v2 also builds the process broker and the shutdown watchdog.
+- **`session-source-inventory.json`** (main's reviewed baseline of every provider, connection, diagnostic and write site; test `CM-S3-INVENTORY`): v2's 788 commits added 90 files, removed 5 and changed 133 sources, so the baseline was regenerated rather than patched. What was inspected first:
+  the new files add **no** `connection-use` or `connection-factory` site; the only provider sites in new files are in `src/daemon/tools/convert-text.ts` (the gh/Jira text conversion), which is unreachable from a temporary session because `READ_ONLY_TOOL_IDS` (`src/analyze/context/tool-surface.ts`) excludes `gh.*` and no Jira tool is on it.
+  Each new file took the class its neighbours in the same area have (`src/workflow/**` forbidden-session-service, `src/daemon/steps/**` forbidden-session-workflow, `src/daemon/tools/**` tool-allowlist-boundary, `src/daemon/*.ts` daemon-admission-boundary, `src/bin` and `src/cli` client-process-boundary, `src/shared` shared-transport-foundation) with that class's rationale; existing entries keep theirs. Any later edit of a production file under `src/` changes its source digest and needs this regenerated.
+- **`artifact-write-inventory.test.ts`**: its "no other file writes `meta.envelope.binding`" heuristic matched main's `connection-session-rpc.ts` (a session pipe's delivery `envelope` and a connection `binding`); the file is excluded by name with a comment.
+- **`tui-shipped-registry.test.ts`** called `reviewArtifact('/w/repo', ...)`; v2's review resolves the repository's lifecycle service first, which needs a real directory. The test now makes one.
+
+### Sweep (foreground, `--test-force-exit`, Node 24.21)
+
+Every failure left was compared with a clean checkout of `origin/main` run the same way; none is new:
+
+| Failing on the merged tree | On `origin/main` |
+| --- | --- |
+| 10 `CM-S3-*` tests that run a nested `node --test` and expect the TAP line `# pass N`; this Node prints the spec form `ℹ pass N` | the same fail |
+| `live-store-file-refusal` (`executeTool` called with no deps, `deps.connectionExecution` read) | fails |
+| `analyze/context/pipeline-outcome` 15 tests; `analyze/runtimes/scope-sources` 1 | the same 15 + 1 |
+| `daemon/db` probes that need ClickHouse, Oracle, Redis, MongoDB, Cassandra, NATS, etcd, Memcached | the same (main also fails 5 more there, compiled workers needing `out/`) |
+| `cli/panes/MCPSection` "poll interval" (timing: 60 ms against a 15 ms poll) | flaky, 2 of 6 runs; the merged tree 4 of 6 |
+| `daemon/threads/threads-boot` SIGTERM | passes alone (11 to 14 s); failed once under load in the sweep |
+
+Everything else passes: workflow 2387 tests, db 598, config + shared + mcp 394, tools 412, daemon top-level 375, daemon steps (without the 10 above) all.

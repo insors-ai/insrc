@@ -1,16 +1,51 @@
 {
   "version": 1,
-  "providers": {
-    "cli-claude": [
-      { "id": "claude-opus-5-5", "displayName": "Claude Opus 5.5" },
-      { "id": "claude-sonnet-5", "displayName": "Claude Sonnet 5" },
-      { "id": "claude-fable-5-1", "displayName": "Claude Fable 5.1" },
-      { "id": "claude-haiku-4-5-20251001", "displayName": "Claude Haiku 4.5" }
-    ],
-    "cli-codex": [
-      { "id": "gpt-6-astra", "displayName": "GPT-6 Astra" },
-      { "id": "gpt-6.1-sol", "displayName": "GPT-6.1 Sol" },
-      { "id": "gpt-6-luna", "displayName": "GPT-6 Luna" }
-    ]
-  }
+  "defaultFamily": "cli-claude",
+  "families": [
+    {
+      "id": "cli-claude",
+      "cliKind": "claude",
+      "displayName": "Claude CLI",
+      "models": [
+        { "id": "claude-opus-5-5", "aliases": ["opus"], "displayName": "Claude Opus 5.5", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "claude-sonnet-5", "aliases": ["sonnet"], "displayName": "Claude Sonnet 5", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "claude-fable-5-1", "displayName": "Claude Fable 5.1", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "claude-haiku-5-5", "aliases": ["haiku"], "displayName": "Claude Haiku 5.5", "efforts": ["low", "medium", "high", "xhigh", "max"], "inputLimit": { "unit": "tokens", "max": 1000000 } }
+      ],
+      "tierDefaults": {
+        "core":  { "model": "opus" },
+        "mid":   { "model": "sonnet" },
+        "cheap": { "model": "haiku" }
+      },
+      "summariserModel": "haiku"
+    },
+    {
+      "id": "cli-codex",
+      "cliKind": "codex",
+      "displayName": "Codex CLI",
+      "models": [
+        { "id": "gpt-6-astra", "displayName": "GPT-6 Astra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6.1-sol", "displayName": "GPT-6.1 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6-luna", "displayName": "GPT-6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-6-sol", "displayName": "GPT-6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-sol", "displayName": "GPT-5.6 Sol", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-terra", "displayName": "GPT-5.6 Terra", "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "inputLimit": { "unit": "chars", "max": 1048576 } },
+        { "id": "gpt-5.6-luna", "displayName": "GPT-5.6 Luna", "efforts": ["low", "medium", "high", "xhigh", "max"], "inputLimit": { "unit": "chars", "max": 1048576 } }
+      ],
+      "tierDefaults": {
+        "core":  { "model": "gpt-6-astra" },
+        "mid":   { "model": "gpt-6.1-sol" },
+        "cheap": { "model": "gpt-6-luna" }
+      },
+      "summariserModel": "gpt-6-luna"
+    },
+    {
+      "id": "ollama",
+      "displayName": "Ollama (local)",
+      "models": [
+        { "id": "qwen3.6:27b", "displayName": "Qwen 3.6 27B", "efforts": [], "inputLimit": { "unit": "tokens", "max": 32768 } }
+      ],
+      "toolLoopModel": "qwen3.6:27b"
+    }
+  ]
 }

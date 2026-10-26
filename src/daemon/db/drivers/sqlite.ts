@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * SQLite driver (kind: `sqlite`).
  *
@@ -13,7 +15,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -67,10 +68,10 @@ import {
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-sqlite');
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class SqliteDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'sqlite';
 
@@ -78,7 +79,8 @@ export class SqliteDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, filename: string, prismaPath?: string) {
+	constructor(readonly id: string, filename: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-sqlite', context);
 		// readOnly opens with SQLITE_OPEN_READONLY, which also refuses a
 		// missing file rather than creating one.
 		this.db = new DatabaseSync(filename, { readOnly: true });
@@ -101,6 +103,10 @@ export class SqliteDriver implements RdbmsDriver {
 				return 0;
 			}
 		});
+	}
+
+	async probeReachability(): Promise<void> {
+		this.db.prepare('SELECT 1').get();
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -145,7 +151,7 @@ export class SqliteDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, SQLITE_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 		const rows = this.rows(text, values);
 		const limit = Math.min(opts.limit, 50);
 		return {
@@ -164,7 +170,7 @@ export class SqliteDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, SQLITE_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const rows = this.rows(text, values);
 		return { plan: rows.map(r => JSON.stringify(r)).join('\n') };
 	}
@@ -173,7 +179,7 @@ export class SqliteDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, SQLITE_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		// SQLite has no built-in STDDEV / VARIANCE / PERCENTILE_CONT;
 		// the engine surfaces those as "no such function: ..." errors
 		// at run-time. The tool layer renders that as `success: false`
@@ -186,7 +192,7 @@ export class SqliteDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, SQLITE_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const countRow = this.row(compiled.distinctCountSql);
 		const valueRows = this.rows(compiled.topValuesSql);
 		return {
@@ -405,8 +411,8 @@ function pathOf(config: ConnectionConfig): string {
 registerDriver({
 	kind: 'sqlite',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new SqliteDriver(config.id, pathOf(config), prismaPath);
+		return new SqliteDriver(config.id, pathOf(config), prismaPath, context);
 	},
-});
+}, 'resource-context');

@@ -1,3 +1,4 @@
+import { driverResourceLog, temporaryFileExecutionOwner } from '../driver-log-policy.js';
 /**
  * DuckDB-backed FileDriver -- one implementation for every file kind
  * DuckDB reads natively (csv / tsv / jsonl / ndjson / json / parquet
@@ -36,7 +37,6 @@ import { listValue } from '@duckdb/node-api';
 import { readdir } from 'node:fs/promises';
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, sep, resolve } from 'node:path';
-import { getLogger } from '../../../shared/logger.js';
 import type { AggregateRequest, AggregateResult, ColumnDescription, ConnectionConfig, DriverFactoryContext, CorrelationMatrixRequest, CorrelationMatrixResult, DistinctRequest, DistinctResult, FileDriver, HistogramRequest, HistogramResult, OutlierRequest, OutlierResult, SampleOpts, SampleResult, ScanOpts, SchemaDescription, ShapeReport, TemporalTrendRequest, TemporalTrendResult, } from '../../../shared/db-driver.js';
 import { registerDriver } from '../registry.js';
 import { MemoryFileExecution, savedFileExecution } from '../file-execution.js';
@@ -54,7 +54,6 @@ import { fixedWidthConverter } from './converters/fixed-width.js';
 import { xlsxConverter } from './converters/xlsx.js';
 import { walkSourceTree } from './converters/shared.js';
 import type { FileConverter } from './converters/types.js';
-const log = getLogger('db-duckdb-file');
 /**
  * DuckDB's Node binding returns BIGINT / HUGEINT columns as JS `bigint`.
  * BigInt is opaque to `JSON.stringify` (which throws) and not safely
@@ -271,13 +270,29 @@ function csvOptionsSql(opts: ResolvedCsvOptions): string {
 // Driver class
 // ---------------------------------------------------------------------------
 class DuckDBFileDriver implements FileDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
+	async probeReachability(): Promise<void> {
+		if (!(this.execution instanceof MemoryFileExecution))
+			throw new Error('Private file execution required');
+		// Load real sources before selecting a real workbook target. Never
+		// substitute a made-up sheet or enter the persistent converter cache.
+		await this.loadMemoryReader(this.execution);
+		const targets = await this.execution.targets();
+		const target = targets[0]?.targetId;
+		const table = await this.execution.table(target);
+		await this.execution.withConnection(async connection => {
+			await connection.runAndReadAll('SELECT 1 FROM query_table(?) LIMIT 1', [table]);
+		});
+	}
+
 	readonly family = 'file' as const;
 	readonly kind: DuckDBFileKind;
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private memoryReady: Promise<void> | undefined;
 	private closed = false;
 	private readonly cachePins = new Map<string, () => void>();
-	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined) {
+	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-duckdb-file', context);
 		this.kind = kind;
 	}
 	// ---------------------------------------------------------------------------
@@ -293,7 +308,7 @@ class DuckDBFileDriver implements FileDriver {
 		const readPath = await this.readerPath(target);
 		const expr = this.readerExpr();
 		const sql = `DESCRIBE SELECT * FROM ${expr}`;
-		log.debug({ id: this.id, sql }, 'describe');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'describe' }));
 		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, [readPath]);
 			return reader.getRowObjects();
@@ -332,7 +347,7 @@ class DuckDBFileDriver implements FileDriver {
 		const where = compileWhere(opts.where ?? [], cols, POSTGRES_DIALECT, 2);
 		const whereText = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT * FROM ${expr}${whereText} LIMIT ${limit}`;
-		log.debug({ id: this.id, sql }, 'sample');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'sample' }));
 		const params = [readPath, ...where.values];
 		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
@@ -377,7 +392,7 @@ class DuckDBFileDriver implements FileDriver {
 		const where = compileWhere(request.where ?? [], cols, POSTGRES_DIALECT, whereStart);
 		const whereClause = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT ${aggExprs.exprs.join(', ')} FROM ${expr}${whereClause}`;
-		log.debug({ id: this.id, sql }, 'aggregate');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, sql }, message: 'aggregate' }));
 		const params = [readPath, ...aggExprs.values, ...where.values];
 		const row = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
@@ -394,7 +409,7 @@ class DuckDBFileDriver implements FileDriver {
 		// `asTableExpr` so compileDistinct doesn't quote-target the
 		// connection path (which isn't a SQL identifier).
 		const compiled = compileDistinct(target ?? this.displayTarget(), request, cols, POSTGRES_DIALECT, { asTableExpr: this.readerExpr() });
-		log.debug({ id: this.id }, 'distinct');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct' }));
 		const [countRow, valueRows] = await this.execution.withConnection(async (conn) => {
 			const cReader = await conn.runAndReadAll(compiled.distinctCountSql, [readPath]);
 			const vReader = await conn.runAndReadAll(compiled.topValuesSql, [readPath]);
@@ -504,19 +519,21 @@ class DuckDBFileDriver implements FileDriver {
 			throw new Error('File driver closed');
 		if (this.execution instanceof MemoryFileExecution) {
 			const execution = this.execution;
-			if (!this.memoryReady) {
-				this.memoryReady = isConvertedKind(this.kind)
-					? execution.loadRows((budget, signal) => memoryFileSources(CONVERTERS[this.kind as keyof typeof CONVERTERS], this.sourcePaths, budget, signal, this.connectionOptions))
-					: execution.loadNative({ kind: this.kind as Exclude<DuckDBFileKind, 'avro' | 'bson' | 'fixed-width' | 'xlsx'>, paths: this.sourcePaths,
-						...this.csvOpts, hivePartitioning: this.hivePartitioning });
-			}
-			await this.memoryReady;
+			await this.loadMemoryReader(execution);
 			return execution.table(this.kind === 'xlsx' && !this.isDirectory ? target : undefined);
 		}
 		if (!isConvertedKind(this.kind)) {
 			return resolveReaderPath(this.kind, this.path, this.isDirectory, this.recursive);
 		}
 		return this.ensureConvertedAndGlob(this.kind, target);
+	}
+	private async loadMemoryReader(execution: MemoryFileExecution): Promise<void> {
+		if (this.closed) throw new Error('File driver closed');
+		this.memoryReady ??= isConvertedKind(this.kind)
+			? execution.loadRows((budget, signal) => memoryFileSources(CONVERTERS[this.kind as keyof typeof CONVERTERS], this.sourcePaths, budget, signal, this.connectionOptions))
+			: execution.loadNative({ kind: this.kind as Exclude<DuckDBFileKind, 'avro' | 'bson' | 'fixed-width' | 'xlsx'>, paths: this.sourcePaths,
+				...this.csvOpts, hivePartitioning: this.hivePartitioning });
+		await this.memoryReady;
 	}
 	/**
 	 * Stage a converted-kind connection's source(s) into the cache,
@@ -589,6 +606,8 @@ function slugifySheetName(name: string): string {
 // ---------------------------------------------------------------------------
 function makeFactory(kind: DuckDBFileKind) {
 	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
+		driverResourceLog('db-duckdb-file', context); // Check before source access or native engine allocation.
+		const retainFile = temporaryFileExecutionOwner(context);
 		try {
 			if (config.path === undefined) {
 				throw new Error(`data-driver: ${kind} connection '${config.id}' missing path`);
@@ -619,13 +638,16 @@ function makeFactory(kind: DuckDBFileKind) {
 				? await MemoryFileExecution.open(policy, { nativePaths: isConvertedKind(kind) ? [] : sourcePaths,
 					...((kind === 'arrow' || kind === 'feather') ? { localReaders: ['arrow'] as const } : {}) })
 				: savedFileExecution(policy);
-			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options);
+			retainFile?.(execution); // Owner retains even a late allocation whose constructor authority has expired.
+			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options, context);
 		}
 		catch (error) {
 			if (context?.fileExecutionPolicy?.persistence !== 'memory-only')
 				throw error;
+			const authorityCode = error && typeof error === 'object' ? Object.getOwnPropertyDescriptor(error, 'code')?.value : undefined;
+			if (authorityCode === 'session-expired') throw Object.assign(new Error('Connection session expired.'), { code: 'session-expired' });
 			const message = error instanceof Error ? error.message : '';
-			throw new Error(['resource-limit', 'unsupported-temporary'].includes(message) ? message : 'Temporary file initialization failed');
+			throw Object.assign(new Error(['resource-limit', 'unsupported-temporary'].includes(message) ? message : 'Temporary file initialization failed'), ['resource-limit', 'unsupported-temporary'].includes(message) ? { code: message } : {});
 		}
 	};
 }
@@ -639,10 +661,10 @@ function makeFactory(kind: DuckDBFileKind) {
  *  consolidating onto one SQL surface. */
 export function registerDuckDBFileDriver(): void {
 	for (const kind of NATIVE_KINDS) {
-		registerDriver({ kind, family: 'file', factory: makeFactory(kind) });
+		registerDriver({ kind, family: 'file', factory: makeFactory(kind) }, 'resource-context');
 	}
 	for (const kind of CONVERTED_KINDS) {
-		registerDriver({ kind, family: 'file', factory: makeFactory(kind) });
+		registerDriver({ kind, family: 'file', factory: makeFactory(kind) }, 'resource-context');
 	}
 }
 // Self-register on import (matches the convention every other driver

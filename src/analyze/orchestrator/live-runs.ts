@@ -16,26 +16,58 @@
  * running, and a reader would then take a run that is alive for dead.
  */
 
+import { assertSessionReuseNow, sessionReuseWindow } from '../session-reuse.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+
 const liveCount = new Map<string, number>();
 
 /** One more run is going under this id. */
 export function raiseRunLive(runId: string): void {
+	assertSessionReuseNow(undefined);
 	liveCount.set(runId, (liveCount.get(runId) ?? 0) + 1);
 }
 
 /** One run under this id has returned or thrown. */
 export function lowerRunLive(runId: string): void {
+	assertSessionReuseNow(undefined);
 	const count = liveCount.get(runId) ?? 0;
 	if (count <= 1) liveCount.delete(runId);
 	else liveCount.set(runId, count - 1);
 }
 
 /** How many runs are going under this id in this process. */
-export function liveRunCount(runId: string): number {
+export function liveRunCount(runId: string, execution?: ConnectionExecutionContext): number {
+	assertSessionReuseNow(execution);
+	if (execution?.mode === 'session-memory') return ownerLiveCounts.get(sessionReuseWindow(execution).owner)?.get(runId) ?? 0;
 	return liveCount.get(runId) ?? 0;
 }
 
 /** Whether at least one run is going under this id in this process. */
-export function isRunLive(runId: string): boolean {
-	return liveRunCount(runId) > 0;
+export function isRunLive(runId: string, execution?: ConnectionExecutionContext): boolean {
+	return liveRunCount(runId, execution) > 0;
+}
+
+
+// Session counts contain keys only and are separate from Saved run ids.
+const ownerLiveCounts = new Map<string, Map<string, number>>();
+/** Capture the cleanup key while admitted; cleanup still works after expiry. */
+export function trackRunLive(runId: string, execution?: ConnectionExecutionContext): () => void {
+	assertSessionReuseNow(execution);
+	if (execution?.mode !== 'session-memory') {
+		liveCount.set(runId, (liveCount.get(runId) ?? 0) + 1);
+		let released = false;
+		return () => { if (released) return; released = true; const count = liveCount.get(runId) ?? 0; if (count <= 1) liveCount.delete(runId); else liveCount.set(runId, count - 1); };
+	}
+	const owner = sessionReuseWindow(execution).owner;
+	let counts = ownerLiveCounts.get(owner);
+	if (!counts) { counts = new Map(); ownerLiveCounts.set(owner, counts); }
+	counts.set(runId, (counts.get(runId) ?? 0) + 1);
+	let released = false;
+	return () => {
+		if (released) return;
+		released = true;
+		const count = counts!.get(runId) ?? 0;
+		if (count <= 1) counts!.delete(runId); else counts!.set(runId, count - 1);
+		if (counts!.size === 0) ownerLiveCounts.delete(owner);
+	};
 }

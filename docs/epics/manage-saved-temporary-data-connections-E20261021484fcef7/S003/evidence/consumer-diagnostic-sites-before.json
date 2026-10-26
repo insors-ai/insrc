@@ -1,0 +1,258 @@
+{
+  "stage": "design discovery, not runtime safety proof",
+  "source": "production getLogger/log/console source scan, tests excluded",
+  "sites": [
+    {
+      "file": "src/analyze/docs-retrieval.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/search-text.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/classifier/driver.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/boot-validator.ts",
+      "classification": "static bootstrap only; invocation payloads still need quiet policy"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/doc-constraint-enumerate.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/repo-ignore-filter.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/manifests-locate.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/capability-reuse-check.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/orchestrator/persistence.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/data-model-trace.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/executor/registry.ts",
+      "classification": "static bootstrap only; invocation payloads still need quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/module-profile.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/shaper-provider.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/symbol-locate.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/cache.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/synthesizer.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/invariants.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/doc-mention.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/executor/walker.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/class-hierarchy.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/bootstrap.ts",
+      "classification": "static bootstrap only; invocation payloads still need quiet policy"
+    },
+    {
+      "file": "src/analyze/planner/templates/bootstrap.ts",
+      "classification": "static bootstrap only; invocation payloads still need quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/doc-decision-trace.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/orchestrator/driver.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/decomposer.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/context/driver.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/planner/cache.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/usage-example.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/freeform-probe.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/test-locate.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/executor/cache.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/executor.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/summariser/driver.ts",
+      "classification": "background summarizer refused for session input"
+    },
+    {
+      "file": "src/analyze/explore/convention-detect.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/config-trace.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/concept-resolve.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/explore/import-graph.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/planner/templates/registry.ts",
+      "classification": "static bootstrap only; invocation payloads still need quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/planner/recursive.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-ci.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-helm.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-docker.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/discovery-families.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/code/discovery-entrypoints.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/planner/driver.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/code/discovery-modules.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-connections.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-terraform.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/code/surface-functional.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/data/schema-table.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/shared/adherence-topic-constraints.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/code/structure-module-tree.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/shared/adherence.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/shared/aggregator.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/docs/discovery-inventory.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    },
+    {
+      "file": "src/analyze/runtimes/docs/family-summarise.ts",
+      "classification": "reached invocation diagnostics must use immutable execution-local quiet policy"
+    }
+  ]
+}

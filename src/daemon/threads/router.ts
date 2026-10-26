@@ -20,8 +20,11 @@ import type { MessagePort } from 'node:worker_threads';
 import { getLogger } from '../../shared/logger.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
+import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
-import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, RequestEnvelope } from './channel.js';
+import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope } from './channel.js';
+import { MAIN_DAEMON_CONNECTION_METHODS } from './method-class.js';
+import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
 
@@ -43,6 +46,7 @@ export interface RouterOptions {
 }
 
 interface Pending {
+	readonly lifetime?: RequestLifetime | undefined;
 	readonly threadId: number;
 	readonly method: string;
 	readonly stream: boolean;
@@ -59,7 +63,7 @@ export interface OrphanedRequest {
 
 interface Held {
 	readonly cls: MethodClass;
-	readonly request: RequestEnvelope;
+	readonly request: LocalRequestEnvelope;
 	readonly deliver: DeliverEnvelope;
 	readonly timer: NodeJS.Timeout;
 	cancelled: boolean;
@@ -93,22 +97,27 @@ export class Router {
 	readonly forward: ForwardRequest = (request, deliver) => {
 		const cls = this.opts.classOf(request.method);
 		const ended = this.opts.onRequest?.(request.method, cls);
-		if (ended !== undefined) {
-			const cancel = this.dispatch(cls, request, envelope => {
-				if (envelope.kind === 'reply') ended();
-				else {
+		let finished = false;
+		const finish = (): void => { if (!finished) { finished = true; ended?.(); } };
+		if (request.lifetime) void Promise.all([request.lifetime.completed, request.lifetime.drained]).then(finish);
+		const cancel = this.dispatch(cls, request, envelope => {
+			try { deliver(envelope); }
+			finally {
+				if (envelope.kind === 'reply') {
+					if (!request.stream) request.lifetime?.complete();
+					if (!request.lifetime) finish();
+				} else {
 					const stream = (envelope.frame as IpcStreamMessage).stream;
-					if (stream === 'done' || stream === 'error') ended();
+					if (!request.lifetime && (stream === 'done' || stream === 'error')) finish();
 				}
-				deliver(envelope);
-			});
-			return () => { if (request.stream) ended(); cancel(); };
-		}
-		return this.dispatch(cls, request, deliver);
+			}
+		});
+		return () => { if (request.stream && !request.lifetime) finish(); cancel(); };
 	};
 
-	private dispatch(cls: MethodClass | undefined, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
-		if (cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
+	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
+		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
+			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver);
@@ -121,7 +130,7 @@ export class Router {
 	 * hold; by default, whether this context holds it (a nested call).
 	 */
 	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined } = {}): Promise<unknown> {
-		const request: RequestEnvelope = {
+		const request: LocalRequestEnvelope = {
 			kind: 'request', requestId: `internal-${++this.seq}`, method, params, stream: false,
 			...((opts.underHold ?? holdsMaintenanceLock()) ? { underHold: true } : {}),
 		};
@@ -139,15 +148,21 @@ export class Router {
 	/** A worker's channel: its replies and frames are routed back to their requests. */
 	attach(threadId: number, port: MessagePort): void {
 		const onMessage = (msg: unknown): void => {
-			if (!isReplyOrFrame(msg)) return;
-			const pending = this.pending.get(msg.requestId);
-			if (pending === undefined) return;   // its socket closed, or the request was failed
-			if (msg.kind === 'reply') this.pending.delete(msg.requestId);
-			else {
-				const stream = (msg.frame as IpcStreamMessage).stream;
-				if (stream === 'done' || stream === 'error') this.pending.delete(msg.requestId);
+			const completion = (msg as { kind?: string } | null)?.kind === 'complete';
+			if (!isReplyOrFrame(msg) && !completion) return;
+			const response = msg as ReplyEnvelope | FrameEnvelope;
+			const pending = this.pending.get(response.requestId);
+			if (pending === undefined || pending.threadId !== threadId) return;
+			if (completion) {
+				if (pending.lifetime) { this.pending.delete(response.requestId); pending.lifetime.complete(); }
+				return;
 			}
-			pending.deliver(msg);
+			if (response.kind === 'reply') { if (!pending.lifetime) this.pending.delete(response.requestId); }
+			else {
+				const stream = ((response as FrameEnvelope).frame as IpcStreamMessage).stream;
+				if (!pending.lifetime && (stream === 'done' || stream === 'error')) this.pending.delete(response.requestId);
+			}
+			pending.deliver(response);
 		};
 		this.ports.set(threadId, port);
 		this.listeners.set(threadId, onMessage);
@@ -166,6 +181,7 @@ export class Router {
 		for (const [requestId, p] of this.pending) {
 			if (p.threadId !== threadId) continue;
 			this.pending.delete(requestId);
+			p.lifetime?.complete();
 			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver });
 		}
 		return orphaned;
@@ -192,21 +208,27 @@ export class Router {
 		}
 	}
 
-	private send(threadId: number, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const port = this.ports.get(threadId)!;
-		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver });
-		port.postMessage(request);
+		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver, ...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}) });
+		try { port.postMessage(wireRequest(request)); }
+		catch {
+			this.pending.delete(request.requestId);
+			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }
+			finally { request.lifetime?.complete(); }
+		}
 		return () => this.cancel(threadId, request);
 	}
 
-	private hold(cls: MethodClass, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const held: Held = {
 			cls, request, deliver, cancelled: false,
 			timer: setTimeout(() => {
 				this.release(held);
 				if (held.cancelled) return;
 				log.warn({ method: request.method, cls, holdMs: this.holdMs }, 'router: no worker registered for the request\'s class in time');
-				deliver({ kind: 'reply', requestId: request.requestId, error: `the daemon's ${cls} thread is not available` });
+				try { deliver({ kind: 'reply', requestId: request.requestId, error: `the daemon's ${cls} thread is not available` }); }
+				finally { request.lifetime?.complete(); }
 			}, this.holdMs),
 		};
 		this.held.add(held);
@@ -214,6 +236,8 @@ export class Router {
 			if (held.sentTo !== undefined) { this.cancel(held.sentTo, request); return; }
 			if (held.localCancel !== undefined) { held.localCancel(); return; }
 			held.cancelled = true;
+			request.lifetime?.abort();
+			request.lifetime?.complete();
 			this.release(held);
 		};
 	}
@@ -224,9 +248,10 @@ export class Router {
 	}
 
 	/** The request's socket closed: a stream is cancelled on its worker; a unary request runs on and its reply is dropped there. */
-	private cancel(threadId: number, request: RequestEnvelope): void {
+	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
-		this.pending.delete(request.requestId);
+		request.lifetime?.abort();
+		if (!request.lifetime) this.pending.delete(request.requestId);
 		this.ports.get(threadId)?.postMessage({ kind: 'cancel', requestId: request.requestId } satisfies CancelEnvelope);
 	}
 }

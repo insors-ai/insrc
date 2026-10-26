@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 /**
  * Memcached driver (kind: `memcached`).
  *
@@ -20,7 +22,6 @@
 
 import * as memjsMod from 'memjs';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -34,14 +35,18 @@ import type {
 import { registerDriver } from '../registry.js';
 import { SCAN_TIMEOUT_MS } from './kv-common.js';
 
-const log = getLogger('db-memcached');
 
 interface MemcachedClient {
+	readonly servers: {username: string; password: string}[];
 	get(key: string, cb?: (err: Error | null, value: Buffer | null) => void): unknown;
+	incrSeq(): void;
+	readonly seq: number;
+	perform(key: string, request: Buffer, seq: number, callback: (error: Error | null, response: {header: {status:number;opcode:number}} | null) => void, retries: number): void;
 	close(): void;
 }
 
 class MemcachedDriver implements KvDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'kv' as const;
 	readonly kind = 'memcached';
 
@@ -51,7 +56,9 @@ class MemcachedDriver implements KvDriver {
 		readonly id: string,
 		serverString: string,
 		auth: { user?: string; password?: string },
+		context?: DriverFactoryContext,
 	) {
+		this.#runtimeLog = driverResourceLog('db-memcached', context);
 		// memjs's signature: Client.create(serverString, options).
 		// We type it loosely because @types/memjs models the legacy
 		// callback shape that doesn't expose modern options cleanly.
@@ -62,7 +69,27 @@ class MemcachedDriver implements KvDriver {
 			...(auth.user !== undefined ? { username: auth.user } : {}),
 			...(auth.password !== undefined ? { password: auth.password } : {}),
 			timeout: SCAN_TIMEOUT_MS / 1000,
+			logger: { log: () => this.#runtimeLog.emit('warn', () => ({ fields: { id }, message: 'memcached operation failed' })) },
 		});
+		// memjs otherwise fills cleared fields from MEMCACHE_* environment.
+		for (const [index, server] of this.client.servers.entries()) {
+			const pieces = serverString.split(',')[index]!.split('@');
+			const [user, password] = (pieces.at(-2) ?? '').split(':');
+			server.username = user || auth.user || '';
+			server.password = password || auth.password || '';
+		}
+	}
+
+	async probeReachability(): Promise<void> {
+		// memjs exposes no VERSION convenience method; use its authenticated binary operation path.
+		this.client.incrSeq();
+		const sequence = this.client.seq, packet = Buffer.alloc(24);
+		packet[0] = 0x80; packet[1] = 0x0b; packet.writeUInt32BE(sequence, 12);
+		await new Promise<void>((resolve, reject) => this.client.perform('', packet, sequence, (error, response) => {
+			if (error) reject(error);
+			else if (!response || response.header.status !== 0 || response.header.opcode !== 0x0b) reject(new Error('Memcached probe failed.'));
+			else resolve();
+		}, 1));
 	}
 
 	async scan(_opts: ScanOpts): Promise<KeyList> {
@@ -105,8 +132,7 @@ class MemcachedDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
-		try { this.client.close(); }
-		catch (err) { log.warn({ id: this.id, err: (err as Error).message }, 'memcached close failed'); }
+		this.client.close();
 	}
 
 	async listNamespaces(): Promise<KvNamespaceList> {
@@ -131,7 +157,7 @@ class MemcachedDriver implements KvDriver {
 registerDriver({
 	kind: 'memcached',
 	family: 'kv',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		const opts = (config.options ?? {}) as Record<string, unknown>;
 		const servers = Array.isArray(opts['servers'])
 			? opts['servers'].filter((x): x is string => typeof x === 'string')
@@ -144,6 +170,6 @@ registerDriver({
 		const auth: { user?: string; password?: string } = {};
 		if (typeof opts['user'] === 'string')     { auth.user = opts['user']; }
 		if (typeof opts['password'] === 'string') { auth.password = opts['password']; }
-		return new MemcachedDriver(config.id, servers.join(','), auth);
+		return new MemcachedDriver(config.id, servers.join(','), auth, context);
 	},
-});
+}, 'resource-context');

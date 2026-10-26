@@ -1,0 +1,9 @@
+# S003 task 5 — stream completion and cleanup
+
+Streaming handlers receive an additive optional fourth frozen trusted context. The dispatch signal combines request, connection, session and execution lifetimes. Delivery failure aborts the request and actual handler completion seals it in `finally`; a terminal frame alone does neither. Cleanup registered after a terminal frame remains legal while the handler runs.
+
+Socket delivery completion and internal completion are tracked separately. A terminal response retains the disconnect cancellation hook until actual completion and registered drains. Router activity and maintenance holds likewise await both. Session-bound work cannot use a subscription's maintenance exemption. Existing no-lifetime forwarding retains its behavior.
+
+For routed saved streams, an internal `trackCompletion` request flag and private `complete` channel acknowledgement retain main activity through the worker's real completion/drain. The worker constructs its own local RequestLifetime; signals, authority and drain functions never cross the channel. The router accepts acknowledgement only from the serving worker, retains cancellation after terminal delivery, and releases proxy lifetime on worker exit. Session execution continues to stay on the main daemon.
+
+Validation: all 27 relevant stream/socket/router/channel/lifetime tests passed, including ten new cases. The new cases use real Unix sockets and MessageChannels with the enabled shared/exclusive maintenance lock. They prove exclusion after done/error, disconnect before and after terminal delivery, throwing progress/terminal delivery, delayed handler completion, cleanup registered after terminal response, and worker terminal/cancel/unary-fallback cleanup acknowledgement. No live-service or workbench acceptance is claimed. Production release evidence remains disabled; no full regression sweep was run at this intermediate task.

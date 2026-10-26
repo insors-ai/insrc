@@ -1,20 +1,13 @@
 import pino from 'pino';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { PATHS } from './paths.js';
-
-// ---------------------------------------------------------------------------
-// Ensure log directory exists
-// ---------------------------------------------------------------------------
-
-try { mkdirSync(PATHS.logDir, { recursive: true }); } catch { /* ok */ }
 
 // ---------------------------------------------------------------------------
 // Mode detection
 // ---------------------------------------------------------------------------
 
-export type LogMode = 'daemon' | 'cli' | 'mcp';
+export type LogMode = 'daemon' | 'cli' | 'mcp' | 'probe-worker';
 
 let _mode: LogMode = 'cli';
 
@@ -37,7 +30,7 @@ const VALID_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
 function resolveLevel(): pino.Level {
   // 1. Check config.json (highest priority)
   try {
-    const configPath = join(homedir(), '.insrc', 'config.json');
+    const configPath = PATHS.config;
     const raw = readFileSync(configPath, 'utf-8');
     const config = JSON.parse(raw) as Record<string, unknown>;
     const configLevel = config['logLevel'] as string | undefined;
@@ -151,6 +144,13 @@ function getRoot(): pino.Logger {
   if (_root) return _root;
 
   const mode = getLogMode();
+  // The worker sets this fixed, nonsecret mode before importing any drivers.
+  // Do not resolve config or create a transport/directory in this process.
+  if (mode === 'probe-worker') {
+    _root = pino({ enabled: false, level: 'silent' }, { write() {} });
+    return _root;
+  }
+  try { mkdirSync(PATHS.logDir, { recursive: true }); } catch { /* ok */ }
   const transport = mode === 'daemon'
     ? buildDaemonTransport()
     : mode === 'mcp'

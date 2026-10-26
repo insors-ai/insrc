@@ -4,22 +4,23 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * sc2 list-models dispatch tests (Epic ba132c185fe45860, S002 / t4).
+ * sc2 list-models dispatch tests (Epic ba132c185fe45860, S002), re-sourced from
+ * the models.definitions projection (Epic ce99b72065d03b1b, s2 · t2).
  *
- * Every branch of listModels is exercised over injected deps (a fake ollama
- * lister + a stub CuratedCatalog) so no live daemon/ollama is needed — mirroring
- * the S001 inject-the-dependency approach. Plus: the real-getCuratedCatalog cloud
- * path (post validateModelCatalog), a source-scan guarding no-cloud-REST, and a
- * source-scan of the daemon handler-map entry confirming it is revived (not
- * offlineRpc).
+ * Every branch of listModels runs over injected deps: the real per-thread
+ * registry built from a TEMP definitions dir and store, and a fake Ollama lister,
+ * so no live daemon/ollama is needed. Plus: agreement with models.definitions for
+ * every family, source scans (no cloud REST, no curated accessor left), the
+ * handler-map entry, and the real shipped asset through the default deps.
  *
  * Run: npx tsx --test src/daemon/__tests__/list-models.test.ts
  */
 
-import { test } from 'node:test';
+import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -29,34 +30,65 @@ import {
   type ModelListResult,
   type ListModelsError,
 } from '../list-models.js';
-import type { CuratedCatalog, CloudProvider } from '../model-catalog.js';
-import { validateModelCatalog, getCuratedCatalog } from '../model-catalog.js';
+import { _setModelCatalogDirForTests, validateModelCatalog } from '../model-catalog.js';
+import { getModelRegistry, _resetModelRegistryForTests, _setApprovedModelsPathForTests } from '../model-registry.js';
+import { modelDefinitions } from '../model-definitions.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const SRC = join(HERE, '..', '..');
 
-/** A stub CuratedCatalog with known per-provider arrays. */
-function stubCatalog(map: Partial<Record<CloudProvider, readonly ModelInfo[]>>): CuratedCatalog {
+function fixture(): Record<string, unknown> {
   return {
-    modelsFor(provider: CloudProvider) {
-      return map[provider] ?? [];
-    },
+    version: 1,
+    defaultFamily: 'cli-claude',
+    families: [
+      {
+        id: 'cli-claude', cliKind: 'claude', displayName: 'Claude',
+        models: [{ id: 'claude-opus-5-5', aliases: ['opus'], displayName: 'Opus 5.5', efforts: ['low'] }, { id: 'claude-sonnet-5', efforts: ['low'] }],
+        tierDefaults: { core: { model: 'opus' }, mid: { model: 'claude-sonnet-5' }, cheap: { model: 'claude-sonnet-5' } },
+        summariserModel: 'claude-sonnet-5',
+      },
+      {
+        id: 'cli-codex', cliKind: 'codex', displayName: 'Codex',
+        models: [{ id: 'gpt-a', displayName: 'GPT A', efforts: ['low'] }],
+        tierDefaults: { core: { model: 'gpt-a' }, mid: { model: 'gpt-a' }, cheap: { model: 'gpt-a' } },
+        summariserModel: 'gpt-a',
+      },
+      {
+        id: 'ollama', displayName: 'Ollama',
+        models: [
+          { id: 'qwen:1b', displayName: 'Qwen 1B', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } },
+          { id: 'qwen3.6:27b', efforts: [], inputLimit: { unit: 'tokens', max: 32768 } },
+        ],
+        toolLoopModel: 'qwen:1b',
+      },
+    ],
   };
 }
 
-/** A ListModelsDeps whose ollamaList / catalog are driven per-test; ollamaCalls
- *  counts invocations so a cloud request can assert the lister is never called. */
-function fakeDeps(opts: {
-  ollamaList?: () => Promise<readonly ModelInfo[]>;
-  catalog?: CuratedCatalog;
-}): { deps: ListModelsDeps; ollamaCalls: () => number } {
+const tmpDirs: string[] = [];
+function tmp(): string { const d = mkdtempSync(join(tmpdir(), 'list-models-')); tmpDirs.push(d); return d; }
+
+/** Point the registry at the fixture and a store with one approved and one rejected Codex model. */
+function useFixture(): void {
+  const assets = tmp();
+  writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(fixture()));
+  const store = join(tmp(), 'approved-models.json');
+  writeFileSync(store, JSON.stringify({ version: 1, profiles: [
+    { family: 'cli-codex', modelId: 'gpt-new', status: 'approved', efforts: ['low'], decidedAt: '2026-10-01T00:00:00Z', cliVersion: '0.164.0' },
+    { family: 'cli-codex', modelId: 'gpt-gone', status: 'rejected', efforts: [], decidedAt: '2026-10-01T00:00:00Z', cliVersion: '0.164.0' },
+  ] }));
+  _setModelCatalogDirForTests(assets);
+  _setApprovedModelsPathForTests(store);
+}
+
+/** Deps over the fixture registry; ollamaCalls counts lister invocations. */
+function fakeDeps(ollamaList: () => Promise<readonly ModelInfo[]> = async () => []): { deps: ListModelsDeps; ollamaCalls: () => number } {
   let calls = 0;
   const deps: ListModelsDeps = {
-    ollamaList: async () => {
-      calls++;
-      if (opts.ollamaList) return opts.ollamaList();
-      return [];
-    },
-    catalog: () => opts.catalog ?? stubCatalog({}),
+    ollamaList: async () => { calls++; return ollamaList(); },
+    registry: getModelRegistry,
+    catalogVersion: () => validateModelCatalog().version,
   };
   return { deps, ollamaCalls: () => calls };
 }
@@ -66,128 +98,132 @@ function asResult(v: ModelListResult | ListModelsError): ModelListResult {
   return v;
 }
 
-// ── cloud branch ────────────────────────────────────────────────
-
-test("listModels('cli-claude') -> curated list mapped from CatalogModel, available:true", async () => {
-  const catalog = stubCatalog({ 'cli-claude': [{ id: 'claude-opus-5-5', displayName: 'Opus 5.5' }, { id: 'claude-sonnet-5' }] });
-  const { deps } = fakeDeps({ catalog });
-  const r = asResult(await listModels({ provider: 'cli-claude' }, deps));
-  assert.equal(r.provider, 'cli-claude');
-  assert.equal(r.available, true);
-  assert.deepEqual(r.models, [{ id: 'claude-opus-5-5', displayName: 'Opus 5.5' }, { id: 'claude-sonnet-5' }]);
+afterEach(() => {
+  _setModelCatalogDirForTests(undefined);
+  _setApprovedModelsPathForTests(undefined);
+  _resetModelRegistryForTests();
+  for (const d of tmpDirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-test("listModels('cli-codex') -> the cli-codex curated list, available:true", async () => {
-  const catalog = stubCatalog({ 'cli-codex': [{ id: 'gpt-5-codex' }] });
-  const { deps } = fakeDeps({ catalog });
-  const r = asResult(await listModels({ provider: 'cli-codex' }, deps));
-  assert.deepEqual(r.models, [{ id: 'gpt-5-codex' }]);
-  assert.equal(r.available, true);
-});
+test('list-models.test.ts: CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged', async () => {
+  useFixture();
+  const { deps, ollamaCalls } = fakeDeps(async () => [{ id: 'qwen:1b' }, { id: 'llama3:8b' }]);
 
-test('cloud branch: an empty curated array stays available:true + []', async () => {
-  const { deps } = fakeDeps({ catalog: stubCatalog({ 'cli-claude': [] }) });
-  const r = asResult(await listModels({ provider: 'cli-claude' }, deps));
-  assert.equal(r.available, true);
-  assert.deepEqual(r.models, []);
-});
+  const claude = asResult(await listModels({ provider: 'cli-claude' }, deps));
+  assert.deepEqual(claude, { provider: 'cli-claude', available: true, models: [{ id: 'claude-opus-5-5', displayName: 'Opus 5.5' }, { id: 'claude-sonnet-5' }] });
+  const codex = asResult(await listModels({ provider: 'cli-codex' }, deps));
+  assert.deepEqual(codex.models, [{ id: 'gpt-a', displayName: 'GPT A' }, { id: 'gpt-new' }], 'shipped then user-approved; the rejected id is absent');
+  assert.equal(ollamaCalls(), 0, 'a CLI family never calls the ollama lister');
 
-test('ac4: the ollama lister is NEVER called for a cloud provider (no HTTP path)', async () => {
-  const { deps, ollamaCalls } = fakeDeps({ catalog: stubCatalog({ 'cli-claude': [{ id: 'x' }] }) });
-  await listModels({ provider: 'cli-claude' }, deps);
-  assert.equal(ollamaCalls(), 0, 'cloud must not touch the ollama lister');
-});
+  const ollama = asResult(await listModels({ provider: 'ollama' }, deps));
+  assert.deepEqual(ollama, { provider: 'ollama', available: true, models: [{ id: 'qwen:1b', displayName: 'Qwen 1B' }] });
+  assert.equal(ollamaCalls(), 1);
 
-// ── ollama branch ──────────────────────────────────────────────
-
-test("listModels('ollama') success -> available:true + mapped models", async () => {
-  const { deps } = fakeDeps({ ollamaList: async () => [{ id: 'llama3' }, { id: 'qwen3' }] });
-  const r = asResult(await listModels({ provider: 'ollama' }, deps));
-  assert.equal(r.provider, 'ollama');
-  assert.equal(r.available, true);
-  assert.deepEqual(r.models, [{ id: 'llama3' }, { id: 'qwen3' }]);
-});
-
-test("listModels('ollama') with a REJECTING lister (unreachable) -> available:false + []", async () => {
-  const { deps } = fakeDeps({ ollamaList: async () => { throw new Error('fetch failed'); } });
-  const r = asResult(await listModels({ provider: 'ollama' }, deps));
-  assert.equal(r.available, false);
-  assert.deepEqual(r.models, []);
-});
-
-test("listModels('ollama') with a lister that rejects on timeout -> available:false + []", async () => {
-  const { deps } = fakeDeps({ ollamaList: async () => { throw new Error('ollama model list timed out after 4000ms'); } });
-  const r = asResult(await listModels({ provider: 'ollama' }, deps));
-  assert.equal(r.available, false);
-  assert.deepEqual(r.models, []);
-});
-
-test("listModels('ollama') with a lister that rejects on malformed -> available:false + []", async () => {
-  const { deps } = fakeDeps({ ollamaList: async () => { throw new Error('malformed response'); } });
-  const r = asResult(await listModels({ provider: 'ollama' }, deps));
-  assert.equal(r.available, false);
-  assert.deepEqual(r.models, []);
-});
-
-test("listModels('ollama') reachable-but-zero -> available:true + [] (distinct from failure)", async () => {
-  const { deps } = fakeDeps({ ollamaList: async () => [] });
-  const r = asResult(await listModels({ provider: 'ollama' }, deps));
-  assert.equal(r.available, true);
-  assert.deepEqual(r.models, []);
-});
-
-// ── invalid provider + read-only ───────────────────────────────────
-
-test('unknown/missing provider -> invalid-params error result, no throw, no mutation', async () => {
-  for (const bad of [{ provider: 'gpt' }, {}, null, 'ollama', { provider: 42 }]) {
-    const { deps, ollamaCalls } = fakeDeps({});
-    const v = await listModels(bad, deps);
-    assert.ok('error' in v, `expected invalid-params for ${JSON.stringify(bad)}`);
-    assert.match(v.error, /invalid-params/);
-    assert.equal(v.recoverable, false);
-    assert.equal(ollamaCalls(), 0, 'invalid provider must not touch the lister');
+  for (const message of ['fetch failed', 'ollama model list timed out after 4000ms', 'ollama model list returned a malformed response (no models array)']) {
+    const down = fakeDeps(async () => { throw new Error(message); });
+    assert.deepEqual(await listModels({ provider: 'ollama' }, down.deps), { provider: 'ollama', available: false, models: [] }, message);
   }
+
+  const none = fakeDeps(async () => [{ id: 'llama3:8b' }]);
+  assert.deepEqual(await listModels({ provider: 'ollama' }, none.deps), { provider: 'ollama', available: true, models: [] }, 'reachable but none of the listed models installed');
+
+  for (const bad of [{ provider: 'gpt' }, {}, null, 'ollama', { provider: 42 }]) {
+    const probe = fakeDeps();
+    const v = await listModels(bad, probe.deps);
+    assert.deepEqual(v, { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, JSON.stringify(bad));
+    assert.equal(probe.ollamaCalls(), 0);
+  }
+});
+
+test('list-models.test.ts: for every family listModels agrees with models.definitions, and an installed unlisted Ollama model appears in neither', async () => {
+  useFixture();
+  const lister = async (): Promise<readonly ModelInfo[]> => [{ id: 'qwen3.6:27b' }, { id: 'llama3:8b' }];
+  const { deps } = fakeDeps(lister);
+  const definitions = await modelDefinitions(deps);
+  for (const family of definitions.families) {
+    const listed = asResult(await listModels({ provider: family.id }, deps));
+    const expected = family.models
+      .filter(m => family.id !== 'ollama' || m.installed === true)
+      .map(m => (m.displayName !== undefined ? { id: m.id, displayName: m.displayName } : { id: m.id }));
+    assert.deepEqual(listed.models, expected, family.id);
+    assert.ok(expected.length > 0, `${family.id}: the agreement is checked on a non-empty list`);
+  }
+  const ollamaDefs = definitions.families.find(f => f.id === 'ollama')!;
+  assert.ok(!ollamaDefs.models.some(m => m.id === 'llama3:8b'));
+  assert.ok(!asResult(await listModels({ provider: 'ollama' }, deps)).models.some(m => m.id === 'llama3:8b'));
+});
+
+test('list-models.test.ts: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel', () => {
+  const offenders: string[] = [];
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) { walk(p); continue; }
+      if (!/\.(ts|mts|tsx)$/.test(name)) continue;
+      if (/\b(getCuratedCatalog|CuratedCatalog|CatalogModel)\b/.test(readFileSync(p, 'utf8'))) offenders.push(relative(SRC, p));
+    }
+  };
+  walk(SRC);
+  // This file names the symbols only inside its own test title and regex.
+  assert.deepEqual(offenders.filter(f => f !== join('daemon', '__tests__', 'list-models.test.ts')), []);
 });
 
 test('read-only: the injected deps expose only read methods (no config-write path reachable)', async () => {
-  // The dispatch only calls deps.catalog().modelsFor and deps.ollamaList — both reads.
-  const { deps } = fakeDeps({ ollamaList: async () => [{ id: 'a' }], catalog: stubCatalog({ 'cli-claude': [{ id: 'b' }] }) });
+  useFixture();
+  const { deps } = fakeDeps(async () => [{ id: 'qwen:1b' }]);
   await listModels({ provider: 'ollama' }, deps);
   await listModels({ provider: 'cli-claude' }, deps);
-  // No mutation surface exists on ListModelsDeps; this test documents + guards that.
-  assert.deepEqual(Object.keys(deps).sort(), ['catalog', 'ollamaList']);
+  assert.deepEqual(Object.keys(deps).sort(), ['catalogVersion', 'ollamaList', 'registry']);
 });
-
-// ── no-cloud-REST source scan (k1/ac4) ────────────────────────────
 
 test('source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/ac4)', () => {
   const src = readFileSync(join(HERE, '..', 'list-models.ts'), 'utf8');
-  const imports = [...src.matchAll(/^import[^\n]*from\s+'([^']+)'/gm)].map(m => m[1]!);
+  const imports = [...src.matchAll(/^import[^;]*?from\s+'([^']+)'/gms)].map(m => m[1]!);
   for (const spec of imports) {
     assert.doesNotMatch(spec, /@anthropic|openai|undici|node:http|node:https|axios/i, `forbidden import: ${spec}`);
   }
-  // The only runtime dependencies are the ollama provider + the sc1 catalog.
-  assert.ok(imports.some(s => s.includes('model-catalog')), 'reads the curated catalog (sc1)');
-  assert.ok(imports.some(s => s.includes('providers/ollama')), 'lists ollama via the vetted provider');
+  const runtime = [...src.matchAll(/^import\s+(?!type\b)[^;]*?from\s+'([^']+)'/gms)].map(m => m[1]!);
+  assert.deepEqual(runtime, ['./model-definitions.js'], 'its only runtime dependency is the models.definitions projection');
 });
 
-// ── handler-map wiring (t3): revived, not offlineRpc (lc1) ───────────────
-
 test("handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)", () => {
-  const idx = readFileSync(join(HERE, '..', 'handler-runtime.ts'), 'utf8');   // the handler map (Epic 86197ac6 s2/t1)
+  const idx = readFileSync(join(HERE, '..', 'handler-runtime.ts'), 'utf8');
   const entries = [...idx.matchAll(/'providers\.listModels':\s*([^\n,]+)/g)].map(m => m[1]!.trim());
   assert.equal(entries.length, 1, 'exactly one providers.listModels entry (no dead duplicate) — lc1');
   assert.match(entries[0]!, /listModels\(params\)/, 'delegates to the sc2 listModels dispatch');
   assert.doesNotMatch(entries[0]!, /offlineRpc/, 'no longer the offline stub');
 });
 
-// ── integration: the real getCuratedCatalog cloud path (post-boot) ─────────
-
-test('integration: listModels(cloud) sources from the REAL getCuratedCatalog after validateModelCatalog', async () => {
-  await validateModelCatalog();   // no override -> the shipped catalog
-  const expected = getCuratedCatalog().modelsFor('cli-claude').map(m => m.id);
-  const r = asResult(await listModels({ provider: 'cli-claude' }));   // default deps = real getCuratedCatalog + real ollama lister (not reached for cloud)
+test('integration: listModels(cli-claude) with the default deps lists the shipped Claude models', async () => {
+  // The shipped asset, with an empty approved-model store (not the user's own), so the answer is deterministic.
+  _setApprovedModelsPathForTests(join(tmp(), 'approved-models.json'));
+  const r = asResult(await listModels({ provider: 'cli-claude' }));   // default deps; a CLI family never reaches the real ollama lister
   assert.equal(r.available, true);
-  assert.deepEqual(r.models.map(m => m.id), expected);
-  assert.ok(r.models.length > 0, 'the shipped catalog has cli-claude models');
+  assert.deepEqual(r.models.map(m => m.id), validateModelCatalog().families.find(f => f.id === 'cli-claude')!.models.map(m => m.id));
+});
+
+test("list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error", async () => {
+  useFixture();
+  const { deps } = fakeDeps(async () => [{ id: 'qwen:1b' }]);
+  const ids = getModelRegistry().families().map(f => f.id);
+  assert.deepEqual([...ids].sort(), ['cli-claude', 'cli-codex', 'ollama']);
+  for (const id of ids) {
+    const r = await listModels({ provider: id }, deps);
+    assert.ok(!('error' in r), id);
+    assert.equal((r as ModelListResult).provider, id);
+  }
+  for (const bad of ['cli-gemini', 'Ollama', 'claude', 'codex', '']) {
+    assert.deepEqual(await listModels({ provider: bad }, deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, bad);
+  }
+
+  // The same text when the definitions file lists the families in another order.
+  _resetModelRegistryForTests();
+  const reordered = fixture();
+  reordered['defaultFamily'] = 'cli-codex';
+  reordered['families'] = [...(reordered['families'] as unknown[])].reverse();
+  const assets = tmp();
+  writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(reordered));
+  _setModelCatalogDirForTests(assets);
+  assert.deepEqual(getModelRegistry().families().map(f => f.id), ['ollama', 'cli-codex', 'cli-claude']);
+  assert.deepEqual(await listModels({ provider: 'cli-gemini' }, fakeDeps().deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false });
 });

@@ -79,6 +79,17 @@ export async function readRegistrySnapshot(path: string, allowMissing = false): 
 		throw new ManagedStoreError('registry-unreadable');
 	}
 }
+/** Readonly saved-ID reservation view. Never resolves credentials or allocates a pool. */
+export async function savedConnectionIds(path: string): Promise<ReadonlySet<string>> {
+	const snapshot = await readRegistrySnapshot(path, true);
+	if (snapshot.missing && await managementMarkerExists(path)) throw new ManagedStoreError('recovery-required');
+	const ids = new Set<string>();
+	for (const entry of snapshot.file.connections) {
+		if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || !entry.id || ids.has(entry.id)) throw new ManagedStoreError('registry-unreadable');
+		ids.add(entry.id);
+	}
+	return ids;
+}
 /** Exercise the legacy writeFile recipe in an independent same-UID process.
  * The writable control proves permission denial is real rather than a broken child.
  */

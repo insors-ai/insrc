@@ -41,6 +41,8 @@ export type RunStage =
 // ---------------------------------------------------------------------------
 
 export interface RunAnalyzeArgs {
+	/** Trusted staged carrier; never reconstructed from serialized input. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId: string;
 	readonly userPrompt: string;
 	/** Starting scope ref -- usually workspace; the classifier may
@@ -71,6 +73,8 @@ export interface RunAnalyzeArgs {
  * surface plug into.
  */
 export interface RunAnalyzeOpts {
+	/** Trusted carrier lives in options as well as the direct internal entry. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/**
 	 * Streaming progress callback. Fires synchronously at every
 	 * pipeline transition (stage boundaries, planner attempts,
@@ -304,6 +308,9 @@ export type RunErrorCode =
 	// cancellation
 	| 'aborted'
 	// catch-all
+	| 'session-expired'
+	| 'unsupported-temporary'
+	| 'resource-limit'
 	| 'internal-error';
 
 // ---------------------------------------------------------------------------

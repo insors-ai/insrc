@@ -1,3 +1,4 @@
+import { stepSavedPlan as stepPlan } from '../../../analyze/__tests__/fixtures/saved-exploration-executor.js';
 /**
  * The step tool reports a missing answer prompt with what its lookups found
  * (LLD-b9d5c5c40df5a574-s1, task t15).
@@ -21,7 +22,7 @@ import { renderCompletenessLine } from '../../../analyze/completeness.js';
 import { _setSynthesizerPromptPathForTest } from '../../../analyze/context/synthesizer.js';
 import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
 import { measureLookupResults } from '../../../analyze/measure.js';
-import { stepPlan } from '../../../analyze/explore/executor.js';
+
 import type { Exploration, ExplorationPlan } from '../../../analyze/explore/types.js';
 import { getDb } from '../../../db/client.js';
 import { upsertEntities } from '../../../db/entities.js';

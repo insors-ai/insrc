@@ -1,3 +1,5 @@
+import { driverResourceLog } from '../driver-log-policy.js';
+import type { DriverFactoryContext } from '../../../shared/db-driver.js';
 import { allDriverWork } from '../driver-work.js';
 /**
  * Oracle driver (kind: `oracle`).
@@ -14,7 +16,6 @@ import { allDriverWork } from '../driver-work.js';
 
 import oracledb from 'oracledb';
 
-import { getLogger } from '../../../shared/logger.js';
 import type {
 	AggregateRequest,
 	AggregateResult,
@@ -69,7 +70,6 @@ import type { OrchestratorDeps } from './rdbms-common.js';
 import type { PlanResult, QueryAst } from '../../../shared/db-driver.js';
 import { prismaSchemaDescription } from './rdbms-prisma.js';
 
-const log = getLogger('db-oracle');
 
 function clampOracleListLimit(n: number | undefined): number {
 	if (typeof n !== 'number' || !Number.isFinite(n)) return 500;
@@ -95,6 +95,7 @@ function parseUrl(url: string): oracledb.PoolAttributes {
 
 /** Exported for its tests; the registry is how the daemon reaches it. */
 export class OracleDriver implements RdbmsDriver {
+	readonly #runtimeLog: ReturnType<typeof driverResourceLog>;
 	readonly family = 'rdbms' as const;
 	readonly kind = 'oracle';
 
@@ -102,9 +103,16 @@ export class OracleDriver implements RdbmsDriver {
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
-	constructor(readonly id: string, url: string, prismaPath?: string) {
+	constructor(readonly id: string, url: string, prismaPath?: string, context?: DriverFactoryContext) {
+		this.#runtimeLog = driverResourceLog('db-oracle', context);
 		this.poolPromise = oracledb.createPool(parseUrl(url));
 		this.prismaPath = prismaPath;
+	}
+
+	async probeReachability(): Promise<void> {
+		const pool = await this.poolPromise, connection = await pool.getConnection();
+		try { await connection.execute('SELECT 1 FROM DUAL'); }
+		finally { await connection.close(); }
 	}
 
 	async describe(target: string): Promise<SchemaDescription> {
@@ -137,7 +145,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text }, 'sample query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'sample query' }));
 
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
@@ -168,7 +176,7 @@ export class OracleDriver implements RdbmsDriver {
 			? { limit: 50, where: queryAst.where }
 			: { limit: 50 };
 		const { text, values } = buildSampleSql(queryAst.target, opts, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text }, 'explain query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text }, message: 'explain query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
@@ -191,7 +199,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileAggregate(target, request, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id, text: compiled.text }, 'aggregate query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id, text: compiled.text }, message: 'aggregate query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
@@ -210,7 +218,7 @@ export class OracleDriver implements RdbmsDriver {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, ORACLE_DIALECT);
-		log.debug({ id: this.id }, 'distinct query');
+		this.#runtimeLog.emit('debug', () => ({ fields: { id: this.id }, message: 'distinct query' }));
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
 		try {
@@ -498,11 +506,11 @@ function splitTarget(target: string): { owner: string | null; table: string } {
 registerDriver({
 	kind: 'oracle',
 	family: 'rdbms',
-	factory: async (config: ConnectionConfig) => {
+	factory: async (config: ConnectionConfig, context?: DriverFactoryContext) => {
 		if (config.url === undefined) {
 			throw new Error(`data-driver: oracle connection '${config.id}' missing url`);
 		}
 		const prismaPath = config.schemaSource?.type === 'prisma' ? config.schemaSource.path : undefined;
-		return new OracleDriver(config.id, config.url, prismaPath);
+		return new OracleDriver(config.id, config.url, prismaPath, context);
 	},
-});
+}, 'resource-context');

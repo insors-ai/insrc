@@ -1,3 +1,5 @@
+import { assertAnalysisAudience, analysisAdmissionEnvelope } from './analysis-admission.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -7,14 +9,15 @@
  * The one-shot analyze tool's body (`insrc_analyze`), moved out of the MCP
  * server into the daemon's step tree (Epic c2ba6fa6, Story s11). A caller may
  * wrap the run in its own provider context; with no wrap given, the run is
- * wrapped in the step context's client, converted to 'cli-claude' |
- * 'cli-codex' for runWithClientProviderContext.
+ * wrapped in the family the step context's client implies (familyForClient)
+ * for runWithClientProviderContext.
  */
 
 import { buildRun } from '../analyze-rpc.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { getLogger } from '../../shared/logger.js';
-import { clientProviderKind, stepClient } from '../../shared/step-context.js';
+import { stepClient } from '../../shared/step-context.js';
+import { familyForClient } from '../model-registry.js';
 import { runWithClientProviderContext } from '../../analyze/context/shaper-provider.js';
 import type { AnalyzeShaperProviderKind } from '../../config/analyze.js';
 import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';
@@ -83,7 +86,9 @@ export function checkOneShotArgs(raw: unknown): AnalyzeOneShotArgs | string {
 export async function runAnalyzeOneShot(
 	rawArgs: unknown,
 	deps: AnalyzeOneShotDeps = {},
+	execution?: ConnectionExecutionContext,
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean | undefined }> {
+	try { assertAnalysisAudience(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	const args = checkOneShotArgs(rawArgs);
 	if (typeof args === 'string') return errorResult(args);
 	// Resolve the repo path: explicit param > CWD-contained registered repo >
@@ -99,7 +104,7 @@ export async function runAnalyzeOneShot(
 
 	// Assemble the intent. This mirrors the shape the daemon's
 	// `analyze.context.buildRun` RPC accepts (see daemon/analyze-rpc.ts).
-	const clientDefault = deps.clientDefault ?? clientProviderKind(stepClient());
+	const clientDefault = deps.clientDefault ?? familyForClient(stepClient());
 	const runId  = `mcp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const rpcParams = oneShotRunParams(args, repoPath, runId);
 	const intent = rpcParams.intent;

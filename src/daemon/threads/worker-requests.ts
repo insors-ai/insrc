@@ -18,8 +18,9 @@ import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
+import { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
-import type { CancelEnvelope, FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './channel.js';
+import type { CancelEnvelope, CompletionEnvelope, FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 
 const log = getLogger('worker-requests');
@@ -63,17 +64,22 @@ export function serveRequests(port: Port, unheld: ForwardRequest, opts: ServeReq
 			void (opts.beforeTestExit?.() ?? Promise.resolve()).finally(() => process.exit(1));
 			return;
 		}
+		const lifetime = msg.trackCompletion === true ? new RequestLifetime() : undefined;
+		if (lifetime) void Promise.all([lifetime.completed, lifetime.drained]).then(() => {
+			inflight.delete(requestId);
+			port.postMessage({ kind: 'complete', requestId } satisfies CompletionEnvelope);
+		}).catch(() => { /* A closed channel owns no delivery target. */ });
 		let ended = false;
 		const deliver: DeliverEnvelope = (envelope) => {
-			if (envelope.kind === 'reply') { ended = true; inflight.delete(requestId); }
+			if (envelope.kind === 'reply') { ended = true; if (!lifetime) inflight.delete(requestId); }
 			else {
 				const stream = (envelope.frame as IpcStreamMessage).stream;
-				if (stream === 'done' || stream === 'error') { ended = true; inflight.delete(requestId); }
+				if (stream === 'done' || stream === 'error') { ended = true; if (!lifetime) inflight.delete(requestId); }
 			}
 			post(port, envelope, method);
 		};
-		const cancel = forward(msg, deliver);
-		if (!ended) inflight.set(requestId, cancel);
+		const cancel = forward(lifetime ? { ...msg, lifetime } : msg, deliver);
+		if (lifetime || !ended) inflight.set(requestId, cancel);
 	};
 	port.on('message', onMessage);
 	return () => port.off('message', onMessage);

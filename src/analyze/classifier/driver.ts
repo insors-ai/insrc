@@ -32,6 +32,8 @@
  *      design/analyze-context-builder.md "Invocation modes / classification"
  */
 
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -107,6 +109,7 @@ export class ClassifierPromptMissingError extends Error {
 // ---------------------------------------------------------------------------
 
 export interface ClassifyDriverArgs {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly input:    ClassifyInput;
 	readonly opts:     ClassifyOpts;
 	readonly provider?: LLMProvider | undefined;
@@ -119,12 +122,16 @@ export interface ClassifyDriverArgs {
 
 /** The connection check a classify call validates with. */
 export function connectionCheckFor(
-	args: Pick<ClassifyDriverArgs, 'connectionExists'>,
+	args: Pick<ClassifyDriverArgs, 'connectionExists' | 'connectionExecution'>,
 ): (id: string) => Promise<boolean> {
+	const execution = args.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return id => connectionIsRegistered(id, undefined, execution);
 	return args.connectionExists ?? connectionIsRegistered;
 }
 
 export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
 	const { input, opts } = args;
 	const cfg = loadAnalyzeConfig();
 
@@ -134,6 +141,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>
 	const bundle = await shaper.buildClassificationBundle(input, {
 		runId:        opts.runId,
 		bypassCache:  opts.bypassCache ?? false,
+		connectionExecution: args.connectionExecution,
 	});
 	const bundleMd = assembleMarkdown(bundle);
 
@@ -171,7 +179,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>
 		}
 
 		// Semantic validation: scopeRef.kind ↔ target match + path resolution.
-		const failure = await validateIntentSemantics(raw, connectionCheckFor(args));
+		const failure = await validateIntentSemantics(raw, connectionCheckFor(args), args.connectionExecution);
 		if (failure === null) {
 			log.debug(
 				{ runId: opts.runId, target: raw.target, attempt },

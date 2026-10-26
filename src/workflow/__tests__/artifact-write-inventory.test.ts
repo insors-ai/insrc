@@ -256,6 +256,7 @@ test('the write inventory lists the binding and attach writers as meta-only writ
 	}
 	assert.match(read('src/workflow/tracker/attach.ts'), /export function recordAttachment\(/);
 	// no other production file writes the two fields
-	const others = productionFiles(join(ROOT, 'src')).filter(f => !/tracker\/(binding|attach|unit-head)\.ts$|artifact-core\/|workflow\/storage\.ts$/.test(f) && /envelope['"\]]*\s*[:=][^;\n]*\b(binding|attachments)\b/.test(read(f)));
+	// connection-session-rpc.ts has a session pipe's delivery `envelope` and a connection `binding`: not meta.envelope.
+	const others = productionFiles(join(ROOT, 'src')).filter(f => !/tracker\/(binding|attach|unit-head)\.ts$|artifact-core\/|workflow\/storage\.ts$|daemon\/connection-session-rpc\.ts$/.test(f) && /envelope['"\]]*\s*[:=][^;\n]*\b(binding|attachments)\b/.test(read(f)));
 	assert.deepEqual(others, []);
 });

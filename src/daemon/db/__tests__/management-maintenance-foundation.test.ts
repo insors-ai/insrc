@@ -8,7 +8,7 @@ import { ManagementOwnerLease } from '../management-owner-lease.js';
 import type { ProcessObservation } from '../management-owner-lease.js';
 import { privateDirectory, writeProtected, readProtected } from '../management-files.js';
 import { proveWriterFence, proveProtectedRegistry, assertUnmanagedWrite } from '../managed-store.js';
-import { connectionManagementEnablement } from '../management-enablement.js';
+import { connectionManagementEnablement, CONNECTION_TEST_GATE_FILES, CONNECTION_FOUNDATION_GATE_FILES } from '../management-enablement.js';
 async function fixture(use: (directory: string) => Promise<void>) {
 	const dir = await mkdtemp(join(tmpdir(), 'cm-maintenance-'));
 	try {
@@ -57,16 +57,23 @@ test('release evidence remains disabled until the completed build supplies verif
 	const path = join(dir, 'disabled.json');
 	await writeFile(path, JSON.stringify({ version: 2, ready: false }));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
-	await writeFile(path, JSON.stringify({ version: 2, ready: true, sourceFiles: {}, compiledFiles: {}, inventoryDigest: 'a'.repeat(64), testReportDigest: 'a'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc8'] }));
+	await writeFile(path, JSON.stringify({ version: 2, ready: true, sourceFiles: {}, compiledFiles: {}, inventoryDigest: 'a'.repeat(64), testReportDigest: 'a'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] }));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
 	const { createHash } = await import('node:crypto');
 	const names = ['management-enablement', 'management-files', 'management-owner-lease', 'management-state', 'management-adoption', 'management-startup', 'managed-store', 'management-tickets', 'management', 'driver-profiles'];
 	const sourceFiles: Record<string, string> = {};
 	for (const name of names)
 		sourceFiles['daemon/db/' + name + '.ts'] = createHash('sha256').update(await readFile(new URL('../' + name + '.ts', import.meta.url))).digest('hex');
-	const valid = { version: 2, ready: true, sourceFiles, compiledFiles: sourceFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc8'] };
+	for (const name of [...CONNECTION_FOUNDATION_GATE_FILES,...CONNECTION_TEST_GATE_FILES]) sourceFiles[name+'.ts']=createHash('sha256').update(await readFile(new URL('../../../'+name+'.ts',import.meta.url))).digest('hex');
+	const valid = { version: 2, ready: true, sourceFiles, compiledFiles: sourceFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
 	await writeFile(path, JSON.stringify(valid));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, true);
+	await writeFile(path,JSON.stringify({...valid,scopes:['sc1','sc2','sc3','sc8']}));
+	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready,false,'S001-only evidence cannot enable testing');
+	await writeFile(path,JSON.stringify(valid));
+	await writeFile(path,JSON.stringify({...valid,sourceFiles:Object.fromEntries(CONNECTION_TEST_GATE_FILES.map(name=>[name+'.ts',sourceFiles[name+'.ts']]))}));
+	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready,false,'S002-only hashes cannot enable missing foundation evidence');
+	await writeFile(path,JSON.stringify(valid));
 	const initial = (await connectionManagementEnablement(pathToFileURL(path))).digest;
 	await writeFile(path, JSON.stringify({ ...valid, testReportDigest: 'c'.repeat(64) }));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).digest, initial, 'report timestamps do not change running code identity');

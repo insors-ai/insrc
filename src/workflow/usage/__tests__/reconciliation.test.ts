@@ -57,7 +57,15 @@ test('aggregate fallback and qualified complete-leaf basis never add overlapping
   assert.equal(fallbackResult.knownTokens, '100'); assert.deepEqual(fallbackResult.basisEventIds, ['aggregate-end']);
   const decomposed = [...rows, reconcile(ids, ['a-end', 'b-end'], 'complete-leaf')];
   const leafResult = await reduceGroupCore(stream(decomposed), evidence(decomposed));
-  assert.equal(leafResult.knownTokens, '70'); assert.deepEqual(leafResult.basisEventIds, ['a-end', 'b-end']);
+  assert.equal(leafResult.knownTokens, '0'); assert.deepEqual(leafResult.basisEventIds, []);
+  assert.ok(leafResult.quality.includes('unavailable'));
+  assert.ok(leafResult.notices.includes('native-coverage-unverified:reconcile'));
+  assert.deepEqual(await reduceGroupCore(stream([...decomposed].reverse()), evidence(decomposed)), leafResult);
+  const successor = reconcile(ids, ['aggregate-end'], 'aggregate-fallback', 'fallback-successor', 'reconcile');
+  const restored = [...decomposed, successor];
+  const restoredResult = await reduceGroupCore(stream(restored), evidence(restored));
+  assert.equal(restoredResult.knownTokens, '100'); assert.deepEqual(restoredResult.basisEventIds, ['aggregate-end']);
+  assert.equal(restoredResult.notices.some(notice => notice.startsWith('native-coverage-unverified:')), false);
   const conflictingControl = reconcile(ids, ['a-end', 'b-end'], 'complete-leaf');
   const ambiguous = [...fallback, conflictingControl];
   const conflict = await reduceGroupCore(stream(ambiguous), evidence(ambiguous));

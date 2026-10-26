@@ -40,3 +40,15 @@ passed on Node 22.22.1 (`/tmp/tu1-s1-t11-node22-packaging.log`). The prior full
 backend sweep failed outside usage: 51 of its 58 failed titles reproduced on the
 baseline, while seven remain unverified; see
 `/tmp/tu1-s1-full-suite-comparison.json`. This is not a full-suite green claim.
+
+User-approved adjustment, 2026-10-27: v1 complete-leaf reconciliation cannot
+replace an aggregate. A source capability declaration, observed-record closure
+and arbitrary evidence event IDs do not prove invocation-specific native leaf
+coverage. The persisted variant stays readable for compatibility, but reduction
+returns `native-coverage-unverified:<eventId>` and conflict/unavailable quality,
+with no selected contribution. It never silently switches the selected basis.
+Use an explicit aggregate-fallback reconciliation (including a successor to a
+rejected leaf reconciliation) to retain the aggregate exactly once. A later
+contract extension must represent native coverage proof before leaf replacement
+can be enabled. This restriction was chosen explicitly by the user after review;
+it supersedes the earlier planned complete-leaf acceptance behavior for v1.

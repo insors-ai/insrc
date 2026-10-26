@@ -102,7 +102,6 @@ export function resolveObservationBasis(rows: readonly LedgerRecord[], starts: R
     if (current.length !== 1 || invalid) rejectReconciliation('reconciliation-conflict:/');
     else {
       const row = current[0]!, control = row.control;
-      const leaf = candidates.filter(candidate => starts.get(candidate.callId)!.context.granularity === 'model-call');
       if (!equalIds(control.candidateEventIds, candidates.map(candidate => candidate.eventId)) || control.selectedEventIds.length === 0) rejectReconciliation(`reconciliation-conflict:${row.eventId}`);
       else {
         selected = candidates.filter(candidate => control.selectedEventIds.includes(candidate.eventId));
@@ -111,8 +110,12 @@ export function resolveObservationBasis(rows: readonly LedgerRecord[], starts: R
         else if (control.coverage === 'aggregate-fallback') {
           if (selected.length !== 1 || starts.get(selected[0]!.callId)!.context.granularity === 'model-call' || selected[0]!.observation.sourceCapabilityId !== capability.capabilityId) rejectReconciliation(`reconciliation-conflict:${row.eventId}`);
         } else {
-          const pendingLeaf = [...starts.values()].some(start => inGroup(start, scope) && start.context.granularity === 'model-call' && !heads.has(start.callId));
-          if (capability.qualification !== 'source-inspected' || capability.physicalCallCoverage !== 'complete' || capability.granularity !== 'model-call' || control.evidenceEventIds.length === 0 || pendingLeaf || !equalIds(selected.map(item => item.eventId), leaf.map(item => item.eventId)) || selected.some(item => item.observation.sourceCapabilityId !== capability.capabilityId)) rejectReconciliation(`reconciliation-conflict:${row.eventId}`);
+          // User-approved v1 restriction: source capabilities and observed-set
+          // closure cannot prove invocation-specific native leaf completeness.
+          // Keep the persisted variant readable, but never authorize replacement
+          // until a future contract represents that proof explicitly.
+          rejectReconciliation(`native-coverage-unverified:${row.eventId}`);
+          quality.add('unavailable');
         }
       }
     }

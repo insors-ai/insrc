@@ -501,6 +501,8 @@ A TUI adapter turns ModelDefinitionsResult back into a ModelDefinitionsFile + ap
   - **resolved**: Correct the LLD evidence mapping — User choice: trace k5 from the DEF through HLD c1 to the s4 check result shape (src/daemon/model-check.ts); s5's tests cover approve → restart → save. _(2026-10-26T12:32:39.470Z)_
 - `qda996789` — sc5 (owner s3): config.write still accepts models.byRepo.<repo>.tiers (and partial tier fields) from any client; only the next boot's reconcile prunes per-repo tiers. The TUI no longer sends either (the command bar refuses model keys); should config.write refuse them so VS Code (s6), JetBrains (s7) and hand-written requests are held to k6 too?
   - **resolved**: Reject at config.write — User choice: config.write refuses writes that would leave models.byRepo.<repo>.tiers (or fields under it), naming the keys; built inside s5 as a small daemon change with tests. _(2026-10-26T12:38:09.353Z)_
+- `q4dc21996` — recommendModels keeps a generic VRAM estimate for the local model to size the context shape; the definitions carry no memory figure for an Ollama model. Should the definitions gain one, or is the estimate acceptable?
+  - **resolved**: Allow model-specific overrides — User choice: Ollama model definitions gain an optional memory estimate (validated when present) and the shipped definitions carry it for every shipped Ollama model; models.definitions exposes it; recommendModels uses it and falls back to the generic estimate only when absent. _(2026-10-26T12:39:58.034Z)_
 
 ## Citations
 

@@ -189,6 +189,13 @@
         "choice": "Reject at config.write",
         "rationale": "User choice: config.write refuses writes that would leave models.byRepo.<repo>.tiers (or fields under it), naming the keys; built inside s5 as a small daemon change with tests.",
         "resolvedAt": "2026-10-26T12:38:09.353Z"
+      },
+      "q4dc21996": {
+        "question": "recommendModels keeps a generic VRAM estimate for the local model to size the context shape; the definitions carry no memory figure for an Ollama model. Should the definitions gain one, or is the estimate acceptable?",
+        "status": "resolved",
+        "choice": "Allow model-specific overrides",
+        "rationale": "User choice: Ollama model definitions gain an optional memory estimate (validated when present) and the shipped definitions carry it for every shipped Ollama model; models.definitions exposes it; recommendModels uses it and falls back to the generic estimate only when absent.",
+        "resolvedAt": "2026-10-26T12:39:58.034Z"
       }
     }
   },

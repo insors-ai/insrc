@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import { cleanup } from '../../../__tests__/_proc.js';
 import { resolveApprovalClass } from '../../../approval-policy.js';
 import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
+import { setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import { getTool } from '../../../registry.js';
 import type { ApprovalGate, ApprovalRequest } from '../../../types.js';
 import { git, newRepo, registerForTests, richRepo, toolDeps } from './_repo.js';
@@ -60,7 +61,7 @@ test('git-rm.test.ts: empty paths, 201 paths and a path with a NUL are rejected 
 	registerForTests(); const { requests } = approver();
 	standIn = installStandInGit('exit 0');
 	const many = Array.from({ length: 201 }, (_, i) => `f${i}`);
-	for (const paths of [[], many, ['a\u0000b'], ['']]) {
+	for (const paths of [[], many, ['a\u0000b']]) {
 		const r = await executeTool('git_rm', { cwd: '/tmp', paths }, toolDeps('/tmp'));
 		assert.equal(r.failure?.kind, 'rejected', JSON.stringify(paths).slice(0, 30));
 	}
@@ -78,4 +79,23 @@ test('git-rm.test.ts: the class is destructive, valid input always asks, and it 
 		assert.equal(existsSync(join(wt, 'a.txt')), false, 'removed in the worktree');
 		assert.equal(existsSync(join(repo, 'a.txt')), true, 'not in the main work tree');
 	} finally { for (const d of [repo, wt, remote]) rmSync(d, { recursive: true, force: true }); }
+});
+
+/** The tool's own limit, as a ceiling: with every limit scaled down a sleeping git is stopped after about limit x scale. */
+async function assertCeiling(run: () => Promise<{ success: boolean; failure?: { kind?: string } | undefined }>, limitMs: number): Promise<void> {
+	const scale = 0.05;
+	standIn = installStandInGit('sleep 30');
+	setShellTimeoutScaleForTests(scale);
+	const t0 = Date.now();
+	const r = await run();
+	const took = Date.now() - t0;
+	setShellTimeoutScaleForTests(undefined);
+	assert.equal(r.success, false);
+	assert.equal(r.failure?.kind, 'timed-out');
+	assert.ok(took >= limitMs * scale * 0.8 && took < limitMs * scale * 2 + 800, `stopped after ${took} ms, expected about ${limitMs * scale} ms`);
+}
+
+test('git-rm.test.ts: the 30000 ms ceiling stops a sleeping git with a timed-out failure that says the outcome is unknown', async () => {
+	registerForTests(); approver();
+	await assertCeiling(() => executeTool('git_rm', { cwd: '/tmp', paths: ['a'] }, toolDeps('/tmp')), 30_000);
 });

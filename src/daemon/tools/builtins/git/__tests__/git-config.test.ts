@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import { withEmptyPath } from '../../../__tests__/_bin.js';
 import { cleanup } from '../../../__tests__/_proc.js';
 import { resolveApprovalClass } from '../../../approval-policy.js';
+import { setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import { executeTool } from '../../../executor.js';
 import { getTool } from '../../../registry.js';
 import { gitConfigTool } from '../config.js';
@@ -25,7 +26,7 @@ import type { StandIn } from './_standin.js';
 
 let standIn: StandIn | undefined;
 let restore: (() => void) | undefined;
-afterEach(() => { standIn?.restore(); if (standIn) cleanup(standIn.dir); standIn = undefined; restore?.(); restore = undefined; });
+afterEach(() => { setShellTimeoutScaleForTests(undefined); standIn?.restore(); if (standIn) cleanup(standIn.dir); standIn = undefined; restore?.(); restore = undefined; });
 
 test('git-config.test.ts: exit 0 gives found true with the value trimmed, including an empty value, and the argv is git config --get key', async () => {
 	registerForTests();
@@ -80,4 +81,23 @@ test('git-config.test.ts: a key that is not dotted, or starts with -, is rejecte
 	assert.deepEqual(standIn.calls(), []);
 	assert.equal(resolveApprovalClass(getTool('git_config')!, { key: 'user.name' }), 'none');
 	assert.equal(gitConfigTool.approval, undefined);
+});
+
+/** The tool's own limit, as a ceiling: with every limit scaled down a sleeping git is stopped after about limit x scale. */
+async function assertCeiling(run: () => Promise<{ success: boolean; failure?: { kind?: string } | undefined }>, limitMs: number): Promise<void> {
+	const scale = 0.05;
+	standIn = installStandInGit('sleep 30');
+	setShellTimeoutScaleForTests(scale);
+	const t0 = Date.now();
+	const r = await run();
+	const took = Date.now() - t0;
+	setShellTimeoutScaleForTests(undefined);
+	assert.equal(r.success, false);
+	assert.equal(r.failure?.kind, 'timed-out');
+	assert.ok(took >= limitMs * scale * 0.8 && took < limitMs * scale * 2 + 800, `stopped after ${took} ms, expected about ${limitMs * scale} ms`);
+}
+
+test('git-config.test.ts: the 5000 ms ceiling stops a sleeping git with a timed-out failure', async () => {
+	registerForTests();
+	await assertCeiling(() => executeTool('git_config', { cwd: '/tmp', key: 'user.name' }, toolDeps('/tmp')), 5_000);
 });

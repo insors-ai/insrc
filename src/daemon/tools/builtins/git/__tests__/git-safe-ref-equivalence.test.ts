@@ -52,5 +52,5 @@ test('git-safe-ref-equivalence.test.ts: every character class the predicate refu
 test('git-safe-ref-equivalence.test.ts: SAFE_PATH refuses only a NUL', () => {
 	const path = new RegExp(SAFE_PATH, 'u');
 	for (const p of ['a.txt', '-x', '--flag', 'dir/a b', '..', 'ü', 'a\nb', '~', ':']) assert.equal(path.test(p), true, JSON.stringify(p));
-	for (const p of ['a\u0000b', '\u0000', '']) assert.equal(path.test(p), false, JSON.stringify(p));
+	for (const p of ['a\u0000b', '\u0000', 'ab\u0000']) assert.equal(path.test(p), false, JSON.stringify(p));
 });

@@ -17,8 +17,8 @@ export const SAFE_REF = `^${SAFE_REF_BODY}`;
 /** SAFE_REF that also starts with 'refs/'. */
 export const SAFE_REFS_REF = `^(?=refs/)${SAFE_REF_BODY}`;
 
-/** A path after '--': only a NUL is refused (a path may start with '-', since the argv puts '--' before the paths). */
-export const SAFE_PATH = '^[^\\u0000]+$';
+/** A path after '--': only a NUL is refused (an empty string is not a NUL; git itself reports a pathspec that matches nothing) (a path may start with '-', since the argv puts '--' before the paths). */
+export const SAFE_PATH = '^[^\\u0000]*$';
 
 /** A dotted git config key such as user.email or branch.main.remote. */
 export const CONFIG_KEY = '^[A-Za-z][A-Za-z0-9-]*(\\.[A-Za-z0-9_-]+)+$';

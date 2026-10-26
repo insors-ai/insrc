@@ -14,6 +14,7 @@ import { rmSync } from 'node:fs';
 
 import { cleanup } from '../../../__tests__/_proc.js';
 import { resolveApprovalClass } from '../../../approval-policy.js';
+import { setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import { executeTool } from '../../../executor.js';
 import { getTool } from '../../../registry.js';
 import { git, registerForTests, richRepo, toolDeps } from './_repo.js';
@@ -21,7 +22,7 @@ import { installStandInGit } from './_standin.js';
 import type { StandIn } from './_standin.js';
 
 let standIn: StandIn | undefined;
-afterEach(() => { standIn?.restore(); if (standIn) cleanup(standIn.dir); standIn = undefined; });
+afterEach(() => { setShellTimeoutScaleForTests(undefined); standIn?.restore(); if (standIn) cleanup(standIn.dir); standIn = undefined; });
 
 function withRepo(fn: (repo: string) => Promise<void>): Promise<void> {
 	const { repo, remote, wt } = richRepo();
@@ -77,4 +78,23 @@ test('git-ls-remote.test.ts: an unsafe remote or pattern and nine patterns are r
 	}
 	assert.deepEqual(standIn.calls(), []);
 	assert.equal(resolveApprovalClass(getTool('git_ls_remote')!, { remote: 'o' }), 'none');
+});
+
+/** The tool's own limit, as a ceiling: with every limit scaled down a sleeping git is stopped after about limit x scale. */
+async function assertCeiling(run: () => Promise<{ success: boolean; failure?: { kind?: string } | undefined }>, limitMs: number): Promise<void> {
+	const scale = 0.05;
+	standIn = installStandInGit('sleep 30');
+	setShellTimeoutScaleForTests(scale);
+	const t0 = Date.now();
+	const r = await run();
+	const took = Date.now() - t0;
+	setShellTimeoutScaleForTests(undefined);
+	assert.equal(r.success, false);
+	assert.equal(r.failure?.kind, 'timed-out');
+	assert.ok(took >= limitMs * scale * 0.8 && took < limitMs * scale * 2 + 800, `stopped after ${took} ms, expected about ${limitMs * scale} ms`);
+}
+
+test('git-ls-remote.test.ts: the 30000 ms ceiling stops a sleeping git with a timed-out failure', async () => {
+	registerForTests();
+	await assertCeiling(() => executeTool('git_ls_remote', { cwd: '/tmp', remote: 'origin' }, toolDeps('/tmp')), 30_000);
 });

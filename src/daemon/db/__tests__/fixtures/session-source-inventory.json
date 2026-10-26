@@ -5893,11 +5893,19 @@
         [
           "serialization",
           "svc.config.write"
+        ],
+        [
+          "serialization",
+          "writeResult"
+        ],
+        [
+          "serialization",
+          "writeResult"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "28f5a28b93b5900b9668cc2455fc62e52edcb20c8b7940222c4b80e3c662d5a1",
-      "sourceDigest": "495f57d55ef80c05666bef5786c878d1c6e2e09e0dbfec3be217503619e8ff00",
+      "siteCount": 8,
+      "sitesDigest": "bd55207ff364d332c205993df243c0845ca84ff1a22f68b3c06fc9323a909100",
+      "sourceDigest": "a0a9a5bcd4b76837c5999394a8ecfb019229edc86aadc4fd85656776e39a3a49",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -5969,6 +5977,22 @@
       "siteCount": 1,
       "sitesDigest": "88067e898f65401d84cf7d0f524d34839744e7da17cac62699953d2ceff1af4e",
       "sourceDigest": "c5a0d8fe2a1e0d564b2b1a0d47376eac50af1774f2502f575ceec4dcc383cfa5",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/cli/panes/RepoModelsView.tsx": {
+      "classification": "client-process-boundary",
+      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
+      "sites": [
+        [
+          "serialization",
+          "svc.config.write"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "0e66cf3107d616fa2a0943aff99280795cc32632d1e279b3e882932b02df5d28",
+      "sourceDigest": "24f8640621608a92982cb52f410422188776f2037e8cdeb27fb80637bdd14791",
       "boundaries": [
         "serialization"
       ]

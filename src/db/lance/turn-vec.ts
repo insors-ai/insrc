@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `turn_vec` LanceDB table -- conversation-turn embeddings.
  *
@@ -68,10 +69,12 @@ export function _resetTurnVecCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function writeTurnEmbedding(row: TurnVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeTurnEmbeddings([row]);
 }
 
 export async function writeTurnEmbeddings(rows: readonly TurnVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getTurnVecTable();
 	// Native upsert via mergeInsert -- see entity-vec.ts:writeEntityEmbeddings
@@ -104,6 +107,7 @@ export async function searchTurnVecs(
 	queryVec: number[],
 	opts: SearchTurnsOpts,
 ): Promise<TurnVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.repo === '') return [];
 	const table = await getTurnVecTable();
 	const types = opts.types ?? ['turn', 'directive', 'merged'];
@@ -148,6 +152,7 @@ export async function searchTurnVecsBySession(
 	queryVec: number[],
 	opts: SearchTurnsBySessionOpts,
 ): Promise<TurnVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.sessionId === '') return [];
 	const table = await getTurnVecTable();
 	const types = opts.types ?? ['turn', 'directive', 'merged'];
@@ -182,6 +187,7 @@ export async function searchTurnVecsBySession(
  * them (e.g. compaction's clustering / centroid / dedup steps).
  */
 export async function getTurnVecsByIds(ids: readonly string[]): Promise<Map<string, Float32Array>> {
+	assertNoSessionPersistence();
 	const out = new Map<string, Float32Array>();
 	if (ids.length === 0) return out;
 	const table = await getTurnVecTable();
@@ -200,12 +206,14 @@ export async function getTurnVecsByIds(ids: readonly string[]): Promise<Map<stri
 // ---------------------------------------------------------------------------
 
 export async function deleteTurnVec(id: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (id === '') return;
 	const table = await getTurnVecTable();
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
 export async function deleteTurnVecsByIds(ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const table = await getTurnVecTable();
 	const list = ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
@@ -213,11 +221,13 @@ export async function deleteTurnVecsByIds(ids: readonly string[]): Promise<void>
 }
 
 export async function deleteTurnVecsBySessionId(sessionId: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getTurnVecTable();
 	await table.delete(`sessionId = '${escapeLanceString(sessionId)}'`);
 }
 
 export async function deleteTurnVecsForRepo(repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getTurnVecTable();
 	await table.delete(`repo = '${escapeLanceString(repo)}'`);
 }

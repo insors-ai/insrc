@@ -1605,7 +1605,7 @@
       ],
       "siteCount": 45,
       "sitesDigest": "c7e010de3b7d51b43dcd8e9ed0ce1126c99e97a63120249651f5f12cc52a8315",
-      "sourceDigest": "145eab3e02519b2c83b0bfa017ae5b348716b09f68dc2b3623a23152a8540bdd",
+      "sourceDigest": "77c75351f9f251cf1f3009f8e4f59ebbb9b0a5a48251d06f9c5a7ad05a356530",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2109,7 +2109,7 @@
       ],
       "siteCount": 20,
       "sitesDigest": "912ad775730610a5d7071cfc54e5fa8a2c2a1bec068f6f5d03c574392c505c09",
-      "sourceDigest": "72f8165d0033195746fec89c79cfb0d90a56dd0947732c6c4493c2488d9e3947",
+      "sourceDigest": "2a43e405d7af17b0e86e5a73664b5a68cd85ea22a753ac4a1b51d8dbb26bb68c",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2133,7 +2133,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "ab6f0a529c022eaff5c5fec06b248effb91824bbba10f1d82c9a7f3ffaf44850",
-      "sourceDigest": "04ef2206a93232d29638144c334932ddd211bc311f3aaa3a3586e4a38ce9a97a",
+      "sourceDigest": "1c20e99714164c9333d782a7c4a4cd597692fc8d9368f422a0c6c82700e520c2",
       "boundaries": [
         "diagnostic"
       ]
@@ -2229,7 +2229,7 @@
       ],
       "siteCount": 21,
       "sitesDigest": "56aa9bbdda91e09d4a28cbbab082dbeb8d63ab6f611b6e57eb8245324d515b8f",
-      "sourceDigest": "ee968638f31916b19407bb8e2a50a527f031d07131123a54977cf31d323f9508",
+      "sourceDigest": "9d1a021841c19841a2d55abab0a26ab3bdbebc6ceb572bbb0cf4388277355737",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -2971,7 +2971,7 @@
       ],
       "siteCount": 19,
       "sitesDigest": "fd0c44bc69e60e00f6c243668c37d4444e4538fbc6e09da060d98c7a96988b02",
-      "sourceDigest": "ae2cfee64b96cdf89addbe244756a60930375f5853da77bd1c3ccf31733267ed",
+      "sourceDigest": "6b6cbe658454f4b51d9d8641cd4dd795a1ab30a222fd888157fe909214244ad7",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -3707,7 +3707,7 @@
       ],
       "siteCount": 49,
       "sitesDigest": "af8c3a6dd874a2cce5c29e1aa7918332bc8a2176f1a1f1c10c4e7f2d022803c1",
-      "sourceDigest": "037a65afdcd327318c7f6c58729e7d517c8334a102d091fd41338456ad38aa43",
+      "sourceDigest": "a8a79c0d84ccd4ea2dd904a7cbf77d2a519c25dc6081c9a2e60bbe81d0d51ed5",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -4178,7 +4178,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "a0dc8d0563e28de80b7a08a86086ebceeab53d053b7d7fa541f8421275b042e9",
-      "sourceDigest": "d2e8da4f429c75115107445f18b990bcff25cc247f42fcc65f4aeb11177f7e36",
+      "sourceDigest": "2a03269051c5894deafdf9f8dee046f18f79efbce364bd7a7b4e95d982b39676",
       "boundaries": [
         "diagnostic"
       ]
@@ -4367,7 +4367,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "2def50309c6fca0d4eb6a0b9d0042feaa9d252a2ea30d7a82f5e14437aa2ee0a",
-      "sourceDigest": "ccdf767bcf4e06d411186741e233035367616ca024dc602c8366ecb6cde7c251",
+      "sourceDigest": "5fbc8d3336062bda74e2ff64104e0c834e6e7089da2dd1c1ff2bfea15773153b",
       "boundaries": [
         "diagnostic"
       ]
@@ -6333,6 +6333,10 @@
           "appendFileSync"
         ],
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -6365,14 +6369,15 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "b57e5091cd9c0b7527143dc3da07098298f42cb2441b1c3cc918ff5fc889c091",
-      "sourceDigest": "4283121359db038ddfcbd8a5992745ca80acbf1388f9df9564d64d8e1b674939",
+      "siteCount": 11,
+      "sitesDigest": "32934e5f65ce373ad517fa7aa41497769b4a30045b846dc78916186ea1268441",
+      "sourceDigest": "7f0f085ce11de39cdbc1cc54cd982947a9aa475fe44818d695a41a2b2773831a",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
         "filesystem-write",
-        "provider-use"
+        "provider-use",
+        "serialization"
       ]
     },
     "src/config/local.ts": {
@@ -6539,6 +6544,30 @@
       "classification": "configuration-boundary",
       "rationale": "Existing static configuration/model selection may be read without temporary data. Session-derived config/feedback/cache writes are not admitted, and selected model/coreFloor cannot be weakened for privacy fallback.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "serialization",
           "Buffer.alloc"
@@ -6828,9 +6857,9 @@
           "writeConfigEmbedding"
         ]
       ],
-      "siteCount": 72,
-      "sitesDigest": "b6caa67d5b61b5e566fbb1b801ba948a73e6ab4c896ec70919a4c02f00226587",
-      "sourceDigest": "99750f92c14cee475809ec881c42df340d99b5da5b36da8e8dd867b97f2c10d0",
+      "siteCount": 78,
+      "sitesDigest": "425867825e19db1871d1f80d385a5f02b7ce005c4990cc619808c17e2d19cada",
+      "sourceDigest": "642f52bee016203a6725b508a012cb91d8957226609aebdff242b57711d21180",
       "boundaries": [
         "serialization",
         "storage-call",
@@ -15381,6 +15410,54 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -15393,9 +15470,9 @@
           "randomBytes(16).toString"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "4c8c28cd8926e1bd11e5f7bf79903fa139e095a485b5b409c61b4e80dcaf9666",
-      "sourceDigest": "afcd12b48ed17d911200f5525ee3c7b5fd9d6a527f60f84d7c0e24e9b580f990",
+      "siteCount": 15,
+      "sitesDigest": "508ac3b4e2cb05433c2f4b795329af5936d9be6fc14c6b9cc8ede0ce576bd679",
+      "sourceDigest": "de32e58d6bee15c9b46e51f7e4fc234ea4691ecef5dbf35a9ebfad67357d4ef2",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -18367,6 +18444,10 @@
           "addCompactedTurns"
         ],
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "storage-call",
           "clusterBySimilarity"
         ],
@@ -18491,11 +18572,12 @@
           "union"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "fc315b3a3e24a9af4af9aee582e562e51ca16c2b9c4b1a61879130f16da5883a",
-      "sourceDigest": "e58e389fddd244862d5871015c7054432c717f82dcff5acdcdfbf91c9694bcb0",
+      "siteCount": 33,
+      "sitesDigest": "9623285297f764413039d1918cd0f811cd872e604748ee0278ff5f906c6dba13",
+      "sourceDigest": "f0720fec39d5e20401d5c1a9268f6e91c145957df456c77926a87bb37f5f7c7c",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -18503,6 +18585,102 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "serialization",
           "Buffer.alloc"
@@ -19428,9 +19606,9 @@
           "writeTurnInTxn"
         ]
       ],
-      "siteCount": 231,
-      "sitesDigest": "b85004527055721477d64723b0de96af1ff7ee265e6d885bd457ebc316eed2ec",
-      "sourceDigest": "3b4c110f38383659566d03d8794454f60f56039f0322888a86ddd181c350a831",
+      "siteCount": 255,
+      "sitesDigest": "eebba1d0b9f62df25b45f290deaa3c175d04f29ac93ba2d4afc0bc58e6bc8b06",
+      "sourceDigest": "2cb09939d2317b86645635af9968bc5a2b177f8e93cef15e00cefa609d4d86ee",
       "boundaries": [
         "serialization",
         "storage-call",
@@ -19457,6 +19635,46 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "backup.close"
@@ -20110,9 +20328,9 @@
           "writeIfCurrentInTxn"
         ]
       ],
-      "siteCount": 163,
-      "sitesDigest": "d3970d87e77a96c5414bf441fa51f86445f263ec7897f3ba282b28860b74910a",
-      "sourceDigest": "c4e4d6ce9c0423d3c4f958396f73e5909cf31e606fa66e616397f9515a816979",
+      "siteCount": 173,
+      "sitesDigest": "33de6772deaeff64b53089c0bfcac5f51c9c4c8107357ddea430d1ae6c46e834",
+      "sourceDigest": "d7d8a624b5a1503f0341c70d4485304a897cd59c4006db81c56428f99e0dbf66",
       "boundaries": [
         "filesystem-read",
         "serialization",
@@ -20130,6 +20348,30 @@
         [
           "storage-call",
           "allocateEntityIdInTxn"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "serialization",
@@ -21456,9 +21698,9 @@
           "writer"
         ]
       ],
-      "siteCount": 333,
-      "sitesDigest": "63e50c452ae4ef604fabefdbb4615ec14ff77e87d97831f911d101112c950a12",
-      "sourceDigest": "1c25d2e846772bed05c6be58e7701591e76aeb6394b530e391a3a8b4ad5bc9fa",
+      "siteCount": 339,
+      "sitesDigest": "e9f3ceeda4f968fb0a72f998eb743661cc188a6e33b98a9cb6a5de7b1ad99ec6",
+      "sourceDigest": "6ccd6688e0d63bf6ab97dda50fd00d6800ed5e0a756127ce985838526fd45186",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -21470,6 +21712,10 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "serialization",
           "Buffer.alloc"
@@ -21595,9 +21841,9 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 31,
-      "sitesDigest": "b1fe411c7fdc0f61d18ef3f2a98e4b6792cc645c1255474f810d766f88c8826c",
-      "sourceDigest": "e8257f449754a5759ecf62abbe359ed9b9f214725ab3c0360f7d7e91f94aafee",
+      "siteCount": 32,
+      "sitesDigest": "cda5b88709079fe3a0f4aa2208aad7765f10a5f5437c24fef54976dc9a665145",
+      "sourceDigest": "92da902dc5a28c54bfc8e203b34095f36e8a8d9e9f72163bced51e095ba550cc",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -21610,6 +21856,10 @@
         [
           "serialization",
           "(value as Buffer).toString"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "serialization",
@@ -21656,9 +21906,9 @@
           "store.exportNames.getRange"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "d99c29c2588cf43339d68fcbd3b17a535d0213d0dc279383911cf75e0cf610d1",
-      "sourceDigest": "85dbeffa2e6329cdeb2cd9d5e75b567718bcd5bfa339c84f0a76ba7a3d31f4e9",
+      "siteCount": 13,
+      "sitesDigest": "8ca8e7d89cb13f1e6a5b24824b246b3465378fdacd84d8bff87b871679d663d4",
+      "sourceDigest": "c11284e73a493677b32af32c1395490782827487ce34804c28cabbad2fbf97f1",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -23066,7 +23316,7 @@
         ],
         [
           "storage-call",
-          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = store;\n\t\treturn store;\n\t})"
+          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
         ],
         [
           "storage-call",
@@ -23079,6 +23329,58 @@
         [
           "storage-call",
           "assertMayOpen"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "storage-call",
@@ -23283,6 +23585,10 @@
         [
           "storage-call",
           "guard.healthSetBy"
+        ],
+        [
+          "storage-call",
+          "guardGraphHandles"
         ],
         [
           "unresolved-call",
@@ -23949,6 +24255,10 @@
           "super"
         ],
         [
+          "unresolved-call",
+          "value.apply"
+        ],
+        [
           "filesystem-write",
           "writeFileSync"
         ],
@@ -23965,9 +24275,9 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 227,
-      "sitesDigest": "3daf2d6774a5df88bdd9f963e22b472189e612faa7eaf724780725cc2d9af7db",
-      "sourceDigest": "e560123fd7618c716c594d88558c620155a267c7e8b9e835d906c6db46964fe2",
+      "siteCount": 242,
+      "sitesDigest": "11c89522d5868993372615132c9bce57a80c0267b0835bd8bc40574e9cf73cc6",
+      "sourceDigest": "41c2a9c67486be0cbe7f4aaea4bc1e1b6f15baf3a9dba3b8f660294afb3d550c",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -24076,6 +24386,18 @@
           "(AWAITING_REASON_TEXT[reason] ?? (k => `${plural(k, 'relationship awaits', 'relationships await')} a target (${reason})`))"
         ],
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "storage-call",
           "deriveIndexState"
         ],
@@ -24168,10 +24490,11 @@
           "zeroPending"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "a100525131986d0551336714bdbc111c08bbc2d5ba53eb87e1439bf46d1c725f",
-      "sourceDigest": "87abc467ffc544aefd6df652cd365dabe5614e39b62198516eb890c5a43455da",
+      "siteCount": 27,
+      "sitesDigest": "f8464e0578c8b301a3efb060c49637b6f68e4a0e204ba48b9b8496710b09829a",
+      "sourceDigest": "737c33611a604edb0d476d06173ee072d3d8283857dfca4ef18f75fbc1449d6c",
       "boundaries": [
+        "serialization",
         "storage-call"
       ]
     },
@@ -24179,6 +24502,34 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "clampListLimit"
@@ -24360,9 +24711,9 @@
           "upsertArtifactVecBatch"
         ]
       ],
-      "siteCount": 45,
-      "sitesDigest": "66685888ed3f604e8ef219048c8ce40d13b23ba5a431b7fb13656af94d4fd357",
-      "sourceDigest": "e256f2fc8e61a4a895d849011fc2f20aa02569328e88606b0ac6bbdedb04efbe",
+      "siteCount": 52,
+      "sitesDigest": "00e0bd4420bfbf0141cb677dfde9c287e5d8c50fc6400b97ee312d3fc6badc9e",
+      "sourceDigest": "dd35356c75acafe57f66c81fe413a260d74798171f9e19042a6e423c790a1414",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -24372,6 +24723,14 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "conn.openTable"
@@ -24509,11 +24868,12 @@
           "turnVecRowCountForSession"
         ]
       ],
-      "siteCount": 34,
-      "sitesDigest": "0286b3e88719a8457a7d60e496f3c5d0d7d6eb3852330ed05d0275903ce2b27c",
-      "sourceDigest": "d0e0123efb935a4b3998befc62cf1c384b327175e2e981c2a80681f62dfb2399",
+      "siteCount": 36,
+      "sitesDigest": "fd86a5ec8e42eb8d82c2f68a4dc3733bf468470e297b0ba87741b19b0a1537cf",
+      "sourceDigest": "1c221a1a925ae2c0bd8ef3c31a8fb6967583ac5384ef12c8d62352120f726034",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -24521,6 +24881,30 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "escapeLanceString"
@@ -24614,9 +24998,9 @@
           "writeConfigEmbeddings"
         ]
       ],
-      "siteCount": 23,
-      "sitesDigest": "de894d7db247075d9a9a2ff0fbb5bf68f51f301fcf8e8f6db6a2a658567d8ea7",
-      "sourceDigest": "f6cda8c9a1293ab39c964aa519b2ade29312483eba55d115963f560f6fb2b9db",
+      "siteCount": 29,
+      "sitesDigest": "41b074da3c16bce944b0ba9d2bf54c831924208325390afee00febdcbe7e33da",
+      "sourceDigest": "53259690d1e84f582bba8b61bd4e0950d2397eef0779abd49c797ba2ec1eb71c",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -24628,7 +25012,39 @@
       "sites": [
         [
           "storage-call",
-          "(async (): Promise<lancedb.Connection> => {\n\t\tconst t0 = Date.now();\n\t\tif (!existsSync(_path)) {\n\t\t\tmkdirSync(_path, { recursive: true });\n\t\t}\n\t\t// Strong read consistency: every read checks for writes committed through\n\t\t// another connection, which is what another daemon thread holds (Epic\n\t\t// 86197ac6, s1). Writes were always consistent.\n\t\tconst conn = await lancedb.connect(_path, { readConsistencyInterval: 0 });\n\t\tlog.info(\n\t\t\t{ initMs: Date.now() - t0, path: _path },\n\t\t\t'lance connection initialised',\n\t\t);\n\t\t_instance = conn;\n\t\treturn conn;\n\t})"
+          "(async (): Promise<lancedb.Connection> => {\n\t\tconst t0 = Date.now();\n\t\tif (!existsSync(_path)) {\n\t\t\tmkdirSync(_path, { recursive: true });\n\t\t}\n\t\t// Strong read consistency: every read checks for writes committed through\n\t\t// another connection, which is what another daemon thread holds (Epic\n\t\t// 86197ac6, s1). Writes were always consistent.\n\t\tconst conn = await lancedb.connect(_path, { readConsistencyInterval: 0 });\n\t\tlog.info(\n\t\t\t{ initMs: Date.now() - t0, path: _path },\n\t\t\t'lance connection initialised',\n\t\t);\n\t\t_instance = guardLanceHandle(conn);\n\t\treturn _instance;\n\t})"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "storage-call",
@@ -24645,6 +25061,22 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "storage-call",
+          "guardLanceHandle"
+        ],
+        [
+          "storage-call",
+          "guardLanceHandle"
+        ],
+        [
+          "storage-call",
+          "guardLanceHandle"
+        ],
+        [
+          "storage-call",
+          "guardLanceHandle"
         ],
         [
           "storage-call",
@@ -24668,6 +25100,10 @@
         ],
         [
           "storage-call",
+          "protect"
+        ],
+        [
+          "storage-call",
           "resolveStorePath"
         ],
         [
@@ -24679,12 +25115,13 @@
           "seedIfMissing"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "0c4c986bc4df1f539978d17f3a6d316e19ac652c04e92f43be819c2db40d52be",
-      "sourceDigest": "255649e04d16f8841f6ff3b76d3d9633acf287641158cd05cfa353026252c4bb",
+      "siteCount": 26,
+      "sitesDigest": "d26c794013086d9052951ce22cb117f9b316e46282cc5badbb5fb17e37c33da6",
+      "sourceDigest": "6b7b30aebe1f86504cf3df42944f9635b257b5757e4d0aea8cb713c4e13f3425",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
+        "serialization",
         "storage-call"
       ]
     },
@@ -24695,6 +25132,46 @@
         [
           "storage-call",
           "addEntityEmbeddings"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "storage-call",
@@ -24841,9 +25318,9 @@
           "writeEntityEmbeddings"
         ]
       ],
-      "siteCount": 37,
-      "sitesDigest": "f57cae0fa381343dd2b1234a6d677a2abacf20e39037d25b261c62e0bd0ac12f",
-      "sourceDigest": "fbf20fdc59ff9b56a9630fc237634daf53532d9597f5fa56602d11b03bc9697f",
+      "siteCount": 47,
+      "sitesDigest": "ae034b9f84a4f45cb6db7a3d700b566342ad5c16b5302030cbc527a9753e870e",
+      "sourceDigest": "c0a61e7f404eadec48fe87f30a5258dae29779fa2669615fde7d9fe0740e5519",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -24853,6 +25330,26 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "escapeLanceString"
@@ -24982,10 +25479,11 @@
           "upsertResponseSegmentVecBatch"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "bd641c0f3331b73dc811c0ac063b136a1fcdf804841eea96404e1d2ca19668cb",
-      "sourceDigest": "83492656ba0e3788a15d082e409190a44d601d09de4594422176d10eb28deb76",
+      "siteCount": 37,
+      "sitesDigest": "69566ba8d3e24022a11a177a0fdc26fc81cd3a292cb9f40f2c526d2b75a4709f",
+      "sourceDigest": "a2247c194270cef545f47c4faf1136d348e8f34dbd9ba7e6ee696ae707c86f8f",
       "boundaries": [
+        "serialization",
         "storage-call"
       ]
     },
@@ -24993,6 +25491,30 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "escapeLanceString"
@@ -25090,9 +25612,9 @@
           "writeSessionEmbeddings"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "106a0d3facfabcf8053954de0b3fdf39ba1293902a8881bfb73b2f2ab9ad334b",
-      "sourceDigest": "7752035d28b8f919f7ecf2face5baf3b858e1d1ea0008ad40fedcab819591329",
+      "siteCount": 30,
+      "sitesDigest": "4cb748fa99cca88c45e99a1bebf25393d0ec0d1b349a9851f9e7aaa294113d49",
+      "sourceDigest": "55b11467967ca2fd61af83d55a143e0a89d9ab6cc1610e416c814f9200f7256d",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -25102,6 +25624,42 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "escapeLanceString"
@@ -25263,9 +25821,9 @@
           "writeTurnEmbeddings"
         ]
       ],
-      "siteCount": 40,
-      "sitesDigest": "cee61fe80d1831a413ce193b3a99dd963299fd0d8f86517a71a2f7cd65c974b4",
-      "sourceDigest": "bf56be6bed8b9fa56128d4f5bd370af3e2298649cb921c722a296074b25e434f",
+      "siteCount": 49,
+      "sitesDigest": "bae9a6f09577451d86ca191c252dcf5677b9e48ef1a683100270c8820ab0c996",
+      "sourceDigest": "808a23c2be293eb75e3eebd19b0aef6c5b8bdee032394579f7a058ab41bcdfa8",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -25275,6 +25833,26 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "escapeLanceString"
@@ -25364,9 +25942,9 @@
           "writeBullets"
         ]
       ],
-      "siteCount": 22,
-      "sitesDigest": "5caf123bf5af44a9eb2c0d28a38b03b03235ed5782857b5b1028008df26f0a85",
-      "sourceDigest": "2a00aa42b9dc28dda3f36525670c5640e13db1a503ead4da9e53e2f4578846bd",
+      "siteCount": 27,
+      "sitesDigest": "fc54c51389139b8f17f85d2283269f2cb95b2a15d7c92e347eaf33942a136ea2",
+      "sourceDigest": "acf127d2eaa0e7ab2871cca1a4c67c1f56b55d39fcd10e9a84d3b363fe1a67cf",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -25399,6 +25977,46 @@
         [
           "storage-call",
           "advanceGenerationInTxn"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "storage-call",
@@ -26097,9 +26715,9 @@
           "writePendingRowInTxn"
         ]
       ],
-      "siteCount": 180,
-      "sitesDigest": "1626adbae57cfdcf39ad0875732a10e57a1fdae99752c4704ac5100820afcc95",
-      "sourceDigest": "047cc92c9222c2a8c040d17470c14907e53b7c47f52eae914d1686fff4a07b0e",
+      "siteCount": 190,
+      "sitesDigest": "8f4bd418fe0483303e2873e1829961f8200b427ba92fb41abcb6f94e3ef93165",
+      "sourceDigest": "d986947dafeefec2df234c9fa3859b0b8e29d5db08cae77e8a35d4ee77b1eea1",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -26113,6 +26731,18 @@
         [
           "storage-call",
           "allocateRepoIdInTxn"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
         ],
         [
           "serialization",
@@ -26343,9 +26973,9 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 58,
-      "sitesDigest": "9e296ca612146c6d204619ee11e3644f82366859b381045e40b295d38adc9911",
-      "sourceDigest": "8701b4619e259817cb6ee5d561f19ee5824cabfb629adb7024f6f3e4b1da11a0",
+      "siteCount": 61,
+      "sitesDigest": "655f020669654f627c2073f3f43cbc839eebd5b8e759afe8c8595a8d9c047fcb",
+      "sourceDigest": "1a47ad75763cb1d6d4dd83bed9ff5dcd7eb9ee63419259470afa9fccaea868b3",
       "boundaries": [
         "filesystem-read",
         "serialization",
@@ -26710,6 +27340,90 @@
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "storage-call",
           "assertParentAllowed"
@@ -27431,9 +28145,9 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 180,
-      "sitesDigest": "ce272971b293e73c1135f99e82b942f7b4f5f8c011809f4b7b0e7ae8e160b4ba",
-      "sourceDigest": "bc4f4be00502cbd46b5991e1c60437c92830076c139f9b4343e801c5a7f1380f",
+      "siteCount": 201,
+      "sitesDigest": "c86780c861567022454d52537abdfcfc7038bdb5eb6ab843f81f6db8c62f14bd",
+      "sourceDigest": "0491f58bd3cba5cab969c8ba96362f91f4a5b683dcf13c49ea5120a4bc6e417b",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -30230,7 +30944,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "f5463792f7442de1b6667602cae5523983ee3eaac5853d02b5079c5c61c9b9e0",
-      "sourceDigest": "b80391bd6ff229ad58a98eb5029727f577b06a82a840d26802ff53ee6ede3eeb",
+      "sourceDigest": "335c3f62457e16fce7646babdadc0a31538faa68c6c5a62f673155da9c8c0f8a",
       "boundaries": [
         "unresolved-call"
       ]
@@ -30906,6 +31620,22 @@
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
       "sites": [
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -30954,9 +31684,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "a82ea5e80e01ffff927572012d8250848dd1ae21c6e230543c67a1b700c2ff63",
-      "sourceDigest": "8e6ea9ce0417d30a121f2cce5df3a22621e906b5f3f64000456edab1d6e0a029",
+      "siteCount": 16,
+      "sitesDigest": "c5f7b8e8a4e47e5b193b8d290c2503f6ed5b13bd03d62232656441c4437cfa73",
+      "sourceDigest": "46d2c4086801368a83d05aadd855657e6394b47da3311e2f23e6145e4af8c2d0",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -31098,6 +31828,22 @@
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
       "sites": [
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -31150,9 +31896,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "2548219a68e7402130f1016b7f94a82bcebfaecfc6250465de6b09b381159677",
-      "sourceDigest": "82a05d98e1fba770e1cb63cea360f1ffe2864c57272cf7c0f0d6436de490ac8f",
+      "siteCount": 17,
+      "sitesDigest": "cd9f9da4edada195573e1a7e808b6b98e3e47d1d96cd96152769251c9478b85a",
+      "sourceDigest": "5d70d379408be6f8a72706b6abb45012c17ed3c2c4634ccf22c93715ccf032bd",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -34182,6 +34928,22 @@
         ],
         [
           "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
           "JSON.parse"
         ],
         [
@@ -34225,9 +34987,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "1370b4058e9493a8d6d11a82f97c0b767d55e28c9af1478fc649af9de10231af",
-      "sourceDigest": "42db5319c91fc60e886452957d4ec801993cd9ee7da3f5c27f2c16188db45df6",
+      "siteCount": 17,
+      "sitesDigest": "ffc6e8176ff4461f443f047831aa187bbf41363df107cc05435600bc35f97870",
+      "sourceDigest": "d926a234b0dc9193c12fe0a00e3fa3f5341db3364401d33e535e1add89ce6e8b",
       "boundaries": [
         "filesystem-read",
         "filesystem-write",

@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed entity persistence. Phase 2.2 of
  * docs/plans/storage-migration-lmdb-lance.md.
@@ -194,6 +195,7 @@ export function unwrapEmbedding(raw: unknown): number[] {
 // ---------------------------------------------------------------------------
 
 export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (entities.length === 0) return;
 
 	const { unique, duplicateIds } = dedupeEntitiesById(entities);
@@ -366,6 +368,7 @@ export async function reindexFile(
 	filePath: string,
 	parsed: Entity[],
 ): Promise<void> {
+	assertNoSessionPersistence();
 	// Phase 2.10 / 2026-05-07 guardrail: reject reindex calls with
 	// invalid repo paths. Same intent as the upsertEntities check --
 	// don't let an empty / banned-root repoPath silently auto-allocate
@@ -520,6 +523,7 @@ export async function reindexFile(
 }
 
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const ids = await collectEntityU64sByFile(store, filePath);
 	await detachDeleteEntities(store, ids);
@@ -547,6 +551,7 @@ async function deleteUnresolvedForFileCascade(filePath: string): Promise<void> {
  * file=''; S001). Missing/stale ids are skipped (no throw); idempotent.
  */
 export async function deleteEntitiesById(_db: DbClient, ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const store = await getGraphStore();
 	const u64s: bigint[] = [];
@@ -575,6 +580,7 @@ export async function deleteEntitiesForRepo(
 		readonly carryDocSummaries?: boolean | undefined;
 	},
 ): Promise<{ returnedToPending: number; carriedDocSummaries: number }> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const repoId = await withReadTxn(store, () => lookupRepoIdInTxn(store, repo));
 	if (repoId === undefined) return { returnedToPending: 0, carriedDocSummaries: 0 };
@@ -937,6 +943,7 @@ export async function updateEmbedding(
 	embedding: number[],
 	embeddingModel: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	// Two-step write: update the LMDB row first (sync inside a write
 	// txn), then persist the vector to Lance. Lance write happens after
 	// the LMDB commit so a Lance failure leaves the EntityRow's

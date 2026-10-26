@@ -53,6 +53,8 @@
  * `db/graph/{entities,edges,traversal,bulk}.ts` (Phase 2.x).
  */
 
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
+import { currentStepContext } from '../../shared/step-context.js';
 import { closeSync, existsSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
@@ -337,6 +339,7 @@ let _path: string = PATHS.lmdb;
 export function getGraphStorePath(): string { return _path; }
 
 export function setGraphStorePath(path: string): void {
+	assertNoSessionPersistence();
 	if (_instance !== null || _initPromise !== null) throw new Error('close graph store before changing its path');
 	_path = path;
 }
@@ -563,6 +566,8 @@ export function resetStoreHealthForTests(): void {
  * place the failure is raised: no later call reaches the library.
  */
 export async function getGraphStore(): Promise<GraphStore> {
+	// A Session read may use the initialized structural graph, never initialize or migrate it.
+	if (_instance === null && currentStepContext()?.connectionExecution?.mode === 'session-memory') assertNoSessionPersistence();
 	const health = currentHealth();
 	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${health.operation})`);
 	// While daemon maintenance compacts on another thread, this thread neither uses nor reopens the store.
@@ -755,8 +760,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			},
 			'lmdb graph store initialised',
 		);
-		_instance = store;
-		return store;
+		_instance = guardGraphHandles(store);
+		return _instance;
 	})();
 
 	try {
@@ -861,6 +866,7 @@ export interface CompactResult {
  * rejects. Without it, behaviour is unchanged.
  */
 export async function compactGraphStore(opts: { readonly beforeRename?: () => Promise<boolean> } = {}): Promise<CompactResult> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot compact: graph store is not open');
@@ -1161,6 +1167,7 @@ export async function backupGraphStore(
 	targetPath: string,
 	opts: { compact?: boolean } = {},
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot backup: graph store is not open');
@@ -1173,6 +1180,7 @@ export async function backupGraphStore(
  * Errors are logged but not re-thrown (the daemon is on the way down).
  */
 export async function closeGraphStore(): Promise<void> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	_instance = null;
 	_initPromise = null;
@@ -1233,6 +1241,7 @@ function isThenable(v: unknown): boolean {
 export async function withWriteTxn<T>(
 	fn: (store: GraphStore) => SyncResult<T>,
 ): Promise<T> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const run = (): T => {
 		const result = fn(store) as T;
@@ -1297,6 +1306,7 @@ export function withWriteTxnSync<T>(
 	store: GraphStore,
 	fn: () => T,
 ): T {
+	assertNoSessionPersistence();
 	const health = currentHealth();
 	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${health.operation})`);
 	try {
@@ -1368,4 +1378,36 @@ function readSchemaVersion(store: GraphStore): number | undefined {
 
 function writeSchemaVersion(store: GraphStore, version: number): void {
 	void store.meta.put(META_SCHEMA_VERSION, version);
+}
+
+
+const graphMutators = new Set(['put', 'putSync', 'remove', 'removeSync', 'clearAsync', 'clearSync', 'drop', 'dropSync', 'batch', 'transaction', 'transactionAsync', 'transactionSync', 'childTransaction', 'openDB', 'backup', 'close', 'resize', 'resetReadTxn']);
+const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState']);
+/** Guard the owned handles too: a warm handle must not bypass transaction admission.
+ * Structural read methods keep their native iterator API; history/cache/config/plan
+ * handles deny all Session method calls. Guards consult context only to DENY. */
+function guardGraphHandles(store: GraphStore): GraphStore {
+	for (const key of Object.keys(store) as (keyof GraphStore)[]) {
+		const raw = store[key];
+		const denyReads = !structuralTables.has(key);
+		const methods = new Map<PropertyKey, unknown>();
+		Reflect.set(store, key, new Proxy(raw, {
+			get(target, property) {
+				if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
+				const value = Reflect.get(target, property, target);
+				if (typeof value !== 'function') return value;
+				if (!methods.has(property)) methods.set(property, (...args: unknown[]) => {
+					if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
+					return value.apply(target, args);
+				});
+				return methods.get(property);
+			},
+			set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
+		}));
+	}
+	return new Proxy(store, {
+		set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
+		defineProperty(target, property, descriptor) { assertNoSessionPersistence(); return Reflect.defineProperty(target, property, descriptor); },
+		deleteProperty(target, property) { assertNoSessionPersistence(); return Reflect.deleteProperty(target, property); },
+	});
 }

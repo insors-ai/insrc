@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * Conversation compaction — tiered compression of persistent turn history.
  *
@@ -57,6 +58,7 @@ export async function compactConversations(
   embedFn: (text: string) => Promise<number[]>,
   opts?: CompactionOpts,
 ): Promise<CompactionResult> {
+	assertNoSessionPersistence();
   const hotDays = opts?.hotDays ?? 7;
   const warmDays = opts?.warmDays ?? 30;
   const coldDays = opts?.coldDays ?? 90;

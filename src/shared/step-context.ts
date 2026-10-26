@@ -177,3 +177,11 @@ export const STEP_TOOL_NAMES = [
 	'insrc_triage',
 ] as const;
 export type StepToolName = typeof STEP_TOOL_NAMES[number];
+
+/** Bind explicit Session execution only so omitted sink policy can deny, never downgrade.
+ * Genuine Saved callers retain their existing context and lazy entry behavior. */
+export function runWithConnectionExecution<T>(execution: ConnectionExecutionContext | undefined, fn: () => Promise<T>): Promise<T> {
+	assertExplicitConnectionExecution(execution);
+	if (execution?.mode !== 'session-memory' || currentStepContext()?.connectionExecution === execution) return fn();
+	return runInStepContext({ ...currentStepContext(), cwd: execution.connectionAccess.lookupRoot, connectionExecution: execution }, fn);
+}

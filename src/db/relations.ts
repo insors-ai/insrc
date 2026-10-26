@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed graph relations + cross-file-resolver queue.
  *
@@ -104,6 +105,7 @@ export function makeUnresolvedRelationId(
 // ---------------------------------------------------------------------------
 
 export async function upsertRelation(_db: DbClient, relation: Relation): Promise<void> {
+	assertNoSessionPersistence();
 	if (!relation.resolved) {
 		await upsertUnresolvedRelations([relation]);
 		return;
@@ -112,6 +114,7 @@ export async function upsertRelation(_db: DbClient, relation: Relation): Promise
 }
 
 export async function upsertRelations(_db: DbClient, relations: Relation[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (relations.length === 0) return;
 
 	const resolved: Relation[] = [];
@@ -199,6 +202,7 @@ export async function deleteResolvedRelations(
 	_db: DbClient,
 	items: ReadonlyArray<{ readonly from: string; readonly kind: RelationKind; readonly to: string }>,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	if (items.length === 0) return;
 	await withWriteTxn(s => {
 		for (const r of items) {
@@ -214,12 +218,14 @@ export async function deleteResolvedRelations(
 }
 
 export async function deleteRelationsForFile(_db: DbClient, _filePath: string): Promise<void> {
+	assertNoSessionPersistence();
 	// Resolved edges are removed automatically when entity rows are
 	// deleted via deleteEntitiesForFile (entities.ts cascade). No
 	// separate action needed here.
 }
 
 export async function deleteRelationsForRepo(_db: DbClient, _repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	// Same as above; cleanup runs through deleteEntitiesForRepo.
 }
 
@@ -354,6 +360,7 @@ export async function listUnresolvedRelations(
 }
 
 export async function deleteUnresolvedForFile(_db: DbClient, file: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// We don't know the repoId from `file` alone (file is an absolute
 	// path; the index is (repoId, fromFile)). The fromFile in the index
@@ -390,6 +397,7 @@ export async function deleteUnresolvedForRepoFile(
 	repo: string,
 	file: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const repoId = repoIdByPathInTxn(store, repo);
 	if (repoId === undefined) return;
@@ -407,6 +415,7 @@ export async function deleteUnresolvedForRepoFile(
 }
 
 export async function deleteUnresolvedForRepo(_db: DbClient, repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const repoId = repoIdByPathInTxn(store, repo);
 	if (repoId === undefined) return;
@@ -449,6 +458,7 @@ export async function updateUnresolvedMeta(
 	id: string,
 	meta: Record<string, unknown>,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const attemptedAt = Date.now();
 	await withWriteTxn(s => { updatePendingMetaInTxn(s, id, meta, attemptedAt); });
 }
@@ -521,6 +531,7 @@ export async function updateUnresolvedMetaBatch(
 	_db: DbClient,
 	items: ReadonlyArray<{ id: string; meta: Record<string, unknown> }>,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	if (items.length === 0) return;
 	const attemptedAt = Date.now();
 	await withWriteTxn(s => {

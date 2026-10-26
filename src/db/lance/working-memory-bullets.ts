@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -85,10 +86,12 @@ export function _resetBulletsTableCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function writeBullet(row: BulletRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeBullets([row]);
 }
 
 export async function writeBullets(rows: readonly BulletRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) { return; }
 	const table = await getBulletsTable();
 	await table.mergeInsert('id')
@@ -125,6 +128,7 @@ export async function searchBullets(
 	queryVec: number[],
 	opts: SearchBulletsOpts,
 ): Promise<BulletHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.runId === '') { return []; }
 	const table = await getBulletsTable();
 	const conditions: string[] = [
@@ -154,12 +158,14 @@ export async function searchBullets(
  * doesn't accumulate stale per-run data across the daemon lifetime.
  */
 export async function deleteBulletsForRun(runId: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (runId === '') { return; }
 	const table = await getBulletsTable();
 	await table.delete(`runId = '${escapeLanceString(runId)}'`);
 }
 
 export async function deleteBulletsForTodo(runId: string, todoId: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (runId === '' || todoId === '') { return; }
 	const table = await getBulletsTable();
 	await table.delete(`runId = '${escapeLanceString(runId)}' AND todoId = '${escapeLanceString(todoId)}'`);

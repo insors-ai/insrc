@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed persistence for the session-scoped TODO framework.
  *
@@ -55,6 +56,7 @@ type DbClient = unknown;
 // ---------------------------------------------------------------------------
 
 export async function initTodosTables(_db: DbClient): Promise<void> {
+	assertNoSessionPersistence();
 	// LMDB sub-DBs are created at env open (in store.ts); nothing to do
 	// here. Kept for back-compat with daemon/index.ts call site.
 }
@@ -76,6 +78,7 @@ export interface InsertListOpts {
 }
 
 export async function insertList(_db: DbClient, opts: InsertListOpts): Promise<TodoList> {
+	assertNoSessionPersistence();
 	if (!isValidTodoOwner(opts.owner)) {
 		throw new Error(`insertList: unknown owner '${opts.owner}'`);
 	}
@@ -137,6 +140,7 @@ export interface InsertItemOpts {
 }
 
 export async function insertItem(_db: DbClient, opts: InsertItemOpts): Promise<TodoItem> {
+	assertNoSessionPersistence();
 	const list = await getList(_db, opts.listId, { withItems: false });
 	if (list === null) {
 		throw new Error(`insertItem: list '${opts.listId}' does not exist`);
@@ -176,6 +180,7 @@ export interface InsertCommentOpts {
 }
 
 export async function insertComment(_db: DbClient, opts: InsertCommentOpts): Promise<TodoComment> {
+	assertNoSessionPersistence();
 	const row: TodoCommentRow = {
 		id:                opts.id,
 		itemId:            opts.itemId,
@@ -210,6 +215,7 @@ export async function getList(
 	listId: string,
 	opts: GetListOpts = {},
 ): Promise<TodoList | null> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.todoList.get(listId);
 	if (buf === undefined) return null;
@@ -223,6 +229,7 @@ export async function getList(
 }
 
 export async function getItem(_db: DbClient, itemId: string): Promise<TodoItem | null> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.todoItem.get(itemId);
 	if (buf === undefined) return null;
@@ -230,6 +237,7 @@ export async function getItem(_db: DbClient, itemId: string): Promise<TodoItem |
 }
 
 export async function getComment(_db: DbClient, commentId: string): Promise<TodoComment | null> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// Comments are keyed by (item_id, comment_id) -- O(N) scan to find
 	// by comment_id alone. Comment counts are typically a handful per
@@ -246,6 +254,7 @@ export async function listItems(
 	listId: string,
 	withComments: boolean,
 ): Promise<readonly TodoItem[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const rows: TodoItemRow[] = [];
 	for (const { value } of store.todoItem.getRange()) {
@@ -291,6 +300,7 @@ export async function listAllLists(
 		readonly updatedBefore?: string;
 	} = {},
 ): Promise<readonly TodoList[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const wantStatuses = filter.statuses && filter.statuses.length > 0
 		? new Set(filter.statuses)
@@ -321,6 +331,7 @@ export async function listListsBySession(
 	sessionId: string,
 	opts: { includeArchived?: boolean } = {},
 ): Promise<readonly TodoList[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// Walk the (sessionId, listId) dupsort index for O(matches)
 	const prefix = encodeTodoListBySessionPrefix(sessionId);
@@ -368,6 +379,7 @@ export async function assertParentAllowed(
 	childId: string,
 	childSessionId: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const seen = new Set<string>();
 	let cursor: string | null = proposedParentId;
@@ -415,6 +427,7 @@ export async function updateList(
 	fields: UpdateListFields,
 	now: string,
 ): Promise<TodoList> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.todoList.get(listId);
 	if (buf === undefined) throw new Error(`updateList: list '${listId}' does not exist`);
@@ -457,6 +470,7 @@ export async function updateItem(
 	fields: UpdateItemFields,
 	now: string,
 ): Promise<TodoItem> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.todoItem.get(itemId);
 	if (buf === undefined) throw new Error(`updateItem: item '${itemId}' does not exist`);
@@ -502,6 +516,7 @@ export async function transferList(
 	now: string,
 	initiator?: TodoOwner,
 ): Promise<TodoList> {
+	assertNoSessionPersistence();
 	if (!isValidTodoOwner(to)) throw new Error(`transferList: unknown target owner '${to}'`);
 	const store = await getGraphStore();
 	const buf = store.todoList.get(listId);
@@ -536,6 +551,7 @@ export async function reparentList(
 	newParentListId: string | null,
 	now: string,
 ): Promise<TodoList> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.todoList.get(listId);
 	if (buf === undefined) throw new Error(`reparentList: list '${listId}' does not exist`);
@@ -574,6 +590,7 @@ export async function updateComment(
 	commentId: string,
 	fields: UpdateCommentFields,
 ): Promise<TodoComment> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// Find the comment row + its key
 	let foundKey: Buffer | null = null;
@@ -604,6 +621,7 @@ export async function updateComment(
 }
 
 export async function deleteComment(_db: DbClient, commentId: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	let foundKey: Buffer | null = null;
 	for (const { key, value } of store.todoComment.getRange()) {
@@ -618,6 +636,7 @@ export async function listCommentsForItem(
 	_db: DbClient,
 	itemId: string,
 ): Promise<readonly TodoComment[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const prefix = encodeTodoCommentPrefix(itemId);
 	const succ = prefixSuccessor(prefix);
@@ -634,6 +653,7 @@ export async function listCommentsForItem(
 // ---------------------------------------------------------------------------
 
 export async function deleteItem(_db: DbClient, itemId: string): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => {
 		// Drop all comments on the item
 		const prefix = encodeTodoCommentPrefix(itemId);
@@ -648,6 +668,7 @@ export async function deleteItem(_db: DbClient, itemId: string): Promise<void> {
 }
 
 export async function deleteList(_db: DbClient, listId: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// Collect item ids belonging to this list
 	const itemIds: string[] = [];
@@ -682,6 +703,7 @@ export async function deleteList(_db: DbClient, listId: string): Promise<void> {
 }
 
 export async function deleteListsBySession(_db: DbClient, sessionId: string): Promise<number> {
+	assertNoSessionPersistence();
 	const lists = await listListsBySession(_db, sessionId, { includeArchived: true });
 	for (const list of lists) {
 		await deleteList(_db, list.id);

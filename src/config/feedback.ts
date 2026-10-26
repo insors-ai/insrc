@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * Feedback recording — LLM-driven generalization and storage.
  *
@@ -62,6 +63,7 @@ export interface RecordFeedbackFullOpts extends RecordFeedbackOpts {
  * 7. Enqueue re-index via IPC
  */
 export async function recordFeedback(opts: RecordFeedbackFullOpts): Promise<void> {
+	assertNoSessionPersistence();
   const { content, namespace, language, repoPath, provider, rpcFn } = opts;
 
   // 1. Classify scope

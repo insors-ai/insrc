@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -99,6 +100,7 @@ export async function renderErCompanion(
 	destPath: string,
 	opts:     RenderErCompanionOpts,
 ): Promise<CompanionArtifactRef> {
+	assertNoSessionPersistence();
 	writeCompanionPage(erDefinitionToPage(erDef, title), destPath, opts.header);
 	const ref = companionRef('diagram-mermaid', title, destPath, opts);
 	log.info({ destPath, relPath: ref.relPath }, 'ER companion rendered');
@@ -117,6 +119,7 @@ export async function renderUxCompanion(
 	destPath: string,
 	opts:     RenderUxCompanionOpts,
 ): Promise<CompanionArtifactRef> {
+	assertNoSessionPersistence();
 	writeCompanionPage(uxDefinitionToPage(uxDef, title), destPath, opts.header);
 	const ref = companionRef('ux-mock', title, destPath, opts);
 	log.info({ destPath, relPath: ref.relPath }, 'UX mock companion rendered');
@@ -133,6 +136,7 @@ export async function renderSequenceCompanion(
 	destPath: string,
 	opts:     RenderDiagramCompanionOpts,
 ): Promise<CompanionArtifactRef> {
+	assertNoSessionPersistence();
 	writeCompanionPage(sequenceDefinitionToPage(seqDef, title), destPath, opts.header);
 	const ref = companionRef('diagram-mermaid', title, destPath, opts);
 	log.info({ destPath, relPath: ref.relPath }, 'sequence companion rendered');
@@ -146,6 +150,7 @@ export async function renderComponentCompanion(
 	destPath: string,
 	opts:     RenderDiagramCompanionOpts,
 ): Promise<CompanionArtifactRef> {
+	assertNoSessionPersistence();
 	writeCompanionPage(componentDependencyDefinitionToPage(compDef, title), destPath, opts.header);
 	const ref = companionRef('diagram-mermaid', title, destPath, opts);
 	log.info({ destPath, relPath: ref.relPath }, 'component-dependency companion rendered');

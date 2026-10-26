@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed config-entry store.
  *
@@ -111,6 +112,7 @@ export class ConfigStore {
 	}
 
 	async upsertEntry(entry: ConfigEntry): Promise<void> {
+		assertNoSessionPersistence();
 		const row = entryToRow(entry);
 		await withWriteTxn(s => {
 			// Read prior row (if any) so we can clean up the by-scope index
@@ -148,6 +150,7 @@ export class ConfigStore {
 	}
 
 	async deleteEntry(id: string): Promise<void> {
+		assertNoSessionPersistence();
 		await withWriteTxn(s => {
 			const buf = s.configEntry.get(id);
 			if (buf === undefined) return;
@@ -164,6 +167,7 @@ export class ConfigStore {
 	}
 
 	async deleteByScope(scope: string): Promise<void> {
+		assertNoSessionPersistence();
 		const store = await getGraphStore();
 		// Walk the by_scope index for this scope to find affected ids
 		const prefix = encodeConfigByScopePrefix(scope);
@@ -196,6 +200,7 @@ export class ConfigStore {
 	}
 
 	async getEntry(id: string): Promise<ConfigEntry | null> {
+		assertNoSessionPersistence();
 		const store = await getGraphStore();
 		const buf = store.configEntry.get(id);
 		if (buf === undefined) return null;
@@ -207,6 +212,7 @@ export class ConfigStore {
 		category?: string | undefined;
 		scope?: string | undefined;
 	}): Promise<ConfigEntry[]> {
+		assertNoSessionPersistence();
 		const store = await getGraphStore();
 		const wantNs = opts?.namespace !== undefined ? opts.namespace : null;
 		const wantCat = opts?.category !== undefined ? opts.category : null;
@@ -235,6 +241,7 @@ export class ConfigStore {
 		where?: string | undefined,
 		limit = 10,
 	): Promise<Array<{ entry: ConfigEntry; distance: number }>> {
+		assertNoSessionPersistence();
 		if (queryVec.length === 0) return [];
 		let hits;
 		try {

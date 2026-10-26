@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -96,6 +97,7 @@ function assertUnderArtifactRoot(absPath: string): void {
  * it is handed is what lands on disk — no field is dropped, reordered, or synthesized.
  */
 export function writeArtifactJson(path: string, artifact: ArtifactShape): void {
+	assertNoSessionPersistence();
 	const abs = resolve(path);
 	assertUnderArtifactRoot(abs);
 	writeFileSync(abs, JSON.stringify(artifact, null, 2));
@@ -129,6 +131,7 @@ function readArtifact(absPath: string): ArtifactShape {
  * or removed.
  */
 export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult {
+	assertNoSessionPersistence();
 	const abs = resolve(req.artifactPath);
 	assertUnderArtifactRoot(abs);
 
@@ -185,6 +188,7 @@ function storedEntry(entry: FeedbackEntryInput, id: string, timestamp: string): 
  * never edits or removes an existing entry and touches no other key.
  */
 export function appendFeedbackBatch(req: AppendFeedbackBatchRequest): AppendFeedbackBatchResult {
+	assertNoSessionPersistence();
 	const abs = resolve(req.artifactPath);
 	assertUnderArtifactRoot(abs);
 	if (!Array.isArray(req.entries) || req.entries.length === 0) {
@@ -209,6 +213,7 @@ export function appendFeedbackBatch(req: AppendFeedbackBatchRequest): AppendFeed
  * document's comments into its re-authored version.
  */
 export function priorFeedback(jsonPath: string): FeedbackEntry[] {
+	assertNoSessionPersistence();
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(readFileSync(resolve(jsonPath), 'utf8'));

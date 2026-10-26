@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * Repo registry CRUD on the LMDB graph store. Phase 2.1 of
  * docs/plans/storage-migration-lmdb-lance.md.
@@ -151,6 +152,7 @@ type DbClient = unknown;
 // ---------------------------------------------------------------------------
 
 export async function addRepo(_db: DbClient, repo: RegisteredRepo): Promise<void> {
+	assertNoSessionPersistence();
 	// Defense in depth -- shape-only validation here (no filesystem
 	// existence check) so synthetic-path tests still work. The IPC
 	// handler at `daemon/index.ts:repo.add` does the full validation
@@ -175,6 +177,7 @@ export async function addRepo(_db: DbClient, repo: RegisteredRepo): Promise<void
 }
 
 export async function removeRepo(_db: DbClient, path: string): Promise<void> {
+	assertNoSessionPersistence();
 	// Phase 2.10 cascade: delete entities (which transitively cascades
 	// to out_edge / in_edge mirrors + entity_id_by_string + name_index),
 	// then unresolved relations for the repo, then conversation sessions
@@ -250,6 +253,7 @@ export async function updateRepoStatus(
 	/** The run's final figures, written with the final status; when omitted the stored ones are kept. */
 	lastRun?: RepoLastRun,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => {
 		const id = findRepoIdByPath(s, path);
 		if (id === undefined) {

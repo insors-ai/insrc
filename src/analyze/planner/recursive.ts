@@ -36,7 +36,7 @@
 
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
-import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 
@@ -112,7 +112,7 @@ export async function runRecursivePlanner(args: RecursivePlannerArgs): Promise<P
 	// Force rootScope to flow through every level.
 	const rootInput: PlanBuilderInput = { ...input, rootScope };
 
-	const tree = await walk(rootInput, opts, args.provider, rootScope);
+	const tree = await runWithConnectionExecution(execution, () => walk(rootInput, opts, args.provider, rootScope));
 	assertSessionReuseNow(execution);
 	return tree;
 }

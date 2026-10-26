@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `session_vec` LanceDB table -- conversation-session embeddings.
  *
@@ -60,10 +61,12 @@ export function _resetSessionVecCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function writeSessionEmbedding(row: SessionVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeSessionEmbeddings([row]);
 }
 
 export async function writeSessionEmbeddings(rows: readonly SessionVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getSessionVecTable();
 	// Native upsert via mergeInsert -- see entity-vec.ts:writeEntityEmbeddings
@@ -94,6 +97,7 @@ export async function searchSessionVecs(
 	queryVec: number[],
 	opts: SearchSessionsOpts,
 ): Promise<SessionVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.repo === '') return [];
 	const table = await getSessionVecTable();
 
@@ -120,12 +124,14 @@ export async function searchSessionVecs(
 // ---------------------------------------------------------------------------
 
 export async function deleteSessionVec(id: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (id === '') return;
 	const table = await getSessionVecTable();
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
 export async function deleteSessionVecsByIds(ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const table = await getSessionVecTable();
 	const list = ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
@@ -133,6 +139,7 @@ export async function deleteSessionVecsByIds(ids: readonly string[]): Promise<vo
 }
 
 export async function deleteSessionVecsForRepo(repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getSessionVecTable();
 	await table.delete(`repo = '${escapeLanceString(repo)}'`);
 }

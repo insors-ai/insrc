@@ -63,7 +63,7 @@ test('root lifecycle uses owner-private records through success, failure and out
 	_setRunShaperForTest(() => ({ buildRunBundle: async (_input: unknown, opts: { connectionExecution?: ConnectionExecutionContext }) => { assert.equal(opts.connectionExecution, expected); if (mode === 'context') throw poison(); return { summary: 'PRIVATE' } as AnalyzeContextBundle; } } as RunShaper));
 	const setup = () => _setOrchestratorStagesForTest({
 		measure: async (...args) => { assert.equal(args[3]?.connectionExecution, expected); if (mode === 'measure') throw poison(); return measureRequestScope(...args); },
-		planner: async args => { assert.equal(args.opts.connectionExecution, expected); if (mode === 'planner') throw poison(); return tree; },
+		planner: async args => { assert.equal(args.opts.connectionExecution, expected); if (mode === 'planner') throw poison(); return { ...tree, children: new Map(), childErrors: new Map() }; },
 		executor: async args => { calls++; assert.equal(args.connectionExecution, expected); if (mode === 'repair') throw poison(); return { root: { perTask: new Map(), tasksCompleted: 1, tasksFailed: [], ...(mode === 'aggregate' ? {} : { finalReport: { summary: expected!.connectionAccess.sessionHandle } }) }, children: new Map() }; },
 	}); setup();
 	try {

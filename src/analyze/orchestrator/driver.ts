@@ -27,7 +27,7 @@
  *     the RPC layer is one wrapper call away)
  */
 
-import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { classify } from '../classifier/index.js';
@@ -82,7 +82,7 @@ import type { RequestMeasure, UnsizedIntent } from '../measure.js';
 import { liveRunCount, trackRunLive } from './live-runs.js';
 import { createRunRecordPort, assertRunRecordPort, assertRunRecordSource } from './persistence.js';
 import type { RunRecordPort } from './persistence.js';
-import { beginSessionReuse, assertSessionReuseNow } from '../session-reuse.js';
+import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type {
 	AnalyzeRunEvent,
@@ -158,7 +158,7 @@ export async function runAnalyze(
 	const records = createRunRecordPort(runId, execution);
 	const releaseLive = trackRunLive(runId, execution);
 	try {
-		const result = await runStages(args, opts, { start, emit, emitDoneAndReturn, reached, records, execution, log });
+		const result = await runWithConnectionExecution(execution, () => runStages(args, opts, { start, emit, emitDoneAndReturn, reached, records, execution, log }));
 		assertSessionReuseNow(execution);
 		return result;
 	} catch (err) {
@@ -469,6 +469,7 @@ async function runStages(
 		log.warn({ runId, code: failure.code }, 'runAnalyze: plan build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
+	await rememberSessionContinuation(tree, execution);
 	assertSessionReuseNow(execution);
 	emit({
 		type: 'plan-accepted',
@@ -515,6 +516,8 @@ async function runStages(
 			}
 		},
 	});
+	assertSessionReuseNow(execution);
+	await rememberSessionContinuation(execResult, execution);
 	assertSessionReuseNow(execution);
 	const rootPlan = execResult.root;
 
@@ -653,6 +656,8 @@ export function completeRun(args: {
 	assertSessionReuseNow(execution);
 	if (execution?.mode === 'session-memory' && !args.recordPort) throw new ConnectionExecutionError('session-expired');
 	assertRunRecordSource(args.record, execution);
+	assertSessionContinuationNow(args.tree, execution);
+	assertSessionContinuationNow(args.executed, execution);
 	const records = args.recordPort ?? createRunRecordPort(args.record.runId, execution);
 	assertRunRecordPort(records, execution);
 	const log = execution?.mode === 'session-memory' ? quietRunLog : savedRunLog;

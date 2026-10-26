@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `config_vec` LanceDB table -- config-entry embeddings.
  *
@@ -69,10 +70,12 @@ export function _resetConfigVecCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function writeConfigEmbedding(row: ConfigVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeConfigEmbeddings([row]);
 }
 
 export async function writeConfigEmbeddings(rows: readonly ConfigVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getConfigVecTable();
 	// Native upsert via mergeInsert -- see entity-vec.ts:writeEntityEmbeddings
@@ -108,6 +111,7 @@ export async function searchConfigVecs(
 	where: string | undefined,
 	limit: number,
 ): Promise<ConfigVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0) return [];
 	const table = await getConfigVecTable();
 
@@ -131,12 +135,14 @@ export async function searchConfigVecs(
 // ---------------------------------------------------------------------------
 
 export async function deleteConfigVec(id: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (id === '') return;
 	const table = await getConfigVecTable();
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
 export async function deleteConfigVecsByIds(ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const table = await getConfigVecTable();
 	const list = ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
@@ -144,6 +150,7 @@ export async function deleteConfigVecsByIds(ids: readonly string[]): Promise<voi
 }
 
 export async function deleteConfigVecsForScope(scope: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getConfigVecTable();
 	await table.delete(`scope = '${escapeLanceString(scope)}'`);
 }

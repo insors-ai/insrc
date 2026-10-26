@@ -78,8 +78,10 @@ export function writeTaskOutput(runId: string, record: TaskExecutionRecord, pare
 	return path;
 }
 
-export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: string | undefined): TaskExecutionRecord | null {
-	const path = taskOutputPathFor(runId, taskId, parentTaskPath);
+export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: string | undefined, execution?: ConnectionExecutionContext): TaskExecutionRecord | null {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return null;
+	const path = taskOutputPathFor(runId, taskId, parentTaskPath, execution);
 	if (!existsSync(path)) return null;
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as TaskExecutionRecord;
@@ -90,8 +92,10 @@ export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: s
 }
 
 /** Best-effort cleanup of one task slot -- used by tests. */
-export function purgeTaskOutput(runId: string, taskId: string): void {
-	const path = taskOutputPathFor(runId, taskId);
+export function purgeTaskOutput(runId: string, taskId: string, execution?: ConnectionExecutionContext): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return;
+	const path = taskOutputPathFor(runId, taskId, undefined, execution);
 	try { unlinkSync(path); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
@@ -101,11 +105,13 @@ export function purgeTaskOutput(runId: string, taskId: string): void {
 }
 
 /** Best-effort cleanup of every task slot in a run. */
-export function purgeAllTaskOutputs(runId: string): void {
+export function purgeAllTaskOutputs(runId: string, execution?: ConnectionExecutionContext): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return;
 	// Just nuke the per-run tasks/ directory; the planner's child-plan
 	// artifacts live in subdirs under it too, so this is destructive --
 	// only use during teardown.
-	const dir = dirname(taskOutputPathFor(runId, 'unused'));
+	const dir = dirname(taskOutputPathFor(runId, 'unused', undefined, execution));
 	try { rmSync(dir, { recursive: true }); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {

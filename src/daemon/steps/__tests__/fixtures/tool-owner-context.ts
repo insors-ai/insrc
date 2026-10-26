@@ -37,7 +37,7 @@ registerDbTools();
 test('owner tool runtime and exploration matrix', async () => {
  const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-tool-owner-'))), root = join(directory, 'root'), other = join(directory,'other'); await mkdir(root); await mkdir(other);
  const originalIns=PATHS.insrc, originalTaskPath=PATHS.analyzeTaskOutput;PATHS.insrc=join(directory,'insrc');PATHS.analyzeTaskOutput=(runId,taskId)=>join(directory,'analyze',runId,'tasks',taskId+'.json');setGraphStorePath(join(directory,'graph.lmdb'));
- registerTemplateRuntime(dataSchemaTableRuntime);
+	registerTemplateRuntime(dataSchemaTableRuntime, { sessionMemory: 'read-only' });
  const overlays = new Map<string,TemporaryConnectionOverlay>();
  const runtime = new ConnectionSessionRpc({ enabled: async()=>true, isRegistered:async r=>r===root||r===other, createOverlay:(r,h,c)=>{ const o=createTemporaryOverlay(r,h,c);overlays.set(h,o);return o; }, dropOverlay:o=>o.close() });
  _setTaskScopeDepsForTest({listRepos:async()=>[],findEntitiesByFile:async()=>[],listEntitiesForRepo:async()=>[],loadConnections:async()=>{throw new Error('saved enumeration forbidden');}});

@@ -25,7 +25,7 @@ import {
 import type { TemplateRuntime } from '../executor/types.js';
 
 import { CODE_RUNTIMES    } from './code/index.js';
-import { DATA_RUNTIMES    } from './data/index.js';
+import { dataDiscoveryConnectionsRuntime, dataDiscoveryObjectsRuntime, dataSchemaTableRuntime, DATA_RUNTIMES } from './data/index.js';
 import { INFRA_RUNTIMES   } from './infra/index.js';
 import { GENERIC_RUNTIMES } from './generic/index.js';
 import { DOCS_RUNTIMES    } from './docs/index.js';
@@ -56,10 +56,11 @@ export function registerBuiltinRuntimes(): void {
 		{ name: 'docs',    runtimes: DOCS_RUNTIMES    },
 	];
 
+	const memoryReadOnly = new Set<TemplateRuntime>([dataDiscoveryConnectionsRuntime, dataDiscoveryObjectsRuntime, dataSchemaTableRuntime]);
 	let total = 0;
 	for (const fam of families) {
 		for (const rt of fam.runtimes) {
-			registerTemplateRuntime(rt);
+			registerTemplateRuntime(rt, memoryReadOnly.has(rt) ? { sessionMemory: 'read-only' } : undefined);
 			total++;
 		}
 		log.debug({ family: fam.name, count: fam.runtimes.length }, 'family runtimes registered');

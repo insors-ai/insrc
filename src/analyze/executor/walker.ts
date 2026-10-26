@@ -43,7 +43,7 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
-import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
 import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { isCompletenessRecord } from '../completeness.js';
@@ -51,7 +51,7 @@ import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
-import { getRuntime } from './registry.js';
+import { getRuntime, assertRuntimeExecution } from './registry.js';
 import {
 	ExecutorOutputShapeError,
 	ExecutorRuntimeMissingError,
@@ -88,10 +88,10 @@ export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult
 	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.tree, execution); }
 	else assertSessionContinuationNow(args.tree, execution);
 	assertSessionReuseNow(execution);
-	const result = await executePlan(args.tree, args.intent, args.runId, {
+	const result = await runWithConnectionExecution(execution, () => executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
 		connectionExecution: args.connectionExecution,
-	});
+	}));
 	assertSessionReuseNow(execution);
 	return result;
 }
@@ -243,7 +243,7 @@ async function executePlan(
 		tasksCompleted,
 		tasksFailed,
 	};
-	return { root, children };
+	return rememberSessionContinuation({ root, children }, opts.connectionExecution);
 }
 
 // ---------------------------------------------------------------------------
@@ -261,11 +261,13 @@ async function executeLeafTask(
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
+		if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		const err = new ExecutorRuntimeMissingError(task.template);
 		log.error({ runId, taskId: task.taskId, template: task.template }, err.message);
 		return failedRecord(task, err.message);
 	}
 
+	assertRuntimeExecution(runtime, execution);
 	const upstreamOutputs = projectUpstream(task, outputs);
 
 	let result: TemplateExecuteResult;
@@ -277,6 +279,7 @@ async function executeLeafTask(
 	} catch (err) {
 		if (err instanceof ConnectionExecutionError) throw err;
 		assertSessionReuseNow(execution);
+		if (execution?.mode === 'session-memory') return failedRecord(task, 'Temporary task failed.');
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
 		// error's code and its own message, with no 'runtime-threw:' in front.
@@ -294,6 +297,7 @@ async function executeLeafTask(
 	// Output shape check: every produces name must be present; no extras.
 	const shapeError = checkOutputShape(task, result);
 	if (shapeError !== null) {
+		if (execution?.mode === 'session-memory') return failedRecord(task, 'Temporary task output is unavailable.');
 		log.warn({ runId, taskId: task.taskId, err: shapeError.message }, 'leaf task output shape mismatch');
 		return failedRecord(task, `output-shape-mismatch: ${shapeError.message}`);
 	}
@@ -341,6 +345,7 @@ async function executePlannerTask(
 	assertSessionContinuationNow(parent, opts.connectionExecution);
 	const childNode = parent.children.get(task.taskId);
 	if (childNode === undefined) {
+		if (opts.connectionExecution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		const childErr = parent.childErrors.get(task.taskId);
 		const reason   = childErr !== undefined
 			? `child-plan-unavailable: ${childErr.message}`
@@ -357,6 +362,7 @@ async function executePlannerTask(
 	assertSessionReuseNow(opts.connectionExecution);
 
 	if (childResult.root.finalReport === undefined) {
+		if (opts.connectionExecution?.mode === 'session-memory') return { record: failedRecord(task, 'Temporary child report is unavailable.'), childResult };
 		const reason = `child-plan-unavailable: ${childFailureCause(childNode, childResult, opts.parentTaskPath)}`;
 		log.warn({ runId, taskId: task.taskId }, reason);
 		return { record: failedRecord(task, reason), childResult };
@@ -585,9 +591,11 @@ function nowIso(): string {
  * orchestrator's emit() helper.
  */
 function emit(opts: WalkOpts, event: TaskExecutionEvent): void {
+	assertSessionReuseNow(opts.connectionExecution);
 	if (opts.onTaskEvent === undefined) return;
 	try { opts.onTaskEvent(event); }
 	catch (err) {
+		if (opts.connectionExecution?.mode === 'session-memory') return;
 		log.warn(
 			{ eventType: event.type, err: (err as Error).message },
 			'executor: onTaskEvent subscriber threw; ignoring',

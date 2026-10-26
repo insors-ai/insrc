@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * LanceDB connection lazy-init singleton.
  *
@@ -41,11 +42,13 @@ let _initPromise: Promise<lancedb.Connection> | null = null;
 let _path: string = PATHS.lance;
 
 export function setLanceConnPath(path: string): void {
+	assertNoSessionPersistence();
 	_path = path;
 }
 
 /** Current backing-directory path (post any test override). */
 export function getLanceConnPath(): string {
+	assertNoSessionPersistence();
 	return _path;
 }
 
@@ -71,6 +74,7 @@ export class LanceStoreNotOwnerError extends Error {
  * cleared so the next caller re-attempts.
  */
 export async function getLanceConn(): Promise<lancedb.Connection> {
+	assertNoSessionPersistence();
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 	// Before anything touches the path: no directory, no connection.
@@ -91,8 +95,8 @@ export async function getLanceConn(): Promise<lancedb.Connection> {
 			{ initMs: Date.now() - t0, path: _path },
 			'lance connection initialised',
 		);
-		_instance = conn;
-		return conn;
+		_instance = guardLanceHandle(conn);
+		return _instance;
 	})();
 
 	try {
@@ -112,6 +116,7 @@ export async function getLanceConn(): Promise<lancedb.Connection> {
  * The native handles get released when the JS object is GC'd.
  */
 export async function closeLanceConn(): Promise<void> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	_instance = null;
 	_initPromise = null;
@@ -134,9 +139,10 @@ export async function openOrCreateTable<T>(
 	name: string,
 	seedIfMissing: () => T[],
 ): Promise<lancedb.Table> {
+	assertNoSessionPersistence();
 	const tables = await conn.tableNames();
 	if (tables.includes(name)) {
-		return conn.openTable(name);
+		return guardLanceHandle(await conn.openTable(name));
 	}
 	const seed = seedIfMissing();
 	if (seed.length === 0) {
@@ -148,5 +154,36 @@ export async function openOrCreateTable<T>(
 	// Lance's createTable typing requires Record<string, unknown>[] but
 	// accepts any plain-object row at runtime. The cast is safe for
 	// our typed seed rows.
-	return conn.createTable(name, seed as unknown as Record<string, unknown>[]);
+	return guardLanceHandle(await conn.createTable(name, seed as unknown as Record<string, unknown>[]));
+}
+
+
+const lanceHandles = new WeakMap<object, object>();
+/** A connection/table captured by Saved code cannot be used later as a Session sink. */
+function guardLanceHandle<T extends object>(raw: T): T {
+	const existing = lanceHandles.get(raw);
+	if (existing) return existing as T;
+	const methods = new Map<PropertyKey, unknown>();
+	const guarded = new Proxy(raw, {
+		get(target, property) {
+			assertNoSessionPersistence();
+			const value = Reflect.get(target, property, target);
+			if (typeof value !== 'function') return value;
+			if (!methods.has(property)) methods.set(property, (...args: unknown[]) => {
+				assertNoSessionPersistence();
+				const result = value.apply(target, args);
+				const protect = (value: unknown): unknown => {
+					if (value === null || typeof value !== 'object' || Array.isArray(value) || ArrayBuffer.isView(value) || value instanceof ArrayBuffer || value instanceof Date || value instanceof Map || value instanceof Set) return value;
+					const prototype = Object.getPrototypeOf(value);
+					return prototype === null || prototype === Object.prototype ? value : guardLanceHandle(value);
+				};
+				return result instanceof Promise ? result.then(protect) : protect(result);
+			});
+			return methods.get(property);
+		},
+		set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
+	});
+	lanceHandles.set(raw, guarded);
+	lanceHandles.set(guarded, guarded);
+	return guarded;
 }

@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed conversation persistence (sessions + turns).
  *
@@ -230,6 +231,7 @@ function parseTs(s: string | undefined): number {
 // ---------------------------------------------------------------------------
 
 export async function saveTurn(_db: DbClient, turn: TurnRecord): Promise<void> {
+	assertNoSessionPersistence();
 	const id = turnIdFor(turn.sessionId, turn.idx);
 	const now = Date.now();
 	const type = coerceTurnType(turn.type);
@@ -269,6 +271,7 @@ export async function saveTurn(_db: DbClient, turn: TurnRecord): Promise<void> {
 }
 
 export async function addCompactedTurns(_db: DbClient, turns: TurnRecord[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (turns.length === 0) return;
 	const now = Date.now();
 	const lanceWrites: Array<{
@@ -333,6 +336,7 @@ export async function closeSession(
 	session: { id: string; repo: string; summary: string; seenEntities: string[] },
 	summaryVector: number[],
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const now = Date.now();
 	const expiresAt = now + 30 * 86_400_000;
 	await withWriteTxn(s => {
@@ -389,6 +393,7 @@ export async function saveSession(
 	},
 	vector?: number[] | undefined,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const now = Date.now();
 	const expiresAt = now + 30 * 86_400_000;
 	let writtenStatus: string = 'active';
@@ -442,6 +447,7 @@ export async function setSessionAgent(
 	agent: string,
 	category?: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const now = Date.now();
 	await withWriteTxn(s => {
 		const buf = s.conversationSession.get(id);
@@ -462,6 +468,7 @@ export async function setSessionStatus(
 	id: string,
 	status: SessionStatus,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const now = Date.now();
 	await withWriteTxn(s => {
 		const buf = s.conversationSession.get(id);
@@ -473,6 +480,7 @@ export async function setSessionStatus(
 }
 
 export async function bumpSessionActivity(_db: DbClient, id: string): Promise<void> {
+	assertNoSessionPersistence();
 	const now = Date.now();
 	await withWriteTxn(s => bumpSessionActivityInTxn(s, id, now));
 }
@@ -493,6 +501,7 @@ export async function deleteSession(
 	_db: DbClient,
 	sessionId: string,
 ): Promise<{ sessionRows: number; turnRows: number }> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	let sessionRows = 0;
 	let turnRows = 0;
@@ -513,6 +522,7 @@ export async function deleteSession(
 }
 
 export async function deleteTurnsForSession(_db: DbClient, sessionId: string): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => deleteTurnsForSessionInTxn(s, sessionId));
 	// Phase 3.3 cascade: drop Lance turn rows for this session
 	const { deleteTurnVecsBySessionId } = await import('./lance/turn-vec.js');
@@ -541,6 +551,7 @@ function deleteTurnsForSessionInTxn(s: GraphStore, sessionId: string): number {
 }
 
 export async function deleteSessionRecord(_db: DbClient, sessionId: string): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => {
 		s.conversationSession.remove(sessionId);
 	});
@@ -551,6 +562,7 @@ export async function deleteSessionRecord(_db: DbClient, sessionId: string): Pro
 }
 
 export async function deleteSessionsForRepo(_db: DbClient, repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const ids: string[] = [];
 	for (const { key, value } of store.conversationSession.getRange()) {
@@ -589,6 +601,7 @@ export async function deleteSessionsForRepo(_db: DbClient, repo: string): Promis
 }
 
 export async function deleteTurnsForRepo(_db: DbClient, repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	// Use the by-repo dupsort index for O(matches)
 	const turnIds: string[] = [];
@@ -614,6 +627,7 @@ export async function deleteTurnsForRepo(_db: DbClient, repo: string): Promise<v
 }
 
 export async function deleteTurnsByIds(_db: DbClient, ids: string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	await withWriteTxn(s => {
 		for (const id of ids) {
@@ -646,6 +660,7 @@ const PER_REPO_CAP = 20;
 export async function pruneConversations(
 	_db: DbClient,
 ): Promise<{ expired: number; capped: number }> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const now = Date.now();
 
@@ -697,6 +712,7 @@ export async function searchTurnsByRepo(
 	queryVector: number[],
 	limit = 20,
 ): Promise<TurnRecord[]> {
+	assertNoSessionPersistence();
 	if (queryVector.length === 0 || repo === '') return [];
 	let hits;
 	try {
@@ -728,6 +744,7 @@ export async function seedFromPrior(
 	queryVector: number[],
 	limit = 3,
 ): Promise<SessionRecord[]> {
+	assertNoSessionPersistence();
 	if (queryVector.length === 0 || repo === '') return [];
 	let hits;
 	try {
@@ -753,6 +770,7 @@ export async function seedFromPrior(
 // ---------------------------------------------------------------------------
 
 export async function getAllTurnsForRepo(_db: DbClient, repo: string): Promise<TurnRecord[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const out: TurnRecord[] = [];
 	const prefix = encodeConvTurnByRepoPrefix(repo);
@@ -772,6 +790,7 @@ export async function getAllTurnsForRepo(_db: DbClient, repo: string): Promise<T
 }
 
 export async function getAllTurns(_db: DbClient): Promise<TurnRecord[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const out: TurnRecord[] = [];
 	for (const { value } of store.conversationTurn.getRange()) {
@@ -794,6 +813,7 @@ export async function getAllTurnsWithVectorsForRepo(
 	_db: DbClient,
 	repo?: string,
 ): Promise<TurnRecord[]> {
+	assertNoSessionPersistence();
 	const turns = repo !== undefined ? await getAllTurnsForRepo(_db, repo) : await getAllTurns(_db);
 	if (turns.length === 0) return turns;
 	const ids = turns.map(t => turnIdFor(t.sessionId, t.idx));
@@ -816,6 +836,7 @@ export async function getConversationStats(
 	_db: DbClient,
 	repo?: string,
 ): Promise<ConversationStats> {
+	assertNoSessionPersistence();
 	const turns = repo !== undefined ? await getAllTurnsForRepo(_db, repo) : await getAllTurns(_db);
 	const byType: Record<string, number> = {};
 	const byTier: Record<string, number> = {};
@@ -841,6 +862,7 @@ export async function getSessionById(
 	_db: DbClient,
 	sessionId: string,
 ): Promise<SessionRecord | null> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const buf = store.conversationSession.get(sessionId);
 	if (buf === undefined) return null;
@@ -851,6 +873,7 @@ export async function getTurnsForSession(
 	_db: DbClient,
 	sessionId: string,
 ): Promise<TurnRecord[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const out: TurnRecord[] = [];
 	const prefix = encodeConversationTurnPrefix(sessionId);
@@ -867,6 +890,7 @@ export async function listSessions(
 	_db: DbClient,
 	repo?: string | undefined,
 ): Promise<SessionSummary[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const rows: { id: string; repo: string; summary: string; createdAt: number }[] = [];
 	for (const { value } of store.conversationSession.getRange()) {
@@ -887,6 +911,7 @@ export async function listSessionRecords(
 	_db: DbClient,
 	opts?: { repo?: string; statuses?: SessionStatus[] },
 ): Promise<SessionRecord[]> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const out: SessionRecord[] = [];
 	const wantStatuses = opts?.statuses && opts.statuses.length > 0

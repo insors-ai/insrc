@@ -229,8 +229,10 @@ export class ShaperToolLoopExhausted extends Error {
  * The turn-limit error for a loop that gathered `toolResults`: they are
  * written in full to a temporary file, and the error's message names it.
  */
-export function toolLoopExhausted(turns: number, toolResults: readonly PartialFinding[]): ShaperToolLoopExhausted {
-	return new ShaperToolLoopExhausted(turns, toolResults, saveToolResults(toolResults));
+export function toolLoopExhausted(turns: number, toolResults: readonly PartialFinding[], execution?: import('../../shared/step-context.js').ConnectionExecutionContext): ShaperToolLoopExhausted {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return new ShaperToolLoopExhausted(turns, [], undefined);
+	return new ShaperToolLoopExhausted(turns, toolResults, saveToolResults(toolResults, undefined, execution));
 }
 
 /**
@@ -241,7 +243,10 @@ export function toolLoopExhausted(turns: number, toolResults: readonly PartialFi
 export function saveToolResults(
 	toolResults: readonly PartialFinding[],
 	dir: string = join(tmpdir(), 'insrc-analyze'),
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): SavedToolResults | undefined {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return undefined;
 	if (toolResults.length === 0) return undefined;
 	try {
 		mkdirSync(dir, { recursive: true });
@@ -952,7 +957,7 @@ async function runToolLoop(
 		source:  `${g.tool}(${previewToolArgs(g.input)})`,
 		content: toolOutputText(g.output),
 	}));
-	throw toolLoopExhausted(maxToolTurns, gathered);
+	throw toolLoopExhausted(maxToolTurns, gathered, deps.connectionExecution);
 }
 
 async function runFinalStructuredEmit(

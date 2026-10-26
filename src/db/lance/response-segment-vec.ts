@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `response_segment_vec` LanceDB table -- per-segment embeddings of
  * prior assistant responses, used by the intent classifier's memory
@@ -92,12 +93,14 @@ export function _resetResponseSegmentVecCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function upsertResponseSegmentVec(row: ResponseSegmentVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await upsertResponseSegmentVecBatch([row]);
 }
 
 export async function upsertResponseSegmentVecBatch(
 	rows: readonly ResponseSegmentVecRow[],
 ): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getResponseSegmentVecTable();
 	await table.mergeInsert('id')
@@ -135,6 +138,7 @@ export async function queryResponseSegmentVec(
 	queryVec: number[],
 	opts: QueryResponseSegmentOpts,
 ): Promise<readonly ResponseSegmentVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.sessionId === '') return [];
 	const table = await getResponseSegmentVecTable();
 	const k = opts.k ?? 6;
@@ -171,6 +175,7 @@ export async function queryResponseSegmentVec(
  * over the session ids it just enumerated.
  */
 export async function deleteResponseSegmentsForSession(sessionId: string): Promise<number> {
+	assertNoSessionPersistence();
 	if (sessionId === '') return 0;
 	const table = await getResponseSegmentVecTable();
 	const before = await rowCountForSession(table, sessionId);
@@ -181,6 +186,7 @@ export async function deleteResponseSegmentsForSession(sessionId: string): Promi
 
 /** Delete every segment row tied to a single turn id. */
 export async function deleteResponseSegmentsForTurn(turnId: string): Promise<number> {
+	assertNoSessionPersistence();
 	if (turnId === '') return 0;
 	const table = await getResponseSegmentVecTable();
 	const rows = await table.query()

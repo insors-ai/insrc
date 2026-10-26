@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * A repository's recorded index state and the completeness derived from it
  * (Epic c2ba6fa6, Story s1; sc1 IndexState with AMD-c2ba6fa62a148ed1-2's
@@ -120,6 +121,7 @@ async function updateState(repoPath: string, change: (row: IndexStateRow) => voi
 
 /** A full index begins, after the repository's rows are deleted: generation advanced, counts zeroed, not finished. */
 export function beginFullIndexState(repoPath: string): Promise<void> {
+	assertNoSessionPersistence();
 	return updateState(repoPath, row => {
 		row.generation += 1;
 		row.pending = zeroPending();
@@ -139,11 +141,13 @@ export function beginFullIndexState(repoPath: string): Promise<void> {
  * after the delete.
  */
 export function markFullIndexUnfinished(repoPath: string): Promise<void> {
+	assertNoSessionPersistence();
 	return updateState(repoPath, row => { row.fullIndexFinished = false; });
 }
 
 /** The selected files the full index could not store. */
 export function setUncommittedFiles(repoPath: string, files: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	return updateState(repoPath, row => { row.uncommittedFiles = [...files]; });
 }
 

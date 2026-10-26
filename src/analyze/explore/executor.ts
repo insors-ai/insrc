@@ -26,7 +26,7 @@
 
 import { assertSessionReuseNow, beginSessionReuse, sessionReuseWindow, assertSessionReuse, assertSessionContinuation, rememberSessionContinuation } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -148,6 +148,11 @@ export interface ExecutePlanArgs {
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	return runWithConnectionExecution(execution, () => executePlanWithContext(args));
+}
+async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPlan> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
 	await beginSessionReuse(execution);
@@ -472,7 +477,12 @@ export type StepPlanResult = StepPlanPending | StepPlanDone;
  * stepPlan seeds outputsById + results from it and continues from the
  * next unprocessed exploration.
  */
-export async function stepPlan(
+export async function stepPlan(args: Parameters<typeof stepPlanWithContext>[0]): Promise<StepPlanResult> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	return runWithConnectionExecution(execution, () => stepPlanWithContext(args));
+}
+async function stepPlanWithContext(
 	args: ExecutePlanArgs & {
 		readonly resumeState?: StepPlanResumeState;
 	},

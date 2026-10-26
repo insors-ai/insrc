@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `entity_vec` LanceDB table -- entity embeddings + filter columns.
  *
@@ -116,6 +117,7 @@ export function _resetEntityVecCache(): void {
  * `embeddingModel` was empty).
  */
 export async function addEntityEmbedding(row: EntityVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await addEntityEmbeddings([row]);
 }
 
@@ -127,6 +129,7 @@ export async function addEntityEmbedding(row: EntityVecRow): Promise<void> {
  * O(target) JOIN cost is fatal at scale).
  */
 export async function addEntityEmbeddings(rows: readonly EntityVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getEntityVecTable();
 	await table.add(rows.map(r => ({
@@ -139,10 +142,12 @@ export async function addEntityEmbeddings(rows: readonly EntityVecRow[]): Promis
 }
 
 export async function writeEntityEmbedding(row: EntityVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeEntityEmbeddings([row]);
 }
 
 export async function writeEntityEmbeddings(rows: readonly EntityVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getEntityVecTable();
 	// Native upsert via Lance's mergeInsert -- one round-trip, dedup
@@ -207,6 +212,7 @@ export async function compactEntityVecTable(): Promise<{
 	filesRemoved:     number;
 	elapsedMs:        number;
 }> {
+	assertNoSessionPersistence();
 	const t0 = Date.now();
 	const table = await getEntityVecTable();
 	const stats = await table.optimize({
@@ -264,6 +270,7 @@ const HNSW_THRESHOLD = 50_000;
 export async function optimizeEntityVecIndex(
 	opts: { force?: boolean } = {},
 ): Promise<{ built: boolean; rowCount: number; elapsedMs: number }> {
+	assertNoSessionPersistence();
 	const t0 = Date.now();
 	const table = await getEntityVecTable();
 	const rowCount = await table.countRows();
@@ -318,6 +325,7 @@ export async function searchEntityVecs(
 	limit: number,
 	filter: EntityVecFilter = 'all',
 ): Promise<EntityVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || closureRepos.length === 0) return [];
 	// An empty list of kinds or of ids matches no row, and the query engine
 	// rejects an empty IN list: no hits, and no query is made.
@@ -363,12 +371,14 @@ export async function searchEntityVecs(
 // ---------------------------------------------------------------------------
 
 export async function deleteEntityVec(id: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (id === '') return;
 	const table = await getEntityVecTable();
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
 export async function deleteEntityVecsByIds(ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const table = await getEntityVecTable();
 	const list = ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
@@ -376,6 +386,7 @@ export async function deleteEntityVecsByIds(ids: readonly string[]): Promise<voi
 }
 
 export async function deleteEntityVecsForRepo(repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getEntityVecTable();
 	await table.delete(`repo = '${escapeLanceString(repo)}'`);
 }

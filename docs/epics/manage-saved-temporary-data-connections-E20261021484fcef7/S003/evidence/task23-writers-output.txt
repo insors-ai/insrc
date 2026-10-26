@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error
+ok 1 - runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error
+# Subtest: writeAtomic creates parent dirs + writes content
+ok 2 - writeAtomic creates parent dirs + writes content
+# Subtest: writeAtomic overwrites existing file
+ok 3 - writeAtomic overwrites existing file
+# Subtest: writeAtomic refuses relative paths
+ok 4 - writeAtomic refuses relative paths
+# Subtest: writeAtomic refuses empty path
+ok 5 - writeAtomic refuses empty path
+# Subtest: stubArtifactPaths returns docs/stub layout
+ok 6 - stubArtifactPaths returns docs/stub layout
+# Subtest: defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 7 - defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+# Subtest: hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 8 - hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+# Subtest: lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/
+ok 9 - lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/
+# Subtest: md folder is labelled by slug; json stays named by hash
+ok 10 - md folder is labelled by slug; json stays named by hash
+# Subtest: slug label is sanitised against path separators
+ok 11 - slug label is sanitised against path separators
+# Subtest: amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/
+ok 12 - amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/
+# Subtest: amendmentFilenamePrefix is `AMD-<hash>-`
+ok 13 - amendmentFilenamePrefix is `AMD-<hash>-`
+# Subtest: lldFilenamePrefix is `LLD-<hash>-`
+ok 14 - lldFilenamePrefix is `LLD-<hash>-`
+# Subtest: amendmentsRootDir points at .insrc/artifacts
+ok 15 - amendmentsRootDir points at .insrc/artifacts
+# Subtest: t1 — a DEF present and readable wins outright; the ISSUE is never consulted
+ok 16 - t1 — a DEF present and readable wins outright; the ISSUE is never consulted
+# Subtest: t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator
+ok 17 - t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator
+# Subtest: t1 — a DEF absent with an ISSUE present yields the ISSUE's values
+ok 18 - t1 — a DEF absent with an ISSUE present yields the ISSUE's values
+# Subtest: t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins
+ok 19 - t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins
+# Subtest: t1 — a DEF that PARSES but carries none of the three fields also falls through
+ok 20 - t1 — a DEF that PARSES but carries none of the three fields also falls through
+# Subtest: t1 — neither artifact readable yields an empty result and does NOT throw
+ok 21 - t1 — neither artifact readable yields an empty result and does NOT throw
+# Subtest: t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected
+ok 22 - t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected
+# Subtest: t1 — UNWIRED: the accessor exists but changes no folder path yet
+ok 23 - t1 — UNWIRED: the accessor exists but changes no folder path yet
+# Subtest: t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined
+ok 24 - t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined
+# Subtest: t2 — signature and return meaning unchanged for a DEF-bearing epic
+ok 25 - t2 — signature and return meaning unchanged for a DEF-bearing epic
+# Subtest: t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment
+ok 26 - t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment
+# Subtest: t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory
+ok 27 - t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory
+# Subtest: t2 — the anchor read is finalize-time only: path construction performs no read
+ok 28 - t2 — the anchor read is finalize-time only: path construction performs no read
+# Subtest: t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item
+ok 29 - t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item
+# Subtest: t5 — the raw hash appears nowhere in the composed folder name
+ok 30 - t5 — the raw hash appears nowhere in the composed folder name
+# Subtest: t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt
+ok 31 - t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt
+# Subtest: t5 — the hash fallback is still REACHABLE for a work item with no definition artifact
+ok 32 - t5 — the hash fallback is still REACHABLE for a work item with no definition artifact
+# Subtest: 3a98d279 — the STANDALONE route takes the label from the head, not the LLD
+ok 33 - 3a98d279 — the STANDALONE route takes the label from the head, not the LLD
+# Subtest: 3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD's createdAt
+ok 34 - 3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD's createdAt
+# Subtest: 3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash
+ok 35 - 3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash
+# Subtest: 3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it
+ok 36 - 3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it
+# Subtest: 3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`
+ok 37 - 3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`
+# Subtest: 0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last
+ok 38 - 0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last
+# Subtest: 0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD
+ok 39 - 0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD
+# Subtest: 0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD
+ok 40 - 0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD
+# Subtest: 0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing
+ok 41 - 0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing
+# Subtest: b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one
+ok 42 - b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one
+# Subtest: 0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record
+ok 43 - 0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record
+# Subtest: 0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort
+ok 44 - 0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort
+# Subtest: 0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder
+ok 45 - 0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder
+# Subtest: round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows
+ok 46 - round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows
+# Subtest: rejects an out-of-tree path (not under .insrc/artifacts or docs/)
+ok 47 - rejects an out-of-tree path (not under .insrc/artifacts or docs/)
+# Subtest: rejects a malformed / missing artifact JSON
+ok 48 - rejects a malformed / missing artifact JSON
+# Subtest: rejects a blank author or blank comment
+ok 49 - rejects a blank author or blank comment
+# Subtest: writeArtifactJson refuses an out-of-tree destination
+ok 50 - writeArtifactJson refuses an out-of-tree destination
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1569.557084

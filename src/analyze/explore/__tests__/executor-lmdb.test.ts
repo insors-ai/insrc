@@ -1,3 +1,4 @@
+import { executeSavedPlan as executePlan, stepSavedPlan as stepPlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /**
  * docs/plans/exploration-based-context-build.md Section 3. Executor
  * tests: dispatch, dependency resolution, cache hits, failure
@@ -23,7 +24,7 @@ import {
 	_getRunnersForTest,
 	_overrideRunnerForTest,
 } from '../executor.js';
-import { executePlan, stepPlan } from '../executor.js';
+
 import { handleAnalyzeStep } from '../../../daemon/steps/analyze-step/handler.js';
 import type {
 	Exploration,

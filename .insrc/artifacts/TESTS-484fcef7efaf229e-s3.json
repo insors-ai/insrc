@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T05:03:06.670Z",
+    "updatedAt": "2026-10-26T05:21:29.256Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1473,6 +1473,68 @@
               },
               {
                 "title": "CM-S3-LEASE: measurement timeout retains actual work through late success or rejection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "7b8a624ea",
+        "ranAt": "2026-10-26T05:21:29.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-FREEFORM: explicit/forced fallback, requestSize variants, direct/task loops and same tuple at every relay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/freeform-owner-relay.test.ts",
+                "title": "CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts",
+                "title": "a module request keeps its own directory, and a bare repo path stands for a workspace scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1093,
+            "titles": [
+              {
+                "title": "free-form lookup for a file-scope request builds a file intent and uses the resolved repo as the loop's path",
+                "result": "pass"
+              },
+              {
+                "title": "free-form loop's path for a connection is the connection's repo",
+                "result": "pass"
+              },
+              {
+                "title": "a module request keeps its own directory, and a bare repo path stands for a workspace scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/freeform-owner-relay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1949,
+            "titles": [
+              {
+                "title": "CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility",
                 "result": "pass"
               }
             ],

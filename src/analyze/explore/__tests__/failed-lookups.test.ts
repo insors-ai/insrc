@@ -1,3 +1,4 @@
+import { executeSavedPlan as executePlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /**
  * A lookup that cannot run is reported as failed, with what it had found,
  * and never as a lookup that found nothing (LLD-b9d5c5c40df5a574-s1, task t7).
@@ -42,7 +43,7 @@ import { runDbTablesList } from '../db-tables-list.js';
 import { runDocMention } from '../doc-mention.js';
 import { prepareDocConstraintEnumerate, runSharedDocConstraintEnumerate } from '../doc-constraint-enumerate.js';
 import { runSharedDocDecisionTrace } from '../doc-decision-trace.js';
-import { _getRunnersForTest, _overrideRunnerForTest, executePlan, failedOutput } from '../executor.js';
+import { _getRunnersForTest, _overrideRunnerForTest,  failedOutput } from '../executor.js';
 import { runFreeformProbe } from '../freeform-probe.js';
 import { LookupFailedError } from '../lookup-failed.js';
 import { manifestBodyUnparsable, runManifestsLocate } from '../manifests-locate.js';

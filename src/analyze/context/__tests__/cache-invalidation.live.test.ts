@@ -1,3 +1,4 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -35,7 +36,7 @@ import {
 	cacheFilePathFor,
 	type CacheKey,
 } from '../cache.js';
-import { runShaper } from '../driver.js';
+
 import type {
 	AnalyzeContextBundle,
 	RunShapeInput,

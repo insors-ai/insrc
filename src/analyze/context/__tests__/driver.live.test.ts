@@ -1,3 +1,4 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -51,7 +52,7 @@ import {
 	invalidateBundle,
 } from '../cache.js';
 import {
-	runShaper,
+
 	ShaperLlmUnavailableError,
 	ShaperToolLoopExhausted,
 } from '../driver.js';

@@ -1,3 +1,4 @@
+import { executeSavedPlan as executePlan, stepSavedPlan as stepPlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /**
  * Every lookup output carries a completeness record (LLD-b9d5c5c40df5a574-s1,
  * task t4).
@@ -49,7 +50,7 @@ import { runDbTablesList } from '../db-tables-list.js';
 import { finalizeDocConstraintEnumerate, prepareDocConstraintEnumerate } from '../doc-constraint-enumerate.js';
 import { finalizeDocDecisionTrace, prepareDocDecisionTrace } from '../doc-decision-trace.js';
 import { runDocMention } from '../doc-mention.js';
-import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest, executePlan, stepPlan } from '../executor.js';
+import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest,  } from '../executor.js';
 import { runFreeformProbe } from '../freeform-probe.js';
 import { runImportGraph } from '../import-graph.js';
 import { runManifestsLocate } from '../manifests-locate.js';

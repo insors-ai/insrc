@@ -1,3 +1,4 @@
+import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -115,7 +116,7 @@ export async function handlePlan(
 	// The token carries the intent, not a resolved scope: resolve it again.
 	const scope = await stepScope(state.intent, undefined, execution);
 	const step = await stepPlan({
-		connectionExecution: execution,
+		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,
 		repoPath:            scope.lookupPath,
 		closureRepos:        [scope.lookupPath],

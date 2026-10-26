@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 78 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -394,3 +394,21 @@ Run at 2026-10-26T05:03:06.670Z on commit `389675d84`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/__tests__/measurement-leases.test.ts` | 0 | 1 | 1.8 s |  |
 | `src/daemon/steps/__tests__/owner-measurement.test.ts` | 0 | 2 | 1.3 s |  |
+
+## t19
+
+Run at 2026-10-26T05:21:29.256Z on commit `7b8a624ea`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-FREEFORM: explicit/forced fallback, requestSize variants, direct/task loops and same tuple at every relay**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility | `src/daemon/steps/__tests__/freeform-owner-relay.test.ts` |
+| pass | a module request keeps its own directory, and a bare repo path stands for a workspace scope | `src/analyze/explore/__tests__/freeform-probe-scope.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/explore/__tests__/freeform-probe-scope.test.ts` | 0 | 3 | 1.1 s |  |
+| `src/daemon/steps/__tests__/freeform-owner-relay.test.ts` | 0 | 1 | 1.9 s |  |

@@ -1,3 +1,4 @@
+import { executeSavedPlan as executePlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /**
  * docs/plans/exploration-based-context-build.md Phase 1 follow-up:
  * placeholder substitution in the executor. Verifies that string
@@ -22,7 +23,7 @@ import type { RegisteredRepo } from '../../../shared/types.js';
 import {
 	_getRunnersForTest,
 	_overrideRunnerForTest,
-	executePlan,
+
 } from '../executor.js';
 import type {
 	Exploration,

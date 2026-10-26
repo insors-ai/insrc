@@ -20,7 +20,9 @@
  *      docs/plans/analyze-context-builder.md Phase 0
  */
 
-import { runShaper } from './driver.js';
+import { runShaper, prepareScope, readUnattachedSavedShaperCache } from './driver.js';
+import type { RunShaperArgs } from './driver.js';
+import { assertAnalysisConnectionExecution, savedAnalysisExecution } from '../connection-access.js';
 import type {
 	AnalyzeContextBundle,
 	ClassificationShapeInput,
@@ -78,6 +80,21 @@ function shaperIdForTask(target: TaskTarget): ShaperId {
 	return target;
 }
 
+/** Caller-facing normalization only. Internal shaper/runner APIs require the tuple. */
+async function runShaperAtEntry(args: Omit<RunShaperArgs, 'connectionExecution'> & { readonly connectionExecution?: RunShaperArgs['connectionExecution'] | undefined }): Promise<AnalyzeContextBundle> {
+	const execution = args.connectionExecution ?? args.opts.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	if (execution) return runShaper({ ...args, connectionExecution: execution });
+	const cached = await readUnattachedSavedShaperCache(args);
+	if (cached !== null) return cached;
+	const ref = 'scopeRef' in args.inputs ? args.inputs.scopeRef : args.inputs.intent.scopeRef;
+	// Directory scopes keep their own exact lookup path. Other scopes resolve the declaring/containing repo.
+	const root = ['repo', 'module', 'manifest-dir', 'workspace'].includes(ref.kind)
+		? ref.value : (await prepareScope(args.invocationMode, args.inputs, args.scopeDeps)).lookupPath;
+	return runShaper({ ...args, connectionExecution: savedAnalysisExecution(root) });
+}
+export const _runShaperAtEntryForTest = runShaperAtEntry;
+
 export function shaperFor(mode: 'classification'): ClassificationShaper;
 export function shaperFor(mode: 'run',  target: RunTarget):  RunShaper;
 export function shaperFor(mode: 'task', target: TaskTarget): TaskShaper;
@@ -92,7 +109,7 @@ export function shaperFor(
 				input: ClassificationShapeInput,
 				opts:  ShapeOpts,
 			): Promise<AnalyzeContextBundle> =>
-				runShaper({
+				runShaperAtEntry({
 					promptPath:     PROMPT_PATHS[shaperId],
 					invocationMode: 'classification',
 					shaperId,
@@ -112,7 +129,7 @@ export function shaperFor(
 				input: RunShapeInput,
 				opts:  ShapeOpts,
 			): Promise<AnalyzeContextBundle> =>
-				runShaper({
+				runShaperAtEntry({
 					promptPath:     PROMPT_PATHS[shaperId],
 					invocationMode: 'run',
 					shaperId,
@@ -137,7 +154,7 @@ export function shaperFor(
 			input: TaskShapeInput,
 			opts:  ShapeOpts,
 		): Promise<AnalyzeContextBundle> =>
-			runShaper({
+			runShaperAtEntry({
 				promptPath:     PROMPT_PATHS[shaperId],
 				invocationMode: 'task',
 				shaperId,

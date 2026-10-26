@@ -35,7 +35,7 @@ async function fixture(){
  return{root,runtime,owners,factories,async fresh(owner:typeof owners[number]){const current=await request(owner.context.connectionIdentity);return{...current,execution:await runtime.executionFor(current.context,root)};},async close(){for(const lifetime of requests){lifetime.abort();lifetime.complete();}await runtime.close();for(const lifetime of requests)await lifetime.drained;await closeAll();_setMeasureDepsForTest(undefined);PATHS.insrc=original;await rm(directory,{recursive:true,force:true});}};
 }
 
-import { executePlan, _overrideRunnerForTest, _getRunnersForTest } from '../../../../analyze/explore/executor.js';
+import { executePlan, stepPlan, _overrideRunnerForTest, _getRunnersForTest } from '../../../../analyze/explore/executor.js';
 import { runFreeformProbe, measureOwnRequest } from '../../../../analyze/explore/freeform-probe.js';
 import { _runExplorationPipelineForTest, _fallbackFreeformPlanForTest, runShaperToolLoop, runShaper, _buildToolDepsForTest } from '../../../../analyze/context/driver.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
@@ -75,6 +75,9 @@ test('actual owner freeform measurement and forced fallback relays',async()=>{
    await assert.rejects(runShaperToolLoop({connectionExecution:owner.execution,provider:poison,inputs:poison} as never),{code:'unsupported-temporary'});
    await assert.rejects(runShaper({connectionExecution:owner.execution,opts:{connectionExecution:owner.execution},inputs:poison} as never),{code:'unsupported-temporary'});
   }
+  assert.equal(reads,0);
+  const missing=new Proxy({}, {get(_target,key){if(key==='connectionExecution')return undefined;reads++;throw new Error('internal receiver inspected input before authority');}});
+  for(const receive of [runShaper,runShaperToolLoop,executePlan,stepPlan,_runExplorationPipelineForTest])await assert.rejects(receive(missing as never),{code:'session-expired'});
   assert.equal(reads,0);
   await runInStepContext({cwd:f.root,connectionExecution:expected},async()=>{await assert.rejects(async()=>measureOwnRequest({repoPath:f.root,connectionExecution:undefined} as never,'data'),{code:'session-expired'});});
   const fresh=await f.fresh(f.owners[0]!);expected=fresh.execution;

@@ -1,3 +1,5 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
+import { executeSavedPlan as executePlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -28,12 +30,12 @@ import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../../s
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { buildCompleteness, renderCompletenessLine, renderMeasureLine } from '../../completeness.js';
-import { executePlan, _getRunnersForTest, _overrideRunnerForTest } from '../../explore/executor.js';
+import {  _getRunnersForTest, _overrideRunnerForTest } from '../../explore/executor.js';
 import { measureOwnRequest, runFreeformProbe } from '../../explore/freeform-probe.js';
 import type { ExecutedPlan, Exploration, ExplorationPlan, ExplorationRunnerContext } from '../../explore/types.js';
 import type { RequestMeasure } from '../../measure.js';
 import { renderBundleAsMarkdown } from '../../../daemon/steps/bundle-md.js';
-import { runShaper, _computeCacheKeyForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
+import {  _computeCacheKeyForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
 import { resolveScope } from '../scope.js';
 import type { AnalyzeContextBundle, RunShapeInput } from '../types.js';
 

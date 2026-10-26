@@ -1,3 +1,4 @@
+import { stepSavedPlan as stepPlan } from '../../../analyze/__tests__/fixtures/saved-exploration-executor.js';
 /**
  * The step tool's path reports a lookup that cannot run as failed, the same
  * way the daemon's pipeline does (LLD-b9d5c5c40df5a574-s1, task t8).
@@ -13,7 +14,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { stepPlan } from '../../../analyze/explore/executor.js';
+
 import { getNarrowRunner } from '../../../analyze/explore/index.js';
 import type { Exploration, ExplorationOutput, ExplorationPlan, FailedExplorationOutput } from '../../../analyze/explore/types.js';
 import { getDb } from '../../../db/client.js';

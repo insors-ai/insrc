@@ -1,3 +1,4 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -42,7 +43,7 @@ import { PATHS } from '../../../shared/paths.js';
 import type { Entity } from '../../../shared/types.js';
 import { renderCompletenessLine } from '../../completeness.js';
 import type { ExecutedPlan, ExplorationPlan, SearchTextOutput } from '../../explore/types.js';
-import { runShaper, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
+import {  _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
 import { SCHEMA_VERSION } from '../schema.js';
 
 const GATE = process.env['INSRC_LIVE_TESTS'] === '1';

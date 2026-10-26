@@ -1,3 +1,4 @@
+import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /**
  * runShaper's own body for a run-mode request, driven directly: the
  * pairing check, the scope resolved once and handed on, the pipeline's
@@ -28,7 +29,7 @@ import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import { writeBundle } from '../cache.js';
 import { DecomposerLlmUnavailableError } from '../decomposer.js';
 import {
-	runShaper,
+
 	ShaperAnswerStepFailedError,
 	ShaperLlmUnavailableError,
 	ShaperIndexStateReadError,

@@ -80,7 +80,7 @@ import {
 	type CacheKey,
 } from './cache.js';
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
-import { assertAnalysisConnectionExecution, savedAnalysisExecution } from '../connection-access.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -130,7 +130,7 @@ const BUNDLE_LAYERS: readonly BundleLayerName[] = Object.freeze([
 
 export interface RunShaperArgs {
 	/** Trusted staged carrier; never reconstructed from serialized input. */
-	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly promptPath:     string;
 	readonly invocationMode: ShaperMode;
 	readonly shaperId:       ShaperId;
@@ -412,16 +412,12 @@ async function servedFromCache(
 	return current === undefined || !isStaleByIndexer(bundle, current);
 }
 
-export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
-	assertAnalysisConnectionExecution(args.opts?.connectionExecution ?? args.connectionExecution);
-	if (args.opts?.connectionExecution !== undefined && args.connectionExecution !== undefined && args.opts.connectionExecution !== args.connectionExecution) throw new ConnectionExecutionError('session-expired');
-	if (args.connectionExecution !== undefined) assertExplicitConnectionExecution(args.connectionExecution);
-	const supplied = args.opts?.connectionExecution ?? args.connectionExecution;
-	if (supplied?.mode === 'session-memory' && supplied.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
-	const cfg = loadAnalyzeConfig();
+type ShaperEntryArgs = Omit<RunShaperArgs, 'connectionExecution'>;
+
+/** One cache implementation shared by a strict invocation and the unattached saved entry. */
+async function prepareShaperCache(args: ShaperEntryArgs) {
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
-
 	// (1) Load prompt content; we need its hash for the cache key.
 	const promptContent = loadPromptFile(promptPath);
 
@@ -461,10 +457,33 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
 				'shaper cache hit',
 			);
-			return withCurrentHint(cached, inputs);
+			return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: withCurrentHint(cached, inputs) };
 		}
 		invalidateBundle(runId, cacheKey);
 	}
+
+	return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: null };
+}
+
+/** Cache-only saved front door: never constructs a provider or resolves a source on a hit. */
+export async function readUnattachedSavedShaperCache(args: ShaperEntryArgs): Promise<AnalyzeContextBundle | null> {
+	assertExplicitConnectionExecution(undefined);
+	if (args.opts.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
+	loadAnalyzeConfig();
+	return (await prepareShaperCache(args)).cachedBundle;
+}
+
+export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	if (args.opts?.connectionExecution !== undefined && args.opts.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
+	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	const cfg = loadAnalyzeConfig();
+	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
+	const runId = opts.runId;
+
+	const { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle } = await prepareShaperCache(args);
+	if (cachedBundle !== null) return cachedBundle;
 
 	// (4) A miss. Resolve the scope ONCE, for every mode. Everything below
 	// that needs the scope's repo, its lookup directory, its entity or
@@ -473,7 +492,6 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// request can arrive with a ready-made intent that no classifier
 	// validated.
 	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps, opts.connectionExecution ?? args.connectionExecution);
-	const execution = opts.connectionExecution ?? args.connectionExecution ?? savedAnalysisExecution(scope.lookupPath);
 
 	// (4.5) Before any model call, unless the caller made these checks
 	// already (runAnalyze, before it measured):
@@ -1440,7 +1458,7 @@ async function tryExplorationPipeline(
 	steps: PipelineSteps = REAL_PIPELINE_STEPS,
 ): Promise<PipelineOutcome> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	const execution = args.connectionExecution ?? savedAnalysisExecution(args.scope.lookupPath);
+	const execution = requireConnectionExecution(args.connectionExecution);
 	if (args.invocationMode !== 'run') return { kind: 'not-applicable' };
 	// Every run-mode shaper flows through the exploration pipeline
 	// (docs/plans/exploration-based-context-build.md Phase 6). Recipe-less

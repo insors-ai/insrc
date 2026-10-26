@@ -24,8 +24,8 @@
  * responsibility to emit a valid topological ordering).
  */
 
-import { assertAnalysisConnectionExecution, savedAnalysisExecution } from '../connection-access.js';
-import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -130,7 +130,7 @@ const NON_CACHEABLE: ReadonlySet<ExplorationType> = new Set([
 
 export interface ExecutePlanArgs {
 	/** Trusted staged carrier; never reconstructed from serialized input. */
-	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:            string;
 	readonly repoPath:         string;
 	readonly closureRepos:     readonly string[];
@@ -148,7 +148,7 @@ export interface ExecutePlanArgs {
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	const execution = args.connectionExecution ?? savedAnalysisExecution(args.repoPath);
+	const execution = requireConnectionExecution(args.connectionExecution);
 	const start = Date.now();
 	const results: ExecutedExploration[] = [];
 	const outputsById = new Map<string, ExplorationOutput>();
@@ -470,7 +470,7 @@ export async function stepPlan(
 	},
 ): Promise<StepPlanResult> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	const execution = args.connectionExecution ?? savedAnalysisExecution(args.repoPath);
+	const execution = requireConnectionExecution(args.connectionExecution);
 	const runStart = Date.now();
 	const outputsById = new Map<string, ExplorationOutput>();
 	const results: ExecutedExploration[] = [];

@@ -21,7 +21,8 @@ import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
 import { defaultDaemonPaths } from './daemon/paths.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
-import { registerDaemonCommands } from './daemon/commands.js';
+import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
+import type { ModelDefinitions } from './models/definitions.js';
 import { defaultHostFileSystem } from './hosts/fs.js';
 import { createHostRegistry } from './hosts/adapter.js';
 import { HOST_SPECS } from './hosts/specs.js';
@@ -238,11 +239,21 @@ export function activate(context: vscode.ExtensionContext): void {
   // client) — constructed once and reused by the ConfigSync engine AND the S007
   // Repo Configuration panel (its writeKeyPath/rawConfig per-repo read/write).
   const configGateway = createDaemonConfigGateway(client);
+  // Offer a daemon restart for changes that apply only after one (s6): the action runs the
+  // restart and reports whether the daemon came back (restartDaemonAndReport).
+  const offerRestart = (message: string): void => {
+    void Promise.resolve(vscode.window.showInformationMessage(message, {}, 'Restart daemon')).then((choice) => {
+      if (choice === 'Restart daemon') void restartDaemonAndReport({ status, controller });
+    });
+  };
   const configSync = createConfigSyncEngine({
     gateway: configGateway,
     settings: configSettings,
     notifier: configNotifier,
     keyMap: MERGED_KEY_MAP,
+    // Native tier edits are checked against the daemon's model definitions (s6).
+    definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+    onRestartRequired: (keys) => offerRestart(`insrc: ${keys.join(', ')} saved — restart the daemon to apply`),
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
   void activationSettled.then(() => configSync.pullFromDaemon());

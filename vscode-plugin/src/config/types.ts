@@ -12,6 +12,7 @@
  */
 
 import type { ConfigOption } from '../../../src/config/config-catalog.js';
+import type { ModelDefinitions } from '../models/definitions.js';
 
 /** One native settings key that changed since the last daemon sync. */
 export interface ChangedKey {
@@ -136,4 +137,12 @@ export interface ConfigSyncDeps {
   readonly settings: SettingsStore;
   readonly notifier: Notifier;
   readonly keyMap: ConfigKeyMap;
+  /**
+   * The daemon's model definitions (models.definitions), against which a native tier
+   * edit is checked (Epic ce99b72065d03b1b, Story s6). Absent: a tier edit cannot be
+   * checked and is reverted.
+   */
+  readonly definitions?: (() => Promise<ModelDefinitions>) | undefined;
+  /** Called once after a batch whose accepted writes need a daemon restart to apply, with their native keys. */
+  readonly onRestartRequired?: ((nativeKeys: readonly string[]) => void) | undefined;
 }

@@ -18,14 +18,38 @@
  *
  * S001 implements pull + validate + write ONLY. The toast/auto-revert/loop-
  * suppression UX and the Refresh command are s3's consumption of this contract.
+ *
+ * Model tiers (Epic ce99b72065d03b1b, Story s6): a change to an
+ * insrc.models.tiers.<tier>.runner / .model / .effort key is a TIER edit. Its valid
+ * values are the daemon's model definitions, not a list in the manifest: the tier's
+ * three native values are checked against models.definitions and, when valid, written
+ * ONCE as the whole tier, so Settings can never save half a tier or a model the family
+ * does not serve. An invalid edit is reverted with the reason.
  */
 
 import type { ConfigOption } from '../../../src/config/config-catalog.js';
+import { classifyDaemonFailure, familyDefault, familyOf, servedModel, type DefinedModel, type ModelDefinitions } from '../models/definitions.js';
 import type {
   ChangedKey,
   ConfigSyncDeps,
   ConfigSyncEngine,
+  ConfigWriteResult,
 } from './types.js';
+
+/** The three fields of a tier, in the order they are read and written. */
+const TIER_FIELDS = ['runner', 'model', 'effort'] as const;
+type TierField = (typeof TIER_FIELDS)[number];
+
+/** The tier and field a catalog path names, when it is one of a tier's three fields. */
+export function tierFieldOf(path: string): { readonly tier: string; readonly field: TierField } | undefined {
+  const m = /^models\.tiers\.([^.]+)\.(runner|model|effort)$/.exec(path);
+  return m === null ? undefined : { tier: m[1]!, field: m[2] as TierField };
+}
+
+/** A refusal as the user reads it: the daemon's reason, and its detail when it gives one. */
+function refusalText(result: Extract<ConfigWriteResult, { ok: false }>): string {
+  return result.detail !== undefined ? `${result.reason} — ${result.detail}` : result.reason;
+}
 
 /**
  * Validate a value against its catalog option's type contract (the client-side
@@ -70,7 +94,7 @@ export function readAtSegments(root: Record<string, unknown>, segments: readonly
 
 /** Build the sc8 ConfigSync engine over its injected boundaries. Never throws. */
 export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
-  const { gateway, settings, notifier, keyMap } = deps;
+  const { gateway, settings, notifier, keyMap, definitions, onRestartRequired } = deps;
 
   // The last-known-good values the daemon holds, keyed by native key. Private to
   // sc8; captured on each successful pull and advanced per successful write. s3's
@@ -103,6 +127,95 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
     } catch {
       // A revert write failure must never throw; the rejection was already surfaced.
     }
+  };
+
+  /** The native key of a tier field (the manifest maps every tier field). */
+  const tierKey = (tier: string, field: TierField): string | undefined => keyMap.byPath(`models.tiers.${tier}.${field}`)?.nativeKey;
+
+  /**
+   * Apply a batch's changes to one tier: read the tier's three native values (the
+   * changed ones from the batch, the others as currently set), check them against the
+   * daemon's definitions, and write the whole tier once. Every refusal reverts the
+   * changed keys. Returns the native keys whose write needs a restart. Never throws.
+   */
+  const applyTier = async (tier: string, changes: readonly ChangedKey[]): Promise<readonly string[]> => {
+    const changedField = (field: TierField) => changes.some((c) => c.key === tierKey(tier, field));
+    const revert = async (message: string): Promise<readonly string[]> => {
+      notifier.error(message);
+      for (const c of changes) {
+        const entry = keyMap.byNativeKey(c.key);
+        if (entry !== undefined) await revertToLastKnown(c.key, entry.option);
+      }
+      return [];
+    };
+    const values = {} as Record<TierField, unknown>;
+    for (const field of TIER_FIELDS) {
+      const key = tierKey(tier, field);
+      const change = changes.find((c) => c.key === key);
+      values[field] = change !== undefined ? change.value : key !== undefined ? settings.read(key) : '';
+      if (values[field] === undefined || values[field] === null) values[field] = '';
+      if (typeof values[field] !== 'string') return revert(`insrc: '${key ?? field}' must be a string — change not applied`);
+    }
+    const runner = (values.runner as string).trim();
+    const model = (values.model as string).trim();
+    const effort = (values.effort as string).trim();
+
+    let tierValue: { runner: string; model: string; effort: string } | null;
+    if (runner === '' && model === '' && effort === '') {
+      tierValue = null; // all empty: clear the tier, so the definitions' default applies.
+    } else {
+      if (definitions === undefined) return revert(`insrc: the ${tier} tier cannot be checked against the daemon's model definitions — change not applied`);
+      let defs: ModelDefinitions;
+      try {
+        defs = await definitions();
+      } catch (err) {
+        return revert(`insrc: could not check the ${tier} tier — ${classifyDaemonFailure(err).text} — change not applied`);
+      }
+      const family = familyOf(defs, runner === '' ? defs.defaultFamily : runner);
+      if (family === undefined) {
+        return revert(`insrc: '${runner}' is not a model family the daemon serves (${defs.families.map((f) => f.id).join(', ')}) — ${tier} tier not changed`);
+      }
+      let chosen: DefinedModel | undefined = model === '' ? undefined : servedModel(family, model);
+      let chosenEffort = effort;
+      // An empty model, or a family switch that left the old family's model, takes the family's default for the tier.
+      if (model === '' || (chosen === undefined && changedField('runner') && !changedField('model'))) {
+        const fallback = familyDefault(family, tier);
+        if (fallback === undefined) return revert(`insrc: ${family.displayName} lists no models — ${tier} tier not changed`);
+        chosen = fallback.model;
+        if (chosenEffort === '') chosenEffort = fallback.effort;
+      } else if (chosen === undefined) {
+        return revert(family.cliKind !== undefined
+          ? `insrc: '${model}' is not a model the daemon lists for ${family.displayName} — run 'insrc: Set model tier' to check and approve it — ${tier} tier not changed`
+          : `insrc: '${model}' is not a listed ${family.displayName} model; only listed ${family.displayName} models can be used (${family.models.map((m) => m.id).join(', ')}) — ${tier} tier not changed`);
+      }
+      if (chosenEffort !== '' && !chosen.efforts.includes(chosenEffort)) {
+        // An effort the user set must be one the model takes; one left from another model is dropped.
+        if (changedField('effort')) {
+          return revert(`insrc: effort '${chosenEffort}' is not accepted by ${chosen.id} (${chosen.efforts.length > 0 ? `accepted: ${chosen.efforts.join(', ')}` : 'it takes none'}) — ${tier} tier not changed`);
+        }
+        chosenEffort = '';
+      }
+      tierValue = { runner: family.id, model: chosen.id, effort: chosenEffort };
+    }
+
+    let result: ConfigWriteResult;
+    try {
+      result = await gateway.writeKeyPath(['models', 'tiers', tier], tierValue);
+    } catch (err) {
+      return revert(`insrc: could not save the ${tier} tier — ${err instanceof Error ? err.message : String(err)}`);
+    }
+    if (!result.ok) return revert(`insrc: daemon rejected the ${tier} tier — ${refusalText(result)}`);
+    // Mirror the written tier in the native keys; the snapshot is set first so the echo is a no-op.
+    for (const field of TIER_FIELDS) {
+      const key = tierKey(tier, field);
+      if (key === undefined) continue;
+      const written = tierValue === null ? '' : tierValue[field];
+      lastSyncedSnapshot.set(key, written);
+      if (settings.read(key) !== written) {
+        try { await settings.write(key, written); } catch { /* the daemon holds the tier; the next pull repairs the mirror */ }
+      }
+    }
+    return result.restartRequired === true ? changes.map((c) => c.key) : [];
   };
 
   return {
@@ -165,6 +278,8 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
     },
 
     async applyChanges(changed: readonly ChangedKey[]): Promise<void> {
+      const restartKeys: string[] = [];
+      const tierChanges = new Map<string, ChangedKey[]>();
       for (const change of changed) {
         const entry = keyMap.byNativeKey(change.key);
         // Unknown native key (drift) — never write it.
@@ -172,6 +287,13 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
 
         // Idempotent no-op: the value already equals what the daemon holds.
         if (lastSyncedSnapshot.has(change.key) && Object.is(lastSyncedSnapshot.get(change.key), change.value)) {
+          continue;
+        }
+
+        // A tier field: collected, then checked and written as the whole tier below.
+        const tierField = tierFieldOf(entry.path);
+        if (tierField !== undefined) {
+          tierChanges.set(tierField.tier, [...(tierChanges.get(tierField.tier) ?? []), change]);
           continue;
         }
 
@@ -192,8 +314,9 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
               : await gateway.writeKey(entry.path, change.value);
           if (result.ok) {
             lastSyncedSnapshot.set(change.key, change.value);
+            if (result.restartRequired === true) restartKeys.push(change.key);
           } else {
-            notifier.error(`insrc: daemon rejected '${change.key}' — ${result.reason}`);
+            notifier.error(`insrc: daemon rejected '${change.key}' — ${refusalText(result)}`);
             await revertToLastKnown(change.key, entry.option); // S003: daemon refused → revert.
           }
         } catch (err) {
@@ -202,6 +325,8 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
           await revertToLastKnown(change.key, entry.option); // S003: daemon unreachable → revert.
         }
       }
+      for (const [tier, changes] of tierChanges) restartKeys.push(...(await applyTier(tier, changes)));
+      if (restartKeys.length > 0) onRestartRequired?.(restartKeys);
     },
   };
 }

@@ -11,8 +11,9 @@
 
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { gitDiffTool } from '../builtins/git/diff.js';
 import { withFailureNet } from '../builtins/git/helpers.js';
@@ -29,6 +30,8 @@ import * as ghRepo from '../builtins/gh/repo.js';
 import * as ghActions from '../builtins/gh/actions.js';
 import * as ghRelease from '../builtins/gh/release.js';
 import { callTool } from '../call-tool.js';
+import { isDefinitionOf } from '../provenance.js';
+import { getTool } from '../registry.js';
 import type { TypedTool } from '../call-tool.js';
 import { _setApprovalGateForTests } from '../executor.js';
 import { _resetRegistryForTests, registerTool } from '../registry.js';
@@ -46,7 +49,35 @@ function typed(id: string, calls: { n: number }, total = 1): TypedTool {
 const REFUSED = /not the definition that was passed/;
 const input = { name: 'a', count: 1 };
 
-test('call-tool-identity.test.ts, real tools: every real git definition and gh export, a plain registered tool and a twice-wrapped one run', async () => {
+/** Every export of the tool files in a directory that looks like a tool: a string id and an execute function. */
+async function toolExports(dir: string, skip: readonly string[]): Promise<Array<[string, TypedTool]>> {
+	const out: Array<[string, TypedTool]> = [];
+	for (const file of readdirSync(dir).filter(n => n.endsWith('.ts') && !n.endsWith('.test.ts') && !skip.includes(n)).sort()) {
+		const mod = await import(pathToFileURL(join(dir, file)).href) as Record<string, unknown>;
+		for (const [name, value] of Object.entries(mod)) {
+			const v = value as { id?: unknown; execute?: unknown } | null;
+			if (v !== null && typeof v === 'object' && typeof v.id === 'string' && typeof v.execute === 'function') out.push([`${file}:${name}`, value as TypedTool]);
+		}
+	}
+	return out;
+}
+
+test('call-tool-identity.test.ts, real tools: every exported git definition and every exported gh tool is the registered tool or a marked copy of it', async () => {
+	const here = dirname(fileURLToPath(import.meta.url));
+	_resetRegistryForTests();
+	registerGitTools(); registerGhTools();
+	const git = await toolExports(join(here, '../builtins/git'), ['index.ts', 'helpers.ts', 'coverage.ts', 'schemas.ts', 'parsers.ts']);
+	const gh = await toolExports(join(here, '../builtins/gh'), ['index.ts', 'helpers.ts', 'coverage.ts', 'schemas.ts', 'parsers.ts', 'inputs.ts', 'convert.ts', 'op-table.ts']);
+	assert.ok(git.length >= 34, `found ${git.length} git definitions`);
+	assert.ok(gh.length >= 46, `found ${gh.length} gh tools`);
+	for (const [where, tool] of [...git, ...gh]) {
+		const registered = getTool(tool.id);
+		assert.ok(registered !== undefined, `${where} (${tool.id}) is registered`);
+		assert.equal(isDefinitionOf(registered!, tool), true, `${where} (${tool.id}) passes the provenance check`);
+	}
+});
+
+test('call-tool-identity.test.ts, real tools: recorded runs of a git definition, five gh exports and a gh family, a plain registered tool and a twice-wrapped one run', async () => {
 	_resetRegistryForTests();
 	registerGitTools(); registerGhTools();
 

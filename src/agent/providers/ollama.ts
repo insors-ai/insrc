@@ -1,5 +1,6 @@
+import { fileURLToPath } from 'node:url';
 import { ConnectionExecutionError } from '../../shared/step-context.js';
-import { assertConnectionProviderAdmission, assertConnectionProviderTransport, recordLocalConnectionProvider } from '../../shared/connection-provider.js';
+import { assertConnectionProviderAdmission, assertConnectionProviderTransport, recordLocalConnectionProvider, captureConnectionProviderModule } from '../../shared/connection-provider.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -312,7 +313,7 @@ export class OllamaProvider implements LLMProvider {
 		});
 		if (this.connectionMemoryOnly) { Object.freeze(Object.getOwnPropertyDescriptor(this.client, 'config')?.value); Object.freeze(this.client); Object.freeze(this); }
 		nativePrivacyIdentities.set(this, recordLocalConnectionProvider(this, {
-			modelId: this.model, host, source: new URL(import.meta.url).pathname, memoryOnly: this.connectionMemoryOnly,
+			modelId: this.model, host, source: fileURLToPath(import.meta.url), moduleEvidence: modulePrivacyEvidence, memoryOnly: this.connectionMemoryOnly,
 			assertUnchanged: () => {
 				assertOriginalAdapterMethods();
 				if (Object.getPrototypeOf(this) !== prototype || own('client') !== client || own('signalledClient') !== signalled || own('model') !== selectedModel || own('connectionMemoryOnly') !== true || own('numCtx') !== contextSize || own('quirks') !== quirks || !Object.isFrozen(quirks) || own('capabilities') !== capabilities || !Object.isFrozen(capabilities) || own('supportsTools') !== true || !Object.isFrozen(this) || !Object.isFrozen(client) || chainChanged()) throw new ConnectionExecutionError('unsupported-temporary');
@@ -818,6 +819,7 @@ export class OllamaProvider implements LLMProvider {
 /** Tool turns an Ollama reviewer session may take; its deadline is the real bound. */
 // Module-load baseline prevents a pre-construction helper substitution from
 // being mistaken for a native implementation when identity is first recorded.
+const modulePrivacyEvidence = captureConnectionProviderModule(import.meta.url);
 const originalAdapterMethods = new Map(Reflect.ownKeys(OllamaProvider.prototype).map(key => [key, Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)!]));
 function assertOriginalAdapterMethods(): void {
 	const keys = Reflect.ownKeys(OllamaProvider.prototype);

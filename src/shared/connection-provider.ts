@@ -2,6 +2,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { LLMProvider } from './types.js';
 import { assertExplicitConnectionExecution, currentStepContext, ConnectionExecutionError, runWithConnectionExecution } from './step-context.js';
 import type { ConnectionExecutionContext } from './step-context.js';
@@ -17,6 +18,7 @@ interface LocalIdentity {
 	readonly modelId: string;
 	readonly host: string;
 	readonly source: string;
+	readonly moduleEvidence: object;
 	readonly memoryOnly: boolean;
 	readonly assertUnchanged: () => void;
 }
@@ -27,7 +29,30 @@ const verificationCounts = new WeakMap<LLMProvider, number>();
 interface Attempt { readonly execution: ConnectionExecutionContext; readonly proof: Proof }
 const attempts = new AsyncLocalStorage<Attempt>();
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
-const adapterFingerprint = (identity: LocalIdentity) => digest(Buffer.concat([readFileSync(identity.source), readFileSync(new URL(import.meta.url)), readFileSync(new URL('../../node_modules/ollama/package.json', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/index.mjs', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/browser.mjs', import.meta.url)), readFileSync(new URL('../agent/providers/structured-output.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url))]));
+const adapterFingerprint = (source: string) => digest(Buffer.concat([readFileSync(source), readFileSync(new URL(import.meta.url)), readFileSync(new URL('../../node_modules/ollama/package.json', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/index.mjs', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/browser.mjs', import.meta.url)), readFileSync(new URL('../agent/providers/structured-output.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url))]));
+
+interface LoadedModule { readonly source: string; readonly digest: string; active: boolean }
+const loadedModules = new WeakMap<object, LoadedModule>();
+const currentModules = new Map<string, LoadedModule>();
+/** Trusted module-initialization port, never a request/data path. Fingerprints
+ * attest the bytes loaded by this module generation. Changing a file on disk
+ * does not replace Node's loaded implementation; reloading/restarting does.
+ * A newly evaluated generation synchronously revokes its predecessor before
+ * it can admit another request, without filesystem work on a refusal path.
+ */
+export function captureConnectionProviderModule(sourceUrl: string): object {
+	const source = fileURLToPath(sourceUrl), previous = currentModules.get(source);
+	if (previous) previous.active = false;
+	if (!previous && currentModules.size >= 64) throw new ConnectionExecutionError('resource-limit');
+	const state: LoadedModule = { source, digest: adapterFingerprint(source), active: true };
+	const token = Object.freeze(Object.create(null)) as object;
+	loadedModules.set(token, state); currentModules.set(source, state); return token;
+}
+function assertCurrentModule(identity: Readonly<LocalIdentity>): LoadedModule {
+	const module = loadedModules.get(identity.moduleEvidence);
+	if (!module || !module.active || module.source !== identity.source || currentModules.get(module.source) !== module) throw new ConnectionExecutionError('unsupported-temporary');
+	return module;
+}
 
 /** Internal adapter registration, called only by the concrete constructor. It
  * grants nothing: actual-service verification must issue a separate opaque proof.
@@ -37,9 +62,10 @@ export function recordLocalConnectionProvider(candidate: LLMProvider, identity: 
 }
 function checkProof(proof: Proof): void {
 	try {
-		proof.identity.assertUnchanged(); proof.assertService();
-		if (adapterFingerprint(proof.identity) !== proof.sourceDigest) throw new ConnectionExecutionError('unsupported-temporary');
+		const module = assertCurrentModule(proof.identity);
+		if (module.digest !== proof.sourceDigest) throw new ConnectionExecutionError('unsupported-temporary');
 		if (identities.get(proof.candidate) !== proof.identity) throw new ConnectionExecutionError('unsupported-temporary');
+		proof.identity.assertUnchanged(); proof.assertService();
 	} catch { throw new ConnectionExecutionError('unsupported-temporary'); }
 }
 
@@ -56,8 +82,10 @@ export async function verifyLocalConnectionProvider(candidate: LLMProvider, port
 }): Promise<object> {
 	assertConnectionProviderAdmission();
 	const identity = identities.get(candidate);
+	if (!identity) throw new ConnectionExecutionError('unsupported-temporary');
 	const { nativeConnectionProviderIdentity } = await import('../agent/providers/ollama.js');
 	if (nativeConnectionProviderIdentity(candidate) !== identity || !identity || !identity.memoryOnly || identity.modelId !== ports.modelId || identity.host !== ports.host) throw new ConnectionExecutionError('unsupported-temporary');
+	const sourceDigest = assertCurrentModule(identity).digest;
 	const endpoint = new URL(identity.host);
 	if (endpoint.protocol !== 'http:' || !['127.0.0.1', '[::1]'].includes(endpoint.hostname) || endpoint.username || endpoint.password || endpoint.pathname !== '/') throw new ConnectionExecutionError('unsupported-temporary');
 	const count = verificationCounts.get(candidate) ?? 0; if (count >= 64) throw new ConnectionExecutionError('resource-limit'); verificationCounts.set(candidate, count + 1);
@@ -65,9 +93,10 @@ export async function verifyLocalConnectionProvider(candidate: LLMProvider, port
 	const version = await fetch(new URL('/api/version', endpoint), { signal: AbortSignal.timeout(4000) });
 	if (!version.ok) throw new ConnectionExecutionError('unsupported-temporary');
 	const serviceVersion: unknown = await version.json();
-	const sourceDigest = adapterFingerprint(identity);
+	assertCurrentModule(identity);
 	const marker = 'CM_LOCAL_PRIVACY_' + randomUUID().replaceAll('-', '');
 	const before = await ports.snapshot();
+	assertCurrentModule(identity);
 	const response = await candidate.complete([{ role: 'user', content: 'Return exactly this marker and nothing else: ' + marker }], { maxTokens: 128, temperature: 0, cacheSystem: false, disableThinking: true, signal: AbortSignal.timeout(180000) });
 	ports.assertIsolatedService(); identity.assertUnchanged();
 	if (!response.text.includes(marker)) throw new ConnectionExecutionError('unsupported-temporary');

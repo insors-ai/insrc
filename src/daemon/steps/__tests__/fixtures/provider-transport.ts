@@ -67,3 +67,42 @@ test('memory-only adapter refuses internal helper substitution before native con
 	try { assert.throws(() => new OllamaProvider('qwen3.8:27b', 'http://127.0.0.1:1', 2048, undefined, 'memory-only'), { code: 'unsupported-temporary' }); assert.equal(reads, 0); }
 	finally { Object.defineProperty(prototype, 'clientFor', descriptor); }
 });
+
+import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { mkdtemp, cp, symlink, writeFile, appendFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+test('issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'cm-stale-provider-')), repo = fileURLToPath(new URL('../../../../../', import.meta.url));
+	let requests = 0; const server = createServer((request, response) => {
+		if (request.url === '/api/version') { request.resume(); response.end(JSON.stringify({ version: 'SDK-fixture-not-live-service-evidence' })); return; }
+		let body = ''; request.on('data', b => { body += b; }); request.once('end', () => { requests++; const marker = JSON.parse(body).messages[0].content.match(/CM_LOCAL_PRIVACY_[a-f0-9]+/)[0]; response.writeHead(200, { 'content-type': 'application/x-ndjson' }); response.end(JSON.stringify({ message: { role: 'assistant', content: marker }, done: true }) + '\n'); });
+	});
+	await new Promise<void>(r => server.listen(0, '127.0.0.1', r)); const address = server.address(); assert.ok(address && typeof address === 'object'); const host = 'http://127.0.0.1:' + address.port;
+	let lifetime: { abort(): void; complete(): void; readonly drained: Promise<void> } | undefined;
+	try {
+		await cp(join(repo, 'out'), join(root, 'out'), { recursive: true }); await symlink(join(repo, 'node_modules'), join(root, 'node_modules')); await writeFile(join(root, 'package.json'), '{"type":"module"}');
+		const artifact = join(root, 'out/agent/providers/ollama.js'), url = pathToFileURL(artifact).href;
+		const native = await import(url), policy = await import(pathToFileURL(join(root, 'out/shared/connection-provider.js')).href), context = await import(pathToFileURL(join(root, 'out/shared/step-context.js')).href), request = await import(pathToFileURL(join(root, 'out/daemon/request-context.js')).href);
+		const candidate = new native.OllamaProvider('qwen3.8:27b', host, 2048, undefined, 'memory-only');
+		const proof = await policy.verifyLocalConnectionProvider(candidate, { modelId: 'qwen3.8:27b', host, assertIsolatedService() { assert.ok(server.listening); }, snapshot: async () => [] });
+		lifetime = new request.RequestLifetime();
+		const execution = context.sessionConnectionExecution(Object.freeze({ lookupRoot: root, daemonEpoch: 'stale-fixture', sessionHandle: 'owner' }), { bindingId: 'stale', audience: 'workbench-ui', controlGeneration: 1, lifetime, assertActive() { } });
+		const facade = policy.admitConnectionProvider(candidate, execution, proof);
+		// Change only a private copied artifact, then actually evaluate its new
+		// module generation. The prior issued proof must become stale in memory.
+		await appendFile(artifact, '\n// private fixture generation changed\n'); await import(url + '?generation=changed');
+		let fileCalls = 0, spawned = 0, payloadReads = 0;
+		const spies = [mock.method(fs, 'readFileSync', () => { fileCalls++; throw Error('unexpected file access'); }), mock.method(fsPromises, 'readFile', async () => { fileCalls++; throw Error('unexpected file access'); }), mock.method(fs, 'writeFileSync', () => { fileCalls++; throw Error('unexpected write'); }), mock.method(fsPromises, 'writeFile', async () => { fileCalls++; throw Error('unexpected write'); }), mock.method(childProcess, 'spawn', () => { spawned++; throw Error('unexpected spawn'); }), mock.method(childProcess, 'fork', () => { spawned++; throw Error('unexpected fork'); })]; syncBuiltinESMExports();
+		try {
+			const poison = new Proxy({}, { get() { payloadReads++; throw Error('private payload'); } });
+			assert.throws(() => policy.admitConnectionProvider(candidate, execution, proof), { code: 'unsupported-temporary' }); await assert.rejects(facade.complete(poison, poison), { code: 'unsupported-temporary' });
+			assert.equal(fileCalls, 0); assert.equal(spawned, 0); assert.equal(payloadReads, 0); assert.equal(requests, 1, 'only the initial verifier reaches the actual SDK fixture');
+		} finally { for (const spy of spies) spy.mock.restore(); syncBuiltinESMExports(); }
+	} finally { lifetime?.abort(); lifetime?.complete(); if (lifetime) await lifetime.drained; server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); await rm(root, { recursive: true, force: true }); }
+});

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 85 pass, 3 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 90 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -479,26 +479,26 @@ Run at 2026-10-26T08:27:38.643Z on commit `11d7d4a0e`. Tests check: **passed**. 
 
 ## t24
 
-Run at 2026-10-26T09:18:51.492Z on commit `3ed81f134`. Tests check: **failed**. 1 pass, 3 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
-
-named test cases that did not pass: fail: 'memory-only Ollama transport rejects malformed frames before SDK console diagnostics' in src/agent/providers/__tests__/ollama-private-transport.test.ts; fail: 'memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame' in src/agent/providers/__tests__/ollama-private-transport.test.ts; fail: 'memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics' in src/agent/providers/__tests__/ollama-private-transport.test.ts
+Run at 2026-10-26T09:47:49.086Z on commit `7d47bfeba`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards | `src/daemon/steps/__tests__/provider-admission.test.ts` |
-| fail | memory-only Ollama transport rejects malformed frames before SDK console diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
-| fail | memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
-| fail | memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only Ollama transport rejects malformed frames before SDK console diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | admitted Session expiry during real structured validation prevents the next SDK retry | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only adapter refuses internal helper substitution before native construction | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
 
 **live: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; actual isolated source and compiled live runs both pass with zero skips in task24-live-source-output.txt and task24-live-compiled-output.txt. Reproducible test: src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1, then INSRC_PROVIDER_MODE=compiled, Node22. Production configured-service proof stays pending; tests close their private servers.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final source and compiled actual isolated Ollama runs both pass with zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt). Test: src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Covers actual native complete/completeStructured, callback policy/persistence denial, copied/wrong-instance proof, immutable model and private helper getter rejection, cancellation, expiry, normal daemon Saved marker, final output snapshots and actual server close. Configured production service remains pending; no release enabled.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 1 | 3 | 0.6 s |  |
+| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 5 | 0.8 s |  |
 | `src/daemon/steps/__tests__/provider-admission.test.ts` | 0 | 2 | 0.7 s |  |

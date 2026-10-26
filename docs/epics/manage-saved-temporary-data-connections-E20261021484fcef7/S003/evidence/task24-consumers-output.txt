@@ -95,8 +95,8 @@ ok 46 - registerBuiltinRuntimes registers BOTH code + generic families (idempote
 ok 47 - GENERIC_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
 # Subtest: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
 ok 48 - CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
-# Subtest: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused
-ok 49 - CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused
+# Subtest: CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence
+ok 49 - CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence
 1..49
 # tests 49
 # suites 0
@@ -105,4 +105,4 @@ ok 49 - CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unava
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 787.753375
+# duration_ms 786.794792

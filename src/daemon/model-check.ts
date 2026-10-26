@@ -221,10 +221,13 @@ async function checkCodex(ctx: Context, claimed: readonly EffortLevel[]): Promis
 	const run = await call(ctx, ['exec', '--json', '--skip-git-repo-check', '--sandbox', 'read-only', '-C', ctx.cwd, '-m', ctx.modelId], PROBE_PROMPT);
 	const runDown = unreachable(ctx, run);
 	if (runDown !== undefined) return { cliVersion, runs: false, efforts, error: runDown };
-	const events = run.stdout.split('\n').flatMap(line => { const v = parseJson(line.trim()); return isRecord(v) ? [v] : []; });
+	// codex exec --json writes only JSON event lines to stdout (its notices go to
+	// stderr), so a line that is not a JSON object makes the run unreadable.
+	const lines = run.stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+	const events = lines.flatMap(line => { const v = parseJson(line); return isRecord(v) ? [v] : []; });
 	const refusal = codexRefusal(events);
 	if (refusal !== undefined) return { cliVersion, runs: false, efforts, error: `the ${ctx.kind} CLI refused the model: ${refusal}` };
-	if (run.exitCode !== 0 || !events.some(e => e['type'] === 'turn.completed')) return { cliVersion, runs: false, efforts, error: unreadable(ctx, run) };
+	if (run.exitCode !== 0 || events.length !== lines.length || !events.some(e => e['type'] === 'turn.completed')) return { cliVersion, runs: false, efforts, error: unreadable(ctx, run) };
 	return { cliVersion, runs: true, efforts };
 }
 

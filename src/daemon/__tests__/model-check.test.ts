@@ -202,6 +202,9 @@ test("model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp 
 	assert.equal(crashed.runs, false);
 	assert.equal(crashed.error, 'the codex CLI gave unreadable output: exit 1: panic: something broke');
 
+	fake({ exec: { 'gpt-new': { exit: 0, lines: [{ type: 'thread.started' }, '{"type": "item.compl', { type: 'turn.completed' }] } } });
+	assert.match((await check('gpt-new', [])).error ?? '', /gave unreadable output: exit 0/, 'a malformed line beside turn.completed is not a run');
+
 	fake({ exec: { 'gpt-new': { exit: 1, lines: [{ type: 'thread.started' }, { type: 'turn.completed' }] } } });
 	assert.match((await check('gpt-new', [])).error ?? '', /gave unreadable output: exit 1/, 'turn.completed with a nonzero exit is not a run');
 });

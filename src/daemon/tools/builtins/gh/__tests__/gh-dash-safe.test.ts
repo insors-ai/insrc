@@ -17,21 +17,25 @@ const families = [
 test('gh-dash-safe.test.ts: a positional that starts with - is refused by every op of the manage and resources families and gh does not run', async () => {
 	const gh = installFakeGh('ok', '');
 	try {
-		let checked = 0;
+		let positionals = 0;
 		for (const tool of families) {
 			for (const def of tool.ops) {
 				for (const a of def.args) {
 					const name = 'pos' in a ? a.pos : 'spread' in a ? a.spread : undefined;
 					if (name === undefined) { continue; }
-					const input: Record<string, unknown> = { op: def.name, [name]: 'spread' in a ? ['-x'] : '-x' };
+					positionals++;
+					// every required field is given, so the only thing wrong is the positional that starts with '-'
+					const input: Record<string, unknown> = { op: def.name };
+					for (const k of def.required ?? []) { input[k] = 'x'; }
+					input[name] = 'spread' in a ? ['-x'] : '-x';
 					const r = await tool.execute(input, deps);
-					// a different refusal may come first (a missing field); the one asked for must name the positional
-					if (!r.success && /must not start with '-'/.test(r.output)) { checked++; assert.match(r.output, new RegExp(name)); }
-					assert.equal(gh.calls().length, 0, `${tool.id} ${def.name} ${name}`);
+					assert.equal(r.success, false, `${tool.id} ${def.name} ${name}`);
+					assert.match(r.output, new RegExp(`op ${def.name}: ${name} must not start with '-'`), `${tool.id} ${def.name} ${name}`);
 				}
 			}
 		}
-		assert.ok(checked > 10, `only ${checked} positionals were checked`);
+		assert.ok(positionals > 10, `only ${positionals} positionals were found`);
+		assert.equal(gh.calls().length, 0, 'gh never ran');
 	} finally { gh.restore(); }
 });
 

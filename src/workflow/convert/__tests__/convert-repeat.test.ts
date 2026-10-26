@@ -25,11 +25,11 @@ function bytesOf(repo: string): Record<string, string> {
 	return out;
 }
 
-/** The same, with what differs by run replaced: the ids and the clock of the store and the wall clock of the lifecycle service, the repository's path; and the line files in line order. */
+/** The same, with what differs by run replaced: the ids and the clock of the store and the wall clock of the lifecycle service (whatever day it is run), the repository's path; and the line files in line order. */
 function normalized(repo: string): Record<string, string> {
 	const out: Record<string, string> = {};
 	for (const [file, text] of Object.entries(bytesOf(repo))) {
-		const plain = text.split(repo).join('REPO').replace(/2026-10-20T12:00:\d\d\.\d{3}Z/g, 'STORE-CLOCK').replace(/\d{4}-\d\d-\d\dT(?!00:00:00\.000Z)\d\d:\d\d:\d\d\.\d{3}Z(?<=2026-10-22T[0-9:.]+Z)/g, 'WALL-CLOCK').replace(/store-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, 'store-RUN').replace(/\b[0-9a-f]{32}\b/g, 'ID');
+		const plain = text.split(repo).join('REPO').replace(/2026-10-20T12:00:\d\d\.\d{3}Z/g, 'STORE-CLOCK').replace(/\d{4}-\d\d-\d\dT(?!00:00:00\.000Z)\d\d:\d\d:\d\d\.\d{3}Z/g, 'WALL-CLOCK').replace(/store-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, 'store-RUN').replace(/\b[0-9a-f]{32}\b/g, 'ID');
 		out[file] = file.endsWith('.jsonl') ? plain.split('\n').sort().join('\n') : plain;
 	}
 	return out;

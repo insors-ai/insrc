@@ -1,9 +1,10 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { canonicalData, canonicalSource, UsageInputError } from './canonical.js';
 import { validateAttribution } from './attribution.js';
+import { resolveObservationBasis } from './basis.js';
 import { eventSetDigest, validateRecord, validateScope } from './validation.js';
 import { USAGE_LIMITS } from './types.js';
-import type { AccountingScope, EffectiveAccounting, LedgerRecord, NormalizedCounters, RequestFinished, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
+import type { AccountingScope, EffectiveAccounting, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
 
 export class UsageReductionError extends Error implements UsageDomainError {
   constructor(readonly code: 'resource-limit' | 'source-unavailable') { super(code); this.name = 'UsageReductionError'; }
@@ -96,7 +97,7 @@ const empty = (notices: readonly string[], quality: readonly UsageQuality[]): Ef
 
 /**
  * Internal t6 composition, intentionally absent from the public barrel while
- * corrections/reconciliation/cumulative/ownership stages are built in t7-t9.
+ * cumulative/ownership stages are built in t8-t9.
  * Unhandled accounting controls are refused explicitly, never approximated.
  */
 export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, input: unknown, options: { readonly signal?: AbortSignal | undefined } = {}): Promise<EffectiveAccounting> {
@@ -117,7 +118,8 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   }
   if (collected.invalid) return empty([...notices], [...quality, 'conflict', 'unavailable']);
   const rows = [...collected.records.values()].sort((a, b) => a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
-  if (rows.some(row => row.recordKind === 'usage.corrected' || row.recordKind === 'usage.reconciled' || row.recordKind.startsWith('transfer.'))) return empty([...notices, 'unsupported-control:/'], [...quality, 'unsupported', 'unavailable']);
+  if (rows.some(row => row.recordKind === 'usage.reconciled' && collected.conflicts.has(row.eventId))) return empty([...notices], [...quality, 'conflict', 'unavailable']);
+  if (rows.some(row => row.recordKind.startsWith('transfer.'))) return empty([...notices, 'unsupported-control:/'], [...quality, 'unsupported', 'unavailable']);
   const starts = new Map<string, RequestStarted>(), startIdentity = new Map<string, string>(), badCalls = new Set(collected.conflictingCalls);
   const referenceOnly = new Set(scope.evidence.referenceOnlyEventIds);
   for (const row of rows) {
@@ -127,11 +129,10 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
     if (startIdentity.has(row.callId) && startIdentity.get(row.callId) !== identity) { badCalls.add(row.callId); notices.add(`identity-conflict:${row.callId}`); quality.add('conflict'); }
     if (!starts.has(row.callId)) { starts.set(row.callId, row); startIdentity.set(row.callId, identity); }
   }
-  const ends = new Map<string, RequestFinished[]>();
-  for (const row of rows) if (row.recordKind === 'request.finished' && !referenceOnly.has(row.eventId)) {
-    const current = ends.get(row.callId) ?? []; current.push(row); ends.set(row.callId, current);
-    if (!starts.has(row.callId)) { badCalls.add(row.callId); notices.add(`reference-missing:${row.eventId}`); quality.add('unavailable'); }
-  }
+  const resolved = resolveObservationBasis(rows, starts, scope, badCalls, collected.conflicts);
+  for (const callId of resolved.blockedCalls) badCalls.add(callId);
+  for (const notice of resolved.notices) notices.add(notice);
+  for (const flag of resolved.quality) quality.add(flag);
   let known = 0n, estimated = 0n;
   const basis: string[] = [];
   const bindings = new Map(scope.expectedBindings.map(binding => [bindingKey(binding.rootArtifactId, binding.artifactId), binding]));
@@ -150,10 +151,11 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
       ...(context.activity === 'workflow-context' ? { parentBinding: context.binding } : {}),
     });
     if (!expectedBinding || canonicalData(expectedBinding) !== canonicalData(context.binding) || attribution.length) { notices.add(`binding-unresolved:${callId}`); quality.add('conflict'); continue; }
-    const terminal = ends.get(callId) ?? [];
-    if (!terminal.length) { quality.add('pending'); notices.add(`pending:${callId}`); continue; }
-    if (terminal.length > 1) { quality.add('conflict'); notices.add(`terminal-conflict:${callId}`); continue; }
-    const end = terminal[0]!;
+    const end = resolved.heads.get(callId);
+    if (!end) {
+      if (!resolved.observedCalls.has(callId)) { quality.add('pending'); notices.add(`pending:${callId}`); }
+      continue;
+    }
     if (end.rootArtifactId !== start.rootArtifactId || end.artifactId !== start.artifactId) { notices.add(`identity-conflict:${callId}`); quality.add('conflict'); continue; }
     const observation = end.observation, capability = capabilities.get(observation.sourceCapabilityId);
     if (!capability || capability.provider !== context.source.provider || capability.transport !== context.source.transport || (capability.version !== null && context.source.version !== capability.version) || (capability.granularity !== 'unknown' && capability.granularity !== context.granularity)) { notices.add(`source-unavailable:${end.eventId}`); quality.add('unavailable'); continue; }

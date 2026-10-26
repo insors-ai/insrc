@@ -415,7 +415,7 @@ Run at 2026-10-26T05:39:46.239Z on commit `cfa11cedf`. Tests check: **passed**. 
 
 ## t20
 
-Run at 2026-10-26T06:07:38.389Z on commit `184578b9e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T06:13:01.345Z on commit `de770ef58`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set**
 
@@ -427,4 +427,4 @@ Run at 2026-10-26T06:07:38.389Z on commit `184578b9e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/__tests__/private-cache.test.ts` | 0 | 1 | 21.9 s |  |
+| `src/daemon/steps/__tests__/private-cache.test.ts` | 0 | 1 | 2.4 s |  |

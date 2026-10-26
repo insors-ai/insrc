@@ -8,8 +8,7 @@
  */
 
 import { onUtf8Data } from '../../../../shared/utf8-stream.js';
-import { spawn } from 'node:child_process';
-import { runShell } from '../../shell-helper.js';
+import { runShell, spawnManaged } from '../../shell-helper.js';
 import { registerTool } from '../../registry.js';
 import type {
   ApprovalClass, Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
@@ -233,10 +232,31 @@ export const sshExecDetachedTool: Tool = {
     let stdoutBuf = '';
     let stderrBuf = '';
 
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const ok = code === 0 && !timedOut;
+      const data: SshExecDetachedData = {
+        host, exitCode: code, timedOut, stdoutBytes, stderrBytes, durationMs,
+      };
+      return {
+        output: [
+          ok ? `Exit 0 after ${durationMs} ms on **${host}**.` : `Process ended${timedOut ? ' (timed out)' : ''} with code ${code} after ${durationMs} ms on **${host}**.`,
+          `Streamed: ${stdoutBytes} B stdout, ${stderrBytes} B stderr.`,
+        ].join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
+        data,
+      };
+    };
 
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted run gives.
+    const m = spawnManaged(cmd!, args, { timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
       const flushStdout = () => {
         if (stdoutBuf) { deps.send({ id: deps.requestId, stream: 'progress', data: { message: stdoutBuf } }); stdoutBuf = ''; }
       };
@@ -244,47 +264,25 @@ export const sshExecDetachedTool: Tool = {
         if (stderrBuf) { deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + stderrBuf } }); stderrBuf = ''; }
       };
 
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGKILL');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
-
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         stdoutBytes += chunkBytes;
         stdoutBuf += decodedChunk;
         if (stdoutBuf.length >= LINE_FLUSH_CHARS || stdoutBuf.includes('\n')) { flushStdout(); }
       });
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => {
         stderrBytes += chunkBytes;
         stderrBuf += decodedChunk;
         if (stderrBuf.length >= LINE_FLUSH_CHARS || stderrBuf.includes('\n')) { flushStderr(); }
       });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         flushStdout(); flushStderr();
         resolve(fail('ssh:exec-detached', `spawn failed: ${err.message}`));
       });
 
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
+      void m.settled.then(exit => {
         flushStdout(); flushStderr();
-        const durationMs = Date.now() - started;
-        const ok = code === 0 && !timedOut;
-        const data: SshExecDetachedData = {
-          host, exitCode: code, timedOut, stdoutBytes, stderrBytes, durationMs,
-        };
-        resolve({
-          output: [
-            ok ? `Exit 0 after ${durationMs} ms on **${host}**.` : `Process ended${timedOut ? ' (timed out)' : ''} with code ${code} after ${durationMs} ms on **${host}**.`,
-            `Streamed: ${stdoutBytes} B stdout, ${stderrBytes} B stderr.`,
-          ].join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: timedOut ? 'runtime cap exceeded' : `exit ${code}` }),
-          data,
-        });
+        resolve(ended(exit.code, exit.timedOut));
       });
     });
   },
@@ -499,47 +497,44 @@ export const sshPortForwardTool: Tool = {
     const [cmd, ...args] = argv;
     const started = Date.now();
 
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
-      let stderr = '';
+    let stderr = '';
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      // A kill on timeout / abort is expected; ssh often exits 255 in that case.
+      const ok = timedOut || code === 0 || code === 143 || code === 255;
+      const data = { host, localPort, remoteHost, remotePort, reverse, timedOut, durationMs, exitCode: code };
+      return {
+        output: [
+          timedOut
+            ? `Tunnel timed out (cap ${Math.round(maxRuntimeMs / 1000)}s) after ${Math.round(durationMs / 1000)}s.`
+            : code === 0
+              ? `Tunnel closed cleanly after ${Math.round(durationMs / 1000)}s.`
+              : `Tunnel exited code ${code} after ${Math.round(durationMs / 1000)}s.`,
+          stderr.trim() ? '\n```\n' + stderr.trim().slice(0, 2000) + '\n```' : '',
+        ].filter(Boolean).join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: `exit ${code}` }),
+        data,
+      };
+    };
 
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned, no tunnel is announced and the result is the one an aborted tunnel gives.
+    const m = spawnManaged(cmd!, args, { timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
       deps.send({ id: deps.requestId, stream: 'progress', data: { message: `Tunnel open: ${reverse ? `remote ${remotePort} -> local ${localPort}` : `local ${localPort} -> ${remoteHost}:${remotePort}`} via ${host}` } });
 
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGTERM');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
-
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         resolve(fail('ssh:port-forward', `spawn failed: ${err.message}`));
       });
 
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
-        const durationMs = Date.now() - started;
-        // SIGTERM on timeout / abort is expected; ssh often exits 255 in that case.
-        const ok = timedOut || code === 0 || code === 143 || code === 255;
-        const data = { host, localPort, remoteHost, remotePort, reverse, timedOut, durationMs, exitCode: code };
-        resolve({
-          output: [
-            timedOut
-              ? `Tunnel timed out (cap ${Math.round(maxRuntimeMs / 1000)}s) after ${Math.round(durationMs / 1000)}s.`
-              : code === 0
-                ? `Tunnel closed cleanly after ${Math.round(durationMs / 1000)}s.`
-                : `Tunnel exited code ${code} after ${Math.round(durationMs / 1000)}s.`,
-            stderr.trim() ? '\n```\n' + stderr.trim().slice(0, 2000) + '\n```' : '',
-          ].filter(Boolean).join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: `exit ${code}` }),
-          data,
-        });
-      });
+      void m.settled.then(exit => resolve(ended(exit.code, exit.timedOut)));
     });
   },
 };

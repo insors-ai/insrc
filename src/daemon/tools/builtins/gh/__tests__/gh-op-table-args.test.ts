@@ -56,3 +56,41 @@ test('gh-op-table-args.test.ts: existing ops build exactly the argv the recorded
 	}
 	assert.ok(checked > 40, `checked ${checked} recorded ops`);
 });
+
+// ---------------------------------------------------------------------------
+// The failure diagnostic seam
+// ---------------------------------------------------------------------------
+
+import { installStandInBin } from '../../../__tests__/_bin.js';
+import { cleanup } from '../../../__tests__/_proc.js';
+import { ORIGINAL_MAX_CHARS } from '../../../executor.js';
+import { FAILURE_ORIGINAL_MAX_CHARS } from '../helpers.js';
+import { defineGhFamily } from '../op-table.js';
+
+test('gh-op-table-args.test.ts: an op that opts in keeps gh\'s text of a command-exit failure in failure.original, capped at the executor\'s cap; an op that does not keeps today\'s failure', async () => {
+	assert.equal(FAILURE_ORIGINAL_MAX_CHARS, ORIGINAL_MAX_CHARS, 'one cap, defined in two places and pinned equal');
+	const out = { kind: 'custom', shape: { ok: Type.Boolean() }, build: async () => ({ ok: true }) } as const;
+	const fam = defineGhFamily({ id: 'gh_t8_diag', description: 'x', ops: [
+		{ name: 'with', command: ['api'], cls: 'none', limitS: 30, args: [], out, diagnostic: 'stderr' },
+		{ name: 'without', command: ['api'], cls: 'none', limitS: 30, args: [], out },
+	] });
+	const deps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0 };
+	// a 5000-character diagnostic and a plain exit 1
+	const bin = installStandInBin('gh', "printf '%05000d' 0 1>&2; exit 1");
+	try {
+		const a = await fam.execute({ op: 'with' }, deps);
+		assert.equal(a.success, false);
+		assert.equal(a.failure?.kind, 'rejected');
+		assert.equal(a.failure?.original?.length, FAILURE_ORIGINAL_MAX_CHARS, 'cut by the seam itself');
+		assert.equal(a.failure?.message.length, 5000, 'the message is not cut');
+		const b = await fam.execute({ op: 'without' }, deps);
+		assert.equal(b.failure?.original, undefined, 'no opt-in, no original');
+	} finally { bin.restore(); cleanup(bin.dir); }
+	// a spawn error keeps its own original (the stderr), opt-in or not
+	const saved = process.env['PATH']; process.env['PATH'] = '/nonexistent';
+	try {
+		const c = await fam.execute({ op: 'with' }, deps);
+		assert.equal(c.failure?.kind, 'missing-tool');
+		assert.ok((c.failure?.original ?? '').length > 0);
+	} finally { process.env['PATH'] = saved; }
+});

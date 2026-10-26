@@ -476,3 +476,19 @@ s7 t1 to t11 are built and gated; t12 is this note. Tasks passed the build gate 
 - **t4 override (user, 2026-10-27, "option 1"):** the `child_process` inventory test exempts test code, which is the LLD's meaning; the build gate read the acceptance text as "any file". The BUILD approval carries this as an override reason.
 - Daemon review of the s7 LLD stayed `block` after cycle 4 (3 MED, the build's obligations: `withFailureNet` converts only `UnsafeArgError`; `runToolHooks` keeps `input: unknown` and a readonly result; the `gh auth status` probe keeps partial captured text). The LLD was approved with an override.
 - Pre-existing flake, unrelated to s7: `src/daemon/threads/__tests__/indexing-port.test.ts` "daemon.status queue fields" fails about 4 runs in 6 (also on the commit before t10). `git-tools-integration.test.ts` may hang at exit; use `--test-force-exit`.
+
+## s7 full sweep (2026-10-27)
+
+Run once after t12, in foreground chunks, `npx tsx --test --test-force-exit` per area of `src` (plus `scripts/__tests__`). Compared by test name with the same chunks run at `2d44eb561^` (the commit before s7 t1) in a separate worktree.
+
+| Area | tests | pass | fail | skipped |
+| --- | --- | --- | --- | --- |
+| daemon/tools | 601 | 594 | 1 | 6 |
+| daemon (rest) | 1410 | 1372 | 21 | 17 |
+| workflow | 2374 | 2368 | 0 | 6 |
+| agent, analyze, cli, config, db, design, docgen, indexer, mcp, shared, understanding | 3018 | 2889 | 17 | 109 |
+
+- **No failure is caused by s7.** The baseline run (before s7) has 55 failing tests across daemon, analyze, cli, config, db and the rest; every failure of the s7 run except one is in that list. The one other, `tui.test.ts` "TUI ModelTiersPane shows an effort row per tier", passes 3 of 3 runs alone (a load-timing flake).
+- `live-store-file-refusal.test.ts` calls `executeTool(id, input)` with no `deps`; the executor read `deps.connectionExecution` before s7 too. Fails at baseline.
+- `CM-S3-INVENTORY` (`src/daemon/db/__tests__/session-source-inventory.test.ts`) fails at baseline on the seven `src/workflow/usage/*` files. s7 adds three production files it would also list (`daemon/tools/builtins/gh/tracker.ts`, `daemon/tools/call-handler.ts`, `daemon/tools/tool-signal.ts`) and changes the digests of files it already lists. The fixture is the connection-management epic's reviewed baseline; it needs one refresh by that epic's owner, covering the usage files and these, and was not touched here.
+- The 21 `CM-S2` and `CM-S3` failures in daemon are in the baseline too (cause not investigated here).

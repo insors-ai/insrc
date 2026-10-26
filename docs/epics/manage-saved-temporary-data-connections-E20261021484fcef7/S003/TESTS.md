@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 107 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -624,3 +624,19 @@ Run at 2026-10-26T14:22:18.043Z on commit `64ae043a3`. Tests check: **passed**. 
 | `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 11 | 0.5 s |  |
 | `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 9 s |  |
 | `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 7 | 1.6 s |  |
+
+## t31
+
+Run at 2026-10-26T16:02:39.623Z on commit `981754881`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots | `src/daemon/db/__tests__/session-service-isolation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-service-isolation.test.ts` | 0 | 1 | 6 s |  |

@@ -110,6 +110,9 @@ try {
 	assert.equal((await resumed.call<any>('db.connections.v2.read', { key: { repoRoot: join(roots[0]!, 'nested'), scope: 'temporary', id: 'same' } })).code, 'invalid-input');
 	await resumed.call('db.connections.v2.session.end'); now = 90000; assert.equal((await owners[1]!.ui.call<any>('db.connections.v2.list', { repoRoot: roots[0] })).code, 'session-expired'); await runtime.close();
 	assert.equal(connectionTestSupervisor.activeCount, 0); assert.ok(children.length >= 4); assert.ok(children.every(c => c.exitCode !== null || c.signalCode !== null)); assert.equal(keychain, 0);
+	// Remain alive with the actual server listening: process exit must not substitute for Session disposal.
+	const verified = once(process, 'message'); process.send!({ type: 'session-drained', mode }); assert.deepEqual((await verified)[0], { type: 'drain-verified' });
+	const savedControl = await client(); assert.ok(Array.isArray(await savedControl.call('db.connections.v2.drivers')));
 	assert.deepEqual(await tree(join(directory, 'state')), beforeState); for (let n = 0;n < roots.length;n++) assert.deepEqual(await tree(roots[n]!), beforeRoots[n]);
 	getLogger('session-service-proof').info('SAVED_ROUTE_DIAGNOSTIC_CONTROL'); let logs = ''; for (let n = 0;n < 100;n++) { await delay(10); logs = await files(PATHS.logDir); if (logs.includes('SAVED_ROUTE_DIAGNOSTIC_CONTROL')) break; } assert.ok(logs.includes('SAVED_ROUTE_DIAGNOSTIC_CONTROL')); assert.equal(logs.includes('CM_ROUTE_PRIVATE_'), false);
 	process.stdout.write('service-isolation-ok:' + mode + '\n');

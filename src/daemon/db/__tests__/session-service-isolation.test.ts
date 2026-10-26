@@ -18,12 +18,25 @@ test('CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay a
 			const child = spawn(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./fixtures/session-service-child.ts', import.meta.url)), run, mode], { env: { ...process.env, ...baseline, INSRC_MODE: 'daemon', INSRC_LOG_LEVEL: 'trace', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
 			let output = ''; child.stdout!.on('data', b => { output += b; }); child.stderr!.on('data', b => { output += b; });
 			const timer = setTimeout(() => child.kill('SIGKILL'), 60000);
+			let observedWhileAlive = false;
+			const liveDrain = new Promise<void>((resolve, reject) => {
+				child.once('message', message => {
+					void (async () => {
+						assert.deepEqual(message, { type: 'session-drained', mode });
+						assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.equal(child.connected, true);
+						await services!.assertDrained();
+						assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.equal(child.connected, true);
+						observedWhileAlive = true; child.send!({ type: 'drain-verified' }); resolve();
+					})().catch(error => { child.kill('SIGKILL'); reject(error); });
+				});
+				child.once('close', () => { if (!observedWhileAlive) reject(new Error('backend exited before live native drain observation')); });
+			});
+			void liveDrain.catch(() => { });
 			try {
 				child.send!(services.endpoints);
 				const code = await new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('close', resolve); });
-				assert.equal(code, 0, output); assert.match(output, /service-isolation-ok/); assert.equal(output.includes('CM_ROUTE_PRIVATE_'), false, 'private data reached process output');
+				await liveDrain; assert.equal(observedWhileAlive, true); assert.equal(code, 0, output); assert.match(output, /service-isolation-ok/); assert.equal(output.includes('CM_ROUTE_PRIVATE_'), false, 'private data reached process output');
 			} finally { clearTimeout(timer); child.kill('SIGKILL'); }
-			await services.assertDrained();
 		}
 		assert.equal(services.diagnostics().includes('CM_ROUTE_PRIVATE_'), false, 'private data reached service logs');
 	} finally { await services?.close(); await rm(directory, { recursive: true, force: true }); }

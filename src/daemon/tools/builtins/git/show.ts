@@ -75,11 +75,13 @@ export const gitShowTool: Tool = {
     const statArgv = ['git', 'show', '--no-color', '--numstat', '--pretty=format:', ref];
     if (path) { statArgv.push('--', path); }
 
+    // The diff and the stat run one after the other, so none starts after an abort and a stat cut short by
+    // the signal is never reported as a mere warning.
     if (aborted()) { return cancelledFail('git:show'); }
-    const [diff, stat] = await Promise.all([
-      runShell(diffArgv, { cwd, timeoutMs: 30_000, maxBytes, signal: deps?.signal }),
-      runShell(statArgv, { cwd, timeoutMs: 15_000, signal: deps?.signal }),
-    ]);
+    const diff = await runShell(diffArgv, { cwd, timeoutMs: 30_000, maxBytes, signal: deps?.signal });
+    if (diff.aborted === true || aborted()) { return cancelledFail('git:show'); }
+    const stat = await runShell(statArgv, { cwd, timeoutMs: 15_000, signal: deps?.signal });
+    if (stat.aborted === true) { return cancelledFail('git:show'); }
 
     // The diff is the answer: a read that failed, timed out or could not be spawned is a failure, not an empty diff.
     // (Its byte cap is the designed truncation, reported as data.truncated.)

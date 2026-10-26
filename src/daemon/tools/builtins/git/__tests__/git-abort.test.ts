@@ -39,7 +39,8 @@ test('git-abort.test.ts: every refresh tool fails rejected on an already-aborted
 	for (const [id, input] of CALLS) {
 		const r = await executeTool(id, input, { ...toolDeps('/tmp'), signal: aborted() });
 		assert.equal(r.success, false, id);
-		assert.ok(r.failure?.kind === 'rejected' || r.failure?.kind === 'denied', `${id}: ${r.failure?.kind}`);
+		assert.equal(r.failure?.kind, 'denied', id);
+		assert.equal(r.failure?.denial, 'cancelled', id);
 	}
 	assert.deepEqual(standIn.calls(), [], 'no git process was started');
 });
@@ -67,6 +68,23 @@ test('git-abort.test.ts: git_show starts no command after an abort between its h
 	const r = await executeTool('git_show', { cwd: '/tmp', ref: 'HEAD' }, { ...toolDeps('/tmp'), signal: c.signal });
 	assert.equal(r.success, false);
 	assert.equal(standIn.calls().length, 1, 'only the header command started; neither diff nor stat did');
+});
+
+test('git-abort.test.ts: git_show returns a cancelled failure, never a success, when the abort comes after the header and the diff and during the stat', async () => {
+	const FS = '\\037';
+	standIn = installStandInGit(`case "$*" in
+  *--no-patch*) printf 'aaaa${FS}bbbb${FS}${FS}An${FS}a@x${FS}2026-01-01T00:00:00Z${FS}subj${FS}body' ;;
+  *--numstat*) sleep 30 ;;
+  *) echo 'diff text' ;;
+esac`);
+	registerForTests();
+	const c = new AbortController();
+	setTimeout(() => c.abort(), 400);
+	const r = await executeTool('git_show', { cwd: '/tmp', ref: 'HEAD' }, { ...toolDeps('/tmp'), signal: c.signal });
+	assert.equal(standIn.calls().length, 3, 'header, diff and stat all started before the abort');
+	assert.equal(r.success, false);
+	assert.equal(r.failure?.kind, 'rejected');
+	assert.match(r.failure?.message ?? '', /cancel/i);
 });
 
 test('git-abort.test.ts: the git helper fail() reports an aborted command as cancelled, and a mutating one adds that its outcome is unknown', () => {

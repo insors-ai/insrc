@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 75 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 78 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -370,3 +370,27 @@ Run at 2026-10-26T04:54:11.092Z on commit `e0feeedcc`. Tests check: **passed**. 
 | `src/analyze/context/__tests__/prepare-scope.test.ts` | 0 | 8 | 1 s |  |
 | `src/analyze/context/__tests__/scope.test.ts` | 0 | 8 | 0.6 s |  |
 | `src/daemon/steps/__tests__/root-bound-scope.test.ts` | 0 | 1 | 1.7 s |  |
+
+## t18
+
+Run at 2026-10-26T05:03:06.670Z on commit `389675d84`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CONTEXT: owner-private measurement slot, both branches and saved pending map compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONTEXT: owner-private measurement slots and source/pool branches | `src/daemon/steps/__tests__/owner-measurement.test.ts` |
+| pass | CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings | `src/analyze/__tests__/measurement-leases.test.ts` |
+
+**integration: CM-S3-LEASE: measure timeout/late rejection retains actual work and drain**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-LEASE: measurement timeout retains actual work through late success or rejection | `src/daemon/steps/__tests__/owner-measurement.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/__tests__/measurement-leases.test.ts` | 0 | 1 | 1.8 s |  |
+| `src/daemon/steps/__tests__/owner-measurement.test.ts` | 0 | 2 | 1.3 s |  |

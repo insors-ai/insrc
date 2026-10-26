@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T04:54:11.092Z",
+    "updatedAt": "2026-10-26T05:03:06.670Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1402,6 +1402,77 @@
             "titles": [
               {
                 "title": "CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "389675d84",
+        "ranAt": "2026-10-26T05:03:06.670Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CONTEXT: owner-private measurement slot, both branches and saved pending map compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/owner-measurement.test.ts",
+                "title": "CM-S3-CONTEXT: owner-private measurement slots and source/pool branches",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/__tests__/measurement-leases.test.ts",
+                "title": "CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-LEASE: measure timeout/late rejection retains actual work and drain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/owner-measurement.test.ts",
+                "title": "CM-S3-LEASE: measurement timeout retains actual work through late success or rejection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/measurement-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1775,
+            "titles": [
+              {
+                "title": "CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/owner-measurement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1327,
+            "titles": [
+              {
+                "title": "CM-S3-CONTEXT: owner-private measurement slots and source/pool branches",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: measurement timeout retains actual work through late success or rejection",
                 "result": "pass"
               }
             ],

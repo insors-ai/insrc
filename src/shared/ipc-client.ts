@@ -33,8 +33,26 @@ const DAEMON_DOWN_PREFIX = 'daemon is not running';
 let _nextId = 1;
 
 /**
+ * The connection to the daemon was lost after a request was written and before
+ * its reply arrived (the daemon exited, restarted or dropped the socket). The
+ * request may or may not have been carried out, so callers must not treat this
+ * as a refusal; `cause` is the socket error when there was one.
+ */
+export class DaemonDisconnectedError extends Error {
+  readonly code = 'disconnected';
+  readonly method: string;
+  constructor(method: string, cause?: unknown) {
+    super(`the daemon closed the connection before answering ${method}`, cause !== undefined ? { cause } : undefined);
+    this.name = 'DaemonDisconnectedError';
+    this.method = method;
+  }
+}
+
+/**
  * Send one JSON-RPC request to the daemon and return the result.
- * Throws if the daemon is not running or returns an error.
+ * Throws if the daemon is not running or returns an error, and
+ * DaemonDisconnectedError if the connection is lost after the request was
+ * written and before a reply. The promise settles exactly once.
  *
  * `connect` is an injectable seam (defaults to the real Unix-socket
  * connection) so the request-write behaviour — including the Story-s4 client
@@ -47,11 +65,15 @@ export async function rpc<T = unknown>(method: string, params: unknown = {}, con
   return new Promise<T>((resolve, reject) => {
     const socket = connect();
     let   buffer = '';
+    let   sent = false;
+    let   settled = false;
+    const settle = (fn: () => void): void => { if (!settled) { settled = true; fn(); } };
 
     socket.on('connect', () => {
       // Self-identify to the daemon's attached-client registry (Story s4).
       const req: IpcRequest = { id: _nextId++, method, params, client: { label: 'cli', pid: process.pid } };
       socket.write(JSON.stringify(req) + '\n');
+      sent = true;
     });
 
     socket.on('data', (chunk: Buffer) => {
@@ -64,22 +86,28 @@ export async function rpc<T = unknown>(method: string, params: unknown = {}, con
         try {
           const res = JSON.parse(line) as IpcResponse;
           socket.end();
-          if (res.error) reject(new Error(res.error));
-          else           resolve(res.result as T);
+          if (res.error) settle(() => reject(new Error(res.error)));
+          else           settle(() => resolve(res.result as T));
         } catch {
           socket.end();
-          reject(new Error('invalid response from daemon'));
+          settle(() => reject(new Error('invalid response from daemon')));
         }
       }
     });
 
     socket.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-        reject(new Error('daemon is not running — start it with: insrc daemon start'));
+      if (sent) settle(() => reject(new DaemonDisconnectedError(method, err)));
+      else if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
+        settle(() => reject(new Error('daemon is not running — start it with: insrc daemon start')));
       } else {
-        reject(err);
+        settle(() => reject(err));
       }
     });
+
+    // A connection that ends or closes with no reply would otherwise leave the promise pending forever.
+    const lost = (): void => settle(() => reject(sent ? new DaemonDisconnectedError(method) : new Error(`the daemon closed the connection before ${method} was sent`)));
+    socket.on('end', lost);
+    socket.on('close', lost);
   });
 }
 

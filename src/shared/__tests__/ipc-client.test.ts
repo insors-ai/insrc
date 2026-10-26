@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { rpc, createIpcClient, sockFilePath } from '../ipc-client.js';
+import { rpc, createIpcClient, sockFilePath, DaemonDisconnectedError } from '../ipc-client.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '..', '..');
@@ -142,4 +142,48 @@ test('src/shared/ipc-client imports only node:net + shared types/paths (no daemo
   }
   // It re-exports the real IPC types (no parallel definitions).
   assert.match(mod, /export type \{ IpcRequest, IpcResponse, DaemonStatus \} from '\.\/types\.js'/);
+});
+
+test('ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged', async () => {
+  const seam = (sock: FakeSocket) => () => sock as unknown as import('node:net').Socket;
+
+  // end then close with no reply.
+  const a = new FakeSocket();
+  const pa = rpc('models.approve', {}, seam(a));
+  a.emit('connect');
+  a.emit('end');
+  a.emit('close');
+  await assert.rejects(pa, (e: unknown) => e instanceof DaemonDisconnectedError && e.code === 'disconnected' && e.method === 'models.approve'
+    && e.message === 'the daemon closed the connection before answering models.approve');
+
+  // ECONNRESET after the write, then close: the named error, with the socket error as cause.
+  const b = new FakeSocket();
+  const pb = rpc('models.check', {}, seam(b));
+  b.emit('connect');
+  const reset = errno('ECONNRESET');
+  b.emit('error', reset);
+  b.emit('close');
+  await assert.rejects(pb, (e: unknown) => e instanceof DaemonDisconnectedError && e.cause === reset);
+
+  // ECONNREFUSED before connect: still 'daemon is not running'.
+  const c = new FakeSocket();
+  const pc = rpc('daemon.status', {}, seam(c));
+  c.emit('error', errno('ECONNREFUSED'));
+  c.emit('close');
+  await assert.rejects(pc, /^Error: daemon is not running/);
+
+  // A reply then close resolves once with the reply.
+  const d = new FakeSocket();
+  const pd = rpc<{ ok: boolean }>('daemon.status', {}, seam(d));
+  d.respondWith(JSON.stringify({ id: 1, result: { ok: true } }));
+  d.emit('end');
+  d.emit('close');
+  assert.deepEqual(await pd, { ok: true });
+
+  // An error reply rejects with the daemon's message, not a disconnect.
+  const e = new FakeSocket();
+  const pe = rpc('config.write', {}, seam(e));
+  e.respondWith(JSON.stringify({ id: 1, error: 'boom' }));
+  e.emit('close');
+  await assert.rejects(pe, (err: unknown) => !(err instanceof DaemonDisconnectedError) && (err as Error).message === 'boom');
 });

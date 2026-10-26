@@ -1,0 +1,290 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>insrc • Model usage / Delivery board prototype</title><style>
+:root{--vscode-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;--vscode-font-size:13px;--vscode-editor-font-family:ui-monospace,SFMono-Regular,Consolas,monospace;--vscode-foreground:#d6d6d6;--vscode-descriptionForeground:#a7a7a7;--vscode-editor-background:#1f1f1f;--vscode-sideBar-background:#181818;--vscode-editorWidget-background:#252526;--vscode-panel-border:#414141;--vscode-focusBorder:#0078d4;--vscode-textLink-foreground:#65b5ff;--vscode-button-background:#0078d4;--vscode-button-foreground:#fff;--vscode-button-secondaryBackground:#343434;--vscode-button-secondaryForeground:#ddd;--vscode-input-background:#292929;--vscode-input-foreground:#ddd;--vscode-input-border:#555;--vscode-testing-iconPassed:#73c991;--vscode-editorWarning-foreground:#e6c466;--vscode-errorForeground:#f98b8b;--vscode-inputValidation-warningBackground:#352e18;--vscode-inputValidation-warningBorder:#a98f34;--vscode-inputValidation-errorBackground:#452222;--vscode-inputValidation-errorBorder:#b55;--vscode-list-activeSelectionBackground:#064c77;--vscode-list-activeSelectionForeground:#fff;--vscode-list-hoverBackground:#303030;--vscode-textBlockQuote-background:#292929}
+body.light{--vscode-foreground:#353535;--vscode-descriptionForeground:#666;--vscode-editor-background:#fff;--vscode-sideBar-background:#f8f8f8;--vscode-editorWidget-background:#f8f8f8;--vscode-panel-border:#d7d7d7;--vscode-focusBorder:#005fb8;--vscode-textLink-foreground:#005fb8;--vscode-button-secondaryBackground:#e9e9e9;--vscode-button-secondaryForeground:#333;--vscode-input-background:#fff;--vscode-input-foreground:#333;--vscode-input-border:#bbb;--vscode-testing-iconPassed:#28733b;--vscode-editorWarning-foreground:#7c5a00;--vscode-errorForeground:#b32929;--vscode-inputValidation-warningBackground:#fff4d2;--vscode-inputValidation-warningBorder:#b59338;--vscode-list-activeSelectionBackground:#dcecff;--vscode-list-activeSelectionForeground:#111;--vscode-list-hoverBackground:#f0f0f0;--vscode-textBlockQuote-background:#f4f4f4}
+*{box-sizing:border-box;}html,body{margin:0;}body{background:var(--vscode-editor-background);color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);line-height:1.45;min-width:320px;}:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}ul{margin:0;padding:0;list-style:none;}h1,h2,h3{font-weight:600;}h1:focus{outline:none;}.page{container-type:inline-size;min-width:320px;}.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 14px;padding:8px 16px;border-bottom:1px solid var(--vscode-panel-border);}.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;}.wordmark{font-weight:700;color:var(--vscode-textLink-foreground);}.crumbs .sep{color:var(--vscode-descriptionForeground);}.crumbs .here{color:var(--vscode-foreground);font-weight:600;overflow-wrap:anywhere;}.crumbs button{background:none;border:0;padding:0;font-size:inherit;color:var(--vscode-textLink-foreground);}.crumbs button:hover{text-decoration:underline;}.appbar-tools{display:flex;align-items:center;gap:10px;color:var(--vscode-descriptionForeground);font-size:12px;}#status{margin:0;}button,.btn{font:inherit;font-size:12px;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid transparent;border-radius:4px;padding:3px 10px;cursor:pointer;display:inline-block;}button:hover{background:var(--vscode-button-secondaryHoverBackground,var(--vscode-button-secondaryBackground));}.icon-btn{font-size:15px;line-height:1;padding:2px 7px;}.btn.primary{background:var(--vscode-button-background);color:var(--vscode-button-foreground);}.btn.ghost{background:none;color:var(--vscode-textLink-foreground);padding:3px 0;}.btn.ghost:hover{background:none;text-decoration:underline;}.link{background:none;border:0;padding:0;font-size:inherit;color:var(--vscode-textLink-foreground);text-align:left;}.link:hover{background:none;text-decoration:underline;}.body{padding:14px 16px 18px;}#banner .panel{margin:10px 16px 0;}.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;}.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--vscode-panel-border);border-radius:6px;}.seg button{padding:4px 12px;font-size:12px;background:none;border:0;border-radius:0;border-right:1px solid var(--vscode-panel-border);color:var(--vscode-descriptionForeground);}.seg button:first-child{border-radius:5px 0 0 5px;}.seg button:last-child{border-right:0;border-radius:0 5px 5px 0;}.seg button[aria-current="page"],.seg button[aria-pressed="true"]{background:var(--vscode-list-activeSelectionBackground);color:var(--vscode-list-activeSelectionForeground);font-weight:600;}.toggle{border-radius:999px;padding:3px 12px;font-size:12px;border:1px solid var(--vscode-panel-border);background:none;color:var(--vscode-descriptionForeground);}.toggle[aria-pressed="true"]{border-color:var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-editorWarning-foreground);}.search{margin-left:auto;min-width:200px;padding:4px 8px;border:1px solid var(--vscode-input-border,var(--vscode-panel-border));background:var(--vscode-input-background);color:var(--vscode-input-foreground);border-radius:4px;font:inherit;font-size:12px;}.count-line{color:var(--vscode-descriptionForeground);font-size:12px;margin:0 0 12px;}.count-line .link{margin-left:8px;}.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:11px;line-height:18px;border:1px solid var(--vscode-panel-border);color:var(--vscode-descriptionForeground);white-space:nowrap;}.ok,[data-tone="success"]{color:var(--vscode-testing-iconPassed);border-color:var(--vscode-testing-iconPassed);}.warn,[data-tone="warning"]{color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground);border-color:var(--vscode-inputValidation-warningBorder);}.bad,[data-tone="danger"]{color:var(--vscode-errorForeground);background:var(--vscode-inputValidation-errorBackground);border-color:var(--vscode-inputValidation-errorBorder);}[data-tone="neutral"]{color:var(--vscode-descriptionForeground);}.stage-pill{color:var(--vscode-foreground);border-color:var(--vscode-focusBorder);}.pills{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}.kicker{font:11px/1.4 var(--vscode-editor-font-family);letter-spacing:.3px;color:var(--vscode-descriptionForeground);overflow-wrap:anywhere;}.muted{color:var(--vscode-descriptionForeground);font-size:var(--small);}.meter{height:5px;border-radius:3px;background:var(--vscode-panel-border);margin-top:5px;}.meter span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}.acc{border:1px solid var(--vscode-panel-border);border-radius:6px;margin:0 0 8px;background:var(--vscode-editor-background);}.acc>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 12px;cursor:pointer;font-weight:600;}.acc>summary::before{content:"\25B8";color:var(--vscode-descriptionForeground);width:10px;}.acc[open]>summary::before{content:"\25BE";}.acc>summary .count{margin-left:auto;}.acc>summary .hint{font-weight:400;}.acc[data-empty] summary{color:var(--vscode-descriptionForeground);font-weight:500;}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:var(--gap);padding:0 12px 12px;}.card{display:block;border:1px solid var(--vscode-panel-border);border-radius:6px;padding:var(--pad);background:var(--vscode-editorWidget-background);color:var(--vscode-foreground);overflow-wrap:anywhere;cursor:pointer;}.card:hover{border-color:var(--vscode-focusBorder);}.card .t{font-weight:600;margin:2px 0 3px;}.card .pills{margin-top:6px;}.empty-line{padding:0 12px 10px 34px;color:var(--vscode-descriptionForeground);font-size:12px;}.more{margin:0 12px 12px;}.fold{color:var(--vscode-descriptionForeground);font-size:12px;margin:0 0 8px;}.rows{border-top:1px solid var(--vscode-panel-border);}.row{display:grid;grid-template-columns:minmax(220px,1fr) 150px auto;gap:6px 20px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--vscode-panel-border);color:var(--vscode-foreground);}button.row{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--vscode-panel-border);border-radius:0;font-size:inherit;overflow-wrap:anywhere;}.row:hover,button.row:hover{background:var(--vscode-list-hoverBackground);}.row .name{font-weight:600;color:var(--vscode-textLink-foreground);}.issue-row{grid-template-columns:minmax(220px,1fr) auto;}.acc .rows{margin:0 12px 12px;}.standalone-link{margin:12px 0;}.no-stories{margin:12px 0 0;}.head{margin:0 0 12px;}.head h1{font-size:19px;line-height:1.3;margin:3px 0 8px;letter-spacing:-.2px;overflow-wrap:anywhere;}.subtabs{display:flex;flex-wrap:wrap;gap:4px 18px;border-bottom:1px solid var(--vscode-panel-border);margin:14px 0 14px;font-size:12px;}.subtabs button{padding:7px 0;background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--vscode-descriptionForeground);}.subtabs button[aria-selected="true"]{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}.cols{display:grid;grid-template-columns:minmax(340px,1.45fr) minmax(280px,1fr);gap:22px;align-items:start;}.label{font-size:10px;font-weight:650;letter-spacing:1px;text-transform:uppercase;color:var(--vscode-descriptionForeground);margin:0 0 8px;}* + .label{margin-top:16px;}table.tasks{min-width:0;}.tasks .task-id{white-space:nowrap;}.tasks .task-title{font-weight:600;}.tasks .task-deps .pill{margin:0 4px 2px 0;}.tasks .task-checks{white-space:nowrap;}.tasks .checks-row td{border-top:none;padding-top:0;}.checks{list-style:none;padding:0;margin:0 0 6px;font-size:12px;color:var(--vscode-descriptionForeground);}.checks li{margin:3px 0;}.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:9px 12px;margin:0 0 6px;}.why p{margin:4px 0;}.chain{list-style:none;margin:0;padding:0;}.chain li{display:grid;grid-template-columns:52px minmax(80px,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--vscode-panel-border);}.chain b{font-size:12px;}.warnbox{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);border-radius:0 4px 4px 0;padding:9px 12px;margin:12px 0;}.warnbox p{margin:4px 0 0;}.item{padding:9px 0;border-bottom:1px solid var(--vscode-panel-border);}.item:last-child{border-bottom:0;}.between{display:flex;justify-content:space-between;align-items:center;gap:8px;}table.records{width:100%;border-collapse:collapse;font-size:12px;}.epic-records{margin:0 0 14px;}.records th{text-align:left;font-weight:600;color:var(--vscode-descriptionForeground);border-bottom:1px solid var(--vscode-panel-border);padding:6px 6px 6px 0;}.records td{border-bottom:1px solid var(--vscode-panel-border);padding:8px 6px 8px 0;vertical-align:top;}pre{white-space:pre-wrap;overflow-wrap:anywhere;}@container (max-width:760px){.cols{grid-template-columns:minmax(0,1fr);}.row{grid-template-columns:minmax(0,1fr) 120px;}.row>:last-child{grid-column:1/-1;justify-self:start;}.issue-row{grid-template-columns:minmax(0,1fr);}.search{margin-left:0;flex:1 1 100%;min-width:0;}.head.between{flex-wrap:wrap;}}@container (max-width:480px){.row{grid-template-columns:minmax(0,1fr);}.seg button{padding:4px 9px;}.body{padding:12px;}}.panel{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:14px 16px;background:var(--vscode-editorWidget-background);}.panel.warnp{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);}.panel h3{font-size:14px;margin:0 0 4px;}.panel p{margin:4px 0;}.panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}.table-wrap{overflow-x:auto;}table.records{min-width:620px;}.center{text-align:center;padding:26px 16px;}.foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 14px;padding:6px 16px;border-top:1px solid var(--vscode-panel-border);color:var(--vscode-descriptionForeground);font-size:11px;}#announce{margin:0;min-height:1em;}.foot .seg button{padding:1px 8px;font-size:11px;}body[data-density="comfortable"]{--gap:8px;--pad:9px 10px;--small:12px;}body[data-density="compact"]{--gap:4px;--pad:4px 8px;--small:11px;font-size:0.92em;}body:not([data-density]){--gap:8px;--pad:9px 10px;--small:12px;}
+.demo{padding:12px 18px;background:var(--vscode-sideBar-background);border-bottom:1px solid var(--vscode-panel-border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.demo strong{font-size:12px}.demo span{font-size:12px;color:var(--vscode-descriptionForeground)}a{color:var(--vscode-textLink-foreground)}.page{max-width:1480px;margin:auto}.usagebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--vscode-panel-border);padding:10px 12px;border-radius:6px;margin:12px 0}.usagebar label{display:flex;gap:7px;align-items:center;font-size:12px}select{font:inherit;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:4px;padding:4px}.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.kpi{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:14px;background:var(--vscode-editorWidget-background)}.kpi .value{font-size:27px;letter-spacing:-.7px;font-weight:650;margin:4px 0}.kpi .label{color:var(--vscode-descriptionForeground);font-size:12px}.kpi .note{color:var(--vscode-descriptionForeground);font-size:11px}.tokenline{padding-top:9px;margin-top:9px;border-top:1px solid var(--vscode-panel-border);display:flex;justify-content:space-between;gap:10px;align-items:center}.tokenline strong{font-variant-numeric:tabular-nums}.usage-table td.num,.usage-table th.num{text-align:right;font-variant-numeric:tabular-nums}.usage-table tr[data-open]{cursor:pointer}.usage-table tr[data-open]:hover{background:var(--vscode-list-hoverBackground)}.usage-table small{display:block;color:var(--vscode-descriptionForeground)}.usage-table td{vertical-align:top}.coverage{margin:10px 0;font-size:12px;color:var(--vscode-descriptionForeground)}.coverage strong{color:var(--vscode-editorWarning-foreground)}.usage-note{padding:11px 13px;border-left:3px solid var(--vscode-focusBorder);background:var(--vscode-textBlockQuote-background);margin:14px 0;font-size:12px}.model-bar{display:flex;gap:2px;height:7px;border-radius:4px;overflow:hidden;margin-top:7px;max-width:400px}.model-bar span{background:#4daafc}.model-bar span:nth-child(2){background:#9884e8}.model-bar span:nth-child(3){background:#5aaf8b}.usage-table .group td{background:var(--vscode-editorWidget-background);font-weight:600}.indent{padding-left:24px!important}.head h1{margin:8px 0}.subtabs{margin-top:16px}.subtabs button[aria-selected=true]{border-bottom:2px solid var(--vscode-focusBorder);color:var(--vscode-foreground)}.subtabs button{background:none;border-radius:0;padding:9px 14px;color:var(--vscode-descriptionForeground)}.table-wrap{overflow:auto}.usage-table{width:100%;border-collapse:collapse;font-size:12px}.usage-table th,.usage-table td{padding:10px 9px;border-bottom:1px solid var(--vscode-panel-border);text-align:left}.usage-table th{font-weight:500;color:var(--vscode-descriptionForeground)}.tree-line{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:16px;padding:10px;border-bottom:1px solid var(--vscode-panel-border)}.tree-line button{text-align:left}.toolbar-spacer{margin-left:auto}.empty-state{padding:28px;border:1px dashed var(--vscode-panel-border);border-radius:6px;color:var(--vscode-descriptionForeground)}dialog{background:var(--vscode-editor-background);color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);border-radius:8px;width:min(840px,95vw);max-height:90vh;padding:20px}dialog::backdrop{background:#0009}dialog pre{font:12px/1.6 var(--vscode-editor-font-family);white-space:pre-wrap;overflow-wrap:anywhere;max-height:55vh;overflow:auto;background:var(--vscode-editorWidget-background);padding:14px}dialog .between{display:flex;justify-content:space-between;align-items:center;gap:15px}.top-links{display:flex;gap:14px;font-size:12px}.full-note{color:var(--vscode-descriptionForeground);font-size:12px;margin:12px 0}#toast{min-height:18px}.stage-count{font-size:12px;font-weight:400;color:var(--vscode-descriptionForeground)}.source-badge{font-size:11px;border:1px solid var(--vscode-panel-border);padding:2px 6px;border-radius:4px}.record-row{padding:10px;border-bottom:1px solid var(--vscode-panel-border);display:flex;gap:12px;align-items:center;flex-wrap:wrap}.record-row button{margin-left:auto}.call-link{white-space:nowrap}.metric-explainer{font-size:11px;color:var(--vscode-descriptionForeground)}@media(max-width:700px){.kpis{grid-template-columns:1fr}.kpi .value{font-size:23px}.demo{padding:10px}.usagebar{align-items:stretch}.row{grid-template-columns:1fr!important}.table-wrap{max-width:100%}.body{padding:12px}.appbar-tools{font-size:11px}.usagebar label{flex-wrap:wrap}}@media print{.demo,.usagebar,button,.foot{display:none}.kpis{grid-template-columns:repeat(3,1fr)}}
+</style></head><body data-density="comfortable"><div class="demo"><strong>PROPOSED · Interactive mock</strong><span>Synthetic requests · no live repository writes</span><a href="../../model-token-usage-prd.html">Read the PRD ↗</a><div class="toolbar-spacer"></div><button id="simulate">Simulate task call +</button><button id="duplicate">Replay duplicate event</button><button id="reset">Reset demo</button><button id="theme" aria-label="Switch to light theme">Light theme</button></div><div class="page"><header class="appbar"><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav><div class="appbar-tools"><span id="status">Synthetic snapshot · 25 Oct 2026</span><span class="readonly">Read-only</span><button id="refresh" aria-label="Refresh snapshot">↻</button></div></header><main id="main" class="body"></main><footer class="foot"><p id="toast" role="status" aria-live="polite">Choose a story, then open Usage to inspect its model calls.</p><div class="seg density" role="group" aria-label="Density"><button data-density="compact" aria-pressed="false">Compact</button><button data-density="comfortable" aria-pressed="true">Comfortable</button></div></footer></div><dialog id="request-dialog" aria-labelledby="dialog-title"><div class="between"><h2 id="dialog-title">Request evidence</h2><button id="close-dialog" aria-label="Close request evidence">Close ×</button></div><div id="dialog-summary"></div><pre id="request-json"></pre></dialog><script>'use strict';
+(() => {
+const $ = id => document.getElementById(id);
+const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const number = value => new Intl.NumberFormat('en-US').format(value);
+const compact = value => value >= 1000000 ? (value / 1000000).toFixed(2) + 'M' : value >= 1000 ? (value / 1000).toFixed(1) + 'k' : number(value);
+const stages = ['Scoped','Design & plan','Ready · design approved','Ready · plan approved','Build recorded','Complete'];
+const nodes = {
+  epic: {id:'E-DEMO',kind:'epic',title:'Reliable engineering workflows',parent:null,stage:1},
+  s1: {id:'E-DEMO:S001',kind:'story',title:'Keep queued replies visible',parent:'epic',stage:5,attention:false,description:'Preserve the correct response after queued work and across reloads.'},
+  s2: {id:'E-DEMO:S002',kind:'story',title:'Explain workflow recovery',parent:'epic',stage:1,attention:true,description:'Make recovery decisions and incomplete evidence visible.'},
+  t1: {id:'E-DEMO:S001:T001',kind:'task',title:'Replay a retained turn prefix',parent:'s1',stage:5},
+  t2: {id:'E-DEMO:S001:T002',kind:'task',title:'Correlate request completion',parent:'s1',stage:5},
+  t3: {id:'E-DEMO:S002:T001',kind:'task',title:'Render recovery evidence',parent:'s2',stage:1},
+  issue: {id:'ISSUE-DEMO',kind:'issue',title:'Retry should preserve its evidence',parent:null,stage:0,attention:true,corrects:'s1',description:'A linked defect is visible beside the story, but is not a second ownership path.'},
+  legacy: {id:'STANDALONE-LEGACY',kind:'story',title:'Historical story before usage capture',parent:null,stage:5,legacy:true,attention:false,description:'An older artifact has no usage collection. Its usage is not recorded, not zero.'},
+};
+const activities = {
+  definition: {label:'Definition',artifact:'DEF-demo',phase:'author'},
+  architecture: {label:'Architecture + reviews',artifact:'HLD-demo',phase:'author'},
+  design: {label:'LLD + reviews',artifact:'LLD-demo-s1',phase:'author'},
+  plan: {label:'PLAN',artifact:'PLAN-demo-s1',phase:'plan'},
+  build: {label:'Implementation',artifact:'TASK-demo-s1',phase:'implement'},
+  validate: {label:'Validation',artifact:'TASK-demo-s1',phase:'validate'},
+  shared: {label:'Shared BUILD / code review',artifact:'BUILD-demo-s1',phase:'code-review'},
+  issue: {label:'Issue framing',artifact:'ISSUE-demo',phase:'author'},
+};
+const models = ['claude-sonnet-4-6','gpt-6.1-sol','qwen3.6:35b-a3b'];
+let artifacts, ledgers, nextId, state;
+function rootOf(node) { while(nodes[node].parent) node=nodes[node].parent; return node==='epic'?'EPIC-demo-epic':'ISSUE-demo'; }
+function ownerOf(node, activity) {
+  if (activity === 'design') return 'LLD-demo-' + node;
+  if (activity === 'plan') return 'PLAN-demo-' + node;
+  if (activity === 'build' || activity === 'validate') return 'TASK-demo-' + node;
+  if (activity === 'shared') return 'BUILD-demo-' + node;
+  return activities[activity].artifact;
+}
+function appendEvent(ledger,event) {
+  const existing=ledger.events.find(e=>e.eventId===event.eventId);
+  if(existing) {if(JSON.stringify(existing)!==JSON.stringify(event))throw Error('Conflicting event identity');return false;}
+  ledger.events.push(event);return true;
+}
+function appendCall(node, activity, model, input, output, options = {}) {
+  const id = 'call-' + String(nextId++).padStart(3,'0');
+  const artifactId = ownerOf(node, activity);
+  const rootArtifactId=rootOf(node);
+  artifacts[artifactId] ||= {artifactId,rootArtifactId,demoOnly:true};
+  const ledger=ledgers[rootArtifactId] ||= {schemaVersion:1,rootArtifactId,events:[]};
+  const events=ledger.events;
+  const provider = model.startsWith('claude') ? 'cli-claude' : model.startsWith('gpt') ? 'cli-codex' : 'ollama';
+  const context = {artifactId,workItemId:nodes[node].id,workflow:activity === 'design' ? 'design.story' : activity === 'plan' ? 'plan' : 'build',stepId:options.review ? 'review.judge' : activity+'.step',runId:options.run || 'run-current',activity:options.review ? 'review' : activities[activity].phase,attempt:options.attempt || 1,logicalRequestId:options.logicalRequestId || 'request-'+id,invocationId:'invocation-'+id,parentCallId:null,model:{provider,requested:model,reported:null,kind:'completion'}};
+  if (options.review) context.review = {round:options.review,reviewRecordId:'REV-demo-'+node+'-'+options.review};
+  const at = options.run === 'run-prior' ? '2026-10-24T09:00:00Z' : '2026-10-25T09:00:00Z';
+  appendEvent(ledger, {rootArtifactId,artifactId,eventId:id+'-started',callId:id,sequence:events.length+1,type:'request.started',recordedAt:at,context,capture:{source:'daemon',granularity:'model-call'}});
+  const counters = {inputUncachedTokens:input,cacheReadTokens:options.cache || 0,cacheWriteTokens:options.write || 0,outputTokens:output,reasoningTokens:options.reasoning || 0};
+  if (options.unknown) Object.keys(counters).forEach(k => counters[k] = null);
+  appendEvent(ledger, {rootArtifactId,artifactId,eventId:id+'-finished',callId:id,sequence:events.length+1,type:'request.finished',recordedAt:at,finishedAt:at,outcome:options.failed ? 'timeout' : 'success',reportedModel:model,usage:{quality:options.unknown ? 'unavailable' : options.estimated ? 'estimated' : 'reported',counters,normalizationVersion:'disjoint-v1',nativeUnit:options.estimated ? 'estimate' : options.unknown ? 'unknown' : 'request-total',reason:options.unknown ? 'CLI ended without a usable usage envelope' : options.estimated ? 'Local tokenizer estimate; not provider reported' : null,providerUsageRef:null}});
+  return id;
+}
+function resetData() {
+  artifacts = {}; ledgers = {}; nextId = 1;
+  appendCall('epic','definition',models[1],9000,1400);
+  appendCall('epic','architecture',models[0],16000,2400);
+  appendCall('epic','architecture',models[1],12000,1800,{review:1});
+  appendCall('s1','design',models[0],22000,4200,{cache:5000,write:3000,run:'run-prior'});
+  appendCall('s1','design',models[1],16000,1200,{cache:8000,review:1,run:'run-prior',reasoning:600});
+  appendCall('s1','design',models[0],9000,1800,{cache:3000});
+  appendCall('s1','design',models[1],11000,900,{cache:12000,review:2,reasoning:400});
+  appendCall('s1','plan',models[0],12000,2000);
+  appendCall('t1','build',models[1],28000,4800,{cache:22000,reasoning:1500});
+  appendCall('t1','validate',models[0],8000,1600);
+  appendCall('t1','build',models[1],5000,250,{failed:true,attempt:2,logicalRequestId:'request-call-009'});
+  appendCall('t2','build',models[1],35000,6000,{cache:12000,reasoning:2000});
+  appendCall('t2','validate',models[0],9000,1100);
+  appendCall('s1','shared',models[1],15000,2000,{cache:8000,reasoning:750});
+  appendCall('s2','design',models[0],12000,2000);
+  appendCall('s2','design',models[1],null,null,{unknown:true,review:1});
+  appendCall('s2','plan',models[0],10000,1800);
+  appendCall('t3','build',models[2],17000,2600,{estimated:true});
+  appendCall('issue','issue',models[0],5000,600);
+}
+function reset() {
+  resetData(); state = {view:'all',selected:null,tab:'overview',model:'all',metric:'total',run:'all',estimates:false,search:'',attention:false,activity:null,stale:false};
+}
+function descendants(key) { return [key,...Object.keys(nodes).filter(k => nodes[k].parent===key).flatMap(descendants)]; }
+function effectiveCalls() {
+  const calls = [];
+  for (const ledger of Object.values(ledgers)) {
+    const unique = [...new Map(ledger.events.map(e=>[e.eventId,e])).values()];
+    const starts = unique.filter(e=>e.type==='request.started');
+    for (const start of starts) {
+      let finish = unique.find(e=>e.type==='request.finished' && e.callId===start.callId);
+      if (!finish) continue;
+      const visited = new Set();
+      while (!visited.has(finish.eventId)) {
+        visited.add(finish.eventId);
+        const corrections = unique.filter(e=>e.type==='usage.corrected' && e.supersedesEventId===finish.eventId);
+        if (corrections.length !== 1) break;
+        finish = {...corrections[0],outcome:finish.outcome};
+      }
+      const node = Object.keys(nodes).find(k=>nodes[k].id===start.context.workItemId);
+      let activity = Object.keys(activities).find(a=>ownerOf(node,a)===start.context.artifactId);
+      if (start.context.activity==='validate') activity='validate';
+      calls.push({node,activity,model:finish.reportedModel || start.context.model.reported || start.context.model.requested,start,finish,quality:finish.usage.quality,counters:finish.usage.counters});
+    }
+  }
+  return calls;
+}
+function filteredRows(key=null) {
+  const keys = key===null ? Object.keys(nodes) : descendants(key);
+  return effectiveCalls().filter(r=>keys.includes(r.node) && (state.model==='all'||r.model===state.model) && (state.run==='all'||r.start.context.runId==='run-current'));
+}
+function metricValue(row) {
+  const c=row.counters;
+  if (state.metric==='total') {
+    const parts=['inputUncachedTokens','cacheReadTokens','cacheWriteTokens','outputTokens'];
+    return {value:parts.reduce((n,k)=>n+(c[k]??0),0),unknown:parts.some(k=>c[k]===null)};
+  }
+  return {value:c[state.metric]??0,unknown:c[state.metric]===null};
+}
+function sum(rows) {
+  let value=0,estimated=0,unknown=0;
+  for(const row of rows) {
+    const v=metricValue(row);
+    if(row.quality==='estimated') {estimated+=v.value;if(state.estimates)value+=v.value;}
+    else value+=v.value;
+    if(v.unknown||row.quality==='unavailable') unknown++;
+  }
+  return {value,estimated,unknown,reported:rows.filter(r=>r.quality==='reported').length,calls:rows.length};
+}
+function display(rows,small=false) {
+  const total=sum(rows);const estimated=state.estimates&&total.estimated;const prefix=estimated?'≈ ':total.unknown?'≥ ':'';
+  return prefix+(small?compact(total.value):number(total.value))+(estimated&&total.unknown?' + unknown':'');
+}
+function coverage(rows) {
+  const s=sum(rows);return `${s.reported}/${s.calls} calls provider-reported${s.estimated?' · '+compact(s.estimated)+' estimated'+(state.estimates?' included':' excluded'):''}${s.unknown?' · '+s.unknown+' unknown':''}`;
+}
+function metricLabel() {return ({total:'Total processed tokens',inputUncachedTokens:'Uncached input',cacheReadTokens:'Cache read',cacheWriteTokens:'Cache write',outputTokens:'Output',reasoningTokens:'Reasoning · part of output'})[state.metric];}
+function button(text,action,cls='btn') {return `<button class="${cls}" data-action="${action}">${text}</button>`;}
+function scopeKey() {return state.selected || null;}
+function usageControls() {
+  return `<div class="usagebar"><label>Metric <select id="metric">${[['total','Total processed'],['inputUncachedTokens','Uncached input'],['cacheReadTokens','Cache read'],['cacheWriteTokens','Cache write'],['outputTokens','Output'],['reasoningTokens','Reasoning (subset)']].map(([v,t])=>`<option value="${v}" ${v===state.metric?'selected':''}>${t}</option>`).join('')}</select></label><label>Model <select id="model"><option value="all">All models</option>${models.map(m=>`<option ${m===state.model?'selected':''}>${m}</option>`).join('')}</select></label><label>Run <select id="run"><option value="all">All recorded runs</option><option value="current" ${state.run==='current'?'selected':''}>Current run only</option></select></label><label><input id="estimates" type="checkbox" ${state.estimates?'checked':''}> Include estimates</label><span class="toolbar-spacer"></span>${button('Export decoded usage JSON','export')}</div><p class="metric-explainer">${metricLabel()}${state.metric==='total'?' = uncached input + cache read + cache write + output. Reasoning is already in output.':''} · Usage filters apply to every figure below.</p>`;
+}
+function tile(label,rows,note) {return `<div class="kpi"><div class="label">${label}</div><div class="value">${display(rows)}</div><div class="note">${note}</div></div>`;}
+function summary(key) {
+  const rows=filteredRows(key),node=nodes[key];
+  if(node?.legacy) return `<div class="usage-note">Usage not recorded. This artifact predates capture; there is no trustworthy historical total.</div>`;
+  let tiles;
+  if(node?.kind==='story') {
+    const design=rows.filter(r=>r.node===key&&r.activity==='design');
+    const rest=rows.filter(r=>!(r.node===key&&r.activity==='design'));
+    tiles=tile('LLD + reviews',design,'Authoring, revisions and every design-review round')+tile('Follow-on activities',rest,'PLAN + child tasks + shared validation / code review')+tile('Story total',rows,'LLD + reviews + follow-on activities');
+  } else {
+    const own=rows.filter(r=>key===null?false:r.node===key),child=rows.filter(r=>key===null||r.node!==key);
+    tiles=tile(key===null?'Scope usage':'Own activities',key===null?rows:own,key===null?'Unique calls in this delivery scope':node?.kind==='epic'?'Definition / architecture on this item only':'Calls charged directly to this work item')+tile(key===null?'Story activities':'Descendants',child,key===null?'Includes task descendants; linked issues are separate':'Unique calls owned by child work items')+tile(key===null?'Scope total':'Inclusive total',rows,'Each physical call counted once');
+  }
+  return `<div class="kpis">${tiles}</div><div class="coverage">${sum(rows).unknown?'<strong>Partial usage</strong> · ':''}${coverage(rows)}${key===null?' · Includes standalone work; search does not reassign ownership.':''}</div>`;
+}
+function card(key) {
+  const n=nodes[key],rows=filteredRows(key);
+  return `<div class="card"><div class="kicker">${n.kind.toUpperCase()} · ${n.id}</div><button class="link t" data-action="open:${key}">${escape(n.title)}</button><div class="muted">${n.parent?'Reliable engineering workflows':'Standalone'}</div><div class="pills"><span class="pill ${n.attention?'warn':'ok'}">${n.attention?'Pending decision':'Approved'}</span></div><div class="tokenline"><span class="muted">${n.legacy?'Usage not recorded':display(rows,true)+' tokens'}</span>${button('Usage →','usage:'+key,'link')}</div></div>`;
+}
+function stageSections(keys) {
+  return stages.map((stage,index)=>{
+    const members=keys.filter(k=>nodes[k].stage===index);
+    return `<details class="acc" ${members.length?'open':''}><summary>${stage}<span class="count stage-count">${members.length}</span></summary>${members.length?'<div class="cards">'+members.map(card).join('')+'</div>':'<div class="empty-line">Nothing at this stage.</div>'}</details>`;
+  }).join('');
+}
+function filterBar() {
+  return `<div class="filterbar"><div class="seg" role="group" aria-label="Delivery view">${[['all','All work'],['epics','Epics'],['standalone','Standalone'],['issues','Issues']].map(([key,title])=>`<button data-action="view:${key}" aria-pressed="${state.view===key}">${title}</button>`).join('')}</div><button class="toggle" id="attention" aria-pressed="${state.attention}">Needs attention</button><input id="search" class="search" type="search" placeholder="Search work items" aria-label="Search work items" value="${escape(state.search)}"></div>`;
+}
+function matches(key) {const n=nodes[key];return (!state.attention||n.attention) && (n.title+' '+n.id).toLowerCase().includes(state.search.toLowerCase());}
+function board() {
+  let body=filterBar()+usageControls();
+  if(state.view==='epics') {
+    const rows=filteredRows('epic');
+    body+=`<h1>Epics</h1><p class="count-line">1 epic · completion counts stories at Complete</p><details class="acc" open><summary>Design & plan <span class="count">1</span></summary><div class="rows"><div class="row"><div><div class="kicker">EPIC · E-DEMO</div><button class="link t" data-action="open:epic">Reliable engineering workflows</button><p class="muted">2 stories · 3 tasks</p></div><span class="muted">1 of 2 stories complete</span><div><strong>${display(rows,true)} tokens</strong><div class="coverage">${sum(rows).unknown?'Partial · ':''}${coverage(rows)}</div>${button('Open usage →','usage:epic','link')}</div></div></div></details>`;
+  } else {
+    let keys=Object.keys(nodes).filter(k=>nodes[k].kind==='story'||nodes[k].kind==='issue');
+    if(state.view==='standalone') keys=keys.filter(k=>!nodes[k].parent);
+    if(state.view==='issues') keys=keys.filter(k=>nodes[k].kind==='issue');
+    keys=keys.filter(matches);
+    const scopeRows=keys.flatMap(k=>filteredRows(k));
+    const unique=[...new Map(scopeRows.map(r=>[r.start.callId,r])).values()];
+    body+=`<div class="between head"><h1>${state.view==='all'?'All work':state.view==='issues'?'Issues':'Standalone'}</h1><span class="pill">${keys.length} matching items</span></div><div class="usage-note">Matching items: <b>${display(unique)} ${metricLabel().toLowerCase()}</b> · ${coverage(unique)}. Story totals include descendants; epic overhead is shown on the epic. Historical unrecorded items are not treated as zero.</div>`;
+    body+=keys.length?stageSections(keys):'<div class="empty-state">No work matches these filters. Clear search or Needs attention to show more work.</div>';
+  }
+  return body;
+}
+function modelTable(rows) {
+  const all=[...new Set(rows.map(r=>r.model))];
+  return `<h2>By model</h2><div class="table-wrap"><table class="usage-table"><thead><tr><th>Reported model</th><th class="num">Uncached input</th><th class="num">Cache read / write</th><th class="num">Output</th><th class="num">${metricLabel()}</th><th>Coverage</th></tr></thead><tbody>${all.map(model=>{const r=rows.filter(x=>x.model===model);const field=k=>{const unknown=r.some(x=>x.counters[k]===null),value=r.reduce((n,x)=>n+(x.quality==='estimated'&&!state.estimates?0:x.counters[k]??0),0);return (unknown?'≥ ':'')+number(value);};return `<tr><td><button class="link" data-action="model:${model}">${model}</button></td><td class="num">${field('inputUncachedTokens')}</td><td class="num">${field('cacheReadTokens')} / ${field('cacheWriteTokens')}</td><td class="num">${field('outputTokens')}</td><td class="num"><b>${display(r)}</b></td><td>${coverage(r)}</td></tr>`;}).join('')||'<tr><td colspan="6">No calls in this usage scope.</td></tr>'}</tbody></table></div>`;
+}
+function activityTree(key,rows) {
+  const design=rows.filter(r=>r.node===key&&r.activity==='design');
+  const plan=rows.filter(r=>r.node===key&&r.activity==='plan');
+  const tasks=Object.keys(nodes).filter(k=>nodes[k].parent===key&&nodes[k].kind==='task');
+  const taskRows=rows.filter(r=>tasks.includes(r.node));
+  const shared=rows.filter(r=>r.node===key&&r.activity==='shared');
+  const row=(label,rs,action,indent='')=>`<tr><td class="${indent}">${action?button(escape(label),action,'link'):escape(label)}</td><td class="num">${display(rs)}</td><td>${rs.length} calls</td><td>${coverage(rs)}</td></tr>`;
+  let table='';
+  if(nodes[key].kind==='story') {
+    table=row('LLD + reviews',design,'activity:design')+row('PLAN',plan,'activity:plan')+row('Child tasks (sum)',taskRows,null);
+    table+=tasks.map(t=>row(nodes[t].id.split(':').at(-1)+' · '+nodes[t].title,rows.filter(r=>r.node===t),'open:'+t,'indent')).join('');
+    table+=row('Shared BUILD / code review',shared,'activity:shared');
+  } else {
+    table=row('Own activities',rows.filter(r=>r.node===key),null);
+    table+=Object.keys(nodes).filter(k=>nodes[k].parent===key).map(k=>row(nodes[k].title,rows.filter(r=>descendants(k).includes(r.node)),'usage:'+k)).join('');
+  }
+  return `<h2>Usage hierarchy</h2><p class="muted">${nodes[key].kind==='story'?'LLD + reviews + PLAN + child tasks + shared work = story total. Child task detail rows partition their group; do not add both.':'Own work + inclusive child totals. Linked “corrects” relationships are not ownership.'}</p><div class="table-wrap"><table class="usage-table"><thead><tr><th>Activity / work item</th><th class="num">${metricLabel()}</th><th>Requests</th><th>Evidence</th></tr></thead><tbody>${table}<tr class="group"><td>Inclusive total</td><td class="num">${display(rows)}</td><td>${rows.length} unique calls</td><td>${coverage(rows)}</td></tr></tbody></table></div>`;
+}
+function callTable(rows) {
+  const shown=state.activity?rows.filter(r=>r.activity===state.activity):rows;
+  return `<div class="between"><h2>Model calls${state.activity?' · '+(activities[state.activity]?.label||state.activity):''}</h2>${state.activity?button('Show all calls','activity:all','link'):''}</div><p class="muted">One row per physical model attempt. Failed calls and review rounds remain visible.</p><div class="table-wrap"><table class="usage-table"><thead><tr><th>Call / workflow step</th><th>Artifact owner</th><th>Model</th><th>Outcome</th><th class="num">${metricLabel()}</th><th>Evidence</th></tr></thead><tbody>${shown.map(r=>`<tr><td><button class="link call-link" data-action="call:${r.start.callId}">${r.start.callId}</button><small>${r.start.context.stepId}${r.start.context.review?' · review round '+r.start.context.review.round:''} · attempt ${r.start.context.attempt}</small></td><td>${r.start.context.artifactId}<small>${nodes[r.node].id}</small></td><td>${r.model}</td><td><span class="pill ${r.finish.outcome==='success'?'ok':'warn'}">${r.finish.outcome}</span></td><td class="num">${r.quality==='unavailable'?'Unknown':r.quality==='estimated'?number(metricValue(r).value)+' est.':display([r])}</td><td>${r.quality==='reported'?'Provider-reported':r.quality==='estimated'?'Estimate (not reported)':'Usage unavailable'}</td></tr>`).join('')||'<tr><td colspan="6">No calls match these usage filters.</td></tr>'}</tbody></table></div>`;
+}
+function detail(key) {
+  const n=nodes[key],rows=filteredRows(key);
+  let body=button('← Back to delivery','back','link')+`<div class="head"><div class="kicker" style="margin-top:14px">${n.kind.toUpperCase()} · ${n.id}</div><h1>${escape(n.title)}</h1><div class="pills"><span class="pill stage-pill">${stages[n.stage]}</span><span class="pill ${n.attention?'warn':'ok'}">${n.attention?'Pending decision':'Approved'}</span></div></div>`+usageControls()+summary(key);
+  if(n.kind==='epic') {
+    body+=`<div class="usage-note">Epic total = DEF/HLD + their reviews + inclusive story totals. No shared cost is copied into every story.</div>`+activityTree(key,rows)+modelTable(rows)+`<h2>Stories</h2>`+stageSections(['s1','s2']);
+    return body;
+  }
+  body+=`<nav class="subtabs" role="tablist" aria-label="Work item tabs">${[['overview','Overview & tasks'],['evidence','Records'],['linked','Linked work'],['usage','Usage']].map(([id,label])=>`<button role="tab" aria-selected="${state.tab===id}" data-action="tab:${id}" tabindex="${state.tab===id?'0':'-1'}">${label}</button>`).join('')}</nav><section role="tabpanel" aria-label="${state.tab}">`;
+  if(state.tab==='usage') body+=n.legacy?'<div class="empty-state">Usage not recorded for this historical artifact. No backfilled counts are available.</div>':activityTree(key,rows)+modelTable(rows)+callTable(rows);
+  else if(state.tab==='overview') {
+    body+=`<div class="cols"><div class="col-main"><h2>Tasks</h2>`;
+    const tasks=Object.keys(nodes).filter(k=>nodes[k].parent===key&&nodes[k].kind==='task');
+    body+=tasks.length?`<div class="table-wrap"><table class="usage-table"><thead><tr><th>Task</th><th>Result</th><th class="num">Total usage</th></tr></thead><tbody>${tasks.map(k=>`<tr><td>${button(escape(nodes[k].title),'open:'+k,'link')}<small>${nodes[k].id}</small></td><td><span class="pill ${nodes[k].stage===5?'ok':'warn'}">${nodes[k].stage===5?'Passed':'In progress'}</span></td><td class="num">${button(display(filteredRows(k)),'usage:'+k,'link')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No child tasks on this work item.</p>';
+    body+=`</div><aside class="col-side"><h2>Why this stage</h2><p>${n.stage===5?'Approved BUILD with a passing independent code review.':'A design or approval decision is pending.'}</p><h2>What this work delivers</h2><p>${escape(n.description||'One task in the parent story.')}</p>${button('Inspect token usage →','tab:usage','link')}</aside></div>`;
+  } else if(state.tab==='evidence') {
+    const ids=[...new Set(rows.map(r=>r.start.context.artifactId))];
+    body+=`<h2>Records</h2><p class="muted">Usage records are stored in the root Avro ledger. Appending them leaves artifact JSON and content approval unchanged.</p>${ids.map(id=>{const rs=rows.filter(r=>r.start.context.artifactId===id);return `<div class="record-row"><strong>${id}</strong><span class="pill ${n.attention?'warn':'ok'}">${n.attention?'Pending':'Approved'}</span><span class="muted">${display(rs)} tokens · ${rs.length} calls</span>${button('Inspect usage records','artifact:'+id)}</div>`;}).join('')||'<p>No token-aware records yet.</p>'}`;
+  } else {
+    body+='<h2>Recorded relationships</h2>';
+    if(n.parent) body+=`<p>Part of ${button(escape(nodes[n.parent].title),'open:'+n.parent,'link')}</p>`;
+    if(n.corrects) body+=`<p>Corrects ${button(escape(nodes[n.corrects].title),'open:'+n.corrects,'link')}</p><div class="usage-note">This link does not copy the corrected story’s usage into this issue.</div>`;
+    if(key==='s1') body+=`<p>Issue correcting this story: ${button(escape(nodes.issue.title),'open:issue','link')}</p><div class="usage-note">Linked issue usage is separate unless ownership explicitly places its fix work under this story.</div>`;
+  }
+  return body+'</section>';
+}
+function render(preserveSearch=false) {
+  const searchFocused=preserveSearch && document.activeElement?.id==='search';
+  $('crumbs').innerHTML=`<span class="wordmark">insrc</span><span class="sep">/</span>${button('Delivery','back','link')}${state.selected?'<span class="sep">/</span><span class="here">'+escape(nodes[state.selected].title)+'</span>':''}`;
+  $('main').innerHTML=(state.stale?'<div class="usage-note"><strong>Usage refresh failed.</strong> Showing the last successful snapshot. Totals may be incomplete; workflow status is unchanged.</div>':'')+(state.selected?detail(state.selected):board());
+  $('status').textContent=state.stale?'Last known usage · stale':'Synthetic snapshot · 25 Oct 2026';
+  if(searchFocused){$('search').focus();$('search').setSelectionRange(state.search.length,state.search.length);}
+}
+function notify(text){$('toast').textContent=text;}
+function evidence(title,data,summary='Decoded records from .insrc/usage/<root-artifact-id>/events.avro. JSON is a read/export view; artifact documents hold no usage arrays.') {
+  $('dialog-title').textContent=title;$('dialog-summary').textContent=summary;$('request-json').textContent=JSON.stringify(data,null,2);$('request-dialog').showModal();
+}
+function act(action) {
+  const i=action.indexOf(':'),type=i<0?action:action.slice(0,i),value=i<0?'':action.slice(i+1);
+  if(type==='open'||type==='usage'){state.selected=value;state.tab=type==='usage'?'usage':'overview';state.activity=null;render();window.scrollTo(0,0);}
+  if(type==='view'){state.view=value;state.selected=null;render();}
+  if(type==='back'){state.selected=null;state.activity=null;render();}
+  if(type==='tab'){state.tab=value;state.activity=null;render();document.querySelector(`[data-action="tab:${value}"]`)?.focus();}
+  if(type==='activity'){state.activity=value==='all'?null:value;state.tab='usage';render();}
+  if(type==='model'){state.model=value;render();}
+  if(type==='call') {
+    const row=effectiveCalls().find(r=>r.start.callId===value);
+    evidence(value,{schemaVersion:1,rootArtifactId:row.start.rootArtifactId,events:ledgers[row.start.rootArtifactId].events.filter(e=>e.callId===value)},'Owner: '+row.start.context.artifactId+' · '+row.model+' · '+row.quality+'. No prompts or completions stored.');
+  }
+  if(type==='artifact') {const root=artifacts[value].rootArtifactId;evidence(value,{schemaVersion:1,rootArtifactId:root,path:'.insrc/usage/'+root+'/events.avro',events:ledgers[root].events.filter(e=>e.artifactId===value)});}
+  if(type==='export') {
+    const ids=new Set(filteredRows(scopeKey()).map(r=>r.start.context.artifactId));
+    const data={demoOnly:true,scope:state.selected?nodes[state.selected].id:'all',filters:{model:state.model,metric:state.metric,run:state.run,includeEstimates:state.estimates},fullSourceHistory:true,ledgers:Object.fromEntries(Object.entries(ledgers).filter(([,l])=>l.events.some(e=>ids.has(e.artifactId))).map(([root,l])=>[root,{...l,events:l.events.filter(e=>ids.has(e.artifactId))}]))};
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='insrc-token-usage-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);notify('Exported full source event history for the selected scope, with active filters recorded as metadata.');
+  }
+}
+document.addEventListener('click',event=>{const control=event.target.closest('[data-action]');if(control)act(control.dataset.action);if(event.target.id==='attention'){state.attention=!state.attention;render();}});
+document.addEventListener('input',event=>{if(event.target.id==='search'){state.search=event.target.value;render(true);}});
+document.addEventListener('change',event=>{const key=event.target.id;if(['model','metric','run'].includes(key)){state[key]=event.target.value;render();}if(key==='estimates'){state.estimates=event.target.checked;render();}});
+document.addEventListener('keydown',event=>{if(event.target.getAttribute('role')==='tab'&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();const tabs=[...document.querySelectorAll('[role=tab]')];const index=tabs.indexOf(event.target),next=tabs[(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length];next.click();next.focus();}});
+$('close-dialog').onclick=()=>$('request-dialog').close();
+$('simulate').onclick=()=>{appendCall('t2','build',models[1],2400,600);render();notify('Appended a 3,000-token call to T002. Task, story and epic totals increased once.');};
+$('duplicate').onclick=()=>{const ledger=ledgers[artifacts['TASK-demo-t2'].rootArtifactId];const finish=ledger.events.find(e=>e.artifactId==='TASK-demo-t2'&&e.type==='request.finished');appendEvent(ledger,structuredClone(finish));render();notify('Replayed an identical event ID. Totals did not change. Transport retries are idempotent.');};
+$('reset').onclick=()=>{reset();render();notify('Synthetic ledger reset.');};
+$('theme').onclick=()=>{const light=document.body.classList.toggle('light');$('theme').textContent=light?'Dark theme':'Light theme';$('theme').setAttribute('aria-label','Switch to '+(light?'dark':'light')+' theme');};
+$('refresh').onclick=()=>{state.stale=!state.stale;render();notify(state.stale?'Demo: failed refresh retains last-known figures.':'Fresh synthetic snapshot restored.');};
+document.querySelectorAll('[data-density]').forEach(b=>{if(b.tagName==='BUTTON')b.onclick=()=>{document.body.dataset.density=b.dataset.density;document.querySelectorAll('button[data-density]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));};});
+reset();render();
+window.tokenUsageMock={getState:()=>structuredClone(state),getArtifacts:()=>structuredClone(artifacts),getLedgers:()=>structuredClone(ledgers),getCalls:()=>effectiveCalls(),rows:filteredRows,totals:key=>sum(filteredRows(key)),open:key=>act('usage:'+key)};
+})();
+</script></body></html>

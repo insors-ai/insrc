@@ -1,0 +1,180 @@
+{
+  "artifact": "DEF-c66d49bb81925886",
+  "revision": 6,
+  "corrections": [
+    {
+      "claimId": "p01",
+      "severity": "MED",
+      "authorCorrection": "Replaced assumed complete parent/root behavior with current identity/envelope/store contracts and an explicit proposed root-resolution requirement.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p10",
+      "severity": "MED",
+      "authorCorrection": "Added full scope evidence and aligned excluded-capability rationale to actual PRD scope.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p11",
+      "severity": "MED",
+      "authorCorrection": "Attributed technical proposals to current PRD contract excerpts; retained the user decision only as the external root-file requirement. Marked Avro/library qualification as future build acceptance.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p12",
+      "severity": "MED",
+      "authorCorrection": "Attributed technical proposals to current PRD contract excerpts; retained the user decision only as the external root-file requirement. Marked Avro/library qualification as future build acceptance.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p15",
+      "severity": "MED",
+      "authorCorrection": "Added pending versus terminal-unavailable definitions to the PRD token semantics and refreshed current evidence.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p16",
+      "severity": "MED",
+      "authorCorrection": "Attributed technical proposals to current PRD contract excerpts; retained the user decision only as the external root-file requirement. Marked Avro/library qualification as future build acceptance.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p17",
+      "severity": "MED",
+      "authorCorrection": "Attributed technical proposals to current PRD contract excerpts; retained the user decision only as the external root-file requirement. Marked Avro/library qualification as future build acceptance.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p19",
+      "severity": "MED",
+      "authorCorrection": "Cited current AGENTS conventions and direct identity/envelope/store/daemon-registry source excerpts; acknowledged limited parentOf coverage and required a new usage-root resolver.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p20",
+      "severity": "MED",
+      "authorCorrection": "Cited current AGENTS conventions and direct identity/envelope/store/daemon-registry source excerpts; acknowledged limited parentOf coverage and required a new usage-root resolver.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p21",
+      "severity": "MED",
+      "authorCorrection": "Cited current AGENTS conventions and direct identity/envelope/store/daemon-registry source excerpts; acknowledged limited parentOf coverage and required a new usage-root resolver.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p23",
+      "severity": "MED",
+      "authorCorrection": "Attributed technical proposals to current PRD contract excerpts; retained the user decision only as the external root-file requirement. Marked Avro/library qualification as future build acceptance.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p28",
+      "severity": "MED",
+      "authorCorrection": "Grounded s4 in existing daemon DuckDB pool and Avro converter source; explicitly required future committed-snapshot/schema compatibility acceptance, with hierarchical SQL kept in TU4.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p29",
+      "severity": "MED",
+      "authorCorrection": "Added explicit proposed dependency assumption and dependency evidence listing actual DEF declarations, future contracts and handoff rationale; no implemented story artifacts claimed.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p30",
+      "severity": "MED",
+      "authorCorrection": "Added explicit proposed dependency assumption and dependency evidence listing actual DEF declarations, future contracts and handoff rationale; no implemented story artifacts claimed.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p31",
+      "severity": "MED",
+      "authorCorrection": "Added explicit proposed dependency assumption and dependency evidence listing actual DEF declarations, future contracts and handoff rationale; no implemented story artifacts claimed.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p32",
+      "severity": "MED",
+      "authorCorrection": "Grounded s4 in existing daemon DuckDB pool and Avro converter source; explicitly required future committed-snapshot/schema compatibility acceptance, with hierarchical SQL kept in TU4.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p33",
+      "severity": "MED",
+      "authorCorrection": "Grounded s4 in existing daemon DuckDB pool and Avro converter source; explicitly required future committed-snapshot/schema compatibility acceptance, with hierarchical SQL kept in TU4.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p34",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p35",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p36",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p37",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p38",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p39",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p40",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p41",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p42",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p43",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p44",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    },
+    {
+      "claimId": "p45",
+      "severity": "MED",
+      "authorCorrection": "Removed nonliteral quotedText from every citation; references retain only source IDs, kinds and locations.",
+      "independentVerification": "pending round 2; not a self-issued resolution"
+    }
+  ]
+}

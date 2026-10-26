@@ -1,0 +1,197 @@
+{
+  "summary": {
+    "prose": "Keep a durable, trustworthy history of the model usage charged to each workflow artifact, including reviews, revisions and unsuccessful work. Later workflow capture and delivery views can use this foundation without losing history, counting the same request twice or confusing unavailable usage with zero.",
+    "audience": "product"
+  },
+  "problem": "People cannot reliably account for the model work consumed while creating and reviewing workflow artifacts. A provider response may contain usage figures, but those figures alone do not establish a durable, attributable history through retries, corrections, interrupted runs and artifact rewrites. Without a shared accounting boundary, later capture and delivery features can lose consumed work, count overlapping observations twice, misattribute shared or reviewed work, or present missing measurement as zero, leaving task, story and epic explanations untrustworthy.",
+  "nonGoals": [
+    {
+      "text": "Instrument workflow or provider inference dispatch sites, or implement native Claude/Codex/Ollama usage extraction.",
+      "rationale": "TU2 owns automatic capture and provider normalization. TU1 qualifies measurement boundaries as contract evidence and supplies the foundation it consumes."
+    },
+    {
+      "text": "Implement controller-host reporting integrations or new controller-facing MCP telemetry flows.",
+      "rationale": "TU3 owns host capability negotiation, reporting and host integrations; TU1 supplies shared event/source semantics and daemon-owned accounting access."
+    },
+    {
+      "text": "Compute task/story/epic subtree totals or add usage to DeliverySnapshot and board UI.",
+      "rationale": "TU4 owns work hierarchy read models and TU5 owns client presentation. TU1 reduces observations for accounting without building those products."
+    },
+    {
+      "text": "Replace the generic common artifact store, lifecycle, journal or artifact identity scheme.",
+      "rationale": "The existing common artifact core is the persistence substrate. Only additive accounting extensions and preservation changes belong here."
+    },
+    {
+      "text": "Add monetary pricing, invoice reconciliation, budgets, inference interception, automatic model downgrades or raw prompt/response retention.",
+      "rationale": "The PRD scopes token accounting and provenance; these would introduce unrelated product and privacy/accuracy contracts."
+    }
+  ],
+  "assumptions": [
+    {
+      "text": "The approved common-artifact design provides a reusable uniform store and durable-history substrate; usage-specific invariants still require explicit implementation and verification.",
+      "confidence": "high",
+      "source": "c5"
+    },
+    {
+      "text": "Artifact content hashing is defined over description, body and citations; usage-only metadata can be separated from that content boundary, provided every relevant writer preserves it.",
+      "confidence": "high",
+      "source": "c6"
+    },
+    {
+      "text": "The current shared provider response type makes token counters optional; optional response counters do not by themselves establish durable usage coverage.",
+      "confidence": "high",
+      "source": "c7"
+    },
+    {
+      "text": "Native and controller observation granularity must be qualified before a producer contract claims physical-call completeness. The PRD allows disclosed aggregate/unknown evidence, not fabricated per-call facts.",
+      "confidence": "med",
+      "source": "c2"
+    }
+  ],
+  "constraints": [
+    {
+      "id": "k1",
+      "type": "stakeholder",
+      "text": "Canonical usage history is an additive append-only collection in each owning artifact JSON under meta.tokenUsage; pending storage is a recovery mechanism, not a second final ledger.",
+      "source": "c1"
+    },
+    {
+      "id": "k2",
+      "type": "invariant",
+      "text": "Each actual model attempt has one stable call identity and one charged owner. Transport replay is idempotent; distinct model retries remain distinct usage. Logical requests, native invocations, references and causal links are not extra charges.",
+      "source": "c1"
+    },
+    {
+      "id": "k3",
+      "type": "contract",
+      "text": "Effective observations preserve originals while handling correction chains, overlap reconciliation and explicit attribution transfers. Invalid references, conflicting identities, forks and cycles are visible conflicts, never silent last-writer-wins or duplicate counts.",
+      "source": "c3"
+    },
+    {
+      "id": "k4",
+      "type": "invariant",
+      "text": "Reported, estimated, pending, unavailable and historical not-recorded states remain distinguishable. Cache buckets are disjoint, reasoning is not counted twice, cumulative snapshots are not summed, and aggregate-only evidence never claims an observed physical-call count.",
+      "source": "c2"
+    },
+    {
+      "id": "k5",
+      "type": "invariant",
+      "text": "A usage-only append advances usage freshness without changing approved content revision/hash/status/signoffs. Ordinary writes, regeneration, kind codecs, import/export, supersession and merges preserve acknowledged usage history.",
+      "source": "c3"
+    },
+    {
+      "id": "k6",
+      "type": "contract",
+      "text": "Acknowledged appends survive interruption and concurrent writes; starts intended for pre-existing or not-yet-created artifacts have recoverable attachment. Missing content must not be fabricated to hold usage, and recovering telemetry must not rerun inference.",
+      "source": "c3"
+    },
+    {
+      "id": "k7",
+      "type": "stakeholder",
+      "text": "Reviews charge the reviewed LLD, task work charges TASK, and shared story validation/code review charges BUILD; generic reference records cannot duplicate those charges. Preserve dispatch-time ownership and explicit transfer provenance.",
+      "source": "c1"
+    },
+    {
+      "id": "k8",
+      "type": "convention",
+      "text": "Reuse daemon-owned persistence and existing common artifact lifecycle/history boundaries. Clients use supported daemon interfaces; the accounting domain does not introduce direct database access, cloud REST inference, concurrent provider calls or weaker critical model roles.",
+      "source": "c8"
+    },
+    {
+      "id": "k9",
+      "type": "contract",
+      "text": "Readers tolerate legacy absence and unsupported future usage versions without reporting complete zeroes. Retention/growth policy forbids silent truncation or loss on rewrite; unknown or malformed accounting evidence produces an explicit result.",
+      "source": "c3"
+    },
+    {
+      "id": "k10",
+      "type": "stakeholder",
+      "text": "TU1 is complete with validated accounting services, preservation/recovery evidence and producer contracts; completion does not depend on later capture, controller, hierarchy or board epics.",
+      "source": "c4"
+    }
+  ],
+  "functionalRequirements": [
+    {
+      "statement": "Retain immutable, attributable usage facts for workflow artifacts, including the model, step/run, request/attempt, activity and measurement provenance."
+    },
+    {
+      "statement": "Select one trustworthy effective observation for consumed work while retaining correction, reconciliation and ownership history, and disclose unresolved accounting conflicts."
+    },
+    {
+      "statement": "Persist and recover acknowledged usage through concurrent appends, interruption and attachment to artifacts that do not yet exist."
+    },
+    {
+      "statement": "Preserve usage and approved content state through the artifact lifecycle and supported serialization, rewrite and merge operations."
+    },
+    {
+      "statement": "Provide daemon-owned artifact-level accounting access and explicit compatibility, coverage and operational outcomes for later producers and read models."
+    }
+  ],
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/model-token-usage-prd.html#ownership"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/model-token-usage-prd.html#counting"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/model-token-usage-prd.html#integrity"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "plans/model-token-usage-implementation.md#tu1-durable-artifact-usage-accounting"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts:102-104"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/shared/types.ts:61-87"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/journal.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "plans/evidence/model-token-usage-tu1-scope.json"
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "plans/evidence/model-token-usage-tu1-frame.json"
+    },
+    {
+      "id": "c14",
+      "kind": "step-output",
+      "ref": "plans/evidence/model-token-usage-tu1-stories.json"
+    }
+  ]
+}

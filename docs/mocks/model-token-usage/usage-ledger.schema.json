@@ -1,0 +1,519 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:insrc:proposed:root-usage-ledger-export:v1",
+  "title": "Proposed root usage ledger JSON export schema",
+  "description": "Logical JSON view of an Avro root ledger, not artifact metadata or the Avro wire schema. Avro physical encoding is finalized in TU1 design.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "rootArtifactId",
+    "events"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "eventId",
+              "callId",
+              "sequence",
+              "recordedAt",
+              "type",
+              "context",
+              "capture",
+              "rootArtifactId",
+              "artifactId"
+            ],
+            "properties": {
+              "eventId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "callId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "recordedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "const": "request.started"
+              },
+              "context": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "artifactId",
+                  "workItemId",
+                  "workflow",
+                  "stepId",
+                  "runId",
+                  "activity",
+                  "attempt",
+                  "invocationId",
+                  "model",
+                  "logicalRequestId"
+                ],
+                "properties": {
+                  "artifactId": {
+                    "type": "string"
+                  },
+                  "workItemId": {
+                    "type": "string"
+                  },
+                  "workflow": {
+                    "type": "string"
+                  },
+                  "stepId": {
+                    "type": "string"
+                  },
+                  "runId": {
+                    "type": "string"
+                  },
+                  "activity": {
+                    "enum": [
+                      "author",
+                      "review",
+                      "plan",
+                      "implement",
+                      "validate",
+                      "code-review",
+                      "embed",
+                      "other"
+                    ]
+                  },
+                  "attempt": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "invocationId": {
+                    "type": "string"
+                  },
+                  "parentCallId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "review": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "round": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "reviewRecordId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "model": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "provider",
+                      "requested",
+                      "reported"
+                    ],
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      },
+                      "requested": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "reported": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "kind": {
+                        "enum": [
+                          "completion",
+                          "embedding"
+                        ]
+                      }
+                    }
+                  },
+                  "logicalRequestId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "capture": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source",
+                  "granularity"
+                ],
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "daemon",
+                      "controller",
+                      "cli-native"
+                    ]
+                  },
+                  "granularity": {
+                    "enum": [
+                      "model-call",
+                      "invocation-aggregate"
+                    ]
+                  }
+                }
+              },
+              "rootArtifactId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifactId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "eventId",
+              "callId",
+              "sequence",
+              "recordedAt",
+              "type",
+              "outcome",
+              "usage",
+              "rootArtifactId",
+              "artifactId"
+            ],
+            "properties": {
+              "eventId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "callId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "recordedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "const": "request.finished"
+              },
+              "outcome": {
+                "enum": [
+                  "success",
+                  "failed",
+                  "cancelled",
+                  "timeout",
+                  "interrupted"
+                ]
+              },
+              "usage": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "quality",
+                  "counters",
+                  "normalizationVersion",
+                  "nativeUnit"
+                ],
+                "properties": {
+                  "quality": {
+                    "enum": [
+                      "reported",
+                      "estimated",
+                      "unavailable"
+                    ]
+                  },
+                  "counters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "inputUncachedTokens",
+                      "cacheReadTokens",
+                      "cacheWriteTokens",
+                      "outputTokens",
+                      "reasoningTokens"
+                    ],
+                    "properties": {
+                      "inputUncachedTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cacheReadTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cacheWriteTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "outputTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "reasoningTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  },
+                  "normalizationVersion": {
+                    "type": "string"
+                  },
+                  "nativeUnit": {
+                    "enum": [
+                      "request-total",
+                      "turn-total",
+                      "session-cumulative",
+                      "estimate",
+                      "unknown"
+                    ]
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "providerUsageRef": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "reportedModel": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "finishedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "rootArtifactId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifactId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "eventId",
+              "callId",
+              "sequence",
+              "recordedAt",
+              "type",
+              "supersedesEventId",
+              "reason",
+              "usage",
+              "rootArtifactId",
+              "artifactId"
+            ],
+            "properties": {
+              "eventId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "callId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "recordedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "const": "usage.corrected"
+              },
+              "supersedesEventId": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "usage": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "quality",
+                  "counters",
+                  "normalizationVersion",
+                  "nativeUnit"
+                ],
+                "properties": {
+                  "quality": {
+                    "enum": [
+                      "reported",
+                      "estimated",
+                      "unavailable"
+                    ]
+                  },
+                  "counters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "inputUncachedTokens",
+                      "cacheReadTokens",
+                      "cacheWriteTokens",
+                      "outputTokens",
+                      "reasoningTokens"
+                    ],
+                    "properties": {
+                      "inputUncachedTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cacheReadTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cacheWriteTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "outputTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "reasoningTokens": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  },
+                  "normalizationVersion": {
+                    "type": "string"
+                  },
+                  "nativeUnit": {
+                    "enum": [
+                      "request-total",
+                      "turn-total",
+                      "session-cumulative",
+                      "estimate",
+                      "unknown"
+                    ]
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "providerUsageRef": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "rootArtifactId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifactId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "rootArtifactId": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

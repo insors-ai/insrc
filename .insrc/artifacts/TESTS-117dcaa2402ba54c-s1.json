@@ -1,0 +1,187 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "42f13823fa942e99b147f6a15e6cde75d9b877bd4231eac890be42fd43b075ed",
+        "at": "2026-10-26T07:21:04.064Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "117dcaa2402ba54c",
+    "storyId": "s1",
+    "createdAt": "2026-10-26T07:04:55.102Z",
+    "updatedAt": "2026-10-26T07:21:03.951Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-26T06:30:07.504Z",
+    "epicSlug": "fix-project-item-archive-delete-tools",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "9c17142d4",
+        "ranAt": "2026-10-26T07:21:03.951Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-dash-safe.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/tools/builtins/gh/__tests__/gh-dash-safe.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 749,
+            "titles": [
+              {
+                "title": "approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the eight destructive builtins are destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the twelve git tools of Story s4 are registered, ten of them reads and two per-input",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 members resolve to common or destructive and never none, and the snapshot is not edited",
+                "result": "pass"
+              },
+              {
+                "title": "approval-class-mapping.test.ts: the 228-row snapshot is not edited and addedByS5 lists the new tools",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1258,
+            "titles": [
+              {
+                "title": "gh-compat.test.ts: issue and pr tools' input schemas serialise identically to the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: repo, release and project tools' input schemas serialise identically to the snapshot, extraArgs and newTag unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: actions tools' input schemas serialise identically to the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: the 46 existing tool ids are all still registered",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: gh_pr_create, gh_issue_comment, gh_release_delete and gh:project:item-add accept their old inputs and run the same gh argv",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: gh_repo_clone keeps extraArgs and forwards it after --, and gh_release_edit keeps newTag, unchanged apart from their approval class",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: existing result data (count, repos, runs, workflows, number, diffBytes, truncated, runId, jobs) keep their shape, with only truncated added to gh_run_view",
+                "result": "pass"
+              },
+              {
+                "title": "gh-compat.test.ts: legacy failure texts stay in output and error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-dash-safe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 430,
+            "titles": [
+              {
+                "title": "gh-dash-safe.test.ts: a positional that starts with - is refused by every op of the manage and resources families and gh does not run",
+                "result": "pass"
+              },
+              {
+                "title": "gh-dash-safe.test.ts: gh:project:item-archive and gh:project:item-delete pass the project number as a positional, not --project-id",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 894,
+            "titles": [
+              {
+                "title": "gh-typed-call.test.ts: the 46 existing tools called through typed callTool keep their concrete result types",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,24 @@
+{
+  "artifactId": "DEF-c66d49bb81925886",
+  "revision": 7,
+  "cycle": "root-ledger revision cycle",
+  "roundsUsed": 3,
+  "latestCompletedReview": {
+    "round": 3,
+    "verdict": "block",
+    "counts": {
+      "high": 0,
+      "med": 10,
+      "low": 44
+    },
+    "unjudgedAfterCLIStalls": 5
+  },
+  "authorCorrections": "All round-1 MEDs mapped and addressed; final three round-2 MEDs addressed in revision 7 via exact state definitions and source/scope integration map.",
+  "pendingReview": null,
+  "nextAction": "Run design.epic HLD for the approved DEF; do not reopen the definition review or treat its blocked review as passed.",
+  "humanApproval": {
+    "kind": "explicit review override",
+    "at": "2026-10-26T07:35:56.019Z",
+    "userMessage": "approved with override"
+  }
+}

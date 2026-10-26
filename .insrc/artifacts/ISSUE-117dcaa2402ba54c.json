@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792996178812-1zc54g",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T06:30:07.504Z",
+    "epicCreatedAt": "2026-10-26T06:30:07.504Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 28691,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "117dcaa2402ba54c",
+    "epicSlug": "fix-project-item-archive-delete-tools",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "63cd1bb4aba5af1916ddd8b1516d7259adaf90697994522a84dd4f7e87a04e01",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T06:34:30.628Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "117dcaa2402ba54c",
+      "slug": "EPIC-117dcaa2402ba54c"
+    }
+  },
+  "body": {
+    "title": "Fix the project item archive and delete tools, the dash check on two gh families, and an open test handle",
+    "reproduction": "1) Call gh:project:item-archive or gh:project:item-delete with projectId and itemId on gh 2.46.0: the command runs 'gh project item-archive --project-id ... --id ...' and gh rejects the unknown flag --project-id (gh takes the project number as a positional: 'gh project item-archive [<number>] --id ITEM --owner OWNER'). 2) Call a tool of the manage or resources gh families with a positional argument that starts with '-': it is not refused, so gh would read it as a flag; the same call to an account family is refused. 3) Run 'npx tsx --test src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts' without --test-force-exit: the file passes but the process takes about 60 s to exit.",
+    "rootCause": "1) The two tools in src/daemon/tools/builtins/gh/project.ts were modelled on gh project item-edit, which has a --project-id flag, but item-archive and item-delete do not; they take the project number. 2) defineGhFamily in src/daemon/tools/builtins/gh/op-table.ts only applies the leading-dash positional check when the family passes dashSafe: true, and only the account families in src/daemon/tools/builtins/gh/account.ts pass it. 3) The open handle in src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts is not yet located; the test loops 46 tools twice through the fake gh (src/daemon/tools/builtins/gh/__tests__/_fakegh.ts) and the approval gate, so the candidate is a timer or child process left by the call path or the fake; it will be found during the build by running the file with active-handle tracing.",
+    "fixIntent": "1) Make gh:project:item-archive and gh:project:item-delete take the project number as a positional instead of --project-id, update their input and output schemas, coverage, and tests so the argv matches gh 2.46.0. 2) Turn dashSafe on for the manage and resources families, with tests that a positional starting with '-' is refused. 3) Locate the handle that keeps gh-typed-call.test.ts alive and close it so the file exits promptly without --test-force-exit."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/project.ts",
+      "quotedText": "ghProjectItemUpdateTool builds item-edit with --project-id; item-archive and item-delete build the same flag"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/op-table.ts:405",
+      "quotedText": "defineGhFamily(spec: { id, description, ops, dashSafe?: boolean })"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/account.ts:113",
+      "quotedText": "dashSafe: true on gh_search, gh_ruleset, gh_org, gh_auth, gh_status, gh_codespace, gh_config, gh_extension"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts:16"
+    }
+  ]
+}

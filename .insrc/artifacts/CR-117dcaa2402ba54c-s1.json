@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "36d80a5e53b27d7ade53881bd2ce4c5397c214d4a9a8ababcfa61623ed0f3aca",
+        "at": "2026-10-26T07:33:16.274Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792999424690-64u2pq",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T07:23:44.690Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 571583,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "117dcaa2402ba54c",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-26T06:30:07.504Z",
+    "epicSlug": "fix-project-item-archive-delete-tools",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "117dcaa2402ba54c",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/builtins/gh/__tests__/_cases.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-dash-safe.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts",
+        "src/daemon/tools/builtins/gh/inputs.ts",
+        "src/daemon/tools/builtins/gh/manage.ts",
+        "src/daemon/tools/builtins/gh/project.ts",
+        "src/daemon/tools/builtins/gh/resources.ts",
+        "src/daemon/tools/builtins/gh/schemas.ts",
+        "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+      ],
+      "buildFingerprint": "d538127edd6c06dbbb4a578591f73401999e950f56ceb4e8ab4f9da687c2515d",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/DEF-c66d49bb81925886.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

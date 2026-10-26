@@ -1,0 +1,321 @@
+{
+  "stories": [
+    {
+      "id": "s1",
+      "title": "Distinguish and reconcile immutable usage observations",
+      "userValue": "An accounting consumer can tell which model work was observed, what remains unknown, and which observation contributes without double counting corrections or overlap.",
+      "sizeEstimate": "L",
+      "dependsOn": [],
+      "existingCapabilityRefs": [
+        "c11"
+      ],
+      "functionalRequirements": [
+        {
+          "statement": "Identify logical requests, actual attempts, source granularity, model identity and charged ownership without treating references or transport delivery as new consumption."
+        },
+        {
+          "statement": "Resolve observations conservatively while preserving every original fact and disclosing uncertainty, conflicts and explicit ownership changes."
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "usage evidence for retries of delivery and for genuinely separate model attempts",
+          "when": "the evidence is accepted and interpreted",
+          "then": "replayed delivery identifies the same event, actual attempts remain separate, and each attempt has one charged owner plus workflow-step/run and source/model provenance",
+          "operationalizes": [
+            "k1",
+            "k2",
+            "k7"
+          ]
+        },
+        {
+          "id": "ac2",
+          "given": "reported counters, estimates, unavailable counters, pending attempts and legacy absence",
+          "when": "a consumer reads their meaning",
+          "then": "reported zero is distinct from every missing/estimated state, cache buckets do not overlap, reasoning is not added again, and unsafe or invalid counts cannot become trusted usage",
+          "operationalizes": [
+            "k4",
+            "k9"
+          ]
+        },
+        {
+          "id": "ac3",
+          "given": "a corrected observation or aggregate evidence overlapping observed constituent calls",
+          "when": "the effective accounting contribution is requested",
+          "then": "only the accepted non-overlapping observation basis contributes, original facts remain available, and unsupported or unreconciled overlap is explicitly unresolved rather than silently added",
+          "operationalizes": [
+            "k2",
+            "k3",
+            "k4"
+          ]
+        },
+        {
+          "id": "ac4",
+          "given": "duplicate identities with different payloads or correction/reconciliation references that fork, cycle or do not resolve",
+          "when": "the evidence is interpreted",
+          "then": "the conflict is visible and untrusted branches cannot silently replace known facts or increase a claimed complete total",
+          "operationalizes": [
+            "k3",
+            "k9"
+          ]
+        },
+        {
+          "id": "ac5",
+          "given": "dispatch-time attribution followed by an explicit change of ownership",
+          "when": "the accounting history is interpreted",
+          "then": "the effective owner is unambiguous, the prior owner and reason remain traceable, and the same consumption is not charged to both owners",
+          "operationalizes": [
+            "k2",
+            "k3",
+            "k7"
+          ]
+        },
+        {
+          "id": "ac6",
+          "given": "qualified evidence about what a native or external source can expose",
+          "when": "the accounting contract describes that source",
+          "then": "per-call observations, invocation aggregates, cumulative observations and unknown physical-call counts remain distinguishable without requiring TU2/TU3 instrumentation to exist",
+          "operationalizes": [
+            "k4",
+            "k10"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Persist usage through interrupted writes and pending artifact creation",
+      "userValue": "A producer can rely on acknowledged usage surviving interruption, even when its target design has not been created yet.",
+      "sizeEstimate": "L",
+      "dependsOn": [
+        "s1"
+      ],
+      "existingCapabilityRefs": [
+        "c11"
+      ],
+      "functionalRequirements": [
+        {
+          "statement": "Retain acknowledged usage under concurrent submissions and restart recovery without acknowledging lost or duplicated observations."
+        },
+        {
+          "statement": "Keep usage for an intended artifact recoverable before its first valid content exists and attach it once afterward."
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a usage submission associated with an existing artifact",
+          "when": "the service acknowledges durable acceptance and then restarts",
+          "then": "the complete accepted event remains readable exactly once with its original identity and owner",
+          "operationalizes": [
+            "k1",
+            "k2",
+            "k6"
+          ]
+        },
+        {
+          "id": "ac2",
+          "given": "simultaneous submissions or interruption at a persistence boundary",
+          "when": "recovery and replay complete",
+          "then": "neither acknowledged event is lost, an identical replay adds no charge, and a changed payload with the same identity is surfaced as a conflict",
+          "operationalizes": [
+            "k2",
+            "k3",
+            "k6"
+          ]
+        },
+        {
+          "id": "ac3",
+          "given": "usage targeted at a stable intended artifact identity before valid artifact content exists",
+          "when": "the producer records usage and the artifact is subsequently created",
+          "then": "the evidence survives restart and attaches once to the intended artifact without fabricating content or approval and without remaining a second final ledger",
+          "operationalizes": [
+            "k1",
+            "k6"
+          ]
+        },
+        {
+          "id": "ac4",
+          "given": "a durable start without a final usable observation",
+          "when": "the service recovers after interruption",
+          "then": "the attempt is represented as pending/interrupted with unavailable usage rather than successful measured zero",
+          "operationalizes": [
+            "k4",
+            "k6"
+          ]
+        },
+        {
+          "id": "ac5",
+          "given": "a persistence failure before start acknowledgment or after a model result was obtained",
+          "when": "the producer receives the accounting outcome",
+          "then": "it can distinguish durable acceptance from failure/pending recovery, retry recording safely, and is never instructed to rerun inference to repair accounting",
+          "operationalizes": [
+            "k2",
+            "k6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "Keep usage intact when artifact content and lifecycle change",
+      "userValue": "A reviewer retains both a trustworthy usage history and the approved content state while normal artifact operations continue.",
+      "sizeEstimate": "L",
+      "dependsOn": [
+        "s2"
+      ],
+      "existingCapabilityRefs": [
+        "c11"
+      ],
+      "functionalRequirements": [
+        {
+          "statement": "Preserve acknowledged usage through supported artifact creation, content changes, lifecycle operations, serialization and merges."
+        },
+        {
+          "statement": "Keep observational freshness separate from content revision, approval and signoff while exposing legacy and unsupported evidence honestly."
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "an approved or signed-off artifact with recorded usage",
+          "when": "only usage facts are appended",
+          "then": "usage freshness advances while the content hash, content revision, approval and signoff remain unchanged",
+          "operationalizes": [
+            "k5"
+          ]
+        },
+        {
+          "id": "ac2",
+          "given": "an artifact carrying acknowledged usage",
+          "when": "it undergoes supported rewriting, regeneration, content revision, lifecycle updates or kind-specific serialization and round-trip import/export",
+          "then": "no acknowledged event is dropped, altered or silently replaced by an older caller snapshot",
+          "operationalizes": [
+            "k1",
+            "k5"
+          ]
+        },
+        {
+          "id": "ac3",
+          "given": "rejected, cancelled or superseded work that consumed model usage",
+          "when": "new content or a successor artifact is recorded",
+          "then": "the consumed history remains attributable and is not erased or copied into a second charge",
+          "operationalizes": [
+            "k2",
+            "k5",
+            "k9"
+          ]
+        },
+        {
+          "id": "ac4",
+          "given": "independent branch histories containing distinct events and an identical replay",
+          "when": "the histories are reconciled",
+          "then": "both distinct events survive once; differing payloads for one identity remain a conflict and are not silently resolved by timestamp or array position",
+          "operationalizes": [
+            "k2",
+            "k3",
+            "k5"
+          ]
+        },
+        {
+          "id": "ac5",
+          "given": "an older artifact without usage or one carrying an unsupported usage version",
+          "when": "normal artifact read/write operations occur",
+          "then": "content remains usable, existing usage bytes are not discarded by an unaware writer, and accounting reports not-recorded or unsupported rather than complete zero",
+          "operationalizes": [
+            "k5",
+            "k9"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Provide daemon accounting access and operational guarantees",
+      "userValue": "Later capture and read-model features can use a scoped, documented accounting service without implementing their own store or relying on an unfinished board.",
+      "sizeEstimate": "M",
+      "dependsOn": [
+        "s2",
+        "s3"
+      ],
+      "existingCapabilityRefs": [
+        "c11"
+      ],
+      "functionalRequirements": [
+        {
+          "statement": "Provide daemon-owned artifact-level submission and reading with explicit acceptance, recovery, conflict and unsupported-version outcomes."
+        },
+        {
+          "statement": "Expose accounting freshness and bounded history access while preserving retained facts and existing model/provider and artifact lifecycle boundaries."
+        }
+      ],
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a producer or reader with valid repository and artifact context",
+          "when": "it uses the accounting service",
+          "then": "it can submit and read attributable artifact-level usage and receive explicit durable/pending/conflict/unsupported results without direct database access or a second ledger",
+          "operationalizes": [
+            "k1",
+            "k6",
+            "k8",
+            "k10"
+          ]
+        },
+        {
+          "id": "ac2",
+          "given": "invalid identity, wrong scope, unresolved ownership or a caller attempting to target arbitrary files",
+          "when": "the request reaches accounting access",
+          "then": "it is rejected or explicitly held unresolved without modifying an unrelated artifact or inventing attribution",
+          "operationalizes": [
+            "k2",
+            "k3",
+            "k7",
+            "k8"
+          ]
+        },
+        {
+          "id": "ac3",
+          "given": "a retained history large enough to require bounded reading",
+          "when": "a consumer reads successive portions at a recorded usage watermark",
+          "then": "it can traverse the acknowledged history consistently without silent omission, while growth/retention outcomes and any limits are explicit",
+          "operationalizes": [
+            "k6",
+            "k9",
+            "k10"
+          ]
+        },
+        {
+          "id": "ac4",
+          "given": "a recovery backlog, unsupported evidence or a retention/merge problem",
+          "when": "the service is inspected or retried",
+          "then": "the unresolved state and recoverable outcome are visible, no acknowledged history is silently truncated, and content approval semantics stay independent",
+          "operationalizes": [
+            "k3",
+            "k5",
+            "k6",
+            "k9"
+          ]
+        },
+        {
+          "id": "ac5",
+          "given": "the accounting foundation and its documented producer/preservation contracts",
+          "when": "its acceptance fixtures run without provider capture, host reporting, hierarchical delivery queries or board code",
+          "then": "the foundation is complete and consumable, and no out-of-scope product capability or weaker inference policy is introduced",
+          "operationalizes": [
+            "k8",
+            "k10"
+          ]
+        }
+      ]
+    }
+  ],
+  "citations": [
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": "plans/evidence/model-token-usage-tu1-grounding.json"
+    }
+  ]
+}

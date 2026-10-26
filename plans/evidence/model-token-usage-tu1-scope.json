@@ -1,0 +1,69 @@
+{
+  "decision": "new",
+  "scope": "L",
+  "notify": "TU1 adds a distinct usage-accounting domain on the common artifact core; it preserves the existing storage/lifecycle contracts and leaves capture, delivery rollups and UI to TU2–TU5.",
+  "flavor": "enhancement",
+  "flavorEvidence": {
+    "classifierHint": "enhancement",
+    "capabilityProbeVerdict": "partial-match",
+    "reasoning": "Existing code supplies general artifact storage, journaling, identity and lifecycle hashing. The catalog's common artifact epic owns those generic facilities; its uniform-model/history/feedback stories do not define usage observations, corrections, overlap reconciliation, pending usage attachment or token coverage. TU1 needs multiple accounting stories rather than one extra generic-artifact story. The delivery and model-definition epics address projections and model capabilities, not this domain. Reuse their established boundaries without reopening their generic designs."
+  },
+  "evidence": [
+    {
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/journal.ts"
+    },
+    {
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts"
+    },
+    {
+      "kind": "doc",
+      "ref": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S002/LLD.md"
+    },
+    {
+      "kind": "doc",
+      "ref": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md"
+    },
+    {
+      "kind": "stakeholder",
+      "ref": "plans/model-token-usage-implementation.md#tu1-durable-artifact-usage-accounting"
+    }
+  ],
+  "analyzeBundles": [
+    {
+      "kind": "module.profile",
+      "focus": "Store and journal reuse",
+      "summary": "Exact-file profiles confirmed the artifact store and journal files but returned no indexed entities. Direct reads show an existing durable ArtifactStore and file journal; those are substrate candidates, not evidence that usage-specific appends exist.",
+      "pathsCited": [
+        "src/workflow/artifact-core/store.ts",
+        "src/workflow/artifact-core/journal.ts"
+      ]
+    },
+    {
+      "kind": "symbol.locate / usage.example",
+      "focus": "Metadata, decoding and lifecycle boundaries",
+      "summary": "Analyzer located ArtifactStore, decodeArtifactHead, createRepoLifecycle, prepareArtifactWrite, artifact contentHash and LLMResponse. It found one prepareArtifactWrite caller and explicitly incomplete graph relationships; affected-writer inventory must be verified rather than inferred from that count.",
+      "pathsCited": [
+        "src/workflow/artifact-core/decode.ts",
+        "src/workflow/artifact-core/repo-lifecycle.ts",
+        "src/workflow/artifact-core/lifecycle.ts",
+        "src/workflow/storage.ts",
+        "src/shared/types.ts"
+      ]
+    },
+    {
+      "kind": "doc.mention",
+      "focus": "Existing epic boundary comparison",
+      "summary": "Bounded document lookup found the common artifact epic's model/store and durable-history designs. Its lifecycle/history/feedback substrate is reused; the new request-usage domain has its own schema, observational semantics and pending attachment contract. Catalog comparison distinguishes delivery projection and model capability work from accounting.",
+      "pathsCited": [
+        "docs/epics/one-common-model-every-artifact-E202610192f27754d/S002/LLD.md",
+        "docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md"
+      ]
+    }
+  ]
+}

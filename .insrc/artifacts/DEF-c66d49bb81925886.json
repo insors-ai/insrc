@@ -21,18 +21,18 @@
     "epicHash": "c66d49bb81925886",
     "epicSlug": "retain-durable-artifact-token-usage",
     "authoredBy": "controller",
-    "revision": 5,
+    "revision": 7,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 5,
-        "contentHash": "5ea8be3eacd4edf1d2ff4c8b1965b6a24242fab92aa15da0150cba6976e7bc00",
-        "at": "2026-10-26T06:05:35.382Z",
+        "number": 7,
+        "contentHash": "d61b509e106414050fa5d31bf5f0b1d8dfae3122b334e5ef823b7b9edbfbec5d",
+        "at": "2026-10-26T06:41:32.160Z",
         "by": {
           "id": "insrc:controller",
           "kind": "agent",
@@ -41,7 +41,7 @@
       },
       "signoffs": [],
       "review": {
-        "revision": 5,
+        "revision": 7,
         "reviewer": {
           "id": "insrc:daemon",
           "kind": "agent",
@@ -51,15 +51,27 @@
         "verdict": "block",
         "counts": {
           "high": 0,
-          "med": 29,
-          "low": 16
+          "med": 10,
+          "low": 44
         },
-        "at": "2026-10-26T06:20:11.110Z",
+        "at": "2026-10-26T07:32:50.644Z",
         "report": {
           "entityId": "DEF-c66d49bb81925886",
           "type": "change-log-entry",
           "relation": "reviews",
-          "fragment": "review-da8e5c916b55d3cc4115e4e4451fd516"
+          "fragment": "review-f698772be4a4fba8d9464e8f7528868a"
+        }
+      },
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T07:35:56.019Z",
+        "override": {
+          "reason": "Explicit user authorization: 'approved with override'. Record human override approval for DEF revision 7 while retaining its blocking independent review (0 HIGH / 10 MED, five unjudged after CLI stalls). This approves the definition, not implementation or a passed review."
         }
       }
     }
@@ -84,18 +96,18 @@
       },
       {
         "text": "Replace the generic common artifact store, lifecycle, journal or artifact identity scheme.",
-        "rationale": "The existing common artifact core is the persistence substrate. Only additive accounting extensions and preservation changes belong here."
+        "rationale": "Reuse the common identity, ownership and lifecycle contracts. Usage persistence is a dedicated external root-ledger service; it does not replace generic artifact content storage."
       },
       {
         "text": "Add monetary pricing, invoice reconciliation, budgets, inference interception, automatic model downgrades or raw prompt/response retention.",
-        "rationale": "The PRD scopes token accounting and provenance; these would introduce unrelated product and privacy/accuracy contracts."
+        "rationale": "The PRD scope excludes invoice reconciliation, pricing/budgets, automatic model downgrades, general traffic interception and prompt/completion retention."
       }
     ],
     "assumptions": [
       {
-        "text": "The documented common-artifact model supplies canonical identity, parent relationships and lifecycle boundaries. The new usage service reuses these contracts without storing usage inside artifact JSON.",
+        "text": "Existing ArtifactIds and decoded envelope types provide identity and optional parent contracts; the daemon registry owns lifecycle services. ArtifactIds.parentOf only defines TASK/TASKS/DIAG to STORY and STORY to EPIC. TU1 must add usage-root resolution for document kinds, standalone work and reserved identities rather than assume an existing complete resolver.",
         "confidence": "high",
-        "source": "c5"
+        "source": "c16"
       },
       {
         "text": "Usage is external to content files. Artifact hashing covers description, body and citations; root-ledger appends must leave artifact JSON bytes, approval, revision and signoff unchanged.",
@@ -111,14 +123,19 @@
         "text": "Native and controller observation granularity must be qualified before a producer contract claims physical-call completeness. The PRD allows disclosed aggregate/unknown evidence, not fabricated per-call facts.",
         "confidence": "med",
         "source": "c2"
+      },
+      {
+        "text": "The dependencies are proposed build order, not implemented story artifacts: s2 consumes s1 identity/reconciliation rules; s3 consumes s2 acknowledged ledger and identity reservations; s4 consumes s2 persistence plus s3 lifecycle/transfer guarantees. The dependency declarations and handoff rationale are recorded in c17.",
+        "confidence": "high",
+        "source": "c17"
       }
     ],
     "constraints": [
       {
         "id": "k1",
-        "type": "stakeholder",
-        "text": "Store one authoritative append-only Avro file at <project>/.insrc/usage/<root-artifact-id>/events.avro for each canonical epic, standalone or issue root. Root and descendant records share this file; every event carries rootArtifactId and charged artifactId. Artifact JSON contains no usage arrays. Journals and Parquet caches are recovery/derived data only.",
-        "source": "c15"
+        "type": "contract",
+        "text": "Proposed TU1 storage contract: one append-only Avro events.avro per canonical usage root under <project>/.insrc/usage/<root-artifact-id>/. This implements the user requirement for one external root data file shared by descendants. Every event carries rootArtifactId and charged artifactId; journals and Parquet caches are recovery/derived data only. Avro schema/library qualification is build acceptance, not an existing capability.",
+        "source": "c1"
       },
       {
         "id": "k2",
@@ -142,13 +159,13 @@
         "id": "k5",
         "type": "invariant",
         "text": "Ledger append freshness is independent of artifact JSON bytes, content revision/hash/status/signoffs. Regeneration, codecs and ordinary lifecycle writes do not touch ledger bytes. Paired export/import, retention, supersession and binary-safe branch reconciliation preserve acknowledged history.",
-        "source": "c15"
+        "source": "c3"
       },
       {
         "id": "k6",
         "type": "contract",
         "text": "A daemon-owned single writer per repository/root durably acknowledges complete Avro blocks and required directory metadata. Concurrent submissions and interrupted tails recover without losing acknowledged events. Reserve valid stable root/child identities before content exists, without fabricated bodies, duplicate ledgers or repeated inference.",
-        "source": "c15"
+        "source": "c3"
       },
       {
         "id": "k7",
@@ -159,14 +176,14 @@
       {
         "id": "k8",
         "type": "convention",
-        "text": "Reuse canonical artifact identities and parent links and daemon-owned persistence interfaces. Provider calls use sequential awaits rather than Promise.all; retain the documented in-progress summary/index queue overlap exception. Preserve CLI-only cloud inference and required critical model tiers.",
-        "source": "c15"
+        "text": "Follow AGENTS.md: daemon-owned persistence interfaces, sequential provider awaits without Promise.all, documented in-progress summary/index overlap, CLI-only cloud inference and required critical model roles. Reuse canonical identity/parent contracts without assuming they already resolve every usage root.",
+        "source": "c8"
       },
       {
         "id": "k9",
         "type": "contract",
         "text": "Missing ledgers, legacy absence, unsupported schemas and malformed evidence remain explicit quality states, never complete zero. One live file per root has measurable growth/read/recovery limits; no silent truncation, rotation or schema rewrite. Root transfer/import must not duplicate charges.",
-        "source": "c15"
+        "source": "c3"
       },
       {
         "id": "k10",
@@ -275,7 +292,7 @@
             "statement": "Append root and descendant events to one root Avro container through a serialized daemon writer, with durable acknowledgment, duplicate detection and interrupted-tail recovery."
           },
           {
-            "statement": "Reserve canonical root and child identities before content creation and resolve pending attribution without copying usage into artifact JSON."
+            "statement": "Implement usage-root resolution using canonical identities, ownership links and explicit dispatch bindings, including standalone and pre-content root/child reservations. Never infer roots from missing links or copy usage into artifact JSON."
           }
         ],
         "acceptanceCriteria": [
@@ -342,7 +359,7 @@
           "s2"
         ],
         "existingCapabilityRefs": [
-          "c11"
+          "c20"
         ],
         "functionalRequirements": [
           {
@@ -428,7 +445,7 @@
           "s3"
         ],
         "existingCapabilityRefs": [
-          "c11"
+          "c20"
         ],
         "functionalRequirements": [
           {
@@ -500,7 +517,7 @@
             "id": "ac6",
             "given": "the agreed first-release root-file scale and physical Avro schema",
             "when": "library, schema evolution, paging and committed-snapshot qualification run",
-            "then": "measured size/read/recovery bounds are recorded, DuckDB-compatible decoding is demonstrated and unsupported schema migration is explicit",
+            "then": "build acceptance records measured size/read/recovery bounds and demonstrates decoding the chosen Avro schema through a committed snapshot and the existing converter or explicitly provisioned DuckDB reader; this compatibility is not claimed to exist before implementation",
             "operationalizes": [
               "k6",
               "k9",
@@ -558,7 +575,7 @@
         },
         {
           "id": "E20261026c66d49bb:S002:FR002",
-          "statement": "Reserve canonical root and child identities before content creation and resolve pending attribution without copying usage into artifact JSON.",
+          "statement": "Implement usage-root resolution using canonical identities, ownership links and explicit dispatch bindings, including standalone and pre-content root/child reservations. Never infer roots from missing links or copy usage into artifact JSON.",
           "scope": "item",
           "itemRef": "s2"
         },
@@ -593,74 +610,87 @@
     {
       "id": "c1",
       "kind": "doc",
-      "ref": "plans/evidence/tu1-root-ledger-review/c1.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/c1.txt:1"
     },
     {
       "id": "c2",
       "kind": "doc",
-      "ref": "plans/evidence/tu1-root-ledger-review/c2.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/c2.txt:1"
     },
     {
       "id": "c3",
       "kind": "doc",
-      "ref": "plans/evidence/tu1-root-ledger-review/c3.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/c3.txt:1"
     },
     {
       "id": "c4",
       "kind": "stakeholder",
-      "ref": "plans/evidence/tu1-root-ledger-review/roadmap.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/roadmap.txt:1"
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
-      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:13",
-      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+      "ref": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md"
     },
     {
       "id": "c6",
       "kind": "code",
-      "ref": "plans/evidence/tu1-root-ledger-review/c6.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/c6.txt:1"
     },
     {
       "id": "c7",
       "kind": "code",
-      "ref": "plans/evidence/tu1-root-ledger-review/c7.txt:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/c7.txt:1"
     },
     {
       "id": "c8",
       "kind": "convention",
-      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:19",
-      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+      "ref": "plans/evidence/tu1-root-ledger-review/conventions.txt:1"
     },
     {
       "id": "c9",
       "kind": "code",
-      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:21",
-      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:21"
     },
     {
       "id": "c10",
       "kind": "code",
-      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:23",
-      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:23"
     },
     {
       "id": "c11",
       "kind": "analyze-bundle",
-      "ref": "plans/evidence/tu1-root-ledger-review/grounding.json:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/tu1-root-ledger-review/grounding.json:1"
     },
     {
       "id": "c15",
       "kind": "stakeholder",
-      "ref": "plans/evidence/model-token-usage-root-storage-decision.json:1",
-      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+      "ref": "plans/evidence/model-token-usage-root-storage-decision.json:1"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "plans/evidence/tu1-root-ledger-review/identity-parent.txt:1"
+    },
+    {
+      "id": "c17",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/dependencies.json:1"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "plans/evidence/tu1-root-ledger-review/duckdb.txt:1"
+    },
+    {
+      "id": "c19",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/scope.txt:1"
+    },
+    {
+      "id": "c20",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/integration-map.txt:1"
     }
   ]
 }

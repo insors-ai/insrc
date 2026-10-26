@@ -1,0 +1,1 @@
+Source src/workflow/artifact-core/lifecycle.ts: export function contentHash(description: string, payload: { readonly body: unknown; readonly citations: unknown }): string { return createHash('sha256').update(canonicalJson({ description, body: payload.body, citations: payload.citations })).digest('hex'); }

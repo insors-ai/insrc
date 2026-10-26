@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "3027ebc7e2d86bb4281088a568f31a63e562026283b0cc9c4c2138b558b5319c",
+        "at": "2026-10-26T07:38:55.832Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T07:38:57.265Z",
+        "override": {
+          "reason": "Natural exit verified manually, 15 of 15 runs without --test-force-exit exited in under 11 s (4 of 12 hung before the fix); the validate gate always forces exit so it cannot see it."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1dcacb06-e95e-4595-84e0-cd9c78410d34",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T06:34:59.174Z",
+    "epicCreatedAt": "2026-10-26T06:30:07.504Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "117dcaa2402ba54c",
+    "storyId": "s1",
+    "revision": 4,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix: ISSUE-117dcaa2402ba54c, no LLD (issue -> build).",
+    "epicSlug": "fix-project-item-archive-delete-tools",
+    "updatedAt": "2026-10-26T07:21:03.951Z"
+  },
+  "body": {
+    "focus": "Fix three known gaps of the gh tools: (1) gh:project:item-archive and gh:project:item-delete must take the project number as a positional instead of --project-id (gh 2.46.0); update input/output schemas, coverage, tests. (2) Turn dashSafe on for the manage.ts and resources.ts families with tests that a '-' positional is refused. (3) Find and close the open handle in src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts so it exits without --test-force-exit.",
+    "producesLld": false,
+    "commit": "9c17142d4",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/fix-project-item-archive-delete-tools-E20261026117dcaa2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_cases.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-dash-safe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/inputs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/manage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/project.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/resources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:38:53.317Z"
+      }
+    ]
+  },
+  "citations": []
+}

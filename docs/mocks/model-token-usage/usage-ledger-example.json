@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "eventId": "evt-01-start",
+      "callId": "call-01",
+      "sequence": 1,
+      "type": "request.started",
+      "recordedAt": "2026-10-25T09:00:00Z",
+      "context": {
+        "artifactId": "LLD-a17c42e69d035b81-s1",
+        "workItemId": "E20261025a17c42e6:S001",
+        "workflow": "design.story",
+        "stepId": "review.judge",
+        "runId": "wf-design-01",
+        "activity": "review",
+        "attempt": 1,
+        "logicalRequestId": "logical-review-round-2",
+        "invocationId": "cli-invocation-01",
+        "parentCallId": null,
+        "review": {
+          "round": 2,
+          "reviewRecordId": null
+        },
+        "model": {
+          "provider": "cli-codex",
+          "requested": "gpt-6.1-sol",
+          "reported": null,
+          "kind": "completion"
+        }
+      },
+      "capture": {
+        "source": "cli-native",
+        "granularity": "model-call"
+      },
+      "rootArtifactId": "EPIC-a17c42e69d035b81",
+      "artifactId": "LLD-a17c42e69d035b81-s1"
+    },
+    {
+      "eventId": "evt-01-finish",
+      "callId": "call-01",
+      "sequence": 2,
+      "type": "request.finished",
+      "recordedAt": "2026-10-25T09:00:08Z",
+      "finishedAt": "2026-10-25T09:00:08Z",
+      "outcome": "success",
+      "reportedModel": "gpt-6.1-sol",
+      "usage": {
+        "quality": "reported",
+        "counters": {
+          "inputUncachedTokens": 11000,
+          "cacheReadTokens": 12000,
+          "cacheWriteTokens": 0,
+          "outputTokens": 900,
+          "reasoningTokens": 400
+        },
+        "normalizationVersion": "disjoint-v1",
+        "nativeUnit": "request-total",
+        "reason": null,
+        "providerUsageRef": null
+      },
+      "rootArtifactId": "EPIC-a17c42e69d035b81",
+      "artifactId": "LLD-a17c42e69d035b81-s1"
+    }
+  ],
+  "rootArtifactId": "EPIC-a17c42e69d035b81"
+}

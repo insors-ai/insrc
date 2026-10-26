@@ -651,7 +651,7 @@ const KNOWN_LOOKUPS: Record<string, 'secondary' | 'precondition' | 'preview'> = 
 	'amend.ts: long': 'secondary', 'amend.ts: msgRes': 'secondary', 'amend.ts: head': 'precondition', 'amend.ts: upstream': 'precondition', 'amend.ts: merge': 'precondition',
 	'branch.ts: head': 'secondary', 'commit.ts: sha': 'secondary', 'commit.ts: short': 'secondary', 'commit.ts: stat': 'secondary',
 	'merge.ts: rev': 'preview', 'rebase.ts: count': 'preview', 'rebase.ts: head': 'secondary',
-	'reset.ts: priorShort': 'secondary', 'reset.ts: afterShort': 'secondary', 'stage.ts: post': 'secondary',
+	'reset.ts: priorShort': 'secondary', 'reset.ts: afterShort': 'secondary', 'show.ts: stat': 'secondary', 'stage.ts: post': 'secondary',
 };
 /** Reads through the typed helpers, with their number of calls per file. */
 const KNOWN_HELPER_READS: Record<string, 'secondary' | 'precondition'> = {
@@ -664,7 +664,7 @@ const KNOWN_HELPER_READS: Record<string, 'secondary' | 'precondition'> = {
 };
 /** The helpers that swallow a failure are used only for the preview of an approval request, where a failure is a placeholder. */
 const KNOWN_SWALLOWING = ['merge.ts: currentBranch', 'pull.ts: currentBranch', 'rebase.ts: currentBranch', 'reset.ts: currentBranch'];
-const TOOL_OF_FILE: Record<string, string> = { 'amend.ts': 'git_amend', 'branch.ts': 'git_branch', 'cherry-pick.ts': 'git:cherry-pick', 'commit.ts': 'git_commit', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert', 'stage.ts': 'git_stage' };
+const TOOL_OF_FILE: Record<string, string> = { 'amend.ts': 'git_amend', 'branch.ts': 'git_branch', 'cherry-pick.ts': 'git:cherry-pick', 'commit.ts': 'git_commit', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert', 'show.ts': 'git_show', 'stage.ts': 'git_stage' };
 
 /**
  * The problems of the git tool sources: a runShell result whose process flags are never looked at, a lookup or a typed-helper

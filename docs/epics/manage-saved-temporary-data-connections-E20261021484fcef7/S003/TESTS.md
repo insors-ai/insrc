@@ -397,7 +397,7 @@ Run at 2026-10-26T05:03:06.670Z on commit `389675d84`. Tests check: **passed**. 
 
 ## t19
 
-Run at 2026-10-26T05:21:29.256Z on commit `7b8a624ea`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T05:39:46.239Z on commit `cfa11cedf`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-FREEFORM: explicit/forced fallback, requestSize variants, direct/task loops and same tuple at every relay**
 
@@ -410,5 +410,5 @@ Run at 2026-10-26T05:21:29.256Z on commit `7b8a624ea`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/explore/__tests__/freeform-probe-scope.test.ts` | 0 | 3 | 1.1 s |  |
-| `src/daemon/steps/__tests__/freeform-owner-relay.test.ts` | 0 | 1 | 1.9 s |  |
+| `src/analyze/explore/__tests__/freeform-probe-scope.test.ts` | 0 | 3 | 1.5 s |  |
+| `src/daemon/steps/__tests__/freeform-owner-relay.test.ts` | 0 | 1 | 2.3 s |  |

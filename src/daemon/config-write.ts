@@ -13,7 +13,13 @@
  * (a rejected model a later definitions file lists is accepted, as resolution
  * and models.definitions treat it). An accepted write reports restartRequired
  * when a restart-sensitive model setting differs between the config before and
- * the candidate after. Pure: no file I/O.
+ * the candidate after.
+ *
+ * Tiers are global (k6): a write is also refused when it adds or changes a
+ * per-repo tier (models.byRepo.<repo>.tiers) — directly or through a parent
+ * object — naming each such key. Per-repo tiers already in config.json are left
+ * alone (the next boot's reconcile prunes them), and removing one is accepted.
+ * Pure: no file I/O.
  */
 
 import { setConfigAtPath } from '../config/write-path.js';
@@ -22,7 +28,7 @@ import type { ModelRegistry } from './model-registry.js';
 
 export type ConfigWriteResult =
 	| { readonly ok: true; readonly restartRequired?: boolean | undefined }
-	| { readonly ok: false; readonly reason?: 'invalid-path' | 'rejected-model' | undefined; readonly detail?: string | undefined };
+	| { readonly ok: false; readonly reason?: 'invalid-path' | 'rejected-model' | 'per-repo-tier' | undefined; readonly detail?: string | undefined };
 
 const TIERS = ['core', 'mid', 'cheap'] as const;
 
@@ -45,6 +51,19 @@ function at(root: unknown, keys: readonly string[]): unknown {
 }
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+/** The per-repo tier keys a write adds or changes (removing one is not a change here). */
+function perRepoTierChanges(before: unknown, after: unknown): string[] {
+	const repos = (root: unknown): string[] => {
+		const byRepo = at(root, ['models', 'byRepo']);
+		return typeof byRepo === 'object' && byRepo !== null && !Array.isArray(byRepo) ? Object.keys(byRepo) : [];
+	};
+	return [...new Set([...repos(before), ...repos(after)])].filter(repo => {
+		const next = at(after, ['models', 'byRepo', repo, 'tiers']);
+		// undefined / null (config unset writes null) = the tier was removed, which is accepted.
+		return next !== undefined && next !== null && !same(at(before, ['models', 'byRepo', repo, 'tiers']), next);
+	}).map(repo => `models.byRepo.${repo}.tiers`);
+}
 
 /** The model a tier names when it is effectively rejected in its family, else undefined. */
 function rejectedIn(registry: ModelRegistry, tier: unknown): { family: FamilyId; model: string } | undefined {
@@ -72,6 +91,11 @@ export function applyConfigWrite(
 		setConfigAtPath(candidate, path, value);
 	} catch (err) {
 		return { result: { ok: false, reason: 'invalid-path', detail: (err as Error).message } };
+	}
+
+	const repoTiers = perRepoTierChanges(config, candidate);
+	if (repoTiers.length > 0) {
+		return { result: { ok: false, reason: 'per-repo-tier', detail: `tiers are global (models.tiers); per-repo settings take only tasks and coreFloor — refused: ${repoTiers.join(', ')}` } };
 	}
 
 	for (const tier of TIERS) {

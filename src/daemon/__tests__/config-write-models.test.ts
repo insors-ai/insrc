@@ -163,3 +163,35 @@ test("config-write-models.test.ts: restartRequired for tier, tasks, coreFloor an
 		assert.deepEqual(await write({ path, value }), { ok: true }, label);
 	}
 });
+
+test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed", async () => {
+	const tier = { runner: 'cli-codex', model: 'gpt-x', effort: '' };
+	const refusals: Array<[string, unknown, unknown, RegExp]> = [
+		['tier leaf', ['models', 'byRepo', '/w/repo', 'tiers', 'core', 'model'], 'gpt-x', /refused: models\.byRepo\.\/w\/repo\.tiers$/],
+		['byRepo object', ['models', 'byRepo'], { '/w/repo': { tasks: { 'tracker.render': 'mid' }, tiers: { core: tier } } }, /refused: models\.byRepo\.\/w\/repo\.tiers$/],
+		['models object', ['models'], { ...BASE.models, byRepo: { '/w/a': { tiers: { mid: tier } }, '/w/b': { tiers: { cheap: tier } } } }, /refused: models\.byRepo\.\/w\/a\.tiers, models\.byRepo\.\/w\/b\.tiers$/],
+	];
+	for (const [label, path, value, detail] of refusals) {
+		const before = reset();
+		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		assert.equal(r.ok, false, label);
+		assert.equal(r.reason, 'per-repo-tier', label);
+		assert.match(r.detail ?? '', /^tiers are global \(models\.tiers\); per-repo settings take only tasks and coreFloor/, label);
+		assert.match(r.detail ?? '', detail, label);
+		assert.equal(readFileSync(PATHS.config, 'utf8'), before, `${label}: config.json unchanged`);
+	}
+
+	// tasks and coreFloor under a repo stay writable.
+	reset();
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/repo', 'tasks'], value: { 'tracker.render': 'core' } }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/repo', 'coreFloor'], value: 'core' }) as { ok: boolean }).ok, true);
+	const written = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { models: { byRepo: Record<string, unknown> } };
+	assert.deepEqual(written.models.byRepo['/w/repo'], { tasks: { 'tracker.render': 'core' }, coreFloor: 'core' });
+
+	// A config that already holds a per-repo tier (pruned at the next boot) still takes unrelated writes, and removing the tier is accepted.
+	const withLegacy = { ...BASE, models: { ...BASE.models, byRepo: { '/w/old': { tasks: {}, tiers: { core: tier } } } } };
+	writeFileSync(PATHS.config, JSON.stringify(withLegacy, null, 2));
+	assert.equal((await write({ path: 'logLevel', value: 'debug' }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'coreFloor'], value: 'mid' }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'tiers'], value: null }) as { ok: boolean }).ok, true);
+});

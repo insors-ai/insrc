@@ -136,8 +136,8 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   let created = false;
   let archived = false;
   try {
+    made = true; // before the call: whatever create answers, or if it throws, the cleanup below tries to remove the project
     const create = await textOf({ op: 'create', fromProject: probe.source, key, name: `insrc probe ${key}`, leadEmail: probe.lead });
-    made = true; // whatever create answered, the cleanup below tries to remove the project (a create that worked but was not read must not leave one)
     created = create.r.success;
     // a refusal is recorded beside the fixtures, never over the success text the reader tests read
     record(create.r.success ? 'create' : 'create-refused', create.text);
@@ -145,7 +145,8 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
     assert.equal(create.r.success, true, `project create was refused; the text is recorded: ${create.text}`);
     for (const input of [{ op: 'update', projectKey: key, description: 'insrc probe' }, { op: 'archive', key }, { op: 'restore', key }]) {
       const step = await textOf(input);
-      record(String(input.op), step.text);
+      // a failure is recorded beside the fixtures, never over the success text
+      record(step.r.success ? String(input.op) : `${String(input.op)}-failed`, step.text);
       archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived;
       assert.equal(step.r.success, true, `${String(input.op)}: ${step.text}`);
     }
@@ -156,7 +157,7 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
       const del = await textOf({ op: 'delete', key });
       // a delete of a project that was never made fails and says nothing about the readers: only a made project is recorded and asserted
       if (created) {
-        record('delete', del.text);
+        record(del.r.success ? 'delete' : 'delete-failed', del.text);
         assert.equal(del.r.success, true, `delete of the scratch project ${key}: ${del.text}`);
       }
     }

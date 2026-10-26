@@ -1,3 +1,4 @@
+import '../../analyze/orchestrator/__tests__/private-paths.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.

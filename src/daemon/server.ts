@@ -1,3 +1,4 @@
+import { connectionExecutionErrorCode, currentStepContext } from '../shared/step-context.js';
 import { createServer, type Server, type Socket } from 'node:net';
 import { randomUUID } from 'node:crypto';
 import type { TrustedRpcContext } from './request-context.js';
@@ -74,6 +75,7 @@ export type ForwardRequest = (request: LocalRequestEnvelope, deliver: DeliverEnv
 export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}): ForwardRequest {
   return (request, deliver) => {
     const { requestId, method } = request;
+		const privateReply = !!request.trustedContext?.connectionSession || request.trustedContext?.connectionExecution?.mode === 'session-memory';
     const streamHandler = request.stream ? streamHandlers[method] : undefined;
     if (streamHandler === undefined) {
       const lifetime = request.lifetime;
@@ -82,15 +84,15 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
       };
       const handler = handlers[method];
       if (!handler) {
-        finish({ kind: 'reply', requestId, error: `unknown method: ${method}` });
+				finish({ kind: 'reply', requestId, error: privateReply ? 'unsupported-temporary' : `unknown method: ${method}` });
         return () => {};
       }
       let running: Promise<unknown>;
       const context = request.trustedContext ? Object.freeze({ ...request.trustedContext, ...(lifetime ? { signal: lifetime.signal, registerDrain: lifetime.registerDrain, assertRequestActive: lifetime.assertActive } : {}) }) : undefined;
       try { running = Promise.resolve(handler(request.params, context)); } catch (err) { running = Promise.reject(err); }
       void running.then(
-        result => finish({ kind: 'reply', requestId, result }),
-        err => finish({ kind: 'reply', requestId, error: failureMessage(err, method) }),
+				result => finish({ kind: 'reply', requestId, result: privateReply ? privateFailureResult(result) : result }),
+				err => finish({ kind: 'reply', requestId, error: failureMessage(err, method, request.trustedContext) }),
       ).catch(() => { /* Delivery failure cannot strand internal completion. */ });
       return () => lifetime?.abort();
     }
@@ -106,18 +108,33 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
     const send = (msg: IpcStreamMessage): void => {
       if (terminal || signal.aborted) return;
       if (msg.stream === 'done' || msg.stream === 'error') terminal = true;
-      try { deliver({ kind: 'frame', requestId, frame: msg }); }
+			const frame = !privateReply ? msg : msg.stream === 'progress' ? { id: msg.id, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } } : msg.stream === 'error' ? { id: msg.id, stream: 'error', data: { error: 'unsupported-temporary', recoverable: false } } : msg.stream === 'done' ? { id: msg.id, stream: 'done', data: {} } : { ...msg, data: privateFailureResult(msg.data) };
+			try { deliver({ kind: 'frame', requestId, frame }); }
       catch (error) { abortController.abort(); lifetime?.abort(); throw error; }
     };
     let running: Promise<void>;
     try { running = Promise.resolve(streamHandler(request.params, send, signal, context)); } catch (err) { running = Promise.reject(err); }
     void running.catch(err => {
       if (!signal.aborted && !terminal) {
-        send({ id: 0, stream: 'error', data: { error: failureMessage(err, method), recoverable: true } });
+				send({ id: 0, stream: 'error', data: { error: failureMessage(err, method, request.trustedContext), recoverable: !(request.trustedContext?.connectionSession || request.trustedContext?.connectionExecution?.mode === 'session-memory') } });
       }
     }).finally(() => lifetime?.complete()).catch(() => { /* Delivery failure must still complete the admitted lifetime. */ });
     return () => { abortController.abort(); lifetime?.abort(); };
   };
+}
+
+/** Only failure envelopes are projected. Successful owner-authorized results
+ * stay on the workbench data channel; unverified channels are refused earlier.
+ * Inspect discriminators as data descriptors, never source/error accessors. */
+function privateFailureResult(value: unknown): unknown {
+	const failure = { code: 'unsupported-temporary', message: 'Temporary connection operation failed.' };
+	try {
+		if (value !== null && typeof value === 'object') {
+			if (Object.getOwnPropertyDescriptor(value, 'ok')?.value === false) return { ok: false, error: failure };
+			if (Object.getOwnPropertyDescriptor(value, 'success')?.value === false) return { output: failure.message, format: 'text', success: false, error: failure.message };
+		}
+		return value;
+	} catch { return { ok: false, error: failure }; }
 }
 
 // ---------------------------------------------------------------------------
@@ -140,7 +157,8 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
  * store's health before it is reduced to text, and the client is answered
  * with the named error, whose message states the true cause.
  */
-export function failureMessage(err: unknown, method: string): string {
+export function failureMessage(err: unknown, method: string, context?: TrustedRpcContext): string {
+	if (context?.connectionSession || context?.connectionExecution?.mode === 'session-memory' || currentStepContext()?.connectionExecution?.mode === 'session-memory') return connectionExecutionErrorCode(err) ?? 'unsupported-temporary';
   if (recordStoreFailureIfLockError(err, `request ${method}`)) {
     const named = err instanceof LmdbStoreLocksLostError ? err : new LmdbStoreLocksLostError(`request ${method}`, err);
     return `${named.name}: ${named.message}`;
@@ -364,7 +382,7 @@ export class IpcServer {
       ...(lifetime ? { lifetime } : {}),
     }, deliver); }
     catch (error) {
-      try { deliver({kind: 'reply', requestId, error: failureMessage(error, request.method)}); }
+			try { deliver({ kind: 'reply', requestId, error: failureMessage(error, request.method, this.connectionContext(conn)) }); }
       finally { lifetime?.complete(); }
     }
     // Remember it until it ends or its socket closes (unless it was answered already).

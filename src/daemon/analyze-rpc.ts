@@ -1,3 +1,7 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
+import { currentStepContext } from '../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
+import { captureAnalysisDiagnostics } from '../analyze/connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -272,7 +276,8 @@ export type RunPurgeRpcResponse = RunPurgeRpcOk | AnalyzeRpcErr;
 // Public handlers
 // ---------------------------------------------------------------------------
 
-export async function buildClassification(params: unknown): Promise<AnalyzeRpcResponse> {
+export async function buildClassification(params: unknown, execution?: ConnectionExecutionContext): Promise<AnalyzeRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: ClassificationParams;
 	try {
 		parsed = parseClassificationParams(params);
@@ -288,7 +293,8 @@ export async function buildClassification(params: unknown): Promise<AnalyzeRpcRe
 	return invoke(() => shaper.buildClassificationBundle(input, opts), 'classification', parsed.runId);
 }
 
-export async function buildRun(params: unknown): Promise<AnalyzeRpcResponse> {
+export async function buildRun(params: unknown, execution?: ConnectionExecutionContext): Promise<AnalyzeRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: RunParams;
 	try {
 		parsed = parseRunParams(params);
@@ -301,7 +307,8 @@ export async function buildRun(params: unknown): Promise<AnalyzeRpcResponse> {
 	return invoke(() => shaper.buildRunBundle(input, opts), 'run', parsed.runId);
 }
 
-export async function buildTask(params: unknown): Promise<AnalyzeRpcResponse> {
+export async function buildTask(params: unknown, execution?: ConnectionExecutionContext): Promise<AnalyzeRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: TaskParams;
 	try {
 		parsed = parseTaskParams(params);
@@ -333,7 +340,8 @@ export async function buildTask(params: unknown): Promise<AnalyzeRpcResponse> {
 // analyze.classify
 // ---------------------------------------------------------------------------
 
-export async function classify(params: unknown): Promise<ClassifyRpcResponse> {
+export async function classify(params: unknown, execution?: ConnectionExecutionContext): Promise<ClassifyRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: ClassifyParams;
 	try {
 		parsed = parseClassifyParams(params);
@@ -450,7 +458,8 @@ export function planDepthScope(currentDepth: number, handedDown: AnalyzeScope | 
 	return handedDown ?? measured;
 }
 
-export async function plan(params: unknown): Promise<PlanRpcResponse> {
+export async function plan(params: unknown, execution?: ConnectionExecutionContext): Promise<PlanRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: PlanParams;
 	try {
 		parsed = parsePlanParams(params);
@@ -564,7 +573,9 @@ export async function runStart(
 	params: unknown,
 	send: (msg: IpcStreamMessage) => void,
 	signal: AbortSignal,
+	execution?: ConnectionExecutionContext,
 ): Promise<void> {
+	assertNoSessionPersistence(execution);
 	const start = Date.now();
 
 	let parsed: RunStartParams;
@@ -685,9 +696,16 @@ export async function runStart(
 export function makeProgressEmitter(
 	send: (msg: IpcStreamMessage) => void,
 	runId: string,
+	execution?: ConnectionExecutionContext,
 ): (event: AnalyzeRunEvent) => void {
+	const quiet = execution?.mode === 'session-memory' || currentStepContext()?.connectionExecution?.mode === 'session-memory';
+	const diagnostics = captureAnalysisDiagnostics(log, execution);
 	let stageIndex = 0;
 	return (event: AnalyzeRunEvent): void => {
+		if (quiet) {
+			try { send({ id: 0, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } }); } catch { /* Private delivery errors never enter formatting or logs. */ }
+			return;
+		}
 		// `done` is captured by runAnalyze's return value; the handler
 		// emits a single terminal `analyze.result` frame from that
 		// return value. It never rides a `progress` frame.
@@ -699,10 +717,7 @@ export function makeProgressEmitter(
 			send({ id: 0, stream: 'progress', data });
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
-			log.warn(
-				{ runId, eventType: event.type, message },
-				'analyze.run.start: progress emit failed; continuing run',
-			);
+			diagnostics.emit('warn', () => [{ runId, eventType: event.type, message }, 'analyze.run.start: progress emit failed; continuing run']);
 		}
 	};
 }
@@ -828,7 +843,8 @@ function shapeTerminalFrame(result: RunAnalyzeResult): RunStartRpcResponse {
  * exist. Genuinely unrecoverable read errors surface as
  * internal-error.
  */
-export async function runStatus(params: unknown): Promise<RunStatusRpcResponse> {
+export async function runStatus(params: unknown, execution?: ConnectionExecutionContext): Promise<RunStatusRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: RunStatusParams;
 	try {
 		parsed = parseRunStatusParams(params);
@@ -874,7 +890,8 @@ export async function runStatus(params: unknown): Promise<RunStatusRpcResponse> 
  *
  * Filesystem errors propagate to the wire as 'internal-error'.
  */
-export async function runPurge(params: unknown): Promise<RunPurgeRpcResponse> {
+export async function runPurge(params: unknown, execution?: ConnectionExecutionContext): Promise<RunPurgeRpcResponse> {
+	assertNoSessionPersistence(execution);
 	let parsed: RunPurgeParams;
 	try {
 		parsed = parseRunPurgeParams(params);

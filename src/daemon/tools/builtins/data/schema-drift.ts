@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * data_schema-drift -- diff a connection's expected schema (Prisma)
  * against the live RDBMS shape and report column-level drift.
@@ -208,10 +209,7 @@ export const dataSchemaDriftTool: Tool = {
 					confidence: 'medium',
 				};
 
-				log.info(
-					{ connectionId, target, prismaPath, drift: drift.length },
-					'data_schema-drift diff complete',
-				);
+				captureAnalysisDiagnostics(log, deps.connectionExecution).emit('info', () => [{ connectionId, target, prismaPath, drift: drift.length }, 'data_schema-drift diff complete']);
 
 				return {
 					output: renderDriftReport(data, expected, live),

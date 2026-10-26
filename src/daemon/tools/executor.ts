@@ -1,3 +1,5 @@
+import { connectionExecutionErrorCode, ConnectionExecutionError, runWithConnectionExecution } from '../../shared/step-context.js';
+import { isReadOnlyShaperTool } from '../../analyze/context/tool-surface.js';
 import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -15,7 +17,7 @@ import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
  * the chat-loop wiring lands.
  */
 
-import { assertAnalysisConnectionExecution } from '../../analyze/connection-access.js';
+import { assertAnalysisConnectionExecution, captureAnalysisDiagnostics } from '../../analyze/connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import { getTool } from './registry.js';
 import type { ToolDeps, ToolInput, ToolResult } from './types.js';
@@ -28,10 +30,13 @@ export async function executeTool(
 	deps: ToolDeps,
 ): Promise<ToolResult> {
 	assertAnalysisConnectionExecution(deps.connectionExecution);
+	const execution = deps.connectionExecution;
+	const diagnostics = captureAnalysisDiagnostics(log, execution);
 	const tool = getTool(toolId);
+	if (execution?.mode === 'session-memory' && (!tool || !isReadOnlyShaperTool(tool.id))) throw new ConnectionExecutionError('unsupported-temporary');
 	if (tool && ['docs_retrieve', 'docs_project_context', 'docs_summary_get', 'docs_family_list', 'graph_search', 'data_lineage'].includes(tool.id)) assertNoSessionEmbedding(deps.connectionExecution);
 	if (!tool) {
-		log.error({ toolId }, 'unknown tool');
+		diagnostics.emit('error', () => [{ toolId }, 'unknown tool']);
 		return {
 			output: `Unknown tool: ${toolId}`,
 			format: 'text',
@@ -40,22 +45,25 @@ export async function executeTool(
 		};
 	}
 
-	log.info({ id: tool.id }, 'executing tool');
+	diagnostics.emit('info', () => [{ id: tool.id }, 'executing tool']);
 
+	try {
 	const needsGate = tool.requiresApproval === true
 		|| (typeof tool.requiresApproval === 'function' && tool.requiresApproval(input));
 	if (needsGate) {
-		log.warn({ id: tool.id }, 'tool requires approval but the gate dispatcher is gone; auto-approving');
+			diagnostics.emit('warn', () => [{ id: tool.id }, 'tool requires approval but the gate dispatcher is gone; auto-approving']);
 	}
 
-	try {
-		const result = await tool.execute(input, deps);
+		const result = await runWithConnectionExecution(execution, () => tool.execute(input, deps));
 		assertAnalysisConnectionExecution(deps.connectionExecution);
+		if (execution?.mode === 'session-memory' && !result.success) return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		return result;
 	} catch (err) {
-		if (deps.connectionExecution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
+		assertAnalysisConnectionExecution(execution);
+		const code = execution?.mode === 'session-memory' ? connectionExecutionErrorCode(err) : undefined; if (code) throw new ConnectionExecutionError(code);
+		if (execution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		const errMsg = err instanceof Error ? err.message : String(err);
-		log.error({ id: tool.id, err: errMsg }, 'tool execution failed');
+		diagnostics.emit('error', () => [{ id: tool.id, err: errMsg }, 'tool execution failed']);
 		return {
 			output: `[Tool failed] ${errMsg}`,
 			format: 'text',

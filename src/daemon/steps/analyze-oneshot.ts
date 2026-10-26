@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 import { assertAnalysisAudience, analysisAdmissionEnvelope } from './analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -88,7 +89,7 @@ export async function runAnalyzeOneShot(
 	deps: AnalyzeOneShotDeps = {},
 	execution?: ConnectionExecutionContext,
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean | undefined }> {
-	try { assertAnalysisAudience(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
+	try { assertAnalysisAudience(execution); assertNoSessionPersistence(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	const args = checkOneShotArgs(rawArgs);
 	if (typeof args === 'string') return errorResult(args);
 	// Resolve the repo path: explicit param > CWD-contained registered repo >

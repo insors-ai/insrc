@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: mapper: table covers every AnalyzeRunEvent variant exactly once (exhaustive)
+ok 1 - mapper: table covers every AnalyzeRunEvent variant exactly once (exhaustive)
+# Subtest: mapper: stage variants -> StageProgressEvent{operation:analyze.run,total:null,index}
+ok 2 - mapper: stage variants -> StageProgressEvent{operation:analyze.run,total:null,index}
+# Subtest: mapper: specific stageId/stageLabel derivations
+ok 3 - mapper: specific stageId/stageLabel derivations
+# Subtest: mapper: llm-token + all sub-events + done -> null (no throw)
+ok 4 - mapper: llm-token + all sub-events + done -> null (no throw)
+# Subtest: mapper: malformed / unknown input -> null, never throws
+ok 5 - mapper: malformed / unknown input -> null, never throws
+# Subtest: emitter: stage events -> progress frames; sub-events/llm-token emit nothing; zero delta frames
+ok 6 - emitter: stage events -> progress frames; sub-events/llm-token emit nothing; zero delta frames
+# Subtest: emitter: repeated stages still advance the counter
+ok 7 - emitter: repeated stages still advance the counter
+# Subtest: emitter: a send that throws EPIPE on the Nth call does not abort the run
+ok 8 - emitter: a send that throws EPIPE on the Nth call does not abort the run
+# Subtest: the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)
+ok 9 - the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)
+# Subtest: the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle
+ok 10 - the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle
+# Subtest: a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+ok 11 - a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+# Subtest: analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'
+ok 12 - analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'
+# Subtest: buildClassification rejects non-object params with invalid-params
+ok 13 - buildClassification rejects non-object params with invalid-params
+# Subtest: buildClassification rejects missing runId
+ok 14 - buildClassification rejects missing runId
+# Subtest: buildClassification rejects missing scopeRef
+ok 15 - buildClassification rejects missing scopeRef
+# Subtest: buildClassification rejects bad scopeRef.kind
+ok 16 - buildClassification rejects bad scopeRef.kind
+# Subtest: buildRun rejects missing intent
+ok 17 - buildRun rejects missing intent
+# Subtest: buildRun rejects bad intent.target
+ok 18 - buildRun rejects bad intent.target
+# Subtest: buildRun rejects bad intent.scope
+ok 19 - buildRun rejects bad intent.scope
+# Subtest: buildRun rejects non-boolean intent.focused
+ok 20 - buildRun rejects non-boolean intent.focused
+# Subtest: buildTask rejects target=generic at task scope
+ok 21 - buildTask rejects target=generic at task scope
+# Subtest: buildTask rejects bad task.produces shape
+ok 22 - buildTask rejects bad task.produces shape
+# Subtest: buildTask accepts undefined upstream as an empty Map
+ok 23 - buildTask accepts undefined upstream as an empty Map
+# Subtest: buildTask accepts array-form upstream
+ok 24 - buildTask accepts array-form upstream
+# Subtest: buildTask rejects bad upstream array entries
+ok 25 - buildTask rejects bad upstream array entries
+# Subtest: invalid-params responses carry { code, message }
+ok 26 - invalid-params responses carry { code, message }
+# Subtest: classify rejects non-object params with invalid-params
+ok 27 - classify rejects non-object params with invalid-params
+# Subtest: classify rejects missing runId
+ok 28 - classify rejects missing runId
+# Subtest: classify rejects missing userPrompt
+ok 29 - classify rejects missing userPrompt
+# Subtest: classify rejects missing scopeRef
+ok 30 - classify rejects missing scopeRef
+# Subtest: classify rejects bad scopeRef.kind
+ok 31 - classify rejects bad scopeRef.kind
+# Subtest: classify rejects empty-string userPrompt
+ok 32 - classify rejects empty-string userPrompt
+# Subtest: plan rejects non-object params with invalid-params
+ok 33 - plan rejects non-object params with invalid-params
+# Subtest: plan rejects missing runId
+ok 34 - plan rejects missing runId
+# Subtest: plan rejects missing intent
+ok 35 - plan rejects missing intent
+# Subtest: plan rejects bad intent.target
+ok 36 - plan rejects bad intent.target
+# Subtest: plan rejects bad rootScope value
+ok 37 - plan rejects bad rootScope value
+# Subtest: plan rejects non-integer currentDepth
+ok 38 - plan rejects non-integer currentDepth
+# Subtest: plan rejects negative currentDepth
+ok 39 - plan rejects negative currentDepth
+# Subtest: runStart (streaming): non-object params -> analyze.result frame with invalid-params + done
+ok 40 - runStart (streaming): non-object params -> analyze.result frame with invalid-params + done
+# Subtest: runStart (streaming): missing runId -> invalid-params in terminal frame
+ok 41 - runStart (streaming): missing runId -> invalid-params in terminal frame
+# Subtest: runStart (streaming): missing userPrompt -> invalid-params
+ok 42 - runStart (streaming): missing userPrompt -> invalid-params
+# Subtest: runStart (streaming): missing scopeRef -> invalid-params
+ok 43 - runStart (streaming): missing scopeRef -> invalid-params
+# Subtest: runStart (streaming): bad scopeRef.kind -> invalid-params with field name in message
+ok 44 - runStart (streaming): bad scopeRef.kind -> invalid-params with field name in message
+# Subtest: runStart (streaming): resume cache hit -> analyze.result with ok:true; no intermediate progress frames
+ok 45 - runStart (streaming): resume cache hit -> analyze.result with ok:true; no intermediate progress frames
+# Subtest: runStatus rejects non-object params with invalid-params
+ok 46 - runStatus rejects non-object params with invalid-params
+# Subtest: runStatus rejects missing runId
+ok 47 - runStatus rejects missing runId
+# Subtest: runStatus on missing runId record returns invalid-input
+ok 48 - runStatus on missing runId record returns invalid-input
+# Subtest: runStatus returns the persisted RunRecord round-trip
+ok 49 - runStatus returns the persisted RunRecord round-trip
+# Subtest: runPurge rejects non-object params with invalid-params
+ok 50 - runPurge rejects non-object params with invalid-params
+# Subtest: runPurge rejects missing runId
+ok 51 - runPurge rejects missing runId
+# Subtest: runPurge rejects non-boolean force
+ok 52 - runPurge rejects non-boolean force
+# Subtest: runPurge on missing runId record returns purged=false (idempotent)
+ok 53 - runPurge on missing runId record returns purged=false (idempotent)
+# Subtest: runPurge removes a persisted finished run; subsequent purge returns purged=false
+ok 54 - runPurge removes a persisted finished run; subsequent purge returns purged=false
+# Subtest: runPurge refuses on status=in-progress for a live run without force; force=true overrides
+ok 55 - runPurge refuses on status=in-progress for a live run without force; force=true overrides
+# Subtest: AnalyzeRpcOk responses have ok:true and a bundle field
+ok 56 - AnalyzeRpcOk responses have ok:true and a bundle field
+# Subtest: new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback
+ok 57 - new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback
+# Subtest: closing the socket aborts a stream request and drops a unary request's late reply while its handler completes
+ok 58 - closing the socket aborts a stream request and drops a unary request's late reply while its handler completes
+# Subtest: the registry hook fires on connect, close and each message before the request is forwarded
+ok 59 - the registry hook fires on connect, close and each message before the request is forwarded
+# Subtest: handler rejects non-object input
+ok 60 - handler rejects non-object input
+# Subtest: handler rejects an unknown phase
+ok 61 - handler rejects an unknown phase
+# Subtest: handler rejects missing phase field
+ok 62 - handler rejects missing phase field
+# Subtest: start returns emit_plan with a state blob + a real prompt
+ok 63 - start returns emit_plan with a state blob + a real prompt
+# Subtest: start with no repo + no INSRC_REPO env → clear no-repo error
+ok 64 - start with no repo + no INSRC_REPO env → clear no-repo error
+# Subtest: plan phase with a garbage state blob returns wrong-state error
+ok 65 - plan phase with a garbage state blob returns wrong-state error
+# Subtest: bundle phase with awaiting_plan state returns wrong-stage error
+ok 66 - bundle phase with awaiting_plan state returns wrong-stage error
+# Subtest: envelope is { content: [{type:"text", text: JSON}] }
+ok 67 - envelope is { content: [{type:"text", text: JSON}] }
+# Subtest: CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility
+ok 68 - CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility
+# Subtest: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+ok 69 - CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+# Subtest: CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it
+ok 70 - CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it
+# Subtest: CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap
+ok 71 - CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap
+# Subtest: CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume
+ok 72 - CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume
+# Subtest: CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority
+ok 73 - CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority
+# tests 73
+# pass 73
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3190.819208

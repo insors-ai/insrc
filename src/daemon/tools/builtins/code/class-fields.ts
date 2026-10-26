@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * code_class_fields -- typed field extraction for a class entity
  * (code-analyzer-skills.md Phase 0.2).
@@ -120,11 +121,10 @@ const codeClassFieldsTool: Tool = {
 			source,
 		};
 
-		log.info(
-			{ entityId, className: out.className, language: classEntity.language,
-				fieldCount: fields.length, source },
-			'code_class_fields',
-		);
+		captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{
+			entityId, className: out.className, language: classEntity.language,
+			fieldCount: fields.length, source
+		}, 'code_class_fields']);
 
 		return ok(out);
 	},

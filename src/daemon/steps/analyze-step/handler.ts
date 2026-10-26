@@ -1,3 +1,4 @@
+import { connectionExecutionErrorCode, runWithConnectionExecution } from '../../../shared/step-context.js';
 import { beginSessionReuse, assertSessionReuse, assertSessionReuseNow } from '../../../analyze/session-reuse.js';
 import { assertAnalysisAudience, analysisAdmissionEnvelope } from '../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
@@ -59,7 +60,7 @@ const log = getLogger('mcp:analyze-step:handler');
  */
 export async function handleAnalyzeStep(input: unknown, execution?: ConnectionExecutionContext): Promise<StepMcpEnvelope> {
 	try { assertAnalysisAudience(execution); await beginSessionReuse(execution); assertSessionReuseNow(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
-	const result = await dispatch(input, execution);
+	const result = await runWithConnectionExecution(execution, () => dispatch(input, execution));
 	try { await assertSessionReuse(execution); assertSessionReuseNow(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	if (TRACE_PATH !== undefined && execution?.mode !== 'session-memory') {
 		try {
@@ -111,6 +112,7 @@ async function dispatch(input: unknown, execution?: ConnectionExecutionContext):
 				);
 		}
 	} catch (err) {
+		if (execution?.mode === 'session-memory') return errorResult(connectionExecutionErrorCode(err) ?? 'unsupported-temporary', 'Temporary analysis failed.', false);
 		const scoped = scopeErrorResult(err);
 		if (scoped !== undefined) return scoped;
 		const msg = err instanceof Error ? err.message : String(err);

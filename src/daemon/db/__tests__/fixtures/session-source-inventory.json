@@ -1207,17 +1207,17 @@
           "args.provider.completeStructured"
         ],
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log, execution).emit"
         ],
         [
           "diagnostic",
-          "log.warn"
+          "getLogger"
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "74d2107608dfd3e25adb8bd33a85d0f68f9aa67ab380b7bbf4648837368cfda4",
-      "sourceDigest": "34f4a809eed9974368b04b56bdf69567b4e0f99e091032024b3da2135adfcc6e",
+      "sitesDigest": "5654e46518a80dfff5b39ab5f92c36f5aa661b9dbaff637706602e17b9aeacea",
+      "sourceDigest": "345e55eaff0efcdc9c0e89b67e76c03be308c97ac3b2ca2e7872ce2ecf61c58b",
       "boundaries": [
         "diagnostic",
         "provider-use",
@@ -7124,6 +7124,42 @@
           "abandonRunRecord"
         ],
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "diagnostics.emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -7208,10 +7244,6 @@
           "log.warn"
         ],
         [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "storage-call",
           "purgeRun"
         ],
@@ -7253,6 +7285,10 @@
         ],
         [
           "serialization",
+          "send"
+        ],
+        [
+          "serialization",
           "writeRunRecord"
         ],
         [
@@ -7260,9 +7296,9 @@
           "writeRunRecord"
         ]
       ],
-      "siteCount": 35,
-      "sitesDigest": "66631c9b4a692d6d9758061664d38916eb071ebd168c8ae5589f580cc2a6ab63",
-      "sourceDigest": "705beaa50384597858b495dadca93f0bd139684bfcfaeb7da7d9735c0f8aa695",
+      "siteCount": 44,
+      "sitesDigest": "708b14c6182a30b4008bf3097a45b1539de60c5a54a85ea677fb820d43ffbb8c",
+      "sourceDigest": "3f5642ae84b28ee443df15a24a149cef3b7db772dc5cbf05e2000686c1a9ebf9",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -12900,7 +12936,7 @@
       ],
       "siteCount": 184,
       "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "39841ffb2109284b625747d8027ee122e448fffd840d259b70cad08cd202a2fb",
+      "sourceDigest": "f71e51d7e132857ac2fc36125ba979db1e795ec8f57d98ad344b9e47f36fb137",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13842,7 +13878,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "c7ae49d253a9dafc29adcf8e4c6624e897e71b0cabd19a6a2eca000d700f31cd",
+      "sourceDigest": "0048f551691b2b9a54fe58bbf59f65fb645a209206d71cfa782c9e672e533b2e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14010,7 +14046,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "8f52f3dde0371c877f61c1a6984877d0408867b1a1b79b52d02b6ed7cb8496de",
-      "sourceDigest": "c1ca2623973f8502c9e8b0a8e7f07af0f2a2c31bc022f7ba642776aec00d2846",
+      "sourceDigest": "76fc20c177a8c86c0c3e788547d65f5495faff4064f3d7469c66995b7e23ec7a",
       "boundaries": [
         "serialization"
       ]
@@ -14019,6 +14055,10 @@
       "classification": "analysis-transport",
       "rationale": "Session analysis host boundary; unverified MCP phases refuse before state/output/prompt access and UI daemon execution retains memory-only authority through all serializers.",
       "sites": [
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
         [
           "diagnostic",
           "getLogger"
@@ -14032,9 +14072,9 @@
           "Math.random().toString"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "9dbd8958a59e85d91a56945c65fbb6bf11c551207bb248d49e58a4a4c93e27bf",
-      "sourceDigest": "8a851e2c7f53a6b8292d77273dde8ed90da3d2c759d46dfb64188c8223978f8f",
+      "siteCount": 4,
+      "sitesDigest": "7676a6f66e3001bad5830dbc5055023fbe068d0a7880b88ff0ca378d09024aa9",
+      "sourceDigest": "c423f9d04816821dc8dc9cd9cfac41ad1c237f968e8a67708fbc3cb457458291",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -14067,7 +14107,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e9159fc4d21b56fcc656c0042d17e1a82a087b082ce9afcc1ecbe447b7397c6b",
-      "sourceDigest": "377e80ca3f2e35c89107c616b1b3a1301f0ec9170ba23cd4438e836e9d515c0e",
+      "sourceDigest": "b2079b22dc9f80b1542ef9cee26263b65e9e1f78340be492c8695dc9234f793e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -16382,6 +16422,10 @@
       "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "findDefinedIn"
         ],
@@ -16396,15 +16440,11 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "7547de223fbe8e6258655f442b9846c525516915510b9fd92a79194d503f7299",
-      "sourceDigest": "57e62b49a5520476b8d993e91cba30d62a36e61fc9c69e3a0fa27fa813f9b7bc",
+      "sitesDigest": "e4daf2ad5e6f22cf00a2db08e155ac60df4d03eb3b7b6eccb2b2ba8a5e40c202",
+      "sourceDigest": "44c874971336be5966a63a529435b5917f3b712dc256b48267d3c82130936b49",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -16422,6 +16462,10 @@
         [
           "serialization",
           "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
         ],
         [
           "serialization",
@@ -16460,10 +16504,6 @@
           "key.writeBigUInt64BE"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "storage-call",
           "lookupRepoIdInTxn"
         ],
@@ -16489,8 +16529,8 @@
         ]
       ],
       "siteCount": 18,
-      "sitesDigest": "f2aeefb4cbb04001c0e5dd292ba327e1ffb90ca85082ab006a3b91a6529ea3bc",
-      "sourceDigest": "3aeaae9a341d83f65659bf52f0b105c750cc05ba83010d96d7e7a1c9b03ac534",
+      "sitesDigest": "c9dd7e5baea449188449ea68d1acec0a253bc4f06b80e6158763b88493d588c1",
+      "sourceDigest": "5937e9d9995ffc2d8c46c3e5fc155661266a20db7abcc79022f7be9a62696bed",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -16501,6 +16541,14 @@
       "classification": "tool-allowlist-boundary",
       "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
         [
           "serialization",
           "encodeInEdgePrefix"
@@ -16538,14 +16586,6 @@
           "JSON.stringify"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "storage-call",
           "prefixSuccessor"
         ],
@@ -16555,8 +16595,8 @@
         ]
       ],
       "siteCount": 13,
-      "sitesDigest": "23fe5fc14dc1707dd0c71a87085967527d9dd021ebb0fdf714dad8a2476fee2d",
-      "sourceDigest": "7a747f618f7826a01905abd899ce7cb0020b8a064adce4318f40ce09b06f8b09",
+      "sitesDigest": "9a44c78384f252dbf9cd6b3755e4efeab4185b2d718b4d8392b298ad0813eea1",
+      "sourceDigest": "01b92ab6ab565ab9c6e4f53e7adc3afbfbbd64f2cdfd39f675143fabd15dd711",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -16568,29 +16608,29 @@
       "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "5b5b5dbaf4aaf9f520421bda577aed05324f7a3168d5a979d8ead0cff82c7420",
-      "sourceDigest": "30a2decd0d81e371031ceb54ec4c81f143e72ba751a86bf3360e47a969bedc59",
+      "sitesDigest": "788f7b9cbc5921a015c1e3146358f6de9b638fa976d7e55d45b6be87040fe901",
+      "sourceDigest": "5a39705d1efa6f5e67011e4108bde3eab3775cd78626be95b522ff89a78644bf",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16649,29 +16689,29 @@
       "rationale": "This capability receives no automatic session grant. Admit only audited readonly analysis operations with trusted tuple; filesystem/cloud/shell/notify and other persistence-capable operations refuse before execution.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, _deps.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "9a84591ce0f489ac6862ae9c3fc2fca443107d1fbd8ad03500a7edd4c12d489b",
-      "sourceDigest": "7a0228358399e455b14643ad12082af010ea7cf659ecc50efd52097b921e861f",
+      "sitesDigest": "718de5d23941359c5b787668482baaabc0a51e290de55020025b5f6c4df1a01d",
+      "sourceDigest": "76e437d70c0735a4dab146d01510019d82b42bb6cc20bcb8abcafb373da12cba",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16765,12 +16805,12 @@
           "(driver as RdbmsDriver).describe"
         ],
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log, deps.connectionExecution).emit"
         ],
         [
           "diagnostic",
-          "log.info"
+          "getLogger"
         ],
         [
           "acquisition:resolver-member",
@@ -16814,13 +16854,14 @@
         ]
       ],
       "siteCount": 13,
-      "sitesDigest": "66dd06a3920109487bcebbdffec67a5af58219f345e281b2f526a100e9f0ad98",
-      "sourceDigest": "731a12c4593132231cd9176220c7a1daf221a71d2c1c13b1d3ec3054ff2a4d75",
+      "sitesDigest": "1cffc5b710614f1a0128768ab688d095f0dc90d5305452e83e51ba730158b3e8",
+      "sourceDigest": "229ee8b5d96aef06d35d6da623092c356f1f3d80bd6cc70c59d8d362b5a1604e",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/daemon/tools/builtins/db/index.ts": {
@@ -18179,31 +18220,32 @@
       "rationale": "Tool dispatch must carry explicit trusted tuple, enforce session method admission and quiet diagnostics/error mapping before argument or exception formatting.",
       "sites": [
         [
+          "serialization",
+          "diagnostics.emit"
+        ],
+        [
+          "serialization",
+          "diagnostics.emit"
+        ],
+        [
+          "serialization",
+          "diagnostics.emit"
+        ],
+        [
+          "serialization",
+          "diagnostics.emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "6ac65b6545dfab6862ae3f8a6c3ae2b49140c3ed2ed2feeb445c0b252c684b99",
-      "sourceDigest": "1117545415063620e4553f8e083dde07a078e738ecea1e78dcae8fab318741b5",
+      "sitesDigest": "43adb9da72b15ece36f4367ea33e746310465455c2175d796f44dc09a99cbf12",
+      "sourceDigest": "605f9a1177a61a7447e7bf5de27ff7625a75bf982da9029d3c65a4eb4ca4bac0",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/daemon/tools/registry.ts": {

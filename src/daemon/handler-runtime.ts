@@ -1518,17 +1518,20 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Each handler returns a tagged union AnalyzeRpcResponse so typed
 		// shaper errors (ScopeNotIndexedError, ShaperLlmUnavailable, ...)
 		// surface with stable error codes instead of generic string errors.
-		'analyze.context.buildClassification': async (params) => {
+		'analyze.context.buildClassification': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildClassification(params);
+			return mod.buildClassification(params, context?.connectionExecution);
 		},
-		'analyze.context.buildRun': async (params) => {
+		'analyze.context.buildRun': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildRun(params);
+			return mod.buildRun(params, context?.connectionExecution);
 		},
-		'analyze.context.buildTask': async (params) => {
+		'analyze.context.buildTask': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildTask(params);
+			return mod.buildTask(params, context?.connectionExecution);
 		},
 		// Classifier (LLM-driven ClassifiedIntent producer). Tagged
 		// union response with `intent` (not `bundle`) on success;
@@ -1537,9 +1540,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// is unwrapped at the wire: error.code carries the inner
 		// failure code (scope-ref-unresolved or
 		// scope-ref-kind-target-mismatch) directly.
-		'analyze.classify': async (params) => {
+		'analyze.classify': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.classify(params);
+			return mod.classify(params, context?.connectionExecution);
 		},
 		// Plan Builder. Internally builds the run-level context bundle
 		// + calls runPlanner. Tagged union: ok:true carries `plan`,
@@ -1547,24 +1551,27 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// with the inner invariant id in `data`, max-plan-depth-exceeded,
 		// etc.). Shaper-side errors from the pre-step bundle build
 		// surface with the shaper's stable codes.
-		'analyze.plan.build': async (params) => {
+		'analyze.plan.build': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.plan(params);
+			return mod.plan(params, context?.connectionExecution);
 		},
 		// Read-only lookup of <runRoot>/run.json. Returns
 		// ok:false/code:invalid-input when the runId has no on-disk
 		// record. Used by IDE polling + by resume callers.
-		'analyze.run.status': async (params) => {
+		'analyze.run.status': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStatus(params);
+			return mod.runStatus(params, context?.connectionExecution);
 		},
 		// Remove a run's on-disk artifacts (plan.json + plan.attempts/
 		// + tasks/ + run.json + context cache). Default refuses on
 		// status='in-progress'; pass `force: true` to override.
 		// Idempotent: purged=false when the run dir didn't exist.
-		'analyze.run.purge': async (params) => {
+		'analyze.run.purge': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runPurge(params);
+			return mod.runPurge(params, context?.connectionExecution);
 		},
 
 		// Async (start/poll/abort) lifecycle for `workflow.run`. The
@@ -1652,9 +1659,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Persistence happens inside runAnalyze regardless of how the
 		// stream ends (IDE disconnect, signal abort) -- terminal state
 		// is recoverable via analyze.run.status.
-		'analyze.run.start': async (params, send, signal) => {
+		'analyze.run.start': async (params, send, signal, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStart(params, send, signal);
+			return mod.runStart(params, send, signal, context?.connectionExecution);
 		},
 		// Daemon-side workflow runner: drives one workflow (define / design.* /
 		// plan / stub) end-to-end through the LLMProvider (config → invoking

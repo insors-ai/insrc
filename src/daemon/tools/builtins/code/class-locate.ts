@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * code_class_locate -- typed class lookup over the LMDB graph
  * (code-analyzer-skills.md Phase 0.1).
@@ -142,10 +143,7 @@ const codeClassLocateTool: Tool = {
 			limit: NEAREST_LIMIT,
 		});
 
-		log.info(
-			{ className, repoPath, language, nearestCount: nearest.length },
-			'code_class_locate: not found',
-		);
+		captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{ className, repoPath, language, nearestCount: nearest.length }, 'code_class_locate: not found']);
 
 		return ok({ found: false, nearest });
 	},

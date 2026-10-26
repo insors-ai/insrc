@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+ok 1 - CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+# Subtest: parseModifiers: returns leading mod tokens, stops at type
+ok 2 - parseModifiers: returns leading mod tokens, stops at type
+# Subtest: parseModifiers: skips leading annotations
+ok 3 - parseModifiers: skips leading annotations
+# Subtest: parseTypeFromSignature: java shape extracts type
+ok 4 - parseTypeFromSignature: java shape extracts type
+# Subtest: parseTypeFromSignature: scala shape uses colon
+ok 5 - parseTypeFromSignature: scala shape uses colon
+# Subtest: parseTypeFromSignature: returns undefined when no type
+ok 6 - parseTypeFromSignature: returns undefined when no type
+# Subtest: parseDefaultFromBody: extracts simple = expr
+ok 7 - parseDefaultFromBody: extracts simple = expr
+# Subtest: parseDefaultFromBody: caps very long defaults
+ok 8 - parseDefaultFromBody: caps very long defaults
+# Subtest: parseNullable: detects @Nullable annotation
+ok 9 - parseNullable: detects @Nullable annotation
+# Subtest: parseNullable: detects @NotNull annotation
+ok 10 - parseNullable: detects @NotNull annotation
+# Subtest: parseNullable: detects Optional<>, Option[], X | null, X | None
+ok 11 - parseNullable: detects Optional<>, Option[], X | null, X | None
+# Subtest: parseNullable: returns undefined for non-nullable types
+ok 12 - parseNullable: returns undefined for non-nullable types
+# Subtest: extractTsFields: typed + optional + default
+ok 13 - extractTsFields: typed + optional + default
+# Subtest: extractTsFields: skips method-shaped lines
+ok 14 - extractTsFields: skips method-shaped lines
+# Subtest: extractTsFields: declaredAt line tracks body offset
+ok 15 - extractTsFields: declaredAt line tracks body offset
+# Subtest: extractPyFields: type-annotated dataclass-style fields
+ok 16 - extractPyFields: type-annotated dataclass-style fields
+# Subtest: extractPyFields: skips bare indented identifiers (likely method body)
+ok 17 - extractPyFields: skips bare indented identifiers (likely method body)
+# Subtest: extractGoFields: simple struct fields with types
+ok 18 - extractGoFields: simple struct fields with types
+# Subtest: extractGoFields: handles struct tags
+ok 19 - extractGoFields: handles struct tags
+# Subtest: extractGoFields: comma-separated names share a type
+ok 20 - extractGoFields: comma-separated names share a type
+# Subtest: execute: empty entityId returns 400-shape error
+ok 21 - execute: empty entityId returns 400-shape error
+# Subtest: execute: entity not found returns success: false
+ok 22 - execute: entity not found returns success: false
+# Subtest: execute: non-class entity returns success: false
+ok 23 - execute: non-class entity returns success: false
+# Subtest: execute: Java class walks DEFINES edges to variable children
+ok 24 - execute: Java class walks DEFINES edges to variable children
+# Subtest: execute: TypeScript class regex-parses body fields
+ok 25 - execute: TypeScript class regex-parses body fields
+# Subtest: execute: Python class regex-parses body fields
+ok 26 - execute: Python class regex-parses body fields
+# Subtest: execute: Go struct regex-parses fields
+ok 27 - execute: Go struct regex-parses fields
+# Subtest: execute: empty class returns fields: []
+ok 28 - execute: empty class returns fields: []
+# Subtest: levenshtein: identity is 0
+ok 29 - levenshtein: identity is 0
+# Subtest: levenshtein: single-char swap is 1
+ok 30 - levenshtein: single-char swap is 1
+# Subtest: levenshtein: empty vs N is N
+ok 31 - levenshtein: empty vs N is N
+# Subtest: commonPrefixLen: counts matching prefix
+ok 32 - commonPrefixLen: counts matching prefix
+# Subtest: similarityScore: identity returns 1
+ok 33 - similarityScore: identity returns 1
+# Subtest: similarityScore: total mismatch (long edits) returns 0
+ok 34 - similarityScore: total mismatch (long edits) returns 0
+# Subtest: similarityScore: typo (one trailing char) ranks above unrelated
+ok 35 - similarityScore: typo (one trailing char) ranks above unrelated
+# Subtest: similarityScore: shared prefix outranks shared suffix
+ok 36 - similarityScore: shared prefix outranks shared suffix
+# Subtest: execute: empty className returns 400-shape error
+ok 37 - execute: empty className returns 400-shape error
+# Subtest: execute: exact hit returns { found: true } with location metadata
+ok 38 - execute: exact hit returns { found: true } with location metadata
+# Subtest: execute: abstract class surfaces isAbstract flag
+ok 39 - execute: abstract class surfaces isAbstract flag
+# Subtest: execute: interface and type kinds also resolve
+ok 40 - execute: interface and type kinds also resolve
+# Subtest: execute: typo near a real class returns { found: false, nearest } with the real class first
+ok 41 - execute: typo near a real class returns { found: false, nearest } with the real class first
+# Subtest: execute: missing class with no neighbours returns { found: false, nearest: [] }
+ok 42 - execute: missing class with no neighbours returns { found: false, nearest: [] }
+# Subtest: execute: language filter excludes other-language matches
+ok 43 - execute: language filter excludes other-language matches
+# Subtest: execute: repoPath filter narrows to a single repo
+ok 44 - execute: repoPath filter narrows to a single repo
+# Subtest: execute: unknown repoPath returns { found: false, nearest: [] }
+ok 45 - execute: unknown repoPath returns { found: false, nearest: [] }
+# Subtest: execute: `repos` filter scopes to the listed workspace repos
+ok 46 - execute: `repos` filter scopes to the listed workspace repos
+# Subtest: execute: `repos` and `repoPath` together -> error
+ok 47 - execute: `repos` and `repoPath` together -> error
+# Subtest: execute: empty `repos` array short-circuits to { found: false, nearest: [] }
+ok 48 - execute: empty `repos` array short-circuits to { found: false, nearest: [] }
+# Subtest: execute: `repos` with unknown paths drops them silently
+ok 49 - execute: `repos` with unknown paths drops them silently
+# Subtest: execute: nearest dedupes same name across repos
+ok 50 - execute: nearest dedupes same name across repos
+# Subtest: parseKinds: undefined yields all four kinds
+ok 51 - parseKinds: undefined yields all four kinds
+# Subtest: parseKinds: subset is honoured
+ok 52 - parseKinds: subset is honoured
+# Subtest: parseKinds: unknown kind rejected
+ok 53 - parseKinds: unknown kind rejected
+# Subtest: parseKinds: empty array rejected
+ok 54 - parseKinds: empty array rejected
+# Subtest: parseKinds: non-array rejected
+ok 55 - parseKinds: non-array rejected
+# Subtest: buildSnippet: first non-empty line, trimmed
+ok 56 - buildSnippet: first non-empty line, trimmed
+# Subtest: buildSnippet: caps at 200 chars with ellipsis
+ok 57 - buildSnippet: caps at 200 chars with ellipsis
+# Subtest: buildSnippet: empty body returns undefined
+ok 58 - buildSnippet: empty body returns undefined
+# Subtest: execute: empty entityId returns 400
+ok 59 - execute: empty entityId returns 400
+# Subtest: execute: unknown kinds rejected before DB lookup
+ok 60 - execute: unknown kinds rejected before DB lookup
+# Subtest: execute: missing entity returns success: false
+ok 61 - execute: missing entity returns success: false
+# Subtest: execute: non-class entity rejected
+ok 62 - execute: non-class entity rejected
+# Subtest: execute: surfaces INHERITS / IMPLEMENTS / CALLS / REFERENCES with per-kind counts
+ok 63 - execute: surfaces INHERITS / IMPLEMENTS / CALLS / REFERENCES with per-kind counts
+# Subtest: execute: kinds filter narrows the result set
+ok 64 - execute: kinds filter narrows the result set
+# Subtest: execute: snippet captures the first body line, trimmed
+ok 65 - execute: snippet captures the first body line, trimmed
+# Subtest: execute: empty class -> empty references with all-zero counts
+ok 66 - execute: empty class -> empty references with all-zero counts
+# Subtest: execute: REF_LIMIT cap stops at 200 and sets truncated: true
+ok 67 - execute: REF_LIMIT cap stops at 200 and sets truncated: true
+# Subtest: extractDdlOps: CREATE TABLE -> create_table with table name
+ok 68 - extractDdlOps: CREATE TABLE -> create_table with table name
+# Subtest: extractDdlOps: DROP TABLE IF EXISTS -> drop_table
+ok 69 - extractDdlOps: DROP TABLE IF EXISTS -> drop_table
+# Subtest: extractDdlOps: ALTER TABLE ADD COLUMN -> add_column with type + nullable + default
+ok 70 - extractDdlOps: ALTER TABLE ADD COLUMN -> add_column with type + nullable + default
+# Subtest: extractDdlOps: ALTER TABLE DROP COLUMN
+ok 71 - extractDdlOps: ALTER TABLE DROP COLUMN
+# Subtest: extractDdlOps: ALTER TABLE RENAME TO -> rename_table
+ok 72 - extractDdlOps: ALTER TABLE RENAME TO -> rename_table
+# Subtest: extractDdlOps: CREATE UNIQUE INDEX -> add_index
+ok 73 - extractDdlOps: CREATE UNIQUE INDEX -> add_index
+# Subtest: extractDdlOps: unrecognised statement -> execute_raw
+ok 74 - extractDdlOps: unrecognised statement -> execute_raw
+# Subtest: extractDdlOps: multiple statements in one file split correctly
+ok 75 - extractDdlOps: multiple statements in one file split correctly
+# Subtest: extractRubyOps: create_table block + inline t.string fields
+ok 76 - extractRubyOps: create_table block + inline t.string fields
+# Subtest: extractRubyOps: add_column / remove_column standalone
+ok 77 - extractRubyOps: add_column / remove_column standalone
+# Subtest: extractRubyOps: rename_column / rename_table / add_index / remove_index
+ok 78 - extractRubyOps: rename_column / rename_table / add_index / remove_index
+# Subtest: extractRubyOps: comment lines are stripped before parsing
+ok 79 - extractRubyOps: comment lines are stripped before parsing
+# Subtest: execute: missing repoPath returns 400
+ok 80 - execute: missing repoPath returns 400
+# Subtest: execute: unknown tool returns 400 with supported list
+ok 81 - execute: unknown tool returns 400 with supported list
+# Subtest: execute: empty repo (no migration dirs) -> { detected: false, migrations: [] }
+ok 82 - execute: empty repo (no migration dirs) -> { detected: false, migrations: [] }
+# Subtest: execute: prisma-migrate picks up migration.sql files in lex order
+ok 83 - execute: prisma-migrate picks up migration.sql files in lex order
+# Subtest: execute: rails mode reads .rb files
+ok 84 - execute: rails mode reads .rb files
+# Subtest: execute: auto mode picks the first detected tool (registry order)
+ok 85 - execute: auto mode picks the first detected tool (registry order)
+# Subtest: parsePrismaSchema: extracts both models with correct line numbers
+ok 86 - parsePrismaSchema: extracts both models with correct line numbers
+# Subtest: parsePrismaSchema: User columns + relations + table override
+ok 87 - parsePrismaSchema: User columns + relations + table override
+# Subtest: parsePrismaSchema: Post @map renames the column
+ok 88 - parsePrismaSchema: Post @map renames the column
+# Subtest: parseTypeORMEntity: extracts table name + columns + relations
+ok 89 - parseTypeORMEntity: extracts table name + columns + relations
+# Subtest: parseTypeORMEntity: skips classes without @Entity decorator (defensive)
+ok 90 - parseTypeORMEntity: skips classes without @Entity decorator (defensive)
+# Subtest: execute: missing repoPath returns 400
+ok 91 - execute: missing repoPath returns 400
+# Subtest: execute: unknown orm returns 400 with supported list
+ok 92 - execute: unknown orm returns 400 with supported list
+# Subtest: execute: empty repo (no orm artefacts) returns success with empty detected + models
+ok 93 - execute: empty repo (no orm artefacts) returns success with empty detected + models
+# Subtest: execute: prisma mode picks up models from prisma/schema.prisma
+ok 94 - execute: prisma mode picks up models from prisma/schema.prisma
+# Subtest: execute: typeorm mode picks up @Entity classes from the graph
+ok 95 - execute: typeorm mode picks up @Entity classes from the graph
+# Subtest: execute: auto mode merges models from every detected dialect
+ok 96 - execute: auto mode merges models from every detected dialect
+# Subtest: execute: auto mode skips dialects that fail detection without erroring
+ok 97 - execute: auto mode skips dialects that fail detection without erroring
+# tests 97
+# pass 97
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6771.333791

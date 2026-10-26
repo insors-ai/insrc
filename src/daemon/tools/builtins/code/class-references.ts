@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * code_class_references -- typed in-edge walk for a class entity
  * (code-analyzer-skills.md Phase 0.3).
@@ -119,7 +120,7 @@ const codeClassReferencesTool: Tool = {
 			// Defensive: entity row exists but reverse u64 lookup missed.
 			// Treat as "no references" rather than throwing -- callers see
 			// success with empty refs.
-			log.warn({ entityId }, 'entityU64ForId miss for known entity');
+			captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('warn', () => [{ entityId }, 'entityU64ForId miss for known entity']);
 			return ok(emptyOutput(entityId, classEntity.name));
 		}
 
@@ -160,10 +161,7 @@ const codeClassReferencesTool: Tool = {
 			counts,
 		};
 
-		log.info(
-			{ entityId, className: classEntity.name, total: refs.length, truncated, counts },
-			'code_class_references',
-		);
+		captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{ entityId, className: classEntity.name, total: refs.length, truncated, counts }, 'code_class_references']);
 		return ok(out);
 	},
 };

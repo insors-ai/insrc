@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../analyze/connection-access.js';
 import { assertConnectionProviderAdmission } from '../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -99,8 +100,8 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 	const dispatch = async (name: string, input: unknown): Promise<ToolResult> => {
 		assertExplicitConnectionExecution(execution);
 		const tool = getTool(name);
-		if (tool === undefined) return unknownTool(name);
-		if (!args.allow.has(tool.id)) return refused(name, tool.id);
+		if (tool === undefined) return unknownTool(name, execution);
+		if (!args.allow.has(tool.id)) return refused(name, tool.id, execution);
 		return execute(name, args.root !== undefined ? rootedInput(tool.id, input, args.root) : input, deps);
 	};
 
@@ -258,12 +259,14 @@ export function rootedInput(toolId: string, input: unknown, root: string): unkno
 	return out;
 }
 
-function unknownTool(name: string): ToolResult {
+function unknownTool(name: string, execution?: ConnectionExecutionContext): ToolResult {
+	if (execution?.mode === 'session-memory') return { output: 'Temporary tool is unavailable.', format: 'text', success: false, error: 'Temporary tool is unavailable.' };
 	return { output: `Unknown tool: ${name}`, format: 'text', success: false, error: `No tool registered for '${name}'` };
 }
 
-function refused(name: string, id: string): ToolResult {
-	log.warn({ tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed');
+function refused(name: string, id: string, execution?: ConnectionExecutionContext): ToolResult {
+	if (execution?.mode === 'session-memory') return { output: 'Temporary tool is unavailable.', format: 'text', success: false, error: 'Temporary tool is unavailable.' };
+	captureAnalysisDiagnostics(log, execution).emit('warn', () => [{ tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed']);
 	return {
 		output:  `Tool '${name}' is not available in this session. Only the read-only tools offered to you can be used.`,
 		format:  'text',

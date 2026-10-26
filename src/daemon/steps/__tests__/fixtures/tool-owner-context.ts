@@ -74,7 +74,7 @@ test('owner tool runtime and exploration matrix', async () => {
 
    const tables=await runDbTablesList({...exp,type:'db.tables.list'},ctx);assert.ok(JSON.stringify(tables).includes('data'));
    const listed=await runDbConnectionsList({...exp,type:'db.connections.list'},ctx);assert.ok(JSON.stringify(listed).includes('same'));
-   assert.equal((await executeTool('db_sql_sample',{connectionId:'same',target:'data'}, {...deps,repoPath:selected===root?other:root})).success,false);
+   await assert.rejects(executeTool('db_sql_sample',{connectionId:'same',target:'data'}, {...deps,repoPath:selected===root?other:root}),{code:'session-expired'});
    await runInStepContext({cwd:selected,connectionExecution:execution},async()=>{
     await assert.rejects(getTool('db_list_connections')!.execute({}, {...deps,connectionExecution:undefined}),{code:'session-expired'});
     await assert.rejects(runDbConnectionsList(exp,{...ctx,connectionExecution:undefined}),{code:'session-expired'});

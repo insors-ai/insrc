@@ -18,8 +18,8 @@ import { fileURLToPath } from 'node:url';
 
 const TOOLS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ALLOWED = ['shell-helper.ts'];
-/** import ... from 'node:child_process' | 'child_process', a dynamic import of it, or a require of it. */
-const CHILD_PROCESS = /(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"](?:node:)?child_process['"]/;
+/** import or export ... from the module, a side-effect import, a dynamic import or a require of 'node:child_process' | 'child_process'. */
+const CHILD_PROCESS = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"](?:node:)?child_process['"]/;
 
 function listSources(root: string): string[] {
 	const out: string[] = [];
@@ -58,6 +58,12 @@ test('child-process-inventory.test.ts: a temporary file that imports it in a tem
 		writeFileSync(join(root, 'builtins', 'b.ts'), "import cp from 'child_process';\n");
 		writeFileSync(join(root, 'builtins', 'c.ts'), "const cp = await import('node:child_process');\n");
 		writeFileSync(join(root, 'builtins', 'd.ts'), "const cp = require('child_process');\n");
-		assert.deepEqual(findChildProcessImports(root, ['shell-helper.ts']).sort(), ['builtins/a.ts', 'builtins/b.ts', 'builtins/c.ts', 'builtins/d.ts']);
+		writeFileSync(join(root, 'builtins', 'e.ts'), "import 'node:child_process';\n");
+		writeFileSync(join(root, 'builtins', 'f.ts'), "export { spawn } from 'node:child_process';\n");
+		writeFileSync(join(root, 'builtins', 'g.ts'), "export * from \"child_process\";\n");
+		assert.deepEqual(
+			findChildProcessImports(root, ['shell-helper.ts']).sort(),
+			['builtins/a.ts', 'builtins/b.ts', 'builtins/c.ts', 'builtins/d.ts', 'builtins/e.ts', 'builtins/f.ts', 'builtins/g.ts'],
+		);
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });

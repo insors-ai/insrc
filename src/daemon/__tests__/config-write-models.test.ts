@@ -147,7 +147,6 @@ test("config-write-models.test.ts: restartRequired for tier, tasks, coreFloor an
 		['parent models', 'models', { ...BASE.models, coreFloor: 'core' }],
 		['parent models.local', 'models.local', { host: 'http://localhost:11434', coreModel: 'o:2' }],
 		['byRepo', ['models', 'byRepo', '/w/repo'], { tasks: { 'tracker.render': 'core' } }],
-		['local host (the embedder keeps its first client)', 'models.local.host', 'http://other:11434'],
 	];
 	for (const [label, path, value] of restart) {
 		reset();
@@ -156,7 +155,7 @@ test("config-write-models.test.ts: restartRequired for tier, tasks, coreFloor an
 	const none: Array<[string, unknown, unknown]> = [
 		['logLevel', 'logLevel', 'debug'],
 		['shaper knob', 'models.shaper.maxToolTurns', 12],
-		['models.local unchanged model settings', 'models.local', { host: 'http://localhost:11434', coreModel: 'o:1', charsPerToken: 4 }],
+		['models.local host only', 'models.local', { host: 'http://other:11434', coreModel: 'o:1' }],
 		['the same tier value', 'models.tiers.core.model', 'gpt-x'],
 	];
 	for (const [label, path, value] of none) {

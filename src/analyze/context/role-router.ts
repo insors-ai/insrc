@@ -37,7 +37,7 @@ import type { FallbackReason, ModelRegistry } from '../../daemon/model-registry.
 import type { RoleId } from '../../config/role-taxonomy.js';
 import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
-import { buildShaperProvider, buildSummariserProvider, resolveShaperKind } from './shaper-provider.js';
+import { buildShaperProvider, buildSummariserProvider, resolveShaperKind, summariserSelection } from './shaper-provider.js';
 import type { LLMProvider } from '../../shared/types.js';
 
 /** Tier used for a RoleId outside the closed taxonomy (total function — the
@@ -207,13 +207,16 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 			// Delegate to the summariser factory so the summariser's own provider
 			// rule (it follows the cheap tier) is wrapped, not re-implemented; stamp a resolution so
 			// summariser access is attributed like every other role.
-			const provider = buildSummariserProvider(cfg, deps.registry !== undefined ? { registry: deps.registry } : undefined);
+			const overrides = deps.registry !== undefined ? { registry: deps.registry } : undefined;
+			const provider = buildSummariserProvider(cfg, overrides);
+			// The model the provider runs, as the same selection chose it.
+			const { model } = summariserSelection(cfg, overrides);
 			const fallback = cfg.tierResolutions?.cheap?.fallback;
 			const resolution: RoleResolution = {
 				role:           SUMMARISER_ROLE,
 				tier:           'cheap',
 				runner:         cfg.summariserProvider,
-				model:          cfg.summariserModel,
+				model:          model.id,
 				...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}),
 				clampedByFloor: false,
 				...(fallback !== undefined ? { fallback } : {}),

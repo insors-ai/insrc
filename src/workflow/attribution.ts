@@ -32,17 +32,18 @@ import { SHIPPED_DEFINITIONS } from '../config/model-defaults.js';
  *  + model for a single synthesized stamp, decoded by the shipped definitions'
  *  family metadata before any model lookup, so historical labels keep their
  *  family: a family id (`ollama`, `ollama:<m>`, even for a model no longer
- *  listed), then a CLI kind prefix (`claude`, `codex`, `codex:<m>`), then a
+ *  listed; on a historical artifact the raw label stays as the model), then a CLI kind prefix (`claude`, `codex`, `codex:<m>`), then a
  *  model id or alias of a family, else the default family (`client` included).
  *  `role` is a placeholder note — `(legacy)` for the read-shim on old artifacts,
  *  `(client)` for the MCP client-driven write path. Fidelity is approximate by
  *  design. */
-function labelStamp(label: string, role: string): OutputModelStamp {
+function labelStamp(label: string, role: string, keepRawLabel = false): OutputModelStamp {
 	const families = SHIPPED_DEFINITIONS.families;
 	const stamp = (runner: OutputModelStamp['runner'], model: string): OutputModelStamp => ({ role, tier: 'core', runner, model });
 	for (const f of families) {
 		if (label === f.id) return stamp(f.id, label);
-		if (label.startsWith(`${f.id}:`)) return stamp(f.id, label.slice(f.id.length + 1));
+		// A historical artifact keeps its raw label as the model; a new stamp splits it.
+		if (label.startsWith(`${f.id}:`)) return stamp(f.id, keepRawLabel ? label : label.slice(f.id.length + 1));
 	}
 	for (const f of families) {
 		if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);
@@ -75,7 +76,7 @@ export function attributionOf(meta: ArtifactMetaBase): readonly OutputModelStamp
 	// Empty stored aggregate on a NEW artifact is authoritative (zero-output run).
 	if (meta.attribution !== undefined) return outputs ?? [];
 	const legacy = meta.model;
-	if (typeof legacy === 'string' && legacy.length > 0) return [labelStamp(legacy, '(legacy)')];
+	if (typeof legacy === 'string' && legacy.length > 0) return [labelStamp(legacy, '(legacy)', true)];
 	return [];
 }
 

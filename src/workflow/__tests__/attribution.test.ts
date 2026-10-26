@@ -49,7 +49,7 @@ test('attributionOf shims a legacy scalar into a single (legacy)-role stamp', ()
 	assert.equal(out.length, 1);
 	assert.equal(out[0]!.role, '(legacy)');
 	assert.equal(out[0]!.runner, 'ollama');
-	assert.equal(out[0]!.model, 'qwen3.6:35b-a3b');
+	assert.equal(out[0]!.model, 'ollama:qwen3.6:35b-a3b', 'a historical artifact keeps its raw label as the model (Epic ce99b720 s3)');
 });
 
 test('attributionOf on a pre-attribution artifact (neither field) returns [] — no fabricated model', () => {
@@ -101,13 +101,15 @@ test('attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<lis
 		['codex:gpt-6.1-sol',     'cli-codex',  'codex:gpt-6.1-sol'],
 		['ollama',                'ollama',     'ollama'],
 		['ollama:qwen3.6:27b',    'ollama',     'qwen3.6:27b'],
-		['ollama:llama2:retired', 'ollama',     'llama2:retired'],
+		['ollama:qwen3.6:35b-a3b', 'ollama',    'qwen3.6:35b-a3b'],
 	];
 	for (const [label, runner, model] of cases) {
 		assert.deepEqual([stampOf(label).runner, stampOf(label).model], [runner, model], label);
 		// The legacy read-shim decodes a scalar meta.model the same way.
 		assert.equal(attributionOf({ model: label } as unknown as ArtifactMetaBase)[0]!.runner, runner, `legacy ${label}`);
 	}
+	// On a historical artifact (the legacy read shim) the raw label stays as the model.
+	for (const [label] of cases) assert.equal(attributionOf({ model: label } as unknown as ArtifactMetaBase)[0]!.model, label, label);
 	// A bare model id or alias maps to the family that lists it.
 	assert.equal(stampOf('gpt-6-astra').runner, 'cli-codex');
 	assert.equal(stampOf('opus').runner, 'cli-claude');

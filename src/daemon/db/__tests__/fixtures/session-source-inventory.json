@@ -1741,7 +1741,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "247186affb54184145cc25b91fa049ce19b8906bbf8942029c0e95e8b812587d",
-      "sourceDigest": "3c04d37cbe64ba5c551643ef3d6917122e72dec82a2899479f121f66cf52ab67",
+      "sourceDigest": "79b12068479ec199c23d5883cdf6c80c5e921f8a48cf30f052cd6a88c8627b56",
       "boundaries": [
         "provider-factory"
       ]
@@ -1875,10 +1875,6 @@
           "familyProvider"
         ],
         [
-          "provider-factory",
-          "familyProvider"
-        ],
-        [
           "diagnostic",
           "getLogger"
         ],
@@ -1889,14 +1885,6 @@
         [
           "diagnostic",
           "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "diagnostic",
@@ -1923,9 +1911,9 @@
           "OllamaProvider"
         ]
       ],
-      "siteCount": 21,
-      "sitesDigest": "1158f95b9681f771a643936f642b22c10f9d657e20cbf39cb02910541837ecbb",
-      "sourceDigest": "e22ff9abb51296eb3335ffc890cce634157de7f312ba482928dda7d30826c345",
+      "siteCount": 18,
+      "sitesDigest": "862111a97b3b5998f80230c5df3e52bff516582f0d646df3ee8b50e558ab9dce",
+      "sourceDigest": "3090a46151467c7bcd7e40a9a2d89f341cdc23fee4647149b8a259029bdd3e8c",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -7371,7 +7359,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "d07f6b4a93bfb32ab9b3a5fd6c02dfd6ab1203aaa4d342d59f8b52fbd01fab7c",
-      "sourceDigest": "5901e6d996d2c937e3bcd5e4a9dff6df23fe03ba2065c197ba0384c994a89d0a",
+      "sourceDigest": "77dec35246d99b4149f8c95885cffc99e6b64a585e782fd0bda29af51826da71",
       "boundaries": [
         "serialization"
       ]
@@ -14128,7 +14116,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "e18bbae6eb9f58e20fdfafaed305bcadf8c05c153984eac339e7b1d101f1a330",
-      "sourceDigest": "0f1982bb6a6269a17dcbe998c8b149590b9ea1bf009b6007456321e88eb4782e",
+      "sourceDigest": "c78820cbe618f374768ff868858ad980cc2f23d1cb076792a2e43e32c46d137d",
       "boundaries": [
         "diagnostic",
         "serialization"

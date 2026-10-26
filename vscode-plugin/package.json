@@ -933,7 +933,7 @@
     "sync-manifest": "tsx scripts/sync-manifest-catalog.mjs",
     "build": "npm run sync-assets && tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json",
     "test": "tsx --test 'src/**/__tests__/*.test.ts'",
-    "vscode:prepublish": "tsc -p tsconfig.json && npm run bundle",
+    "vscode:prepublish": "tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json && npm run bundle",
     "package": "npx --yes @vscode/vsce@3.2.1 package",
     "vscode:uninstall": "node ./out/uninstall.js",
     "gen:webview-libs": "node gen-webview-libs.mjs"

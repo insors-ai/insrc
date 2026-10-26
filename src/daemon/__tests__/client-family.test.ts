@@ -73,7 +73,7 @@ test("client-family.test.ts: step host and one-shot analyze map client 'claude'/
 	const table = {
 		...stepToolTable(),
 		insrc_triage: async (): Promise<StepEnvelope> => {
-			seen.push(`${stepClient()}→${familyForClient(stepClient())}`);
+			seen.push(`${stepClient()}→${familyForClient(stepClient())}→${currentClientProviderKind()}`);
 			return { content: [{ type: 'text', text: '{}' }], isError: false };
 		},
 	};
@@ -82,7 +82,8 @@ test("client-family.test.ts: step host and one-shot analyze map client 'claude'/
 		const frames = await collect({ tool: 'insrc_triage', args: {}, context: ctx }, table);
 		assert.equal(frames.at(-1)?.stream, 'done', JSON.stringify(frames));
 	}
-	assert.deepEqual(seen, ['claude→cli-codex', 'codex→cli-claude']);
+	// The host runs the step in the client provider context of that family.
+	assert.deepEqual(seen, ['claude→cli-codex→cli-codex', 'codex→cli-claude→cli-claude']);
 	// An unknown client identity is refused.
 	const refused = await collect({ tool: 'insrc_triage', args: {}, context: { cwd: '/caller', client: 'gemini' } }, table);
 	assert.equal(refused.at(-1)?.stream, 'error');

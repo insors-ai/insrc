@@ -22,6 +22,8 @@ import { getLogger } from '../../shared/logger.js';
 import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
 import type { StepCallContext, StepClient, StepToolName, ConnectionExecutionContext } from '../../shared/step-context.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
+import { familyForClient } from '../model-registry.js';
+import { runWithClientProviderContext } from '../../analyze/context/shaper-provider.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from './code-review-step/handler.js';
@@ -131,7 +133,11 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 		};
 		let envelope: StepEnvelope;
 		try {
-			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress, execution));
+			// The step runs in the client provider context of the family the calling
+			// client implies (Claude Code → the family running claude), as an MCP call did.
+			const family = familyForClient((ctx as StepCallContext).client);
+			const call = (): Promise<StepEnvelope> => run(p.args, signal, progress, execution);
+			envelope = await runInStepContext(ctx, () => family !== undefined ? runWithClientProviderContext(family, call) : call());
 		} catch (err) {
 			answered = true;
 			const message = bound ? 'Connection session operation failed.' : err instanceof Error ? err.message : String(err);

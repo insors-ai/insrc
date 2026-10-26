@@ -206,3 +206,16 @@ test("provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's
 	const ollamaCore = config({ core: { runner: 'ollama', model: 'llama:big' } });
 	assert.equal(shaperModelLabel(ollamaCore, { registry }), 'ollama:llama:big');
 });
+
+test("provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs", async () => {
+	const registry = getModelRegistry();
+	const foreign = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'cli-codex', model: 'gpt-s' } } }), SHAPER, DEPTH, registry);
+	const halfEdited = { ...foreign, summariserModel: 'claude-z' };
+	const { provider, resolution } = createRoleRouter({ registry }).resolveSummariser(halfEdited);
+	assert.equal((provider as Cli).defaultModel, 'gpt-s');
+	assert.equal(resolution.model, 'gpt-s');
+	const local = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama', model: 'llama:small' } } }), SHAPER, DEPTH, registry);
+	const r = createRoleRouter({ registry }).resolveSummariser({ ...local, summariserModel: 'gpt-x' });
+	assert.equal((r.provider as unknown as { model: string }).model, 'llama:loop');
+	assert.equal(r.resolution.model, 'llama:loop');
+});

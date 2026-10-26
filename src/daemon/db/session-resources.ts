@@ -58,7 +58,7 @@ export class TemporaryDriverResources {
    // close synchronously aborts/interrupts the private execution before waiting for its work.
    try { closing = file.close(); } catch { closing = Promise.reject(new ManagementServiceError('recovery-required')); }
    record.fileClosures.set(file, closing);
-   void closing.then(() => { record.files.delete(file); record.fileClosures.delete(file); }, () => { this.#failedClose = true; });
+			void closing.then(() => { record.files.delete(file); record.fileClosures.delete(file); }, () => { this.#failedClose = true; record.fileClosures.delete(file); });
   }
   return closing;
  }
@@ -76,7 +76,7 @@ export class TemporaryDriverResources {
     if (record.driver) { await record.driver.close(); record.driver = undefined; }
     if (files.some(value => value.status === 'rejected')) throw new ManagementServiceError('recovery-required');
     this.#records.delete(revision);
-   }).catch(() => { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); });
+			}).catch(() => { this.#failedClose = true; record.closing = undefined; throw new ManagementServiceError('recovery-required'); });
    void record.closing.catch(() => {}); // Retain failed closed handles without an unhandled rejection.
   }
   return record.closing;

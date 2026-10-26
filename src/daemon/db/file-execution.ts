@@ -109,6 +109,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 	#retained: (() => void)[] = [];
 	#closed = false;
 	#closing: Promise<void> | undefined;
+	#engineClosed = false;
 	#initialized = false;
 	#targets: readonly ConvertedTarget[] = [];
 	#tables = new Map<string, string>();
@@ -153,7 +154,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 	#closeSource(source: MemoryRowSource): Promise<void> {
 		let closing = this.#sourceClosures.get(source);
 		if (!closing) {
-			closing = Promise.resolve().then(() => source.close()).finally(() => this.#sources.delete(source));
+			closing = Promise.resolve().then(() => source.close()).then(() => { this.#sources.delete(source); }, () => { this.#sourceClosures.delete(source); throw new Error('File execution cleanup pending'); });
 			this.#sourceClosures.set(source, closing);
 		}
 		return closing;
@@ -172,8 +173,8 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 				return await use(connection);
 			}
 			finally {
-				this.#connections.delete(connection);
 				connection.closeSync();
+				this.#connections.delete(connection);
 			}
 		})();
 		this.#pending.add(work);
@@ -345,28 +346,26 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 		});
 	}
 	async close(): Promise<void> {
-		if (this.#closing)
-			return this.#closing;
-		this.#closed = true;
-		this.#controller.abort();
-		for (const connection of this.#connections)
-			connection.interrupt();
+		if (this.#closing) return this.#closing;
+		this.#closed = true; this.#controller.abort();
+		for (const connection of this.#connections) { try { connection.interrupt(); } catch { /* Still drain and close this owned handle. */ } }
 		this.#closing = (async () => {
-			while (this.#pending.size)
-				await Promise.allSettled([...this.#pending]);
-			try {
-				for (const source of this.#sources) await this.#closeSource(source);
+			while (this.#pending.size) await Promise.allSettled([...this.#pending]);
+			let failed = false;
+			const sources = await Promise.allSettled([...this.#sources].map(source => this.#closeSource(source)));
+			for (const connection of this.#connections) {
+				try { connection.closeSync(); this.#connections.delete(connection); } catch { failed = true; }
 			}
-			finally {
-				try { this.engine.close(); }
-				finally {
-					this.#tables.clear(); this.#targets = []; this.#union = undefined;
-					for (const release of this.#retained.splice(0)) release();
-				}
+			if (this.#connections.size === 0 && !this.#engineClosed) {
+				try { this.engine.close(); this.#engineClosed = true; } catch { failed = true; }
 			}
-		})();
+			if (failed || sources.some(result => result.status === 'rejected')) throw new Error('File execution cleanup pending');
+			this.#tables.clear(); this.#targets = []; this.#union = undefined;
+			for (const release of this.#retained.splice(0)) release();
+		})().catch(() => { this.#closing = undefined; throw new Error('File execution cleanup pending'); });
 		return this.#closing;
 	}
+
 }
 export function savedFileExecution(policy: FileExecutionPolicy): OwnedFileExecutionResource {
 	if (policy.persistence !== 'saved-cache')

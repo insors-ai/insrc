@@ -50,8 +50,10 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 	#drained: Promise<void> | undefined;
 	constructor(ports: ConnectionSessionRpcPorts<Overlay>) {
 		this.#ports = Object.freeze({ ...ports });
-		this.#uninstallReservations = installConnectionReservations({ ready: () => this.ready(), isRegistered: ports.isRegistered,
-			contains: (root, id) => this.#owner?.hasOverlayEntry(root, overlay => overlay instanceof TemporaryConnectionOverlay && overlay.contains(id)) ?? false });
+		this.#uninstallReservations = installConnectionReservations({
+			ready: async () => this.#owner?.hasReservations || await this.ready(), isRegistered: ports.isRegistered,
+			contains: (root, id) => this.#owner?.hasOverlayEntry(root, overlay => overlay instanceof TemporaryConnectionOverlay && overlay.reserves(id)) ?? false
+		});
 	}
 	async ready(): Promise<boolean> { return !this.#closed && await this.#ports.enabled() && !this.#closed; }
 	#context(context: TrustedRpcContext): void {
@@ -294,14 +296,14 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		this.#claims.delete(context.connectionIdentity); this.#intents.delete(context.connectionIdentity);
 	}
 	stopAdmission(): void {
-		this.#closed = true; this.#uninstallReservations();
+		this.#closed = true;
 		this.#drained ??= this.#owner?.close() ?? Promise.resolve();
-		void this.#drained.catch(() => {});
+		void this.#drained.then(() => this.#uninstallReservations(), () => { });
 	}
 	async close(): Promise<void> {
 		this.stopAdmission(); this.#claims.clear();
 		// Keep safe role markers until each socket disconnects: closing authority cannot downgrade a live channel.
-		await this.#drained;
+		try { await this.#drained; } catch { this.#drained = undefined; throw new ManagementServiceError('recovery-required'); }
 	}
 }
 

@@ -68,7 +68,8 @@ export class ConnectionSessionOwner<Overlay> {
 	readonly #controlTransports = new Set<string>();
 	readonly #ports: SessionOwnerPorts<Overlay>;
 	readonly #timer: ReturnType<typeof setInterval>;
-	readonly #cleanup = new Map<Promise<void>, readonly Overlay[]>();
+	readonly #cleanup = new Map<Promise<void>, readonly { readonly root: string; readonly overlay: Overlay }[]>();
+	readonly #failedCleanup = new Set<Promise<void>>();
 	#lastNow = -Infinity;
 	#closed = false;
 
@@ -85,8 +86,10 @@ export class ConnectionSessionOwner<Overlay> {
 			const overlay = session.overlays.get(root);
 			if (overlay !== undefined && contains(overlay)) return true;
 		}
+		for (const owned of this.#cleanup.values()) for (const item of owned) if (item.root === root && contains(item.overlay)) return true;
 		return false;
 	}
+	get hasReservations(): boolean { return this.#sessions.size > 0 || this.#cleanup.size > 0; }
 	get size(): number { this.sweepExpired(); return this.#sessions.size; }
 	#now(): number {
 		const now = (this.#ports.monotonicNow ?? (() => performance.now()))();
@@ -121,16 +124,33 @@ export class ConnectionSessionOwner<Overlay> {
 		session.signingKey.fill(0); session.ledger.close();
 		this.#revokeData(session);
 		session.controlController.abort();
-		const closing: Promise<void>[] = [], owned = [...session.overlays.values()];
-		for (const overlay of owned) {
+		const owned = [...session.overlays].map(([root, overlay]) => ({ root, overlay }));
+		session.overlays.clear();
+		return this.#closeOverlays(owned);
+	}
+	/** Cleanup-only ownership. No entry/config or transport can be restored. */
+	#closeOverlays(owned: readonly { readonly root: string; readonly overlay: Overlay }[]): Promise<void> {
+		const closing: Promise<void>[] = [];
+		for (const { overlay } of owned) {
 			try { closing.push(Promise.resolve(this.#ports.dropOverlay?.(overlay))); }
 			catch { closing.push(Promise.reject(new ManagementServiceError('recovery-required'))); }
 		}
-		session.overlays.clear();
 		const drain = Promise.allSettled(closing).then(results => { if (results.some(result => result.status === 'rejected')) throw new ManagementServiceError('recovery-required'); });
-		this.#cleanup.set(drain, owned); void drain.then(() => this.#cleanup.delete(drain), () => {});
+		this.#cleanup.set(drain, owned);
+		void drain.then(() => { this.#cleanup.delete(drain); this.#failedCleanup.delete(drain); }, () => { this.#failedCleanup.add(drain); });
 		return drain;
 	}
+
+	#retryFailedCleanup(): void {
+		// A pending retry is never started twice. Admission remains closed for
+		// these owners; only retained cleanup handles reach dropOverlay again.
+		for (const failed of [...this.#failedCleanup]) {
+			const owned = this.#cleanup.get(failed);
+			if (owned) void this.#closeOverlays(owned);
+			this.#cleanup.delete(failed); this.#failedCleanup.delete(failed);
+		}
+	}
+
 	#revokeData(session: Session<Overlay>): void {
 		const controllers: AbortController[] = [];
 		for (const delegation of session.delegations.values()) {
@@ -149,6 +169,7 @@ export class ConnectionSessionOwner<Overlay> {
 		if (this.#closed) return;
 		const now = this.#now();
 		for (const session of this.#sessions.values()) if (now >= session.deadline) void this.#expire(session);
+		this.#retryFailedCleanup();
 	}
 	#result(session: Session<Overlay>, capability: string): OpenConnectionSessionResult {
 		return Object.freeze({ sessionHandle: session.handle, capability, daemonEpoch: this.#ports.daemonEpoch,
@@ -334,6 +355,7 @@ export class ConnectionSessionOwner<Overlay> {
 	close(): Promise<void> {
 		clearInterval(this.#timer);
 		this.#closed = true;
+		this.#retryFailedCleanup();
 		for (const session of this.#sessions.values()) void this.#expire(session);
 		this.#dataTransports.clear(); this.#controlTransports.clear();
 		return Promise.allSettled([...this.#cleanup.keys()]).then(results => { if (results.some(result => result.status === 'rejected')) throw new ManagementServiceError('recovery-required'); });

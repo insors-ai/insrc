@@ -46,6 +46,7 @@ export class TemporaryConnectionOverlay {
  readonly #uses = new Set<Promise<unknown>>();
  readonly #externalLeases = new Set<() => Promise<void>>();
  readonly #retired = new Set<Promise<void>>();
+	readonly #cleanupReservations = new Set<string>();
  #closing: Promise<void> | undefined;
  readonly #assertActive: () => void;
  #closed = false;
@@ -62,6 +63,8 @@ export class TemporaryConnectionOverlay {
  #quota(previous: Entry | undefined, next: Entry): void {
   if (this.#budget.entries + (previous ? 0 : 1) > MAX_SESSION_CONNECTIONS || this.#budget.bytes - (previous?.bytes ?? 0) + next.bytes > MAX_SESSION_CONFIG_BYTES) throw reject('busy');
  }
+	/** Boolean-only root coordinator metadata; never grants access to closed entries. */
+	reserves(id: string): boolean { return this.#entries.has(id) || this.#cleanupReservations.has(id); }
  contains(id: string): boolean { this.#active(); return this.#entries.has(id); }
  list(): readonly SafeConnection[] { this.#active(); return Object.freeze([...this.#entries.values()].map(entry => entry.safe)); }
  read(id: string): SafeConnection { this.#active(); const entry = this.#entries.get(id); if (!entry) throw reject('not-found'); return entry.safe; }
@@ -167,13 +170,19 @@ export class TemporaryConnectionOverlay {
  }
  close(): Promise<void> {
   if (this.#closing) return this.#closing;
-  this.#closed = true; this.#resources.stopAdmission();
-  for (const release of this.#externalLeases) void release();
-  for (const entry of this.#entries.values()) { this.#budget.entries--; this.#budget.bytes -= entry.bytes; }
-  this.#entries.clear(); this.#prepared = new WeakMap();
+		if (!this.#closed) {
+			this.#closed = true; this.#resources.stopAdmission();
+			for (const release of this.#externalLeases) void release();
+			for (const id of this.#entries.keys()) this.#cleanupReservations.add(id);
+			for (const entry of this.#entries.values()) { this.#budget.entries--; this.#budget.bytes -= entry.bytes; }
+			this.#entries.clear(); this.#prepared = new WeakMap();
+		}
   this.#closing = Promise.resolve().then(async () => {
-   await Promise.allSettled([...this.#uses]); await this.#resources.close(); await this.retiredCleanup();
-  });
+			await Promise.allSettled([...this.#uses]); await this.#resources.close();
+			// All retired handles are included in resources.close. Old rejected
+			// promises are not cleanup truth after those exact handles close.
+			this.#retired.clear(); this.#cleanupReservations.clear();
+		}).catch(() => { this.#closing = undefined; throw new ManagementServiceError('recovery-required'); });
   void this.#closing.catch(() => {}); return this.#closing;
  }
 }

@@ -563,7 +563,8 @@ async function main(): Promise<void> {
 				await supervisor.terminateAll();
 				log.info('shutdown: the daemon\'s workers exited');
 			}
-			for (const owner of connectionOwners) await owner.close();
+			const closedOwners = await Promise.allSettled(connectionOwners.map(owner => Promise.resolve().then(() => owner.close())));
+			if (closedOwners.some(result => result.status === 'rejected')) throw new Error('Connection cleanup is pending.');
 			await closeDb();
 			await closeDuckDB();
 			await closeGraphStore();

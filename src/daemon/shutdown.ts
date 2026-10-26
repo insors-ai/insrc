@@ -116,6 +116,7 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 	const end = parts.end ?? realEndDeps;
 	const hardExitMs = parts.hardExitMs ?? 20_000;
 	let started = false;
+	let ended = false;
 
 	return function shutdown(signal: string): void {
 		// Re-entrant safety: SIGINT followed by SIGTERM (or vice
@@ -135,34 +136,44 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 		const health = end.storeHealth();
 		if (health.state === 'locks-lost') {
 			parts.log.warn({ signal, operation: health.operation }, 'shutdown: the graph store lost its locks; not waiting for the queue, skipping the store close');
-			setTimeout(() => endAfterStoreFailure(`shutdown (${signal})`, health, end), REPLY_FLUSH_MS);
+			setTimeout(() => { if (ended) return; ended = true; endAfterStoreFailure(`shutdown (${signal})`, health, end); }, REPLY_FLUSH_MS);
 			return;
 		}
 
-		// Hard-exit backstop -- fires whether or not queueDone resolved.
+		// Hard-exit backstop reports incomplete cleanup as failure, whether or not the queue drained.
 		// `unref()` so the timer doesn't keep the event loop alive on
 		// its own; queue drain finishing first lets us exit early.
 		const backstop = setTimeout(() => {
+			if (ended) return; ended = true;
 			parts.log.warn({ ms: hardExitMs }, 'shutdown: hard-exit backstop fired (queue drain stalled)');
 			try { end.clearPid(); } catch { /* nothing */ }
-			exitRespectingStoreHealth(0, `shutdown (${signal}), hard-exit backstop`, end);
+			exitRespectingStoreHealth(1, `shutdown (${signal}), hard-exit backstop`, end);
 		}, hardExitMs);
 		backstop.unref();
 
-		void parts.queueDone.finally(async () => {
+		void parts.queueDone.then(() => false, () => true).then(async queueFailed => {
+			if (ended) return;
 			// The store may have failed while the queue drained: its close
 			// would then never return.
 			const now = end.storeHealth();
 			if (now.state === 'locks-lost') {
 				clearTimeout(backstop);
+				ended = true;
 				endAfterStoreFailure(`shutdown (${signal})`, now, end);
 				return;
 			}
 			await parts.closeStores();
+			if (ended) return; ended = true;
 			end.clearPid();
-			parts.log.info('bye');
+			parts.log.info(queueFailed ? 'shutdown: queue drain failed' : 'bye');
 			clearTimeout(backstop);
-			exitRespectingStoreHealth(0, `shutdown (${signal})`, end);
+			exitRespectingStoreHealth(queueFailed ? 1 : 0, `shutdown (${signal})`, end);
+		}).catch(() => {
+			if (ended) return; ended = true;
+			clearTimeout(backstop);
+			try { end.clearPid(); } catch { /* best effort */ }
+			parts.log.warn('shutdown: cleanup failed; ending with pending resources');
+			exitRespectingStoreHealth(1, `shutdown (${signal}), cleanup pending`, end);
 		});
 	};
 }

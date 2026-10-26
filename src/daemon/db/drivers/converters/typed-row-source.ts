@@ -56,10 +56,12 @@ export function createTypedRowSource(input: readonly TypedTargetReader[], option
 		if (!result) {
 			result = Promise.resolve().then(() => iterator.return?.());
 			closing.set(iterator, result);
+			void result.then(() => active.delete(iterator), () => closing.delete(iterator));
 		}
 		return result;
 	};
 	let closed = false;
+	let sourceClosing: Promise<void> | undefined;
 	const budget = options.budget ?? new DecoderBudget(options.memoryBudgetBytes);
 	let cleanupPromise: Promise<void> | undefined;
 	const held = new Set<() => void>();
@@ -73,10 +75,10 @@ export function createTypedRowSource(input: readonly TypedTargetReader[], option
 		return tracked;
 	};
 	const cleanup = () => cleanupPromise ??= Promise.resolve().then(async () => {
-		for (const release of held)
-			release();
 		await options.close?.();
-	});
+		for (const release of held) release();
+	}).catch(() => { cleanupPromise = undefined; throw new Error('Converted source cleanup pending'); });
+
 	const live = (signal?: AbortSignal): void => {
 		if (closed)
 			throw new Error('Converted source closed');
@@ -143,34 +145,26 @@ export function createTypedRowSource(input: readonly TypedTargetReader[], option
 				catch (error) {
 					closed = true;
 					controller.abort();
-					active.delete(iterator);
 					await finish(iterator);
 					for (const other of active)
 						await finish(other);
-					active.clear();
 					await cleanup();
 					throw error;
 				}
 				finally {
 					releaseBatch();
-					active.delete(iterator);
 					await finish(iterator);
 				}
 			}
 		},
 		async close() {
-			if (closed)
-				return;
-			closed = true;
-			controller.abort();
-			try {
-				for (const iterator of active)
-					await finish(iterator);
-			}
-			finally {
-				active.clear();
+			closed = true; controller.abort();
+			if (!sourceClosing) sourceClosing = (async () => {
+				const results = await Promise.allSettled([...active].map(finish));
 				await cleanup();
-			}
+				if (results.some(result => result.status === 'rejected')) throw new Error('Converted source cleanup pending');
+			})().catch(() => { sourceClosing = undefined; throw new Error('Converted source cleanup pending'); });
+			return sourceClosing;
 		},
 	};
 }

@@ -7963,7 +7963,7 @@
       ],
       "siteCount": 28,
       "sitesDigest": "7361f037222b47316c113cc37873720870d7277099083d9578cff7ff216c4dad",
-      "sourceDigest": "14306f66340dd8bacbe3be7408318093235f672b2947efd9ab5713ef2fadf95d",
+      "sourceDigest": "bd4913ee34361a08bbff4394b8ef8f5674587632027e39edd68f19f5ff2c5072",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -8867,7 +8867,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "be4c368259e88186af9a42bbae895891b43077e9c116c2f976ab8ec443342d83",
-      "sourceDigest": "127cca4db3afe787268883836f7fd50ee30f1c1d77905703199f3780f7ed6619",
+      "sourceDigest": "fff1a4bcf9e1b4a40c186e0e08ec7c2e4c1e66429ac34e2ebf4ce3e743809b51",
       "boundaries": [
         "serialization"
       ]
@@ -9791,7 +9791,7 @@
       ],
       "siteCount": 31,
       "sitesDigest": "254843ce2984d62b44ce1b690e05e91b764988e1b3e6696d7419e256ab6544ce",
-      "sourceDigest": "b65ea37535108eeafc501da61893ebbac5d28e8107c3942455005901e52d3169",
+      "sourceDigest": "f388b86380caa3b6d7b48df214921dc82eb87d025630f598c82d66b288cc824d",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -9849,6 +9849,10 @@
         [
           "storage-call",
           "appender.endRow"
+        ],
+        [
+          "storage-call",
+          "connection.closeSync"
         ],
         [
           "storage-call",
@@ -9935,9 +9939,9 @@
           "this.engine.instance.connect"
         ]
       ],
-      "siteCount": 33,
-      "sitesDigest": "facf01310f693b0a33907d02f6983f8fe0a11b02559b074973d021f67908c604",
-      "sourceDigest": "d3515302859371b0e14fd9d7f14a2ff0dbc62a3617bc7156dd09d92e7aab7b0c",
+      "siteCount": 34,
+      "sitesDigest": "1403ff0c58990c9ba88e204b9709783bab759151a0e8f0d71a1deb4d7d630d23",
+      "sourceDigest": "babf0791200dad7074015f1a67b7b6bb934551aa64d0f67f9170dc52f37a18fe",
       "boundaries": [
         "filesystem-read",
         "serialization",
@@ -11801,7 +11805,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e7af791139404a5e3b98583a239777d13ca0cd13e304a89b2e757cb69a3aa28d",
-      "sourceDigest": "4ba789db128cf2997ae0e874afe800173ce174365d377dacbe9157d19b05feac",
+      "sourceDigest": "0a7559bd821c4a24d3f227541619a94ac79a9cec08aa18544412dc12c684c0c5",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:ConnectionResolver",
@@ -11884,6 +11888,14 @@
         [
           "serialization",
           "randomBytes(32).toString"
+        ],
+        [
+          "connection-use",
+          "this.#closeOverlays"
+        ],
+        [
+          "connection-use",
+          "this.#closeOverlays"
         ],
         [
           "connection-use",
@@ -12035,6 +12047,14 @@
         ],
         [
           "connection-use",
+          "this.#retryFailedCleanup"
+        ],
+        [
+          "connection-use",
+          "this.#retryFailedCleanup"
+        ],
+        [
+          "connection-use",
           "this.#revokeData"
         ],
         [
@@ -12158,9 +12178,9 @@
           "this.sweepExpired"
         ]
       ],
-      "siteCount": 72,
-      "sitesDigest": "27dcfe7e47989d455b09dfa466e9329f10cefdc78c0753b0f79ee621b322edea",
-      "sourceDigest": "edb62a1a5d1b85b52393112c3cd0a390cbd3e9006802502cf0576dd863e7a26a",
+      "siteCount": 76,
+      "sitesDigest": "786edd5a01b30f63325401866f35c5f873edaa5dd6a6674cabe12a10fc7c6324",
+      "sourceDigest": "05a58209abf3d6fdc2575dd6067d7162b7652f42188b2ab0b9860c2dcf9dbc69",
       "boundaries": [
         "connection-use",
         "serialization"
@@ -12225,7 +12245,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "4dedc99f09f858d254763559e6b0e6bab19c66f27f5111accd7b47f0f9b4846f",
-      "sourceDigest": "0baaae44100a93c75279ce3a230ebba87ced0e755eff8143c78ec8447b6aead5",
+      "sourceDigest": "39229c3154869921aaafda222318f26b50997705e2ddfb2827cd8eb49d129d0a",
       "boundaries": [
         "acquisition:driver-port-call",
         "acquisition:symbol:DriverFactory",
@@ -13291,7 +13311,7 @@
       ],
       "siteCount": 66,
       "sitesDigest": "dc08f1859373c36269cc212c17eed799a303ec32da4d2cd27bc7e8d771ab55a0",
-      "sourceDigest": "e6bd54bc0ddadef2b293b02b7ec88ba7e5014c179d9b8763bb9fac376a4f1e83",
+      "sourceDigest": "91eedf10f298f7412db22e58cd9b92dbfc07e11e7199a424ca83488d3588b12e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -13988,11 +14008,15 @@
         [
           "diagnostic",
           "parts.log.warn"
+        ],
+        [
+          "diagnostic",
+          "parts.log.warn"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "9ce8547c823741429a8cdc270250441834a89b9751006dc8c02d5a1416a3a550",
-      "sourceDigest": "c25d2d0a943de5362bccc888d7c59ef3b14df3ec2cdb80ddec8c46693fb65623",
+      "siteCount": 8,
+      "sitesDigest": "e8925f043ea768b29bd245c4df9ef9cf12bccb71660bf8d8ab99b8bbefa57ccc",
+      "sourceDigest": "fead7e9bd4cd8170d0082ead8e3b881566b7b0b968caacd8f366320b0728ffdc",
       "boundaries": [
         "diagnostic",
         "filesystem-write"

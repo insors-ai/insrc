@@ -26,6 +26,17 @@ const snapshot = (JSON.parse(readFileSync(join(HERE, '..', '..', '..', '__tests_
 
 const converted = (m: Record<string, unknown>): Tool[] => Object.values(m).filter((v): v is Tool => typeof v === 'object' && v !== null && 'inputSchema' in v);
 
+// the snapshot is pinned and never edited; a tool whose input was corrected afterwards is compared with its corrected schema instead.
+// item-archive and item-delete passed --project-id, a flag gh 2.46.0 lacks; they take the project number as a positional.
+const projectItemSchema = (extra: Record<string, unknown>) => ({
+	type: 'object', additionalProperties: false, required: ['number', 'itemId'],
+	properties: { cwd: { type: 'string' }, number: { type: 'number', minimum: 1, description: 'Project number.' }, itemId: { type: 'string' }, owner: { type: 'string' }, ...extra },
+});
+const CHANGED_SINCE_SNAPSHOT: Record<string, unknown> = {
+	'gh:project:item-archive': projectItemSchema({ undo: { type: 'boolean', description: 'Unarchive instead.' } }),
+	'gh:project:item-delete': projectItemSchema({}),
+};
+
 test("gh-compat.test.ts: issue and pr tools' input schemas serialise identically to the snapshot", () => {
 	const tools = [...converted(issue), ...converted(pr)];
 	assert.equal(tools.length, 20, 'eight issue tools and twelve pr tools');
@@ -43,7 +54,7 @@ test("gh-compat.test.ts: repo, release and project tools' input schemas serialis
 	for (const tool of tools) {
 		const row = snapshot.find(s => s.id === tool.id);
 		assert.ok(row, `${tool.id} is in the snapshot`);
-		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), row.inputSchema, tool.id);
+		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), CHANGED_SINCE_SNAPSHOT[tool.id] ?? row.inputSchema, tool.id);
 		assert.ok(tool.outputSchema !== undefined, `${tool.id} declares an output schema`);
 	}
 	const props = (id: string) => (JSON.parse(JSON.stringify(tools.find(t => t.id === id)!.inputSchema)) as { properties: Record<string, unknown> }).properties;

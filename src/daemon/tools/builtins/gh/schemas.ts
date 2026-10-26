@@ -136,8 +136,8 @@ export const GhProjectItemRowSchema = Type.Object({
 export const GhProjectItemListDataSchema = Type.Object({ count: Type.Number(), items: Type.Array(GhProjectItemRowSchema) });
 export const GhProjectItemAddDataSchema = Type.Object({ number: Type.Number(), url: Type.String() });
 export const GhProjectItemUpdateDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String(), fieldId: Type.String() });
-export const GhProjectItemArchiveDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String(), undo: Type.Boolean() });
-export const GhProjectItemDeleteDataSchema = Type.Object({ projectId: Type.String(), itemId: Type.String() });
+export const GhProjectItemArchiveDataSchema = Type.Object({ number: Type.Number(), itemId: Type.String(), undo: Type.Boolean() });
+export const GhProjectItemDeleteDataSchema = Type.Object({ number: Type.Number(), itemId: Type.String() });
 export const GhProjectFieldListDataSchema = Type.Object({
   number: Type.Number(),
   fields: Type.Array(Type.Object({

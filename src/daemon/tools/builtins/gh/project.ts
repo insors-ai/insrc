@@ -260,7 +260,7 @@ export const ghProjectItemArchiveTool = withGhFailureNet({
   description: 'Archive an item (hides it without deleting).',
   inputSchema: Type.Object({
     cwd: Type.Optional(Type.String()),
-    projectId: Type.String(),
+    number: Type.Number({ minimum: 1, description: 'Project number.' }),
     itemId: Type.String(),
     owner: Type.Optional(Type.String()),
     undo: Type.Optional(Type.Boolean({ description: 'Unarchive instead.' })),
@@ -271,7 +271,7 @@ export const ghProjectItemArchiveTool = withGhFailureNet({
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
       title: input['undo'] === true ? 'gh:project:item-archive (undo)' : 'gh:project:item-archive',
-      content: `${input['undo'] === true ? 'Unarchive' : 'Archive'} item \`${str(input, 'itemId')}\` in project \`${str(input, 'projectId')}\`.`,
+      content: `${input['undo'] === true ? 'Unarchive' : 'Archive'} item \`${str(input, 'itemId')}\` in project #${num(input, 'number')}.`,
       actions: [
         { name: 'approve', label: 'Approve' },
         { name: 'skip', label: 'Skip' },
@@ -280,15 +280,15 @@ export const ghProjectItemArchiveTool = withGhFailureNet({
   },
 
   async execute(input: ToolInput): Promise<ToolResult> {
-    const projectId = str(input, 'projectId');
+    const n = num(input, 'number');
     const itemId = str(input, 'itemId');
-    if (!projectId || !itemId) { return fail('gh:project:item-archive', 'missing projectId or itemId'); }
-    const argv = ['gh', 'project', 'item-archive', '--project-id', projectId, '--id', itemId];
+    if (!n || !itemId) { return fail('gh:project:item-archive', 'missing number or itemId'); }
+    const argv = ['gh', 'project', 'item-archive', String(n), '--id', itemId];
     if (input['undo'] === true) { argv.push('--undo'); }
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-archive' } });
     const bad = ghFailResult('gh:project:item-archive', r, true); if (bad) { return bad; }
-    return { output: `${input['undo'] === true ? 'Unarchived' : 'Archived'} item \`${itemId}\`.`, format: 'markdown', success: true, data: { projectId, itemId, undo: input['undo'] === true } };
+    return { output: `${input['undo'] === true ? 'Unarchived' : 'Archived'} item \`${itemId}\`.`, format: 'markdown', success: true, data: { number: n, itemId, undo: input['undo'] === true } };
   },
 });
 
@@ -297,7 +297,7 @@ export const ghProjectItemDeleteTool = withGhFailureNet({
   description: 'Remove an item from a Project v2 (does not delete the issue/PR).',
   inputSchema: Type.Object({
     cwd: Type.Optional(Type.String()),
-    projectId: Type.String(),
+    number: Type.Number({ minimum: 1, description: 'Project number.' }),
     itemId: Type.String(),
     owner: Type.Optional(Type.String()),
   }, { additionalProperties: false }),
@@ -307,7 +307,7 @@ export const ghProjectItemDeleteTool = withGhFailureNet({
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     return {
       title: 'gh:project:item-delete',
-      content: `Remove item \`${str(input, 'itemId')}\` from project \`${str(input, 'projectId')}\`.\n\nThe underlying issue/PR is **not** deleted.`,
+      content: `Remove item \`${str(input, 'itemId')}\` from project #${num(input, 'number')}.\n\nThe underlying issue/PR is **not** deleted.`,
       actions: [
         { name: 'approve', label: 'Approve' },
         { name: 'skip', label: 'Skip' },
@@ -316,14 +316,14 @@ export const ghProjectItemDeleteTool = withGhFailureNet({
   },
 
   async execute(input: ToolInput): Promise<ToolResult> {
-    const projectId = str(input, 'projectId');
+    const n = num(input, 'number');
     const itemId = str(input, 'itemId');
-    if (!projectId || !itemId) { return fail('gh:project:item-delete', 'missing projectId or itemId'); }
-    const argv = ['gh', 'project', 'item-delete', '--project-id', projectId, '--id', itemId];
+    if (!n || !itemId) { return fail('gh:project:item-delete', 'missing number or itemId'); }
+    const argv = ['gh', 'project', 'item-delete', String(n), '--id', itemId];
     if (str(input, 'owner')) { argv.push('--owner', str(input, 'owner')!); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh:project:item-delete' } });
     const bad = ghFailResult('gh:project:item-delete', r, true); if (bad) { return bad; }
-    return { output: `Removed item \`${itemId}\` from project.`, format: 'markdown', success: true, data: { projectId, itemId } };
+    return { output: `Removed item \`${itemId}\` from project.`, format: 'markdown', success: true, data: { number: n, itemId } };
   },
 });
 

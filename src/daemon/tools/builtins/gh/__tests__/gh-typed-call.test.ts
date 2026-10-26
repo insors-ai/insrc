@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { afterEach, test } from 'node:test';
+import { after, afterEach, test } from 'node:test';
 
+import pino from 'pino';
 import { Value } from '@sinclair/typebox/value';
 
+import { getLogger } from '../../../../../shared/logger.js';
 import { callTool } from '../../../call-tool.js';
 import { _setApprovalGateForTests } from '../../../executor.js';
 import { _resetRegistryForTests, registerTool } from '../../../registry.js';
@@ -12,6 +14,8 @@ import { installFakeGh } from './_fakegh.js';
 
 const deps: ToolDeps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0, approvalMode: 'auto' };
 
+// the logger writes through a worker thread that keeps the process alive; end it so the file exits by itself
+after(() => { (getLogger('gh-typed-call.test') as unknown as Record<symbol, { end?: () => void }>)[pino.symbols.streamSym]?.end?.(); });
 afterEach(() => { _setApprovalGateForTests(undefined); _resetRegistryForTests(); });
 
 test('gh-typed-call.test.ts: the 46 existing tools called through typed callTool keep their concrete result types', async () => {

@@ -59,7 +59,7 @@ export const CASES: GhCase[] = [
 	[project.ghProjectItemListTool, { number: 2 }, JSON.stringify({ items: [{ id: 'i', title: 't', content: { type: 'Issue', number: 1, title: 't', url: 'u' }, fieldValues: { nodes: [{ a: 1 }] } }, { id: 'd' }] })],
 	[project.ghProjectItemAddTool, { number: 2, url: 'https://github.com/o/r/issues/1' }, ''],
 	[project.ghProjectItemUpdateTool, { projectId: 'p', itemId: 'i', fieldId: 'f', value: 'v' }, ''],
-	[project.ghProjectItemArchiveTool, { projectId: 'p', itemId: 'i' }, ''],
+	[project.ghProjectItemArchiveTool, { number: 2, itemId: 'i' }, ''],
 	[project.ghProjectFieldListTool, { number: 2 }, JSON.stringify({ fields: [{ id: 'f', name: 'Status', type: 'SINGLE_SELECT', options: [{ id: 'o', name: 'Todo' }] }] })],
 	[actions.ghRunListTool, {}, JSON.stringify([{ databaseId: 9, number: 1, name: 'ci', workflowName: 'ci', conclusion: null, status: 'queued', headBranch: 'main' }])],
 	[actions.ghRunViewTool, { runId: 9 }, '', { stdout: 'build\tCompile\tlog line\n', json: JSON.stringify({ jobs: [{ name: 'build', status: 'completed', conclusion: 'failure' }], status: 'completed', conclusion: 'failure', workflowName: 'ci', headBranch: 'main' }) }],
@@ -69,6 +69,6 @@ export const CASES: GhCase[] = [
 	[actions.ghWorkflowRunTool, { workflow: 'ci.yml' }, ''],
 	[repo.ghRepoDeleteTool, { repo: 'o/r' }, ''],
 	[release.ghReleaseDeleteTool, { tag: 'v1' }, ''],
-	[project.ghProjectItemDeleteTool, { projectId: 'p', itemId: 'i' }, ''],
+	[project.ghProjectItemDeleteTool, { number: 2, itemId: 'i' }, ''],
 ];
 

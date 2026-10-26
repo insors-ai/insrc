@@ -49,7 +49,7 @@ const issueOps: OpDef[] = [
   },
 ];
 
-export const ghIssueManageTool = defineGhFamily({ id: 'gh_issue_manage', description: 'Issue operations beyond create, edit and close: status, delete, develop (create or list linked branches), lock, unlock, pin, unpin and transfer.', ops: issueOps });
+export const ghIssueManageTool = defineGhFamily({ id: 'gh_issue_manage', dashSafe: true, description: 'Issue operations beyond create, edit and close: status, delete, develop (create or list linked branches), lock, unlock, pin, unpin and transfer.', ops: issueOps });
 
 // ---------------------------------------------------------------------------
 // gh_pr_manage
@@ -78,7 +78,7 @@ const prOps: OpDef[] = [
   },
 ];
 
-export const ghPrManageTool = defineGhFamily({ id: 'gh_pr_manage', description: 'Pull request operations beyond create, edit and merge: status, checkout, lock, unlock and reopen.', ops: prOps });
+export const ghPrManageTool = defineGhFamily({ id: 'gh_pr_manage', dashSafe: true, description: 'Pull request operations beyond create, edit and merge: status, checkout, lock, unlock and reopen.', ops: prOps });
 
 // ---------------------------------------------------------------------------
 // gh_release_asset
@@ -111,7 +111,7 @@ const releaseOps: OpDef[] = [
   },
 ];
 
-export const ghReleaseAssetTool = defineGhFamily({ id: 'gh_release_asset', description: 'Release asset operations: download assets or a source archive, upload files, delete an asset.', ops: releaseOps });
+export const ghReleaseAssetTool = defineGhFamily({ id: 'gh_release_asset', dashSafe: true, description: 'Release asset operations: download assets or a source archive, upload files, delete an asset.', ops: releaseOps });
 
 // ---------------------------------------------------------------------------
 // gh_repo_manage
@@ -164,7 +164,7 @@ const repoOps: OpDef[] = [
   { name: 'deploy-key-delete', command: ['repo', 'deploy-key', 'delete'], cls: 'destructive', limitS: 30, repo: true, fields: { keyId: field.str('ID of the key.') }, required: ['keyId'], args: [pos('keyId')], out: { kind: 'mutation' }, target: i => String(i['keyId']) },
 ];
 
-export const ghRepoManageTool = defineGhFamily({ id: 'gh_repo_manage', description: 'Repository operations beyond create, fork, clone and delete: archive, unarchive, edit, rename, set-default, sync and deploy keys.', ops: repoOps });
+export const ghRepoManageTool = defineGhFamily({ id: 'gh_repo_manage', dashSafe: true, description: 'Repository operations beyond create, fork, clone and delete: archive, unarchive, edit, rename, set-default, sync and deploy keys.', ops: repoOps });
 
 // ---------------------------------------------------------------------------
 // gh_run_manage and gh_workflow_manage
@@ -173,7 +173,7 @@ export const ghRepoManageTool = defineGhFamily({ id: 'gh_repo_manage', descripti
 const runId = { runId: field.int('Run database ID.') } as const;
 
 export const ghRunManageTool = defineGhFamily({
-  id: 'gh_run_manage', description: 'Workflow run operations beyond list, view, rerun and cancel: delete a run, download its artifacts.',
+  id: 'gh_run_manage', dashSafe: true, description: 'Workflow run operations beyond list, view, rerun and cancel: delete a run, download its artifacts.',
   ops: [
     { name: 'delete', command: ['run', 'delete'], cls: 'destructive', limitS: 30, repo: true, fields: runId, required: ['runId'], args: [pos('runId')], out: { kind: 'mutation' }, target: i => String(i['runId']) },
     {
@@ -187,7 +187,7 @@ export const ghRunManageTool = defineGhFamily({
 const workflow = { workflow: field.str('Workflow ID, name or file name.') } as const;
 
 export const ghWorkflowManageTool = defineGhFamily({
-  id: 'gh_workflow_manage', description: 'Workflow operations beyond list and run: view a workflow (or its YAML), enable, disable.',
+  id: 'gh_workflow_manage', dashSafe: true, description: 'Workflow operations beyond list and run: view a workflow (or its YAML), enable, disable.',
   ops: [
     {
       name: 'view', command: ['workflow', 'view'], cls: 'none', limitS: 30, repo: true,
@@ -241,4 +241,4 @@ const projectOps: OpDef[] = [
   { name: 'field-delete', command: ['project', 'field-delete'], cls: 'destructive', limitS: 30, fields: { id: field.str('ID of the field to delete.') }, required: ['id'], args: [val('--id', 'id'), FORMAT_JSON], out: { kind: 'mutation' }, target: projectTarget },
 ];
 
-export const ghProjectManageTool = defineGhFamily({ id: 'gh_project_manage', description: 'Projects v2 operations beyond list, view and items: copy, create, edit, close, delete, link, unlink, mark-template, item-create, field-create and field-delete.', ops: projectOps });
+export const ghProjectManageTool = defineGhFamily({ id: 'gh_project_manage', dashSafe: true, description: 'Projects v2 operations beyond list, view and items: copy, create, edit, close, delete, link, unlink, mark-template, item-create, field-create and field-delete.', ops: projectOps });

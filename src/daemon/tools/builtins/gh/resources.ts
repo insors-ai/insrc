@@ -18,7 +18,7 @@ const VISIBILITY = ['all', 'private', 'selected'] as const;
 const labelName = { name: field.str('Name of the label.') } as const;
 
 export const ghLabelTool = defineGhFamily({
-  id: 'gh_label', description: 'Repository labels: list, create, edit, clone from another repository, delete.',
+  id: 'gh_label', dashSafe: true, description: 'Repository labels: list, create, edit, clone from another repository, delete.',
   ops: [
     {
       name: 'list', command: ['label', 'list'], cls: 'none', limitS: 30, repo: true,
@@ -90,7 +90,7 @@ const gistOps: OpDef[] = [
   { name: 'delete', command: ['gist', 'delete'], cls: 'destructive', limitS: 30, fields: gistId, required: ['id'], args: [pos('id')], out: { kind: 'mutation' }, target: i => String(i['id']) },
 ];
 
-export const ghGistTool = defineGhFamily({ id: 'gh_gist', description: 'Gists: list, view, create (from files or text), edit (add or remove a file, change the description), rename a file, clone, delete.', ops: gistOps });
+export const ghGistTool = defineGhFamily({ id: 'gh_gist', dashSafe: true, description: 'Gists: list, view, create (from files or text), edit (add or remove a file, change the description), rename a file, clone, delete.', ops: gistOps });
 
 // ---------------------------------------------------------------------------
 // gh_secret and gh_variable
@@ -111,7 +111,7 @@ const reposAndVisibility = (kind: 'secret' | 'variable') => (i: Record<string, u
 };
 
 export const ghSecretTool = defineGhFamily({
-  id: 'gh_secret', description: 'Repository, environment, organization and user secrets: list, set (the value is sent on standard input, never in argv) and delete.',
+  id: 'gh_secret', dashSafe: true, description: 'Repository, environment, organization and user secrets: list, set (the value is sent on standard input, never in argv) and delete.',
   ops: [
     {
       name: 'list', command: ['secret', 'list'], cls: 'none', limitS: 30, repo: true, fields: secretScope, exclusive: [['env', 'org', 'user']],
@@ -136,7 +136,7 @@ export const ghSecretTool = defineGhFamily({
 });
 
 export const ghVariableTool = defineGhFamily({
-  id: 'gh_variable', description: 'Repository, environment and organization variables: list, set (the value is sent on standard input) and delete.',
+  id: 'gh_variable', dashSafe: true, description: 'Repository, environment and organization variables: list, set (the value is sent on standard input) and delete.',
   ops: [
     { name: 'list', command: ['variable', 'list'], cls: 'none', limitS: 30, repo: true, fields: scope, exclusive: [['env', 'org']], args: [val('-e', 'env'), val('-o', 'org')], out: { kind: 'items', jsonFields: VARIABLE_ITEM } },
     {
@@ -162,7 +162,7 @@ export const ghVariableTool = defineGhFamily({
 // ---------------------------------------------------------------------------
 
 export const ghCacheTool = defineGhFamily({
-  id: 'gh_cache', description: 'Actions caches: list and delete (one by ID or key, or all).',
+  id: 'gh_cache', dashSafe: true, description: 'Actions caches: list and delete (one by ID or key, or all).',
   ops: [
     {
       name: 'list', command: ['cache', 'list'], cls: 'none', limitS: 30, repo: true,
@@ -183,7 +183,7 @@ export const ghCacheTool = defineGhFamily({
 // ---------------------------------------------------------------------------
 
 export const ghSshKeyTool = defineGhFamily({
-  id: 'gh_ssh_key', description: 'SSH keys of your account: list, add (from a file or as public-key text) and delete.',
+  id: 'gh_ssh_key', dashSafe: true, description: 'SSH keys of your account: list, add (from a file or as public-key text) and delete.',
   ops: [
     { name: 'list', command: ['ssh-key', 'list'], cls: 'none', limitS: 30, args: [], out: { kind: 'rows' } },
     {
@@ -196,7 +196,7 @@ export const ghSshKeyTool = defineGhFamily({
 });
 
 export const ghGpgKeyTool = defineGhFamily({
-  id: 'gh_gpg_key', description: 'GPG keys of your account: list, add (from a file or as public-key text) and delete.',
+  id: 'gh_gpg_key', dashSafe: true, description: 'GPG keys of your account: list, add (from a file or as public-key text) and delete.',
   ops: [
     { name: 'list', command: ['gpg-key', 'list'], cls: 'none', limitS: 30, args: [], out: { kind: 'rows' } },
     {

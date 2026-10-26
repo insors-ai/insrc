@@ -21,7 +21,8 @@ function deferred() { let resolve!: () => void; const promise = new Promise<void
 async function fixture() {
 	const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-owner-measure-'))), root = join(directory, 'root'); await mkdir(root);
 	const original = PATHS.insrc, originalContext = PATHS.analyzeContext, originalOutput = PATHS.analyzeTaskOutput; PATHS.analyzeContext = id => join(directory, 'analyze', id, 'context'); PATHS.analyzeTaskOutput = (id, task) => join(directory, 'analyze', id, 'tasks', task + '.json'); PATHS.insrc = join(directory, 'insrc'); const overlays = new Map<string, TemporaryConnectionOverlay>(), factories: string[] = [];
-	const runtime = new ConnectionSessionRpc({ enabled: async () => true, isRegistered: async r => r === root, createOverlay: (r, h, c) => { const o = createTemporaryOverlay(r, h, c, { factory: kind => { factories.push(kind); return getFactory(kind); } }); overlays.set(h, o); return o; }, dropOverlay: o => o.close() });
+	let now = 0;
+	const runtime = new ConnectionSessionRpc({ monotonicNow: () => now, enabled: async () => true, isRegistered: async r => r === root, createOverlay: (r, h, c) => { const o = createTemporaryOverlay(r, h, c, { factory: kind => { factories.push(kind); return getFactory(kind); } }); overlays.set(h, o); return o; }, dropOverlay: o => o.close() });
 	const requests: RequestLifetime[] = [];
 	const request = async (identity: string) => { const lifetime = new RequestLifetime(); requests.push(lifetime); const context = { connectionIdentity: identity, daemonEpoch: 'measure-fixture', signal: lifetime.signal, registerDrain: lifetime.registerDrain, assertRequestActive: lifetime.assertActive }; return { lifetime, context }; };
 	const owners = [];
@@ -32,7 +33,7 @@ async function fixture() {
 		owners.push({ ...current, overlay, execution: await runtime.executionFor(current.context, root), count });
 	}
 	_setMeasureDepsForTest({ scope: { listRepos: async () => [{ path: root, status: 'ready' } as RegisteredRepo], findEntitiesByFile: async () => [], listEntitiesForRepo: async () => [], loadConnections: async () => { throw new Error('cross-root saved enumeration forbidden'); } } });
-	return { root, runtime, owners, factories, async fresh(owner: typeof owners[number]) { const current = await request(owner.context.connectionIdentity); return { ...current, execution: await runtime.executionFor(current.context, root) }; }, async close() { for (const lifetime of requests) { lifetime.abort(); lifetime.complete(); } await runtime.close(); for (const lifetime of requests) await lifetime.drained; await closeAll(); _setMeasureDepsForTest(undefined); PATHS.insrc = original; PATHS.analyzeContext = originalContext; PATHS.analyzeTaskOutput = originalOutput; await rm(directory, { recursive: true, force: true }); } };
+	return { root, runtime, owners, factories, advance(ms: number) { now += ms; }, async fresh(owner: typeof owners[number]) { const current = await request(owner.context.connectionIdentity); return { ...current, execution: await runtime.executionFor(current.context, root) }; }, async close() { for (const lifetime of requests) { lifetime.abort(); lifetime.complete(); } await runtime.close(); for (const lifetime of requests) await lifetime.drained; await closeAll(); _setMeasureDepsForTest(undefined); PATHS.insrc = original; PATHS.analyzeContext = originalContext; PATHS.analyzeTaskOutput = originalOutput; await rm(directory, { recursive: true, force: true }); } };
 }
 
 import { setGraphStorePath, closeGraphStore, getGraphStore } from '../../../../db/graph/store.js';
@@ -128,4 +129,30 @@ test('private continuations authenticate owner and revisions before output paylo
 		await assert.rejects(encodeState(payload, b.execution), { code: 'resource-limit' });
 		assert.equal(_privateStateCountForTests(), 100); b.lifetime.abort(); assert.equal(_privateStateCountForTests(), 0); assert.equal(shared, 0); assert.equal(reads, 0);
 	} finally { mock.restoreAll(); installStepStateStore(new LocalStepStateStore()); await _clearStateStoreForTests(); await closeGraphStore(); await f.close(); }
+});
+
+import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
+test('monotonic session expiry rejects continuation before source getters', async () => {
+ const f = await fixture();
+ const a = f.owners[0]!;
+ let reads = 0;
+ const resume = { get outputs() { reads++; throw Error('EXPIRED_SOURCE_CANARY'); }, results: [], totalCached: 0, totalMsSoFar: 0 } as StepPlanResumeState;
+ const payload = { version: 2, get runId() { reads++; throw Error('EXPIRED_SOURCE_CANARY'); } } as StepStatePayload;
+ try {
+  await beginSessionReuse(a.execution);
+  await rememberSessionContinuation(resume, a.execution);
+  const token = await encodeState(payload, a.execution);
+  const args = { runId: 'expired', repoPath: f.root, closureRepos: [f.root], repoLastIndexedAtMs: 1n, plan: { answerType: 'structural-map', synthesisHint: '', explorations: [] } as ExplorationPlan, resumeState: resume };
+  // A genuinely unattached caller with explicit Saved authority must not downgrade
+  // an object that was produced under Session policy, including after expiry.
+  await assert.rejects(stepPlan({ ...args, connectionExecution: savedAnalysisExecution(f.root) }), { code: 'session-expired' });
+  await assert.rejects(rememberSessionContinuation(resume, savedAnalysisExecution(f.root)), { code: 'session-expired' });
+  f.advance(90_001);
+  await assert.rejects(stepPlan({ ...args, connectionExecution: a.execution }), { code: 'session-expired' });
+  await assert.rejects(decodeState(token, a.execution), { code: 'session-expired' });
+  await assert.rejects(getCachedExploration(f.root, 1n, {} as Exploration, a.execution), { code: 'session-expired' });
+  await assert.rejects(stepPlan({ ...args, connectionExecution: savedAnalysisExecution(f.root) }), { code: 'session-expired' });
+  assert.equal(reads, 0);
+  assert.equal(_privateStateCountForTests(), 0);
+ } finally { await f.close(); }
 });

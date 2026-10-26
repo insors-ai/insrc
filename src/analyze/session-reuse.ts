@@ -50,13 +50,18 @@ export function sessionReuseWindow(execution: SessionConnectionExecution): Reado
 }
 export async function rememberSessionContinuation<T extends object>(value: T, execution: ConnectionExecutionContext | undefined): Promise<T> {
 	await assertSessionReuse(execution);
+	if (execution?.mode !== 'session-memory' && continuations.has(value)) throw new ConnectionExecutionError('session-expired');
 	if (execution?.mode === 'session-memory') { const window = sessionReuseWindow(execution); continuations.set(value, { owner: window.owner, fingerprint: window.fingerprint }); }
 	return value;
 }
 export async function assertSessionContinuation(value: object, execution: ConnectionExecutionContext | undefined): Promise<void> {
 	assertAnalysisConnectionExecution(execution);
-	if (execution?.mode !== 'session-memory') return;
-	const owned = continuations.get(value), current = sessionReuseWindow(execution);
+	const owned = continuations.get(value);
+	if (execution?.mode !== 'session-memory') {
+		if (owned) throw new ConnectionExecutionError('session-expired');
+		return;
+	}
+	const current = sessionReuseWindow(execution);
 	if (!owned || owned.owner !== current.owner || owned.fingerprint !== current.fingerprint) throw new ConnectionExecutionError('session-expired');
 	await assertSessionReuse(execution);
 }

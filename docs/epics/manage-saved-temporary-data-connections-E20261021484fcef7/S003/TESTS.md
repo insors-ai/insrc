@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 81 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -412,3 +412,19 @@ Run at 2026-10-26T05:39:46.239Z on commit `cfa11cedf`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/explore/__tests__/freeform-probe-scope.test.ts` | 0 | 3 | 1.5 s |  |
 | `src/daemon/steps/__tests__/freeform-owner-relay.test.ts` | 0 | 1 | 2.3 s |  |
+
+## t20
+
+Run at 2026-10-26T06:07:38.389Z on commit `184578b9e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set | `src/daemon/steps/__tests__/private-cache.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/private-cache.test.ts` | 0 | 1 | 21.9 s |  |

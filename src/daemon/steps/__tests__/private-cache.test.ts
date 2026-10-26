@@ -9,7 +9,7 @@ function runMatrix(): Promise<string> {
 		const child = spawn(process.execPath, ['--import', 'tsx', '--test', fileURLToPath(new URL('./fixtures/private-cache.ts', import.meta.url))], { env: { ...process.env, ...baseline, NODE_TEST_CONTEXT: undefined, INSRC_MODE: 'probe-worker' }, stdio: ['ignore', 'pipe', 'pipe'] });
 		let output = ''; child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; }); const timer = setTimeout(() => child.kill('SIGKILL'), 25000);
 		child.once('error', error => { clearTimeout(timer); reject(error); });
-		child.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0, output); assert.match(output, /# pass 2\b/); for (const key of ['fail', 'cancelled', 'skipped', 'todo']) assert.match(output, new RegExp('# ' + key + ' 0\\b')); resolve(output); } catch (error) { reject(error); } });
+		child.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0, output); assert.match(output, /# pass 3\b/); for (const key of ['fail', 'cancelled', 'skipped', 'todo']) assert.match(output, new RegExp('# ' + key + ' 0\\b')); resolve(output); } catch (error) { reject(error); } });
 	});
 }
 test('CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set', async () => { await runMatrix(); });

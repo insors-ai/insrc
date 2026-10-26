@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T05:39:46.239Z",
+    "updatedAt": "2026-10-26T06:07:38.389Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1535,6 +1535,42 @@
             "titles": [
               {
                 "title": "CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "184578b9e",
+        "ranAt": "2026-10-26T06:07:38.389Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/private-cache.test.ts",
+                "title": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/private-cache.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 21860,
+            "titles": [
+              {
+                "title": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
                 "result": "pass"
               }
             ],

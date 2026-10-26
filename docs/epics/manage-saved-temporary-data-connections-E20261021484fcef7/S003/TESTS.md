@@ -627,7 +627,7 @@ Run at 2026-10-26T14:22:18.043Z on commit `64ae043a3`. Tests check: **passed**. 
 
 ## t31
 
-Run at 2026-10-26T16:02:39.623Z on commit `981754881`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T16:11:42.294Z on commit `d8928fce2`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots**
 
@@ -639,4 +639,4 @@ Run at 2026-10-26T16:02:39.623Z on commit `981754881`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-service-isolation.test.ts` | 0 | 1 | 6 s |  |
+| `src/daemon/db/__tests__/session-service-isolation.test.ts` | 0 | 1 | 6.1 s |  |

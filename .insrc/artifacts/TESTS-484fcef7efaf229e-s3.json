@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T16:02:39.623Z",
+    "updatedAt": "2026-10-26T16:11:42.294Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2245,8 +2245,8 @@
       },
       {
         "taskId": "t31",
-        "commit": "981754881",
-        "ranAt": "2026-10-26T16:02:39.623Z",
+        "commit": "d8928fce2",
+        "ranAt": "2026-10-26T16:11:42.294Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2268,7 +2268,7 @@
             "file": "src/daemon/db/__tests__/session-service-isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5976,
+            "durationMs": 6090,
             "titles": [
               {
                 "title": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",

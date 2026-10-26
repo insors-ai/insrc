@@ -25,7 +25,16 @@ export interface FieldSpec {
   readonly description?: string;
   /** A string that may be empty (a description cleared on purpose). */
   readonly empty?: boolean;
+  /**
+   * A JSON-schema pattern a string value must match, as a STRING (not a RegExp): buildInputSchema compares a field two
+   * ops share as JSON, which would hide a RegExp. The executor checks the input schema before it asks for approval, so
+   * a value outside the pattern is refused before any prompt.
+   */
+  readonly pattern?: string;
 }
+
+/** An owner, repo, org or login: letters, digits, '.', '_' and '-', and not '.' or '..'. It refuses '/', '?', '#', '%', whitespace and non-ASCII. */
+export const NAME_PATTERN = '^(?!\\.{1,2}$)[A-Za-z0-9._-]+$';
 
 const EXPR_PART = /^[\w:+*-]*(?:\.[\w:+*-]+)*$/;
 
@@ -48,13 +57,15 @@ export const field = {
   /** A list whose members are each one of the values. */
   manyOf: (values: readonly string[], description?: string): FieldSpec => ({ kind: 'enums', values, ...(description ? { description } : {}) }),
   /** A string holding a comparison or range such as >100, 10..50 or >=2024-01-01. */
+  /** An owner, repo, org or login (see NAME_PATTERN). */
+  name: (description?: string): FieldSpec => ({ kind: 'string', pattern: NAME_PATTERN, ...(description ? { description } : {}) }),
   expr: (description?: string): FieldSpec => ({ kind: 'expr', description: description ?? 'A number, size or date; comparisons and ranges are allowed (>100, 10..50, >=2024-01-01).' }),
 };
 
 export function fieldSchema(spec: FieldSpec): TSchema {
   const d = spec.description !== undefined ? { description: spec.description } : {};
   switch (spec.kind) {
-    case 'string':
+    case 'string': return Type.String({ ...(spec.empty === true ? {} : { minLength: 1 }), ...(spec.pattern !== undefined ? { pattern: spec.pattern } : {}), ...d });
     case 'expr': return Type.String({ ...(spec.empty === true ? {} : { minLength: 1 }), ...d });
     case 'integer': return Type.Integer({ minimum: spec.minimum ?? 1, ...d });
     case 'boolean': return Type.Boolean(d);
@@ -73,7 +84,18 @@ export type Arg =
   | { readonly spread: string }
   | { readonly last: string }
   | { readonly flag: string; readonly field: string; readonly as?: 'value' | 'bool' | 'bool3' | 'repeat' | 'csv' }
-  | { readonly lit: readonly string[]; readonly when?: (input: ToolInput) => boolean };
+  | { readonly lit: readonly string[]; readonly when?: (input: ToolInput) => boolean }
+  | { readonly path: readonly (string | { readonly field: string })[] }
+  | { readonly kv: string; readonly flag: '-f' | '-F'; readonly field: string; readonly repeat?: boolean }
+  | { readonly qs: readonly QsEntry[] };
+
+/**
+ * One entry of a query string: a FIXED constant (never from input), or a value from an input field. A string or integer
+ * field is percent-encoded; a list field needs join ',' and is emitted as its members, each encoded, joined by a literal ','.
+ */
+export type QsEntry =
+  | { readonly key: string; readonly value: string }
+  | { readonly key: string; readonly field: string; readonly optional?: boolean; readonly join?: ',' };
 
 /** A positional taken from a field when it is given. */
 export const pos = (name: string): Arg => ({ pos: name });
@@ -93,6 +115,15 @@ export const rep = (flag: string, name: string): Arg => ({ flag, field: name, as
 export const csv = (flag: string, name: string): Arg => ({ flag, field: name, as: 'csv' });
 /** Fixed tokens the tool always passes (a prompt-suppressing flag, a --json field list). */
 export const lit = (...tokens: string[]): Arg => ({ lit: tokens });
+/**
+ * One positional built from fixed text and input fields, each field value percent-encoded (so '/', '?', '#', '%' and
+ * Unicode cannot change the path): apiPath('repos/', {field: 'owner'}, '/', {field: 'repo'}, '/issues').
+ */
+export const apiPath = (...parts: readonly (string | { readonly field: string })[]): Arg => ({ path: parts });
+/** gh api's -f / -F pair: `key=<value>`; with `repeat` one pair per member of a list field (the key being e.g. 'labels[]'). A field that is absent emits nothing. */
+export const kvField = (flag: '-f' | '-F', key: string, name: string, repeat = false): Arg => ({ kv: key, flag, field: name, ...(repeat ? { repeat } : {}) });
+/** The query string of the path positional before it: `?key=value&key=value` in the order declared; no entry left means no '?'. */
+export const query = (...entries: readonly QsEntry[]): Arg => ({ qs: entries });
 /** Fixed tokens passed only when `when` holds. */
 export const litIf = (when: (input: ToolInput) => boolean, ...tokens: string[]): Arg => ({ lit: tokens, when });
 
@@ -161,6 +192,11 @@ export interface OpDef {
   readonly notice?: string;
   /** The capture cap in bytes for a read whose answer can be long. */
   readonly maxBytes?: number;
+  /**
+   * Opt in to keeping gh's own text of a command-exit failure in failure.original (capped at FAILURE_ORIGINAL_MAX_CHARS),
+   * for a caller that reads it (the typed-issue fallback reads the API's 422 text). Other ops keep today's failures.
+   */
+  readonly diagnostic?: 'stderr';
 }
 
 // ---------------------------------------------------------------------------
@@ -228,8 +264,42 @@ export function refuseInput(def: OpDef, input: ToolInput, opts: { dashSafe?: boo
 export function buildArgv(def: OpDef, input: ToolInput): string[] {
   const argv: string[] = ['gh', ...def.command];
   const tail: string[] = [];
+  /** Where the last path positional is in argv, so the query that follows it can be appended. */
+  let pathIndex = -1;
+  const encoded = (name: string, v: unknown): string => encodeURIComponent(String(v));
   for (const a of def.args) {
-    if ('pos' in a) {
+    if ('path' in a) {
+      pathIndex = argv.length;
+      argv.push(a.path.map(part => {
+        if (typeof part === 'string') { return part; }
+        const v = input[part.field];
+        if (v === undefined || v === null) { throw new Error(`op ${def.name}: the path needs the field ${part.field}`); }
+        return encoded(part.field, v);
+      }).join(''));
+    } else if ('qs' in a) {
+      if (pathIndex < 0) { throw new Error(`op ${def.name}: a query string needs a path before it`); }
+      const pairs: string[] = [];
+      for (const e of a.qs) {
+        if ('value' in e) { pairs.push(`${e.key}=${e.value}`); continue; }
+        const v = input[e.field];
+        if (v === undefined || v === null) {
+          if (e.optional === true) { continue; }
+          throw new Error(`op ${def.name}: the query needs the field ${e.field}`);
+        }
+        if (Array.isArray(v)) {
+          if (e.join !== ',') { throw new Error(`op ${def.name}: the list field ${e.field} needs join ','`); }
+          pairs.push(`${e.key}=${v.map(x => encoded(e.field, x)).join(',')}`);
+        } else { pairs.push(`${e.key}=${encoded(e.field, v)}`); }
+      }
+      if (pairs.length > 0) { argv[pathIndex] = `${argv[pathIndex]}?${pairs.join('&')}`; }
+    } else if ('kv' in a) {
+      const v = input[a.field];
+      if (v === undefined || v === null) { continue; }
+      if (Array.isArray(v)) {
+        if (a.repeat !== true) { throw new Error(`op ${def.name}: the list field ${a.field} needs repeat`); }
+        for (const x of v) { argv.push(a.flag, `${a.kv}=${String(x)}`); }
+      } else { argv.push(a.flag, `${a.kv}=${String(v)}`); }
+    } else if ('pos' in a) {
       const v = input[a.pos];
       if (v !== undefined && v !== null) { argv.push(String(v)); }
     } else if ('spread' in a) {
@@ -434,7 +504,7 @@ export function defineGhFamily(spec: { id: string; description: string; ops: rea
         ...(def.maxBytes !== undefined ? { maxBytes: def.maxBytes, cutIsAnswer: true } : {}),
         ...(deps.signal !== undefined ? { signal: deps.signal } : {}),
       });
-      const failure = ghFailureOf(o, { mutating });
+      const failure = ghFailureOf(o, { mutating, ...(def.diagnostic !== undefined ? { diagnostic: def.diagnostic } : {}) });
       if (failure !== undefined) {
         const hide = (t: string): string => def.secretStdin === true && stdin !== undefined && stdin.length > 0 ? t.split(stdin).join('[redacted]') : t;
         const clean = { ...failure, message: hide(failure.message), ...(failure.original !== undefined ? { original: hide(failure.original) } : {}) };

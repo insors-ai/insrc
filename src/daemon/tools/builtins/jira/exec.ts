@@ -44,7 +44,7 @@ function defaultLimit(def: OpDef): number | undefined {
 
 /** A free-text flag and its value as one `--flag=value` token, so a value that starts with '-' cannot be read as a flag. */
 function joinFreeText(a: Arg, input: ToolInput): Arg {
-  if (!('flag' in a) || IDENTIFIER_FLAG_FIELDS.has(a.field)) { return a; }
+  if (!('flag' in a) || 'kv' in a || IDENTIFIER_FLAG_FIELDS.has(a.field)) { return a; }
   const v = input[a.field];
   if (v === undefined || v === null || v === false || a.as === 'bool' || a.as === 'bool3' || typeof v === 'number' || typeof v === 'boolean') { return a; }
   if (a.as === 'repeat' && Array.isArray(v)) { return { lit: v.map(x => `${a.flag}=${String(x)}`) }; }

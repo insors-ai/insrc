@@ -29,7 +29,7 @@ import type { ApprovalDenial, ApprovalGate, CommonApprovalMode, Tool, ToolDeps, 
 const log = getLogger('tools-executor');
 
 /** failure.original keeps at most this many characters of the tool's own output. */
-const ORIGINAL_MAX_CHARS = 4000;
+export const ORIGINAL_MAX_CHARS = 4000;
 
 function failed(kind: ToolFailureKind, message: string, original?: string, denial?: ApprovalDenial): ToolResult {
 	return {

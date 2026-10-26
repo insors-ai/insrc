@@ -156,6 +156,26 @@ export function parseJson<T = unknown>(raw: string): T | undefined {
   try { return JSON.parse(trimmed) as T; } catch { return undefined; }
 }
 
+/**
+ * The parsed lines of a paginated gh command whose fixed jq filter prints one JSON value per line, in output order. gh api
+ * --paginate prints one array per page, which together are not one JSON document, so such a command is read line by line.
+ * Blank lines are skipped and an empty output is an empty list; the first line that is not valid JSON is reported with its
+ * 1-based number and its first 200 characters. Never throws.
+ */
+export function parseJsonLines(stdout: string): { ok: true; values: unknown[] } | { ok: false; line: number; text: string } {
+  const values: unknown[] = [];
+  const lines = stdout.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const text = lines[i]!.trim();
+    if (text === '') { continue; }
+    try { values.push(JSON.parse(text)); } catch { return { ok: false, line: i + 1, text: text.slice(0, 200) }; }
+  }
+  return { ok: true, values };
+}
+
+/** failure.original keeps at most this many characters of a tool's own diagnostic text; the executor's cap is the same number. */
+export const FAILURE_ORIGINAL_MAX_CHARS = 4000;
+
 /** Pass labels / assignees as comma-separated strings to gh, which is the CLI convention. */
 export function joinCsv(arr: string[] | undefined): string | undefined {
   return arr && arr.length > 0 ? arr.join(',') : undefined;
@@ -177,7 +197,7 @@ export const GH_UNKNOWN_OUTCOME = 'the outcome is unknown; check the current sta
  * network failure, a sign-in failure, a plain non-zero exit): gh's own text is kept, and no message says that
  * nothing changed or that a value was not set.
  */
-export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFailure | undefined {
+export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean; diagnostic?: 'stderr' }): ToolFailure | undefined {
   const unknown = (msg: string): string => opts.mutating ? `${msg}; ${GH_UNKNOWN_OUTCOME}` : msg;
   if (o.spawnError) {
     return { kind: 'missing-tool', message: `gh CLI not on PATH or failed to spawn -- ${o.stderr.trim()}`, original: o.stderr.trim() };
@@ -200,7 +220,10 @@ export function ghFailureOf(o: GhOutcome, opts: { mutating: boolean }): ToolFail
   const text = `${o.stderr}\n${o.stdout}`;
   const probeText = o.probe?.output ?? '';
   const msg = o.stderr.trim() || o.stdout.trim() || `exit ${o.code}`;
-  const original = probeText.length > 0 ? probeText : undefined;
+  // an op that opts in keeps gh's own text (the API's answer to a rejected call) in failure.original, capped here because
+  // the executor returns a tool's own failure unchanged; every other op keeps the probe text only
+  const diagnosticText = opts.diagnostic === 'stderr' ? (o.stderr.trim() || o.stdout.trim()).slice(0, FAILURE_ORIGINAL_MAX_CHARS) : '';
+  const original = diagnosticText.length > 0 ? diagnosticText : probeText.length > 0 ? probeText : undefined;
   if (GH_AUTH_RE.test(text) || (o.probe !== undefined && o.probe.code !== 0 && GH_AUTH_RE.test(probeText))) {
     return { kind: 'missing-signin', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
   }

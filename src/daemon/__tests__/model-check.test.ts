@@ -294,7 +294,10 @@ test('model-check.test.ts: Claude check — recognised-unconfirmed / rejected, n
 
 	// An alias is answered under the canonical id: the single entry is used whatever its key.
 	fake({ run: { haiku: { exit: 0, stdout: envelope({ modelUsage: { 'claude-haiku-5-5': { contextWindow: 1000000 } } }) } } });
-	assert.deepEqual((await claude('haiku', [])).inputLimit, { unit: 'tokens', max: 1000000 });
+	const alias = await claude('haiku', ['high']);
+	assert.deepEqual(alias.inputLimit, { unit: 'tokens', max: 1000000 });
+	assert.match(alias.efforts[0]!.evidence, /; the CLI ran haiku as claude-haiku-5-5$/, 'the evidence names the model the CLI actually ran');
+	assert.ok(!r.efforts[0]!.evidence.includes('the CLI ran'), 'no note when the CLI ran the requested id');
 
 	// Several entries: only the one keyed by the requested id counts.
 	fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ modelUsage: { 'claude-new-1': { contextWindow: 300000 }, 'claude-helper': { contextWindow: 100000 } } }) } } });
@@ -346,6 +349,14 @@ test("model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuse
 
 	fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ result: '' }) } } });
 	assert.match((await claude('claude-new-1', [])).error ?? '', /gave unreadable output/, 'an empty result is not a completed run');
+
+	// Several envelopes are ambiguous: a refusal in any of them refuses, otherwise the output is unreadable.
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: `${JSON.stringify({ type: 'result', subtype: 'success', is_error: true, result: 'model not available' })}\n${envelope()}\n` } } });
+	assert.equal((await claude('claude-new-1', [])).error, 'the claude CLI refused the model: model not available');
+	fake({ run: { 'claude-new-1': { exit: 0, stdout: `${envelope()}\n${envelope()}\n` } } });
+	const twice = await claude('claude-new-1', []);
+	assert.equal(twice.runs, false);
+	assert.match(twice.error ?? '', /gave unreadable output/);
 
 	fake({ run: { 'claude-new-1': { exit: 0, stdout: 'not json' } } });
 	assert.match((await claude('claude-new-1', [])).error ?? '', /gave unreadable output: exit 0: not json/);

@@ -189,17 +189,27 @@ function codexRefusal(events: readonly Record<string, unknown>[]): string | unde
 	return message;
 }
 
-async function checkCodex(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure> {
-	const notChecked = (why: string): EffortCheck[] => claimed.map(effort => ({ effort, verdict: 'rejected', evidence: why }));
-
+/** The steps every procedure starts with: `--version`, then the call that
+ *  discovers the effort levels. Either one failing to reach the CLI ends the
+ *  check with every claimed level not checked. */
+async function preflight(ctx: Context, claimed: readonly EffortLevel[], discoveryArgs: readonly string[]):
+	Promise<{ readonly cliVersion: string; readonly discovery: ProcessGroupResult } | { readonly failed: Procedure }> {
+	const notChecked = (cliVersion: string, error: string): { readonly failed: Procedure } => ({
+		failed: { cliVersion, runs: false, efforts: claimed.map(effort => ({ effort, verdict: 'rejected', evidence: 'not checked: the CLI could not be reached' })), error },
+	});
 	const version = await call(ctx, ['--version']);
 	const down = unreachable(ctx, version);
-	if (down !== undefined) return { cliVersion: '', runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: down };
+	if (down !== undefined) return notChecked('', down);
 	const cliVersion = version.exitCode === 0 ? version.stdout.trim() : '';
+	const discovery = await call(ctx, discoveryArgs);
+	const discoveryDown = unreachable(ctx, discovery);
+	return discoveryDown !== undefined ? notChecked(cliVersion, discoveryDown) : { cliVersion, discovery };
+}
 
-	const list = await call(ctx, ['debug', 'models']);
-	const listDown = unreachable(ctx, list);
-	if (listDown !== undefined) return { cliVersion, runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: listDown };
+async function checkCodex(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure> {
+	const pre = await preflight(ctx, claimed, ['debug', 'models']);
+	if ('failed' in pre) return pre.failed;
+	const { cliVersion, discovery: list } = pre;
 	const levels = codexLevels(list, ctx.modelId);
 	const efforts: EffortCheck[] = claimed.map(effort => {
 		if (levels === undefined) return { effort, verdict: 'rejected', evidence: "the CLI's model list could not be read" };
@@ -231,40 +241,34 @@ function claudeEffortNames(r: ProcessGroupResult): string[] | undefined {
 	return names.length > 0 ? names : undefined;
 }
 
-/** The JSON envelope of a `claude --print --output-format json` run: the whole
- *  stdout, else its last line that is a JSON object (a notice line may precede it). */
-function claudeEnvelope(stdout: string): Record<string, unknown> | undefined {
+/** The JSON envelopes of a `claude --print --output-format json` run: the whole
+ *  stdout, else every line that is a JSON object (a notice line may precede the
+ *  envelope). More than one envelope is ambiguous output. */
+function claudeEnvelopes(stdout: string): Record<string, unknown>[] {
 	const whole = parseJson(stdout.trim());
-	if (isRecord(whole)) return whole;
-	const lines = stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).reverse();
-	for (const line of lines) { const v = parseJson(line); if (isRecord(v)) return v; }
-	return undefined;
+	if (isRecord(whole)) return [whole];
+	return stdout.split('\n').flatMap(line => { const v = parseJson(line.trim()); return isRecord(v) ? [v] : []; });
 }
 
-/** The input limit from modelUsage: keyed by the model the CLI actually ran (its
- *  canonical id, which can differ from the requested alias). One entry is used
- *  whatever its key; with several, only the one keyed by the requested id. */
-function claudeInputLimit(ctx: Context, envelope: Record<string, unknown>): InputLimit | undefined {
+/** The input limit from modelUsage, and the model the CLI says it ran: entries
+ *  are keyed by the canonical id, which can differ from the requested alias. One
+ *  entry is used whatever its key; with several, only the one keyed by the
+ *  requested id. */
+function claudeUsage(ctx: Context, envelope: Record<string, unknown>): { readonly inputLimit?: InputLimit | undefined; readonly ranAs?: string | undefined } {
 	const usage = envelope['modelUsage'];
 	const entries = isRecord(usage) ? Object.entries(usage).filter(([, v]) => isRecord(v)) as Array<[string, Record<string, unknown>]> : [];
-	const entry = entries.length === 1 ? entries[0]?.[1] : entries.find(([k]) => k === ctx.modelId)?.[1];
-	const max = entry?.['contextWindow'];
-	if (typeof max === 'number' && Number.isInteger(max) && max > 0) return { unit: 'tokens', max };
+	const chosen = entries.length === 1 ? entries[0] : entries.find(([k]) => k === ctx.modelId);
+	const max = chosen?.[1]['contextWindow'];
+	const ranAs = chosen?.[0];
+	if (typeof max === 'number' && Number.isInteger(max) && max > 0) return { inputLimit: { unit: 'tokens', max }, ranAs };
 	log.warn({ family: ctx.family, modelId: ctx.modelId, usageKeys: entries.map(([k]) => k) }, 'model check: no input limit in the CLI output');
-	return undefined;
+	return { ranAs };
 }
 
 async function checkClaude(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure> {
-	const notChecked = (why: string): EffortCheck[] => claimed.map(effort => ({ effort, verdict: 'rejected', evidence: why }));
-
-	const version = await call(ctx, ['--version']);
-	const down = unreachable(ctx, version);
-	if (down !== undefined) return { cliVersion: '', runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: down };
-	const cliVersion = version.exitCode === 0 ? version.stdout.trim() : '';
-
-	const help = await call(ctx, ['--help']);
-	const helpDown = unreachable(ctx, help);
-	if (helpDown !== undefined) return { cliVersion, runs: false, efforts: notChecked('not checked: the CLI could not be reached'), error: helpDown };
+	const pre = await preflight(ctx, claimed, ['--help']);
+	if ('failed' in pre) return pre.failed;
+	const { cliVersion, discovery: help } = pre;
 	const names = claudeEffortNames(help);
 	const efforts: EffortCheck[] = claimed.map(effort => {
 		if (names === undefined) return { effort, verdict: 'rejected', evidence: "the CLI's --effort values could not be read" };
@@ -277,18 +281,24 @@ async function checkClaude(ctx: Context, claimed: readonly EffortLevel[]): Promi
 	const run = await call(ctx, ['--print', '--output-format', 'json', '--model', ctx.modelId], PROBE_PROMPT);
 	const runDown = unreachable(ctx, run);
 	if (runDown !== undefined) return { cliVersion, runs: false, efforts, error: runDown };
-	const envelope = claudeEnvelope(run.stdout);
-	if (envelope?.['is_error'] === true) {
-		const result = envelope['result'];
-		const message = typeof result === 'string' && result.length > 0 ? result : `api error ${String(envelope['api_error_status'] ?? envelope['subtype'] ?? 'unknown')}`;
+	const envelopes = claudeEnvelopes(run.stdout);
+	const refusal = envelopes.find(e => e['is_error'] === true);
+	if (refusal !== undefined) {
+		const result = refusal['result'];
+		const message = typeof result === 'string' && result.length > 0 ? result : `api error ${String(refusal['api_error_status'] ?? refusal['subtype'] ?? 'unknown')}`;
 		return { cliVersion, runs: false, efforts, error: `the ${ctx.kind} CLI refused the model: ${message}` };
 	}
+	const envelope = envelopes.length === 1 ? envelopes[0] : undefined;
 	const result = envelope?.['result'];
 	if (envelope === undefined || run.exitCode !== 0 || envelope['is_error'] !== false || envelope['subtype'] !== 'success' || typeof result !== 'string' || result.length === 0) {
 		return { cliVersion, runs: false, efforts, error: unreadable(ctx, run) };
 	}
-	const inputLimit = claudeInputLimit(ctx, envelope);
-	return { cliVersion, runs: true, efforts, ...(inputLimit !== undefined ? { inputLimit } : {}) };
+	const { inputLimit, ranAs } = claudeUsage(ctx, envelope);
+	// Say which model the CLI actually ran when it is not the requested id (an alias).
+	const reported = ranAs !== undefined && ranAs !== ctx.modelId
+		? efforts.map(e => ({ ...e, evidence: `${e.evidence}; the CLI ran ${ctx.modelId} as ${ranAs}` }))
+		: efforts;
+	return { cliVersion, runs: true, efforts: reported, ...(inputLimit !== undefined ? { inputLimit } : {}) };
 }
 
 // ── models.check ────────────────────────────────────────────────────────────

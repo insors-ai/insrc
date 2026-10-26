@@ -1,26 +1,25 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Procix Software India. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 /**
- * Pure overlay logic for the Model Tiers pane (standalone S001).
+ * Pure overlay logic for the Model Tiers pane (standalone S001; Epic
+ * ce99b72065d03b1b, Story s5).
  *
  * `computeEffectiveTiers` is the single source of truth the pane renders AND
  * edits against, so what the user sees and what a persisted edit resolves to
  * can never diverge. It overlays the config tiering (from `parseTiering`) onto
- * the built-in `DEFAULT_TIERS` and the `reasoningRoleTaxonomy()` role→tier
- * defaults, then clamps critical roles up to the `coreFloor` via the shipped
- * `applyCoreFloor` guard. No I/O — the pane does all config read/write through
- * the daemon-owned config service.
+ * the daemon's model definitions (models.definitions) and the
+ * `reasoningRoleTaxonomy()` role→tier defaults, then clamps critical roles up
+ * to the `coreFloor` via the shipped `applyCoreFloor` guard. Every family,
+ * model and effort the pane offers comes from the definitions answer; the TUI
+ * holds no list of its own (k2). No I/O.
  */
 
-import type { AnalyzeTiering, TierEffort, TierModel, TierName } from '../../config/analyze.js';
-import { DEFAULT_TIERS, resolveTier, TIER_EFFORTS } from '../../config/analyze.js';
+import type { AnalyzeTiering, TierModel, TierName } from '../../config/analyze.js';
 import type { Criticality } from '../../config/role-taxonomy.js';
 import { reasoningRoleTaxonomy } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
-import { shippedModelRegistry } from '../shipped-model-registry.js';
+import type { ModelDefinitionsResult } from '../services/models.js';
+
+type FamilyEntry = ModelDefinitionsResult['families'][number];
+type ModelEntry = FamilyEntry['models'][number];
 
 /** The coreFloor applied when none is configured — mirrors the guard's built-in default. */
 export const DEFAULT_CORE_FLOOR: TierName = 'mid';
@@ -38,9 +37,16 @@ export interface EffectiveRole {
 	readonly source:        'taxonomy' | 'override';
 }
 
+/** A tier as the pane shows it: the configured or default {runner, model, effort},
+ *  and whether its family serves the model (an unserved one runs the tier default
+ *  until it is approved and the daemon restarted). */
+export interface EffectiveTier extends TierModel {
+	readonly served: boolean;
+}
+
 export interface EffectiveTiers {
-	/** The {runner,model} backing each tier: config value or the built-in default. */
-	readonly tiers:           Readonly<Record<TierName, TierModel>>;
+	/** The {runner,model,effort} backing each tier: config value or the definitions' default. */
+	readonly tiers:           Readonly<Record<TierName, EffectiveTier>>;
 	readonly tierSource:      Readonly<Record<TierName, 'config' | 'default'>>;
 	readonly coreFloor:       TierName;
 	readonly coreFloorSource: 'config' | 'default';
@@ -49,20 +55,55 @@ export interface EffectiveTiers {
 	readonly staleOverrides:  readonly { readonly id: string; readonly tier: TierName }[];
 }
 
-const TIER_NAMES: readonly TierName[] = ['core', 'mid', 'cheap'];
+export const TIER_NAMES: readonly TierName[] = ['core', 'mid', 'cheap'];
+
+// ── lookups over the definitions answer ─────────────────────────────────────
+
+export function familyOf(defs: ModelDefinitionsResult, id: string): FamilyEntry | undefined {
+	return defs.families.find(f => f.id === id);
+}
+
+/** The model a family serves under `idOrAlias`, or undefined. */
+export function servedModel(defs: ModelDefinitionsResult, familyId: string, idOrAlias: string): ModelEntry | undefined {
+	return familyOf(defs, familyId)?.models.find(m => m.id === idOrAlias || m.aliases.includes(idOrAlias));
+}
+
+/** The tier a family would run by default: its tierDefaults[tier], else its
+ *  tool-loop model with no effort (the local family), else its first model. */
+export function familyDefaultTier(defs: ModelDefinitionsResult, familyId: string, tier: TierName): TierModel | undefined {
+	const family = familyOf(defs, familyId);
+	if (family === undefined) return undefined;
+	const td = family.tierDefaults?.[tier];
+	if (td !== undefined) {
+		const model = servedModel(defs, familyId, td.model);
+		return { runner: family.id, model: model?.id ?? td.model, ...(td.effort !== undefined ? { effort: td.effort } : {}) };
+	}
+	const pick = family.toolLoopModel ?? family.models[0]?.id;
+	return pick !== undefined ? { runner: family.id, model: pick, effort: '' } : undefined;
+}
 
 /**
  * Resolve the effective tiers, tier models, coreFloor, and per-role tiers by
- * overlaying `tiering` (config) onto DEFAULT_TIERS + the role taxonomy.
- * Pure — safe to call on every render.
+ * overlaying `tiering` (config) onto the definitions' defaults + the role
+ * taxonomy. A tier that does not survive parseTiering (unset, or an empty
+ * model) shows the default family's tier default, with the configured effort
+ * when tiering.efforts holds one (an explicit '' stays '') — the precedence the
+ * daemon applies. Pure — safe to call on every render.
  */
-export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
-	const tiers: Record<TierName, TierModel> = { core: DEFAULT_TIERS.core, mid: DEFAULT_TIERS.mid, cheap: DEFAULT_TIERS.cheap };
-	const tierSource: Record<TierName, 'config' | 'default'> = { core: 'default', mid: 'default', cheap: 'default' };
+export function computeEffectiveTiers(tiering: AnalyzeTiering, defs: ModelDefinitionsResult): EffectiveTiers {
+	const tiers = {} as Record<TierName, EffectiveTier>;
+	const tierSource = {} as Record<TierName, 'config' | 'default'>;
 	for (const t of TIER_NAMES) {
-		// The same fallback the config applies: a default tier keeps its configured effort.
-		tiers[t] = resolveTier(tiering, t, shippedModelRegistry());
-		if (tiering.tiers?.[t] !== undefined) tierSource[t] = 'config';
+		const configured = tiering.tiers?.[t];
+		if (configured !== undefined) {
+			tiers[t] = { ...configured, served: servedModel(defs, configured.runner, configured.model) !== undefined };
+			tierSource[t] = 'config';
+			continue;
+		}
+		const def = familyDefaultTier(defs, defs.defaultFamily, t);
+		const effort = tiering.efforts?.[t] ?? def?.effort;
+		tiers[t] = { runner: def?.runner ?? defs.defaultFamily, model: def?.model ?? '', ...(effort !== undefined ? { effort } : {}), served: def !== undefined };
+		tierSource[t] = 'default';
 	}
 
 	const coreFloor: TierName = tiering.coreFloor ?? DEFAULT_CORE_FLOOR;
@@ -93,17 +134,60 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
 	return { tiers, tierSource, coreFloor, coreFloorSource, roles, staleOverrides };
 }
 
-/** The config dot-path for a tier's runner/model/effort field (for config.write). */
+// ── tier edits (each yields the whole tier object the pane writes) ─────────
+
+/** The config dot-path for one tier field (the pane's per-field edits until it writes whole tiers). */
 export function tierFieldPath(tier: TierName, field: 'runner' | 'model' | 'effort'): string {
 	return `models.tiers.${tier}.${field}`;
 }
 
-/** The effort values the pane cycles through; '' is the CLI's own default. */
-export const EFFORT_CYCLE: readonly ('' | TierEffort)[] = ['', ...TIER_EFFORTS];
+/** The config path a whole tier object is written at (one config.write per edit). */
+export function tierPath(tier: TierName): string {
+	return `models.tiers.${tier}`;
+}
 
-/** The effort after `current` in EFFORT_CYCLE (wrapping back to the CLI default). */
-export function nextEffort(current: TierEffort | undefined): '' | TierEffort {
-	return EFFORT_CYCLE[(EFFORT_CYCLE.indexOf(current ?? '') + 1) % EFFORT_CYCLE.length]!;
+/** The tier after switching to `familyId`: that family's default for the tier. */
+export function switchFamily(defs: ModelDefinitionsResult, tier: TierName, familyId: string): TierModel | undefined {
+	return familyDefaultTier(defs, familyId, tier);
+}
+
+/** The tier after switching to a model its family serves: canonical id, and the
+ *  current effort only when the new model accepts it. */
+export function switchModel(defs: ModelDefinitionsResult, current: TierModel, idOrAlias: string): TierModel | undefined {
+	const model = servedModel(defs, current.runner, idOrAlias);
+	if (model === undefined) return undefined;
+	const effort = current.effort !== undefined && current.effort !== '' && model.efforts.includes(current.effort) ? current.effort : '';
+	return { runner: current.runner, model: model.id, effort };
+}
+
+/** The effort choices for a tier: '' (the CLI's default) then its model's efforts;
+ *  none for a model its family does not serve. */
+export function effortChoices(defs: ModelDefinitionsResult, current: TierModel): readonly string[] {
+	const model = servedModel(defs, current.runner, current.model);
+	return model === undefined ? [] : ['', ...model.efforts];
+}
+
+/** The item after `current` in `list`, wrapping; the first item when `current` is absent. */
+export function nextInCycle(list: readonly string[], current: string | undefined): string | undefined {
+	if (list.length === 0) return undefined;
+	return list[(list.indexOf(current ?? '') + 1) % list.length];
+}
+
+/** What a typed model id means for a family: a model it serves (by id or alias),
+ *  an id to check through the family's CLI, or a refusal (a family without a
+ *  CLI only offers its listed models). */
+export type TypedModel =
+	| { readonly kind: 'served'; readonly model: string }
+	| { readonly kind: 'check' }
+	| { readonly kind: 'refused'; readonly reason: string };
+
+export function resolveTypedModel(defs: ModelDefinitionsResult, familyId: string, typed: string): TypedModel {
+	const model = servedModel(defs, familyId, typed);
+	if (model !== undefined) return { kind: 'served', model: model.id };
+	const family = familyOf(defs, familyId);
+	if (family === undefined) return { kind: 'refused', reason: `unknown family ${familyId}` };
+	if (family.cliKind === undefined) return { kind: 'refused', reason: `only listed ${family.displayName} models are selectable` };
+	return { kind: 'check' };
 }
 
 /** The config dot-path for a role's tier override.

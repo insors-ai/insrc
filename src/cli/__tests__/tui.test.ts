@@ -266,8 +266,20 @@ test('bottom box: Setup model-pull streams ollama progress into the message box'
 	unmount();
 });
 
+/** A fake models.definitions answer for the Model Tiers pane (names unlike the shipped file). */
+const PANE_DEFS = {
+	version: 1, defaultFamily: 'cli-codex' as const,
+	families: [
+		{ id: 'cli-claude' as const, cliKind: 'claude' as const, displayName: 'C', tierDefaults: { core: { model: 'cl-a' }, mid: { model: 'cl-a' }, cheap: { model: 'cl-a' } }, summariserModel: 'cl-a',
+			models: [{ id: 'cl-a', aliases: [], efforts: [], source: 'shipped' as const }] },
+		{ id: 'cli-codex' as const, cliKind: 'codex' as const, displayName: 'X', tierDefaults: { core: { model: 'fx-core' }, mid: { model: 'fx-mid' }, cheap: { model: 'fx-cheap' } }, summariserModel: 'fx-cheap',
+			models: [{ id: 'fx-core', aliases: [], efforts: ['lo', 'turbo', 'max'], source: 'shipped' as const }, { id: 'fx-mid', aliases: [], efforts: ['max'], source: 'shipped' as const }, { id: 'fx-cheap', aliases: [], efforts: [], source: 'shipped' as const }] },
+	],
+};
+
 test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config', async () => {
 	const svc = fakeServices();
+	svc.models.definitions = async () => PANE_DEFS;
 	svc.config.show = async () => ({ models: { tasks: { 'context.assemble': 'cheap' } } });
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
@@ -275,7 +287,7 @@ test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from co
 	await settle();
 	const frame = lastFrame() ?? '';
 	assert.match(frame, /Model Tiers/);
-	assert.match(frame, /opus/);          // core-tier default model
+	assert.match(frame, /fx-core/);       // core-tier default model, from the definitions
 	assert.match(frame, /coreFloor/);
 	assert.match(frame, /review/);        // a critical role row (→ core)
 	assert.match(frame, /override/);      // the context.assemble override is surfaced (in-window)
@@ -473,12 +485,13 @@ test('the TUI tests run with fakeServices carrying the team entry', () => {
 	assert.equal(typeof svc.team.teamRefresh, 'function');
 });
 
-test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max/ultra and writes models.tiers.<tier>.effort', async () => {
+test("TUI ModelTiersPane shows an effort row per tier, cycles the model's efforts from the definitions and writes models.tiers.<tier>.effort", async () => {
 	const svc = fakeServices();
+	svc.models.definitions = async () => PANE_DEFS;
 	const writes: Array<[string, unknown]> = [];
 	let tiers: Record<string, unknown> = {
-		core: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'xhigh' },
-		mid:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'max' },
+		core: { runner: 'cli-codex', model: 'fx-core', effort: 'turbo' },
+		mid:  { runner: 'cli-codex', model: 'fx-mid', effort: 'max' },
 	};
 	svc.config.show = async () => ({ models: { tiers } });
 	svc.config.write = async (path: string, value: unknown) => {
@@ -493,7 +506,7 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	await settle();
 	const frame = lastFrame() ?? '';
 	assert.match(frame, /runner \/ model \/ effort/);
-	assert.match(frame, /core\s+.*cli-codex.*gpt-6\.1-sol.*xhigh/);
+	assert.match(frame, /core\s+.*cli-codex.*fx-core.*turbo/);
 	assert.match(frame, /mid\s+.*max/);
 	assert.match(frame, /cheap\s+.*\(cli default effort\)/);
 
@@ -501,11 +514,9 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	stdin.write('e'); await settle();
 	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'max']);
 	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'ultra'], 'the cycle offers every shipped effort level');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], "the model's last level wraps to the CLI default");
 	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'the last level wraps to the CLI default');
-	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'low']);
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'lo'], "the cycle offers only the model's efforts from the definitions");
 
 	// The rows below still edit their own keys: the coreFloor is now row 10.
 	for (let i = 0; i < 7; i++) { stdin.write('j'); await settle(); }
@@ -514,16 +525,17 @@ test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/me
 	unmount();
 });
 
-test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset config (shipped-only registry)", async () => {
+test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset config", async () => {
 	const svc = fakeServices();
+	svc.models.definitions = async () => PANE_DEFS;
 	svc.config.show = async () => ({});
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('5');          // → Model Tiers pane
 	await settle();
 	const frame = lastFrame() ?? '';
-	assert.match(frame, /core\s+.*cli-claude.*claude-opus-5-5/);
-	assert.match(frame, /mid\s+.*cli-claude.*claude-sonnet-5/);
-	assert.match(frame, /cheap\s+.*cli-claude.*claude-haiku-5-5/);
+	assert.match(frame, /core\s+.*cli-codex.*fx-core/);
+	assert.match(frame, /mid\s+.*cli-codex.*fx-mid/);
+	assert.match(frame, /cheap\s+.*cli-codex.*fx-cheap/);
 	unmount();
 });

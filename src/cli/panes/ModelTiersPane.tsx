@@ -18,11 +18,12 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { parseTiering, type TierName } from '../../config/analyze.js';
+import type { ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import {
 	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
-	ROLE_TIERS_PATH, nextRoleTiers, nextEffort,
+	ROLE_TIERS_PATH, nextRoleTiers, effortChoices, nextInCycle,
 	type EffectiveTiers, type EffectiveRole,
 } from './model-tiers.js';
 
@@ -58,6 +59,7 @@ export function ModelTiersPane(): ReactElement {
 	const captured = useCaptured();
 
 	const [raw, setRaw] = useState<Record<string, unknown> | undefined>(undefined);
+	const [defs, setDefs] = useState<ModelDefinitionsResult | undefined>(undefined);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | undefined>(undefined);
 	const [malformed, setMalformed] = useState(false);
@@ -69,20 +71,20 @@ export function ModelTiersPane(): ReactElement {
 	useEffect(() => {
 		let live = true;
 		setLoading(true); setError(undefined);
-		svc.config.show()
-			.then(cfg => { if (live) { setRaw(cfg); } })
+		Promise.all([svc.config.show(), svc.models.definitions()])
+			.then(([cfg, d]) => { if (live) { setRaw(cfg); setDefs(d); } })
 			.catch((err: unknown) => { if (live) setError(err instanceof Error ? err.message : String(err)); })
 			.finally(() => { if (live) setLoading(false); });
 		return () => { live = false; };
 	}, [svc, nonce]);
 
 	const eff = useMemo<EffectiveTiers | undefined>(() => {
-		if (raw === undefined) return undefined;
+		if (raw === undefined || defs === undefined) return undefined;
 		const models = raw['models'];
-		if (models !== undefined && !isObj(models)) { setMalformed(true); return computeEffectiveTiers(parseTiering({})); }
+		if (models !== undefined && !isObj(models)) { setMalformed(true); return computeEffectiveTiers(parseTiering({}), defs); }
 		setMalformed(false);
-		return computeEffectiveTiers(parseTiering(isObj(models) ? models : {}));
-	}, [raw]);
+		return computeEffectiveTiers(parseTiering(isObj(models) ? models : {}), defs);
+	}, [raw, defs]);
 
 	const rows = useMemo<Row[]>(() => (eff !== undefined ? buildRows(eff) : []), [eff]);
 	const cur = rows[Math.min(sel, Math.max(0, rows.length - 1))];
@@ -136,8 +138,9 @@ export function ModelTiersPane(): ReactElement {
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
 		// The effort row cycles CLI default → low → … → max and saves each step.
-		if (input === 'e' && cur?.kind === 'tier' && cur.field === 'effort' && eff !== undefined) {
-			save(cur.path, nextEffort(eff.tiers[cur.tier].effort));
+		if (input === 'e' && cur?.kind === 'tier' && cur.field === 'effort' && eff !== undefined && defs !== undefined) {
+			const next = nextInCycle(effortChoices(defs, eff.tiers[cur.tier]), eff.tiers[cur.tier].effort);
+			if (next !== undefined) save(cur.path, next);
 			return;
 		}
 		if (input === 'e' && cur !== undefined) {

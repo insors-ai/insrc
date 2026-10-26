@@ -25,7 +25,6 @@ import { fileURLToPath } from 'node:url';
 
 const HOME = mkdtempSync(join(tmpdir(), 'tui-shipped-registry-'));
 process.env['HOME'] = HOME;
-const { computeEffectiveTiers } = await import('../panes/model-tiers.js');
 const { reviewArtifact } = await import('../services/workflow.js');
 const { shippedModelRegistry } = await import('../shipped-model-registry.js');
 const { _setModelCatalogDirForTests } = await import('../../daemon/model-catalog.js');
@@ -35,7 +34,7 @@ const { CliProvider } = await import('../../agent/providers/cli-provider.js');
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-test("tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry", async () => {
+test("tui-shipped-registry.test.ts: reviewArtifact succeeds with getModelRegistry stubbed to throw and the store unreadable; src/cli/** does not import getModelRegistry", async () => {
 	try {
 		_setModelCatalogDirForTests(join(HOME, 'no-such-definitions'));
 		_setApprovedModelsPathForTests(HOME);   // a directory: unreadable as the store file
@@ -46,12 +45,7 @@ test("tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact suc
 		const def = SHIPPED_DEFINITIONS.families.find(f => f.id === SHIPPED_DEFINITIONS.defaultFamily)!;
 		const canonical = (alias: string): string => def.models.find(m => m.id === alias || (m.aliases ?? []).includes(alias))!.id;
 
-		// The model-tiers pane's data.
-		const eff = computeEffectiveTiers({});
-		for (const tier of ['core', 'mid', 'cheap'] as const) {
-			assert.equal(eff.tiers[tier].runner, SHIPPED_DEFINITIONS.defaultFamily, tier);
-			assert.equal(eff.tiers[tier].model, canonical(def.tierDefaults![tier].model), tier);
-		}
+		// (The model-tiers pane now renders the daemon's models.definitions answer: src/cli/__tests__/model-tiers.test.ts.)
 
 		// The review command: loadAnalyzeConfig + createRoleRouter + provider construction, end to end.
 		let seen: { provider: unknown; model: string } | undefined;

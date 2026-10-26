@@ -4,31 +4,54 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit tests for the Model Tiers pane overlay (standalone S001) — the pure
- * computeEffectiveTiers logic + path helpers. Uses the REAL DEFAULT_TIERS +
- * reasoningRoleTaxonomy (both pure), no ink/daemon.
+ * Unit tests for the Model Tiers pane overlay (standalone S001; Epic
+ * ce99b72065d03b1b, Story s5) — the pure computeEffectiveTiers logic, the tier
+ * edit helpers and the path helpers, over a FAKE models.definitions answer whose
+ * families, models and efforts differ from the shipped file (so a value can only
+ * have come from the answer), and the real reasoningRoleTaxonomy. No ink/daemon.
  *
  * Run: npx tsx --test src/cli/__tests__/model-tiers.test.ts
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import type { AnalyzeTiering } from '../../config/analyze.js';
+import { parseTiering, type AnalyzeTiering } from '../../config/analyze.js';
+import type { ModelDefinitionsResult } from '../services/models.js';
 import {
-	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
-	ROLE_TIERS_PATH, nextRoleTiers,
+	computeEffectiveTiers as compute, tierFieldPath, tierPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
+	ROLE_TIERS_PATH, nextRoleTiers, switchFamily, switchModel, effortChoices, nextInCycle, resolveTypedModel,
 } from '../panes/model-tiers.js';
 
+/** A fake answer: nothing here matches the shipped definitions. */
+const FAKE: ModelDefinitionsResult = {
+	version: 9,
+	defaultFamily: 'cli-codex',
+	families: [
+		{ id: 'cli-claude', cliKind: 'claude', displayName: 'Fake Claude',
+			tierDefaults: { core: { model: 'fc-big' }, mid: { model: 'fc-big' }, cheap: { model: 'fc-small' } }, summariserModel: 'fc-small',
+			models: [{ id: 'fc-big', aliases: [], efforts: ['deep'], source: 'shipped' }, { id: 'fc-small', aliases: [], efforts: [], source: 'shipped' }] },
+		{ id: 'cli-codex', cliKind: 'codex', displayName: 'Fake Codex',
+			tierDefaults: { core: { model: 'fx', effort: 'turbo' }, mid: { model: 'fx-lite', effort: 'lo' }, cheap: { model: 'mini' } }, summariserModel: 'fx-lite',
+			models: [{ id: 'fx', aliases: [], efforts: ['lo', 'turbo'], source: 'shipped' }, { id: 'fx-lite-1', aliases: ['fx-lite', 'mini'], efforts: ['lo'], source: 'shipped' }] },
+		{ id: 'ollama', displayName: 'Fake Local', toolLoopModel: 'loc:2',
+			models: [{ id: 'loc:1', aliases: [], efforts: [], source: 'shipped' }, { id: 'loc:2', aliases: [], efforts: [], source: 'shipped' }] },
+	],
+};
+
+const computeEffectiveTiers = (t: AnalyzeTiering) => compute(t, FAKE);
 const role = (eff: ReturnType<typeof computeEffectiveTiers>, id: string) => eff.roles.find(r => r.id === id)!;
 
 // ── empty tiering → built-in defaults ───────────────────────────────────────
 
 test('empty tiering: tiers = the definitions\' tier defaults as canonical ids (source default), coreFloor = mid (default)', () => {
 	const eff = computeEffectiveTiers({});
-	assert.deepEqual(eff.tiers.core, { runner: 'cli-claude', model: 'claude-opus-5-5' });
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'claude-sonnet-5' });
-	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-claude', model: 'claude-haiku-5-5' });
+	assert.deepEqual(eff.tiers.core, { runner: 'cli-codex', model: 'fx', effort: 'turbo', served: true });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'fx-lite-1', effort: 'lo', served: true });
+	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-codex', model: 'fx-lite-1', served: true });
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.coreFloor, 'mid');
 	assert.equal(eff.coreFloorSource, 'default');
@@ -51,9 +74,9 @@ test('empty tiering: a peripheral role resolves to its taxonomy default (mid/che
 // ── config overlay ──────────────────────────────────────────────────────────
 
 test('a configured tier model overrides the default and is marked source=config', () => {
-	const t: AnalyzeTiering = { tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol' } } };
+	const t: AnalyzeTiering = { tiers: { mid: { runner: 'cli-claude', model: 'fc-big' } } };
 	const eff = computeEffectiveTiers(t);
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol' });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'fc-big', served: true });
 	assert.equal(eff.tierSource.mid, 'config');
 	assert.equal(eff.tierSource.core, 'default'); // untouched tier stays default
 });
@@ -152,18 +175,49 @@ test('nextRoleTiers does not mutate the input map', () => {
 	assert.notEqual(next, current);
 });
 
-test("computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high", async () => {
-	const { parseTiering } = await import('../../config/analyze.js');
-	const { computeEffectiveTiers: effective, nextEffort, EFFORT_CYCLE } = await import('../panes/model-tiers.js');
-	const eff = effective(parseTiering({ tiers: {
-		core: { runner: 'cli-codex', model: '', effort: 'high' },
-		mid:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'medium' },
-	} }));
-	assert.equal(eff.tiers.core.effort, 'high', 'the dropped core tier shows its configured effort');
-	assert.equal(eff.tierSource.core, 'default');
-	assert.equal(eff.tiers.mid.effort, 'medium');
-	assert.equal(eff.tiers.cheap.effort, undefined);
-	// The pane's cycle: CLI default → each shipped effort level → CLI default.
-	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
-	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', 'ultra', '']);
+test("model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence", () => {
+	// core.model '' with core.effort 'high': the tier is dropped, the effort kept over the default's 'turbo'.
+	const eff = compute(parseTiering({ tiers: {
+		core:  { runner: 'cli-codex', model: '', effort: 'high' },
+		mid:   { runner: 'cli-codex', model: '', effort: '' },
+		cheap: { runner: 'cli-codex', model: 'fx', effort: 'lo' },
+	} }), FAKE);
+	assert.deepEqual([eff.tierSource.core, eff.tiers.core.model, eff.tiers.core.effort], ['default', 'fx', 'high']);
+	// An explicit '' stays '' (the CLI default), not the default's 'lo'.
+	assert.deepEqual([eff.tierSource.mid, eff.tiers.mid.model, eff.tiers.mid.effort], ['default', 'fx-lite-1', '']);
+	assert.deepEqual([eff.tierSource.cheap, eff.tiers.cheap.effort], ['config', 'lo']);
+	// No effort configured: the tier default's.
+	assert.equal(compute({}, FAKE).tiers.core.effort, 'turbo');
+
+	// A configured model its family does not serve is shown as not served, with no effort choices.
+	const unserved = compute({ tiers: { core: { runner: 'cli-codex', model: 'gpt-unknown', effort: 'turbo' } } }, FAKE);
+	assert.equal(unserved.tiers.core.served, false);
+	assert.deepEqual(effortChoices(FAKE, unserved.tiers.core), []);
+	// Effort choices are '' plus the model's efforts from the answer, cycling back to ''.
+	assert.deepEqual(effortChoices(FAKE, { runner: 'cli-codex', model: 'fx' }), ['', 'lo', 'turbo']);
+	assert.deepEqual(['', 'lo', 'turbo'].map(e => nextInCycle(effortChoices(FAKE, { runner: 'cli-codex', model: 'fx' }), e)), ['lo', 'turbo', '']);
+	assert.equal(nextInCycle([], 'x'), undefined);
+
+	// The pane module holds no list of its own.
+	const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'panes', 'model-tiers.ts'), 'utf8');
+	assert.doesNotMatch(src, /\b(DEFAULT_TIERS|TIER_EFFORTS|resolveTier|shippedModelRegistry)\b/);
+});
+
+test('model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)', () => {
+	// Family switch: the family's tierDefaults[tier]; for a family without tierDefaults, its toolLoopModel with ''.
+	assert.deepEqual(switchFamily(FAKE, 'core', 'cli-claude'), { runner: 'cli-claude', model: 'fc-big' });
+	assert.deepEqual(switchFamily(FAKE, 'mid', 'cli-codex'), { runner: 'cli-codex', model: 'fx-lite-1', effort: 'lo' });
+	assert.deepEqual(switchFamily(FAKE, 'cheap', 'ollama'), { runner: 'ollama', model: 'loc:2', effort: '' });
+	assert.equal(switchFamily(FAKE, 'core', 'nope'), undefined);
+
+	// Model switch keeps an accepted effort and drops one the new model does not list.
+	assert.deepEqual(switchModel(FAKE, { runner: 'cli-codex', model: 'fx', effort: 'lo' }, 'fx-lite-1'), { runner: 'cli-codex', model: 'fx-lite-1', effort: 'lo' });
+	assert.deepEqual(switchModel(FAKE, { runner: 'cli-codex', model: 'fx', effort: 'turbo' }, 'mini'), { runner: 'cli-codex', model: 'fx-lite-1', effort: '' });
+	assert.equal(switchModel(FAKE, { runner: 'cli-codex', model: 'fx' }, 'gpt-unknown'), undefined);
+
+	// Typed ids: an alias resolves to the canonical id; an unserved CLI id asks for a check; an unserved local id is refused.
+	assert.deepEqual(resolveTypedModel(FAKE, 'cli-codex', 'mini'), { kind: 'served', model: 'fx-lite-1' });
+	assert.deepEqual(resolveTypedModel(FAKE, 'cli-claude', 'fc-new'), { kind: 'check' });
+	assert.deepEqual(resolveTypedModel(FAKE, 'ollama', 'loc:9'), { kind: 'refused', reason: 'only listed Fake Local models are selectable' });
+	assert.equal(tierPath('mid'), 'models.tiers.mid');
 });

@@ -80,6 +80,7 @@ import {
 	type CacheKey,
 } from './cache.js';
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
+import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
@@ -415,7 +416,7 @@ async function servedFromCache(
 type ShaperEntryArgs = Omit<RunShaperArgs, 'connectionExecution'>;
 
 /** One cache implementation shared by a strict invocation and the unattached saved entry. */
-async function prepareShaperCache(args: ShaperEntryArgs) {
+async function prepareShaperCache(args: ShaperEntryArgs, execution?: import('../../shared/step-context.js').ConnectionExecutionContext) {
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
 	// (1) Load prompt content; we need its hash for the cache key.
@@ -446,7 +447,7 @@ async function prepareShaperCache(args: ShaperEntryArgs) {
 	// (3) Cache lookup, BEFORE the scope is resolved: the key does not depend
 	// on the resolved scope, so a hit needs none of it. A failure to resolve
 	// something the cache does not depend on cannot make a hit unreachable.
-	const cached = readBundle(runId, cacheKey, opts);
+	const cached = execution?.mode === 'session-memory' ? null : readBundle(runId, cacheKey, { ...opts, connectionExecution: execution ?? opts.connectionExecution });
 	if (cached !== null) {
 		const scopeCheck = checksScopeState(invocationMode, shaperId, opts)
 			? (scope: ResolvedScope) => checkScopeState(shaperId, scope)
@@ -459,7 +460,7 @@ async function prepareShaperCache(args: ShaperEntryArgs) {
 			);
 			return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: withCurrentHint(cached, inputs) };
 		}
-		invalidateBundle(runId, cacheKey);
+		invalidateBundle(runId, cacheKey, execution);
 	}
 
 	return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: null };
@@ -478,11 +479,13 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	const execution = requireConnectionExecution(args.connectionExecution);
 	if (args.opts?.connectionExecution !== undefined && args.opts.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
 	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
 
-	const { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle } = await prepareShaperCache(args);
+	const { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle } = await prepareShaperCache(args, execution);
 	if (cachedBundle !== null) return cachedBundle;
 
 	// (4) A miss. Resolve the scope ONCE, for every mode. Everything below
@@ -537,7 +540,9 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		},
 	}));
 	if (pipelineBundle !== null) {
-		writeBundle(runId, cacheKey, pipelineBundle.bundle);
+		await assertSessionReuse(execution);
+		assertSessionReuseNow(execution);
+		if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, pipelineBundle.bundle, execution);
 		log.info(
 			{
 				runId,
@@ -613,7 +618,9 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	}
 
 	// (8) Persist + return.
-	writeBundle(runId, cacheKey, bundle);
+	await assertSessionReuse(execution);
+	assertSessionReuseNow(execution);
+	if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, bundle, execution);
 	log.info(
 		{ runId, mode: invocationMode, shaperId, toolCalls: toolCallCount },
 		'shaper invocation complete',

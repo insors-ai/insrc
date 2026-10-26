@@ -1,3 +1,4 @@
+import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
@@ -67,10 +68,13 @@ export async function handlePlan(
 	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitBundle | StepOutputEmitNarrow | StepOutputError> {
 	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = await decodeState(input.state);
+		state = await decodeState(input.state, execution);
+		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_plan');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -176,7 +180,7 @@ export async function handlePlan(
 			prompt:          step.systemPrompt,
 			userTurn:        step.userTurn,
 			schema:          step.schema as unknown as Record<string, unknown>,
-			state:           await reencodeState(input.state, pauseState),
+			state:           await reencodeState(input.state, pauseState, execution),
 			explorationId:   step.explorationId,
 			explorationType: step.explorationType,
 		};
@@ -235,7 +239,7 @@ export async function handlePlan(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    await reencodeState(input.state, nextState),
+		state:    await reencodeState(input.state, nextState, execution),
 	};
 }
 

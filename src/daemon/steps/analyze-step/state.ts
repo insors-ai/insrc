@@ -28,6 +28,8 @@
  * See state-store.ts for the store's TTL + LRU eviction contract.
  */
 
+import { assertSessionReuseNow, assertSessionReuse } from '../../../analyze/session-reuse.js';
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 import type { AnalyzeScope, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type {
 	ExecutedPlan,
@@ -122,14 +124,16 @@ export class StepStateDecodeError extends Error {
  * (Kept the `encodeState` name so the phase handlers don't need to
  * change; the on-wire shape changed underneath.)
  */
-export async function encodeState(payload: StepStatePayload): Promise<string> {
+export async function encodeState(payload: StepStatePayload, execution?: ConnectionExecutionContext): Promise<string> {
+ await assertSessionReuse(execution);
+ assertSessionReuseNow(execution);
 	if (payload.version !== STATE_VERSION) {
 		throw new StepStateDecodeError(
 			'wrong-version',
 			`encodeState: payload version ${String(payload.version)} != expected ${STATE_VERSION}`,
 		);
 	}
-	return saveState(payload);
+	return saveState(payload, execution);
 }
 
 /**
@@ -140,14 +144,16 @@ export async function encodeState(payload: StepStatePayload): Promise<string> {
  * ~1 live token rather than leaking one per turn; start (first mint) keeps calling
  * encodeState and bundle keeps its terminal releaseState.
  */
-export async function reencodeState(previousToken: string, payload: StepStatePayload): Promise<string> {
+export async function reencodeState(previousToken: string, payload: StepStatePayload, execution?: ConnectionExecutionContext): Promise<string> {
+ await assertSessionReuse(execution);
+ assertSessionReuseNow(execution);
 	if (payload.version !== STATE_VERSION) {
 		throw new StepStateDecodeError(
 			'wrong-version',
 			`reencodeState: payload version ${String(payload.version)} != expected ${STATE_VERSION}`,
 		);
 	}
-	return replaceState(previousToken, payload);
+	return replaceState(previousToken, payload, execution);
 }
 
 /**
@@ -156,7 +162,9 @@ export async function reencodeState(previousToken: string, payload: StepStatePay
  * StepStateDecodeError on unknown tokens (the daemon was restarted,
  * the token expired, malformed token shape).
  */
-export async function decodeState(token: string): Promise<StepStatePayload> {
+export async function decodeState(token: string, execution?: ConnectionExecutionContext): Promise<StepStatePayload> {
+ await assertSessionReuse(execution);
+ assertSessionReuseNow(execution);
 	if (typeof token !== 'string' || token.length < 8 || token.length > 128) {
 		throw new StepStateDecodeError(
 			'malformed',
@@ -166,7 +174,7 @@ export async function decodeState(token: string): Promise<StepStatePayload> {
 		);
 	}
 	try {
-		return await loadState(token);
+		return await loadState(token, execution);
 	} catch (err) {
 		if (err instanceof StateTokenNotFound) {
 			throw new StepStateDecodeError('malformed', err.message);

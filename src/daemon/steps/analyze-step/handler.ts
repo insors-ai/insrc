@@ -1,3 +1,4 @@
+import { beginSessionReuse, assertSessionReuse, assertSessionReuseNow } from '../../../analyze/session-reuse.js';
 import { assertAnalysisAudience, analysisAdmissionEnvelope } from '../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -57,8 +58,9 @@ const log = getLogger('mcp:analyze-step:handler');
  * `errorResult('internal')`.
  */
 export async function handleAnalyzeStep(input: unknown, execution?: ConnectionExecutionContext): Promise<StepMcpEnvelope> {
-	try { assertAnalysisAudience(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
+	try { assertAnalysisAudience(execution); await beginSessionReuse(execution); assertSessionReuseNow(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	const result = await dispatch(input, execution);
+	try { await assertSessionReuse(execution); assertSessionReuseNow(execution); } catch (error) { return analysisAdmissionEnvelope(error); }
 	if (TRACE_PATH !== undefined && execution?.mode !== 'session-memory') {
 		try {
 			appendFileSync(

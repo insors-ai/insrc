@@ -56,7 +56,7 @@ export interface SessionConnectionExecution extends ConnectionExecutionBase {
 export type ConnectionExecutionContext = SavedConnectionExecution | SessionConnectionExecution;
 
 export class ConnectionExecutionError extends Error {
-	constructor(readonly code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary') {
+	constructor(readonly code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit') {
 		super(code);
 		this.name = 'ConnectionExecutionError';
 	}

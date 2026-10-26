@@ -25,6 +25,8 @@
  * (different repoId) which matches the V1 repo-scoped policy.
  */
 
+import { assertAnalysisConnectionExecution } from '../analyze/connection-access.js';
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { createHash } from 'node:crypto';
 import { Packr, Unpackr } from 'msgpackr';
 
@@ -120,7 +122,10 @@ export async function getCachedExploration(
 	repo:            string,
 	lastIndexedAtMs: bigint,
 	exp:             Exploration,
+ execution?: ConnectionExecutionContext,
 ): Promise<ExplorationOutput | null> {
+ assertAnalysisConnectionExecution(execution);
+ if (execution?.mode === 'session-memory') return null;
 	const store = await getGraphStore();
 	const repoId = lookupRepoIdInTxn(store, repo);
 	if (repoId === undefined) return null;
@@ -141,7 +146,10 @@ export async function putCachedExploration(
 	lastIndexedAtMs: bigint,
 	exp:             Exploration,
 	output:          ExplorationOutput,
+ execution?: ConnectionExecutionContext,
 ): Promise<void> {
+ assertAnalysisConnectionExecution(execution);
+ if (execution?.mode === 'session-memory') return;
 	await withWriteTxn(s => {
 		const repoId = lookupRepoIdInTxn(s, repo);
 		if (repoId === undefined) return;

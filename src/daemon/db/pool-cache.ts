@@ -17,6 +17,9 @@
  * Scope: one cache per daemon process; shared across all sessions
  * pointing at the same repoPath.
  */
+import { statSync } from 'node:fs';
+import { connectionsPath } from './config.js';
+import type { SafeConnection } from '../../shared/connection-management.js';
 import { getLogger } from '../../shared/logger.js';
 import { ConnectionUseError } from './lease-gate.js';
 import { guardedDriver } from './driver-guard.js';
@@ -39,6 +42,7 @@ export class SessionAccessError extends Error {
 }
 interface SessionResolverBinding {
  readonly resolve: () => Promise<ConnectionResolver>;
+ readonly temporaryRevisions?: (() => readonly SafeConnection[]) | undefined;
  readonly assertActive?: (() => void) | undefined;
  readonly retainWork?: ((work: Promise<unknown>) => void) | undefined;
 }
@@ -47,6 +51,26 @@ const sessionResolvers = new WeakMap<ConnectionAccessContext, SessionResolverBin
 export function bindSessionConnectionResolver(access: Readonly<ConnectionAccessContext>, resolve: () => Promise<ConnectionResolver>, ports: Omit<SessionResolverBinding, 'resolve'> = {}): void {
 	if (!access.sessionHandle || !Object.isFrozen(access) || sessionResolvers.has(access)) throw new SessionAccessError();
 	sessionResolvers.set(access, { resolve, ...ports });
+}
+/** Registry identity metadata only; a source payload is never read by this check. */
+export function sessionRegistryStamp(access: ConnectionAccessContext): string {
+ const binding = sessionResolvers.get(access);
+ if (!binding?.assertActive || !binding.temporaryRevisions) throw new SessionAccessError();
+ binding.assertActive();
+ try { const value = statSync(connectionsPath(access.lookupRoot), { bigint: true }); return `${value.dev}:${value.ino}:${value.size}:${value.mtimeNs}:${value.ctimeNs}`; }
+ catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'missing'; throw new SessionAccessError(); }
+}
+/** Synchronous check immediately before result reuse closes the async snapshot/publication gap. */
+export function sessionRevisionCheck(access: ConnectionAccessContext, expected: readonly SafeConnection[], registryStamp: string): () => void {
+ const binding = sessionResolvers.get(access);
+ if (!binding?.assertActive || !binding.temporaryRevisions) throw new SessionAccessError();
+ const vector = (entries: readonly SafeConnection[]) => JSON.stringify(entries.map(entry => [entry.key.scope, entry.key.id, entry.revision]).sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+ const baseline = vector(expected);
+ return () => {
+  binding.assertActive!();
+  const saved = CACHE.get(access.lookupRoot);
+  if (!saved || sessionRegistryStamp(access) !== registryStamp || vector([...saved.safeList(), ...binding.temporaryRevisions!()]) !== baseline) throw new SessionAccessError();
+ };
 }
 /** Saved reads retain the caller's own directory, independently of registry membership. */
 export function createConnectionResolver(ports: ResolverPorts = {}): ConnectionResolver {

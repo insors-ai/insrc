@@ -1,3 +1,4 @@
+import { assertSessionReuseNow, beginSessionReuse, deriveSessionContinuation } from '../../../../analyze/session-reuse.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
@@ -63,10 +64,13 @@ export async function handleNarrow(
 	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitBundle | StepOutputEmitNarrow | StepOutputError> {
 	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	// (1) Decode + stage-check.
 	let state: StepStatePayload;
 	try {
-		state = await decodeState(input.state);
+		state = await decodeState(input.state, execution);
+		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_narrow');
 	} catch (err) {
 		if (err instanceof StepStateDecodeError) {
@@ -165,13 +169,14 @@ export async function handleNarrow(
 	// (4) Cache the finalized output (same key executePlan uses). A failed
 	//     output is never cached: the cache holds successful outputs only, and
 	//     a stored failure would be served to every later run.
-	if (pausedExp !== undefined && finalizedOutput.type !== 'failed') {
+	if (execution?.mode !== 'session-memory' && pausedExp !== undefined && finalizedOutput.type !== 'failed') {
 		try {
 			await putCachedExploration(
 				state.repoPath,
 				BigInt(state.repoIndexedAt ?? 0),
 				pausedExp,
 				finalizedOutput,
+				execution,
 			);
 		} catch (err) {
 			log.warn(
@@ -183,6 +188,7 @@ export async function handleNarrow(
 
 	// (5) Continue stepPlan from the resume state, injecting the just-
 	//     finalized output.
+	assertSessionReuseNow(execution);
 	const carriedOutputs = state.narrow.resumeState.outputs.slice();
 	carriedOutputs.push({
 		id:     state.narrow.explorationId,
@@ -218,12 +224,12 @@ export async function handleNarrow(
 		// The request's size as the start phase measured it, for a lookup that sizes its own work.
 		requestSize:         state.intent.scope,
 		plan:                state.plan,
-		resumeState: {
+		resumeState: await deriveSessionContinuation(state.narrow.resumeState, {
 			results:      carriedResults,
 			outputs:      carriedOutputs,
 			totalCached:  state.narrow.resumeState.totalCached,
 			totalMsSoFar: state.narrow.resumeState.totalMsSoFar,
-		},
+		}, execution),
 	});
 
 	if (step.kind === 'pending') {
@@ -255,7 +261,7 @@ export async function handleNarrow(
 			prompt:          step.systemPrompt,
 			userTurn:        step.userTurn,
 			schema:          step.schema as unknown as Record<string, unknown>,
-			state:           await reencodeState(input.state, pauseState),
+			state:           await reencodeState(input.state, pauseState, execution),
 			explorationId:   step.explorationId,
 			explorationType: step.explorationType,
 		};
@@ -308,7 +314,7 @@ export async function handleNarrow(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    await reencodeState(input.state, nextState),
+		state:    await reencodeState(input.state, nextState, execution),
 	};
 }
 

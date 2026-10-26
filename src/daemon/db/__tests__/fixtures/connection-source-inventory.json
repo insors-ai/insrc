@@ -116,6 +116,10 @@
     "src/shared/locks/lock-manager.ts": {
       "classification": "unrelated-lock",
       "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
+    },
+    "src/analyze/session-reuse.ts": {
+      "classification": "metadata-only",
+      "rationale": "S003 t20: exact branded owner/root revision vectors only; no source result, configuration or credential cache. Synchronous registry/overlay recheck precedes continuation payload access."
     }
   },
   "sites": [
@@ -465,6 +469,21 @@
       "boundary": "symbol:dataConnectionResolver"
     },
     {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/session-reuse.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
       "file": "src/bin/insrc-connection-test.ts",
       "expression": "factory(start.config,familyOf(start.config.kind)==='file'?{fileExecutionPolicy:fileExecutionPolicy(start.config,{lookupRoot:start.lookupRoot,ownerId:'probe',revision:start.nonce,persistence:'memory-only'})}:undefined)",
       "boundary": "driver-port-call"
@@ -671,6 +690,11 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
+      "expression": "CACHE.get(access.lookupRoot)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
       "expression": "CACHE.get(repoPath)",
       "boundary": "pool-port-call"
     },
@@ -787,6 +811,11 @@
     {
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "saved.lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "saved.safeList",
       "boundary": "pool-member"
     },
     {

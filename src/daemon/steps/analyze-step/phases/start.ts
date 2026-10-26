@@ -1,3 +1,4 @@
+import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -44,6 +45,8 @@ export async function handleStart(
 	execution?: ConnectionExecutionContext,
 ): Promise<StepOutputEmitPlan | StepOutputDone> {
 	assertAnalysisAudience(execution);
+	await beginSessionReuse(execution);
+	assertSessionReuseNow(execution);
 	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
@@ -132,7 +135,7 @@ export async function handleStart(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    await encodeState(state),
+		state:    await encodeState(state, execution),
 	};
 }
 

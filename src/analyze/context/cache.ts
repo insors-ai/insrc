@@ -35,6 +35,8 @@
  *      docs/plans/analyze-context-builder.md Phase 4
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -109,6 +111,8 @@ export function readBundle(
 	opts:  ShapeOpts,
 	currentLastIndexedAt?: number,
 ): AnalyzeContextBundle | null {
+ assertAnalysisConnectionExecution(opts.connectionExecution);
+ if (opts.connectionExecution?.mode === 'session-memory') return null;
 	if (opts.bypassCache === true) {
 		return null;
 	}
@@ -205,7 +209,10 @@ export function writeBundle(
 	runId:  string,
 	key:    CacheKey,
 	bundle: AnalyzeContextBundle,
+ execution?: ConnectionExecutionContext,
 ): void {
+ assertAnalysisConnectionExecution(execution);
+ if (execution?.mode === 'session-memory') return;
 	const path = cacheFilePathFor(runId, key);
 	mkdirSync(dirname(path), { recursive: true });
 
@@ -225,7 +232,9 @@ export function writeBundle(
  * indexer-timestamp check when a cached bundle's `meta.repoLastIndexedAt`
  * is stale. Silent no-op when the slot doesn't exist.
  */
-export function invalidateBundle(runId: string, key: CacheKey): void {
+export function invalidateBundle(runId: string, key: CacheKey, execution?: ConnectionExecutionContext): void {
+ assertAnalysisConnectionExecution(execution);
+ if (execution?.mode === 'session-memory') return;
 	safeUnlink(cacheFilePathFor(runId, key));
 }
 

@@ -42,6 +42,11 @@ function bindingNotices(binding: UsageBinding, path: string): string[] {
   const notices: string[] = [];
   if (!rootId(binding.rootArtifactId)) notices.push(`binding-invalid:${path}/rootArtifactId`);
   if (!artifactId(binding.artifactId)) notices.push(`binding-invalid:${path}/artifactId`);
+  const root = ArtifactIds.parse(binding.rootArtifactId), artifact = ArtifactIds.parse(binding.artifactId);
+  if (root && artifact && (root.kind === 'EPIC' || root.kind === 'STORY') &&
+      (root.epicHash !== artifact.epicHash || (root.kind === 'STORY' && root.story !== artifact.story))) {
+    notices.push(`binding-invalid:${path}/rootArtifactId`);
+  }
   return notices;
 }
 function safeCopy(input: unknown, maxBytes: number): { value?: unknown; notice?: string } {

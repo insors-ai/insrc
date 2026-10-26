@@ -183,3 +183,34 @@ test('bad digest excludes only its disjoint call and every unresolved observed c
     assert.ok(owners.every(owner => owner.artifactId === null && owner.ownerVersion === null));
   }
 });
+
+test('reference flags cannot hide an ordinary call or masquerade as a cumulative baseline', async () => {
+  const reducer = new DefaultUsageReducer(), rows = [start(), finish()], scope = scoped(rows);
+  for (const referenceOnlyEventIds of [['start'], ['finish'], ['start', 'finish']]) {
+    const result = await reducer.reduce(stream(rows), { ...scope, evidence: { ...scope.evidence, referenceOnlyEventIds } });
+    assert.ok(result.quality.includes('conflict')); assert.ok(result.quality.includes('unavailable'));
+    assert.ok(result.notices.some(notice => notice.startsWith('reference-role-invalid:')));
+    assert.equal(result.quality.includes('reported'), false);
+  }
+  const ordinary = signed({ ...finish(), eventId: 'fake-baseline', callId: 'prior' });
+  const priorStart = signed({ ...start(), eventId: 'prior-start', callId: 'prior' });
+  const forgedRows = [...rows, priorStart, ordinary], forged = scoped(forgedRows);
+  const result = await reducer.reduce(stream(forgedRows), { ...forged, evidence: { ...forged.evidence,
+    baselineEventId: 'fake-baseline', selectedCurrentEventId: 'finish', referenceOnlyEventIds: ['prior-start', 'fake-baseline'] } });
+  assert.ok(result.quality.includes('unavailable')); assert.equal(result.quality.includes('reported'), false);
+});
+
+test('record and scope binding validation reject unrelated epic and standalone-story membership', async () => {
+  const reducer = new DefaultUsageReducer(), { validateScope } = await import('../index.js');
+  for (const rootArtifactId of ['EPIC-fedcba9876543210', 'STORY-0123456789abcdef-s2']) {
+    const badBinding = { ...binding, rootArtifactId };
+    const captured = signed({ ...start(), rootArtifactId, context: { ...start().context, binding: badBinding } });
+    assert.ok(reducer.validate(captured).some(notice => notice.startsWith('binding-invalid:')));
+    const scope = scoped([captured]);
+    const badScope = { ...scope, expectedBindings: [badBinding], evidence: { ...scope.evidence,
+      rootWatermarkRefs: [{ rootArtifactId, watermarkId: 'fixture' }], expectedBindingVersions: [{ rootArtifactId, artifactId: binding.artifactId, version: binding.version }] } };
+    assert.ok(validateScope(badScope).some(notice => notice.startsWith('binding-invalid:')));
+    const result = await reducer.reduce(stream([captured]), badScope);
+    assert.ok(result.quality.includes('conflict')); assert.deepEqual(result.effectiveOwners, []);
+  }
+});

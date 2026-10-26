@@ -157,6 +157,35 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
     if (startIdentity.has(row.callId) && startIdentity.get(row.callId) !== identity) { badCalls.add(row.callId); notices.add(`identity-conflict:${row.callId}`); quality.add('conflict'); }
     if (!starts.has(row.callId)) { starts.set(row.callId, row); startIdentity.set(row.callId, identity); }
   }
+  // Reference flags are claims about roles, never permission to hide a call.
+  // Qualify cumulative references against the same interval checks used below.
+  const allowedReferences = new Set(rows.filter(row => row.callId === null).map(row => row.eventId));
+  const current = collected.records.get(scope.evidence.selectedCurrentEventId ?? '');
+  if (current?.recordKind === 'request.finished' || current?.recordKind === 'usage.corrected') {
+    const currentStart = starts.get(current.callId);
+    if (currentStart && cumulativeInterval(current, currentStart, collected.records, starts, badCalls, scope).counters) {
+      for (const row of rows) {
+        if (row.recordKind !== 'request.finished' && row.recordKind !== 'usage.corrected') continue;
+        if (row.eventId === scope.evidence.baselineEventId || (referenceOnly.has(row.eventId) && row.observation.cumulative?.baselineEventId === scope.evidence.baselineEventId)) {
+          allowedReferences.add(row.eventId);
+          const frameStart = starts.get(row.callId);
+          if (frameStart) allowedReferences.add(frameStart.eventId);
+        }
+      }
+    }
+  }
+  // Transfer observations can be external closure, but never a way to exclude
+  // calls belonging to the accounting group itself.
+  for (const row of rows) {
+    if (row.recordKind !== 'transfer.prepared' && row.recordKind !== 'transfer.accepted' && row.recordKind !== 'transfer.committed') continue;
+    const ref = row.control.originalObservationRef, observation = collected.records.get(ref.eventId), capture = starts.get(ref.callId);
+    if (!capture || !observation || observation.callId !== ref.callId || observation.rootArtifactId !== ref.rootArtifactId ||
+        (observation.recordKind !== 'request.finished' && observation.recordKind !== 'usage.corrected')) continue;
+    const belongs = capture.context.modelSliceId === scope.group.modelSliceId && (scope.group.invocationId !== null ? capture.context.invocationId === scope.group.invocationId : capture.context.invocationId === null && capture.callId === scope.group.isolatedCallId);
+    if (!belongs) { allowedReferences.add(observation.eventId); allowedReferences.add(capture.eventId); }
+  }
+  const invalidReferences = [...referenceOnly].filter(id => !allowedReferences.has(id));
+  if (invalidReferences.length) return empty([...notices, ...invalidReferences.map(id => `reference-role-invalid:${id}`)], [...quality, 'conflict', 'unavailable']);
   const resolved = resolveObservationBasis(rows, starts, scope, badCalls, collected.conflicts);
   for (const callId of resolved.blockedCalls) badCalls.add(callId);
   for (const notice of resolved.notices) notices.add(notice);

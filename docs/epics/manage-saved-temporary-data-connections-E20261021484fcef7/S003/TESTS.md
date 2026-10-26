@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 91 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 94 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -503,3 +503,27 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/man
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 6 | 1.9 s |  |
 | `src/daemon/steps/__tests__/provider-admission.test.ts` | 0 | 2 | 0.7 s |  |
+
+## t25
+
+Run at 2026-10-26T10:35:13.787Z on commit `9a9e14ad5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal | `src/daemon/steps/__tests__/provider-diagnostics.test.ts` |
+| pass | admitted Session expiry during real structured validation prevents the next SDK retry | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+
+**integration: CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control | `src/daemon/steps/__tests__/provider-diagnostics.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 6 | 1.6 s |  |
+| `src/daemon/steps/__tests__/provider-diagnostics.test.ts` | 0 | 2 | 1.1 s |  |

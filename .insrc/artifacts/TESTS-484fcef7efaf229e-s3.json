@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T10:11:31.210Z",
+    "updatedAt": "2026-10-26T10:35:13.787Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1793,6 +1793,97 @@
               },
               {
                 "title": "CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t25",
+        "commit": "9a9e14ad5",
+        "ranAt": "2026-10-26T10:35:13.787Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+                "title": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+                "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1571,
+            "titles": [
+              {
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only adapter refuses internal helper substitution before native construction",
+                "result": "pass"
+              },
+              {
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1088,
+            "titles": [
+              {
+                "title": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
                 "result": "pass"
               }
             ],

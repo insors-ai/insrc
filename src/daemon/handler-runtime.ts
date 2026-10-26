@@ -79,6 +79,7 @@ import * as todosRpc from './todos-rpc.js';
 import { createRepoSettingsHandlers } from './repo-settings.js';
 import { handoffRpcHandlers } from './steps/workflow-step/handoff-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
+import { toolsCall } from './tools/call-handler.js';
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -1640,6 +1641,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'chat.resumeCodeAnalysis':     offlineStream('chat.resumeCodeAnalysis'),
 		'chat.resumeDataAnalysis':     offlineStream('chat.resumeDataAnalysis'),
 		'todos.subscribe': todosRpc.subscribe,
+		// One registry tool run for a client with a validated caller; closing the stream cancels it.
+		'tools.call':                  toolsCall,
 		// Orchestrator end-to-end. Drives the full pipeline
 		// (classify -> buildRunBundle -> plan -> execute), persists
 		// run.json at every stage transition, and emits a stream of

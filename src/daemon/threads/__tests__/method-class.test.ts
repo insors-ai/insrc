@@ -63,6 +63,12 @@ test('classOf/entries: the ten admin and ten indexing methods have their class, 
 	assert.ok(Object.isFrozen(entries) && Object.isFrozen(entries[0]), 'the table is frozen');
 });
 
+test('tools.call is classed session and stream, and equals the handler table', () => {
+	const entry = methodClasses.entries().find(e => e.method === 'tools.call');
+	assert.deepEqual(entry, { method: 'tools.call', cls: 'session', stream: true });
+	assert.equal(methodClasses.classOf('tools.call'), 'session');
+});
+
 test('coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry', () => {
 	try {
 		const tables = servedTables();

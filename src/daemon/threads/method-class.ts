@@ -253,6 +253,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['ollama.pull', 'session', true],
 	['step.call', 'session', true],
 	['todos.subscribe', 'session', true],
+	['tools.call', 'session', true],
 	['understanding.watch', 'session', true],
 	['workflow.review', 'session', true],
 	['workflow.run', 'session', true],

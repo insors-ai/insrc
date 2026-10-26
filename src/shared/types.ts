@@ -939,6 +939,34 @@ export type ApprovalGateFrame =
 export interface ApprovalAnswerParams { requestId: string; decision: 'approve' | 'decline' }
 export interface ApprovalAnswerResult { accepted: boolean }
 
+// ---------------------------------------------------------------------------
+// tools.call (stream): a client runs one registry tool with a validated caller.
+// The stream answers with one `done` frame carrying the ToolResult, or one
+// `error` frame { code: 'invalid-params' } when the params are wrong. Closing
+// the stream cancels the call. Approvals travel on approval.subscribe.
+// ---------------------------------------------------------------------------
+
+export interface ToolsCallParams {
+  toolId:        string;
+  input:         Record<string, unknown>;
+  repoPath:      string;
+  caller:        'agent' | 'daemon' | 'workflow';
+  approvalMode?: 'manual' | 'edit-auto' | 'auto' | undefined;
+}
+
+/** The data of the one `done` frame of a tools.call stream: the executor's ToolResult, structurally. */
+export interface ToolsCallDone {
+  result: {
+    output:        string;
+    format:        string;
+    success:       boolean;
+    error?:        string | undefined;
+    data?:         unknown;
+    failure?:      { kind: string; message: string; original?: string | undefined } | undefined;
+    hookFailures?: readonly unknown[] | undefined;
+  };
+}
+
 export type IpcStreamKind = 'delta' | 'progress' | 'gate' | 'checkpoint' | 'done' | 'error' | 'qna.update' | 'liveStep' | 'todos' | 'handoff' | 'meta-task' | 'assertion-confirm' | 'analyze.result';
 
 export interface IpcStreamMessage {

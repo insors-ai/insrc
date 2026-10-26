@@ -45,6 +45,10 @@ import { gitHashObjectTool } from './hash-object.js';
 import { gitMergeBaseTool } from './merge-base.js';
 import { gitShowRefTool } from './show-ref.js';
 import { gitSymbolicRefTool } from './symbolic-ref.js';
+import { gitConfigTool } from './config.js';
+import { gitLsRemoteTool } from './ls-remote.js';
+import { gitUpdateRefTool } from './update-ref.js';
+import { gitRmTool } from './rm.js';
 
 export const gitToolDefinitions = [
   gitStatusTool,
@@ -81,4 +85,8 @@ export const gitToolDefinitions = [
   gitMergeBaseTool,
   gitShowRefTool,
   gitSymbolicRefTool,
+  gitConfigTool,
+  gitLsRemoteTool,
+  gitUpdateRefTool,
+  gitRmTool,
 ] as const satisfies readonly TypedTool[];

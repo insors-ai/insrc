@@ -1451,12 +1451,14 @@ and a test keeps this copy equal to it.
 | checkout |  | covered | git_checkout |
 | cherry-pick |  | covered | git:cherry-pick |
 | commit |  | covered | git_commit, git_amend |
+| config |  | covered | git_config (built by s7) |
 | diff |  | covered | git_diff |
 | fetch |  | covered | git_fetch, git_fetch_refs |
 | for-each-ref |  | covered | git_for_each_ref |
 | hash-object |  | covered | git_hash_object |
 | log |  | covered | git_log |
 | ls-files |  | covered | git_ls_files |
+| ls-remote |  | covered | git_ls_remote (built by s7) |
 | ls-tree |  | covered | git_ls_tree |
 | merge |  | covered | git_merge |
 | merge-base |  | covered | git_merge_base |
@@ -1467,6 +1469,7 @@ and a test keeps this copy equal to it.
 | refs |  | covered | git_for_each_ref, git_show_ref |
 | remote |  | covered | git_remote |
 | reset |  | covered | git_reset |
+| rm |  | covered | git_rm (built by s7) |
 | rev-list |  | covered | git_rev_list |
 | rev-parse |  | covered | git_rev_parse |
 | revert |  | covered | git_revert |
@@ -1478,6 +1481,7 @@ and a test keeps this copy equal to it.
 | switch |  | covered | git_branch |
 | symbolic-ref |  | covered | git_symbolic_ref |
 | tag |  | covered | git_tag |
+| update-ref |  | covered | git_update_ref (built by s7) |
 | unpack-file |  | covered | git_cat_file |
 | whatchanged |  | covered | git_path_history |
 | worktree |  | covered | git_worktree |
@@ -1563,7 +1567,6 @@ and a test keeps this copy equal to it.
 | column |  | assigned | s8 |
 | commit-graph |  | assigned | s8 |
 | commit-tree |  | assigned | s8 |
-| config |  | assigned | s8 |
 | count-objects |  | assigned | s8 |
 | describe |  | assigned | s8 |
 | diagnose |  | assigned | s8 |
@@ -1585,7 +1588,6 @@ and a test keeps this copy equal to it.
 | init-db |  | assigned | s8 |
 | interpret-trailers |  | assigned | s8 |
 | last-modified |  | assigned | s8 |
-| ls-remote |  | assigned | s8 |
 | mailinfo |  | assigned | s8 |
 | mailsplit |  | assigned | s8 |
 | maintenance |  | assigned | s8 |
@@ -1620,7 +1622,6 @@ and a test keeps this copy equal to it.
 | request-pull |  | assigned | s8 |
 | rerere |  | assigned | s8 |
 | restore |  | assigned | s8 |
-| rm |  | assigned | s8 |
 | shortlog |  | assigned | s8 |
 | show-branch |  | assigned | s8 |
 | show-index |  | assigned | s8 |
@@ -1630,7 +1631,6 @@ and a test keeps this copy equal to it.
 | subtree |  | assigned | s8 |
 | unpack-objects |  | assigned | s8 |
 | update-index |  | assigned | s8 |
-| update-ref |  | assigned | s8 |
 | var |  | assigned | s8 |
 | verify-commit |  | assigned | s8 |
 | verify-pack |  | assigned | s8 |

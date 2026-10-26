@@ -38,7 +38,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 34, '22 existing and 12 new git tools');
+	assert.equal(registered.size, 38, '22 existing, 12 from s4 and 4 from s7');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -148,6 +148,10 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'show': async c => { const r = await c.ok('git_show', { ref: 'HEAD' }); assert.equal((r.data as { subject: string }).subject, 'second'); },
 	'show-ref': async c => { const r = await c.ok('git_show_ref', { ref: 'refs/heads/b', verify: true }); assert.equal((r.data as { refs: { sha: string }[] }).refs[0]?.sha, sha(c, 'b')); },
 	'status': async c => { const r = await c.ok('git_status', {}); assert.deepEqual((r.data as { unstaged: { path: string }[] }).unstaged.map(e => e.path), ['a.txt']); },
+	'config': async c => { const r = await c.ok('git_config', { key: 'user.email' }); assert.deepEqual(r.data, { found: true, value: c.git('config', '--get', 'user.email').trim() }); const none = await c.ok('git_config', { key: 'no.such.key' }); assert.deepEqual(none.data, { found: false }); },
+	'ls-remote': async c => { const r = await c.ok('git_ls_remote', { remote: 'origin', heads: true, patterns: ['refs/heads/main'] }); assert.deepEqual((r.data as { entries: { ref: string }[] }).entries.map(e => e.ref), ['refs/heads/main']); },
+	'update-ref': async c => { c.git('update-ref', 'refs/heads/gone', 'HEAD'); await c.ok('git_update_ref', { ref: 'refs/heads/gone', delete: true }); assert.equal(c.git('for-each-ref', 'refs/heads/gone').trim(), ''); },
+	'rm': async c => { c.git('checkout', '-q', '--', 'a.txt'); await c.ok('git_rm', { paths: ['a.txt'] }); assert.equal(existsSync(join(c.repo, 'a.txt')), false); },
 	'symbolic-ref': async c => { const r = await c.ok('git_symbolic_ref', { ref: 'HEAD', op: 'get' }); assert.deepEqual(r.data, { target: 'refs/heads/main' }); },
 
 	'stash list': async c => { const r = await c.ok('git_stash', { op: 'list' }); assert.equal((r.data as { entries: unknown[] }).entries.length, 1); },
@@ -230,4 +234,17 @@ test('git_amend runs its own case and git_diff with path and paths keeps its leg
 		assert.match(both.output, /\[git:diff\] invalid-input: `paths` must be a non-empty array of non-empty strings, and cannot be combined with `path`/);
 		assert.equal(both.error, 'invalid-input');
 	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); rmSync(dirname(wt), { recursive: true, force: true }); }
+});
+
+test('git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions', async () => {
+	const { gitToolDefinitions } = await import('../definitions.js');
+	const ids = new Set(gitToolDefinitions.map(t => t.id));
+	for (const [command, tool] of [['config', 'git_config'], ['ls-remote', 'git_ls_remote'], ['update-ref', 'git_update_ref'], ['rm', 'git_rm']] as const) {
+		const row = GIT_COVERAGE.find(r => r.command === command && r.operation === undefined)!;
+		assert.equal(row.owner, 'covered', `${command} is covered, no longer assigned to s8`);
+		assert.equal(row.builtBy, 's7', `${command} is marked as built by s7`);
+		assert.deepEqual(row.toolIds, [tool]);
+		assert.ok(ids.has(tool), `${tool} is in gitToolDefinitions`);
+	}
+	assert.match(renderCoverageTable(), /\| config \|  \| covered \| git_config \(built by s7\) \|/);
 });

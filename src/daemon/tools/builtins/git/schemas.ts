@@ -398,3 +398,18 @@ export const GitFetchRefsDataSchema = Type.Object({
   updated: Type.Array(Type.Object({ ref: Type.String(), old: Type.String(), new: Type.String() })),
 });
 export type GitFetchRefsData = Static<typeof GitFetchRefsDataSchema>;
+
+export const GitConfigDataSchema = Type.Object({ found: Type.Boolean(), value: Type.Optional(Type.String()) });
+export type GitConfigData = Static<typeof GitConfigDataSchema>;
+
+export const GitLsRemoteDataSchema = Type.Object({
+  entries: Type.Array(Type.Object({ objectId: Type.String(), ref: Type.String() })),
+  symrefs: Type.Array(Type.Object({ ref: Type.String(), target: Type.String() })),
+});
+export type GitLsRemoteData = Static<typeof GitLsRemoteDataSchema>;
+
+export const GitUpdateRefDataSchema = Type.Object({ ref: Type.String(), deleted: Type.Literal(true) });
+export type GitUpdateRefData = Static<typeof GitUpdateRefDataSchema>;
+
+export const GitRmDataSchema = Type.Object({ paths: Type.Array(Type.String()) });
+export type GitRmData = Static<typeof GitRmDataSchema>;

@@ -32,6 +32,8 @@ const CALLS: Array<[string, Record<string, unknown>]> = [
 	['git_ls_tree', { cwd: '/tmp', rev: 'HEAD' }],
 	['git_cat_file', { cwd: '/tmp', rev: 'HEAD', exists: true }],
 	['git_show', { cwd: '/tmp', ref: 'HEAD' }],
+	['git_ls_remote', { cwd: '/tmp', remote: 'origin' }],
+	['git_config', { cwd: '/tmp', key: 'user.name' }],
 ];
 
 test('git-abort.test.ts: every refresh tool fails rejected on an already-aborted signal and starts no git', async () => {

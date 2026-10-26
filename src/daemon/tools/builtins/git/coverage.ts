@@ -26,6 +26,8 @@ export interface CoverageRow {
   /** The tools that serve it (covered rows). */
   readonly toolIds?: readonly string[];
   readonly cases?: readonly CoverageCase[];
+  /** The Story that built the tool, when it is not s4 (s7 built git_config, git_ls_remote, git_update_ref and git_rm). */
+  readonly builtBy?: string;
   /** Why it is excluded. */
   readonly reason?: string;
 }
@@ -205,6 +207,9 @@ export const GIT_2_53_COMMANDS: readonly string[] = [
 
 const covered = (command: string, toolIds: readonly string[], cases?: readonly CoverageCase[], operation?: string): CoverageRow =>
   ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'covered', toolIds, ...(cases !== undefined ? { cases } : {}) });
+/** A row of a tool Story s7 built (the commands s4 left to s8 that the refresh, handoff and identity code needed first). */
+const coveredByS7 = (command: string, toolId: string): CoverageRow =>
+  ({ command, owner: 'covered', toolIds: [toolId], cases: [{ id: command, tool: toolId }], builtBy: 's7' });
 const assigned = (command: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'assigned' });
 const excluded = (command: string, reason: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'excluded', reason });
 
@@ -218,12 +223,14 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('checkout', ['git_checkout'], [{ id: 'checkout', tool: 'git_checkout' }]),
   covered('cherry-pick', ['git:cherry-pick'], [{ id: 'cherry-pick', tool: 'git:cherry-pick' }]),
   covered('commit', ['git_commit', 'git_amend'], [{ id: 'commit', tool: 'git_commit' }, { id: 'commit-amend', tool: 'git_amend' }]),
+  coveredByS7('config', 'git_config'),
   covered('diff', ['git_diff'], [{ id: 'diff', tool: 'git_diff' }]),
   covered('fetch', ['git_fetch', 'git_fetch_refs'], [{ id: 'fetch', tool: 'git_fetch' }, { id: 'fetch-refs', tool: 'git_fetch_refs' }]),
   covered('for-each-ref', ['git_for_each_ref'], [{ id: 'for-each-ref', tool: 'git_for_each_ref' }]),
   covered('hash-object', ['git_hash_object'], [{ id: 'hash-object', tool: 'git_hash_object' }]),
   covered('log', ['git_log'], [{ id: 'log', tool: 'git_log' }]),
   covered('ls-files', ['git_ls_files'], [{ id: 'ls-files', tool: 'git_ls_files' }]),
+  coveredByS7('ls-remote', 'git_ls_remote'),
   covered('ls-tree', ['git_ls_tree'], [{ id: 'ls-tree', tool: 'git_ls_tree' }]),
   covered('merge', ['git_merge'], [{ id: 'merge', tool: 'git_merge' }]),
   covered('merge-base', ['git_merge_base'], [{ id: 'merge-base', tool: 'git_merge_base' }]),
@@ -234,6 +241,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('refs', ['git_for_each_ref', 'git_show_ref']),
   covered('remote', ['git_remote']),
   covered('reset', ['git_reset'], [{ id: 'reset', tool: 'git_reset' }]),
+  coveredByS7('rm', 'git_rm'),
   covered('rev-list', ['git_rev_list'], [{ id: 'rev-list', tool: 'git_rev_list' }]),
   covered('rev-parse', ['git_rev_parse'], [{ id: 'rev-parse', tool: 'git_rev_parse' }]),
   covered('revert', ['git_revert'], [{ id: 'revert', tool: 'git_revert' }]),
@@ -245,6 +253,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('switch', ['git_branch'], [{ id: 'switch', tool: 'git_branch' }]),
   covered('symbolic-ref', ['git_symbolic_ref'], [{ id: 'symbolic-ref', tool: 'git_symbolic_ref' }]),
   covered('tag', ['git_tag']),
+  coveredByS7('update-ref', 'git_update_ref'),
   covered('unpack-file', ['git_cat_file'], [{ id: 'unpack-file', tool: 'git_cat_file' }]),
   covered('whatchanged', ['git_path_history'], [{ id: 'whatchanged', tool: 'git_path_history' }]),
   covered('worktree', ['git_worktree']),
@@ -333,7 +342,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('column'),
   assigned('commit-graph'),
   assigned('commit-tree'),
-  assigned('config'),
   assigned('count-objects'),
   assigned('describe'),
   assigned('diagnose'),
@@ -355,7 +363,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('init-db'),
   assigned('interpret-trailers'),
   assigned('last-modified'),
-  assigned('ls-remote'),
   assigned('mailinfo'),
   assigned('mailsplit'),
   assigned('maintenance'),
@@ -390,7 +397,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('request-pull'),
   assigned('rerere'),
   assigned('restore'),
-  assigned('rm'),
   assigned('shortlog'),
   assigned('show-branch'),
   assigned('show-index'),
@@ -400,7 +406,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('subtree'),
   assigned('unpack-objects'),
   assigned('update-index'),
-  assigned('update-ref'),
   assigned('var'),
   assigned('verify-commit'),
   assigned('verify-pack'),
@@ -452,7 +457,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
 export function renderCoverageTable(): string {
   const lines = ['| Command | Operation | Owner | Tools or reason |', '| --- | --- | --- | --- |'];
   for (const r of GIT_COVERAGE) {
-    lines.push(`| ${r.command} | ${r.operation ?? ''} | ${r.owner} | ${r.owner === 'covered' ? (r.toolIds ?? []).join(', ') : r.owner === 'excluded' ? r.reason ?? '' : 's8'} |`);
+    lines.push(`| ${r.command} | ${r.operation ?? ''} | ${r.owner} | ${r.owner === 'covered' ? `${(r.toolIds ?? []).join(', ')}${r.builtBy !== undefined ? ` (built by ${r.builtBy})` : ''}` : r.owner === 'excluded' ? r.reason ?? '' : 's8'} |`);
   }
   return lines.join('\n');
 }

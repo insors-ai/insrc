@@ -65,6 +65,11 @@ export async function run(opts: {
       return (want === undefined ? undefined : (items as Item[]).find((x) => x.value === want || (x.value === undefined && x.label === want))) as never;
     },
     notify: async (message) => { messages.push(message); return actions.shift(); },
+    check: async () => { throw new Error('check not scripted'); },
+    approve: async () => { throw new Error('approve not scripted'); },
+    reject: async () => { throw new Error('reject not scripted'); },
+    input: async () => undefined,
+    pickMany: async () => undefined,
     ...opts.extra,
   };
   await runSetModelTier(deps);
@@ -77,8 +82,8 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   // Family step: exactly the answer's families, the current one marked.
   let r = await run({ picks: ['core', 'cli-claude', 'c-big', 'deeper'], raw: TIER('cli-codex', 'x-a', 'lo') });
   assert.deepEqual(r.shown[1]!.map((x) => [x.label, x.description]), [['FakeC', 'cli-claude'], ['FakeX', 'cli-codex (current)'], ['FakeLocal', 'ollama']]);
-  // Model step: the family's models with aliases and the user-approved mark, plus Refresh — no typed entry yet.
-  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['c-big', 'alias cb'], ['c-new', '(user-approved)'], ['$(refresh) Refresh', undefined]]);
+  // Model step: the family's models with aliases and the user-approved mark, then a typed id (CLI family) and Refresh.
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['c-big', 'alias cb'], ['c-new', '(user-approved)'], ['Enter another model id…', 'checked by the daemon before it can be used'], ['$(refresh) Refresh', undefined]]);
   // Effort step: the CLI default then the model's own levels.
   assert.deepEqual(r.shown[3]!.map((x) => x.label), ['CLI default', 'deep', 'deeper']);
   // ONE whole-tier write.
@@ -90,7 +95,7 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
   assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)');
   r = await run({ picks: ['core', 'ollama', 'loc:2'], raw: TIER('cli-codex', 'x-a', 'lo') });
-  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['loc:1', undefined], ['loc:2', '(not installed)'], ['$(refresh) Refresh', undefined]]);
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['loc:1', undefined], ['loc:2', '(not installed)'], ['$(refresh) Refresh', undefined]], 'Ollama: no typed-id entry');
   assert.equal(r.shown.length, 3, 'tier, family, model — no effort step');
   assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama', model: 'loc:2', effort: '' } }]);
 
@@ -153,3 +158,91 @@ test('model-tier-picker.test.ts: model-tier-picker.ts names no runner or model l
   assert.doesNotMatch(src, /from\s+'[^']*src\/config\//, 'imports nothing from src/config');
   assert.doesNotMatch(src, /CONFIG_CATALOG|PROVIDERS|providers\.listModels/);
 });
+
+test('model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve', async () => {
+  const checks: unknown[] = [];
+  const approves: unknown[] = [];
+  const rejects: unknown[] = [];
+  const result = { checkId: 'c1', runs: true, inputLimit: { unit: 'tokens', max: 64000 },
+    efforts: [{ effort: 'lo', verdict: 'accepted' as const, evidence: 'lo listed' }, { effort: 'turbo', verdict: 'rejected' as const, evidence: 'turbo not listed' }, { effort: 'max', verdict: 'recognised-unconfirmed' as const, evidence: 'max is a name the CLI knows' }] };
+  let inputs: string[] = [];
+  const seams = (overrides: Partial<SetModelTierDeps> = {}): Partial<SetModelTierDeps> => ({
+    input: async (o) => { const next = inputs.shift(); return next === '<default>' ? o.value : next; },
+    check: async (p) => { checks.push(p); return result; },
+    approve: async (p) => { approves.push(p); return { ok: true, restartRequired: true }; },
+    reject: async (p) => { rejects.push(p); return { ok: true, restartRequired: true }; },
+    pickMany: async (items) => items.filter((x) => (x as Item).value === 'lo' || (x as Item).value === 'max'),
+    ...overrides,
+  });
+  const reset = () => { checks.length = 0; approves.length = 0; rejects.length = 0; };
+
+  // Check: the family's effort names are claimed; each level's verdict and evidence is shown, then the decision.
+  inputs = ['x-new', '<default>'];
+  const restartResults = [false, true];
+  let r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: ['Restart daemon and save', 'Restart daemon and save'], restart: async () => restartResults.shift()! });
+  assert.deepEqual(checks, [{ family: 'cli-codex', modelId: 'x-new', claimedEfforts: ['lo', 'turbo'] }]);
+  const verdicts = r.shown[3]!;
+  assert.deepEqual(verdicts.filter((x) => x.kind === 'verdict').map((x) => [x.label, x.detail]), [['lo — accepted', 'lo listed'], ['turbo — rejected', 'turbo not listed'], ['max — recognised — unconfirmed', 'max is a name the CLI knows']]);
+  assert.deepEqual(verdicts.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Approve x-new…', 'Reject x-new']);
+  // Approve: the chosen non-rejected levels; nothing saved; a failed restart saves nothing and never re-approves; the next restart saves.
+  assert.deepEqual(approves, [{ checkId: 'c1', efforts: ['lo', 'max'] }]);
+  assert.equal(r.restarts(), 2);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: 'lo' } }]);
+  assert.match(r.messages.join('\n'), /approval of x-new is recorded, but the daemon did not restart — the core tier was not saved/);
+  assert.equal(approves.length, 1, 'never approved twice');
+
+  // Only the non-rejected levels are offered for approval.
+  reset(); inputs = ['x-new', '<default>'];
+  let offered: string[] = [];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams({ pickMany: async (items) => { offered = items.map((x) => (x as Item).value ?? ''); return undefined; } }) });
+  assert.deepEqual(offered, ['lo', 'max']);
+  assert.deepEqual(approves, [], 'cancelling the level choice approves nothing');
+
+  // Approved but the user does not restart now: nothing saved.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: [undefined] });
+  assert.equal(approves.length, 1);
+  assert.deepEqual(r.writes, []);
+  assert.equal(r.restarts(), 0);
+
+  // Reject: recorded, nothing saved.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Reject x-new'], extra: seams() });
+  assert.deepEqual(rejects, [{ checkId: 'c1' }]);
+  assert.deepEqual(r.writes, []);
+
+  // runs:false offers no approve; { error } shows the refusal, and an id now served is offered as a pick.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async () => ({ ...result, runs: false, error: 'the codex CLI refused the model' }) }) });
+  assert.deepEqual(r.shown[3]!.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Reject x-new']);
+  assert.deepEqual(approves, [], 'nothing approvable');
+  reset(); inputs = ['x-new', '<default>'];
+  const served: ModelDefinitions = { ...DEFS, families: DEFS.families.map((f) => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
+  let defsCalls = 0;
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }), actions: ['Save x-new'] });
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: '' } }]);
+
+  // A typed alias of a listed model saves as a normal pick, without a check.
+  reset(); inputs = ['xb'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'lo'], extra: seams() });
+  assert.deepEqual(checks, []);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-b', effort: 'lo' } }]);
+
+  // unknown-check offers a fresh check; a disconnected check offers to check again; a disconnected approve reports an unknown outcome.
+  reset(); inputs = ['x-new', '<default>'];
+  const approveAnswers: Array<() => Promise<DecisionResultLike>> = [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1' })];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }), actions: ['Check again'] });
+  assert.equal(checks.length, 2, 'checked again after unknown-check');
+  assert.deepEqual(rejects, [{ checkId: 'c1' }]);
+  reset(); inputs = ['x-new', '<default>'];
+  const checkAnswers: Array<() => Promise<typeof result>> = [async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); }, async () => result];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }), actions: ['Check again'] });
+  assert.equal(checks.length, 2);
+  assert.match(r.messages[0]!, /the check of x-new was interrupted/);
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams({ approve: async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); } }) });
+  assert.match(r.messages.at(-1)!, /the outcome is unknown/);
+  assert.deepEqual(r.writes, []);
+});
+
+type DecisionResultLike = { ok: true; restartRequired?: boolean } | { ok: false; reason: string; detail: string };

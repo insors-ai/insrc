@@ -154,6 +154,8 @@ declare module 'vscode' {
       showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean | undefined },
       options?: { enableScripts?: boolean | undefined },
     ): WebviewPanel;
+    /** Ask for a line of text; resolves the entered text, or undefined when dismissed (Epic ce99b72065d03b1b s6). */
+    export function showInputBox(options?: { prompt?: string | undefined; value?: string | undefined }): PromiseLike<string | undefined>;
     /** A multi-select quick-pick; resolves the chosen items or undefined on dismiss (Epic ce99b72065d03b1b s6: choosing approved effort levels). */
     export function showQuickPick<T extends QuickPickItem>(
       items: readonly T[] | PromiseLike<readonly T[]>,

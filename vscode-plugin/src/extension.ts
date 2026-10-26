@@ -47,7 +47,7 @@ import { renderRepoConfig, createRepoConfigWriteHandler } from './panels/repo-co
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
-import { runSetModelTier } from './models/model-tier-picker.js';
+import { runSetModelTier, type DecisionResult, type ModelCheckResult } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
@@ -450,6 +450,12 @@ export function activate(context: vscode.ExtensionContext): void {
       // The bundled vscode.d.ts stub's showInformationMessage requires the options
       // arg; {} (all fields optional) satisfies it, followed by any action buttons.
       notify: (message, ...actions) => Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
+      // The unlisted-model check and decision (models.check / approve / reject, s6).
+      check: (params) => client.rpc<ModelCheckResult | { error: string }>('models.check', params),
+      approve: (params) => client.rpc<DecisionResult>('models.approve', params),
+      reject: (params) => client.rpc<DecisionResult>('models.reject', params),
+      input: (opts) => Promise.resolve(vscode.window.showInputBox(opts)),
+      pickMany: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, { ...opts, canPickMany: true })),
     }),
   );
 

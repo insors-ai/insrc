@@ -12,6 +12,14 @@
  * family. The daemon's refusal reason and detail, and a 'restart to apply', are
  * shown; a restart is offered through the injected restartDaemon seam.
  *
+ * A Claude or Codex model the family does not list is entered by id and checked by
+ * the daemon (models.check): each claimed effort level's verdict and evidence is
+ * shown, the user chooses the levels to allow, and models.approve records the
+ * decision. Nothing is saved then — the running daemon does not yet serve the
+ * model — so the tier is written only after a restart that brings the daemon back
+ * (restartDaemon resolves true), and the approval is never sent twice. Ollama has
+ * no such flow: only listed Ollama models can be used.
+ *
  * Everything is injected via {@link SetModelTierDeps}, so the whole flow is
  * unit-testable over fakes WITHOUT vscode; extension.ts binds the real seams.
  * Never throws — every failure surfaces via `notify` and writes nothing.
@@ -22,6 +30,7 @@ import {
   classifyDaemonFailure,
   familyDefault,
   familyOf,
+  servedModel,
   type DefinedFamily,
   type DefinedModel,
   type ModelDefinitions,
@@ -49,7 +58,31 @@ export interface SetModelTierDeps {
   pick<T extends QuickPickItemLike>(items: readonly T[], opts: { placeHolder: string }): Promise<T | undefined>;
   /** Show a message with optional action buttons; resolves the chosen action. */
   notify(message: string, ...actions: string[]): Promise<string | undefined>;
+  /** Check an unlisted CLI model through its CLI (models.check). */
+  check(params: { family: string; modelId: string; claimedEfforts: readonly string[] }): Promise<ModelCheckResult | { error: string }>;
+  /** Record the approval of a check's levels (models.approve). */
+  approve(params: { checkId: string; efforts: readonly string[] }): Promise<DecisionResult>;
+  /** Record the rejection of a checked model (models.reject). */
+  reject(params: { checkId: string }): Promise<DecisionResult>;
+  /** Ask for a line of text (default vscode.window.showInputBox); undefined on cancel. */
+  input(opts: { prompt: string; value?: string }): Promise<string | undefined>;
+  /** Present a multi-select dropdown (showQuickPick with canPickMany); undefined on cancel. */
+  pickMany<T extends QuickPickItemLike>(items: readonly T[], opts: { placeHolder: string }): Promise<readonly T[] | undefined>;
 }
+
+/** The daemon's check of an unlisted model (models.check), typed structurally. */
+export interface ModelCheckResult {
+  readonly checkId: string;
+  readonly runs: boolean;
+  readonly inputLimit?: { readonly unit: string; readonly max: number } | undefined;
+  readonly efforts: readonly { readonly effort: string; readonly verdict: 'accepted' | 'rejected' | 'recognised-unconfirmed'; readonly evidence: string }[];
+  readonly error?: string | undefined;
+}
+
+/** The daemon's answer to models.approve / models.reject. */
+export type DecisionResult =
+  | { readonly ok: true; readonly restartRequired?: boolean | undefined }
+  | { readonly ok: false; readonly reason: string; readonly detail: string };
 
 /** A tier as config.json holds it. */
 interface TierValue {
@@ -73,7 +106,7 @@ const RESTART = 'Restart daemon';
 
 /** The QuickPick item the flow drives; `kind` names its role. */
 interface PickItem extends QuickPickItemLike {
-  readonly kind: 'tier' | 'family' | 'model' | 'refresh' | 'current-not-listed' | 'no-models' | 'effort';
+  readonly kind: 'tier' | 'family' | 'model' | 'refresh' | 'current-not-listed' | 'no-models' | 'effort' | 'enter-id' | 'verdict' | 'approve' | 'reject';
   readonly value?: string;
 }
 
@@ -162,8 +195,19 @@ async function runSetModelTierInner(deps: SetModelTierDeps): Promise<void> {
       }
       continue;
     }
-    if (chosen.kind !== 'model' || chosen.value === undefined) return; // a notice row — no-op.
-    const model = models.find((m) => m.id === chosen.value);
+    let model: DefinedModel | undefined;
+    if (chosen.kind === 'enter-id') {
+      const typed = (await deps.input({ prompt: `A ${family.displayName} model id (a listed id or alias, or one to check)` }))?.trim();
+      if (typed === undefined || typed === '') return;
+      model = models.find((m) => m.id === typed || m.aliases.includes(typed));
+      if (model === undefined) {
+        await checkUnlisted(deps, tier, family, typed, current);
+        return;
+      }
+    } else {
+      if (chosen.kind !== 'model' || chosen.value === undefined) return; // a notice row — no-op.
+      model = models.find((m) => m.id === chosen.value);
+    }
     if (model === undefined) return;
 
     // 5) Pick the effort ('' = the CLI's default) from the model's own levels.
@@ -268,8 +312,110 @@ async function pickModel(
     const label = m.displayName !== undefined && m.displayName.length > 0 ? m.displayName : m.id;
     items.push(desc === undefined ? { label, kind: 'model', value: m.id } : { label, description: desc, kind: 'model', value: m.id });
   }
+  // Only a CLI family's models can be checked; Ollama offers only its listed models.
+  if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…', description: 'checked by the daemon before it can be used', kind: 'enter-id' });
   items.push({ label: '$(refresh) Refresh', kind: 'refresh' });
   return deps.pick(items, { placeHolder: `Select a ${family.displayName} model` });
+}
+
+const VERDICT: Record<string, string> = { accepted: 'accepted', rejected: 'rejected', 'recognised-unconfirmed': 'recognised — unconfirmed' };
+const CHECK_AGAIN = 'Check again';
+const RESTART_AND_SAVE = 'Restart daemon and save';
+
+/**
+ * Check a model the family does not list, then approve or reject it. Approve records the
+ * decision and saves nothing; the tier is saved only after a restart that brings the
+ * daemon back, and the approval is never sent again. Never throws.
+ */
+async function checkUnlisted(deps: SetModelTierDeps, tier: Tier, family: DefinedFamily, modelId: string, current: TierValue | undefined): Promise<void> {
+  const familyEfforts = [...new Set(family.models.flatMap((m) => m.efforts))];
+  const claimedText = await deps.input({ prompt: `Effort levels to check for ${modelId} (comma-separated; empty for none)`, value: familyEfforts.join(', ') });
+  if (claimedText === undefined) return;
+  const claimedEfforts = claimedText.split(',').map((e) => e.trim()).filter((e) => e.length > 0);
+
+  for (;;) {
+    let result: ModelCheckResult | { error: string };
+    try {
+      result = await deps.check({ family: family.id, modelId, claimedEfforts });
+    } catch (err) {
+      if (classifyDaemonFailure(err).kind === 'disconnected') {
+        if ((await deps.notify(`insrc: the check of ${modelId} was interrupted — the daemon closed the connection.`, CHECK_AGAIN)) === CHECK_AGAIN) continue;
+        return;
+      }
+      await deps.notify(failureMessage(err, `check ${modelId}`));
+      return;
+    }
+    if (!('checkId' in result)) {
+      // The daemon refuses an id it already serves: if fresh definitions list it, offer it as a normal pick.
+      let served: DefinedModel | undefined;
+      try {
+        const fresh = familyOf(await deps.definitions(), family.id);
+        served = fresh !== undefined ? servedModel(fresh, modelId) : undefined;
+      } catch { /* nothing to offer: the refusal is shown below */ }
+      if (served !== undefined) {
+        const save = `Save ${served.id}`;
+        if ((await deps.notify(`insrc: ${served.id} is served by ${family.displayName} now.`, save)) === save) {
+          await saveTier(deps, tier, { runner: family.id, model: served.id, effort: '' }, current);
+        }
+        return;
+      }
+      await deps.notify(`insrc: the daemon refused to check ${modelId}: ${result.error}`);
+      return;
+    }
+
+    // The verdicts, with the decision: Approve (only for a model that ran), Reject or cancel.
+    const rows: PickItem[] = result.efforts.map((e) => ({ label: `${e.effort} — ${VERDICT[e.verdict] ?? e.verdict}`, detail: e.evidence, kind: 'verdict' }));
+    const summary = `runs: ${result.runs ? 'yes' : 'no'}${result.inputLimit !== undefined ? ` · input limit ${result.inputLimit.max} ${result.inputLimit.unit}` : ''}${result.error !== undefined ? ` · ${result.error}` : ''}`;
+    const decisions: PickItem[] = [
+      ...(result.runs ? [{ label: `Approve ${modelId}…`, description: 'choose the levels to allow', kind: 'approve' as const }] : []),
+      { label: `Reject ${modelId}`, kind: 'reject' },
+    ];
+    const decision = await deps.pick([...rows, ...decisions], { placeHolder: `${modelId} through ${family.displayName}: ${summary}` });
+    if (decision === undefined || decision.kind === 'verdict') return;
+
+    let outcome: DecisionResult;
+    let efforts: readonly string[] = [];
+    try {
+      if (decision.kind === 'reject') {
+        outcome = await deps.reject({ checkId: result.checkId });
+      } else {
+        const allowable = result.efforts.filter((e) => e.verdict !== 'rejected');
+        if (allowable.length > 0) {
+          const chosen = await deps.pickMany(allowable.map((e) => ({ label: e.effort, description: VERDICT[e.verdict] ?? e.verdict, kind: 'effort' as const, value: e.effort })), { placeHolder: `Effort levels to allow for ${modelId}` });
+          if (chosen === undefined) return;
+          efforts = chosen.map((c) => c.value ?? '').filter((e) => e !== '');
+        }
+        outcome = await deps.approve({ checkId: result.checkId, efforts });
+      }
+    } catch (err) {
+      const failure = classifyDaemonFailure(err);
+      await deps.notify(failure.kind === 'disconnected'
+        ? `insrc: the outcome is unknown — ${failure.text}; reopen the picker after a restart to see whether ${modelId} was recorded.`
+        : failureMessage(err, `record the decision for ${modelId}`));
+      return;
+    }
+    if (!outcome.ok) {
+      // unknown-check: the daemon no longer holds this check (a restart or eviction) — only a fresh check helps.
+      const again = outcome.reason === 'unknown-check' ? [CHECK_AGAIN] : [];
+      if ((await deps.notify(`insrc: ${outcome.reason}: ${outcome.detail}`, ...again)) === CHECK_AGAIN) continue;
+      return;
+    }
+    if (decision.kind === 'reject') {
+      await deps.notify(`insrc: ${modelId} rejected — the decision applies after a daemon restart.`);
+      return;
+    }
+
+    // Approved: save only after a restart that brings the daemon back; never approve again.
+    let message = `insrc: approved ${modelId} (levels: ${efforts.length > 0 ? efforts.join(', ') : 'none'}) — restart the daemon to use it; the ${tier} tier is saved after the restart.`;
+    for (;;) {
+      if ((await deps.notify(message, RESTART_AND_SAVE)) !== RESTART_AND_SAVE) return;
+      if (await deps.restartDaemon()) {
+        await saveTier(deps, tier, { runner: family.id, model: modelId, effort: efforts[0] ?? '' }, current);
+        return;
+      }
+      message = `insrc: the approval of ${modelId} is recorded, but the daemon did not restart — the ${tier} tier was not saved.`;
+    }
+  }
 }
 
 /** Step 5 — the effort dropdown: '' (the CLI default) then the model's own levels; skipped when it lists none. */

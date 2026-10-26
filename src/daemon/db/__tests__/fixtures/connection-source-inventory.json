@@ -19,7 +19,7 @@
     },
     "src/analyze/measure.ts": {
       "classification": "full-use-lease",
-      "rationale": "t11: metadata snapshots separate; underlying late listings retain shared lease beyond bounded wait"
+      "rationale": "S003 t18: session metadata comes from the exact-root resolver; active owner/root/id/revision keys contain no shared results and stay occupied until full callback/pin work settles. Saved-only pendingListings retains existing shared waiter semantics."
     },
     "src/analyze/runtimes/data/_shared.ts": {
       "classification": "resolver-port",
@@ -296,7 +296,37 @@
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.reload",
+      "expression": "dataConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "dataConnectionResolver",
+      "boundary": "symbol:dataConnectionResolver"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool!.safeList",
       "boundary": "pool-member"
     },
     {
@@ -306,18 +336,18 @@
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
+      "expression": "pool.reload",
       "boundary": "pool-member"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
-      "boundary": "pool-member"
+      "expression": "resolver.lease",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.safeList",
-      "boundary": "pool-member"
+      "expression": "resolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/analyze/measure.ts",

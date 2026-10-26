@@ -3366,6 +3366,26 @@
           "createConnectionResolver({ poolSource: async () => pool })"
         ],
         [
+          "acquisition:resolver-member",
+          "dataConnectionResolver.list"
+        ],
+        [
+          "connection-use",
+          "dataConnectionResolver.list"
+        ],
+        [
+          "acquisition:symbol:dataConnectionResolver",
+          "dataConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:dataConnectionResolver",
+          "dataConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:dataConnectionResolver",
+          "dataConnectionResolver"
+        ],
+        [
           "storage-call",
           "findEntitiesByFile"
         ],
@@ -3376,6 +3396,14 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "serialization",
@@ -3403,6 +3431,30 @@
         ],
         [
           "acquisition:pool-member",
+          "pool!.safeList"
+        ],
+        [
+          "acquisition:pool-member",
+          "pool!.safeList"
+        ],
+        [
+          "acquisition:pool-member",
+          "pool!.safeList"
+        ],
+        [
+          "connection-use",
+          "pool!.safeList"
+        ],
+        [
+          "connection-use",
+          "pool!.safeList"
+        ],
+        [
+          "connection-use",
+          "pool!.safeList"
+        ],
+        [
+          "acquisition:pool-member",
           "pool.reload"
         ],
         [
@@ -3416,34 +3468,26 @@
         [
           "connection-use",
           "pool.reload"
-        ],
-        [
-          "acquisition:pool-member",
-          "pool.safeList"
-        ],
-        [
-          "acquisition:pool-member",
-          "pool.safeList"
-        ],
-        [
-          "acquisition:pool-member",
-          "pool.safeList"
-        ],
-        [
-          "connection-use",
-          "pool.safeList"
-        ],
-        [
-          "connection-use",
-          "pool.safeList"
-        ],
-        [
-          "connection-use",
-          "pool.safeList"
         ],
         [
           "connection-use",
           "r.listTables"
+        ],
+        [
+          "acquisition:resolver-member",
+          "resolver.lease"
+        ],
+        [
+          "connection-use",
+          "resolver.lease"
+        ],
+        [
+          "acquisition:resolver-member",
+          "resolver.list"
+        ],
+        [
+          "connection-use",
+          "resolver.list"
         ],
         [
           "acquisition:resolver-member",
@@ -3454,9 +3498,9 @@
           "resolver.withConnection"
         ]
       ],
-      "siteCount": 34,
-      "sitesDigest": "fbebc02fc73fa2393c30d91d605ce97c8b2770215c75745659c432249df8bc02",
-      "sourceDigest": "0ad2a0b581ad94ca1b89d7cb85ab663891c2782aea62045710882674a60722f1",
+      "siteCount": 45,
+      "sitesDigest": "6f761a2a6d87cc131469d2ba8e006d11d901d5063b286fcef3b844a9212783f7",
+      "sourceDigest": "80d223941594ace8c4ec1f0147a18f7bf7c6e80fd2538a62fe8b5fda76952c5b",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",
@@ -3464,6 +3508,7 @@
         "acquisition:resolver-port-call",
         "acquisition:symbol:acquireDataPool",
         "acquisition:symbol:createConnectionResolver",
+        "acquisition:symbol:dataConnectionResolver",
         "connection-factory",
         "connection-use",
         "diagnostic",

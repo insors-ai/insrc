@@ -32,7 +32,7 @@ test('REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is b
 		'design-extract': { timeoutMs: 600_000 },
 		'design-session': { silenceMs: 300_000 },
 		'code-review':    { silenceMs: 300_000, timeoutMs: 600_000 },
-		'build-validate': { silenceMs: 90_000 },
+		'build-validate': { silenceMs: 300_000 },
 	});
 	for (const [kind, row] of Object.entries(REVIEW_CALL_LIMITS as Readonly<Record<string, ReviewCallLimits>>)) {
 		if (row.silenceMs !== undefined && row.timeoutMs !== undefined) assert.ok(row.silenceMs < row.timeoutMs, `${kind}: silence below its cap`);
@@ -42,7 +42,7 @@ test('REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is b
 	// the defaults, not the settings of the machine the test runs on (~/.insrc/config.json may shorten them)
 	const deadline = (c: 'issue' | 'feature') => reviewDeadlineMs(c, DEFAULT_DESIGN_REVIEW_SETTINGS);
 	assert.ok(session < deadline('issue') && session < deadline('feature') && session < HARD_REVIEW_DEADLINE_MS, 'design-session: below the review deadline');
-	assert.ok(REVIEW_CALL_LIMITS['build-validate'].silenceMs! < 300_000, 'build-validate: below the 300 s judge deadline');
+	assert.equal(REVIEW_CALL_LIMITS['build-validate'].silenceMs, 300_000, 'build-validate: the total judge deadline governs instead of an earlier silence kill');
 	assert.equal(VERIFY_CALL_TIMEOUT_MS, 600_000);
 	assert.equal(VERIFY_CALL_STALL_MS, 90_000);
 	assert.deepEqual(structuredLimits('design-extract'), { timeoutMs: 600_000 }, 'no silence limit is sent where the row has none');

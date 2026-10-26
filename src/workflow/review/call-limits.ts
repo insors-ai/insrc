@@ -18,12 +18,13 @@
  *                   (median call 130 s: a limit above its silence would sit near its run time)
  *   design-session  132 healthy calls, longest silence 172 s -> 300 s
  *   code-review     670 gather calls 185 s, 105 judge calls 66 s -> 300 s
- *   build-validate  176 healthy calls, longest silence  29 s ->  90 s
+ *   build-validate  176 healthy calls, longest silence  29 s ->  90 s (original survey)
+ *                   raised to 300 s after observed slow first responses on 2026-10-26
  *
  * Evidence: docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md
  *
  * A silence limit is armed only below its call's total limit
- * (src/shared/process-group.ts), so each one stays under it.
+ * (src/shared/process-group.ts). When equal, the total deadline governs.
  */
 
 export type ReviewCallKind = 'design-verify' | 'design-extract' | 'design-session' | 'code-review' | 'build-validate';
@@ -42,8 +43,8 @@ export const REVIEW_CALL_LIMITS: Readonly<Record<ReviewCallKind, ReviewCallLimit
 	'design-session': { silenceMs: 300_000 },
 	// Every code-review chunk, gather, judge and controller call.
 	'code-review':    { silenceMs: 300_000, timeoutMs: 600_000 },
-	// Inside the validation session's 300 s deadline, leaving time for its one retry.
-	'build-validate': { silenceMs: 90_000 },
+	// Let the judge use its full 300 s deadline before treating silence as failure.
+	'build-validate': { silenceMs: 300_000 },
 };
 
 /** A row as structured-execution fields: `{ timeoutMs?, stallMs? }`, absent fields left out. */

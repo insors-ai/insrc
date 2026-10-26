@@ -284,7 +284,7 @@ test('validate: a failing judge verdict gives passed:false', async () => {
 	}
 });
 
-test('the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS', async () => {
+test('the build-validation session is run with stallMs 300 s and deadlineMs JUDGE_DEADLINE_MS', async () => {
 	const repo = mkRepo();
 	try {
 		seedDef(repo);
@@ -297,7 +297,7 @@ test('the build-validation session is run with stallMs 90 s and deadlineMs JUDGE
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
 		assert.equal(seen.length, 1);
-		assert.equal(seen[0]?.stallMs, 90_000, "the build-validate row's silence limit");
+		assert.equal(seen[0]?.stallMs, 300_000, "the build-validate row's silence limit");
 		assert.equal(seen[0]?.deadlineMs, JUDGE_DEADLINE_MS);
 		assert.equal(JUDGE_DEADLINE_MS, 300_000);
 	} finally {

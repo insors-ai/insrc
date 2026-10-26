@@ -10,6 +10,7 @@
  * unclassified.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
 
 import { test } from 'node:test';
@@ -208,7 +209,7 @@ test.beforeEach(async () => {
 	mkdirSync(REPO);
 	setGraphStorePath(join(dir, 'graph.lmdb'));
 	await addRepo(null, { path: REPO, name: '', addedAt: NOW, status: 'pending' });
-	ctx = { runId: 'test', repoPath: REPO, closureRepos: [REPO], readDep: () => undefined, ignoreFilter: permissiveIgnoreFilter(REPO) } as ExplorationRunnerContext;
+	ctx = { connectionExecution: savedAnalysisExecution(REPO), runId: 'test', repoPath: REPO, closureRepos: [REPO], readDep: () => undefined, ignoreFilter: permissiveIgnoreFilter(REPO) } as ExplorationRunnerContext;
 });
 
 test.afterEach(async () => {

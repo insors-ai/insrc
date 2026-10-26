@@ -21,6 +21,8 @@
  * for the dispatch logic.
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -104,6 +106,7 @@ export type SynthesizerPromptKey =
 	| 'infra';
 
 export interface SynthesizeArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId:    string;
 	readonly intent:   ClassifiedIntent;
 	readonly executed: ExecutedPlan;
@@ -121,6 +124,8 @@ export interface SynthesizeArgs {
  * schemaVersion, ...) after synthesis.
  */
 export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	if (args.connectionExecution?.mode === 'session-memory' && args.connectionExecution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.target);
 	const provider = args.provider ?? resolveRoleProvider('analyze.synthesize', cfg);

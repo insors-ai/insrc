@@ -36,7 +36,7 @@ import type { TemplateExecuteArgs } from '../../../../analyze/executor/types.js'
 registerDbTools();
 test('owner tool runtime and exploration matrix', async () => {
  const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-tool-owner-'))), root = join(directory, 'root'), other = join(directory,'other'); await mkdir(root); await mkdir(other);
- const originalIns=PATHS.insrc;PATHS.insrc=join(directory,'insrc');setGraphStorePath(join(directory,'graph.lmdb'));
+ const originalIns=PATHS.insrc, originalTaskPath=PATHS.analyzeTaskOutput;PATHS.insrc=join(directory,'insrc');PATHS.analyzeTaskOutput=(runId,taskId)=>join(directory,'analyze',runId,'tasks',taskId+'.json');setGraphStorePath(join(directory,'graph.lmdb'));
  registerTemplateRuntime(dataSchemaTableRuntime);
  const overlays = new Map<string,TemporaryConnectionOverlay>();
  const runtime = new ConnectionSessionRpc({ enabled: async()=>true, isRegistered:async r=>r===root||r===other, createOverlay:(r,h,c)=>{ const o=createTemporaryOverlay(r,h,c);overlays.set(h,o);return o; }, dropOverlay:o=>o.close() });
@@ -127,5 +127,5 @@ test('owner tool runtime and exploration matrix', async () => {
   } finally {fileProceed();await refusedListing;await ending;statSpy.mock.restore();syncBuiltinESMExports();}
   const poison=new Proxy({}, {get(){throw new Error('input read before authority');}});
   await assert.rejects(executeTool('db_sql_sample',poison,{sessionId:'fixture',repoPath:root,requestId:1,send:()=>{},connectionExecution:first.execution}),{code:'session-expired'});
- } finally {for(const o of owners){o.lifetime.abort();o.lifetime.complete();await o.lifetime.drained;} _setTaskScopeDepsForTest(undefined);await runtime.close();await closeAll();await closeGraphStore();PATHS.insrc=originalIns;await rm(directory,{recursive:true,force:true});}
+ } finally {for(const o of owners){o.lifetime.abort();o.lifetime.complete();await o.lifetime.drained;} _setTaskScopeDepsForTest(undefined);await runtime.close();await closeAll();await closeGraphStore();PATHS.insrc=originalIns;PATHS.analyzeTaskOutput=originalTaskPath;await rm(directory,{recursive:true,force:true});}
 });

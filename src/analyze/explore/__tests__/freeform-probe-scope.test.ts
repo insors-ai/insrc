@@ -9,6 +9,7 @@
  * The tool loop is a stand-in -- no model, no store.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
@@ -49,7 +50,7 @@ function exploration(shaperId: string): Exploration {
 
 function ctx(scope: ResolvedScope | undefined, repoPath: string): ExplorationRunnerContext {
 	return {
-		runId: 'r1', repoPath, closureRepos: [repoPath],
+		connectionExecution: savedAnalysisExecution(repoPath), runId: 'r1', repoPath, closureRepos: [repoPath],
 		readDep: () => undefined,
 		...(scope !== undefined ? { scope } : {}),
 	} as unknown as ExplorationRunnerContext;
@@ -72,7 +73,7 @@ async function probe(scope: ResolvedScope | undefined, repoPath: string, shaperI
 function loopPath(args: RunShaperToolLoopArgs): string {
 	return _buildToolDepsForTest({
 		runId: args.runId, shaperId: args.shaperId, invocationMode: args.invocationMode,
-		scope: args.scope, provider: {} as unknown as LLMProvider,
+		scope: args.scope, connectionExecution: args.connectionExecution, provider: {} as unknown as LLMProvider,
 	}).repoPath;
 }
 

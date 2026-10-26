@@ -24,7 +24,8 @@
  * responsibility to emit a valid topological ordering).
  */
 
-import { assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { assertAnalysisConnectionExecution, savedAnalysisExecution } from '../connection-access.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -146,7 +147,8 @@ export interface ExecutePlanArgs {
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
-	assertExplicitConnectionExecution(args.connectionExecution);
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = args.connectionExecution ?? savedAnalysisExecution(args.repoPath);
 	const start = Date.now();
 	const results: ExecutedExploration[] = [];
 	const outputsById = new Map<string, ExplorationOutput>();
@@ -220,7 +222,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 			if (!cached) {
 				try {
 					const ctx: ExplorationRunnerContext = {
-                        connectionExecution: args.connectionExecution,
+						connectionExecution: execution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,
@@ -237,6 +239,8 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 						);
 					}
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'exploration failed',
@@ -465,7 +469,8 @@ export async function stepPlan(
 		readonly resumeState?: StepPlanResumeState;
 	},
 ): Promise<StepPlanResult> {
-	assertExplicitConnectionExecution(args.connectionExecution);
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = args.connectionExecution ?? savedAnalysisExecution(args.repoPath);
 	const runStart = Date.now();
 	const outputsById = new Map<string, ExplorationOutput>();
 	const results: ExecutedExploration[] = [];
@@ -531,7 +536,7 @@ export async function stepPlan(
 			} else {
 				const narrow = NARROW_RUNNERS[exp.type]!;
 				const ctx: ExplorationRunnerContext = {
-                        connectionExecution: args.connectionExecution,
+						connectionExecution: execution,
 					runId:        args.runId,
 					repoPath:     args.repoPath,
 					closureRepos: args.closureRepos,
@@ -548,6 +553,8 @@ export async function stepPlan(
 				try {
 					prep = await narrow.prepare(exp, ctx);
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'multi-turn exploration failed in prepare',
@@ -595,7 +602,7 @@ export async function stepPlan(
 			} else {
 				try {
 					const ctx: ExplorationRunnerContext = {
-                        connectionExecution: args.connectionExecution,
+						connectionExecution: execution,
 						runId:        args.runId,
 						repoPath:     args.repoPath,
 						closureRepos: args.closureRepos,
@@ -610,6 +617,8 @@ export async function stepPlan(
 						args.repoPath, args.repoLastIndexedAtMs, exp, output,
 					);
 				} catch (err) {
+					if (err instanceof ConnectionExecutionError) throw err;
+					assertAnalysisConnectionExecution(execution);
 					log.warn(
 						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'multi-turn exploration failed',

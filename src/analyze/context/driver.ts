@@ -46,7 +46,7 @@
  *      docs/plans/analyze-context-builder.md Phase 3
  */
 
-import { assertExplicitConnectionExecution, requireConnectionExecution } from '../../shared/step-context.js';
+import { ConnectionExecutionError, assertExplicitConnectionExecution, requireConnectionExecution } from '../../shared/step-context.js';
 import { emitStructuredAnswer, runReadOnlyToolLoop, type ReadOnlyToolLoopResult } from '../../agent/read-only-tool-loop.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -80,7 +80,7 @@ import {
 	type CacheKey,
 } from './cache.js';
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
-import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { assertAnalysisConnectionExecution, savedAnalysisExecution } from '../connection-access.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -413,8 +413,11 @@ async function servedFromCache(
 }
 
 export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
-	assertExplicitConnectionExecution(args.opts?.connectionExecution ?? args.connectionExecution);
+	assertAnalysisConnectionExecution(args.opts?.connectionExecution ?? args.connectionExecution);
+	if (args.opts?.connectionExecution !== undefined && args.connectionExecution !== undefined && args.opts.connectionExecution !== args.connectionExecution) throw new ConnectionExecutionError('session-expired');
 	if (args.connectionExecution !== undefined) assertExplicitConnectionExecution(args.connectionExecution);
+	const supplied = args.opts?.connectionExecution ?? args.connectionExecution;
+	if (supplied?.mode === 'session-memory' && supplied.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
@@ -470,6 +473,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// request can arrive with a ready-made intent that no classifier
 	// validated.
 	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps, opts.connectionExecution ?? args.connectionExecution);
+	const execution = opts.connectionExecution ?? args.connectionExecution ?? savedAnalysisExecution(scope.lookupPath);
 
 	// (4.5) Before any model call, unless the caller made these checks
 	// already (runAnalyze, before it measured):
@@ -491,7 +495,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// bundle, or the one cause for which it did not proceed, or
 	// 'not-applicable' for a mode it does not serve.
 	const outcome = await tryExplorationPipeline(
-		{ invocationMode, shaperId, inputs, runId, scope },
+		{ invocationMode, shaperId, inputs, runId, scope, connectionExecution: execution },
 		steps,
 	);
 	// A cause the pipeline names becomes its own typed error here, in
@@ -542,6 +546,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		invocationMode,
 		scope,
 		provider,
+		connectionExecution: execution,
 	});
 
 	// (6) Run the tool-loop + final structured emit.
@@ -560,6 +565,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		cfg.shaper.structuredOutputRetries,
 		cfg.shaper.ollamaNumPredict,
 		onTrace,
+		execution,
 	);
 
 	// (7) Stamp meta + validate. `repoLastIndexedAt` carries the registry
@@ -836,8 +842,9 @@ export interface RunShaperToolLoopArgs {
 export async function runShaperToolLoop(
 	args: RunShaperToolLoopArgs,
 ): Promise<ShaperToolLoopResult> {
-	assertExplicitConnectionExecution(args.connectionExecution);
-	requireConnectionExecution(args.connectionExecution);
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	if (execution.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
@@ -848,6 +855,7 @@ export async function runShaperToolLoop(
 		invocationMode: args.invocationMode,
 		scope:          args.scope,
 		provider,
+		connectionExecution: execution,
 	});
 	const { messages: finalMessages, toolCallCount } = await runToolLoop(
 		provider,
@@ -862,7 +870,9 @@ export async function runShaperToolLoop(
 		cfg.shaper.structuredOutputRetries,
 		cfg.shaper.ollamaNumPredict,
 		args.onTrace,
+		execution,
 	);
+	assertAnalysisConnectionExecution(execution);
 	return { rawBundle, toolCallCount };
 }
 
@@ -881,9 +891,11 @@ async function runToolLoop(
 	maxToolTurns: number,
 	onTrace?:     ((event: ShaperTraceEvent) => void) | undefined,
 ): Promise<ToolLoopResult> {
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	let result: ReadOnlyToolLoopResult;
 	try {
 		result = await runReadOnlyToolLoop({
+			connectionExecution: deps.connectionExecution,
 			provider,
 			messages,
 			tools:    getReadOnlyTools(),
@@ -903,8 +915,11 @@ async function runToolLoop(
 			},
 		});
 	} catch (err) {
+		assertAnalysisConnectionExecution(deps.connectionExecution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		throw classifyOllamaError(err, 'tool loop');
 	}
+	assertAnalysisConnectionExecution(deps.connectionExecution);
 	if (result.done) return { messages: result.messages, toolCallCount: result.toolCallCount };
 
 	// The results are written to a file in full; the error's message names it.
@@ -921,7 +936,9 @@ async function runFinalStructuredEmit(
 	structuredOutputRetries: number,
 	maxOutputTokens:         number,
 	onTrace?:                ((event: ShaperTraceEvent) => void) | undefined,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<AnalyzeContextBundle> {
+	assertAnalysisConnectionExecution(execution);
 	// Per feedback_prompt_structure: structural reference goes trailing.
 	// The final user turn carries the explicit schema reminder so the
 	// model's recency-weighted attention lands on the required-fields
@@ -979,6 +996,7 @@ async function runFinalStructuredEmit(
 
 	try {
 		const raw = await emitStructuredAnswer<AnalyzeContextBundle>({
+			connectionExecution: execution,
 			provider,
 			messages,
 			instruction,
@@ -995,6 +1013,8 @@ async function runFinalStructuredEmit(
 		});
 		return raw;
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		const errClass = classifyOllamaError(err, 'final structured emit');
 		// classifyOllamaError returns either a ShaperLlmUnavailableError or
 		// the original error; if it's the original, treat it as a schema
@@ -1125,6 +1145,7 @@ export function localToolLoopModel(cfg: AnalyzeConfig, registry: ModelRegistry =
 }
 
 interface BuildToolDepsArgs {
+	readonly connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
@@ -1133,6 +1154,8 @@ interface BuildToolDepsArgs {
 }
 
 function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	requireConnectionExecution(args.connectionExecution);
 	const sessionId = `analyze-shaper-${args.runId}-${args.invocationMode}-${args.shaperId}`;
 	// The directory the tools run in: the scope's own directory for a
 	// repo / module / manifest directory / workspace; the containing
@@ -1141,6 +1164,8 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	return {
 		sessionId,
 		repoPath,
+		connectionExecution: args.connectionExecution,
+		signal: args.connectionExecution.lifetime.signal,
 		// V1 shaper closure = the scope's containing repo only.
 		// docs/plans/docs-module.md Section 6.3 pins the docs retriever to
 		// this policy; graph_search + docs_* tools use this to bound
@@ -1404,6 +1429,7 @@ function didNotProceed(cause: PipelineCause, message: string, extra: PipelineCau
  */
 async function tryExplorationPipeline(
 	args: {
+		connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 		invocationMode: ShaperMode;
 		shaperId:       ShaperId;
 		inputs:         RunShaperArgs['inputs'];
@@ -1413,6 +1439,8 @@ async function tryExplorationPipeline(
 	},
 	steps: PipelineSteps = REAL_PIPELINE_STEPS,
 ): Promise<PipelineOutcome> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = args.connectionExecution ?? savedAnalysisExecution(args.scope.lookupPath);
 	if (args.invocationMode !== 'run') return { kind: 'not-applicable' };
 	// Every run-mode shaper flows through the exploration pipeline
 	// (docs/plans/exploration-based-context-build.md Phase 6). Recipe-less
@@ -1444,7 +1472,8 @@ async function tryExplorationPipeline(
 	const reused = handed !== undefined && handed.source !== 'lookup-results';
 	const area = reused
 		? handed
-		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);
+		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint, { connectionExecution: execution, signal: execution.lifetime.signal });
+	assertAnalysisConnectionExecution(execution);
 	const intent: ClassifiedIntent = { ...unsized, scope: area.size };
 	log.info(
 		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note, reused },
@@ -1460,8 +1489,11 @@ async function tryExplorationPipeline(
 	let plan: ExplorationPlan;
 	let usedFallback = false;
 	try {
-		plan = await steps.decompose({ intent, runId: args.runId, scope: args.scope });
+		plan = await steps.decompose({ intent, runId: args.runId, scope: args.scope, connectionExecution: execution });
+		assertAnalysisConnectionExecution(execution);
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof DecomposerLlmUnavailableError) {
 			log.info(
 				{ runId: args.runId, err: err.message },
@@ -1535,12 +1567,15 @@ async function tryExplorationPipeline(
 	try {
 		lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		return didNotProceed('index-state-read-failed', errorText(err));
 	}
 	const lastIndexedBigInt = BigInt(lastIndexedMs ?? 0);
 	let executed: Awaited<ReturnType<PipelineSteps['executePlan']>>;
 	try {
 		executed = await steps.executePlan({
+			connectionExecution: execution,
 			runId:            args.runId,
 			repoPath,
 			closureRepos:     [repoPath],
@@ -1551,9 +1586,12 @@ async function tryExplorationPipeline(
 			requestSize:      area.size,
 		});
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		return didNotProceed('lookup-failed', errorText(err));
 	}
 
+	assertAnalysisConnectionExecution(execution);
 	// (c.0) The answer report, derived from the lookups' own records before any
 	// answer is written. It does not depend on the answer. A lookup output
 	// that states nothing about its completeness is a defect of that lookup:
@@ -1617,11 +1655,13 @@ async function tryExplorationPipeline(
 							: 'code';
 	try {
 		const raw = await steps.synthesize({
+			connectionExecution: execution,
 			runId:    args.runId,
 			intent:   answerIntent,
 			executed,
 			target:   synthesizeTarget,
 		});
+		assertAnalysisConnectionExecution(execution);
 		return {
 			kind:             'bundle',
 			raw,
@@ -1629,6 +1669,8 @@ async function tryExplorationPipeline(
 			found,
 		};
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof SynthesizerLlmUnavailableError) {
 			log.info(
 				{ runId: args.runId, err: err.message },

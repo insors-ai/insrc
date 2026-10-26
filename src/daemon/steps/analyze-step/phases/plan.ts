@@ -115,6 +115,7 @@ export async function handlePlan(
 	// The token carries the intent, not a resolved scope: resolve it again.
 	const scope = await stepScope(state.intent, undefined, execution);
 	const step = await stepPlan({
+		connectionExecution: execution,
 		runId:               state.runId,
 		repoPath:            scope.lookupPath,
 		closureRepos:        [scope.lookupPath],

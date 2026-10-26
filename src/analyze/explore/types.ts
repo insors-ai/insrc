@@ -879,8 +879,8 @@ export interface ExecutedPlan {
  * failures, LMDB txn errors) still throw as usual.
  */
 export interface ExplorationRunnerContext {
-	/** Staged carrier; made required when production entry points migrate. */
-	readonly connectionExecution?: ConnectionExecutionContext | undefined;
+	/** Required normalized authority; trusted saved entries supply explicit saved execution. */
+	readonly connectionExecution: ConnectionExecutionContext;
 	readonly runId:       string;
 	readonly repoPath:    string;
 	readonly closureRepos: readonly string[];

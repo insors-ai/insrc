@@ -11,6 +11,7 @@
  * stand-in tool loop.
  */
 
+import { savedAnalysisExecution } from '../../connection-access.js';
 import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
 
 import { test } from 'node:test';
@@ -112,6 +113,7 @@ test.beforeEach(async () => {
 	setGraphStorePath(join(dir, 'graph.lmdb'));
 	await addRepo(null, { path: REPO, name: '', addedAt: NOW, status: 'pending' });
 	ctx = {
+		connectionExecution: savedAnalysisExecution(REPO),
 		runId: 'test', repoPath: REPO, closureRepos: [REPO],
 		readDep: () => undefined,
 		ignoreFilter: permissiveIgnoreFilter(REPO),

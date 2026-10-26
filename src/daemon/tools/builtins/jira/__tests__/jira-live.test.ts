@@ -76,7 +76,10 @@ test('jira-live.test.ts: read ops view, search, count, list, types, status and v
     await ok(jiraCommentTool, { op: 'list', key: itemKey, limit: 5 });
     await ok(jiraLinkTool, { op: 'list', key: itemKey });
   } finally {
-    if (temp !== undefined) { await call(jiraWorkitemTool, { op: 'delete', keys: [temp] }); }
+    if (temp !== undefined) {
+      const del = await call(jiraWorkitemTool, { op: 'delete', keys: [temp] });
+      assert.equal(del.success, true, `cleanup of the temporary work item ${temp}: ${del.failure?.message ?? ''}`);
+    }
   }
   // a missing work item is a rejected failure with Jira's text
   const missing = await call(jiraWorkitemTool, { op: 'view', key: 'ZZNOPE-999999' });
@@ -134,7 +137,8 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   const key = probe.key as string;
   // the cleanup below removes whatever sits under the scratch key, so the key must be free: refuse to start if a project already has it
   const existing = await call(jiraProjectTool, { op: 'view', key });
-  assert.equal(existing.success, false, `a project ${key} already exists; choose a key that is free (deleted projects keep their key in Jira's trash)`);
+  // only acli's own 'No project could be found' proves the key is free: a network or permission failure proves nothing, and the cleanup deletes whatever sits under the key
+  assert.ok(existing.success === false && /No project could be found/.test(`${existing.failure?.message ?? ''}${existing.failure?.original ?? ''}`), `cannot show that ${key} is free (${existing.success ? 'a project has it' : existing.failure?.message}); choose another key (deleted projects keep their key in Jira's trash)`);
   let made = false;
   let created = false;
   let archived = false;
@@ -148,10 +152,10 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
     assert.equal(create.r.success, true, `project create was refused; the text is recorded: ${create.text}`);
     for (const input of [{ op: 'update', projectKey: key, description: 'insrc probe' }, { op: 'archive', key }, { op: 'restore', key }]) {
       const step = await textOf(input);
+      // the state changes only on a confirmed answer, and before the fallible recording, so a failed restore is retried in the cleanup
+      if (step.r.success) { archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived; }
       // a failure is recorded beside the fixtures, never over the success text
       record(step.r.success ? String(input.op) : `${String(input.op)}-failed`, step.text);
-      // the state changes only on a confirmed answer, so a failed restore is retried in the cleanup
-      if (step.r.success) { archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived; }
       assert.equal(step.r.success, true, `${String(input.op)}: ${step.text}`);
     }
   } finally {

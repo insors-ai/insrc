@@ -72,10 +72,20 @@ export function canonicalData(value: unknown, maxBytes: number = USAGE_LIMITS.so
     // engine allocation here is explicitly outside our bounded bookkeeping.
     const keys = Reflect.ownKeys(object);
     if (keys.length > USAGE_LIMITS.nodes) limit(path);
+    let keyCharacters = 0;
     // A single bounded descriptor at a time avoids copying an oversized graph.
     const descriptors = new Map<string, PropertyDescriptor>();
     for (const key of keys) {
-      if (typeof key !== 'string') fail(path);
+      if (typeof key !== 'string') return fail(path);
+      // Check constant-time lengths before descriptor lookup, sorting, regexes
+      // or path escaping can scan attacker-controlled property names.
+      if (array) {
+        if (key.length > maxBytes) limit(path);
+        if (key !== 'length' && key.length > String(USAGE_LIMITS.referenceItems - 1).length) fail(path);
+      } else {
+        keyCharacters += key.length;
+        if (keyCharacters > maxBytes) limit(path);
+      }
       const descriptor = Object.getOwnPropertyDescriptor(object, key);
       if (!descriptor || !('value' in descriptor) || (!(array && key === 'length') && !descriptor.enumerable)) fail(path);
       descriptors.set(key as string, descriptor!);

@@ -69,6 +69,13 @@ test('canonical identity enforces byte, depth, node and reference limits', () =>
   rejected(() => canonicalData(Array(1025).fill(0)), 'resource-limit');
   rejected(() => canonicalData(Array.from({ length: 5 }, () => Array(1024).fill(0))), 'resource-limit');
   rejected(() => canonicalData(Object.fromEntries(Array.from({ length: 4097 }, (_, i) => [`k${i}`, 0]))), 'resource-limit');
+  const longPrefix = 'x'.repeat(100_000);
+  rejected(() => canonicalData({ [longPrefix + 'a']: 1, [longPrefix + 'b']: 2 }), 'resource-limit');
+  // Aggregate key work is bounded even when each name alone fits the budget.
+  rejected(() => canonicalData({ ['a'.repeat(9000)]: 1, ['b'.repeat(9000)]: 2 }), 'resource-limit');
+  const longArrayKey: unknown[] = [];
+  Object.defineProperty(longArrayKey, '1'.repeat(100_000), { value: 1, enumerable: true });
+  rejected(() => canonicalData(longArrayKey), 'resource-limit');
   const base = { ...record, observation: { ...record.observation!, reason: 'x' } };
   const spare = 16384 - Buffer.byteLength(canonicalSource(base)) + 1;
   const full = { ...base, observation: { ...base.observation, reason: 'x'.repeat(spare) } };

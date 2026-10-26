@@ -1,7 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { collectGroup, reduceGroupCore } from '../reducer.js';
+import { collectGroup } from '../reducer.js';
+import { DefaultUsageReducer } from '../index.js';
+const reduceGroupCore = new DefaultUsageReducer().reduce;
 import { finish, start, signed, scoped, stream } from './fixtures/domain-fixtures.js';
 import type { AccountingScope, LedgerRecord, RequestFinished, RequestStarted } from '../types.js';
 const zero = { inputUncachedTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, outputTokens: 0, reasoningTokens: 0 };

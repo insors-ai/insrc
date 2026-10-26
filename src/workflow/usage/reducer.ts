@@ -6,7 +6,7 @@ import { cumulativeInterval } from './cumulative.js';
 import { resolveEffectiveOwner } from './ownership.js';
 import { eventSetDigest, validateRecord, validateScope } from './validation.js';
 import { USAGE_LIMITS } from './types.js';
-import type { AccountingScope, EffectiveAccounting, EffectiveOwner, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
+import type { AccountingScope, EffectiveAccounting, EffectiveOwner, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality, UsageReducer } from './types.js';
 
 export class UsageReductionError extends Error implements UsageDomainError {
   constructor(readonly code: 'resource-limit' | 'source-unavailable') { super(code); this.name = 'UsageReductionError'; }
@@ -59,7 +59,11 @@ export async function collectGroup(records: AsyncIterable<LedgerRecord>, signal?
         // serialized, charge its bounded worst-case traversal allowance.
         receivedBytes += serialized === undefined ? USAGE_LIMITS.sourceBytes + 1024 : Buffer.byteLength(serialized);
         if (receivedBytes > USAGE_LIMITS.groupBytes) throw new UsageReductionError('resource-limit');
-        invalid = true; notices.add('invalid-record:/'); continue;
+        invalid = true;
+        if (serialized !== undefined) {
+          for (const notice of validateRecord(JSON.parse(serialized))) notices.add(notice);
+        } else notices.add('invalid-record:/');
+        continue;
       }
       receivedBytes += Buffer.byteLength(source);
       if (receivedBytes > USAGE_LIMITS.groupBytes) throw new UsageReductionError('resource-limit');
@@ -125,6 +129,7 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
     notices.add('closure-incomplete:/evidence'); quality.add('unavailable');
     if (scope.evidence.coverageState === 'legacy' || scope.evidence.coverageState === 'missing' || scope.evidence.coverageState === 'unsupported') quality.add(scope.evidence.coverageState);
   }
+  if (collected.notices.some(notice => notice.startsWith('unsupported-version:') || notice.startsWith('unknown-kind:'))) quality.add('unsupported');
   if (collected.invalid) return empty([...notices], [...quality, 'conflict', 'unavailable']);
   const rows = [...collected.records.values()].sort((a, b) => a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
   if (collected.ambiguousControl) return empty([...notices], [...quality, 'conflict', 'unavailable']);
@@ -196,4 +201,12 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   if (collected.conflicts.size) quality.add('conflict');
   checkAbort(options.signal);
   return { knownTokens: known.toString(), estimatedTokens: estimated.toString(), quality: [...quality].sort(), basisEventIds: basis.sort(), notices: orderedNotices(notices), effectiveOwners: owners.sort((a, b) => a.callId < b.callId ? -1 : a.callId > b.callId ? 1 : 0) };
+}
+
+/** Complete sc1 implementation. Storage callers supply the bounded evidence set. */
+export class DefaultUsageReducer implements UsageReducer {
+  validate(record: LedgerRecord): readonly string[] { return validateRecord(record); }
+  reduce(records: AsyncIterable<LedgerRecord>, scope: Readonly<Record<string, unknown>>): Promise<EffectiveAccounting> {
+    return reduceGroupCore(records, scope);
+  }
 }

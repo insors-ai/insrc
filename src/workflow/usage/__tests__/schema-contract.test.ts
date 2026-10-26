@@ -17,7 +17,7 @@ test('types preserve HLD contracts and reject invalid v1 payloads', () => {
     require.resolve('typescript/bin/tsc'), '--noEmit', '--strict',
     '--exactOptionalPropertyTypes', '--noUncheckedIndexedAccess', '--skipLibCheck',
     '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2022',
-    '--types', 'node', '--pretty', 'false', fixture,
+    '--resolveJsonModule', '--esModuleInterop', '--types', 'node', '--pretty', 'false', fixture,
   ], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(output, '');
 });
@@ -118,4 +118,44 @@ test('logical and typed Avro schemas preserve v1 payloads and reject illegal sha
   assert.deepEqual(unwrap(type.clone(envelope('request.started', { callId: 'call', context: missingNull }), { wrapUnions: true })), fixtures[0]);
   assert.equal(Object.isFrozen(ledgerRecordV1Schema.$defs.Context.properties), true);
   assert.equal(Object.isFrozen(ledgerRecordV1AvroSchema.fields), true);
+});
+
+test('isolated compiled-output public imports load matching schemas and round-trip records with no source tree', async () => {
+  const { mkdtemp, cp, writeFile, symlink, readFile, rm, stat } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join, resolve } = await import('node:path');
+  const { createHash } = await import('node:crypto');
+  const root = fileURLToPath(new URL('../../../../', import.meta.url));
+  const isolated = await mkdtemp(join(tmpdir(), 'insrc-usage-package-'));
+  try {
+    const compiled = join(isolated, 'compiled'), packaged = join(isolated, 'package');
+    execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--project', join(root, 'tsconfig.json'), '--outDir', compiled], { encoding: 'utf8', timeout: 60_000 });
+    await cp(join(compiled, 'workflow/usage'), join(packaged, 'usage'), { recursive: true });
+    await cp(join(compiled, 'workflow/artifact-ids.js'), join(packaged, 'artifact-ids.js'));
+    await writeFile(join(packaged, 'package.json'), JSON.stringify({ type: 'module' }));
+    await symlink(resolve(root, 'node_modules'), join(packaged, 'node_modules'), 'dir');
+    // The test imports only this production subset; sibling modules are absent.
+    await rm(compiled, { recursive: true });
+    await assert.rejects(stat(join(isolated, 'src')));
+    await assert.rejects(stat(join(packaged, 'src')));
+    for (const name of ['ledger-record.v1.schema.json', 'ledger-record.v1.avsc.json']) {
+      // TypeScript reformats JSON on emit; compare the complete schema value.
+      const digest = (bytes: Buffer) => createHash('sha256').update(JSON.stringify(JSON.parse(bytes.toString('utf8')))).digest('hex');
+      assert.equal(digest(await readFile(join(packaged, 'usage', name))), digest(await readFile(new URL(`../${name}`, import.meta.url))));
+    }
+    const script = `
+      import assert from 'node:assert/strict';
+      import { DefaultUsageReducer, DefaultUsageAttributionPolicy, ledgerRecordV1Schema, ledgerRecordV1AvroSchema, createUsageAvroType } from './usage/index.js';
+      assert.ok(new DefaultUsageReducer()); assert.ok(new DefaultUsageAttributionPolicy());
+      assert.equal(Object.isFrozen(ledgerRecordV1Schema), true);
+      assert.equal(Object.isFrozen(ledgerRecordV1AvroSchema), true);
+      const type = createUsageAvroType();
+      const fixtures = ${JSON.stringify(fixtures)};
+      const unwrap = ${unwrap.toString()};
+      for (const record of fixtures) assert.deepEqual(unwrap(type.fromBuffer(type.toBuffer(type.clone(record, { wrapUnions: true })))), record);
+      process.stdout.write('packaged-roundtrips-ok');
+    `;
+    await writeFile(join(packaged, 'smoke.mjs'), script);
+    assert.equal(execFileSync(process.execPath, [join(packaged, 'smoke.mjs')], { cwd: packaged, encoding: 'utf8', timeout: 30_000 }), 'packaged-roundtrips-ok');
+  } finally { await rm(isolated, { recursive: true, force: true }); }
 });

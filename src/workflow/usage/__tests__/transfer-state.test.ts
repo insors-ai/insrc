@@ -1,7 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { reduceGroupCore } from '../reducer.js';
+import { DefaultUsageReducer } from '../index.js';
+const reduceGroupCore = new DefaultUsageReducer().reduce;
 import { requireEffectiveOwners } from '../ownership.js';
 import { binding, finish, scoped, signed, start, stream } from './fixtures/domain-fixtures.js';
 import type { AccountingScope, LedgerRecord, TransferIdentity, UsageBinding } from '../types.js';

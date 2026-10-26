@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "warn",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers S004 ac1–ac5 and its local constraints without adding client implementation or Ollama approval.",
-          "evidence": "DEF §6.4 and HLD §5.4 require CLI-derived evidence, explicit approval, refusal when the model did not run, persisted decisions and subsequent definitions visibility. LLD §§2, 6 and 7 address each, retaining Codex list-based verdicts and Claude recognised-unconfirmed verdicts. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Retain this scope and acceptance mapping.",
+          "premise": "The design covers s4/ac1–ac5 and lc1–lc3 without adding client UI or definition editing.",
+          "evidence": "Compared DEF §6.4 and HLD §6.4 with the proposed requests and acceptance mapping. CLI-specific effort evidence, successful-run approval guards, approved subsets, rejection, persistence and restart-visible definitions are covered. The CLI probe evidence supports distinguishing Codex support from Claude recognised-but-unconfirmed effort names. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,23 +48,11 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing registry reads approval profiles, caches its view per thread and already supports approved and rejected models.",
-          "evidence": "getModelRegistry builds once from validateModelCatalog() and readStore(). buildModelRegistry selects the latest decidedAt, exposes approved profiles as source 'user-approved' and records rejected ids. projectDefinitions projects those values; applyConfigWrite refuses changed tiers naming an effectively rejected model. [files: src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts]",
-          "action": "Reuse these behaviours without changing the reader.",
+          "premise": "The existing registry reads approvals and rejections, caches them per thread, and already supplies definitions and settings admission; the decision writer is new.",
+          "evidence": "Read model-registry.ts, model-definitions.ts, config-write.ts and the config.write handler. getModelRegistry builds only when 'registry === undefined'; approved profiles become source 'user-approved', and effective rejected ids feed config.write refusal. Source searches found approvedModels used by the reader and no existing models.check/approve/reject handlers or store writer. Session handlers currently register models.definitions and models.resolveRole. [files: src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts, src/daemon/handler-runtime.ts, src/shared/paths.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Before S004, the daemon spawns Claude and Codex only as providers.",
-          "evidence": "LLD §8 says 'The daemon spawns claude / codex only as providers'. Existing registerMcpClients also selects bin 'claude' and bin 'codex'; registerOne invokes \"run(p.bin, ['mcp', 'list'])\" and MCP registration arguments through runCli's spawn(). The repo.add handler calls this registration path. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/daemon/mcp-register.ts, src/daemon/handler-runtime.ts]",
-          "action": "Narrow the statement to model-execution calls, and acknowledge the existing MCP-registration subprocesses.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -72,9 +60,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The approval workflow is new, while the proposed subprocess and profile-validation dependencies exist with the stated shapes.",
-          "evidence": "Repository searches found no models.check/approve/reject handlers or approval-store writer. runInProcessGroup accepts command, readonly args and options including stdin, cwd, timeoutMs and env; its result includes spawnError and timedOut. profileProblem is currently private, validates ApprovedProfile entries and is called by readStore. The registry test reset/path seams and exported buildModelRegistry also exist. [files: src/shared/process-group.ts, src/daemon/model-registry.ts, src/daemon/handler-runtime.ts, src/daemon/__tests__/model-registry.test.ts]",
-          "action": "Add the workflow module and export profileProblem as proposed; retain its validation body.",
+          "premise": "The proposed subprocess and profile-validation reuse exists with the stated shape.",
+          "evidence": "runInProcessGroup exports command/args/options execution with stdin, cwd and timeoutMs; its result includes stdout, stderr, exitCode, spawnError and timedOut. CliProvider's runSubprocess is private and wraps this runner. profileProblem is currently private and returns 'string | undefined', so an export-only change supplies the proposed shared validation without changing reader behavior. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, src/daemon/model-registry.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,9 +72,21 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Handler registration, method classification and the recorded RPC inventory are the required daemon integration sites, and session classification supports a single shared pending table and queue.",
-          "evidence": "buildHandlerRuntime constructs the RPC table. method-class.ts independently classifies methods, while handler-runtime.test.ts compares sorted handler keys with RECORDED_RPC and method-class.test.ts checks table coverage. Router dispatch sends unrouted session requests to local handlers on the main thread. Direct reads supplied this verification after insrc_analyze failed at answer generation because its model was at capacity. [files: src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/threads/router.ts, src/daemon/index.ts, src/daemon/__tests__/handler-runtime.test.ts, src/daemon/threads/__tests__/method-class.test.ts]",
-          "action": "Update all three inventories together and retain the session-class assertions.",
+          "premise": "Handler registration, method classification and recorded-method inventory are the required RPC integration sites.",
+          "evidence": "buildHandlerRuntime constructs the RPC table. method-class.ts independently inventories methods, and its coverage test compares entries with the constructed tables. handler-runtime.test.ts asserts the sorted RPC keys equal RECORDED_RPC. Adding the three handlers and both inventories follows these actual contracts. [files: src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/threads/__tests__/method-class.test.ts, src/daemon/__tests__/handler-runtime.test.ts]",
+          "action": "Keep RECORDED_RPC in sorted order, as its assertion requires.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Session classification makes a main-thread module-level queue and pending table sufficient for all three external requests.",
+          "evidence": "Read main-thread routing and the indexing worker's handler selection. index.ts explicitly states 'session methods run here' and routes admin/indexing classes to workers. Router.dispatch sends unrouted classes locally. The indexing worker installs only entries whose class is 'indexing', despite constructing the shared runtime. Analyzer caller coverage was incomplete; these source reads establish the ownership directly. [files: src/daemon/index.ts, src/daemon/threads/router.ts, src/daemon/threads/indexing-worker.ts, src/daemon/__tests__/handler-runtime.test.ts]",
+          "action": "Keep pending-table and queue initialization lazy so constructing handler tables does not start work.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,11 +96,35 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Appending validated version-1 profiles preserves compatibility with the existing reader and its decision precedence.",
-          "evidence": "ApprovedProfile contains exactly the proposed family, modelId, status, efforts, optional inputLimit, decidedAt and cliVersion fields. readStore skips invalid entries individually; buildModelRegistry chooses the latest timestamp, with later entries winning ties. Empty efforts and omitted inputLimit are accepted. A version-1 writer is compatible with the reader's broader numeric-version root check, and refusing other versions avoids rewriting newer formats. [files: src/daemon/model-registry.ts, src/shared/paths.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Keep existing entries verbatim, validate only the appended profile and retain the planned read-back and malformed-store tests.",
+          "premise": "Appending version-1 ApprovedProfile records preserves reader compatibility and existing decision precedence.",
+          "evidence": "Read the complete reader, profile validator and registry construction. The reader skips invalid entries individually; effective profiles use Date.parse with '>=' so the latest timestamp wins and ties favor later entries. Shipped models shadow approvals. The proposed writer's version===1 guard is intentionally stricter than the reader's numeric-version check and preserves existing profile entries. [files: src/daemon/model-registry.ts, src/daemon/__tests__/model-registry.test.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design adequately documents the changed relationships and their ownership without requiring an additional ERD.",
+          "evidence": "Sections 2–3 specify checkId ownership, at most 32 pending checks, consumption after one successful decision, and multiple historical profiles per (family, modelId) resolved by decidedAt. The companion HTML contains five participants and eight messages covering client→check→CLI, decision→store, acknowledgement after rename, and registry reads. These relationships agree with the existing registry's history model. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html, src/daemon/model-registry.ts]",
+          "action": "None; an additional ERD is optional.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders successfully with readable, unclipped content.",
+          "evidence": "Inspected the generated HTML, embedded Mermaid sequence, participant/message descriptions, rendering initialization and error fallback. Browser inventory exposed no browser surface; attempting Chrome access returned 'Computer Use was not approved to use Google Chrome'. No rendered screenshot was available, so Mermaid execution, layout and clipping remain unverified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html]",
+          "action": "Render and visually inspect the existing companion; have the author correct or regenerate it if necessary.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "boundaries.1",
@@ -108,23 +132,11 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design preserves adjacent Story ownership and adequately documents the new check-to-decision-to-profile relationships.",
-          "evidence": "HLD assigns sc4 to S004, sc2 to S001 and client flows to S005–S007. The LLD keeps those boundaries: the daemon owns up to 32 pending checks; each check permits one successful consuming decision; each decision appends one profile; profiles resolve per family/modelId by decidedAt. The companion source shows client → checker → CLI/store and registry → store interactions. This prose and sequence source adequately describe ownership, direction, cardinality and compatibility without requiring an additional ERD. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html, src/daemon/model-registry.ts]",
-          "action": "Retain the documented relationships and adjacent-Story exclusions.",
+          "premise": "The implementation stays within sc4 and consumes the existing sc1/sc2/sc3/sc5 behavior without redesigning adjacent stories.",
+          "evidence": "HLD assigns the check procedures, store writer and method-class entries to s4. The actual registry, definitions projection and config.write already implement the consumed behavior. The proposed registry change only exports its validator; client screens remain assigned to s5–s7, and existing settings-write behavior is not replaced. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.2",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The linked sequence companion renders correctly and remains visually consistent with the design.",
-          "evidence": "Inspected the actual HTML, Mermaid sequence source, participant descriptions and eight-message table; their content matches the proposed flow. Opening the file through the in-app browser failed with 'Browser is not available: iab', and browser inventory returned []. Rendered layout, legibility and successful Mermaid execution could not be checked. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html]",
-          "action": "Have the author verify the existing companion in a working renderer and correct or regenerate it if necessary.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.1",
@@ -132,9 +144,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design supplies detectable failure conditions and safe handling for subprocess failures, incomplete runs, invalid approvals and persistence failures.",
-          "evidence": "runInProcessGroup exposes spawnError, timedOut, exitCode and captured output and kills the process group on timeout. Existing CliProvider parsing recognises Claude is_error and Codex error/turn.failed events. The design adds explicit positive-completion checks, rejects unreadable effort evidence, guards approval with runs, and retains pending checks after write failure. Its write-temp/rename sequence matches the repository's writeAtomic pattern while adding malformed-store refusal and cleanup. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, src/workflow/storage.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Implement and test the stated failure precedence, retry retention and rename-before-acknowledgement guarantees.",
+          "premise": "The design states detectable outcomes and safe handling for subprocess failures and decision-write failures.",
+          "evidence": "The runner reports spawn errors and timeouts separately and kills process groups on timeout and child exit. The design distinguishes explicit refusal from incomplete/nonzero output and requires positive completion before approval. Its store policy preserves malformed/unsupported documents, acknowledges only after rename, cleans temporary files best-effort, and retains pending checks on failure. The write-temp/rename and cleanup pattern has existing repository precedents. Installed Claude help also lists '(low, medium, high, xhigh, max)' under --effort; Codex debug models returns a models array with supported_reasoning_levels entries. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, src/config/reconcile-io.ts, src/workflow/storage.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,21 +156,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every S004 acceptance criterion maps to concrete planned tests using viable repository fixtures and test seams.",
-          "evidence": "The mapping covers CLI procedures/serialization (ac1), evidence and unchanged stores (ac2), approved effort subsets after restart (ac3), rejection and unreachable CLI (ac4), and definitions projection (ac5). Existing cli-subprocess tests demonstrate executable fake CLIs; mcp-e2e provides temp-HOME daemon startup and RPC; registry tests expose catalog/store reset seams. The shipped catalog contains the retained sonnet and gpt-5.6-luna models required by the proposed live fixture. These are design-level test mappings, not claims that S004 tests already exist or pass. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/agent/providers/__tests__/cli-subprocess.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts, src/daemon/__tests__/model-registry.test.ts, src/assets/models/cloud-model-catalog.json]",
-          "action": "Implement the mapped tests, including malformed output, failed rename, concurrent checks and restart-dependent integration cases.",
+          "premise": "Every s4 acceptance criterion maps to a concrete planned test using compatible repository test seams.",
+          "evidence": "Checked DEF ac1–ac5 against §7: fake-CLI evidence and serialization cover ac1–ac2; subset approval and restart resolution cover ac3; rejection and unreachable-run guards cover ac4; restarted definitions cover ac5. Additional cases cover malformed stores, rename failure and positive completion protocols. Existing tests demonstrate executable fake CLIs, temp-HOME daemon RPCs and registry reset/path overrides. The shipped catalog contains the live fixture's retained sonnet and gpt-5.6-luna targets. This verifies test-plan coverage, not execution of the proposed tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/agent/providers/__tests__/cli-subprocess.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts, src/daemon/__tests__/model-registry.test.ts, src/assets/models/cloud-model-catalog.json]",
+          "action": "Implement and run the planned unit, contract and daemon tests; keep live tests gated.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 1,
-        "low": 9,
+        "med": 0,
+        "low": 11,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-26T07:49:45.949Z",
+      "reviewedAt": "2026-10-26T07:55:50.752Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }

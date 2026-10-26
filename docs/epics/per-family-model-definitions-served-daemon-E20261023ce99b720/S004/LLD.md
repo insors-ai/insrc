@@ -353,3 +353,23 @@ Same procedures, lock, table and approve/reject RPCs as a1; models.check registe
 
 - Checklist ep3 (partial): the serial-CLI-call invariant rests on the s1 usage.example bundle (no shared serial-queue helper; daemon code serialises provider work with sequential awaits, c12) and CLAUDE.md (c4), not on the probe evidence its s5 source id names.
 - Checklist alt2 (partial): s3 scored the alternatives against ac1-ac5 and sc1-sc4 but not lc1-lc3 explicitly; all three alternatives share the same CLI procedures, so lc1 (installed CLIs only), lc2 (the codex model list decides efforts) and lc3 (Claude levels recognised-unconfirmed) hold equally for each and do not change the ranking.
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-26T07:55:50.752Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The linked sequence companion renders successfully with readable, unclipped content. | Inspected the generated HTML, embedded Mermaid sequence, participant/message descriptions, rendering initialization and error fallback. Browser inventory exposed no browser surface; attempting Chrome access returned 'Computer Use was not approved to use Google Chrome'. No rendered screenshot was available, so Mermaid execution, layout and clipping remain unverified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html] | Render and visually inspect the existing companion; have the author correct or regenerate it if necessary. |

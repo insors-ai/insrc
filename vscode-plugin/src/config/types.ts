@@ -41,8 +41,12 @@ export interface Notifier {
   error(message: string): void;
 }
 
-/** The outcome of a daemon config write, widened from the daemon's bare `{ok}` with a client-authored reason. */
-export type ConfigWriteResult = { ok: true } | { ok: false; reason: string };
+/** The outcome of a daemon config write, as the daemon answers it: restartRequired when the
+ *  change applies after a daemon restart; on refusal the daemon's reason (e.g. 'rejected-model',
+ *  'per-repo-tier', 'invalid-path') and detail, or 'refused' when an older daemon gives none. */
+export type ConfigWriteResult =
+  | { ok: true; restartRequired?: boolean | undefined }
+  | { ok: false; reason: string; detail?: string | undefined };
 
 /**
  * The daemon snapshot the pull reads: the current value of each catalog path

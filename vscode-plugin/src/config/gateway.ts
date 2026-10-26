@@ -3,9 +3,9 @@
  *
  * The VS-Code-free boundary that maps sc8's ConfigGateway onto the EXISTING sc1
  * SharedIpcClient. `catalog()` wraps `config.catalog` (mapping its `values`
- * record into a path-keyed Map); `writeKey()` wraps `config.write`, widening the
- * daemon's bare `{ok:boolean}` (no reason) into a ConfigWriteResult with a
- * client-authored reason on refusal. No new daemon capability is introduced —
+ * record into a path-keyed Map); `writeKey()` wraps `config.write`, returning a
+ * ConfigWriteResult that carries the daemon's restartRequired / reason / detail
+ * (Epic ce99b72065d03b1b, Story s6). No new daemon capability is introduced —
  * only these two existing IPC methods are called (k3), and there is no cloud
  * path (k2). Constructed in extension.ts from the shared client.
  */
@@ -18,11 +18,26 @@ interface CatalogPayload {
   readonly values?: Readonly<Record<string, unknown>>;
 }
 
+/** config.write's answer as the daemon sends it (an older daemon sends only `ok`). */
+interface DaemonWriteAnswer {
+  readonly ok?: boolean;
+  readonly restartRequired?: boolean;
+  readonly reason?: string;
+  readonly detail?: string;
+}
+
+/** The daemon's answer as a ConfigWriteResult: restartRequired on success; reason and detail on refusal. */
+function writeResult(answer: DaemonWriteAnswer | undefined): ConfigWriteResult {
+  if (answer?.ok === true) return answer.restartRequired === true ? { ok: true, restartRequired: true } : { ok: true };
+  const reason = typeof answer?.reason === 'string' && answer.reason.length > 0 ? answer.reason : 'refused';
+  return typeof answer?.detail === 'string' && answer.detail.length > 0 ? { ok: false, reason, detail: answer.detail } : { ok: false, reason };
+}
+
 /**
  * Build the sc8 ConfigGateway over the shared daemon client. `catalog()` may
  * reject (daemon unreachable) — the engine's pull catches it. `writeKey()`
- * resolves a ConfigWriteResult: the daemon's `{ok:true}` passes through, an
- * `{ok:false}` (invalid path) becomes a reason-carrying refusal, and a socket
+ * resolves a ConfigWriteResult: `{ok:true}` keeps restartRequired, a refusal keeps
+ * the daemon's reason and detail ('refused' when an older daemon gives no reason), and a socket
  * rejection propagates so applyChanges can treat it as an aborted write.
  */
 export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
@@ -34,17 +49,13 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
     },
 
     async writeKey(key: string, value: unknown): Promise<ConfigWriteResult> {
-      const result = await client.rpc<{ ok: boolean }>('config.write', { path: key, value });
-      if (result?.ok) return { ok: true };
-      return { ok: false, reason: 'the daemon refused the write (invalid path)' };
+      return writeResult(await client.rpc<DaemonWriteAnswer>('config.write', { path: key, value }));
     },
 
     async writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult> {
       // The ARRAY form of config.write: each element is one literal key segment,
       // so a dotted leaf (models.tasks['context.assemble']) is written un-mis-nested.
-      const result = await client.rpc<{ ok: boolean }>('config.write', { path: segments, value });
-      if (result?.ok) return { ok: true };
-      return { ok: false, reason: 'the daemon refused the write (invalid path)' };
+      return writeResult(await client.rpc<DaemonWriteAnswer>('config.write', { path: segments, value }));
     },
 
     async rawConfig(): Promise<Record<string, unknown>> {

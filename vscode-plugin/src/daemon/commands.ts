@@ -51,6 +51,25 @@ export async function offerDaemonInstall(
 }
 
 /**
+ * Restart the daemon and report whether it came back (Epic ce99b72065d03b1b, Story s6): the
+ * same controller run and status reflection the insrc.daemon.restart command does, resolving
+ * true only when the result is ok and the daemon is running. Callers that must not act on a
+ * daemon that did not come back (saving a tier after an approval) use this rather than the
+ * command, whose completion says nothing about the outcome. A rejecting controller is
+ * reflected as errored and resolves false; never throws.
+ */
+export async function restartDaemonAndReport(deps: Pick<DaemonCommandDeps, 'status' | 'controller'>): Promise<boolean> {
+  let result: LifecycleResult;
+  try {
+    result = await deps.controller.run('restart');
+  } catch (err) {
+    result = { ok: false, state: 'errored', message: err instanceof Error ? err.message : String(err) };
+  }
+  reflect(deps.status, result);
+  return result.ok && result.state === 'running';
+}
+
+/**
  * Register the daemon lifecycle commands. The Install command runs the shared
  * consent-gated install flow; the four lifecycle commands act on an
  * already-installed daemon (no gate). Every command reflects its result in sc2.

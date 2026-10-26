@@ -19,7 +19,7 @@ import { designReviewSnapshot, premiseAdapter, templateAdapter } from '../../rev
 import type { ExecutionMode, ReviewCall, ReviewMaterialSnapshot } from '../../review-pipeline/types.js';
 import type { LLMProvider, StructuredCompletionOpts } from '../../../shared/types.js';
 import { REVIEW_CALL_LIMITS, structuredLimits, type ReviewCallLimits } from '../call-limits.js';
-import { HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor } from '../template.js';
+import { DEFAULT_DESIGN_REVIEW_SETTINGS, HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor } from '../template.js';
 import { extractClaims } from '../extract.js';
 import type { Claim } from '../types.js';
 import { VERIFY_CALL_STALL_MS, VERIFY_CALL_TIMEOUT_MS, verifyClaim } from '../verify.js';
@@ -39,7 +39,9 @@ test('REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is b
 	}
 	// The rows without a cap of their own sit inside their call's deadline.
 	const session = REVIEW_CALL_LIMITS['design-session'].silenceMs!;
-	assert.ok(session < reviewDeadlineMs('issue') && session < reviewDeadlineMs('feature') && session < HARD_REVIEW_DEADLINE_MS, 'design-session: below the review deadline');
+	// the defaults, not the settings of the machine the test runs on (~/.insrc/config.json may shorten them)
+	const deadline = (c: 'issue' | 'feature') => reviewDeadlineMs(c, DEFAULT_DESIGN_REVIEW_SETTINGS);
+	assert.ok(session < deadline('issue') && session < deadline('feature') && session < HARD_REVIEW_DEADLINE_MS, 'design-session: below the review deadline');
 	assert.ok(REVIEW_CALL_LIMITS['build-validate'].silenceMs! < 300_000, 'build-validate: below the 300 s judge deadline');
 	assert.equal(VERIFY_CALL_TIMEOUT_MS, 600_000);
 	assert.equal(VERIFY_CALL_STALL_MS, 90_000);

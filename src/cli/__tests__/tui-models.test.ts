@@ -135,8 +135,8 @@ const disconnectedError = (method: string): Error => Object.assign(new Error(`th
 
 /** Fake services for the check screen: scripted check / approve / restart / save answers, all recorded. */
 function checkServices(script: {
-	check?: Array<() => Promise<unknown>>; approve?: Array<() => Promise<unknown>>; restart?: Array<{ ok: boolean; error?: string }>;
-	write?: ConfigWriteResult[]; definitions?: ModelDefinitionsResult;
+	check?: Array<() => Promise<unknown>> | undefined; approve?: Array<() => Promise<unknown>> | undefined; restart?: Array<{ ok: boolean; error?: string | undefined }> | undefined;
+	write?: ConfigWriteResult[] | undefined; definitions?: ModelDefinitionsResult | undefined;
 }) {
 	const tiers: Record<string, unknown> = { core: { runner: 'cli-codex', model: 'x-a', effort: 'lo' } };
 	const { svc, writes } = tiersServices(tiers, script.write ?? []);
@@ -289,5 +289,82 @@ test('tui-models.test.ts: repo models view edits only tasks and coreFloor', asyn
 	assert.ok((r.lastFrame() ?? '').includes(REPO_MODELS_DOWN));
 	await press(r.stdin, 'e');
 	assert.deepEqual(down.writes, []);
+	r.unmount();
+});
+
+test('tui-models.test.ts: Model Tiers pane retries after the daemon starts, names an older daemon, shows aliases and an effort the model does not take', async () => {
+	// Down, then up: r on the not-running screen reloads.
+	let up = false;
+	const { svc } = tiersServices({ cheap: { runner: 'cli-codex', model: 'x-b', effort: '' }, core: { runner: 'cli-codex', model: 'x-b', effort: 'turbo' } });
+	svc.models.definitions = async () => { if (!up) throw new Error('daemon is not running — start it with: insrc daemon start'); return DEFS; };
+	let r = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5');
+	assert.ok((r.lastFrame() ?? '').includes(MODEL_TIERS_DOWN));
+	up = true;
+	await press(r.stdin, 'r'); await settle();
+	let frame = r.lastFrame() ?? '';
+	assert.match(frame, /Tiers \(family/, 'r reloads once the daemon answers');
+	assert.match(frame, /cheap\s+FakeX \/ x-b \(xb\) \/ \(cli default effort\)/, "the model's aliases are shown");
+	assert.match(frame, /core\s+FakeX \/ x-b \(xb\) \/ turbo \(set\) not accepted — runs at the CLI default/, 'an effort the model does not take is marked');
+	assert.doesNotMatch(frame, /mid\s+FakeX[^\n]*not accepted/, 'no note for a tier whose effort the model takes');
+	r.unmount();
+
+	// An older daemon that does not know models.definitions: its error and the update, not "not running" — in the pane and in Setup.
+	const old = tiersServices({});
+	old.svc.models.definitions = async () => { throw new Error("unknown method 'models.definitions'"); };
+	old.svc.setup.detect = () => ({ cpu: { model: 'M-Test', cores: 8 }, ram: { totalMb: 32768, freeMb: 16384 }, gpu: null, ollama: { available: true, version: '0.1', models: [] } }) as never;
+	r = render(createElement(App, { services: old.svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5');
+	frame = r.lastFrame() ?? '';
+	assert.ok(!frame.includes(MODEL_TIERS_DOWN), frame);
+	assert.match(frame, /the daemon could not answer: unknown method 'models\.definitions' — if it is older than this/);
+	await press(r.stdin, '4');
+	assert.match(r.lastFrame() ?? '', /cannot recommend a local model: the daemon could not answer: unknown method[\s│]+'models\.definitions' — if it is older/);
+	r.unmount();
+});
+
+test('tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reports the restart a save needs, and holds while restarting', async () => {
+	// unknown-check on approve: the screen offers a fresh check, and c runs one.
+	const a = checkServices({ approve: [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1; run models.check again' })] });
+	let r = await openCheck(a.svc);
+	await press(r.stdin, 'a');
+	assert.match(r.lastFrame() ?? '', /the daemon no longer holds this check \(it restarted or dropped it\) — check again \(c\)/);
+	await press(r.stdin, 'c'); await settle();
+	assert.equal(a.checks.length, 2);
+	assert.match(r.lastFrame() ?? '', /lo — accepted/);
+	r.unmount();
+
+	// The daemon already serves the id (the definitions changed since the pane loaded): s saves it as a normal pick.
+	const served: ModelDefinitionsResult = { ...DEFS, families: DEFS.families.map(f => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
+	const b = checkServices({ check: [async () => ({ error: 'x-new is already a model or alias of cli-codex', recoverable: false })], definitions: served });
+	r = await openCheck(b.svc);
+	await settle();
+	assert.match(r.lastFrame() ?? '', /x-new is served by the family now — save it as the core model \(s\)/);
+	await press(r.stdin, 's'); await settle();
+	assert.deepEqual(b.writes.at(-1), ['models.tiers.core', { runner: 'cli-codex', model: 'x-new', effort: 'lo' }], 'saved through the fresh definitions, keeping an effort it takes');
+	r.unmount();
+
+	// A save after the restart that still needs a restart: the pane shows the restart line.
+	const c = checkServices({});
+	r = await openCheck(c.svc);
+	await press(r.stdin, 'a', 'R'); await settle();
+	assert.match(r.lastFrame() ?? '', /Tiers \(family/);
+	assert.match(r.lastFrame() ?? '', /restart the daemon to apply \(R\)/, 'the saved tier still needs a restart');
+	r.unmount();
+
+	// While restarting, esc does nothing; if the screen goes away anyway, the tier is not written afterwards.
+	const d = checkServices({});
+	let release: (v: { ok: boolean; steps: string[] }) => void = () => {};
+	d.svc.daemon.restart = () => new Promise(res => { release = res; });
+	r = await openCheck(d.svc);
+	const before = d.writes.length;
+	await press(r.stdin, 'a', 'R');
+	await press(r.stdin, '\x1b'); await settle();
+	assert.match(r.lastFrame() ?? '', /restarting…/, 'esc is ignored while the restart runs');
+	await press(r.stdin, '1');   // leave the pane: the screen unmounts mid-restart
+	release({ ok: true, steps: [] }); await settle(); await settle();
+	assert.equal(d.writes.length, before, 'no tier write after the screen is gone');
 	r.unmount();
 });

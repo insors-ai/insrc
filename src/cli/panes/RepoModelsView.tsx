@@ -19,7 +19,7 @@ import type { ReactElement } from 'react';
 import { parseTiering, type TierName } from '../../config/analyze.js';
 import { reasoningRoleTaxonomy } from '../../config/role-taxonomy.js';
 import type { ConfigWriteResult } from '../services/config.js';
-import type { ModelDefinitionsResult } from '../services/models.js';
+import { daemonProblem, type ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { computeEffectiveTiers, familyOf, isTierName, nextRoleTiers, TIER_NAMES } from './model-tiers.js';
@@ -40,7 +40,7 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 
 	const [raw, setRaw] = useState<Record<string, unknown> | undefined>(undefined);
 	const [defs, setDefs] = useState<ModelDefinitionsResult | undefined>(undefined);
-	const [error, setError] = useState<string | undefined>(undefined);
+	const [error, setError] = useState<ReturnType<typeof daemonProblem> | undefined>(undefined);
 	const [sel, setSel] = useState(0);
 	const [prompt, setPrompt] = useState<Row | undefined>(undefined);
 	const [nonce, setNonce] = useState(0);
@@ -54,7 +54,7 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 				const d = await svc.models.definitions();
 				if (live) { setRaw(cfg); setDefs(d); }
 			} catch (err) {
-				if (live) setError(err instanceof Error ? err.message : String(err));
+				if (live) setError(daemonProblem(err));
 			}
 		})();
 		return () => { live = false; };
@@ -107,8 +107,7 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 	if (error !== undefined) {
 		return (
 			<Panel title={title} active>
-				<Text color="red">{REPO_MODELS_DOWN}</Text>
-				<Text dimColor>{error}</Text>
+				<Text color="red">{error.down ? REPO_MODELS_DOWN : error.text}</Text>
 				<Box marginTop={1}><KeyHints hints={[['r', 'retry'], ['esc', 'back']]} /></Box>
 			</Panel>
 		);

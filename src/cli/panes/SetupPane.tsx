@@ -18,7 +18,7 @@ import type { ReactElement } from 'react';
 
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { LocalModelChoice, ModelRecommendation } from '../../shared/model-recommender.js';
-import { CANNOT_RECOMMEND, localModelFrom } from '../services/setup.js';
+import { cannotRecommend, localModelFrom } from '../services/setup.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints } from '../ui/widgets.js';
 
@@ -29,16 +29,16 @@ export function SetupPane(): ReactElement {
 	const [busy, setBusy] = useState(false);
 
 	const info = useMemo<SystemInfo>(() => svc.setup.detect(), [svc]);
-	// undefined = still asking the daemon; null = it could not answer (or names no local model).
-	const [local, setLocal] = useState<LocalModelChoice | null | undefined>(undefined);
+	// undefined = still asking the daemon; a string = why nothing can be recommended.
+	const [local, setLocal] = useState<LocalModelChoice | string | undefined>(undefined);
 	useEffect(() => {
 		let live = true;
 		svc.models.definitions()
-			.then(defs => { if (live) setLocal(localModelFrom(defs) ?? null); })
-			.catch(() => { if (live) setLocal(null); });
+			.then(defs => { if (live) setLocal(localModelFrom(defs) ?? cannotRecommend()); })
+			.catch((err: unknown) => { if (live) setLocal(cannotRecommend(err)); });
 		return () => { live = false; };
 	}, [svc]);
-	const rec = useMemo<ModelRecommendation | undefined>(() => (local ? svc.setup.recommend(info, local) : undefined), [svc, info, local]);
+	const rec = useMemo<ModelRecommendation | undefined>(() => (typeof local === 'object' ? svc.setup.recommend(info, local) : undefined), [svc, info, local]);
 	const toPull = useMemo<string[]>(() => (rec !== undefined ? svc.setup.modelsToPull(rec) : []), [svc, rec]);
 
 	useInput((input) => {
@@ -70,7 +70,7 @@ export function SetupPane(): ReactElement {
 				<Text>  Ollama {info.ollama.available ? `v${info.ollama.version} (${info.ollama.models.length} models)` : 'not found'}</Text>
 			</Box>
 			{rec === undefined
-				? <Box marginTop={1}><Text {...(local === null ? { color: 'yellow' } : { dimColor: true })}>{local === null ? CANNOT_RECOMMEND : 'asking the daemon for the local model…'}</Text></Box>
+				? <Box marginTop={1}><Text {...(typeof local === 'string' ? { color: 'yellow' } : { dimColor: true })}>{typeof local === 'string' ? local : 'asking the daemon for the local model…'}</Text></Box>
 				: <>
 			<Box flexDirection="column" marginTop={1}>
 				<Text bold>Recommendation <Text dimColor>({rec.tier})</Text></Text>

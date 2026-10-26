@@ -111,7 +111,7 @@ test('config-write-models.test.ts: refusal via model leaf, runner switch, whole-
 	];
 	for (const [label, path, value] of refusals) {
 		const before = reset();
-		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
 		assert.equal(r.ok, false, label);
 		assert.equal(r.reason, 'rejected-model', label);
 		assert.match(r.detail ?? '', /'gpt-gone' is rejected in cli-codex/, label);
@@ -173,7 +173,7 @@ test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo
 	];
 	for (const [label, path, value, detail] of refusals) {
 		const before = reset();
-		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
 		assert.equal(r.ok, false, label);
 		assert.equal(r.reason, 'per-repo-tier', label);
 		assert.match(r.detail ?? '', /^tiers are global \(models\.tiers\); per-repo settings take only tasks and coreFloor/, label);
@@ -199,7 +199,7 @@ test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo
 	];
 	for (const [label, path, value] of changes) {
 		const before = readFileSync(PATHS.config, 'utf8');
-		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
 		assert.equal(r.ok, false, label);
 		assert.equal(r.reason, 'per-repo-tier', label);
 		assert.match(r.detail ?? '', /refused: models\.byRepo\.\/w\/old\.tiers$/, label);

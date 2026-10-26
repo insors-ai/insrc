@@ -37,3 +37,15 @@ export function modelsService(call: Rpc = rpc): ModelsService {
 		resolveRole: p => call<ResolvedRole | InvalidParams>('models.resolveRole', p),
 	};
 }
+
+/** Why a daemon request got no answer, in the user's terms: the daemon is not
+ *  running (`down`); the connection was lost; or the daemon refused — an older
+ *  daemon may not know the request, so that case names the update. */
+export function daemonProblem(err: unknown): { readonly down: boolean; readonly text: string } {
+	const message = err instanceof Error ? err.message : String(err);
+	if (message.startsWith('daemon is not running')) return { down: true, text: 'the daemon is not running' };
+	if (typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'disconnected') {
+		return { down: false, text: 'the daemon closed the connection before answering' };
+	}
+	return { down: false, text: `the daemon could not answer: ${message} — if it is older than this TUI, update it (daemon update)` };
+}

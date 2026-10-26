@@ -20,7 +20,7 @@ import {
 	type LocalModelChoice,
 	type ModelRecommendation,
 } from '../../shared/model-recommender.js';
-import type { ModelDefinitionsResult } from './models.js';
+import { daemonProblem, type ModelDefinitionsResult } from './models.js';
 import { PATHS } from '../../shared/paths.js';
 
 export function detect(): SystemInfo {
@@ -33,6 +33,15 @@ export function recommend(info: SystemInfo, local: LocalModelChoice): ModelRecom
 
 /** The message shown when Setup cannot ask the daemon which local model to recommend. */
 export const CANNOT_RECOMMEND = 'cannot recommend a local model: the daemon is not running';
+
+/** Why no local model can be recommended: the daemon's definitions name none,
+ *  or the daemon did not answer (not running, or a refusal — e.g. an older
+ *  daemon — with its text and the update hint). */
+export function cannotRecommend(err?: unknown): string {
+	if (err === undefined) return 'cannot recommend a local model: the daemon\'s model definitions name no local tool-loop model';
+	const problem = daemonProblem(err);
+	return problem.down ? CANNOT_RECOMMEND : `cannot recommend a local model: ${problem.text}`;
+}
 
 /** The local model to recommend from the daemon's definitions: the tool-loop
  *  model of the family that has one (Ollama), with its installed state and

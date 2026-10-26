@@ -27,7 +27,7 @@ const { _resetModelRegistryForTests, _setApprovedModelsPathForTests } = await im
 test("system-recommend.test.ts: the daemon's system.recommend recommends a fixture file's tool-loop model", async () => {
 	const assets = mkdtempSync(join(tmpdir(), 'insrc-system-recommend-assets-'));
 	try {
-		const defs = JSON.parse(readFileSync(join(MODEL_CATALOG_DIR, 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ id: string; models: unknown[]; toolLoopModel?: string }> };
+		const defs = JSON.parse(readFileSync(join(MODEL_CATALOG_DIR, 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ id: string; models: unknown[]; toolLoopModel?: string | undefined }> };
 		const ollama = defs.families.find(f => f.id === 'ollama')!;
 		ollama.models.push({ id: 'fixture-local:3b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 }, memoryMb: 3000 });
 		ollama.toolLoopModel = 'fixture-local:3b';

@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 /**
  * Pure overlay logic for the Model Tiers pane (standalone S001; Epic
  * ce99b72065d03b1b, Story s5).

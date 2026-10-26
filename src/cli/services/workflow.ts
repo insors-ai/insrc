@@ -60,7 +60,7 @@ import { getLogger } from '../../shared/logger.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { modelsService, type ModelsService, type ResolvedRole } from './models.js';
+import { daemonProblem, modelsService, type ModelsService, type ResolvedRole } from './models.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { rpc } from '../client.js';
 import type { Entity } from '../../shared/types.js';
@@ -251,8 +251,8 @@ export async function reviewArtifact(
 	let answer: Awaited<ReturnType<ModelsService['resolveRole']>>;
 	try {
 		answer = await resolveRole({ role: 'review', repoPath });
-	} catch {
-		throw new Error('cannot review: the daemon is not running');
+	} catch (err) {
+		throw new Error(`cannot review: ${daemonProblem(err).text}`);
 	}
 	if ('error' in answer) throw new Error(`cannot review: ${answer.error}`);
 	return reviewFile({

@@ -20,12 +20,12 @@ import type { ReactElement } from 'react';
 
 import { parseTiering, type TierModel, type TierName } from '../../config/analyze.js';
 import type { ConfigWriteResult } from '../services/config.js';
-import type { ModelDefinitionsResult } from '../services/models.js';
+import { daemonProblem, type ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import {
 	computeEffectiveTiers, CORE_FLOOR_PATH, isTierName, ROLE_TIERS_PATH, nextRoleTiers, TIER_NAMES,
-	tierPath, switchFamily, switchModel, effortChoices, nextInCycle, resolveTypedModel, familyOf,
+	tierPath, switchFamily, switchModel, effortChoices, nextInCycle, resolveTypedModel, familyOf, servedModel,
 	type EffectiveTiers, type EffectiveRole,
 } from './model-tiers.js';
 import { ModelCheckScreen, type ModelCheckTarget } from './ModelCheckScreen.js';
@@ -58,7 +58,7 @@ export function ModelTiersPane(): ReactElement {
 	const [raw, setRaw] = useState<Record<string, unknown> | undefined>(undefined);
 	const [defs, setDefs] = useState<ModelDefinitionsResult | undefined>(undefined);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | undefined>(undefined);
+	const [error, setError] = useState<ReturnType<typeof daemonProblem> | undefined>(undefined);
 	const [malformed, setMalformed] = useState(false);
 	const [sel, setSel] = useState(0);
 	const [prompt, setPrompt] = useState<Prompt | undefined>(undefined);
@@ -76,7 +76,7 @@ export function ModelTiersPane(): ReactElement {
 				const d = await svc.models.definitions();
 				if (live) { setRaw(cfg); setDefs(d); }
 			} catch (err) {
-				if (live) setError(err instanceof Error ? err.message : String(err));
+				if (live) setError(daemonProblem(err));
 			} finally {
 				if (live) setLoading(false);
 			}
@@ -191,12 +191,14 @@ export function ModelTiersPane(): ReactElement {
 		}
 	}, { isActive: prompt === undefined && checking === undefined && !captured && !loading && error === undefined });
 
+	// The not-running / cannot-answer screen: r retries once the daemon is back.
+	useInput(input => { if (input === 'r') setNonce(n => n + 1); }, { isActive: error !== undefined && !captured && !loading });
+
 	if (loading) return <Panel title="Model Tiers" active><Text dimColor>loading config and model definitions…</Text></Panel>;
 	if (error !== undefined) {
 		return (
 			<Panel title="Model Tiers" active>
-				<Text color="red">{MODEL_TIERS_DOWN}</Text>
-				<Text dimColor>{error}</Text>
+				<Text color="red">{error.down ? MODEL_TIERS_DOWN : error.text}</Text>
 				<Box marginTop={1}><KeyHints hints={[['r', 'retry']]} /></Box>
 			</Panel>
 		);
@@ -204,7 +206,15 @@ export function ModelTiersPane(): ReactElement {
 	if (eff === undefined || defs === undefined || cur === undefined) return <Panel title="Model Tiers" active><Text dimColor>no config</Text></Panel>;
 
 	if (checking !== undefined) {
-		return <ModelCheckScreen target={checking} defs={defs} onClose={saved => { setChecking(undefined); if (saved) setNonce(n => n + 1); }} />;
+		const target = checking;
+return (
+	<ModelCheckScreen
+		target={target}
+		defs={defs}
+		onClose={(saved, restartRequired) => { setChecking(undefined); if (restartRequired === true) setRestartPending(true); if (saved) setNonce(n => n + 1); }}
+		onPickServed={(id, fresh) => { setChecking(undefined); saveTier(target.tier, switchModel(fresh, eff.tiers[target.tier], id)); }}
+	/>
+);
 	}
 
 	if (prompt !== undefined) {
@@ -238,10 +248,15 @@ export function ModelTiersPane(): ReactElement {
 				{TIER_NAMES.map((t, i) => {
 					const tier = eff.tiers[t];
 					const family = familyOf(defs, tier.runner)?.displayName ?? tier.runner;
+					const model = servedModel(defs, tier.runner, tier.model);
+					const aliases = model !== undefined && model.aliases.length > 0 ? ` (${model.aliases.join(', ')})` : '';
+					// A served model that does not take the configured effort runs at the CLI's default effort.
+					const effortRejected = model !== undefined && tier.effort !== undefined && tier.effort !== '' && !model.efforts.includes(tier.effort);
 					return (
 						<Text key={t} {...hi(sel === i)}>
-							{`${rowMark(i)}${t.padEnd(5)} ${family} / ${tier.model || '(cli default)'} / ${tier.effort ? tier.effort : '(cli default effort)'}`}
+							{`${rowMark(i)}${t.padEnd(5)} ${family} / ${tier.model || '(cli default)'}${aliases} / ${tier.effort ? tier.effort : '(cli default effort)'}`}
 							<Text dimColor> {eff.tierSource[t] === 'default' ? '(default)' : '(set)'}</Text>
+							{effortRejected && <Text color="yellow"> not accepted — runs at the CLI default</Text>}
 							{!tier.served && <Text color="yellow"> not served: runs the default until approved and the daemon restarted</Text>}
 						</Text>
 					);

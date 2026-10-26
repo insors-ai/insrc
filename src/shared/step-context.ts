@@ -55,11 +55,19 @@ export interface SessionConnectionExecution extends ConnectionExecutionBase {
 }
 export type ConnectionExecutionContext = SavedConnectionExecution | SessionConnectionExecution;
 
+export type ConnectionExecutionErrorCode = 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit';
+const executionErrorCodes = new WeakMap<object, ConnectionExecutionErrorCode>();
 export class ConnectionExecutionError extends Error {
-	constructor(readonly code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit') {
-		super(code);
-		this.name = 'ConnectionExecutionError';
+	readonly code: ConnectionExecutionErrorCode;
+	constructor(code: ConnectionExecutionErrorCode) {
+		const safe = code === 'session-expired' || code === 'upgrade-required' || code === 'resource-limit' ? code : 'unsupported-temporary';
+		super(safe); this.code = safe;
+		this.name = 'ConnectionExecutionError'; executionErrorCodes.set(this, safe);
 	}
+}
+/** Identity-only projection: no name/message/code getter or proxy trap is read. */
+export function connectionExecutionErrorCode(error: unknown): ConnectionExecutionErrorCode | undefined {
+	return error !== null && (typeof error === 'object' || typeof error === 'function') ? executionErrorCodes.get(error) : undefined;
 }
 
 const savedExecutions = new WeakSet<object>();

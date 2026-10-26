@@ -1,5 +1,5 @@
 import { assertConnectionProviderAttempt } from '../../shared/connection-provider.js';
-import { ConnectionExecutionError, assertExplicitConnectionExecution, currentStepContext } from '../../shared/step-context.js';
+import { ConnectionExecutionError, assertExplicitConnectionExecution, currentStepContext, connectionExecutionErrorCode } from '../../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -40,7 +40,7 @@ import { ModelCallFailedError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
 const savedLog = getLogger('providers:structured-output');
-const quietLog = { info() { }, warn() { } };
+const quietLog = Object.freeze({ info() { }, warn() { } });
 
 
 // ---------------------------------------------------------------------------
@@ -232,6 +232,7 @@ export async function withStructuredRetry<T>(
 			assertConnectionProviderAttempt(execution);
 		} catch (err) {
 			assertConnectionProviderAttempt(execution);
+			if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(err) ?? 'unsupported-temporary');
 			if (err instanceof ConnectionExecutionError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.
@@ -244,7 +245,7 @@ export async function withStructuredRetry<T>(
 			// error inside the provider's call closure, etc.). Convert to
 			// a validation failure so the next attempt re-issues with the
 			// error message as feedback.
-			const msg = execution?.mode === 'session-memory' ? 'Temporary provider call failed.' : (err as Error).message ?? String(err);
+			const msg = (err as Error).message ?? String(err);
 			lastErrors = [msg];
 			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
 			lastThrown = err;
@@ -252,7 +253,8 @@ export async function withStructuredRetry<T>(
 			continue;
 		}
 
-		const result = validate(raw);
+		let result: ValidationResult<T>;
+		try { result = validate(raw); } catch (error) { assertConnectionProviderAttempt(execution); if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(error) ?? 'unsupported-temporary'); throw error; }
 		assertConnectionProviderAttempt(execution);
 		if (result.ok) {
 			if (attempt > 1) {
@@ -265,6 +267,8 @@ export async function withStructuredRetry<T>(
 		lastThrown = undefined;
 		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
+	assertConnectionProviderAttempt(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
 	if (lastCallFailure !== undefined) {
 		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });

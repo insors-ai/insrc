@@ -13213,6 +13213,39 @@
         "serialization"
       ]
     },
+    "src/daemon/model-check.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "9b979ca01be4eb4eb42c99b5654acfd25b7205aae98cf30a4d16d96b24045e8b",
+      "sourceDigest": "2afaa71454e5e9cd6e946efffee835890e235f4d0c19bd78d01b55c9249ade3b",
+      "boundaries": [
+        "diagnostic",
+        "serialization"
+      ]
+    },
     "src/daemon/model-definitions.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",

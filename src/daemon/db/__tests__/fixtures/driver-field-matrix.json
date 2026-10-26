@@ -2370,7 +2370,7 @@
     "src/daemon/db/drivers/nats.ts": "976872f6516971caab3c3b5d48685f8ab86cdd16de75f047b954f0aea74bb50e",
     "src/daemon/db/drivers/oracle.ts": "8d7c312b756e04dcc72580d45c8b529744105ceb78ddae68de2815833d6ddbb1",
     "src/daemon/db/drivers/pg.ts": "76560b7c7a506f487ff406c19743c151c1f1575cb032f8aa6cb7c7fc8ec74ba2",
-    "src/daemon/db/drivers/redis.ts": "5fc3c23856d64fb7a5c3457e2d5b676060ece6e92078c0458ad23ad6ce3279dc",
+    "src/daemon/db/drivers/redis.ts": "eed01a448003dc7a6c30b148c6e1b46b02fa4003a9ac5e9ca7f1603d311015b2",
     "src/daemon/db/drivers/sqlite.ts": "343b358cf3d3136b5607f974679cdf4d24625919ec749d046636210358deed51",
     "src/daemon/db/pool.ts": "a1e2a330d6a298dc4e01f3a9d9e13bd6a01566ca3221788b6e3c1d5747e1a32f",
     "src/daemon/db/secrets.ts": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",

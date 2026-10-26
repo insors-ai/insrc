@@ -7921,6 +7921,22 @@
           "privateResolver.withConnection"
         ],
         [
+          "acquisition:resolver-member",
+          "savedConnectionResolver.list"
+        ],
+        [
+          "connection-use",
+          "savedConnectionResolver.list"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
+        ],
+        [
           "connection-use",
           "this.#owner!.management"
         ],
@@ -7961,12 +7977,13 @@
           "this.#ownerFor"
         ]
       ],
-      "siteCount": 28,
-      "sitesDigest": "7361f037222b47316c113cc37873720870d7277099083d9578cff7ff216c4dad",
-      "sourceDigest": "bd4913ee34361a08bbff4394b8ef8f5674587632027e39edd68f19f5ff2c5072",
+      "siteCount": 32,
+      "sitesDigest": "3d2f54a05a26bb954efa58d5d52c4de690502dd361552da4fc262f6f3cb34b15",
+      "sourceDigest": "1a798accf4499af66b22ac8608149b7506883fd52c15b62b653d9339c78d3282",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
+        "acquisition:symbol:savedConnectionResolver",
         "connection-factory",
         "connection-use",
         "storage-call"
@@ -9619,7 +9636,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "d0a3694cb3c889b341a304cc176d73dad28aca56547a6fe8e04e981a4f55157b",
-      "sourceDigest": "5fc3c23856d64fb7a5c3457e2d5b676060ece6e92078c0458ad23ad6ce3279dc",
+      "sourceDigest": "eed01a448003dc7a6c30b148c6e1b46b02fa4003a9ac5e9ca7f1603d311015b2",
       "boundaries": [
         "serialization"
       ]
@@ -11864,7 +11881,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "8af27afaadebe6f3add0a11d36eaa05634d25d6f29baf287615176c7fe1ed2df",
-      "sourceDigest": "fb132714f4124c57747aa564e74268492cf17bf72cd69cc2fdab19bbb79c7226",
+      "sourceDigest": "c7f00a6a13bab6781d2d75e7ba0caad43a68b9dba424e401dd670251399eaa72",
       "boundaries": [
         "serialization"
       ]
@@ -13969,7 +13986,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "6518439430317c22ba2dae8985454a583b4e67843fc24a2c1f150d04324d1bcd",
+      "sourceDigest": "2233b38b92046f935c9c2bfb27b801d500044369b2240cd438e6a44d98a35a5c",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

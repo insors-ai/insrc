@@ -1,10 +1,11 @@
 /** Strict temporary management decoding; mutation publication stays daemon memory only. */
 import type { ConnectionKey, MutationRequest, OperationTicket } from '../../shared/connection-management.js';
-import { parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../../shared/connection-management-wire.js';
+import { parseConnectionKey, parseMutationRequest, parseOperationTicket, parseSessionOpen, ManagementInputError } from '../../shared/connection-management-wire.js';
 import { canonicalRequestJson } from './management-tickets.js';
 import { ManagementServiceError } from './management.js';
-export const TEMPORARY_MANAGEMENT_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.read', 'db.connections.v2.activate']);
+export const TEMPORARY_MANAGEMENT_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.list', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.read', 'db.connections.v2.activate']);
 export type TemporaryManagementCommand =
+	| { readonly method: 'db.connections.v2.list'; readonly root: string }
  | { readonly method: 'db.connections.v2.activate'; readonly root: string; readonly key: ConnectionKey; readonly revision: string }
  | { readonly method: 'db.connections.v2.ticket'; readonly root: string; readonly key: ConnectionKey; readonly mode: 'create' | 'update' }
  | { readonly method: 'db.connections.v2.read'; readonly root: string; readonly key: ConnectionKey }
@@ -15,6 +16,7 @@ export function parseTemporaryManagement(method: string, value: unknown): Tempor
  if (params === null || typeof params !== 'object' || Array.isArray(params)) throw new ManagementInputError();
  const p = params as Record<string, unknown>;
  const exact = (fields: readonly string[]) => { if (Object.keys(p).length !== fields.length || fields.some(key => !Object.hasOwn(p, key))) throw new ManagementInputError(); };
+	if (method === 'db.connections.v2.list') return { method, root: parseSessionOpen(params).repoRoot };
  if (method === 'db.connections.v2.mutate') {
   const request = parseMutationRequest(params);
   if (request.key.scope !== 'temporary' || request.mode === 'remove') throw new ManagementServiceError('upgrade-required');

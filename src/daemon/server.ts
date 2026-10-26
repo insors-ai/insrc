@@ -108,7 +108,7 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
     const send = (msg: IpcStreamMessage): void => {
       if (terminal || signal.aborted) return;
       if (msg.stream === 'done' || msg.stream === 'error') terminal = true;
-			const frame = !privateReply ? msg : msg.stream === 'progress' ? { id: msg.id, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } } : msg.stream === 'error' ? { id: msg.id, stream: 'error', data: { error: privatePayloadCode(msg.data), recoverable: false } } : msg.stream === 'done' ? { id: msg.id, stream: 'done', data: {} } : { ...msg, data: privateFailureResult(msg.data) };
+			const frame = !privateReply ? msg : msg.stream === 'progress' ? { id: msg.id, stream: 'progress', data: { kind: 'info', message: 'Temporary analysis is running.' } } : msg.stream === 'error' ? { id: msg.id, stream: 'error', data: { error: privatePayloadCode(msg.data), recoverable: false } } : msg.stream === 'done' ? { id: msg.id, stream: 'done', data: request.method === 'step.call' ? privateFailureResult(msg.data) : {} } : { ...msg, data: privateFailureResult(msg.data) };
 			try { deliver({ kind: 'frame', requestId, frame }); }
       catch (error) { abortController.abort(); lifetime?.abort(); throw error; }
     };

@@ -4,7 +4,7 @@ import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest } from '../shared/connection-management-wire.js';
 import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
-import { bindSessionConnectionResolver } from './db/pool-cache.js';
+import { bindSessionConnectionResolver, savedConnectionResolver } from './db/pool-cache.js';
 import type { ConnectionAccessContext, MutationOutcome, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
 import { installConnectionReservations } from './db/connection-reservations.js';
 import { savedConnectionIds } from './db/managed-store.js';
@@ -157,6 +157,11 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			const assertRequest = () => { binding.assertActive(); current.assertActive(); };
 			assertRequest();
 			const signal = AbortSignal.any([binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
+			if (command.method === 'db.connections.v2.list') {
+				const access = await this.accessFor(context, command.root);
+				const result = await savedConnectionResolver.list(access);
+				assertRequest(); return result;
+			}
 			const activate = async (id: string, revision: string): Promise<MutationOutcome> => {
 				assertRequest(); if (overlay.read(id).revision !== revision) throw new ManagementServiceError('conflict');
 				const outcome = ledger.outcome(revision);

@@ -47,7 +47,7 @@
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "private-transport-resolver",
-      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits."
+      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits. S003 t31: Authenticated UI management list binds exact registered owner/root access before the composite resolver; saved metadata reads remain read-only and temporary entries use private revision authority."
     },
     "src/daemon/db/driver-log-policy.ts": {
       "classification": "resource-local-authority",
@@ -517,6 +517,21 @@
       "file": "src/daemon/connection-session-rpc.ts",
       "expression": "privateResolver.withConnection",
       "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/db/driver-log-policy.ts",

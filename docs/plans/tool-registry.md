@@ -399,3 +399,24 @@ Five tools in `src/daemon/tools/builtins/jira/`, 32 ops, all over Atlassian's ac
 - **Project mutation text** (recorded by the live probe on 2026-10-26, project created from `IN`): create prints `Project ZZPROBE4 created at https://<site>/jira/software/projects/ZZPROBE4/settings/details`; update, archive, restore and delete print `Project K has been successfully updated | archived | restored | deleted`. The first line may or may not start with the check mark (update and create did; archive, restore and delete did not), so the readers take an optional mark and match these texts. Fixtures: `__tests__/fixtures/project-*.txt`. An archived project cannot be deleted (`Permission denied: You cannot edit the configuration of this project`): restore it first. A deleted project goes to Jira's trash and keeps its key and name reserved (`uses this project key`, `A project with that name already exists`) until the trash is emptied; `ZZPROBE` to `ZZPROBE5` are in the trash of the user's site. Not recorded: attachment delete's success text (acli has no way to add an attachment here).
 - **Run the live tests:** `INSRC_LIVE_TESTS=1 INSRC_JIRA_SCRATCH_PROJECT=<project> npx tsx --test src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts`; the probe also needs `INSRC_JIRA_PROBE_SOURCE` (a company-managed project, read only), `INSRC_JIRA_PROBE_KEY` and `INSRC_JIRA_PROBE_LEAD`.
 
+
+## s6 outcome (2026-10-26)
+
+Built in eleven tasks (t1 to t11): `src/daemon/tools/builtins/jira/`, five tools (`jira_workitem` 15 ops, `jira_comment` 5, `jira_link` 4, `jira_project` 7, `jira_auth` 1), no gh file edited; one registration line in `builtins/index.ts`. t1 to t10 passed the build gate; t11 did not (see below). Full sweep: no new failures (the workflow/MCP chunk has the same 24 failures as the commit before the build; one LMDB, one ModelTiersPane and one registry test fail and touch nothing in s6). The BUILD was approved with an override on 2026-10-26 after two code review rounds (both degraded: the test and fixture files were never freshly indexed) that blocked on the deviations below.
+
+### Deviations from the approved LLD and PLAN, and why
+
+All were found by running the real acli on the user's site, or by the build and code review; each has a test.
+
+- **`clone` requires `toProject`** (the LLD made it optional): `acli jira workitem clone` exits with `required flag(s) "to-project" not set`. To clone within a project, pass that project's key.
+- **Project command texts** (the LLD said the readers accept the success mark only): the live probe recorded `Project K created at <url>`, `Project K has been successfully updated | archived | restored | deleted`, and archive, restore and delete print no check mark, so the readers match those recorded texts (a leading mark is optional, a mark alone is rejected). Fixtures: `__tests__/fixtures/project-*.txt`.
+- **`jira_project list`** takes at most one of `limit` and `recent` (neither means limit 30), not "exactly one".
+- **A status, assignee, summary, description, label or JQL value is joined to its flag as `--flag=value`**; only keys, ids, project keys, link and issue type names and users keep two tokens (the LLD listed status and assignee as identifiers).
+- **Names** (status, issue type, link type) accept any letters, digits, marks, dashes and common punctuation, not ASCII only.
+- **Failure classification:** an unexplained failure is `unreachable` only when its own text names a network failure; a sign-in probe that failed on the network leaves it `rejected`. `missing-signin` needs a completed probe that says unauthorized (acli's own "unauthorized" text alone is not enough; the probe runs for it too).
+- **A builder that returns nothing** is left for the executor's output check (`schema-mismatch`), not turned into `rejected`.
+- **Results keep what callers need:** work item results drop top-level null properties; project results keep key, id and name only; a failure's `original` text is cut at 2000 characters; `jira_comment visibility` allows an answer with neither groups nor roles in its schema (the readers never produce one).
+- **`bytesToText`** is a local copy in `exec.ts` (the LLD allowed only `withGhFailureNet` from the gh helpers).
+- **Not recorded:** the success text of `attachment delete` (acli cannot add an attachment here); it is read by the success mark only.
+- **Jira trash:** the live probe made and deleted projects `ZZPROBE` to `ZZPROBE5`; Jira keeps their keys and names reserved in its trash until it is emptied. The user accepted the key substitution in chat ("1. OK"); the log is `docs/plans/acli-recorded/jira-live-run-2026-10-26.txt`.
+- **Why t11 failed the gate** (and was overridden): the judge wanted the user's confirmation of the substituted probe keys to come before the runs, and counted the `clone` and project reader fixes, found by t11's own live runs, as outside t11's files.

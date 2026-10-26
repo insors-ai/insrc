@@ -11,6 +11,6 @@ test('CM-S3-FILES: isolated production file matrix verifies owner identity budge
  const timer = setTimeout(() => { timeout = true; child.kill('SIGKILL'); }, 30000);
  try {
   const code = await new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('close', resolve); }); assert.equal(timeout, false, 'file matrix timed out'); assert.equal(code, 0, output);
-  assert.match(output, /# tests 5\b/); assert.match(output, /# pass 5\b/); for (const key of ['fail', 'cancelled', 'skipped', 'todo']) assert.match(output, new RegExp('# ' + key + ' 0\\b'));
+		assert.match(output, /# tests 6\b/); assert.match(output, /# pass 6\b/); for (const key of ['fail', 'cancelled', 'skipped', 'todo']) assert.match(output, new RegExp('# ' + key + ' 0\\b'));
  } finally { clearTimeout(timer); child.kill('SIGKILL'); }
 });

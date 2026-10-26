@@ -1,0 +1,772 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s4",
+    "createdAt": "2026-10-26T08:16:23.074Z",
+    "updatedAt": "2026-10-26T08:41:35.439Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "08b22f82e",
+        "ranAt": "2026-10-26T08:27:02.827Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 569,
+            "titles": [
+              {
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10873,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "11d7d4a0e",
+        "ranAt": "2026-10-26T08:28:47.353Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: invalid params refused with no CLI call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: invalid params refused with no CLI call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9839,
+            "titles": [
+              {
+                "title": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: invalid params refused with no CLI call",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1432,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10449,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "303dbae66",
+        "ranAt": "2026-10-26T08:41:35.439Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9960,
+            "titles": [
+              {
+                "title": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: invalid params refused with no CLI call",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1477,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10684,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "751ef949f",
+        "ranAt": "2026-10-26T08:31:35.717Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9889,
+            "titles": [
+              {
+                "title": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: invalid params refused with no CLI call",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10568,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "17bfd35c3",
+        "ranAt": "2026-10-26T08:38:50.539Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "models-daemon-s4.test.ts: models.check leaves the store and config.json unchanged and the model is not served before approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-daemon-s4.test.ts",
+                "title": "models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-daemon-s4.test.ts: approve → restart → user-approved in models.definitions and config.write accepts → second restart → resolveRole keeps the approved effort and drops the unapproved one",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-daemon-s4.test.ts",
+                "title": "models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-daemon-s4.test.ts: reject → restart → rejectedModels and config.write refuses; an absent CLI's check cannot be approved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-daemon-s4.test.ts",
+                "title": "models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-check.live.test.ts: isolated fixture validated and unserved; real codex and claude checks",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/evidence/model-check-live.txt (INSRC_LIVE_TESTS=1 run 2026-10-26T08:38Z, codex-cli 0.164.0, Claude Code 2.1.310; line 185 ✔)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/models-daemon-s4.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8192,
+            "titles": [
+              {
+                "title": "models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "303dbae66",
+        "ranAt": "2026-10-26T08:40:14.525Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 835,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10737,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1059,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

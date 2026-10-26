@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s4",
+    "createdAt": "2026-10-26T08:16:23.074Z",
+    "updatedAt": "2026-10-26T08:41:35.439Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Added the Claude procedure (recognised-unconfirmed effort names from --help, a --print run decided only on exit 0 plus a success envelope, is_error as refusal, input limit from modelUsage). Fix f6f34de5f: the installed CLI wraps the --effort value list onto the next line; the parser now reads a wrapped list but never past the next option.",
+    "testRecord": {
+      "md": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-check.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/evidence/model-check-live.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-check.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/models-daemon-s4.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T08:41:35.439Z"
+      }
+    ],
+    "commit": "17bfd35c3"
+  }
+}

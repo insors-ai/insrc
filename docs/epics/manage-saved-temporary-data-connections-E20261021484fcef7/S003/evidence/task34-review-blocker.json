@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "story": "484fcef7efaf229e/s3",
+  "sourceCommit": "d29375109544445eadc53b25da2f6e08a40ef90d",
+  "independentReviewRecorded": false,
+  "groundingRequested": "degraded diff-based; user explicitly authorized fallback on stale index",
+  "staleFiles": [
+    "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+    "src/assets/connection-management-inventory.json"
+  ],
+  "attempts": [
+    {
+      "limitTokens": 128000,
+      "limitCharacters": 384000,
+      "atom": "src/assets/connection-management-inventory.json#src/assets/connection-management-inventory.json",
+      "promptCharacters": 443605,
+      "error": "AtomTooLargeError; no review recorded"
+    },
+    {
+      "limitTokens": 200000,
+      "limitCharacters": 600000,
+      "atom": "src/daemon/db/__tests__/fixtures/session-source-inventory.json#src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "promptCharacters": 1838027,
+      "error": "AtomTooLargeError; no review recorded"
+    }
+  ],
+  "restoredReviewChunkTokens": 128000,
+  "temporarySettingRestored": true,
+  "releaseEnabled": false,
+  "next": "Tracked sized bugfix: lossless bounded review units for oversized diff evidence, before retrying S003 independent review."
+}

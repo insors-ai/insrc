@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793042338639-bewh3u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-26T19:20:08.322Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 69679,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "5384820ac9eb0fd3",
+    "epicSlug": "split-oversized-diff-evidence-into-lossless",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Split oversized diff evidence into lossless bounded review units",
+    "reproduction": "On connection-management Story S003, request insrc_code_review_step with epicHash 484fcef7efaf229e, storyId s3, and diff-based fallback after the two inventory JSON files remain stale. At the default review.chunkTokens=128000, the daemon fails before recording a review: the connection-management-inventory.json atom requires 443605 characters versus384000 allowed. Temporarily raising the supported limit to200000 tokens/600000 characters moves failure to session-source-inventory.json, whose atom requires1838027 characters. The original128000 setting was restored. Expected: review all changed evidence through bounded complete units and record an independent degraded review; oversized indivisible values may still fail explicitly. Actual: no independent review artifact can be produced, blocking S003 completion. Exact errors and restored setting are recorded in the S003 review-blocker evidence [c3].",
+    "rootCause": "The graph locates buildDiffSymbols in src/workflow/code-review/grounding.ts and its caller assembleDiffCodeReviewGrounding [c1]. Direct source inspection shows one synthetic file symbol carrying a file's unified-diff hunks as its signature, so a large non-code JSON file remains one review item. The shared packIntoBatches correctly raises AtomTooLargeError when one item's complete prompt exceeds the per-call budget [c2]. Increasing the budget does not solve the inappropriate whole-file granularity for the actual1.8M-character item. Graph relationship coverage is incomplete (154 source-missing relationships), so caller exhaustiveness is not claimed; direct search confirms the constructor's production caller and existing diff-grounding test coverage.",
+    "fixIntent": "Allow complete oversized diff evidence to be reviewed as bounded, attributable units while retaining every changed entry and the file/line relationships needed for findings. Preserve the configured per-call limit and reject genuinely indivisible oversized material; do not truncate evidence to obtain a verdict. Preserve degraded coverage reporting and the daemon's independent-review role for controller-authored changes. Keep the S003 inventory contents and disabled release gate intact. Cover large added/modified/deleted JSON evidence and source attribution with focused regressions, then retry the actual S003 review at the restored default budget. This record defines correction intent; detailed unit boundaries and compatibility belong in the sized bugfix design."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:266-338",
+      "quotedText": "buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[]; graph caller assembleDiffCodeReviewGrounding."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/pack-into-batches.ts:14-54",
+      "quotedText": "packIntoBatches throws AtomTooLargeError when one item's built prompt alone exceeds the budget."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-review-blocker.json"
+    }
+  ]
+}

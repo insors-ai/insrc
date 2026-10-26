@@ -48,7 +48,6 @@ import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
-import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
@@ -443,16 +442,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // showInformationMessage. All flow/k7 logic is in the VS-Code-free module.
   commands.register({ id: 'insrc.models.setTier', title: 'insrc: Set model tier' }, () =>
     runSetModelTier({
-      listModels: (provider: ModelProvider) =>
-        client.rpc<ModelListResult>('providers.listModels', { provider }),
-      catalog: () => configGateway.catalog(),
+      definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+      rawConfig: () => configGateway.rawConfig(),
       writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      restartDaemon: () => restartDaemonAndReport({ status, controller }),
       pick: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, opts)),
-      notify: (message) => {
-        // The bundled vscode.d.ts stub's showInformationMessage requires the
-        // options arg; {} (all fields optional) satisfies it with no buttons.
-        void vscode.window.showInformationMessage(message, {});
-      },
+      // The bundled vscode.d.ts stub's showInformationMessage requires the options
+      // arg; {} (all fields optional) satisfies it, followed by any action buttons.
+      notify: (message, ...actions) => Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
     }),
   );
 

@@ -32,6 +32,14 @@ test('vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its 
     const { bundle } = await import(pathToFileURL(join(PLUGIN, 'esbuild.mjs')).href) as { bundle: (dir: string) => Promise<void> };
     await bundle(join(out, 'ext'));
     assert.ok(existsSync(join(out, 'ext', 'extension.js')));
+    // The whole bundle names no Claude or Codex model of the definitions file: tier choices come from the daemon (s6).
+    const extension = readFileSync(join(out, 'ext', 'extension.js'), 'utf8');
+    const shipped = JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ cliKind?: string; models: Array<{ id: string; aliases?: string[] }> }> };
+    for (const family of shipped.families.filter((f) => f.cliKind !== undefined)) {
+      for (const m of family.models) {
+        for (const name of [m.id, ...(m.aliases ?? [])]) assert.ok(!extension.includes(`"${name}"`) && !extension.includes(`'${name}'`), `the bundle names '${name}'`);
+      }
+    }
 
     // The key map, bundled the same way and loaded by node from a dir without node_modules, maps
     // the manifest's catalog-backed settings without the settings catalog or the definitions file.

@@ -154,6 +154,11 @@ declare module 'vscode' {
       showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean | undefined },
       options?: { enableScripts?: boolean | undefined },
     ): WebviewPanel;
+    /** A multi-select quick-pick; resolves the chosen items or undefined on dismiss (Epic ce99b72065d03b1b s6: choosing approved effort levels). */
+    export function showQuickPick<T extends QuickPickItem>(
+      items: readonly T[] | PromiseLike<readonly T[]>,
+      options: { placeHolder?: string | undefined; canPickMany: true },
+    ): PromiseLike<readonly T[] | undefined>;
     /** Present a quick-pick menu; resolves the chosen item or undefined on dismiss (S004 sc9). */
     export function showQuickPick<T extends QuickPickItem>(
       items: readonly T[] | PromiseLike<readonly T[]>,

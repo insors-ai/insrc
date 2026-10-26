@@ -1,3 +1,4 @@
+import './private-paths.js';
 /**
  * The plan tree and the daemon each map a context-builder error to a
  * code (two functions, both named classifyShaperError). They are one

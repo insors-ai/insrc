@@ -59,6 +59,8 @@ export interface PlanBuilderInput {
 
 /** Plan Builder per-invocation options. */
 export interface PlanBuilderOpts {
+	/** Trusted carrier relayed by root orchestration; recursive consumers enforce it. */
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly runId: string;
 	/** Force-skip cache reads. Tests only. */
 	readonly bypassCache?: boolean;

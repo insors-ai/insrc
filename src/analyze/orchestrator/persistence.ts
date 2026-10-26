@@ -11,6 +11,11 @@
  * Atomic write via tmp+rename so partial files never leak.
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { assertSessionReuseNow } from '../session-reuse.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+
 import {
 	existsSync,
 	mkdirSync,
@@ -27,13 +32,22 @@ import { PATHS } from '../../shared/paths.js';
 import type { RunRecord } from './types.js';
 
 const log = getLogger('analyze:orchestrator:persistence');
+const sessionRecords = new WeakMap<RunRecord, ConnectionExecutionContext>();
+/** An existing Session record cannot be laundered through an unattached Saved call. */
+export function assertRunRecordSource(record: RunRecord, execution?: ConnectionExecutionContext): void {
+	assertSessionReuseNow(execution);
+	const owner = sessionRecords.get(record);
+	if (owner !== undefined && owner !== execution) throw new ConnectionExecutionError('session-expired');
+}
 
-export function runRecordPathFor(runId: string): string {
+export function runRecordPathFor(runId: string, execution?: ConnectionExecutionContext): string {
+	assertPersistentRunExecution(execution);
 	return PATHS.analyzeRunRecord(runId);
 }
 
-export function readRunRecord(runId: string): RunRecord | null {
-	const path = runRecordPathFor(runId);
+export function readRunRecord(runId: string, execution?: ConnectionExecutionContext): RunRecord | null {
+	assertPersistentRunExecution(execution);
+	const path = runRecordPathFor(runId, execution);
 	if (!existsSync(path)) return null;
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as RunRecord;
@@ -43,8 +57,10 @@ export function readRunRecord(runId: string): RunRecord | null {
 	}
 }
 
-export function writeRunRecord(record: RunRecord): string {
-	const path = runRecordPathFor(record.runId);
+export function writeRunRecord(record: RunRecord, execution?: ConnectionExecutionContext): string {
+	assertPersistentRunExecution(execution);
+	assertRunRecordSource(record, execution);
+	const path = runRecordPathFor(record.runId, execution);
 	atomicWriteJson(path, record);
 	log.debug(
 		{ runId: record.runId, stage: record.stage, status: record.status },
@@ -104,7 +120,9 @@ export const RUN_ABANDONED_MESSAGE =
  * died) the failure is logged and the abandoned record is returned all the
  * same, so the reader still says what is true.
  */
-export function abandonRunRecord(record: RunRecord): RunRecord {
+export function abandonRunRecord(record: RunRecord, execution?: ConnectionExecutionContext): RunRecord {
+	assertPersistentRunExecution(execution);
+	assertRunRecordSource(record, execution);
 	const abandoned: RunRecord = {
 		...record,
 		status:    'failed',
@@ -112,7 +130,7 @@ export function abandonRunRecord(record: RunRecord): RunRecord {
 		updatedAt: new Date().toISOString(),
 	};
 	try {
-		writeRunRecord(abandoned);
+		writeRunRecord(abandoned, execution);
 		log.info({ runId: record.runId, stage: record.stage }, 'run record rewritten as abandoned: in-progress with no live run');
 	} catch (err) {
 		log.warn({ runId: record.runId, err: (err as Error).message }, 'the abandoned run record could not be written; it is reported as abandoned all the same');
@@ -129,15 +147,17 @@ export function purgeRun(
 		 *  'in-progress' record is then refused. */
 		readonly isLive?: ((runId: string) => boolean) | undefined;
 	} = {},
+	execution?: ConnectionExecutionContext,
 ): PurgeRunResult | PurgeRunRefused {
-	const dir = dirname(runRecordPathFor(runId));
+	assertPersistentRunExecution(execution);
+	const dir = dirname(runRecordPathFor(runId, execution));
 
 	if (opts.force !== true) {
-		const record = readRunRecord(runId);
+		const record = readRunRecord(runId, execution);
 		if (record !== null && record.status === 'in-progress' && opts.isLive !== undefined && !opts.isLive(runId)) {
 			// No live run stands behind the record: it is abandoned, and is
 			// purged without force. The rewrite is best effort; the purge follows.
-			abandonRunRecord(record);
+			abandonRunRecord(record, execution);
 		} else if (record !== null && record.status === 'in-progress') {
 			log.info(
 				{ runId, stage: record.stage },
@@ -171,4 +191,47 @@ function atomicWriteJson(path: string, value: unknown): void {
 	const tmp = `${path}.tmp-${process.pid}-${Date.now()}`;
 	writeFileSync(tmp, json, 'utf8');
 	renameSync(tmp, path);
+}
+
+/** Durable helpers refuse before paths, record properties, serialization or repair. */
+function assertPersistentRunExecution(execution: ConnectionExecutionContext | undefined): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+}
+
+export interface RunRecordPort {
+	read(): RunRecord | null;
+	write(record: RunRecord): string;
+	close(): void;
+}
+const recordPortAuthorities = new WeakMap<RunRecordPort, ConnectionExecutionContext | undefined>();
+
+/** Each Session invocation owns at most one record. No completed result cache. */
+export function createRunRecordPort(runId: string, execution?: ConnectionExecutionContext): RunRecordPort {
+	assertSessionReuseNow(execution);
+	let record: RunRecord | null = null;
+	let closed = false;
+	const guard = () => { assertSessionReuseNow(execution); if (closed) throw new ConnectionExecutionError('session-expired'); };
+	const close = () => { closed = true; record = null; execution?.lifetime.signal.removeEventListener('abort', close); };
+	const port: RunRecordPort = Object.freeze({
+		read() { guard(); return execution?.mode === 'session-memory' ? record : readRunRecord(runId, execution); },
+		write(value: RunRecord) {
+			guard();
+			assertRunRecordSource(value, execution);
+			if (value.runId !== runId) throw new ConnectionExecutionError('session-expired');
+			if (execution?.mode !== 'session-memory') return writeRunRecord(value, execution);
+			sessionRecords.set(value, execution);
+			record = value;
+			return '';
+		},
+		close,
+	});
+	recordPortAuthorities.set(port, execution);
+	if (execution?.mode === 'session-memory') execution.lifetime.signal.addEventListener('abort', close, { once: true });
+	return port;
+}
+/** Exact port identity prevents a supplied callback from replacing owner memory with disk. */
+export function assertRunRecordPort(port: RunRecordPort, execution?: ConnectionExecutionContext): void {
+	assertSessionReuseNow(execution);
+	if (!recordPortAuthorities.has(port) || recordPortAuthorities.get(port) !== execution) throw new ConnectionExecutionError('session-expired');
 }

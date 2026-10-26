@@ -3509,6 +3509,30 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "storage-call",
+          "assertRunRecordPort"
+        ],
+        [
+          "storage-call",
+          "assertRunRecordPort"
+        ],
+        [
+          "storage-call",
+          "assertRunRecordSource"
+        ],
+        [
+          "storage-call",
+          "createRunRecordPort"
+        ],
+        [
+          "storage-call",
+          "createRunRecordPort"
+        ],
+        [
+          "serialization",
+          "emit"
+        ],
+        [
           "serialization",
           "emit"
         ],
@@ -3646,40 +3670,44 @@
         ],
         [
           "storage-call",
-          "readRunRecord"
+          "records.close"
         ],
         [
           "storage-call",
-          "readRunRecord"
+          "records.read"
+        ],
+        [
+          "storage-call",
+          "records.read"
         ],
         [
           "serialization",
-          "writeRunRecord"
+          "records.write"
         ],
         [
           "serialization",
-          "writeRunRecord"
+          "records.write"
         ],
         [
           "serialization",
-          "writeRunRecord"
+          "records.write"
         ],
         [
           "storage-call",
-          "writeRunRecord"
+          "records.write"
         ],
         [
           "storage-call",
-          "writeRunRecord"
+          "records.write"
         ],
         [
           "storage-call",
-          "writeRunRecord"
+          "records.write"
         ]
       ],
-      "siteCount": 42,
-      "sitesDigest": "ae584f708dd56a0a324a05297006d2d1289ffdbd307995fd6951ea522a6527f2",
-      "sourceDigest": "0f841f2ed88d9dcd1d73db2500d186c2eeb6d2c8f799475bd2c3cde9cfab28bc",
+      "siteCount": 49,
+      "sitesDigest": "af8c3a6dd874a2cce5c29e1aa7918332bc8a2176f1a1f1c10c4e7f2d022803c1",
+      "sourceDigest": "037a65afdcd327318c7f6c58729e7d517c8334a102d091fd41338456ad38aa43",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -3695,12 +3723,72 @@
           "abandonRunRecord"
         ],
         [
+          "serialization",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "serialization",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "serialization",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "serialization",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "serialization",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertPersistentRunExecution"
+        ],
+        [
+          "storage-call",
+          "assertRunRecordSource"
+        ],
+        [
+          "storage-call",
+          "assertRunRecordSource"
+        ],
+        [
+          "storage-call",
+          "assertRunRecordSource"
+        ],
+        [
           "storage-call",
           "atomicWriteJson"
         ],
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "storage-call",
+          "guard"
+        ],
+        [
+          "storage-call",
+          "guard"
         ],
         [
           "serialization",
@@ -3755,6 +3843,10 @@
           "readRunRecord"
         ],
         [
+          "storage-call",
+          "readRunRecord"
+        ],
+        [
           "filesystem-write",
           "renameSync"
         ],
@@ -3787,13 +3879,21 @@
           "writeRunRecord"
         ],
         [
+          "serialization",
+          "writeRunRecord"
+        ],
+        [
+          "storage-call",
+          "writeRunRecord"
+        ],
+        [
           "storage-call",
           "writeRunRecord"
         ]
       ],
-      "siteCount": 25,
-      "sitesDigest": "9c7933cf3109ef3c3f3c1f62dc10a158bfb7bf08e0546f3c2daec74b722d175b",
-      "sourceDigest": "758784bf50cda0b917e96a26caa9d3199a4f1902edf2321fa357ca8dd7d24a27",
+      "siteCount": 43,
+      "sitesDigest": "8aec89ccd684fa0b2e4c88b15f7041766345abae4266d587a3ca574983ca6430",
+      "sourceDigest": "6cc51d3da3b4ab65895f343b7dbff7b4ed5028decc19479b8364575ce242cdad",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

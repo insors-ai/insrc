@@ -308,6 +308,9 @@ export type RunErrorCode =
 	// cancellation
 	| 'aborted'
 	// catch-all
+	| 'session-expired'
+	| 'unsupported-temporary'
+	| 'resource-limit'
 	| 'internal-error';
 
 // ---------------------------------------------------------------------------

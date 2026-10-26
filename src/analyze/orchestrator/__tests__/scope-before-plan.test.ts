@@ -1,3 +1,4 @@
+import './private-paths.js';
 /**
  * The run checks its scope once before it plans (Story s7, task t13), and,
  * since Epic c2ba6fa6 Story s5 (task t9), before the request is measured: a

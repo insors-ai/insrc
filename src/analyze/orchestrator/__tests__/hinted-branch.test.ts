@@ -1,3 +1,4 @@
+import './private-paths.js';
 /**
  * The plan tree's branch for a request started with a stated kind of
  * source (a "hinted" request). No classifier runs on it, so it builds

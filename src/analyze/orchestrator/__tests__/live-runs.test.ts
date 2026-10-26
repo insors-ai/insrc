@@ -1,3 +1,4 @@
+import './private-paths.js';
 /**
  * A run that dies says so (Story s7, task t12).
  *

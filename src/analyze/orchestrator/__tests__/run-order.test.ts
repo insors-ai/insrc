@@ -1,3 +1,4 @@
+import './private-paths.js';
 /**
  * Epic c2ba6fa6, Story s5, Task t9 -- the run refuses a scope BEFORE it
  * measures or announces a size (ISSUE-a6940f8a).

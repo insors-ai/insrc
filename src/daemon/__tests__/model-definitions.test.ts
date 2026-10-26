@@ -152,3 +152,17 @@ test('model-definitions.test.ts: installed exact-match true/false, absent when t
 	assert.equal(ollamaDown.models.length, 2, 'the request still succeeds with every listed model');
 	assert.ok(ollamaDown.models.every(m => !('installed' in m)));
 });
+
+test('model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it', async () => {
+	const assets = tmp();
+	const f = fixture() as { families: Array<{ id: string; models: Array<Record<string, unknown>> }> };
+	f.families.find(x => x.id === 'ollama')!.models[0]!['memoryMb'] = 1200;
+	writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(f));
+	_setModelCatalogDirForTests(assets);
+	_setApprovedModelsPathForTests(join(tmp(), 'approved-models.json'));
+	const r = await modelDefinitions(deps(async () => []));
+	const models = r.families.find(x => x.id === 'ollama')!.models;
+	assert.equal(models[0]!.memoryMb, 1200);
+	assert.ok(!('memoryMb' in models[1]!), 'omitted when the definitions do not give it');
+	for (const fam of r.families.filter(x => x.id !== 'ollama')) for (const m of fam.models) assert.ok(!('memoryMb' in m));
+});

@@ -43,7 +43,7 @@
       "id": "ollama",
       "displayName": "Ollama (local)",
       "models": [
-        { "id": "qwen3.6:27b", "displayName": "Qwen 3.6 27B", "efforts": [], "inputLimit": { "unit": "tokens", "max": 32768 } }
+        { "id": "qwen3.6:27b", "displayName": "Qwen 3.6 27B", "efforts": [], "inputLimit": { "unit": "tokens", "max": 32768 }, "memoryMb": 14000 }
       ],
       "toolLoopModel": "qwen3.6:27b"
     }

@@ -41,6 +41,8 @@ export interface ModelDefinitionEntry {
 	readonly displayName?: string | undefined;
 	readonly efforts:      readonly EffortLevel[];
 	readonly inputLimit?:  InputLimit | undefined;
+	/** Ollama models only, when the definitions give it: approximate memory (MB) at base context. */
+	readonly memoryMb?:    number | undefined;
 	readonly source:       'shipped' | 'user-approved';
 	/** Ollama models only; absent when Ollama did not answer. */
 	readonly installed?:   boolean | undefined;
@@ -106,6 +108,7 @@ export function projectDefinitions(
 			...(m.displayName !== undefined ? { displayName: m.displayName } : {}),
 			efforts: m.efforts,
 			...(m.inputLimit !== undefined ? { inputLimit: m.inputLimit } : {}),
+			...(m.memoryMb !== undefined ? { memoryMb: m.memoryMb } : {}),
 			source:  m.source,
 			...(!cli && installed !== undefined ? { installed: installed.includes(m.id) } : {}),
 		}));

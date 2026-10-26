@@ -94,3 +94,13 @@ test('model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimi
 		assert.deepEqual(m.inputLimit, { unit: 'chars', max: 1_048_576 }, m.id);
 	}
 });
+
+test('model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes', async () => {
+	const ollama = validateModelCatalog().families.find(f => f.id === 'ollama')!;
+	assert.ok(ollama.models.length > 0);
+	for (const m of ollama.models) assert.ok(Number.isInteger(m.memoryMb) && m.memoryMb! > 0, `${m.id} has memoryMb`);
+	const { spawnSync } = await import('node:child_process');
+	// The gate against the current source validator (the built out/ module may be stale).
+	const r = spawnSync(process.execPath, ['--import', 'tsx', join(repoRoot, 'scripts', 'check-model-definitions.mjs'), '--module', join(repoRoot, 'src', 'daemon', 'model-catalog.ts')], { cwd: repoRoot, encoding: 'utf8', timeout: 60_000 });
+	assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+});

@@ -172,3 +172,28 @@ test('smoke: the built out/assets/models stages the catalog JSON, non-empty', { 
 	const parsed = JSON.parse(readFileSync(builtCatalog, 'utf8')) as { version: unknown };
 	assert.equal(typeof parsed.version, 'number');
 });
+
+test('model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model', () => {
+	// Accepted: an Ollama model with memoryMb, and one without it.
+	const ok = valid();
+	ok.families[2].models = [{ id: 'qwen:1b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 }, memoryMb: 14000 }, { id: 'qwen:2b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } }];
+	useAsset(JSON.stringify(ok));
+	const ollama = validateModelCatalog().families.find(f => f.id === 'ollama')!;
+	assert.equal(ollama.models[0]!.memoryMb, 14000);
+	assert.ok(!('memoryMb' in ollama.models[1]!), 'absent stays absent');
+	_resetModelCatalogForTests();
+
+	const refused: Array<[string, (x: Record<string, any>) => void, RegExp]> = [
+		...([0, -1, 1.5, '14000'] as unknown[]).map((v): [string, (x: Record<string, any>) => void, RegExp] => [
+			`memoryMb ${JSON.stringify(v)}`, x => { x.families[2].models[0].memoryMb = v; },
+			/families\[2\] \(ollama\): models\[0\] 'qwen:1b': memoryMb is not a positive whole number of MB/]),
+		['memoryMb on a CLI model', x => { x.families[1].models[0].memoryMb = 4000; }, /families\[1\] \(cli-codex\): model 'gpt-a' has memoryMb, which only Ollama models take/],
+	];
+	for (const [label, mutate, reason] of refused) {
+		const x = valid();
+		mutate(x);
+		useAsset(JSON.stringify(x));
+		assert.throws(() => validateModelCatalog(), (e: unknown) => e instanceof ModelCatalogValidationError && reason.test(e.reason), label);
+		_resetModelCatalogForTests();
+	}
+});

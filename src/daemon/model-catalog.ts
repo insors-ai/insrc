@@ -53,6 +53,9 @@ export interface ModelDefinition {
 	readonly efforts:      readonly EffortLevel[];
 	/** Required (in tokens) for ollama; absent on a CLI model = the CLI's own refusal decides. */
 	readonly inputLimit?:  InputLimit | undefined;
+	/** Ollama only, optional: approximate memory (MB) the model needs at its base
+	 *  context, for Setup's sizing; absent = the recommender's generic estimate. */
+	readonly memoryMb?:    number | undefined;
 }
 
 /** `model` is an id or alias of the same family. */
@@ -161,12 +164,17 @@ function validateModel(raw: unknown, at: string, fail: (reason: string) => never
 		}
 		inputLimit = Object.freeze({ unit: limit['unit'], max: limit['max'] });
 	}
+	const memoryMb = raw['memoryMb'];
+	if (memoryMb !== undefined && (typeof memoryMb !== 'number' || !Number.isInteger(memoryMb) || memoryMb <= 0)) {
+		fail(`${where}: memoryMb is not a positive whole number of MB`);
+	}
 	return Object.freeze({
 		id,
 		...(raw['aliases'] !== undefined ? { aliases: Object.freeze([...raw['aliases'] as string[]]) } : {}),
 		...(raw['displayName'] !== undefined ? { displayName: raw['displayName'] as string } : {}),
 		efforts: Object.freeze([...raw['efforts']]),
 		...(inputLimit !== undefined ? { inputLimit } : {}),
+		...(memoryMb !== undefined ? { memoryMb } : {}),
 	});
 }
 
@@ -212,6 +220,9 @@ function validateFamily(raw: Json, index: number, fail: (reason: string) => neve
 			out[tier] = Object.freeze({ model: d['model'], ...(effort !== undefined ? { effort } : {}) });
 		}
 		tierDefaults = Object.freeze(out);
+		for (const m of models) {
+			if (m.memoryMb !== undefined) fail(`${at}: model '${m.id}' has memoryMb, which only Ollama models take`);
+		}
 		const summariser = raw['summariserModel'] as string;
 		if (resolveName(models, summariser) === undefined) {
 			fail(`${at}: summariserModel '${summariser}' is not a model or alias of ${id}`);

@@ -1,0 +1,217 @@
+# INSRC_LIVE_TESTS=1 npx tsx --test --test-reporter=spec src/daemon/__tests__/model-check.live.test.ts
+# 2026-10-26T08:38Z — codex-cli 0.164.0, 2.1.310 (Claude Code)
+[08:37:14] INFO: [daemon:model-catalog] model definitions validated
+    module: "daemon:model-catalog"
+    dir: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/model-check-live-ez9RAU"
+    version: 1
+    models: {
+      "cli-claude": 3,
+      "cli-codex": 6,
+      "ollama": 1
+    }
+[08:37:15] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-nonexistent-insrc-probe"
+    cli: "codex"
+    args: [
+      "--version"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 80
+[08:37:15] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-nonexistent-insrc-probe"
+    cli: "codex"
+    args: [
+      "debug",
+      "models"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 520
+[08:37:17] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-nonexistent-insrc-probe"
+    cli: "codex"
+    args: [
+      "exec",
+      "--json",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "read-only",
+      "-C",
+      "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T",
+      "-m",
+      "gpt-nonexistent-insrc-probe"
+    ]
+    exitCode: 1
+    timedOut: false
+    durationMs: 2453
+[08:37:17] INFO: [daemon:model-check] model check: verdict
+    module: "daemon:model-check"
+    checkId: "d6222344-2d44-4ac2-8cb6-84d6ea6517f4"
+    family: "cli-codex"
+    modelId: "gpt-nonexistent-insrc-probe"
+    runs: false
+    efforts: [
+      "high:rejected"
+    ]
+    error: "the codex CLI refused the model: {\"type\":\"error\",\"status\":400,\"error\":{\"type\":\"invalid_request_error\",\"message\":\"The 'gpt-nonexistent-insrc-probe' model is not supported when using Codex with a ChatGPT account.\",\"code\":\"model_not_found\"}}"
+[08:37:18] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-6-luna"
+    cli: "codex"
+    args: [
+      "--version"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 82
+[08:37:18] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-6-luna"
+    cli: "codex"
+    args: [
+      "debug",
+      "models"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 82
+[08:37:23] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-codex"
+    modelId: "gpt-6-luna"
+    cli: "codex"
+    args: [
+      "exec",
+      "--json",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "read-only",
+      "-C",
+      "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T",
+      "-m",
+      "gpt-6-luna"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 4829
+[08:37:23] INFO: [daemon:model-check] model check: verdict
+    module: "daemon:model-check"
+    checkId: "fe0c02bd-085b-4454-af53-02fa0aab30c6"
+    family: "cli-codex"
+    modelId: "gpt-6-luna"
+    runs: true
+    efforts: [
+      "low:accepted",
+      "ultra:rejected"
+    ]
+[08:37:23] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "claude-nonexistent-insrc-probe"
+    cli: "claude"
+    args: [
+      "--version"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 18
+[08:37:23] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "claude-nonexistent-insrc-probe"
+    cli: "claude"
+    args: [
+      "--help"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 81
+[08:37:26] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "claude-nonexistent-insrc-probe"
+    cli: "claude"
+    args: [
+      "--print",
+      "--output-format",
+      "json",
+      "--model",
+      "claude-nonexistent-insrc-probe"
+    ]
+    exitCode: 1
+    timedOut: false
+    durationMs: 3508
+[08:37:26] INFO: [daemon:model-check] model check: verdict
+    module: "daemon:model-check"
+    checkId: "c08bbadf-af16-47be-a1d8-245c5288548f"
+    family: "cli-claude"
+    modelId: "claude-nonexistent-insrc-probe"
+    runs: false
+    efforts: [
+      "high:recognised-unconfirmed"
+    ]
+    error: "the claude CLI refused the model: There's an issue with the selected model (claude-nonexistent-insrc-probe). It may not exist or you may not have access to it. Run --model to pick a different model."
+[08:37:26] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "haiku"
+    cli: "claude"
+    args: [
+      "--version"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 21
+[08:37:26] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "haiku"
+    cli: "claude"
+    args: [
+      "--help"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 74
+✔ model-check.live.test.ts: isolated fixture validated and unserved; real codex and claude checks (15949.335208ms)
+[08:37:30] INFO: [daemon:model-check] model check: CLI call
+    module: "daemon:model-check"
+    family: "cli-claude"
+    modelId: "haiku"
+    cli: "claude"
+    args: [
+      "--print",
+      "--output-format",
+      "json",
+      "--model",
+      "haiku"
+    ]
+    exitCode: 0
+    timedOut: false
+    durationMs: 4082
+[08:37:30] INFO: [daemon:model-check] model check: verdict
+    module: "daemon:model-check"
+    checkId: "cd0c7f56-d6fc-4cc9-80e1-3341e95a2e84"
+    family: "cli-claude"
+    modelId: "haiku"
+    runs: true
+    efforts: [
+      "high:recognised-unconfirmed"
+    ]
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16107.422917

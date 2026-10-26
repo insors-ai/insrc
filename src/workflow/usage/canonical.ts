@@ -18,7 +18,12 @@ export class UsageInputError extends Error {
 const validShape = new Ajv({ strict: false, useDefaults: false, removeAdditional: false }).compile(ledgerRecordV1Schema);
 const pointer = (key: string): string => key.replace(/~/g, '~0').replace(/\//g, '~1');
 
-/** A bounded JSON snapshot; descriptors are inspected before any data is read. */
+/**
+ * Central object-to-JSON boundary. Bounds traversal, buffers and emitted bytes;
+ * V8's initial own-key enumeration can allocate in proportion to the supplied
+ * object's properties. Callers pass objects directly and must not pre-serialize.
+ * Descriptors are inspected before any property value is read.
+ */
 export function canonicalData(value: unknown, maxBytes: number = USAGE_LIMITS.sourceBytes): string {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > USAGE_LIMITS.groupBytes) {
     throw new UsageInputError('resource-limit', '');
@@ -60,6 +65,11 @@ export function canonicalData(value: unknown, maxBytes: number = USAGE_LIMITS.so
     if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) fail(path);
     if (active.has(object)) fail(path);
     active.add(object);
+    // Array length is a non-accessor own property. Reject oversized arrays
+    // before enumerating their keys; arbitrary objects have no size primitive.
+    if (array && Object.getOwnPropertyDescriptor(object, 'length')!.value > USAGE_LIMITS.referenceItems) limit(path);
+    // Required to detect non-enumerable and symbol properties as well. The
+    // engine allocation here is explicitly outside our bounded bookkeeping.
     const keys = Reflect.ownKeys(object);
     if (keys.length > USAGE_LIMITS.nodes) limit(path);
     // A single bounded descriptor at a time avoids copying an oversized graph.

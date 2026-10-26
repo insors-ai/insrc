@@ -34,6 +34,9 @@
  * See: design/analyze-plan-builder.md "XL -> planner-template tasks"
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 
@@ -48,7 +51,11 @@ import type {
 	PlannedTask,
 } from './types.js';
 
-const log = getLogger('analyze:planner:recursive');
+const savedLog = getLogger('analyze:planner:recursive');
+const quietLog = { info: (..._args: unknown[]) => { }, warn: (..._args: unknown[]) => { } };
+let plannerImpl = runPlanner;
+/** Deterministic plan stage seam; production always uses the guarded runPlanner. */
+export function _setRecursivePlannerForTest(planner?: typeof runPlanner): void { plannerImpl = planner ?? runPlanner; }
 
 // ---------------------------------------------------------------------------
 // Tree shape
@@ -96,13 +103,22 @@ type PlanBuilderArgs = Parameters<typeof runPlanner>[0];
  * cap fires inside runPlanner before any LLM call.
  */
 export async function runRecursivePlanner(args: RecursivePlannerArgs): Promise<PlanTreeNode> {
-	const { input, opts } = args;
+	const sourceOpts = args.opts;
+	const execution = sourceOpts.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.input, execution); }
+	else assertSessionContinuationNow(args.input, execution);
+	assertSessionReuseNow(execution);
+	const input = args.input;
+	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
 	const rootScope = input.rootScope ?? input.intent.scope;
 
 	// Force rootScope to flow through every level.
 	const rootInput: PlanBuilderInput = { ...input, rootScope };
 
-	return walk(rootInput, opts, args.provider, rootScope);
+	const tree = await walk(rootInput, opts, args.provider, rootScope);
+	assertSessionReuseNow(execution);
+	return tree;
 }
 
 async function walk(
@@ -112,15 +128,23 @@ async function walk(
 	rootScope: 'XS' | 'S' | 'M' | 'L' | 'XL',
 	measure?:  RequestMeasure,
 ): Promise<PlanTreeNode> {
+	const execution = opts.connectionExecution;
+	assertSessionReuseNow(execution);
+	await rememberSessionContinuation(input, execution);
+	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
 	const planArgs: PlanBuilderArgs = provider !== undefined
 		? { input, opts, provider }
 		: { input, opts };
-	const plan = await runPlanner(planArgs);
+	const plan = await plannerImpl(planArgs);
+	assertSessionReuseNow(execution);
+	await rememberSessionContinuation(plan, execution);
+	assertSessionReuseNow(execution);
 
 	const children:    Map<string, PlanTreeNode> = new Map();
 	const childErrors: Map<string, Error>        = new Map();
 
 	for (const task of plan.tasks) {
+		assertSessionReuseNow(execution);
 		if (task.kind !== 'planner') continue;
 
 		const childIntent = extractChildIntent(task);
@@ -137,7 +161,8 @@ async function walk(
 		// was. The figure the planner model wrote is the measure's hint: it
 		// is never the size, and never the fallback when the count cannot
 		// be taken (the size is then the largest).
-		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope, { signal: opts.signal });
+		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope, { signal: opts.signal, connectionExecution: execution });
+		assertSessionReuseNow(execution);
 		const measuredChild: ClassifiedIntent = { ...childIntent, scope: childMeasure.size };
 		log.info(
 			{ runId: opts.runId, taskId: task.taskId, size: childMeasure.size, determined: childMeasure.determined, sizeHint: childMeasure.sizeHint, note: childMeasure.note },
@@ -156,8 +181,12 @@ async function walk(
 
 		try {
 			const childNode = await walk(childInput, opts, provider, rootScope, childMeasure);
+			assertSessionReuseNow(execution);
 			children.set(task.taskId, childNode);
 		} catch (err) {
+			if (err instanceof ConnectionExecutionError) throw err;
+			assertSessionReuseNow(execution);
+			if (execution?.mode === 'session-memory') { childErrors.set(task.taskId, new Error('Child planning failed.')); continue; }
 			if (err instanceof MaxPlanDepthExceededError) {
 				log.info(
 					{
@@ -182,7 +211,7 @@ async function walk(
 		}
 	}
 
-	return { plan, children, childErrors, ...(measure !== undefined ? { measure } : {}) };
+	return rememberSessionContinuation({ plan, children, childErrors, ...(measure !== undefined ? { measure } : {}) }, execution);
 }
 
 /**

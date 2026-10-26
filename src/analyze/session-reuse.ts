@@ -50,11 +50,12 @@ export function sessionReuseWindow(execution: SessionConnectionExecution): Reado
 }
 export async function rememberSessionContinuation<T extends object>(value: T, execution: ConnectionExecutionContext | undefined): Promise<T> {
 	await assertSessionReuse(execution);
-	if (execution?.mode !== 'session-memory' && continuations.has(value)) throw new ConnectionExecutionError('session-expired');
+	if (continuations.has(value)) assertSessionContinuationNow(value, execution);
 	if (execution?.mode === 'session-memory') { const window = sessionReuseWindow(execution); continuations.set(value, { owner: window.owner, fingerprint: window.fingerprint }); }
 	return value;
 }
-export async function assertSessionContinuation(value: object, execution: ConnectionExecutionContext | undefined): Promise<void> {
+/** Synchronous provenance check, also used by persistence boundaries before source reads. */
+export function assertSessionContinuationNow(value: object, execution: ConnectionExecutionContext | undefined): void {
 	assertAnalysisConnectionExecution(execution);
 	const owned = continuations.get(value);
 	if (execution?.mode !== 'session-memory') {
@@ -63,6 +64,9 @@ export async function assertSessionContinuation(value: object, execution: Connec
 	}
 	const current = sessionReuseWindow(execution);
 	if (!owned || owned.owner !== current.owner || owned.fingerprint !== current.fingerprint) throw new ConnectionExecutionError('session-expired');
+}
+export async function assertSessionContinuation(value: object, execution: ConnectionExecutionContext | undefined): Promise<void> {
+	assertSessionContinuationNow(value, execution);
 	await assertSessionReuse(execution);
 }
 export async function deriveSessionContinuation<T extends object>(previous: object, value: T, execution: ConnectionExecutionContext | undefined): Promise<T> {

@@ -34,6 +34,10 @@
  * per-run directory works too.
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { assertSessionContinuationNow } from '../session-reuse.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -63,7 +67,9 @@ export interface PersistArgs {
  * Child t02         -> ~/.insrc/analyze/<runId>/tasks/t02/
  * Nested t02.t05    -> ~/.insrc/analyze/<runId>/tasks/t02/tasks/t02.t05/
  */
-export function planDirFor(args: PersistArgs): string {
+export function planDirFor(args: PersistArgs, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 	const runRoot = PATHS.analyzeRun(args.runId);
 	if (args.parentTaskPath === undefined || args.parentTaskPath.length === 0) {
 		return runRoot;
@@ -94,22 +100,30 @@ function expandTaskPathSegments(taskPath: string): string[] {
 	return out;
 }
 
-export function planFinalPathFor(args: PersistArgs): string {
-	return join(planDirFor(args), 'plan.json');
+export function planFinalPathFor(args: PersistArgs, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+	return join(planDirFor(args, execution), 'plan.json');
 }
 
-export function planAttemptsDirFor(args: PersistArgs): string {
-	return join(planDirFor(args), 'plan.attempts');
+export function planAttemptsDirFor(args: PersistArgs, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+	return join(planDirFor(args, execution), 'plan.attempts');
 }
 
 /** Filename for an attempt's plan (zero-padded NN.plan.json). */
-export function planAttemptPathFor(args: PersistArgs, attemptNumber: number): string {
-	return join(planAttemptsDirFor(args), `${pad2(attemptNumber)}.plan.json`);
+export function planAttemptPathFor(args: PersistArgs, attemptNumber: number, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+	return join(planAttemptsDirFor(args, execution), `${pad2(attemptNumber)}.plan.json`);
 }
 
 /** Filename for an attempt's validator feedback (NN.feedback.json). */
-export function planFeedbackPathFor(args: PersistArgs, attemptNumber: number): string {
-	return join(planAttemptsDirFor(args), `${pad2(attemptNumber)}.feedback.json`);
+export function planFeedbackPathFor(args: PersistArgs, attemptNumber: number, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+	return join(planAttemptsDirFor(args, execution), `${pad2(attemptNumber)}.feedback.json`);
 }
 
 function pad2(n: number): string {
@@ -128,8 +142,12 @@ export function writeAttempt(
 	args:          PersistArgs,
 	attemptNumber: number,
 	plan:          PlanTask,
+	execution?: ConnectionExecutionContext,
 ): string {
-	const path = planAttemptPathFor(args, attemptNumber);
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return '';
+	assertSessionContinuationNow(plan, execution);
+	const path = planAttemptPathFor(args, attemptNumber, execution);
 	atomicWriteJson(path, plan);
 	log.debug({ runId: args.runId, attempt: attemptNumber, parentTaskPath: args.parentTaskPath, path }, 'wrote plan attempt');
 	return path;
@@ -143,8 +161,12 @@ export function writeFeedback(
 	args:          PersistArgs,
 	attemptNumber: number,
 	failure:       PlanValidationFailure,
+	execution?: ConnectionExecutionContext,
 ): string {
-	const path = planFeedbackPathFor(args, attemptNumber);
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return '';
+	assertSessionContinuationNow(failure, execution);
+	const path = planFeedbackPathFor(args, attemptNumber, execution);
 	atomicWriteJson(path, failure);
 	log.debug({ runId: args.runId, attempt: attemptNumber, invariantId: failure.invariantId, path }, 'wrote plan feedback');
 	return path;
@@ -155,8 +177,11 @@ export function writeFeedback(
  * the per-(runId, parentTaskPath?) dir; overwrites any prior final
  * (resume cases re-build the plan, which is intended).
  */
-export function writePlanFinal(args: PersistArgs, plan: PlanTask): string {
-	const path = planFinalPathFor(args);
+export function writePlanFinal(args: PersistArgs, plan: PlanTask, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return '';
+	assertSessionContinuationNow(plan, execution);
+	const path = planFinalPathFor(args, execution);
 	atomicWriteJson(path, plan);
 	log.info({ runId: args.runId, parentTaskPath: args.parentTaskPath, taskCount: plan.tasks.length, path }, 'wrote final plan');
 	return path;
@@ -175,8 +200,10 @@ export function writePlanFinal(args: PersistArgs, plan: PlanTask): string {
  * plans were validated by the driver before they hit disk, so a
  * cached read is trustworthy unless a human hand-edited the file.
  */
-export function readPlanFinal(args: PersistArgs): PlanTask | null {
-	const path = planFinalPathFor(args);
+export function readPlanFinal(args: PersistArgs, execution?: ConnectionExecutionContext): PlanTask | null {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return null;
+	const path = planFinalPathFor(args, execution);
 	if (!existsSync(path)) return null;
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as PlanTask;
@@ -192,10 +219,12 @@ export function readPlanFinal(args: PersistArgs): PlanTask | null {
  * isolation; production cleanup goes through a future
  * `analyze.run.purge` IPC.
  */
-export function purgePlan(args: PersistArgs): void {
-	const dir = planDirFor(args);
-	const finalPath  = planFinalPathFor(args);
-	const attemptDir = planAttemptsDirFor(args);
+export function purgePlan(args: PersistArgs, execution?: ConnectionExecutionContext): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return;
+	const dir = planDirFor(args, execution);
+	const finalPath = planFinalPathFor(args, execution);
+	const attemptDir = planAttemptsDirFor(args, execution);
 	safeRm(finalPath);
 	safeRmDir(attemptDir);
 	// Don't remove the run dir itself (it may have peer context-cache

@@ -64,7 +64,25 @@ interface Services { /* existing */ readonly models: { definitions(): Promise<Mo
 **Postconditions:**
 - src/cli imports no getModelRegistry, shippedModelRegistry, DEFAULT_TIERS or TIER_EFFORTS.
 
-### 2.2 `computeEffectiveTiers`
+### 2.2 `rpc`
+
+```typescript
+rpc<T = unknown>(method: string, params?: unknown, connect?: () => Socket): Promise<T>  // src/shared/ipc-client.ts (signature unchanged)
+```
+
+**Parameters:**
+- `connect: () => Socket` _(optional)_ — Existing socket seam; the new disconnect test drives it.
+
+**Returns:** `Promise<T>` — As today, plus: the promise settles exactly once, and a socket that ends or closes before a reply line arrives rejects with Error('the daemon closed the connection before answering <method>') instead of staying pending.
+
+**Errors:**
+- `Error('the daemon closed the connection before answering <method>')` when 'close' (or 'end') fires before any reply was parsed — the daemon exited, restarted or dropped the connection mid-request.
+
+**Postconditions:**
+- No rpc call stays pending after its socket closes; a close after the reply changes nothing.
+- Every caller of the shared client (the TUI and the VS Code plugin) gets the rejection instead of a hang.
+
+### 2.3 `computeEffectiveTiers`
 
 ```typescript
 computeEffectiveTiers(tiering: AnalyzeTiering, defs: ModelDefinitionsResult): EffectiveTiers  // src/cli/panes/model-tiers.ts
@@ -82,7 +100,7 @@ computeEffectiveTiers(tiering: AnalyzeTiering, defs: ModelDefinitionsResult): Ef
 **Postconditions:**
 - Pure: no I/O and no list of its own; DEFAULT_TIERS / resolveTier / the shipped registry are no longer used.
 
-### 2.3 `ModelTiersPane`
+### 2.4 `ModelTiersPane`
 
 ```typescript
 ModelTiersPane(): ReactElement  // src/cli/panes/ModelTiersPane.tsx — tier row actions: f (family), m (model), n (new model id), e (effort), R (restart daemon)
@@ -101,7 +119,7 @@ ModelTiersPane(): ReactElement  // src/cli/panes/ModelTiersPane.tsx — tier row
 - After a save with restartRequired the pane shows 'restart the daemon to apply' with R, which calls svc.daemon.restart and reloads.
 - The pane renders no runner, model or effort literal of its own.
 
-### 2.4 `models.check`
+### 2.5 `models.check`
 
 ```typescript
 check screen (in ModelTiersPane): models.check → table → models.approve(checkId, chosen efforts) | models.reject(checkId)
@@ -117,6 +135,8 @@ check screen (in ModelTiersPane): models.check → table → models.approve(chec
 - `toast '✗ <reason>: <detail>'` when models.approve / models.reject returns ok:false (unknown-check after a daemon restart, invalid-efforts, write-failed); the screen stays so the user can check again or go back.
 - `screen text 'approval recorded; restart failed: <detail> — the tier was not saved'` when The restart after an approval fails; the approval stands (it is not retried) and R retries the restart-then-save.
 - `screen text 'approval recorded; the tier was not saved: <reason> — <detail>'` when The save after a successful restart is refused; the user can set the tier again from the pane.
+- `screen text 'the check was interrupted: the daemon closed the connection — check again'` when models.check rejects with the disconnect error; nothing was decided, so 'check again' re-runs it once the daemon answers.
+- `screen text 'outcome unknown: the daemon disconnected before answering — reload to see whether the decision was recorded'` when models.approve / models.reject rejects with the disconnect error; the decision may or may not have been written. Reload calls models.definitions after a restart and shows whether the model is listed user-approved or among the rejected ids; the approval is not re-sent blindly.
 
 **Preconditions:**
 - The family has a CLI kind.
@@ -124,7 +144,7 @@ check screen (in ModelTiersPane): models.check → table → models.approve(chec
 **Postconditions:**
 - The tier is saved only after a successful restart that follows a successful approval (k5); an approval is never re-sent after it succeeded.
 
-### 2.5 `ReposPane`
+### 2.6 `ReposPane`
 
 ```typescript
 ReposPane(): ReactElement  // src/cli/panes/ReposPane.tsx — 'm' on a selected repo opens its models view
@@ -141,7 +161,7 @@ ReposPane(): ReactElement  // src/cli/panes/ReposPane.tsx — 'm' on a selected 
 **Postconditions:**
 - No write from this view targets models.byRepo.<repo>.tiers (k6, ac3).
 
-### 2.6 `config set`
+### 2.7 `config set`
 
 ```typescript
 runConfig('set' | 'unset', [key, ...value], svc): Promise<string[]>  // src/cli/command.ts
@@ -159,7 +179,7 @@ runConfig('set' | 'unset', [key, ...value], svc): Promise<string[]>  // src/cli/
 - The command bar never reports success for a write the daemon refused (HLD override item 2).
 - No command-bar write sets part of a tier, a dotted role key or a per-repo key, including through a parent object (models, models.byRepo).
 
-### 2.7 `reviewArtifact`
+### 2.8 `reviewArtifact`
 
 ```typescript
 reviewArtifact(repoPath: string, artifactPath: string, reviewFile?: typeof reviewArtifactFile, resolveRole?: Services['models']['resolveRole']): Promise<ReviewArtifactResult>  // src/cli/services/workflow.ts
@@ -180,7 +200,7 @@ reviewArtifact(repoPath: string, artifactPath: string, reviewFile?: typeof revie
 **Postconditions:**
 - The review runs the family, model, effort and Ollama host / numCtx the daemon resolves (sc5).
 
-### 2.8 `recommendModels`
+### 2.9 `recommendModels`
 
 ```typescript
 recommendModels(info: SystemInfo, local: { readonly model: string; readonly installed?: boolean | undefined }): ModelRecommendation  // src/shared/model-recommender.ts
@@ -197,7 +217,7 @@ recommendModels(info: SystemInfo, local: { readonly model: string; readonly inst
 **Postconditions:**
 - src/shared/model-recommender.ts names no model of the definitions.
 
-### 2.9 `SetupPane`
+### 2.10 `SetupPane`
 
 ```typescript
 SetupPane(): ReactElement  // src/cli/panes/SetupPane.tsx; Services.setup.recommend(info, defs) async
@@ -212,7 +232,7 @@ SetupPane(): ReactElement  // src/cli/panes/SetupPane.tsx; Services.setup.recomm
 - No local model name is chosen by the TUI.
 - svc.setup.apply keeps its existing direct write of config.json (unchanged by s5; settings-write safety is out of scope, ISSUE-8dc75bc5).
 
-### 2.10 `runSetup`
+### 2.11 `runSetup`
 
 ```typescript
 runSetup(sub: 'show' | 'apply' | 'pull' | undefined, svc: Services, ctx: CommandCtx): Promise<string[]>  // src/cli/command.ts
@@ -291,6 +311,14 @@ The two existing callers that reach reviewArtifact without a daemon that answers
 - `src/workflow/review/__tests__/same-party-refusal.test.ts`
 - `src/cli/services/workflow.ts:244`
 
+### 3.6 `Shared IPC client settlement` — invariant-change
+
+rpc settles once: a reply resolves or rejects as today; a socket 'end' / 'close' with no reply yet rejects with a named disconnect error. Previously such a request stayed pending forever (only connect, data and error were handled).
+
+**Call sites:**
+- `src/shared/ipc-client.ts`
+- `src/cli/client.ts`
+
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
@@ -343,6 +371,10 @@ The two existing callers that reach reviewArtifact without a daemon that answers
   - Detection: runConfig checks the key's leading segments before calling svc.config.write.
   - Response: Refused with the pointer to the Model Tiers pane and Repos → m; nothing is written.
   - User impact: No partial tier, nested role key or per-repo tier can be written from the command bar.
+- **The daemon drops the connection while a request is outstanding (it exits, is restarted, or crashes mid-check).** (recoverable)
+  - Detection: The shared rpc client's socket emits 'end' / 'close' before a reply line was parsed.
+  - Response: rpc rejects with 'the daemon closed the connection before answering <method>'. The check screen shows 'interrupted — check again' for models.check and 'outcome unknown — reload' for models.approve / models.reject; other panes show their daemon-down message.
+  - User impact: No screen hangs on a lost connection, and a possibly-recorded decision is never reported as failed or re-sent blindly.
 
 **Edge cases**
 
@@ -377,10 +409,10 @@ The two existing callers that reach reviewArtifact without a daemon that answers
 **Test levels**
 
 - **unit** — The pure tier overlay over a fake definitions answer, the recommender with a passed-in local model, the command-bar guard and result rendering, and the review command's provider construction.
-  - Subjects: `src/cli/__tests__/model-tiers.test.ts: computeEffectiveTiers(tiering, fakeDefs) — an unset tier shows the fake default family's tierDefault as a canonical id; a set tier shows its value; a configured model the family does not serve carries the 'not served' note; effort choices for a tier are exactly '' plus the chosen model's efforts in the fake answer; no import of DEFAULT_TIERS / TIER_EFFORTS / shippedModelRegistry; the effort regression: core.model '' with core.effort 'high' shows 'high' over a fake tierDefault effort 'low', an explicit '' shows '', and no effort shows the tierDefault's`, `src/cli/__tests__/model-tiers.test.ts: tier edit helpers — changing family yields { runner: newFamily, model: its tierDefault model, effort: its tierDefault effort or '' }, and for a family without tierDefaults (the fake Ollama family) { model: its toolLoopModel, effort: '' }; changing model drops an effort the new model does not list; a typed id that is an alias resolves to the canonical id; an unserved id of a CLI family asks for a check; an unserved Ollama id is refused`, `src/cli/__tests__/command.test.ts: config set / unset — keys models, models.tiers.core.runner, models.tiers, models.tasks.context.assemble, models.byRepo and models.byRepo./w/repo.coreFloor are refused with the pointer message and the fake config.write is never called (including an object value for models.byRepo); a non-model key is written; an ok:false result prints '✗ not saved: <reason> — <detail>' and never 'set'; restartRequired prints the restart hint; `setup show|apply|pull` fetch the fake definitions and recommend its toolLoopModel, and with models.definitions rejecting each prints 'cannot recommend a local model: the daemon is not running' and calls neither apply nor pullModels`, `src/shared/__tests__/model-recommender.test.ts: recommendModels(info, { model: 'fake-local:1', installed: false }) recommends that model with pull true; installed absent falls back to info.ollama.models; the module names no definitions model`, `src/cli/services/__tests__/review-resolve-role.test.ts: reviewArtifact with a fake resolveRole — a cli answer builds CliProvider with that kind, model, effort and a chars input budget; an ollama answer builds OllamaProvider whose model, host and numCtx are the answer's even when HOME holds a config.json naming another core model and host; the model label is '<family>:<model>'; a rejecting or { error } resolveRole throws 'cannot review: …' and reviewFile is never called; the review path imports no createRoleRouter / loadAnalyzeConfig / registry; src/cli/services/__tests__/review-source-roots-daemon.test.ts and src/workflow/review/__tests__/same-party-refusal.test.ts pass the resolveRole seam and keep their source-root and same-party assertions`, `src/__tests__/no-default-tiers.test.ts: no file under src (tests included) imports or exports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts does not exist`
+  - Subjects: `src/cli/__tests__/model-tiers.test.ts: computeEffectiveTiers(tiering, fakeDefs) — an unset tier shows the fake default family's tierDefault as a canonical id; a set tier shows its value; a configured model the family does not serve carries the 'not served' note; effort choices for a tier are exactly '' plus the chosen model's efforts in the fake answer; no import of DEFAULT_TIERS / TIER_EFFORTS / shippedModelRegistry; the effort regression: core.model '' with core.effort 'high' shows 'high' over a fake tierDefault effort 'low', an explicit '' shows '', and no effort shows the tierDefault's`, `src/cli/__tests__/model-tiers.test.ts: tier edit helpers — changing family yields { runner: newFamily, model: its tierDefault model, effort: its tierDefault effort or '' }, and for a family without tierDefaults (the fake Ollama family) { model: its toolLoopModel, effort: '' }; changing model drops an effort the new model does not list; a typed id that is an alias resolves to the canonical id; an unserved id of a CLI family asks for a check; an unserved Ollama id is refused`, `src/cli/__tests__/command.test.ts: config set / unset — keys models, models.tiers.core.runner, models.tiers, models.tasks.context.assemble, models.byRepo and models.byRepo./w/repo.coreFloor are refused with the pointer message and the fake config.write is never called (including an object value for models.byRepo); a non-model key is written; an ok:false result prints '✗ not saved: <reason> — <detail>' and never 'set'; restartRequired prints the restart hint; `setup show|apply|pull` fetch the fake definitions and recommend its toolLoopModel, and with models.definitions rejecting each prints 'cannot recommend a local model: the daemon is not running' and calls neither apply nor pullModels`, `src/shared/__tests__/model-recommender.test.ts: recommendModels(info, { model: 'fake-local:1', installed: false }) recommends that model with pull true; installed absent falls back to info.ollama.models; the module names no definitions model`, `src/cli/services/__tests__/review-resolve-role.test.ts: reviewArtifact with a fake resolveRole — a cli answer builds CliProvider with that kind, model, effort and a chars input budget; an ollama answer builds OllamaProvider whose model, host and numCtx are the answer's even when HOME holds a config.json naming another core model and host; the model label is '<family>:<model>'; a rejecting or { error } resolveRole throws 'cannot review: …' and reviewFile is never called; the review path imports no createRoleRouter / loadAnalyzeConfig / registry; src/cli/services/__tests__/review-source-roots-daemon.test.ts and src/workflow/review/__tests__/same-party-refusal.test.ts pass the resolveRole seam and keep their source-root and same-party assertions`, `src/__tests__/no-default-tiers.test.ts: no file under src (tests included) imports or exports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts does not exist`, `src/shared/__tests__/ipc-client.test.ts: through the connect seam, a fake socket that emits end then close with no reply rejects with the disconnect error naming the method; close after a reply line does not change the resolved value; an error reply still rejects with the daemon's message`
   - Fixtures: `A fake ModelDefinitionsResult whose families, models and efforts differ from the shipped file (so a match can only come from the answer)`, `Fake Services with recording config.write, models.* and daemon.restart`
 - **integration** — The panes rendered as the user sees them, driven by keystrokes against fake services.
-  - Subjects: `src/cli/__tests__/tui-models.test.ts: Model Tiers pane — with a fake definitions answer, pressing f / m / e cycles exactly the fake families, models and efforts, and each change makes one config.write('models.tiers.<tier>', { runner, model, effort }); a restartRequired result shows the restart line and R calls daemon.restart; an ok:false result shows the reason and the pane reloads`, `src/cli/__tests__/tui-models.test.ts: unknown model — typing an unserved id with n calls models.check with the family's effort names and renders each effort's verdict and evidence; approve calls models.approve with the toggled levels and saves nothing; the screen then shows 'restart the daemon to use it' and R calls daemon.restart and only then config.write('models.tiers.<tier>', { runner, model, effort }); a fake config.write refusing with rejected-model before the restart is never reached; a failing restart shows 'approval recorded; restart failed' with no save and no second approve; a refused save after the restart shows its reason; reject calls models.reject and saves nothing; a runs:false result offers no approve`, `src/cli/__tests__/tui-models.test.ts: repo models view — m on a repo shows roles with the repo's tier or 'global' and coreFloor; editing a role writes the whole map at ['models','byRepo',<repo>,'tasks'] with dotted role ids as flat keys; editing coreFloor writes ['models','byRepo',<repo>,'coreFloor']; the view renders no runner, model or effort field and makes no write under tiers`, `src/cli/__tests__/tui-models.test.ts: daemon down — rejecting models.definitions shows the not-running message in the Model Tiers pane and Setup, with no model list and apply / pull disabled; Setup with a fake answer recommends its ollama toolLoopModel`, `src/daemon/__tests__/model-literal-scan.test.ts: the src/cli and model-recommender exclusions are gone and the scan passes over src/cli and src/shared/model-recommender.ts; no source file exports or imports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts no longer exists`, `src/daemon/__tests__/system-recommend.test.ts: the daemon's system.recommend over a fixture definitions file recommends that file's tool-loop model`
+  - Subjects: `src/cli/__tests__/tui-models.test.ts: Model Tiers pane — with a fake definitions answer, pressing f / m / e cycles exactly the fake families, models and efforts, and each change makes one config.write('models.tiers.<tier>', { runner, model, effort }); a restartRequired result shows the restart line and R calls daemon.restart; an ok:false result shows the reason and the pane reloads`, `src/cli/__tests__/tui-models.test.ts: unknown model — typing an unserved id with n calls models.check with the family's effort names and renders each effort's verdict and evidence; approve calls models.approve with the toggled levels and saves nothing; the screen then shows 'restart the daemon to use it' and R calls daemon.restart and only then config.write('models.tiers.<tier>', { runner, model, effort }); a fake config.write refusing with rejected-model before the restart is never reached; a failing restart shows 'approval recorded; restart failed' with no save and no second approve; a refused save after the restart shows its reason; reject calls models.reject and saves nothing; a runs:false result offers no approve`, `src/cli/__tests__/tui-models.test.ts: repo models view — m on a repo shows roles with the repo's tier or 'global' and coreFloor; editing a role writes the whole map at ['models','byRepo',<repo>,'tasks'] with dotted role ids as flat keys; editing coreFloor writes ['models','byRepo',<repo>,'coreFloor']; the view renders no runner, model or effort field and makes no write under tiers`, `src/cli/__tests__/tui-models.test.ts: daemon down — rejecting models.definitions shows the not-running message in the Model Tiers pane and Setup, with no model list and apply / pull disabled; Setup with a fake answer recommends its ollama toolLoopModel`, `src/daemon/__tests__/model-literal-scan.test.ts: the src/cli and model-recommender exclusions are gone and the scan passes over src/cli and src/shared/model-recommender.ts; no source file exports or imports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts no longer exists`, `src/daemon/__tests__/system-recommend.test.ts: the daemon's system.recommend over a fixture definitions file recommends that file's tool-loop model`, `src/cli/__tests__/tui-models.test.ts: interrupted requests — a models.check rejecting with the disconnect error shows 'interrupted — check again'; a models.approve rejecting with it shows 'outcome unknown — reload', and reload reads models.definitions and reports the model as user-approved (or not) without calling approve again`
   - Fixtures: `ink-testing-library render of App with fakeServices() extended with models.* and the new config.write result`, `A temp INSRC_MODEL_CATALOG_DIR fixture whose tool-loop model differs from the shipped one`
 - **smoke** — The TUI still builds and starts.
   - Subjects: `npx tsc --noEmit -p tsconfig.json over src (including the TUI) and a tsc pass over the changed TUI test files; the existing src/cli/__tests__/tui.test.ts suite passes`
@@ -390,7 +422,7 @@ The two existing callers that reach reviewArtifact without a daemon that answers
 | Criterion | Proving tests |
 | :--- | :--- |
 | `ac1` | `model-tiers.test.ts: computeEffectiveTiers(tiering, fakeDefs) — defaults and effort choices from the fake answer only`, `tui-models.test.ts: Model Tiers pane — f / m / e cycle exactly the fake families, models and efforts and write one tier object`, `model-literal-scan.test.ts: src/cli and the recommender scanned; no DEFAULT_TIERS / TIER_EFFORTS / shipped registry`, `no-default-tiers.test.ts: no file imports or exports DEFAULT_TIERS / TIER_EFFORTS` |
-| `ac2` | `model-tiers.test.ts: an unserved id of a CLI family asks for a check; an Ollama id is refused`, `tui-models.test.ts: unknown model — check, verdict table, approve then restart then save (and the restart-failure / refused-save paths), reject saves nothing, runs:false offers no approve` |
+| `ac2` | `model-tiers.test.ts: an unserved id of a CLI family asks for a check; an Ollama id is refused`, `tui-models.test.ts: unknown model — check, verdict table, approve then restart then save (and the restart-failure / refused-save paths), reject saves nothing, runs:false offers no approve`, `ipc-client.test.ts: a connection closed before a reply rejects instead of hanging; tui-models.test.ts: interrupted check / outcome-unknown approval` |
 | `ac3` | `tui-models.test.ts: repo models view edits only the tasks map and coreFloor and writes nothing under tiers`, `command.test.ts: config set refuses models / models.tiers* / models.tasks* / models.byRepo* keys (including parent-object values)` |
 
 ## 7. Migration
@@ -403,14 +435,15 @@ The two existing callers that reach reviewArtifact without a daemon that answers
 
 **Steps**
 
-1. Add Services.models (definitions, check, approve, reject, resolveRole) over rpc and type config.write's result as ConfigWriteResult; update the fake services used by the TUI tests. — ↩ rollbackable
-2. Make computeEffectiveTiers take the definitions answer and rework the Model Tiers pane to cycle families, models and efforts from it, write whole tiers, show refusals and restartRequired with a restart key, and add the unknown-model check screen. — ↩ rollbackable
-3. Add the repo models view to the Repos pane; make the command bar refuse models, models.tiers*, models.tasks* and models.byRepo* keys and report config.write refusals and restartRequired. — ↩ rollbackable
-4. Switch the review command to models.resolveRole and build its provider from the answer, giving the two existing test callers (review-source-roots-daemon, same-party-refusal) the resolveRole seam; delete src/cli/shipped-model-registry.ts and its test. — ↩ rollbackable
-5. Make recommendModels take the local model; Setup (pane and command bar runSetup) fetches it from models.definitions and says it cannot recommend without the daemon; the daemon's system.recommend passes its registry's tool-loop model; remove DEFAULT_LOCAL_MODEL. — ↩ rollbackable
-6. Move the test modules that import DEFAULT_TIERS / TIER_EFFORTS to SHIPPED_MODEL_DEFAULTS / SHIPPED_DEFINITIONS, then remove both exports and drop the literal scan's src/cli and model-recommender exclusions (naming any remaining program-name exclusion with its owner). — ↩ rollbackable
+1. Make the shared rpc client reject when its socket ends or closes before a reply (settle once), with a socket-seam test. — ↩ rollbackable
+2. Add Services.models (definitions, check, approve, reject, resolveRole) over rpc and type config.write's result as ConfigWriteResult; update the fake services used by the TUI tests. — ↩ rollbackable
+3. Make computeEffectiveTiers take the definitions answer and rework the Model Tiers pane to cycle families, models and efforts from it, write whole tiers, show refusals and restartRequired with a restart key, and add the unknown-model check screen. — ↩ rollbackable
+4. Add the repo models view to the Repos pane; make the command bar refuse models, models.tiers*, models.tasks* and models.byRepo* keys and report config.write refusals and restartRequired. — ↩ rollbackable
+5. Switch the review command to models.resolveRole and build its provider from the answer, giving the two existing test callers (review-source-roots-daemon, same-party-refusal) the resolveRole seam; delete src/cli/shipped-model-registry.ts and its test. — ↩ rollbackable
+6. Make recommendModels take the local model; Setup (pane and command bar runSetup) fetches it from models.definitions and says it cannot recommend without the daemon; the daemon's system.recommend passes its registry's tool-loop model; remove DEFAULT_LOCAL_MODEL. — ↩ rollbackable
+7. Move the test modules that import DEFAULT_TIERS / TIER_EFFORTS to SHIPPED_MODEL_DEFAULTS / SHIPPED_DEFINITIONS, then remove both exports and drop the literal scan's src/cli and model-recommender exclusions (naming any remaining program-name exclusion with its owner). — ↩ rollbackable
 
-**Backward compat:** No daemon request or config shape changes: config.json keeps the same models.tiers objects (now written whole rather than field by field) and byRepo tasks / coreFloor. The daemon's system.recommend keeps its result shape, now recommending the definitions' tool-loop model. Internal exports removed (DEFAULT_TIERS, TIER_EFFORTS, DEFAULT_LOCAL_MODEL, shippedModelRegistry) have no production consumers outside src/cli after s3; four test modules that import them are migrated in the same change; the VS Code and JetBrains plugins do not import them. The command bar stops writing model keys (models, models.tiers*, models.tasks*, models.byRepo*); those are edited in the Model Tiers pane and the Repos models view. A TUI run against a daemon older than s2/s4 shows 'update the daemon' instead of a model list.
+**Backward compat:** No daemon request or config shape changes: config.json keeps the same models.tiers objects (now written whole rather than field by field) and byRepo tasks / coreFloor. The daemon's system.recommend keeps its result shape, now recommending the definitions' tool-loop model. Internal exports removed (DEFAULT_TIERS, TIER_EFFORTS, DEFAULT_LOCAL_MODEL, shippedModelRegistry) have no production consumers outside src/cli after s3; four test modules that import them are migrated in the same change; the VS Code and JetBrains plugins do not import them. The command bar stops writing model keys (models, models.tiers*, models.tasks*, models.byRepo*); those are edited in the Model Tiers pane and the Repos models view. A TUI run against a daemon older than s2/s4 shows 'update the daemon' instead of a model list. The shared rpc client now rejects a request whose connection closes before a reply; every caller (TUI, VS Code plugin) already handles a rejected rpc, and none relied on the previous never-settling promise.
 
 ## 8. Alternatives considered
 

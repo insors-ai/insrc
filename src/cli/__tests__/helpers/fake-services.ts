@@ -36,6 +36,8 @@ export const CHAIN: ChainReport = {
 	nextAction: { kind: 'approve-hld', command: 'insrc workflow approve …' },
 };
 
+const notFaked = (what: string) => (): never => { throw new Error(`${what} is not faked in this test`); };
+
 export function fakeServices(): Services {
 	return {
 		daemon: {
@@ -66,6 +68,13 @@ export function fakeServices(): Services {
 			rejectAmendment:  () => ({} as AmendmentRecord),
 			staleness:        () => [],
 			trackerSetup:     () => ({ steps: [], manualRemaining: 0 }),
+			reviewArtifact:       async () => notFaked('workflow.reviewArtifact')(),
+			reviewFindings:       notFaked('workflow.reviewFindings'),
+			resolveFinding:       notFaked('workflow.resolveFinding'),
+			runWorkflowStreaming: async () => notFaked('workflow.runWorkflowStreaming')(),
+			sync:                 notFaked('workflow.sync'),
+			deferredQuestions:    () => [],
+			resolveEpicHashArg:   () => undefined,
 		},
 		setup: {
 			detect:       () => ({} as SystemInfo),

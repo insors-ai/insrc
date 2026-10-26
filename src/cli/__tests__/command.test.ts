@@ -19,12 +19,14 @@ import type { Services } from '../services/index.js';
 interface Spies {
 	repoAdd: string[];
 	repoAddSteering: Array<unknown>;
-	configWrite: Array<{ path: string; value: unknown }>;
+	configWrite: Array<{ path: string | string[]; value: unknown }>;
 	teamInit: string[];
 	teamRefresh: Array<{ path: string; branch: string | undefined }>;
 	panes: number[];
 	exited: boolean;
 }
+
+const notFaked = (what: string) => (): never => { throw new Error(`${what} is not faked in this test`); };
 
 function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: Spies } {
 	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], teamInit: [], teamRefresh: [], panes: [], exited: false };
@@ -56,6 +58,14 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			approveAmendment: () => ({} as never),
 			rejectAmendment: () => ({} as never),
 			staleness: () => [],
+			trackerSetup: notFaked('workflow.trackerSetup'),
+			reviewArtifact: async () => notFaked('workflow.reviewArtifact')(),
+			reviewFindings: notFaked('workflow.reviewFindings'),
+			resolveFinding: notFaked('workflow.resolveFinding'),
+			runWorkflowStreaming: async () => notFaked('workflow.runWorkflowStreaming')(),
+			sync: notFaked('workflow.sync'),
+			deferredQuestions: () => [],
+			resolveEpicHashArg: () => undefined,
 		},
 		setup: {
 			detect: () => ({} as never),
@@ -204,7 +214,7 @@ test('command.test.ts: config set / unset refuse model keys and report refusals 
 	assert.deepEqual(spies.configWrite, [], 'no model key reaches config.write');
 
 	// A non-model key is written; restartRequired adds the restart hint.
-	ctx.services.config.write = async (path, value) => { spies.configWrite.push({ path: path as string, value }); return { ok: true, restartRequired: true }; };
+	ctx.services.config.write = async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true, restartRequired: true }; };
 	assert.deepEqual(await runCommand('config set analyze.timeoutMs 1000', ctx), ['set analyze.timeoutMs = 1000', '(restart the daemon to apply)']);
 	assert.deepEqual(spies.configWrite, [{ path: 'analyze.timeoutMs', value: 1000 }]);
 

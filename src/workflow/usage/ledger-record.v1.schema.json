@@ -1,0 +1,1354 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:insrc:usage:ledger-record:v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "rootArtifactId",
+    "artifactId",
+    "sequence",
+    "recordedAt",
+    "recordKind",
+    "payloadDigest",
+    "callId",
+    "context",
+    "observation",
+    "control"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "eventId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "rootArtifactId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "artifactId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "recordedAt": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "recordKind": {
+      "type": "string",
+      "enum": [
+        "request.started",
+        "request.finished",
+        "usage.corrected",
+        "usage.reconciled",
+        "root.reserved",
+        "artifact.bound",
+        "binding.reconciled",
+        "batch.commit",
+        "transfer.prepared",
+        "transfer.accepted",
+        "transfer.committed"
+      ]
+    },
+    "payloadDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "callId": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      ]
+    },
+    "context": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/Context"
+        }
+      ]
+    },
+    "observation": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/Observation"
+        }
+      ]
+    },
+    "control": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/Correction"
+        },
+        {
+          "$ref": "#/$defs/Reconciliation"
+        },
+        {
+          "$ref": "#/$defs/BindingControl"
+        },
+        {
+          "$ref": "#/$defs/BatchCommit"
+        },
+        {
+          "$ref": "#/$defs/TransferPrepared"
+        },
+        {
+          "$ref": "#/$defs/TransferAccepted"
+        },
+        {
+          "$ref": "#/$defs/TransferCommitted"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "Binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "rootArtifactId",
+        "artifactId",
+        "workItemId",
+        "workflowRunId",
+        "version",
+        "provenance"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "rootArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "artifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "workItemId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "workflowRunId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "stored-owner",
+            "workflow-reservation",
+            "committed-transfer"
+          ]
+        }
+      }
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "transport",
+        "version",
+        "evidenceId"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "transport": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "evidenceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "Review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round",
+        "recordId"
+      ],
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "recordId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        }
+      }
+    },
+    "Context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "logicalRequestId",
+        "invocationId",
+        "nativeSessionId",
+        "parentCallId",
+        "workflow",
+        "runId",
+        "stepId",
+        "activity",
+        "attempt",
+        "source",
+        "granularity",
+        "modelSliceId",
+        "modelKind",
+        "requestedModel",
+        "reportedModel",
+        "review",
+        "binding"
+      ],
+      "properties": {
+        "logicalRequestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "invocationId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "nativeSessionId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "parentCallId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "workflow": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "stepId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "activity": {
+          "type": "string",
+          "enum": [
+            "definition-author",
+            "definition-review",
+            "epic-design",
+            "epic-design-review",
+            "story-design",
+            "story-revision",
+            "design-review",
+            "plan-author",
+            "plan-refine",
+            "task-implement",
+            "task-repair",
+            "task-probe",
+            "task-validate",
+            "shared-validate",
+            "code-review",
+            "issue-framing",
+            "spec-framing",
+            "workflow-context"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
+        "granularity": {
+          "type": "string",
+          "enum": [
+            "model-call",
+            "invocation-total",
+            "cumulative-snapshot"
+          ]
+        },
+        "modelSliceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "modelKind": {
+          "type": "string",
+          "enum": [
+            "completion",
+            "embedding"
+          ]
+        },
+        "requestedModel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reportedModel": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "review": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Review"
+            }
+          ]
+        },
+        "binding": {
+          "$ref": "#/$defs/Binding"
+        }
+      }
+    },
+    "Counters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inputUncachedTokens",
+        "cacheReadTokens",
+        "cacheWriteTokens",
+        "outputTokens",
+        "reasoningTokens"
+      ],
+      "properties": {
+        "inputUncachedTokens": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        },
+        "cacheReadTokens": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        },
+        "cacheWriteTokens": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        },
+        "outputTokens": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        },
+        "reasoningTokens": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        }
+      }
+    },
+    "Cumulative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nativeSessionId",
+        "baselineEventId",
+        "frameId"
+      ],
+      "properties": {
+        "nativeSessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "baselineEventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "frameId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "Observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "reportedModel",
+        "finishedAt",
+        "quality",
+        "counters",
+        "normalizationVersion",
+        "nativeUnit",
+        "sourceCapabilityId",
+        "reason",
+        "cumulative"
+      ],
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "success",
+            "error",
+            "timeout",
+            "cancelled",
+            "interrupted"
+          ]
+        },
+        "reportedModel": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "finishedAt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "quality": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "estimated",
+            "unavailable"
+          ]
+        },
+        "counters": {
+          "$ref": "#/$defs/Counters"
+        },
+        "normalizationVersion": {
+          "const": "disjoint-v1"
+        },
+        "nativeUnit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "sourceCapabilityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384
+            }
+          ]
+        },
+        "cumulative": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Cumulative"
+            }
+          ]
+        }
+      }
+    },
+    "Group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invocationId",
+        "modelSliceId",
+        "isolatedCallId"
+      ],
+      "properties": {
+        "invocationId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "modelSliceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "isolatedCallId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "invocationId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "isolatedCallId": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "invocationId": {
+              "type": "null"
+            },
+            "isolatedCallId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        }
+      ]
+    },
+    "Correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supersedesEventId",
+        "reason",
+        "provenanceEventIds"
+      ],
+      "properties": {
+        "supersedesEventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "provenanceEventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        }
+      }
+    },
+    "Reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group",
+        "candidateEventIds",
+        "selectedEventIds",
+        "excludedEventIds",
+        "previousReconciliationEventId",
+        "coverage",
+        "sourceCapabilityId",
+        "evidenceEventIds",
+        "reason"
+      ],
+      "properties": {
+        "group": {
+          "$ref": "#/$defs/Group"
+        },
+        "candidateEventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "selectedEventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "excludedEventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "previousReconciliationEventId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "coverage": {
+          "type": "string",
+          "enum": [
+            "aggregate-fallback",
+            "complete-leaf"
+          ]
+        },
+        "sourceCapabilityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "evidenceEventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        }
+      }
+    },
+    "BindingControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "expectedPreviousVersion",
+        "reason",
+        "authorityEvidenceId"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/Binding"
+        },
+        "expectedPreviousVersion": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "authorityEvidenceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "OriginalObservationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rootArtifactId",
+        "eventId",
+        "callId"
+      ],
+      "properties": {
+        "rootArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "eventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "callId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "TransferPrepared": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transferId",
+        "originalObservationRef",
+        "sourceRootId",
+        "destinationRootId",
+        "fromArtifactId",
+        "destinationArtifactId",
+        "expectedBindingVersion",
+        "reason",
+        "mode",
+        "preparedEventId",
+        "acceptedEventId"
+      ],
+      "properties": {
+        "transferId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "originalObservationRef": {
+          "$ref": "#/$defs/OriginalObservationRef"
+        },
+        "sourceRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "fromArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expectedBindingVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "mode": {
+          "const": "cross-root"
+        },
+        "preparedEventId": {
+          "type": "null"
+        },
+        "acceptedEventId": {
+          "type": "null"
+        }
+      }
+    },
+    "TransferAccepted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transferId",
+        "originalObservationRef",
+        "sourceRootId",
+        "destinationRootId",
+        "fromArtifactId",
+        "destinationArtifactId",
+        "expectedBindingVersion",
+        "reason",
+        "mode",
+        "preparedEventId",
+        "acceptedEventId"
+      ],
+      "properties": {
+        "transferId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "originalObservationRef": {
+          "$ref": "#/$defs/OriginalObservationRef"
+        },
+        "sourceRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "fromArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expectedBindingVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "mode": {
+          "const": "cross-root"
+        },
+        "preparedEventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "acceptedEventId": {
+          "type": "null"
+        }
+      }
+    },
+    "TransferCommitted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transferId",
+        "originalObservationRef",
+        "sourceRootId",
+        "destinationRootId",
+        "fromArtifactId",
+        "destinationArtifactId",
+        "expectedBindingVersion",
+        "reason",
+        "mode",
+        "preparedEventId",
+        "acceptedEventId"
+      ],
+      "properties": {
+        "transferId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "originalObservationRef": {
+          "$ref": "#/$defs/OriginalObservationRef"
+        },
+        "sourceRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationRootId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "fromArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "destinationArtifactId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expectedBindingVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "same-root",
+            "cross-root"
+          ]
+        },
+        "preparedEventId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        },
+        "acceptedEventId": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "mode": {
+              "const": "same-root"
+            },
+            "preparedEventId": {
+              "type": "null"
+            },
+            "acceptedEventId": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "mode": {
+              "const": "cross-root"
+            },
+            "preparedEventId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "acceptedEventId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        }
+      ]
+    },
+    "BatchCommit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batchId",
+        "eventIds",
+        "priorDigest",
+        "groupDigest"
+      ],
+      "properties": {
+        "batchId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "eventIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "priorDigest": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "groupDigest": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "recordKind": {
+          "const": "request.started"
+        },
+        "callId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "request.finished"
+        },
+        "callId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "$ref": "#/$defs/Observation"
+        },
+        "control": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "usage.corrected"
+        },
+        "callId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "$ref": "#/$defs/Observation"
+        },
+        "control": {
+          "$ref": "#/$defs/Correction"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "usage.reconciled"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/Reconciliation"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "root.reserved"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/BindingControl"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "artifact.bound"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/BindingControl"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "binding.reconciled"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/BindingControl"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "batch.commit"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/BatchCommit"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "transfer.prepared"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/TransferPrepared"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "transfer.accepted"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/TransferAccepted"
+        }
+      }
+    },
+    {
+      "properties": {
+        "recordKind": {
+          "const": "transfer.committed"
+        },
+        "callId": {
+          "type": "null"
+        },
+        "context": {
+          "type": "null"
+        },
+        "observation": {
+          "type": "null"
+        },
+        "control": {
+          "$ref": "#/$defs/TransferCommitted"
+        }
+      }
+    }
+  ]
+}

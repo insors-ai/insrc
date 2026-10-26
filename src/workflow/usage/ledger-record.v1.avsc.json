@@ -1,0 +1,691 @@
+{
+  "type": "record",
+  "name": "LedgerRecordV1",
+  "fields": [
+    {
+      "name": "schemaVersion",
+      "type": "long"
+    },
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "rootArtifactId",
+      "type": "string"
+    },
+    {
+      "name": "artifactId",
+      "type": "string"
+    },
+    {
+      "name": "sequence",
+      "type": "long"
+    },
+    {
+      "name": "recordedAt",
+      "type": "string"
+    },
+    {
+      "name": "recordKind",
+      "type": "string"
+    },
+    {
+      "name": "payloadDigest",
+      "type": "string"
+    },
+    {
+      "name": "callId",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    {
+      "name": "context",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "Context",
+          "fields": [
+            {
+              "name": "logicalRequestId",
+              "type": "string"
+            },
+            {
+              "name": "invocationId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "nativeSessionId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "parentCallId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "workflow",
+              "type": "string"
+            },
+            {
+              "name": "runId",
+              "type": "string"
+            },
+            {
+              "name": "stepId",
+              "type": "string"
+            },
+            {
+              "name": "activity",
+              "type": "string"
+            },
+            {
+              "name": "attempt",
+              "type": "long"
+            },
+            {
+              "name": "source",
+              "type": {
+                "type": "record",
+                "name": "Source",
+                "fields": [
+                  {
+                    "name": "provider",
+                    "type": "string"
+                  },
+                  {
+                    "name": "transport",
+                    "type": "string"
+                  },
+                  {
+                    "name": "version",
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "evidenceId",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "granularity",
+              "type": "string"
+            },
+            {
+              "name": "modelSliceId",
+              "type": "string"
+            },
+            {
+              "name": "modelKind",
+              "type": "string"
+            },
+            {
+              "name": "requestedModel",
+              "type": "string"
+            },
+            {
+              "name": "reportedModel",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "review",
+              "type": [
+                "null",
+                {
+                  "type": "record",
+                  "name": "Review",
+                  "fields": [
+                    {
+                      "name": "round",
+                      "type": "long"
+                    },
+                    {
+                      "name": "recordId",
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "default": null
+                    }
+                  ]
+                }
+              ],
+              "default": null
+            },
+            {
+              "name": "binding",
+              "type": {
+                "type": "record",
+                "name": "Binding",
+                "fields": [
+                  {
+                    "name": "repo",
+                    "type": "string"
+                  },
+                  {
+                    "name": "rootArtifactId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "artifactId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "workItemId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "workflowRunId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "version",
+                    "type": "string"
+                  },
+                  {
+                    "name": "provenance",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "observation",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "Observation",
+          "fields": [
+            {
+              "name": "outcome",
+              "type": "string"
+            },
+            {
+              "name": "reportedModel",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "finishedAt",
+              "type": "string"
+            },
+            {
+              "name": "quality",
+              "type": "string"
+            },
+            {
+              "name": "counters",
+              "type": {
+                "type": "record",
+                "name": "Counters",
+                "fields": [
+                  {
+                    "name": "inputUncachedTokens",
+                    "type": [
+                      "null",
+                      "long"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "cacheReadTokens",
+                    "type": [
+                      "null",
+                      "long"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "cacheWriteTokens",
+                    "type": [
+                      "null",
+                      "long"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "outputTokens",
+                    "type": [
+                      "null",
+                      "long"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "reasoningTokens",
+                    "type": [
+                      "null",
+                      "long"
+                    ],
+                    "default": null
+                  }
+                ]
+              }
+            },
+            {
+              "name": "normalizationVersion",
+              "type": "string"
+            },
+            {
+              "name": "nativeUnit",
+              "type": "string"
+            },
+            {
+              "name": "sourceCapabilityId",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "cumulative",
+              "type": [
+                "null",
+                {
+                  "type": "record",
+                  "name": "Cumulative",
+                  "fields": [
+                    {
+                      "name": "nativeSessionId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "baselineEventId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "frameId",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ],
+              "default": null
+            }
+          ]
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "control",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "Correction",
+          "fields": [
+            {
+              "name": "supersedesEventId",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "provenanceEventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "Reconciliation",
+          "fields": [
+            {
+              "name": "group",
+              "type": {
+                "type": "record",
+                "name": "Group",
+                "fields": [
+                  {
+                    "name": "invocationId",
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "default": null
+                  },
+                  {
+                    "name": "modelSliceId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "isolatedCallId",
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "default": null
+                  }
+                ]
+              }
+            },
+            {
+              "name": "candidateEventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            },
+            {
+              "name": "selectedEventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            },
+            {
+              "name": "excludedEventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            },
+            {
+              "name": "previousReconciliationEventId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "coverage",
+              "type": "string"
+            },
+            {
+              "name": "sourceCapabilityId",
+              "type": "string"
+            },
+            {
+              "name": "evidenceEventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "BindingControl",
+          "fields": [
+            {
+              "name": "binding",
+              "type": "Binding"
+            },
+            {
+              "name": "expectedPreviousVersion",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "authorityEvidenceId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "BatchCommit",
+          "fields": [
+            {
+              "name": "batchId",
+              "type": "string"
+            },
+            {
+              "name": "eventIds",
+              "type": {
+                "type": "array",
+                "items": "string"
+              }
+            },
+            {
+              "name": "priorDigest",
+              "type": "string"
+            },
+            {
+              "name": "groupDigest",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "TransferPrepared",
+          "fields": [
+            {
+              "name": "transferId",
+              "type": "string"
+            },
+            {
+              "name": "originalObservationRef",
+              "type": {
+                "type": "record",
+                "name": "OriginalObservationRef",
+                "fields": [
+                  {
+                    "name": "rootArtifactId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "eventId",
+                    "type": "string"
+                  },
+                  {
+                    "name": "callId",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "sourceRootId",
+              "type": "string"
+            },
+            {
+              "name": "destinationRootId",
+              "type": "string"
+            },
+            {
+              "name": "fromArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "destinationArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "expectedBindingVersion",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "mode",
+              "type": "string"
+            },
+            {
+              "name": "preparedEventId",
+              "type": "null",
+              "default": null
+            },
+            {
+              "name": "acceptedEventId",
+              "type": "null",
+              "default": null
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "TransferAccepted",
+          "fields": [
+            {
+              "name": "transferId",
+              "type": "string"
+            },
+            {
+              "name": "originalObservationRef",
+              "type": "OriginalObservationRef"
+            },
+            {
+              "name": "sourceRootId",
+              "type": "string"
+            },
+            {
+              "name": "destinationRootId",
+              "type": "string"
+            },
+            {
+              "name": "fromArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "destinationArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "expectedBindingVersion",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "mode",
+              "type": "string"
+            },
+            {
+              "name": "preparedEventId",
+              "type": "string"
+            },
+            {
+              "name": "acceptedEventId",
+              "type": "null",
+              "default": null
+            }
+          ]
+        },
+        {
+          "type": "record",
+          "name": "TransferCommitted",
+          "fields": [
+            {
+              "name": "transferId",
+              "type": "string"
+            },
+            {
+              "name": "originalObservationRef",
+              "type": "OriginalObservationRef"
+            },
+            {
+              "name": "sourceRootId",
+              "type": "string"
+            },
+            {
+              "name": "destinationRootId",
+              "type": "string"
+            },
+            {
+              "name": "fromArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "destinationArtifactId",
+              "type": "string"
+            },
+            {
+              "name": "expectedBindingVersion",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "mode",
+              "type": "string"
+            },
+            {
+              "name": "preparedEventId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            },
+            {
+              "name": "acceptedEventId",
+              "type": [
+                "null",
+                "string"
+              ],
+              "default": null
+            }
+          ]
+        }
+      ],
+      "default": null
+    }
+  ],
+  "namespace": "insrc.usage.v1",
+  "doc": "Typed v1 usage envelope. Apply the companion logical schema before encoding and after decoding; long values must remain nonnegative safe integers. Nullable fields default to null. No opaque provider payloads."
+}

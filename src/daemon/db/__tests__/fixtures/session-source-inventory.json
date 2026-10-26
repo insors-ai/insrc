@@ -5238,6 +5238,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -5294,9 +5298,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "091444e28b3b3618050522c39f9533b6d3d4995ea72f577e975960969fba7bf3",
-      "sourceDigest": "8855a9469d7055cfc42ed959e844271fa8664826ab9b980d72a462b6e4830731",
+      "siteCount": 15,
+      "sitesDigest": "a1b7286d7f04d152c8a53394b5c7475f6b67d72bef89ea541ec96d06719ba83b",
+      "sourceDigest": "5d3e1c43fccf7b075e08422904bab8965d8a280b76088b3c475ecbc68d88fb4b",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -5308,6 +5312,10 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "provider-factory",
+          "admitConnectionProvider"
+        ],
         [
           "storage-call",
           "getDb"
@@ -5342,10 +5350,6 @@
         ],
         [
           "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
           "log.warn"
         ],
         [
@@ -5363,11 +5367,15 @@
         [
           "provider-factory",
           "resolveRoleProvider"
+        ],
+        [
+          "diagnostic",
+          "savedLog.info"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "34e8a6f9c793dd8f3cf895801615114d2a05bb3d98c14d9cebeff92f1be5242d",
-      "sourceDigest": "d9bb640f621047b4d49216f990edf325bb3beb780142506bc6d671969681540e",
+      "siteCount": 15,
+      "sitesDigest": "4abb093461b03aa1845ebff9d53869e0ba04be91c0f636edb305d3aaf356acb7",
+      "sourceDigest": "e4de2706f5aa1a96c41982a2a8ff3181d0759de717fdf858eb7455d67cf0c876",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -30874,7 +30882,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "21a9db16bb8681e02caf77463d28a2f4d9fc8905ae1cbd020d41b5f7afba1b7d",
-      "sourceDigest": "f753e415f45aa3b47f2340f9e2468e96d88297271ba107188786ad2c4420663d",
+      "sourceDigest": "9ccb09d35c11f380591c3984469ec05c9cf25a958e0ba51a019daa2907fa91e3",
       "boundaries": [
         "filesystem-read",
         "provider-adapter",

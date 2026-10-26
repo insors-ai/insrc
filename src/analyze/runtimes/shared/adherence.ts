@@ -1,3 +1,7 @@
+import { assertAnalysisConnectionExecution } from '../../connection-access.js';
+import { assertNoSessionEmbedding, admitConnectionProvider } from '../../../shared/connection-provider.js';
+import { ConnectionExecutionError, connectionExecutionErrorCode, runWithConnectionExecution } from '../../../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -49,7 +53,8 @@ const PROJECT_CONTEXT_LIMIT = 500;
 
 import { familyOfTemplate, graphRepoOf, resolveTaskScope } from './task-scope.js';
 
-const log = getLogger('analyze:runtimes:shared:adherence');
+const savedLog = getLogger('analyze:runtimes:shared:adherence');
+const quietLog = Object.freeze({ warn() { }, info() { }, debug() { } });
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -87,12 +92,13 @@ export interface ResolvedConstraints {
 }
 
 export interface AdherenceRunArgs {
+	readonly provider?: LLMProvider | undefined;
 	readonly executeArgs:  TemplateExecuteArgs;
 	readonly subjectKey:   string;   // 'codeSubject' | 'dataSubject' | 'infraSubject'
 	readonly subjectLabel: string;   // 'Code' | 'Data' | 'Infra'
 	readonly templateId:   string;
 	readonly promptRelPath: string;
-	readonly hydrateExcerpts: (subject: string, repoPath: string, cap: number)
+	readonly hydrateExcerpts: (subject: string, repoPath: string, cap: number, execution?: ConnectionExecutionContext)
 		=> Promise<readonly AdherenceExcerpt[]>;
 }
 
@@ -210,6 +216,19 @@ function buildAdherenceSchema(subjectKey: string): StructuredSchema {
 // ---------------------------------------------------------------------------
 
 export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<AdherenceResult> {
+	const execution = args.executeArgs.connectionExecution;
+	assertAnalysisConnectionExecution(execution);
+	const provider = execution?.mode === 'session-memory' ? admitConnectionProvider(args.provider as LLMProvider, execution) : args.provider;
+	if (execution?.mode === 'session-memory') { const inline = args.executeArgs.task.params['constraints']; if (!Array.isArray(inline) || inline.length === 0) throw new ConnectionExecutionError('unsupported-temporary'); }
+	return runWithConnectionExecution(execution, async () => {
+		try { return await runAdherenceWithContext(args, provider); }
+		catch (error) { assertAnalysisConnectionExecution(execution); if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(error) ?? 'unsupported-temporary'); throw error; }
+	});
+}
+async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMProvider): Promise<AdherenceResult> {
+	const execution = args.executeArgs.connectionExecution;
+	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
+
 	const { executeArgs, subjectKey, subjectLabel, templateId, promptRelPath, hydrateExcerpts } = args;
 	const params = executeArgs.task.params as Record<string, unknown>;
 
@@ -226,17 +245,21 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 	const partlyRead: PartlyReadItem[] = [];
 	const sourceSkipped: SkippedItem[] = [];
 	const db = await getDb();
+	assertAnalysisConnectionExecution(execution);
 	const measurer = createItemMeasurer(db);
 
 	// The repo is resolved once, before the constraints: the ids route and the
 	// topic route both read it, as the excerpts do.
 	const repoPath = await adherenceRepoPath(executeArgs, templateId);
+	assertAnalysisConnectionExecution(execution);
 	// Throws when there is nothing to judge against; each cause has its own reason.
 	const { constraints, source: constraintSource } = await resolveConstraints(
 		executeArgs, params, { limited: sourceLimits, partlyRead, skipped: sourceSkipped, measurer }, repoPath,
 	);
 
-	const excerpts = await hydrateExcerpts(subject, repoPath, maxExcerpts);
+	assertAnalysisConnectionExecution(execution);
+	const excerpts = await hydrateExcerpts(subject, repoPath, maxExcerpts, execution);
+	assertAnalysisConnectionExecution(execution);
 
 	if (excerpts.length === 0) {
 		log.warn(
@@ -260,8 +283,8 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		if (cut !== undefined) partlyRead.push(cut);
 	}
 
-	const cfg = loadAnalyzeConfig();
-	const provider = resolveRoleProvider('analyze.adherence', cfg);
+	const cfg = execution?.mode === 'session-memory' ? undefined : loadAnalyzeConfig();
+	const provider = admitted ?? resolveRoleProvider('analyze.adherence', cfg!, undefined, execution);
 	const promptContent = loadPromptFile(promptRelPath);
 	const messages = buildMessages(promptContent, subjectLabel, subject, constraints, excerpts);
 	const schema = buildAdherenceSchema(subjectKey);
@@ -272,12 +295,16 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 			messages,
 			schema,
 			{
-				maxAttempts:     cfg.shaper.structuredOutputRetries,
+				connectionExecution: execution,
+				maxAttempts: cfg?.shaper.structuredOutputRetries ?? 3,
 				disableThinking: true,
 				maxTokens:       6_144,
 			},
 		);
 	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
+		if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		// The model that judges adherence could not be called: the task did not
 		// do its work. It throws, and the walk records the task as failed. (It
 		// used to return every constraint as "missing implementation", which
@@ -293,6 +320,7 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		);
 	}
 
+	assertAnalysisConnectionExecution(execution);
 	const matches        = Array.isArray(raw['matches'])        ? raw['matches']        as unknown[] : [];
 	const drifts         = Array.isArray(raw['drifts'])         ? raw['drifts']         as unknown[] : [];
 	const missingImpl    = Array.isArray(raw['missingImpl'])    ? raw['missingImpl']    as unknown[] : [];
@@ -347,7 +375,7 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
  * not a registered repo goes on with that directory, as before.
  */
 async function adherenceRepoPath(args: TemplateExecuteArgs, templateId: string): Promise<string> {
-	return graphRepoOf(await resolveTaskScope(args.intent.scopeRef, familyOfTemplate(templateId), templateId));
+	return graphRepoOf(await resolveTaskScope(args.intent.scopeRef, familyOfTemplate(templateId), templateId, undefined, undefined, args.connectionExecution));
 }
 
 // ---------------------------------------------------------------------------
@@ -385,6 +413,7 @@ async function resolveConstraints(
 	facts:    ConstraintSourceFacts,
 	repoPath: string,
 ): Promise<ResolvedConstraints> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
 	const templateId = args.task.template;
 
 	// 1: inline constraint objects.
@@ -396,6 +425,8 @@ async function resolveConstraints(
 		}
 		return { constraints, source: { kind: 'inline' } };
 	}
+
+	assertNoSessionEmbedding(args.connectionExecution);
 
 	// 2: constraintIds -- doc-summary entity ids whose keyConstraints are
 	// hydrated from the LiveProjectContext (docs/plans/docs-module.md Phase 7).
@@ -435,6 +466,7 @@ async function constraintsFromDocuments(
 	repoPath: string,
 	topic:    string,
 ): Promise<ResolvedConstraints> {
+	assertNoSessionEmbedding(args.connectionExecution);
 	const templateId = args.task.template;
 	// Plan validation holds the value to a whole number from 1 to 30; a task
 	// built outside the planner may not be, so anything else is left out.
@@ -446,6 +478,7 @@ async function constraintsFromDocuments(
 	let found: Awaited<ReturnType<typeof constraintsForTopic>>;
 	try {
 		found = await constraintsForTopic({
+			connectionExecution: args.connectionExecution,
 			runId:  args.runId,
 			taskId: args.task.taskId,
 			repoPath,
@@ -454,6 +487,7 @@ async function constraintsFromDocuments(
 			...(maxSources !== undefined ? { maxSources } : {}),
 		});
 	} catch (err) {
+		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
 		throw new Error(
 			`${templateId}: the constraints on "${topic}" could not be enumerated from the documents of ${repoPath}: ${errorMessage(err)}`,
 			{ cause: err },
@@ -542,7 +576,7 @@ async function hydrateFromConstraintIds(
 			heading:        c.docTitle,
 		});
 	}
-	log.info(
+	savedLog.info(
 		{
 			templateContext: 'runAdherenceCheck',
 			requestedIds:    ids.length,
@@ -648,6 +682,8 @@ export async function _resolveConstraintsForTest(
 	repo:   string,
 	facts?: { limited: ReachedLimit[]; partlyRead: PartlyReadItem[]; skipped?: SkippedItem[] },
 ): Promise<ResolvedConstraints> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	if (args.connectionExecution?.mode === 'session-memory' && (!Array.isArray(params['constraints']) || (params['constraints'] as unknown[]).length === 0)) throw new ConnectionExecutionError('unsupported-temporary');
 	return resolveConstraints(args, params, {
 		limited:    facts?.limited ?? [],
 		partlyRead: facts?.partlyRead ?? [],

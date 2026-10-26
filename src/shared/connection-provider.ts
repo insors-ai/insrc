@@ -25,6 +25,7 @@ interface LocalIdentity {
 const identities = new WeakMap<LLMProvider, Readonly<LocalIdentity>>();
 interface Proof { readonly candidate: LLMProvider; readonly identity: Readonly<LocalIdentity>; readonly digest: string; readonly sourceDigest: string; readonly assertService: () => void }
 const proofs = new WeakMap<object, Proof>();
+const admittedFacades = new WeakMap<LLMProvider, { readonly execution: ConnectionExecutionContext; readonly guard: () => void }>();
 const verificationCounts = new WeakMap<LLMProvider, number>();
 interface Attempt { readonly execution: ConnectionExecutionContext; readonly proof: Proof }
 const attempts = new AsyncLocalStorage<Attempt>();
@@ -161,6 +162,8 @@ export function admitConnectionProvider(candidate: LLMProvider, execution?: Conn
 	if (execution?.mode !== 'session-memory') { assertConnectionProviderAdmission(execution); return candidate; }
 	assertExplicitConnectionExecution(execution);
 	if (execution.audience !== 'workbench-ui') throw new ConnectionExecutionError('unsupported-temporary');
+	const existing = evidence === undefined ? admittedFacades.get(candidate) : undefined;
+	if (existing) { if (existing.execution !== execution) throw new ConnectionExecutionError('session-expired'); existing.guard(); return candidate; }
 	const proof = evidence !== null && typeof evidence === 'object' ? proofs.get(evidence) : undefined;
 	if (!proof || proof.candidate !== candidate) throw new ConnectionExecutionError('unsupported-temporary');
 	checkProof(proof);
@@ -176,11 +179,12 @@ export function admitConnectionProvider(candidate: LLMProvider, execution?: Conn
 		}));
 		execution.lifetime.registerDrain(work); return work;
 	};
-	return Object.freeze({
+	const facade = Object.freeze({
 		supportsTools: candidate.supportsTools, capabilities: Object.freeze({ ...candidate.capabilities, embeddings: false, streaming: false }),
 		complete: async (messages, opts) => { guard(); return invoke(signal => candidate.complete(messages, { ...opts, connectionExecution: execution, signal, cacheSystem: false }), opts?.signal); },
 		completeStructured: async <T>(messages: Parameters<LLMProvider['completeStructured']>[0], schema: Parameters<LLMProvider['completeStructured']>[1], opts?: Parameters<LLMProvider['completeStructured']>[2]) => { guard(); return invoke(signal => candidate.completeStructured<T>(messages, schema, { ...opts, connectionExecution: execution, signal }), opts?.signal); },
 		async *stream() { guard(); throw new ConnectionExecutionError('unsupported-temporary'); },
 		async embed() { guard(); throw new ConnectionExecutionError('unsupported-temporary'); },
 	} satisfies LLMProvider);
+	admittedFacades.set(facade, Object.freeze({ execution, guard })); return facade;
 }

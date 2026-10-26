@@ -1,3 +1,6 @@
+import { assertNoSessionEmbedding } from '../../../shared/connection-provider.js';
+import { assertNoSessionPersistence } from '../../../shared/connection-persistence.js';
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -52,6 +55,7 @@ export interface ConstraintRecord {
 }
 
 export interface ConstraintsForTopicArgs {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly runId:       string;
 	readonly taskId:      string;
 	readonly repoPath:    string;
@@ -90,7 +94,8 @@ export function constraintRecordKey(repoPath: string, topic: string, maxSources?
 	return createHash('sha256').update(parts.join('\0')).digest('hex').slice(0, 16);
 }
 
-export function constraintRecordPathFor(runId: string, repoPath: string, topic: string, maxSources?: number | undefined): string {
+export function constraintRecordPathFor(runId: string, repoPath: string, topic: string, maxSources?: number | undefined, execution?: ConnectionExecutionContext): string {
+	assertNoSessionEmbedding(execution);
 	return PATHS.analyzeConstraintRecord(runId, constraintRecordKey(repoPath, topic, maxSources));
 }
 
@@ -104,13 +109,15 @@ export function constraintRecordPathFor(runId: string, repoPath: string, topic: 
  *         is recorded then.
  */
 export async function constraintsForTopic(args: ConstraintsForTopicArgs): Promise<ConstraintsForTopicResult> {
-	const path = constraintRecordPathFor(args.runId, args.repoPath, args.topic, args.maxSources);
+	assertNoSessionEmbedding(args.connectionExecution);
+	const path = constraintRecordPathFor(args.runId, args.repoPath, args.topic, args.maxSources, args.connectionExecution);
 	const stored = readRecord(path, args);
 	if (stored !== null) {
 		return { output: stored.output, record: path, reused: true };
 	}
 
 	const output = await (enumerateForTest ?? runSharedDocConstraintEnumerate)({
+		connectionExecution: args.connectionExecution,
 		subject:    args.topic,
 		repoPath:   args.repoPath,
 		db:         args.db,
@@ -142,7 +149,8 @@ export async function constraintsForTopic(args: ConstraintsForTopicArgs): Promis
 }
 
 /** Remove every constraint record of a run. Best effort; used by tests. */
-export function purgeConstraintRecords(runId: string): void {
+export function purgeConstraintRecords(runId: string, execution?: ConnectionExecutionContext): void {
+	assertNoSessionEmbedding(execution);
 	const dir = dirname(PATHS.analyzeConstraintRecord(runId, 'unused'));
 	try { rmSync(dir, { recursive: true, force: true }); }
 	catch (err) {
@@ -201,6 +209,7 @@ function notThisRecord(parsed: unknown, args: ConstraintsForTopicArgs): string |
 }
 
 function atomicWriteJson(path: string, value: unknown): void {
+	assertNoSessionPersistence();
 	mkdirSync(dirname(path), { recursive: true });
 	const tmp = `${path}.tmp-${process.pid}-${Date.now()}`;
 	writeFileSync(tmp, JSON.stringify(value, null, '\t'), 'utf8');

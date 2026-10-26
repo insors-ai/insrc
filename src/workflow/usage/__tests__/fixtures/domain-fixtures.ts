@@ -35,3 +35,8 @@ export function scope(): AccountingScope {
       sourceCapabilities: [capability], expectedBindingVersions: [{ rootArtifactId: binding.rootArtifactId, artifactId: binding.artifactId, version: binding.version }], coverageState: 'observed' },
   };
 }
+export async function* stream(rows: readonly LedgerRecord[]): AsyncIterable<LedgerRecord> { for (const row of rows) yield row; }
+export function scoped(rows: readonly LedgerRecord[]): AccountingScope {
+  const base = scope(), ids = [...new Set(rows.map(row => row.eventId))];
+  return { ...base, evidence: { ...base.evidence, expectedEventIds: ids, expectedRecordCount: ids.length, eventSetDigest: eventSetDigest(ids) } };
+}

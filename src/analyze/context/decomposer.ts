@@ -207,10 +207,10 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 		throw errClass;
 	}
 
-	const explorations = normalizeExplorationParams(raw.explorations);
+	const explorations = normalizeExplorationParams(raw.explorations, args.connectionExecution);
 	// Validate id ordering + dependsOn topology (schema-level checks
 	// aren't strong enough to enforce this).
-	validatePlanTopology(explorations);
+	validatePlanTopology(explorations, args.connectionExecution);
 
 	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:            args.runId,
@@ -281,8 +281,8 @@ export function finalizeDecompose(raw: unknown, execution?: ConnectionExecutionC
 	if (!result.ok) {
 		throw new DecomposerSchemaUnrecoverable(result.errors);
 	}
-	const explorations = normalizeExplorationParams(result.value.explorations);
-	validatePlanTopology(explorations);
+	const explorations = normalizeExplorationParams(result.value.explorations, execution);
+	validatePlanTopology(explorations, execution);
 	return {
 		answerType:    result.value.answerType,
 		explorations,
@@ -297,7 +297,7 @@ export function finalizeDecompose(raw: unknown, execution?: ConnectionExecutionC
  * anyOf is not tied to the sibling type. A missing required param is left for
  * the runner, which fails only that exploration, as before.
  */
-function normalizeExplorationParams(explorations: readonly Exploration[]): Exploration[] {
+function normalizeExplorationParams(explorations: readonly Exploration[], execution?: ConnectionExecutionContext): Exploration[] {
 	return explorations.map(exp => {
 		const declared = EXPLORATION_PARAMS[exp.type];
 		const params: Record<string, unknown> = {};
@@ -305,7 +305,7 @@ function normalizeExplorationParams(explorations: readonly Exploration[]): Explo
 			if (value === null) continue;
 			if (declared === undefined || !(key in declared)) {
 				throw new DecomposerSchemaUnrecoverable([
-					`exploration '${exp.id}' (${exp.type}) has param '${key}', which ${exp.type} does not take`,
+					execution?.mode === 'session-memory' ? 'Temporary analysis plan has an unsupported parameter.' : `exploration '${exp.id}' (${exp.type}) has param '${key}', which ${exp.type} does not take`,
 				]);
 			}
 			params[key] = value;
@@ -318,18 +318,18 @@ function normalizeExplorationParams(explorations: readonly Exploration[]): Explo
 // Topology validation
 // ---------------------------------------------------------------------------
 
-function validatePlanTopology(explorations: readonly Exploration[]): void {
+function validatePlanTopology(explorations: readonly Exploration[], execution?: ConnectionExecutionContext): void {
 	const seenIds = new Set<string>();
 	for (const exp of explorations) {
 		if (seenIds.has(exp.id)) {
 			throw new DecomposerSchemaUnrecoverable([
-				`duplicate exploration id '${exp.id}'`,
+				execution?.mode === 'session-memory' ? 'Temporary analysis plan has duplicate exploration IDs.' : `duplicate exploration id '${exp.id}'`,
 			]);
 		}
 		for (const dep of exp.dependsOn ?? []) {
 			if (!seenIds.has(dep)) {
 				throw new DecomposerSchemaUnrecoverable([
-					`exploration '${exp.id}' depends on '${dep}' but that id was not defined earlier in the plan`,
+					execution?.mode === 'session-memory' ? 'Temporary analysis plan has an invalid dependency.' : `exploration '${exp.id}' depends on '${dep}' but that id was not defined earlier in the plan`,
 				]);
 			}
 		}

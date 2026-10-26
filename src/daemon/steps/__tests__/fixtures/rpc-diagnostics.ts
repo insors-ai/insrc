@@ -84,6 +84,15 @@ try {
 	const phaseState = { version: 2, runId: 'phase-fixture', repoPath: root, repoIndexedAt: null, intent: phaseIntent, synthesizerKey: 'data', stage: 'awaiting_plan' };
 	const invalidPlan = Object.defineProperty({ answerType: 42, explorations: [], synthesisHint: '' }, 'toJSON', { get() { inputReads++; throw Error('CM_PRIVATE_PLAN_PREVIEW'); } });
 	const planError = await handlePlan({ phase: 'plan', state: await encodeState(phaseState, execution), plan: invalidPlan }, execution); assert.equal(planError.error.code, 'plan-schema'); assert.equal(JSON.stringify(planError).includes('CM_PRIVATE_'), false);
+	// Schema-valid semantic failures must be fixed at the exception source,
+	// before a caller's catch. Poisoned serialization cannot hide in previews.
+	const { finalizeDecompose } = await load('analyze/context/decomposer.js');
+	const item = { id: 'CM_PRIVATE_SEMANTIC_ID', type: 'module.profile', purpose: 'fixture', params: { path: root } };
+	for (const [index, explorations] of [[item, { ...item }], [{ ...item, dependsOn: ['CM_PRIVATE_DEPENDENCY'] }], [{ ...item, type: 'db.connections.list', params: { path: 'CM_PRIVATE_WRONG_PARAM' } }]].entries()) {
+		const plan = Object.defineProperty({ answerType: 'structural-map', explorations, synthesisHint: 'fixture' }, 'toJSON', { get() { inputReads++; throw Error('CM_PRIVATE_SEMANTIC_PREVIEW'); } });
+		assert.throws(() => finalizeDecompose(plan, execution), (error: any) => { assert.equal(error.message.includes('CM_PRIVATE_'), false); assert.ok(error.message.includes(['duplicate exploration IDs', 'invalid dependency', 'unsupported parameter'][index])); return true; });
+		const refused = await handlePlan({ phase: 'plan', state: await encodeState(phaseState, execution), plan }, execution); assert.equal(refused.error.code, 'plan-schema'); assert.equal(JSON.stringify(refused).includes('CM_PRIVATE_'), false);
+	}
 	const bundleError = await handleBundle({ phase: 'bundle', state: await encodeState({ ...phaseState, stage: 'awaiting_bundle' }, execution), bundle: { system: 42, marker: 'CM_PRIVATE_BUNDLE' } }, execution); assert.equal(bundleError.error.code, 'bundle-schema'); assert.equal(JSON.stringify(bundleError).includes('CM_PRIVATE_'), false);
 	const exploration = { id: 'e1', type: 'capability.reuse-check', purpose: 'fixture', params: { capability: 'fixture' } };
 	const resumeState = await rememberSessionContinuation({ results: [], outputs: [], totalCached: 0, totalMsSoFar: 0 }, execution);

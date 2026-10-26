@@ -578,7 +578,7 @@ Run at 2026-10-26T11:32:56.351Z on commit `ca4b9f987`. Tests check: **passed**. 
 
 ## t29
 
-Run at 2026-10-26T11:47:26.921Z on commit `31d7aaa7d`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T12:01:12.394Z on commit `4f5286797`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker**
 
@@ -590,4 +590,4 @@ Run at 2026-10-26T11:47:26.921Z on commit `31d7aaa7d`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` | 0 | 1 | 3.3 s |  |
+| `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` | 0 | 1 | 3.1 s |  |

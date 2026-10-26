@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T11:47:26.921Z",
+    "updatedAt": "2026-10-26T12:01:12.394Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2001,8 +2001,8 @@
       },
       {
         "taskId": "t29",
-        "commit": "31d7aaa7d",
-        "ranAt": "2026-10-26T11:47:26.921Z",
+        "commit": "4f5286797",
+        "ranAt": "2026-10-26T12:01:12.394Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2024,7 +2024,7 @@
             "file": "src/daemon/steps/__tests__/rpc-diagnostics.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3284,
+            "durationMs": 3067,
             "titles": [
               {
                 "title": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",

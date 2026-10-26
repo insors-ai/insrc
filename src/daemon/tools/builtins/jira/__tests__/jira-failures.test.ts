@@ -48,8 +48,9 @@ test('jira-failures.test.ts: jiraFailureOf precedence and the probe rules', () =
   assert.match(f?.message ?? '', /sign in with acli jira auth login outside the daemon/);
   // a probe that did not complete, or that failed on the network, never gives missing-signin
   assert.equal(jiraFailureOf(out({ ...generic, probe: { ...signedOut, completed: false } }), read)?.kind, 'rejected');
-  assert.equal(jiraFailureOf(out({ ...generic, probe: { code: 1, completed: true, output: 'dial tcp: lookup x: no such host' } }), read)?.kind, 'unreachable');
-  assert.equal(jiraFailureOf(out({ ...generic, probe: { code: 1, completed: true, output: 'unauthorized (dial tcp: no such host)' } }), read)?.kind, 'unreachable');
+  // the original failure is classified by its own text: a probe that failed on the network leaves it rejected
+  assert.equal(jiraFailureOf(out({ ...generic, probe: { code: 1, completed: true, output: 'dial tcp: lookup x: no such host' } }), read)?.kind, 'rejected');
+  assert.equal(jiraFailureOf(out({ ...generic, probe: { code: 1, completed: true, output: 'unauthorized (dial tcp: no such host)' } }), read)?.kind, 'rejected');
   assert.equal(jiraFailureOf(out({ ...generic, probe: { code: 0, completed: true, output: '✓ Authenticated' } }), read)?.kind, 'rejected');
   // network text in the command's own output
   assert.equal(jiraFailureOf(out({ stderr: 'dial tcp: lookup example.atlassian.net: no such host' }), read)?.kind, 'unreachable');
@@ -83,9 +84,9 @@ test('jira-failures.test.ts: not installed, not signed in, network probe, time-o
   fake = installFakeAcli('fail-generic', { probe: 'ok' });
   try { assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'rejected'); } finally { fake.restore(); }
 
-  // the probe fails on the network: never missing-signin
+  // the probe fails on the network: never missing-signin, and not unreachable either (the original text has no network failure)
   fake = installFakeAcli('fail-generic', { probe: 'network' });
-  try { assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'unreachable'); } finally { fake.restore(); }
+  try { assert.equal(jiraFailureOf(await run(), { mutating: false })?.kind, 'rejected'); } finally { fake.restore(); }
 
   // a known rejection runs no probe
   fake = installFakeAcli('fail-reject', { probe: 'unauthorized' });

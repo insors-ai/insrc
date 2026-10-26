@@ -43,7 +43,7 @@ export function readClonedKey(message: string): string | undefined {
 
 /** The integer of 'Number of work items in the search: N' (a leading check mark is allowed). */
 export function readCount(stdout: string): number | undefined {
-  const m = /Number of work items in the search:\s*(\d+)\b/.exec(stripAnsi(stdout));
+  const m = /Number of work items in the search:[ \t]*(\d+)[ \t]*$/m.exec(stripAnsi(stdout));
   return m?.[1] === undefined ? undefined : Number(m[1]);
 }
 
@@ -93,7 +93,7 @@ export interface AuthStatus { signedIn: boolean; site?: string; email?: string; 
 export function parseAuthStatus(text: string): AuthStatus {
   const t = stripAnsi(text);
   const line = (label: string): string | undefined => new RegExp(`^\\s*${label}:\\s*(\\S.*?)\\s*$`, 'm').exec(t)?.[1];
-  const signedIn = /\bAuthenticated\b/.test(t) && !/unauthorized/i.test(t);
+  const signedIn = /^\s*(?:✓\s*)?Authenticated\b/m.test(t) && !/unauthorized/i.test(t);
   const site = line('Site');
   const email = line('Email');
   const authType = line('Authentication Type');

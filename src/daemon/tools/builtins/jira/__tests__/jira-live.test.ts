@@ -132,6 +132,9 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   mkdirSync(dir, { recursive: true });
   const record = (name: string, text: string): void => writeFileSync(join(dir, `project-${name}.txt`), `${text.trim().replace(/https:\/\/[^/\s]+/g, 'https://example.atlassian.net')}\n`);
   const key = probe.key as string;
+  // the cleanup below removes whatever sits under the scratch key, so the key must be free: refuse to start if a project already has it
+  const existing = await call(jiraProjectTool, { op: 'view', key });
+  assert.equal(existing.success, false, `a project ${key} already exists; choose a key that is free (deleted projects keep their key in Jira's trash)`);
   let made = false;
   let created = false;
   let archived = false;
@@ -147,7 +150,8 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
       const step = await textOf(input);
       // a failure is recorded beside the fixtures, never over the success text
       record(step.r.success ? String(input.op) : `${String(input.op)}-failed`, step.text);
-      archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived;
+      // the state changes only on a confirmed answer, so a failed restore is retried in the cleanup
+      if (step.r.success) { archived = input.op === 'archive' ? true : input.op === 'restore' ? false : archived; }
       assert.equal(step.r.success, true, `${String(input.op)}: ${step.text}`);
     }
   } finally {

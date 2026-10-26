@@ -46,10 +46,14 @@ test('jira-parsers.test.ts: readCount and parseAuthStatus read recorded acli tex
   assert.equal(readCount('Number of work items in the search: 0'), 0);
   assert.equal(readCount('✓ Number of work items in the search: 1234\n'), 1234);
   assert.equal(readCount('3 work items'), undefined);
+  // an incomplete or non-integer value is not guessed from its prefix
+  for (const t of ['Number of work items in the search: 12.5', 'Number of work items in the search: 12abc', 'Number of work items in the search: ']) { assert.equal(readCount(t), undefined, t); }
   assert.equal(readCount(''), undefined);
   assert.deepEqual(parseAuthStatus(fixture('auth-status.txt')), { signedIn: true, site: 'example.atlassian.net', email: 'user@example.com', authType: 'oauth' });
   assert.deepEqual(parseAuthStatus(fixture('auth-status-unauthorized.txt')), { signedIn: false });
   assert.equal(parseAuthStatus('').signedIn, false);
+  // the word elsewhere in the output is not the status line
+  assert.equal(parseAuthStatus('Site: Authenticated\n').signedIn, false);
 });
 
 test('jira-parsers.test.ts: readVisibility group and role cases including count mismatch, heading only, unrecognised line and ANSI escapes', () => {

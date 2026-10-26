@@ -67,6 +67,8 @@ test('jira-inputs.test.ts: 51 keys with repeats are refused and normalizeKeys ke
   assert.deepEqual(normalizeKeys([]), []);
 });
 
+const edit0 = (): OpDef => workitem.find(o => o.name === 'edit')!;
+
 test('jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every identifier field', () => {
   const find = (ops: OpDef[], name: string): OpDef => ops.find(o => o.name === name)!;
   const cases: [OpDef, string, unknown][] = [
@@ -89,6 +91,8 @@ test('jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every
     assert.equal(f?.kind, 'rejected', `${def.name}.${name}`);
     assert.match(f?.message ?? '', new RegExp(name));
   }
+  // names may use any letters, as configured on the site
+  assert.equal(checkJiraValues(edit0(), { op: 'edit', status: 'Erledigt – prüfen' }), undefined);
   // valid values pass, including a status with spaces, an email, '@me' and a project key for the project commands
   const edit = find(workitem, 'edit');
   assert.equal(checkJiraValues(edit, { op: 'edit', keys: ['IN-1', 'ABC_D-20'], status: 'In Progress', assignee: 'a.b@x.io', parent: 'IN-4', summary: '-free text may start with a dash' }), undefined);

@@ -30,13 +30,13 @@ test('jira-workitem-changes.test.ts: each changing op returns {ok, target, messa
   const created = JSON.stringify({ key: 'IN-4', id: '10040', fields: { summary: 's' }, self: 'x', expand: null });
   const cases: { input: Record<string, unknown>; stdout: string; argv: string; target: string }[] = [
     { input: { op: 'create', project: 'IN', type: 'Task', summary: 'A task', description: '-starts with a dash', labels: ['a', 'b'], assignee: '@me', parent: 'IN-1' }, stdout: created,
-      argv: 'jira workitem create --project IN --type Task --summary=A task --description=-starts with a dash --assignee @me --label=a,b --parent IN-1 --json', target: 'IN-4' },
+      argv: 'jira workitem create --project IN --type Task --summary=A task --description=-starts with a dash --assignee=@me --label=a,b --parent IN-1 --json', target: 'IN-4' },
     { input: { op: 'edit', keys: ['IN-1'], summary: 'new', labels: ['x'], removeLabels: ['y'] }, stdout: fixture('batch-edit-success.json'),
       argv: 'jira workitem edit --key IN-1 --summary=new --labels=x --remove-labels=y --yes --json', target: 'IN-1' },
     { input: { op: 'edit', keys: ['IN-1'], removeAssignee: true }, stdout: fixture('batch-edit-success.json'), argv: 'jira workitem edit --key IN-1 --remove-assignee --yes --json', target: 'IN-1' },
     { input: { op: 'transition', keys: ['IN-1', 'IN-2'], status: 'In Progress' }, stdout: batch(k => `Work item ${k} has been successfully transitioned to In Progress`, 'IN-1', 'IN-2'),
-      argv: 'jira workitem transition --key IN-1,IN-2 --status In Progress --yes --json', target: 'IN-1,IN-2' },
-    { input: { op: 'assign', keys: ['IN-1'], assignee: '@me' }, stdout: batch(k => `Work item ${k} has been successfully assigned to user@example.com`, 'IN-1'), argv: 'jira workitem assign --key IN-1 --assignee @me --yes --json', target: 'IN-1' },
+      argv: 'jira workitem transition --key IN-1,IN-2 --status=In Progress --yes --json', target: 'IN-1,IN-2' },
+    { input: { op: 'assign', keys: ['IN-1'], assignee: '@me' }, stdout: batch(k => `Work item ${k} has been successfully assigned to user@example.com`, 'IN-1'), argv: 'jira workitem assign --key IN-1 --assignee=@me --yes --json', target: 'IN-1' },
     { input: { op: 'assign', keys: ['IN-1'], removeAssignee: true }, stdout: batch(k => `Work item ${k} has been unassigned`, 'IN-1'), argv: 'jira workitem assign --key IN-1 --remove-assignee --yes --json', target: 'IN-1' },
     { input: { op: 'clone', keys: ['IN-1'], toProject: 'IN' }, stdout: fixture('batch-clone.json'), argv: 'jira workitem clone --key IN-1 --to-project IN --yes --json', target: 'IN-3' },
     { input: { op: 'archive', keys: ['IN-2'] }, stdout: fixture('batch-edit-success.json'), argv: 'jira workitem archive --key IN-2 --yes --json', target: 'IN-1' },

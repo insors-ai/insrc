@@ -7,16 +7,31 @@ import { runShellBytes } from '../../shell-helper.js';
 import type { ToolFailure, ToolInput } from '../../types.js';
 import { buildArgv } from '../gh/op-table.js';
 import type { Arg, OpDef } from '../gh/op-table.js';
-import { bytesToText } from '../gh/helpers.js';
 import { JIRA_LIMITS } from './limits.js';
 import { normalizeKeys } from './input.js';
+
+/** Text of captured stdout; an incomplete multibyte sequence at a cut end is dropped. */
+function bytesToText(bytes: Uint8Array, truncated: boolean): string {
+  let end = bytes.length;
+  if (truncated) {
+    let i = end - 1;
+    let back = 0;
+    while (i >= 0 && back < 3 && (bytes[i]! & 0xC0) === 0x80) { i--; back++; }
+    if (i >= 0) {
+      const lead = bytes[i]!;
+      const need = lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : lead >= 0xC0 ? 2 : 1;
+      if (need > 1 && end - i < need) { end = i; }
+    }
+  }
+  return new TextDecoder('utf-8').decode(bytes.subarray(0, end));
+}
 
 // ---------------------------------------------------------------------------
 // Argv
 // ---------------------------------------------------------------------------
 
 /** Fields whose values are identifiers (they cannot start with '-'); every other flag value is free text. */
-const IDENTIFIER_FLAG_FIELDS = new Set(['key', 'keys', 'parent', 'out', 'in', 'project', 'toProject', 'projectKey', 'fromProject', 'id', 'user', 'assignee', 'status', 'type']);
+const IDENTIFIER_FLAG_FIELDS = new Set(['key', 'keys', 'parent', 'out', 'in', 'project', 'toProject', 'projectKey', 'fromProject', 'id', 'user', 'type']);
 
 /** acli's own default for a list, passed explicitly so a list is never unbounded. */
 function defaultLimit(def: OpDef): number | undefined {
@@ -142,6 +157,7 @@ export function jiraFailureOf(o: AcliOutcome, opts: { mutating: boolean }): Tool
   if (probeSaysSignedOut) {
     return { kind: 'missing-signin', message: unknown('acli is not signed in; sign in with acli jira auth login outside the daemon'), original: original ?? msg };
   }
-  if (NETWORK_RE.test(text) || NETWORK_RE.test(probeText)) { return { kind: 'unreachable', message: unknown(msg), ...(original !== undefined ? { original } : {}) }; }
+  // the original failure is classified by its own text: a probe that failed on the network does not make it unreachable
+  if (NETWORK_RE.test(text)) { return { kind: 'unreachable', message: unknown(msg), ...(original !== undefined ? { original } : {}) }; }
   return { kind: 'rejected', message: unknown(msg), ...(original !== undefined ? { original } : {}) };
 }

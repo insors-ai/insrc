@@ -43,9 +43,9 @@ test('jira-argv.test.ts: jiraArgv head, --yes, literal --json, finite --limit, n
   const j = jiraArgv(search, { op: 'search', jql: '-labels = x', fields: ['key', 'summary'] });
   assert.ok(j.includes('--jql=-labels = x'));
   assert.ok(j.includes('--fields=key,summary'));
-  // identifiers keep two tokens (they cannot start with a dash)
+  // keys and ids keep two tokens (they cannot start with a dash); a status name is free text and is joined
   const t = jiraArgv(transition, { op: 'transition', keys: ['IN-1'], status: 'In Progress' });
-  assert.deepEqual(t.slice(-6), ['--key', 'IN-1', '--status', 'In Progress', '--yes', '--json']);
+  assert.deepEqual(t.slice(-5), ['--key', 'IN-1', '--status=In Progress', '--yes', '--json']);
   // project create: from an existing project, never a JSON file
   const c = jiraArgv(projectCreate, { op: 'create', fromProject: 'IN', key: 'ZZPROBE', name: 'Probe', description: 'd', leadEmail: 'a@b.c' });
   assert.deepEqual(c.slice(0, 4), ['acli', 'jira', 'project', 'create']);

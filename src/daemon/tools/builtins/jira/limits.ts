@@ -14,7 +14,7 @@ export const JIRA_LIMITS = {
 } as const;
 
 /** The name of an issue type, a status or a link type: starts with a letter or digit, so it can never read as a flag. */
-const NAME = /^[A-Za-z0-9][\w .,:/()'&-]*$/;
+const NAME = /^[\p{L}\p{N}][\p{L}\p{N}\p{M}\p{Pd} .,:/()'&_]*$/u;
 
 /** None of these allows a leading '-', so a value can never be read by acli as a flag. */
 export const JIRA_PATTERNS = {

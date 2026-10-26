@@ -63,6 +63,8 @@ export function defineJiraFamily(spec: { id: string; description: string; ops: r
       }
       if (def.out.kind !== 'custom') { return rejectInput(id, `op ${def.name} must use the custom output`); }
       const built = await def.out.build({ stdout: o.stdout, stderr: o.stderr, input, deps, truncated: o.stdoutTruncated });
+      // a builder that returns nothing is a defect for the executor's output check (schema-mismatch), not an exception here
+      if (built === undefined || built === null) { return { output: '', format: 'text', success: true }; }
       if ('success' in built && 'output' in built && typeof built['success'] === 'boolean') { return built as ToolResult; }
       return { output: JSON.stringify({ op: def.name, ...built }, null, 2), format: 'json', success: true, data: { op: def.name, ...built } };
     },

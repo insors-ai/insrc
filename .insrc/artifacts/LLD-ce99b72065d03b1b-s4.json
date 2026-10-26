@@ -174,7 +174,16 @@
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-26T08:05:01.897Z"
+    "approvedAt": "2026-10-26T08:05:01.897Z",
+    "questionResolutions": {
+      "q5ad36570": {
+        "question": "Checklist ep3 (partial): the serial-CLI-call invariant rests on the s1 usage.example bundle (no shared serial-queue helper; daemon code serialises provider work with sequential awaits, c12) and CLAUDE.md (c4), not on the probe evidence its s5 source id names.",
+        "status": "resolved",
+        "choice": "Correct the evidence attribution",
+        "rationale": "User choice: the serial-call invariant rests on CLAUDE.md (c4) and the s1 usage.example bundle (c12), not on probe evidence.",
+        "resolvedAt": "2026-10-26T08:07:49.670Z"
+      }
+    }
   },
   "body": {
     "summary": {

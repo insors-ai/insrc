@@ -354,22 +354,23 @@ Same procedures, lock, table and approve/reject RPCs as a1; models.check registe
 - Checklist ep3 (partial): the serial-CLI-call invariant rests on the s1 usage.example bundle (no shared serial-queue helper; daemon code serialises provider work with sequential awaits, c12) and CLAUDE.md (c4), not on the probe evidence its s5 source id names.
 - Checklist alt2 (partial): s3 scored the alternatives against ac1-ac5 and sc1-sc4 but not lc1-lc3 explicitly; all three alternatives share the same CLI procedures, so lc1 (installed CLIs only), lc2 (the codex model list decides efforts) and lc3 (Claude levels recognised-unconfirmed) hold equally for each and do not change the ranking.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q5ad36570` — Checklist ep3 (partial): the serial-CLI-call invariant rests on the s1 usage.example bundle (no shared serial-queue helper; daemon code serialises provider work with sequential awaits, c12) and CLAUDE.md (c4), not on the probe evidence its s5 source id names.
+  - **resolved**: Correct the evidence attribution — User choice: the serial-call invariant rests on CLAUDE.md (c4) and the s1 usage.example bundle (c12), not on probe evidence. _(2026-10-26T08:07:49.670Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-26T07:55:50.752Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| data-compatibility | The linked sequence companion renders successfully with readable, unclipped content. | Inspected the generated HTML, embedded Mermaid sequence, participant/message descriptions, rendering initialization and error fallback. Browser inventory exposed no browser surface; attempting Chrome access returned 'Computer Use was not approved to use Google Chrome'. No rendered screenshot was available, so Mermaid execution, layout and clipping remain unverified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html] | Render and visually inspect the existing companion; have the author correct or regenerate it if necessary. |
+- **[[c1]]** `prior-artifact` `HLD-ce99b72065d03b1b` — "Approved HLD; s4 boundary and sc4 (Unknown-model check and approval requests)."
+- **[[c2]]** `step-output` `s1` — "LldContext analyze bundles: approved-model store and registry, CLI spawning, CLI probe, RPC plug-in points, atomic writes, test patterns."
+- **[[c3]]** `code` `src/daemon/model-registry.ts:49` — "export interface ApprovedProfile {"
+- **[[c4]]** `doc` `CLAUDE.md` — "No direct cloud REST calls from our process. ... Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits."
+- **[[c5]]** `code` `src/daemon/model-registry.ts:159` — "function readStore(path: string): ApprovedProfile[] {"
+- **[[c6]]** `code` `src/agent/providers/cli-provider.ts:868` — "async function runSubprocess("
+- **[[c7]]** `code` `src/workflow/storage.ts:85` — "const tmp = `${absPath}.tmp`;"
+- **[[c8]]** `code` `src/daemon/threads/method-class.ts:156` — "['models.definitions', 'session', false],"
+- **[[c9]]** `code` `src/shared/paths.ts:12` — "approvedModels: join(INSRC_DIR, 'approved-models.json'),"
+- **[[c10]]** `step-output` `s3` — "winnerId a1: satisfies every criterion and contract with the fewest moving parts."
+- **[[c11]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:20` — "codex does not reject a known level that a given model does not list (probe 4). For codex, a model's accepted levels must therefore come from `codex debug models` (probe 1), not from whether a test ru"
+- **[[c12]]** `analyze-bundle` `s1 usage.example` — "Atomic writes follow write-to-`<path>.tmp` then renameSync (src/workflow/storage.ts:85 writeAtomic; src/config/reconcile-io.ts commit). No shared serial-queue helper exists; daemon code serialises LLM"
+- **[[c15]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:40` — "Every recognised level runs without a warning on every model tried (probes 8 to 10), and the output never states the effort used (probe 11). So no Claude CLI run shows whether a given model supports a"

@@ -20,6 +20,7 @@ import { join } from 'node:path';
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-handler-runtime-'));
 process.env['HOME'] = HOME;
 const { buildHandlerRuntime } = await import('../handler-runtime.js');
+const { methodClasses } = await import('../threads/method-class.js');
 
 /** The rpc methods main() built before the move (recorded 2026-10-22 from src/daemon/index.ts). */
 const RECORDED_RPC = [
@@ -44,7 +45,7 @@ const RECORDED_RPC = [
 	'db.testConnection', 'docSummary.restoreFromBackup', 'docgen.generate', 'docgen.list', 'entity.closure',
 	'entity.summary', 'entity.unreachable', 'gate.resolve', 'guide.get', 'guide.list', 'handoff.cleanup',
 	'handoff.discard-orphan', 'handoff.list-orphans', 'handoff.mode-a.resolve', 'index.file', 'keys.delete', 'keys.get',
-	'keys.list', 'keys.set', 'locate.inferParents', 'models.definitions', 'models.resolveRole', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
+	'keys.list', 'keys.set', 'locate.inferParents', 'models.approve', 'models.check', 'models.definitions', 'models.reject', 'models.resolveRole', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
 	'plan.next_step', 'plan.reset_stale', 'plan.save', 'plan.step_update', 'plan_get', 'plan_next_step',
 	'plan_step_update', 'prefs.confirm.list', 'prefs.confirm.resolve', 'prefs.discard', 'prefs.edit', 'prefs.list',
 	'providers.check', 'providers.getConfig', 'providers.listModels', 'providers.setConfig', 'providers.testKey',
@@ -85,5 +86,25 @@ test('the runtime function builds the handler tables with stub indexing dependen
 		assert.equal(typeof runtime.understandingRoutes.stop, 'function');
 	} finally {
 		rmSync(HOME, { recursive: true, force: true });
+	}
+});
+
+test('handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session', async () => {
+	const runtime = buildHandlerRuntime({
+		db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+		startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+	});
+	for (const m of ['models.check', 'models.approve', 'models.reject']) {
+		assert.ok(RECORDED_RPC.includes(m), m);
+		assert.equal(typeof runtime.rpcHandlers[m], 'function', m);
+		assert.equal(methodClasses.classOf(m), 'session', m);
+		assert.equal(methodClasses.entries().find(e => e.method === m)?.stream, false, m);
+	}
+	// The handlers reach model-check.ts: refusals that need no CLI and write nothing.
+	assert.deepEqual(await runtime.rpcHandlers['models.check']!({ family: 'ollama', modelId: 'm', claimedEfforts: [] }),
+		{ error: 'invalid-params: family must be a CLI family of the model definitions', recoverable: false });
+	for (const m of ['models.approve', 'models.reject']) {
+		assert.deepEqual(await runtime.rpcHandlers[m]!({ checkId: 'never-issued', efforts: [] }),
+			{ ok: false, reason: 'unknown-check', detail: 'no pending check never-issued; run models.check again' }, m);
 	}
 });

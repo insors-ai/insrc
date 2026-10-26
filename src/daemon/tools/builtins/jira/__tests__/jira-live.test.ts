@@ -153,7 +153,7 @@ test('jira-live.test.ts: the disposable-project probe records the real success t
   } finally {
     if (made) {
       // an archived project cannot be deleted ('You cannot edit the configuration of this project'): restore it first
-      if (archived) { await call(jiraProjectTool, { op: 'restore', key }); }
+      if (archived) { try { await call(jiraProjectTool, { op: 'restore', key }); } catch { /* the delete below is still tried */ } }
       const del = await textOf({ op: 'delete', key });
       // a delete of a project that was never made fails and says nothing about the readers: only a made project is recorded and asserted
       if (created) {

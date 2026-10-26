@@ -136,7 +136,7 @@ export const GH_COVERAGE: readonly GhCoverageRow[] = [
   { command: "alias import", owner: "excluded", reason: "Local gh configuration (accepted 2026-10-25)." },
   { command: "alias list", owner: "excluded", reason: "Local gh configuration (accepted 2026-10-25)." },
   { command: "alias set", owner: "excluded", reason: "Local gh configuration (accepted 2026-10-25)." },
-  { command: "api", owner: "excluded", reason: "Raw API access would bypass every typed tool (accepted 2026-10-25)." },
+  { command: "api", owner: "excluded", reason: "Raw API access would bypass every typed tool (accepted 2026-10-25). The one amendment is the gh_tracker family (Story s7, decided 2026-10-26): its ops use fixed endpoint templates and no endpoint is ever an input." },
   { command: "completion", owner: "excluded", reason: "Shell setup, not a repository operation (accepted 2026-10-25)." },
   { command: "config clear-cache", owner: "excluded", reason: "Changes the gh cache (accepted 2026-10-25)." },
   { command: "config get", owner: "covered", toolIds: ["gh_config"], op: "get" },

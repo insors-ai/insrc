@@ -6,7 +6,7 @@ import { getTool, listTools } from '../../../registry.js';
 import { GH_COVERAGE } from '../coverage.js';
 import { leafCommands } from './_ghhelp.js';
 
-test('gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, covered rows name registered tools and ops, excluded rows have a reason, and all 68 tools are registered', () => {
+test('gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, covered rows name registered tools and ops, excluded rows have a reason, and all 69 tools are registered (68 that serve a gh command and gh_tracker)', () => {
 	registerBuiltinTools();
 	const rows = new Map(GH_COVERAGE.map(r => [r.command, r]));
 	assert.equal(rows.size, GH_COVERAGE.length, 'one row per command');
@@ -50,11 +50,26 @@ test('gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, cov
 	// every command that has a tool is covered: the included groups, and the alias co
 	assert.equal(rows.get('co')?.toolIds?.[0], 'gh_pr_manage');
 
-	// all 68 gh tools are registered: the 46 existing and the 22 of the families
+	// all 69 gh tools are registered: the 46 existing and the 22 of the families that serve a gh command, and gh_tracker (Story s7)
 	const gh = listTools().filter(t => t.id.startsWith('gh_') || t.id.startsWith('gh:'));
-	assert.equal(gh.length, 68);
-	assert.equal(gh.filter(t => (t as { ops?: unknown }).ops !== undefined).length, 22);
-	// every registered gh tool serves some covered command
+	assert.equal(gh.length, 69);
+	assert.equal(gh.filter(t => (t as { ops?: unknown }).ops !== undefined).length, 23);
+	// every registered gh tool serves some covered command, except gh_tracker, which is the amendment to the excluded gh api
 	const served = new Set(GH_COVERAGE.flatMap(r => r.toolIds ?? []));
-	assert.deepEqual(gh.map(t => t.id).filter(id => !served.has(id)), []);
+	assert.deepEqual(gh.map(t => t.id).filter(id => !served.has(id)), ['gh_tracker']);
+});
+
+test('gh-coverage.test.ts: the coverage table names the tracker family as s7\'s amendment and keeps raw gh api excluded', () => {
+	const api = GH_COVERAGE.find(r => r.command === 'api');
+	assert.equal(api?.owner, 'excluded', 'raw gh api stays excluded');
+	assert.equal(api?.toolIds, undefined, 'no tool is named for it');
+	assert.match(api?.reason ?? '', /gh_tracker/);
+	assert.match(api?.reason ?? '', /Story s7/);
+	assert.match(api?.reason ?? '', /2026-10-26/);
+	assert.match(api?.reason ?? '', /no endpoint is ever an input/);
+	// the amendment is the only tool that is not in a covered row
+	registerBuiltinTools();
+	const served = new Set(GH_COVERAGE.flatMap(r => r.toolIds ?? []));
+	assert.equal(served.has('gh_tracker'), false);
+	assert.ok(getTool('gh_tracker'));
 });

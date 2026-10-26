@@ -46,6 +46,7 @@ import {
 } from './manage.js';
 import { ghAuthTool, ghCodespaceTool, ghConfigTool, ghExtensionTool, ghOrgTool, ghRulesetTool, ghSearchTool, ghStatusTool } from './account.js';
 import { ghCacheTool, ghGistTool, ghGpgKeyTool, ghLabelTool, ghSecretTool, ghSshKeyTool, ghVariableTool } from './resources.js';
+import { ghTrackerTool } from './tracker.js';
 
 export function registerGhTools(): void {
   // Issues
@@ -129,4 +130,7 @@ export function registerGhTools(): void {
   registerTool(ghCodespaceTool);
   registerTool(ghConfigTool);
   registerTool(ghExtensionTool);
+
+  // Tracker: the fixed-endpoint gh api operations of the workflow tracker (Story s7)
+  registerTool(ghTrackerTool);
 }

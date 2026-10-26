@@ -1,4 +1,4 @@
-import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import { assertConnectionProviderAttempt } from '../../shared/connection-provider.js';
 import { ConnectionExecutionError } from '../../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -39,7 +39,8 @@ import { getLogger } from '../../shared/logger.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
-const log = getLogger('providers:structured-output');
+const savedLog = getLogger('providers:structured-output');
+const quietLog = { info() { }, warn() { } };
 
 
 // ---------------------------------------------------------------------------
@@ -193,7 +194,8 @@ export async function withStructuredRetry<T>(
 	maxAttempts:  number,
 	execution?: ConnectionExecutionContext,
 ): Promise<T> {
-	assertConnectionProviderAdmission(execution);
+	assertConnectionProviderAttempt(execution);
+	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
 	if (maxAttempts < 1) {
 		throw new Error(`structured-output: maxAttempts must be >= 1; got ${maxAttempts}`);
 	}
@@ -207,7 +209,7 @@ export async function withStructuredRetry<T>(
 	// request the server rejected keeps its status).
 	let lastThrown: unknown;
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-		assertConnectionProviderAdmission(execution);
+		assertConnectionProviderAttempt(execution);
 		const note = attempt === 1
 			? undefined
 			: buildRetryNote(lastErrors);
@@ -215,9 +217,9 @@ export async function withStructuredRetry<T>(
 		let raw: unknown;
 		try {
 			raw = await call(note);
-			assertConnectionProviderAdmission(execution);
+			assertConnectionProviderAttempt(execution);
 		} catch (err) {
-			assertConnectionProviderAdmission(execution);
+			assertConnectionProviderAttempt(execution);
 			if (err instanceof ConnectionExecutionError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.
@@ -230,7 +232,7 @@ export async function withStructuredRetry<T>(
 			// error inside the provider's call closure, etc.). Convert to
 			// a validation failure so the next attempt re-issues with the
 			// error message as feedback.
-			const msg = (err as Error).message ?? String(err);
+			const msg = execution?.mode === 'session-memory' ? 'Temporary provider call failed.' : (err as Error).message ?? String(err);
 			lastErrors = [msg];
 			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
 			lastThrown = err;
@@ -245,7 +247,7 @@ export async function withStructuredRetry<T>(
 			}
 			return result.value;
 		}
-		lastErrors = result.errors;
+		lastErrors = execution?.mode === 'session-memory' ? ['Temporary provider response was invalid.'] : result.errors;
 		lastCallFailure = undefined;
 		lastThrown = undefined;
 		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');

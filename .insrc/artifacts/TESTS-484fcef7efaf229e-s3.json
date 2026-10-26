@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T08:27:38.643Z",
+    "updatedAt": "2026-10-26T08:40:22.115Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1679,6 +1679,59 @@
             "titles": [
               {
                 "title": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "303dbae66",
+        "ranAt": "2026-10-26T08:40:22.115Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+                "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+                "title": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 673,
+            "titles": [
+              {
+                "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
                 "result": "pass"
               }
             ],

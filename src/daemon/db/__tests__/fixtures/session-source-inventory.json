@@ -589,11 +589,47 @@
         ],
         [
           "provider-adapter",
+          "assertActive"
+        ],
+        [
+          "provider-adapter",
+          "assertActive"
+        ],
+        [
+          "provider-adapter",
+          "assertActive"
+        ],
+        [
+          "provider-adapter",
+          "cancel"
+        ],
+        [
+          "provider-adapter",
+          "cancel"
+        ],
+        [
+          "diagnostic",
+          "controller.error"
+        ],
+        [
+          "serialization",
+          "decoder.decode"
+        ],
+        [
+          "provider-adapter",
           "detectModelFamily"
+        ],
+        [
+          "serialization",
+          "encoder.encode"
         ],
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "provider-adapter",
+          "guardedFetch"
         ],
         [
           "provider-adapter",
@@ -610,6 +646,10 @@
         [
           "provider-adapter",
           "isTransientOllamaError"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
         ],
         [
           "serialization",
@@ -665,7 +705,43 @@
         ],
         [
           "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
+          "own"
+        ],
+        [
+          "provider-adapter",
           "parseToolCalls"
+        ],
+        [
+          "provider-adapter",
+          "quietOllamaResponse"
         ],
         [
           "provider-adapter",
@@ -804,9 +880,9 @@
           "wrapOllamaError"
         ]
       ],
-      "siteCount": 59,
-      "sitesDigest": "fd7d96fd1a8c32a24f8278a2f722528db7dd0663b52008366e9aed524316c64d",
-      "sourceDigest": "8a818b577cf3a3ffe5101a70038770da58585af1739129caad2cbd56f9154313",
+      "siteCount": 78,
+      "sitesDigest": "b3a408116bec7faf4911433fd99d44c31da7e12be979c45fed7fdd7dc649ff65",
+      "sourceDigest": "bbbc5989c50f5b215c85d2413b49d3e150d59569bb38d838a97ce69042a272a0",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -1071,7 +1147,7 @@
       ],
       "siteCount": 39,
       "sitesDigest": "7a90160387f40c04c73aa327857ad887a4afd82bee4634d06519cd98dd652928",
-      "sourceDigest": "0cb757721bb80a73e7e1f624715e2ebd2b763f9b06e69db4f25eed55d4c3d22d",
+      "sourceDigest": "92b9861add7bef3d0dc5397f2df55bb75a6cab60419686aacd8ab818b68bfffa",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -30709,6 +30785,78 @@
       "sourceDigest": "653ad7a212910f5b353771fe7ac693c2adda920b0d688ca831640ae6644e0acf",
       "boundaries": [
         "acquisition:symbol:ConnectionResolver"
+      ]
+    },
+    "src/shared/connection-provider.ts": {
+      "classification": "provider-admission",
+      "rationale": "Production Session provider admission is empty pending exact adapter and isolated actual-service privacy evidence. No caller evidence, type flags, capability labels, cached provider or execution field grants admission. Factory and direct-call guards reject before prompt/configuration/SDK access; Saved policy and selected model/coreFloor remain unchanged.",
+      "sites": [
+        [
+          "unresolved-call",
+          "AsyncLocalStorage"
+        ],
+        [
+          "serialization",
+          "Buffer.concat"
+        ],
+        [
+          "provider-use",
+          "candidate.complete"
+        ],
+        [
+          "provider-use",
+          "candidate.complete"
+        ],
+        [
+          "provider-use",
+          "candidate.completeStructured"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "nativeConnectionProviderIdentity"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ]
+      ],
+      "siteCount": 14,
+      "sitesDigest": "21a9db16bb8681e02caf77463d28a2f4d9fc8905ae1cbd020d41b5f7afba1b7d",
+      "sourceDigest": "8993865d0d3ecf0e5a7fc936c5b59c61950d84120fc54ca5e8fb0d47bf5039ac",
+      "boundaries": [
+        "filesystem-read",
+        "provider-adapter",
+        "provider-use",
+        "serialization",
+        "unresolved-call"
       ]
     },
     "src/shared/db-driver.ts": {

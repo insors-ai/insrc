@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { admitConnectionProvider, assertConnectionProviderAdmission, connectionProviderPrivacyStatus } from '../../../shared/connection-provider.js';
+import { admitConnectionProvider, assertConnectionProviderAdmission, connectionProviderPrivacyStatus, verifyLocalConnectionProvider } from '../../../shared/connection-provider.js';
 import { sessionConnectionExecution, savedConnectionExecution, ConnectionExecutionError, runWithConnectionExecution } from '../../../shared/step-context.js';
 import type { SessionConnectionExecution } from '../../../shared/step-context.js';
 import { RequestLifetime } from '../../request-context.js';
@@ -35,6 +35,7 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 		assert.equal(selected.tier, 'core'); assert.equal(selected.clampedByFloor, true); assert.equal(warm.resolution.model, selected.model);
 		assert.equal(router.resolveProviderForRole('design.contract.detail', cfg), warm);
 		assert.equal(admitConnectionProvider(warm.provider), warm.provider);
+		await assert.rejects(verifyLocalConnectionProvider({ complete() { sends++; } } as never, poison as never), refusal());
 		for (const candidate of [poison, warm.provider, { kind: 'ollama', model: selected.model, capabilities: { structuredOutput: true }, complete() { sends++; } }]) {
 			for (const evidence of [undefined, { mode: 'verified-local', modelId: selected.model, evidenceDigest: 'copied-stale-digest' }, poison]) {
 				assert.throws(() => admitConnectionProvider(candidate as never, a.execution, evidence), refusal());
@@ -75,7 +76,7 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 	} finally { a.lifetime.abort(); a.lifetime.complete(); await a.lifetime.drained; }
 });
 
-test('CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused', () => {
+test('CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence', () => {
 	// This is the required unavailable-evidence branch, NOT an actual-service pass.
 	// No prompt is sent to the user's running service and no identity is admitted.
 	assert.equal(connectionProviderPrivacyStatus.status, 'pending'); assert.equal(connectionProviderPrivacyStatus.mode, 'unsupported'); assert.ok(Object.isFrozen(connectionProviderPrivacyStatus));

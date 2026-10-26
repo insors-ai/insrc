@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 86 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -476,3 +476,25 @@ Run at 2026-10-26T08:27:38.643Z on commit `11d7d4a0e`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/task-persistence.test.ts` | 0 | 1 | 2.2 s |  |
+
+## t24
+
+Run at 2026-10-26T08:40:22.115Z on commit `303dbae66`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards | `src/daemon/steps/__tests__/provider-admission.test.ts` |
+
+**live: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused | `src/daemon/steps/__tests__/provider-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/provider-admission.test.ts` | 0 | 2 | 0.7 s |  |

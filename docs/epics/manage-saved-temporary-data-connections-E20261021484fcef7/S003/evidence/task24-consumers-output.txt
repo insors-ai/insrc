@@ -105,4 +105,4 @@ ok 49 - CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unava
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 961.976959
+# duration_ms 787.753375

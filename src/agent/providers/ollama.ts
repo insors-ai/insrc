@@ -1,4 +1,5 @@
-import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { assertConnectionProviderAdmission, assertConnectionProviderTransport, recordLocalConnectionProvider } from '../../shared/connection-provider.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -161,6 +162,48 @@ function shouldDisableThinking(
 export const _shouldDisableThinkingForTest = shouldDisableThinking;
 export const _modelQuirksForTest = modelQuirks;
 
+/** Per-client quiet boundary before the SDK's diagnostic-producing decoder.
+ * Validated lines alone reach its parser. Cancellation/error waits for reader
+ * cancellation; no console patch, source-bearing error or persistent buffer.
+ */
+async function quietOllamaResponse(response: Response, assertActive: () => void): Promise<Response> {
+	assertActive();
+	if (!response.ok || !response.body) { try { await response.body?.cancel(); } catch { } throw new ConnectionExecutionError('unsupported-temporary'); }
+	const reader = response.body.getReader(), decoder = new TextDecoder(), encoder = new TextEncoder(); let pending = '', terminal: string | undefined;
+	const cancel = async () => { try { await reader.cancel(); } catch { } };
+	return new Response(new ReadableStream<Uint8Array>({
+		async pull(controller) {
+			try {
+				for (;;) {
+					assertActive(); const result = await reader.read(); assertActive();
+					pending += decoder.decode(result.value, { stream: !result.done });
+					if (pending.length > 8 * 1024 * 1024) throw new ConnectionExecutionError('resource-limit');
+					const parts = pending.split('\n'); pending = result.done ? '' : parts.pop() ?? '';
+					const lines: string[] = [];
+					for (const line of parts.filter(line => line.trim())) {
+						if (terminal !== undefined) throw new ConnectionExecutionError('unsupported-temporary');
+						const frame: unknown = JSON.parse(line);
+						if (typeof frame === 'object' && frame !== null && ('done' in frame && frame.done === true || 'status' in frame && frame.status === 'success')) terminal = line;
+						else lines.push(line);
+					}
+					// SDK terminal frames can finish its iterator before the HTTP body
+					// drains. Hold that frame until the actual reader reaches EOF.
+					if (result.done && terminal !== undefined) lines.push(terminal);
+					if (lines.length) controller.enqueue(encoder.encode(lines.join('\n') + '\n'));
+					if (result.done) { reader.releaseLock(); controller.close(); return; }
+					if (lines.length) return;
+				}
+			} catch { await cancel(); controller.error(new ConnectionExecutionError('unsupported-temporary')); }
+		},
+		async cancel() { await cancel(); },
+	}), { status: response.status, headers: { 'content-type': response.headers.get('content-type') ?? 'application/x-ndjson' } });
+}
+
+const nativePrivacyIdentities = new WeakMap<LLMProvider, ReturnType<typeof recordLocalConnectionProvider>>();
+/** Read-only exact native-constructor brand; copied descriptors and injected objects have no identity. */
+export function nativeConnectionProviderIdentity(candidate: LLMProvider): ReturnType<typeof recordLocalConnectionProvider> | undefined {
+	return Object.getPrototypeOf(candidate) === OllamaProvider.prototype ? nativePrivacyIdentities.get(candidate) : undefined;
+}
 export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
   // plans/structured-output.md Phase B.5. Ollama's native structured
@@ -196,14 +239,19 @@ export class OllamaProvider implements LLMProvider {
    *  bursts instead of the ~5-min default eviction (S001). From config. */
   private readonly embeddingKeepAlive: string;
   private readonly quirks: ModelQuirks;
+	private readonly connectionMemoryOnly: boolean;
 
   constructor(
     model?: string,
     host?: string,
     numCtx?: number,
 		execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
+		memoryProfile?: 'memory-only',
   ) {
 		assertConnectionProviderAdmission(execution);
+		this.connectionMemoryOnly = memoryProfile === 'memory-only';
+		if (this.connectionMemoryOnly && ['DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG'].some(key => process.env[key] && !['0', 'false'].includes(process.env[key]!.toLowerCase()))) throw new ConnectionExecutionError('unsupported-temporary');
+		if (this.connectionMemoryOnly) Object.freeze(this.capabilities);
     const d = localDefaults();
     this.model = model ?? d.coreModel;
     host = host ?? d.host;
@@ -216,7 +264,8 @@ export class OllamaProvider implements LLMProvider {
     // (resolveEmbeddingKeepAlive), so d.embeddingKeepAlive is a usable non-empty value.
     this.embeddingKeepAlive = d.embeddingKeepAlive;
     this.quirks = modelQuirks(this.model);
-    log.info({ model: this.model, family: this.quirks.family, noThinkOnTools: this.quirks.noThinkOnTools, formatWithTools: this.quirks.formatWithTools }, 'ollama provider configured');
+		if (this.connectionMemoryOnly) Object.freeze(this.quirks);
+		if (!this.connectionMemoryOnly) log.info({ model: this.model, family: this.quirks.family, noThinkOnTools: this.quirks.noThinkOnTools, formatWithTools: this.quirks.formatWithTools }, 'ollama provider configured');
     // Override undici's default headers timeout (300s) which is too short for
     // CPU-bound large-context inference that can take 5-10 minutes.
     const agent = new Agent({
@@ -225,16 +274,33 @@ export class OllamaProvider implements LLMProvider {
       connectTimeout: 30_000,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const longTimeoutFetch = ((input: any, init?: any) =>
-      undiciFetch(input, { ...init, dispatcher: agent })) as unknown as typeof globalThis.fetch;
+		const guardedFetch = async (input: any, init?: any, signal?: AbortSignal) => {
+			if (this.connectionMemoryOnly) assertConnectionProviderTransport(this);
+			const response = await undiciFetch(input, { ...init, dispatcher: agent, ...(signal ? { signal } : {}) });
+			if (!this.connectionMemoryOnly) return response;
+			return quietOllamaResponse(response as unknown as Response, () => assertConnectionProviderTransport(this));
+		};
+		const longTimeoutFetch = guardedFetch as unknown as typeof globalThis.fetch;
     this.client = new Ollama({ host, fetch: longTimeoutFetch });
     // A cancellable call gets its own client over the SAME agent, whose fetch
     // carries the call's signal, so aborting ends that request (and its stream).
     this.signalledClient = (signal: AbortSignal) => new Ollama({
       host,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fetch: ((input: any, init?: any) => undiciFetch(input, { ...init, dispatcher: agent, signal })) as unknown as typeof globalThis.fetch,
+			fetch: ((input: any, init?: any) => guardedFetch(input, init, signal)) as unknown as typeof globalThis.fetch,
     });
+		const client = this.client, signalled = this.signalledClient, selectedModel = this.model, capabilities = this.capabilities, contextSize = this.numCtx, quirks = this.quirks;
+		const own = (key: string) => Object.getOwnPropertyDescriptor(this, key)?.value;
+		const prototype = Object.getPrototypeOf(this);
+		const methods = ['complete', 'completeStructured', 'stream', 'embed'] as const;
+		const nativeMethods = methods.map(key => Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)?.value);
+		nativePrivacyIdentities.set(this, recordLocalConnectionProvider(this, {
+			modelId: this.model, host, source: new URL(import.meta.url).pathname, memoryOnly: this.connectionMemoryOnly,
+			assertUnchanged: () => {
+				if (Object.getPrototypeOf(this) !== prototype || own('client') !== client || own('signalledClient') !== signalled || own('model') !== selectedModel || own('connectionMemoryOnly') !== true || own('numCtx') !== contextSize || own('quirks') !== quirks || !Object.isFrozen(quirks) || own('capabilities') !== capabilities || !Object.isFrozen(capabilities) || own('supportsTools') !== true || methods.some((key, index) => Object.getOwnPropertyDescriptor(this, key) !== undefined || Object.getOwnPropertyDescriptor(prototype, key)?.value !== nativeMethods[index])) throw new ConnectionExecutionError('unsupported-temporary');
+			}
+		}));
+
   }
 
   /** The client for one call: the shared one, or, when the call can be cancelled,
@@ -300,7 +366,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
-		assertConnectionProviderAdmission(opts?.connectionExecution);
+		assertConnectionProviderAdmission(opts?.connectionExecution, this);
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
@@ -326,7 +392,7 @@ export class OllamaProvider implements LLMProvider {
       }
     }
 
-    log.debug({
+		if (!this.connectionMemoryOnly) log.debug({
       model: this.model,
       numCtx: this.numCtx,
       maxTokens: opts.maxTokens ?? 8_192,
@@ -353,24 +419,25 @@ export class OllamaProvider implements LLMProvider {
     // failures; retrying is wasted latency and a noisier failure mode).
     let lastErr: unknown;
     for (let attempt = 0; attempt < MAX_TRANSIENT_RETRIES + 1; attempt++) {
-			assertConnectionProviderAdmission(opts.connectionExecution);
+			assertConnectionProviderAdmission(opts.connectionExecution, this);
       try {
         // Always use streaming internally to avoid headers-timeout on slow
         // CPU inference. The non-streaming Ollama API waits for the entire
         // response before sending HTTP headers, which can exceed the timeout
         // for large-context calls on CPU-only machines.
 				const result = await this.completeStreaming(ollamaMessages, tools, opts);
-				assertConnectionProviderAdmission(opts.connectionExecution);
+				assertConnectionProviderAdmission(opts.connectionExecution, this);
 				return result;
       } catch (err) {
-				assertConnectionProviderAdmission(opts.connectionExecution);
+				assertConnectionProviderAdmission(opts.connectionExecution, this);
+				if (opts.connectionExecution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
         // A cancelled call is AbortError whatever the fetch rejected with (an abort
         // with a custom reason rejects with that reason). Never retried.
         if (opts.signal?.aborted === true) throw abortError();
         lastErr = err;
         if (attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-          log.warn({
+					if (!this.connectionMemoryOnly) log.warn({
             model:    this.model,
             attempt:  attempt + 1,
             delayMs,
@@ -427,7 +494,7 @@ export class OllamaProvider implements LLMProvider {
     // to 24h so the model + KV cache survive between calls and prefix
     // reuse kicks in. `cacheSystem === false` reverts to the default
     // (5m) for one-off calls.
-    const keepAlive = opts.cacheSystem === false ? undefined : '24h';
+		const keepAlive = this.connectionMemoryOnly ? 0 : opts.cacheSystem === false ? undefined : '24h';
     // tool_choice: best-effort across Ollama model families. Some
     // models (qwen3-coder, devstral) honor it; others ignore. The
     // executeStep per-task driver (Phase 8) treats this as a HINT
@@ -437,7 +504,7 @@ export class OllamaProvider implements LLMProvider {
     // maps to OpenAI-shape; whether the local model actually honors
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
-		assertConnectionProviderAdmission(opts.connectionExecution);
+		assertConnectionProviderAdmission(opts.connectionExecution, this);
     const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: ollamaMessages,
@@ -469,7 +536,7 @@ export class OllamaProvider implements LLMProvider {
     let promptEvalCount: number | undefined;
     let evalCount: number | undefined;
     for await (const chunk of response) {
-			assertConnectionProviderAdmission(opts?.connectionExecution);
+			assertConnectionProviderAdmission(opts?.connectionExecution, this);
       if (chunk.message.content) {
         text += chunk.message.content;
         opts.onToken?.(chunk.message.content);
@@ -486,7 +553,7 @@ export class OllamaProvider implements LLMProvider {
 
     const toolCalls = parseToolCalls(allToolCalls.length > 0 ? allToolCalls : undefined);
 
-    log.debug({
+		if (!this.connectionMemoryOnly) log.debug({
       model: this.model,
       textLen: text.length,
       text,
@@ -540,7 +607,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
-		assertConnectionProviderAdmission(opts.connectionExecution);
+		assertConnectionProviderAdmission(opts.connectionExecution, this);
     const ollamaMessages = toOllamaMessages(messages);
 
     try {
@@ -556,7 +623,7 @@ export class OllamaProvider implements LLMProvider {
       });
 
       for await (const chunk of response) {
-				assertConnectionProviderAdmission(opts?.connectionExecution);
+				assertConnectionProviderAdmission(opts?.connectionExecution, this);
         if (chunk.message.content) {
           yield chunk.message.content;
         }
@@ -585,7 +652,7 @@ export class OllamaProvider implements LLMProvider {
     schema:   StructuredSchema,
     opts?:    StructuredCompletionOpts,
   ): Promise<T> {
-		assertConnectionProviderAdmission(opts?.connectionExecution);
+		assertConnectionProviderAdmission(opts?.connectionExecution, this);
     const apiMessages = toOllamaMessages(messages);
     // plans/structured-output.md Phase C.5. Honour the caller's
     // `disableThinking: true` (Ollama specifically -- cloud providers
@@ -596,7 +663,7 @@ export class OllamaProvider implements LLMProvider {
 
     return withStructuredRetry<T>(
       async (extraSystemNote) => {
-				assertConnectionProviderAdmission(opts?.connectionExecution);
+				assertConnectionProviderAdmission(opts?.connectionExecution, this);
         const msgs = extraSystemNote !== undefined
           ? [...apiMessages, { role: 'user' as const, content: extraSystemNote }]
           : apiMessages;
@@ -612,7 +679,7 @@ export class OllamaProvider implements LLMProvider {
             messages: msgs,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             format:   schema as any,
-            keep_alive: '24h',
+						keep_alive: this.connectionMemoryOnly ? 0 : '24h',
             stream:   true,
             options: {
               num_ctx: this.numCtx,
@@ -625,7 +692,7 @@ export class OllamaProvider implements LLMProvider {
           let text = '';
           let doneReason: string | undefined;
           for await (const chunk of response) {
-						assertConnectionProviderAdmission(opts?.connectionExecution);
+						assertConnectionProviderAdmission(opts?.connectionExecution, this);
             const delta = chunk.message?.content ?? '';
             if (delta.length > 0) {
               text += delta;
@@ -665,6 +732,8 @@ export class OllamaProvider implements LLMProvider {
             throw new Error(`ollama.completeStructured: response was not valid JSON: ${(err as Error).message}. Got: ${stripped.slice(0, 200)}`);
           }
         } catch (err) {
+					assertConnectionProviderAdmission(opts?.connectionExecution, this);
+					if (opts?.connectionExecution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
           // A cancelled call is AbortError whatever the fetch rejected with.
           if (opts?.signal?.aborted === true) throw abortError();
           if (err instanceof Error && err.message.startsWith('ollama.completeStructured:')) {
@@ -689,7 +758,7 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
-		assertConnectionProviderAdmission(opts.connectionExecution);
+		assertConnectionProviderAdmission(opts.connectionExecution, this);
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();
     const handle = setTimeout(() => timer.abort(), opts.deadlineMs);

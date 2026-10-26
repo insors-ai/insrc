@@ -23,6 +23,7 @@ import { getApprovalGate } from '../approval.js';
 import { buildApprovalRequest, resolveApprovalClass, shouldAsk } from './approval-policy.js';
 import { runToolHooks } from './hooks.js';
 import { getTool } from './registry.js';
+import { effectiveToolSignal, runWithToolSignal, runWithoutToolSignal } from './tool-signal.js';
 import type { ApprovalDenial, ApprovalGate, CommonApprovalMode, Tool, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
 
 const log = getLogger('tools-executor');
@@ -65,7 +66,8 @@ export function _setCommonApprovalForTests(f: (() => CommonApprovalMode) | undef
  * per failure in its text. With no rule, or none failing, the very object the tool returned is returned.
  */
 async function withHooks(tool: Tool, input: ToolInput, deps: ToolDeps, result: ToolResult): Promise<ToolResult> {
-	const failures = await runToolHooks(tool, input, result, deps);
+	// Hooks never see a tool call's signal, not even the one of an outer call this call is nested in.
+	const failures = await runWithoutToolSignal(() => runToolHooks(tool, input, result, deps));
 	if (failures.length === 0) return result;
 	const lines = failures.map(f => `[hook failed] ${f.hookId}: ${f.message}`).join('\n');
 	return { ...result, output: result.output === '' ? lines : `${result.output}\n${lines}`, hookFailures: failures };
@@ -110,23 +112,31 @@ export async function executeTool(
 		}
 	}
 
+	// One signal for the whole call: the caller's own combined with the one of an outer tool call this
+	// call runs inside. It stops the preview, the approval wait and every subprocess of the tool.
+	const signal = effectiveToolSignal(deps.signal);
+	const aborted = (): boolean => signal?.aborted === true;
+	const cancelledResult = (): ToolResult => failed('denied', DENIAL_TEXT.cancelled(tool.id), undefined, 'cancelled');
+	if (aborted()) return cancelledResult();
+
 	// Approval. Nothing but the class, the call's mode and the setting decides whether to ask; a
 	// destructive call asks whatever the caller, the mode, the setting or the arguments say.
 	const cls = resolveApprovalClass(tool, input);
 	if (cls !== 'none' && shouldAsk(cls, deps, cls === 'common' ? commonSetting() : 'auto')) {
 		let request: Awaited<ReturnType<typeof buildApprovalRequest>>;
 		try {
-			request = await buildApprovalRequest({ tool, cls, input, deps });
+			request = await runWithToolSignal(signal, () => buildApprovalRequest({ tool, cls, input, deps }));
 		} catch (err) {
 			// A call that cannot be described to the user must not run; this is a failed result, never a throw.
 			const message = `cannot describe ${tool.id} for approval (${err instanceof Error ? err.message : String(err)}); it was not run`;
 			log.error({ id: tool.id, err: err instanceof Error ? err.message : String(err) }, 'approval request could not be built; tool not run');
 			return failed('rejected', message);
 		}
+		if (aborted()) return cancelledResult();
 		log.info({ id: tool.id, approvalClass: cls, requestId: request.requestId, caller: deps.caller }, 'asking for approval');
 		let outcome: Awaited<ReturnType<ApprovalGate['ask']>>;
 		try {
-			outcome = await gate().ask(request, deps.signal);
+			outcome = await gate().ask(request, signal);
 		} catch (err) {
 			log.error({ id: tool.id, err: err instanceof Error ? err.message : String(err) }, 'approval gate failed; denying');
 			outcome = 'no-client';
@@ -142,8 +152,9 @@ export async function executeTool(
 		}
 	}
 
+	if (aborted()) return cancelledResult();
 	try {
-		const result = await tool.execute(input, deps);
+		const result = await runWithToolSignal(signal, () => tool.execute(input, deps));
 		assertAnalysisConnectionExecution(deps.connectionExecution);
 		if (!result.success) return result;
 		if (outputSchema === undefined) return await withHooks(tool, input, deps, result);

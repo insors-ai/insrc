@@ -1,0 +1,180 @@
+TAP version 13
+# (node:7203) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "postgres"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cockroachdb"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mysql"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mariadb"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "sqlite"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mssql"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "oracle"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "clickhouse"
+#     family: "rdbms"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "redis"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "valkey"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "keydb"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mongodb"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cassandra"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "nats"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "dynamodb"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "etcd"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "memcached"
+#     family: "kv"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "csv"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "tsv"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "jsonl"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "ndjson"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "json"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "parquet"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "arrow"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "feather"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "avro"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "bson"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "fixed-width"
+#     family: "file"
+# [18:13:34] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "xlsx"
+#     family: "file"
+# [18:13:35] INFO: [ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rTJuHZ/fixture.sock
+#     module: "ipc"
+# [18:13:35] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rTJuHZ"
+#     count: 2
+# [18:13:36] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rTJuHZ/nested"
+#     count: 1
+# [18:13:36] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rTJuHZ/nested"
+#     count: 1
+# Subtest: CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+ok 1 - CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+  ---
+  duration_ms: 1528.123625
+  type: 'test'
+  ...
+# [18:13:36] INFO: [ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-P2HbZu/disconnect.sock
+#     module: "ipc"
+# Subtest: CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+ok 2 - CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+  ---
+  duration_ms: 6.841125
+  type: 'test'
+  ...
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+ok 3 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  ---
+  duration_ms: 3477.137375
+  type: 'test'
+  ...
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 4 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+  ---
+  duration_ms: 3.138375
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 5 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  ---
+  duration_ms: 10407.175667
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 6 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+  ---
+  duration_ms: 389.81225
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11443.145959

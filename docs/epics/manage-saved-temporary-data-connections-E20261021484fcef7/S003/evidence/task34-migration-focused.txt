@@ -1,0 +1,209 @@
+TAP version 13
+# Subtest: extractDdlOps: CREATE TABLE -> create_table with table name
+ok 1 - extractDdlOps: CREATE TABLE -> create_table with table name
+  ---
+  duration_ms: 2.098458
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: DROP TABLE IF EXISTS -> drop_table
+ok 2 - extractDdlOps: DROP TABLE IF EXISTS -> drop_table
+  ---
+  duration_ms: 0.502875
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: ALTER TABLE ADD COLUMN -> add_column with type + nullable + default
+ok 3 - extractDdlOps: ALTER TABLE ADD COLUMN -> add_column with type + nullable + default
+  ---
+  duration_ms: 0.897583
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: ALTER TABLE DROP COLUMN
+ok 4 - extractDdlOps: ALTER TABLE DROP COLUMN
+  ---
+  duration_ms: 0.628625
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: ALTER TABLE RENAME TO -> rename_table
+ok 5 - extractDdlOps: ALTER TABLE RENAME TO -> rename_table
+  ---
+  duration_ms: 0.526833
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: CREATE UNIQUE INDEX -> add_index
+ok 6 - extractDdlOps: CREATE UNIQUE INDEX -> add_index
+  ---
+  duration_ms: 0.451166
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: unrecognised statement -> execute_raw
+ok 7 - extractDdlOps: unrecognised statement -> execute_raw
+  ---
+  duration_ms: 0.303
+  type: 'test'
+  ...
+# Subtest: extractDdlOps: multiple statements in one file split correctly
+ok 8 - extractDdlOps: multiple statements in one file split correctly
+  ---
+  duration_ms: 0.52425
+  type: 'test'
+  ...
+# Subtest: extractRubyOps: create_table block + inline t.string fields
+ok 9 - extractRubyOps: create_table block + inline t.string fields
+  ---
+  duration_ms: 1.375416
+  type: 'test'
+  ...
+# Subtest: extractRubyOps: add_column / remove_column standalone
+ok 10 - extractRubyOps: add_column / remove_column standalone
+  ---
+  duration_ms: 0.516959
+  type: 'test'
+  ...
+# Subtest: extractRubyOps: rename_column / rename_table / add_index / remove_index
+ok 11 - extractRubyOps: rename_column / rename_table / add_index / remove_index
+  ---
+  duration_ms: 0.46675
+  type: 'test'
+  ...
+# Subtest: extractRubyOps: comment lines are stripped before parsing
+ok 12 - extractRubyOps: comment lines are stripped before parsing
+  ---
+  duration_ms: 0.308042
+  type: 'test'
+  ...
+# Subtest: execute: missing repoPath returns 400
+ok 13 - execute: missing repoPath returns 400
+  ---
+  duration_ms: 0.354417
+  type: 'test'
+  ...
+# Subtest: execute: unknown tool returns 400 with supported list
+ok 14 - execute: unknown tool returns 400 with supported list
+  ---
+  duration_ms: 0.306
+  type: 'test'
+  ...
+# Subtest: execute: empty repo (no migration dirs) -> { detected: false, migrations: [] }
+ok 15 - execute: empty repo (no migration dirs) -> { detected: false, migrations: [] }
+  ---
+  duration_ms: 6.623916
+  type: 'test'
+  ...
+# Subtest: execute: prisma-migrate picks up migration.sql files in lex order
+ok 16 - execute: prisma-migrate picks up migration.sql files in lex order
+  ---
+  duration_ms: 2.580584
+  type: 'test'
+  ...
+# Subtest: execute: rails mode reads .rb files
+ok 17 - execute: rails mode reads .rb files
+  ---
+  duration_ms: 1.380958
+  type: 'test'
+  ...
+# Subtest: execute: auto mode picks the first detected tool (registry order)
+ok 18 - execute: auto mode picks the first detected tool (registry order)
+  ---
+  duration_ms: 1.199917
+  type: 'test'
+  ...
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [code-migration-walk] code_migration_walk: no migrations detected
+#     module: "code-migration-walk"
+#     tool: "auto"
+#     repoPath: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-mig-walk-MJrjBI/repo"
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [code-migration-walk] code_migration_walk
+#     module: "code-migration-walk"
+#     tool: "prisma-migrate"
+#     repoPath: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-mig-walk-sxa7Hz/repo"
+#     count: 2
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [code-migration-walk] code_migration_walk
+#     module: "code-migration-walk"
+#     tool: "rails"
+#     repoPath: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-mig-walk-PR9PK5/repo"
+#     count: 1
+# [18:15:35] INFO: [tools-registry] tool registered
+#     module: "tools-registry"
+#     id: "code_migration_walk"
+#     aliases: []
+# [18:15:35] INFO: [code-migration-walk] code_migration_walk
+#     module: "code-migration-walk"
+#     tool: "prisma-migrate"
+#     repoPath: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-mig-walk-ciHR3Q/repo"
+#     count: 0
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 227.742875

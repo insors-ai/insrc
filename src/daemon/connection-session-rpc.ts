@@ -2,7 +2,7 @@
 import { sessionConnectionExecution } from '../shared/step-context.js';
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
-import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest } from '../shared/connection-management-wire.js';
+import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest, parseTestCancellation } from '../shared/connection-management-wire.js';
 import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
 import { bindSessionConnectionResolver, savedConnectionResolver } from './db/pool-cache.js';
 import type { ConnectionAccessContext, MutationOutcome, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
@@ -134,6 +134,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		if (selectedRoot === undefined) {
 			if (request.method === 'step.call') { /* Root authority comes only from the attached transport. */ }
 			else if (request.method === 'db.connections.v2.capabilities' && request.params !== undefined && request.params !== null && Object.keys(request.params as object).length) root = parseSessionOpen(request.params).repoRoot;
+			else if (request.method === 'db.connections.v2.cancelTest') parseTestCancellation(request.params);
 			else parseSessionEmpty(request.params);
 		}
 		if (claim.kind === 'data') {

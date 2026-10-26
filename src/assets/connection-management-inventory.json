@@ -5960,7 +5960,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "e897f1a56799f7a35a1dad378eaa0b53a977dc69704825c58bd9846c086f515e",
+      "sourceDigest": "63f64ba4f9d83c2107c2e2e0d1c9d0f03e8f00fd5ca6df8abc55d2479cd3e067",
       "boundaries": [
         "serialization"
       ]
@@ -5992,7 +5992,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "0e66cf3107d616fa2a0943aff99280795cc32632d1e279b3e882932b02df5d28",
-      "sourceDigest": "d2acdede4c4e74127ee4700ef23e8068be11da683860fe442aa2c499ba79447a",
+      "sourceDigest": "5126d059f8a03dacfff282f42f0cb580a5309ca1ada04b725b4a3a2296333478",
       "boundaries": [
         "serialization"
       ]
@@ -7979,7 +7979,7 @@
       ],
       "siteCount": 32,
       "sitesDigest": "3d2f54a05a26bb954efa58d5d52c4de690502dd361552da4fc262f6f3cb34b15",
-      "sourceDigest": "1a798accf4499af66b22ac8608149b7506883fd52c15b62b653d9339c78d3282",
+      "sourceDigest": "798693d787c6a713946de6ee4817decee4fc48f178e299a6673bc60df1a193d0",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -36460,7 +36460,7 @@
     "src/cli/services/models.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "72e48f2eece467b74a02886c8f81be41ef8d332ddf45eb246f2c78b1b1b45796",
+      "sourceDigest": "7b61fa8c088cc3b1123a9bb0716fb18dca0c3340a0f09f388c6d3731e29ea4b1",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38850,9 +38850,9 @@
     "cli/panes/DebugPane.tsx": "d5b104db25062a6d1235ab6cb186e2c80ddd46c3e8cae5a8e5bad147c9d9476a",
     "cli/panes/LogsSection.tsx": "82dcee0b6e44d972f190eae53e1d5fb8fd26cf813e6f2d7f8b9c16d688f8ae94",
     "cli/panes/MCPSection.tsx": "1e9fd0f22c6f298835e0e584589f18fdc1a355be1b077639d0a8235c0804dc9c",
-    "cli/panes/ModelCheckScreen.tsx": "e897f1a56799f7a35a1dad378eaa0b53a977dc69704825c58bd9846c086f515e",
+    "cli/panes/ModelCheckScreen.tsx": "63f64ba4f9d83c2107c2e2e0d1c9d0f03e8f00fd5ca6df8abc55d2479cd3e067",
     "cli/panes/ModelTiersPane.tsx": "88f1513a96fc13d374505953de4f3dec88b63943d1c1e65856d4668c72f637a4",
-    "cli/panes/RepoModelsView.tsx": "d2acdede4c4e74127ee4700ef23e8068be11da683860fe442aa2c499ba79447a",
+    "cli/panes/RepoModelsView.tsx": "5126d059f8a03dacfff282f42f0cb580a5309ca1ada04b725b4a3a2296333478",
     "cli/panes/ReposPane.tsx": "2ed2cafd8805b3aaa6ac97f17c03d03c5f0dce95b8da38f3e7f50ba67f7b71ef",
     "cli/panes/SetupPane.tsx": "0cd72115f39ecc852ebc16f60acde4d2f1efc8fe25ddea207fb4dfc1c32176c2",
     "cli/panes/WorkflowsPane.tsx": "552f26f886719ac317057d59c4fce411ccfe1859afc2da4876827f6dddd5f0df",
@@ -38866,7 +38866,7 @@
     "cli/services/index.ts": "abbe48bd2453b784f47f8bf09b0022571ee6c3f1ee327eeaf44f0fa39307e470",
     "cli/services/lifecycle.ts": "62bd8251042fe962317286f2a0f11a37c07da881768b7614521d53836b75b191",
     "cli/services/maintenance.ts": "92de625ecbf332855eb15779ed3eb51e575ab4d75ed1f449c9bd7d3e68f70e00",
-    "cli/services/models.ts": "72e48f2eece467b74a02886c8f81be41ef8d332ddf45eb246f2c78b1b1b45796",
+    "cli/services/models.ts": "7b61fa8c088cc3b1123a9bb0716fb18dca0c3340a0f09f388c6d3731e29ea4b1",
     "cli/services/repo.ts": "d11312f2b69feb14c89bb66aeff6c697033a443b3d6265814f5d135715319415",
     "cli/services/setup.ts": "8ed5dd468ba5d51ad0c4b9b3174e46f5f7037676fff1776220742b2130ecae6d",
     "cli/services/team.ts": "f489124649e1997d41f2402c843033e10dfff9b87e19767e93bcdb8f906f2919",
@@ -38905,7 +38905,7 @@
     "daemon/code-review-rpc.ts": "b399d07cbab2e1e40d0193455d51bd95a436a0e9a0577b7b8bd4f44e6e7babd0",
     "daemon/config-write.ts": "987c61104e13449702cb45304a8367eb3beddf137bf7ea4ecd49ea312d3dd8ce",
     "daemon/connection-management-rpc.ts": "25bc62b2ceab6822bad57fb918147ce894a36b38e41d823e0a8ea6d59c400430",
-    "daemon/connection-session-rpc.ts": "1a798accf4499af66b22ac8608149b7506883fd52c15b62b653d9339c78d3282",
+    "daemon/connection-session-rpc.ts": "798693d787c6a713946de6ee4817decee4fc48f178e299a6673bc60df1a193d0",
     "daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "daemon/db/connection-reservations.ts": "d3ef8865918d2ef1237fcc3c1fa0fa2d976a6055c08a243aa82b51aa73993d62",
     "daemon/db/converter-cache.ts": "3605a7c48065f40dafc22ebf138bad1b17cbba6c4f63716ef970f827a163774d",

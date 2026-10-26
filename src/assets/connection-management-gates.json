@@ -3,8 +3,8 @@
   "ready": false,
   "sourceFiles": {},
   "compiledFiles": {},
-  "inventoryDigest": "c2f5655c9ce1f493d5b4b46124c580a7b25b077acd21db943513f9d5af914650",
-  "testReportDigest": "d4c3a21e7e0dbf6967a030f819a1118d858d7b9f7a3529cbae8e96190ded483a",
+  "inventoryDigest": "6af2307588c87637ee378b79d83f635bc11591a579405b7816439057ddbcbd55",
+  "testReportDigest": "ecab180942263997c9a763e5e14620d6e6b0fc2762f23b28c7398df4843f5dd8",
   "scopes": [],
   "inventoryFile": "connection-management-inventory.json",
   "testReportFile": "connection-management-evidence.json"

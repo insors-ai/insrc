@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "firstSweep": "task34-first-sweep.json",
+  "followupSweep": "task34-followup-sweep.json",
+  "fullSweepResult": "fail",
+  "releaseReady": false,
+  "finalBuild": "pass",
+  "focusedFollowups": [
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-build.txt",
+      "sha256": "e868e9f58f371df0475248e6655dd3b669ac124b2073031437ddf0bd16ef0f3c",
+      "counts": {
+        "tests": null,
+        "pass": null,
+        "fail": null,
+        "cancelled": null,
+        "skipped": null,
+        "todo": null
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-cancel-final-focused.txt",
+      "sha256": "b5d49a3b433c5cae7566c12ce95ce53f04d5d15d51efff55e7bfc047d2ab58d2",
+      "counts": {
+        "tests": 8,
+        "pass": 6,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-audit-focused.txt",
+      "sha256": "b3b7fb157e139fcd961f0b058a5ae1f4f04539448e792f5928ff816c24f5986c",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-migration-focused.txt",
+      "sha256": "fdd8edd44d0755087e3af2d021b561bb8ffb638ae722879e2dfeeefd7ac8ae30",
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  ],
+  "sourceChangesAfterFollowupSnapshot": [
+    "cli/panes/ModelCheckScreen.tsx",
+    "cli/panes/RepoModelsView.tsx",
+    "cli/services/models.ts",
+    "daemon/connection-session-rpc.ts"
+  ],
+  "fullSweepOnFinalSource": "pending; no claim that focused follow-ups constitute a full passing sweep",
+  "resolvedSinceSnapshot": [
+    "Build-command literal assertion corrected and passing focused",
+    "Session cancellation fixtures now open real owners and use exact revisions; production dispatch now parses cancelTest requestId; cancellation, malformed payload and cross-owner controls pass focused",
+    "migration-walk: all 18 pass alone without force-exit; broad-suite cancellation remains recorded, cause unverified"
+  ],
+  "remainingIssues": [
+    "Previously recorded live-store directory search failure",
+    "Previously recorded worker-stores timeout",
+    "migration-walk broad-suite cancellation not reproduced in focused run"
+  ],
+  "externalPrerequisites": [
+    "S001 deferred review",
+    "S002 SQL Server Linux x64 actual-service coverage",
+    "Prior S002 full-sweep issues",
+    "Current-generation provider service proof/enrollment",
+    "S004 removal/lifecycle story",
+    "Both S005 IDE client acceptance"
+  ],
+  "concurrentSourceCommit": "1784db2f1",
+  "currentBaseCommit": "8ec0398dd319b6318776b84026cf4246db3d0014",
+  "daemonRestarted": false,
+  "releaseEnabled": false
+}

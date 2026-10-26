@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed scope addresses s4/ac1–ac5 and its local constraints without implementing the adjacent client stories.",
-          "evidence": "Compared DEF §6.4 and HLD §§5.4/6.4 with the proposed requests, decision guards, persistence and restart flow. Each criterion has a corresponding design path. Codex efforts come from its model list, Claude efforts remain recognised-unconfirmed, and all probes use installed CLI binaries. UI implementation remains assigned to s5–s7. The concrete parser and test defects are reported below. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Retain this scope while correcting the findings below.",
+          "premise": "The design covers S004 ac1–ac5 and its CLI-only, effort-evidence and user-approval constraints.",
+          "evidence": "Checked DEF §6.4 and HLD sc4/Story S004. The proposed procedures cover sequential checks, per-effort evidence, approval restricted to successful runs and permitted efforts, rejection, atomic decisions, and post-restart definitions. Client screens remain assigned to s5–s7. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,9 +48,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing registry, definitions projection and settings rules can consume approved and rejected profiles after restart without being redesigned.",
-          "evidence": "Read readStore, buildModelRegistry, getModelRegistry, projectDefinitions, applyConfigWrite and resolveRoleWire. The registry caches per thread, selects the latest decidedAt with later-entry tie breaking, preserves shipped-definition precedence, and drops unsupported efforts. The definitions projection exposes user-approved models and effective rejected ids; config.write refuses newly selected rejected models. [files: src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts, src/config/analyze.ts, src/daemon/threads/__tests__/worker-model-registry.test.ts]",
-          "action": "Preserve the existing cache semantics, including the HLD caveat that a newly started or first-reading thread may observe disk changes before a full restart.",
+          "premise": "The existing registry and consumers already support approved/rejected profiles, per-thread caching, and unsupported-effort fallback.",
+          "evidence": "Read getModelRegistry, readStore, buildModelRegistry, projectDefinitions, applyConfigWrite and tier resolution. The registry caches its first load, selects the latest decidedAt with later-entry tie breaking, serves approved profiles, and records rejected IDs. Definitions project these results; config.write refuses changed tiers naming effectively rejected models; resolution drops unsupported efforts and logs a warning. [files: src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts, src/config/analyze.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,9 +60,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed subprocess and profile-validation reuse points have the required shapes.",
-          "evidence": "Read the complete runInProcessGroup implementation and profileProblem body. The exported runner accepts command, args and options containing stdin, cwd and timeoutMs; it returns stdout, stderr, exitCode, timedOut and optional spawnError, and kills the process group on timeout and exit. profileProblem already validates the proposed ApprovedProfile fields and is currently private. CliProvider's private wrapper obscures spawnError, supporting the stated choice of the lower-level runner. [files: src/shared/process-group.ts, src/daemon/model-registry.ts, src/agent/providers/cli-provider.ts]",
-          "action": "Reuse the runner and export profileProblem without changing its validation behavior.",
+          "premise": "The check/decision capability is new, while the proposed subprocess and profile-validation reuse exists with the stated shape.",
+          "evidence": "Source searches found no existing models.check/approve/reject handlers or production approved-model writer. Read the complete runInProcessGroup implementation: it accepts stdin, cwd and timeoutMs and returns spawnError/timedOut. profileProblem is currently private and validates the stated ApprovedProfile fields. CliProvider's runSubprocess is private and delegates to the shared runner. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, src/daemon/model-registry.ts, src/daemon/handler-runtime.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -72,9 +72,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Registering the three unary handlers, classifying them as session methods and extending RECORDED_RPC covers the existing daemon dispatch inventories.",
-          "evidence": "Read buildHandlerRuntime registration, Router dispatch, daemon routing setup and both inventory tests. Only admin and indexing classes are routed to workers; session methods execute on the main thread. The method-class test compares all constructed handler keys with the table, while handler-runtime.test.ts separately pins RECORDED_RPC. A module-level queue and pending table therefore share the serving thread. [files: src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/threads/router.ts, src/daemon/index.ts, src/daemon/__tests__/handler-runtime.test.ts, src/daemon/threads/__tests__/method-class.test.ts]",
-          "action": "Add all three names to both inventories and retain coverage of the constructed handler tables.",
+          "premise": "The proposed handler registrations and session classifications provide one daemon-local owner for the queue and pending checks.",
+          "evidence": "Read Router.dispatch and daemon routing setup: only indexing and admin classes are routed to workers; session requests execute locally on the main thread. buildHandlerRuntime constructs the RPC table, RECORDED_RPC pins its names, and method-class tests compare the complete served inventories. The three proposed additions cover these registration surfaces. [files: src/daemon/index.ts, src/daemon/threads/router.ts, src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/__tests__/handler-runtime.test.ts, src/daemon/threads/__tests__/method-class.test.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -83,12 +83,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Claude's context window can be read using modelUsage indexed by the requested model name.",
-          "evidence": "The LLD specifies \"modelUsage[<model>].contextWindow\". Its own cited probe 11 invokes \"--model haiku\" but reports \"modelUsage[\\\"claude-haiku-5-5\\\"]\". CliProvider likewise treats usage keys as response model identities, logging Object.keys(envelope.modelUsage ?? {})[0]. A requested alias and the returned key can differ, so the designed lookup omits an available context window and fails the proposed live assertion that haiku reports inputLimit. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md, src/agent/providers/cli-provider.ts]",
-          "action": "Define how the requested name maps to the response's canonical usage entry, including ambiguous multiple-entry output. Add a fixture where the requested alias differs from the returned usage key and verify that its context window is retained.",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders consistently with the design.",
+          "evidence": "Inspected the companion's Mermaid source, participant descriptions and message table. They describe the check, pending result, decision, atomic rename and subsequent registry read consistently. Browser rendering could not be inspected: opening Chrome reported it unavailable, and browser inventory returned no browsers. Layout, clipping and successful Mermaid rendering remain unverified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html]",
+          "action": "Have the author render the existing companion and verify its readability and consistency.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "data-compatibility.1",
@@ -96,9 +96,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The append-only version-1 writer is compatible with the existing reader and sufficiently documents the changed ownership and relationships.",
-          "evidence": "Checked ApprovedProfile, profileProblem, readStore and buildModelRegistry against §§3/8. The proposed fields satisfy the existing reader; invalid older entries can remain while the reader skips them. The writer's stricter version === 1 guard does not require a reader change. The prose identifies the daemon as writer, per-thread registries as readers, up to 32 pending checks, consumption after one successful decision, and multiple profiles per family/model with latest-decision precedence. These relationships are adequately specified without an additional ERD. [files: src/daemon/model-registry.ts, src/shared/paths.ts, src/daemon/__tests__/model-registry.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Retain the root/version refusal and entry preservation rules; keep read-back tests through both registry construction paths.",
+          "premise": "Appending validated version-1 profiles preserves compatibility with the existing store reader and registry.",
+          "evidence": "Read ApprovedProfile, profileProblem, readStore and buildModelRegistry. The proposed entries satisfy the reader's shape; invalid historical entries are already skipped independently. Latest-decision selection supports appended replacements, and shipped models shadow approved profiles. Requiring version 1 in the writer is stricter than the reader's numeric-version check and prevents overwriting newer formats. [files: src/daemon/model-registry.ts, src/shared/paths.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
+          "action": "None. The prose adequately documents family/model identity, multiple historical decisions, effective-profile selection and ownership; an additional ERD is unnecessary.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -108,23 +108,11 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed implementation respects HLD ownership of sc1, sc2, sc3 and sc5.",
-          "evidence": "Compared HLD contract ownership with the actual registry, projection and settings implementations. s4 adds the sc4 handlers and store writer, uses existing registry queries, and only exports an existing validator. It does not replace the definitions loader, alter tier resolution, change models.definitions, or implement client screens. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts]",
-          "action": "Keep fixes within s4 and avoid changing shared cache behavior to accommodate the integration-test sequencing defect.",
+          "premise": "S004 implements sc4 without redesigning the registry, definition projection, settings rules or client interfaces owned by adjacent stories.",
+          "evidence": "Compared HLD §§5–6 with the actual registry, definitions and config-write implementations. The LLD consumes their existing contracts and confines production changes to the new check/decision module, RPC registration/classification, and exporting the existing profile validator unchanged. UI adoption remains outside this story. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.2",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The linked sequence companion renders consistently with the proposed interactions.",
-          "evidence": "Read the generated HTML's Mermaid source, participant/message descriptions and rendering bootstrap. They describe the client-to-check-to-CLI flow, decision write followed by acknowledgement, and registry read after restart consistently with the main flow. Attempting to open the artifact returned \"Browser is not available: iab\"; browser inventory was empty. Rendered layout, clipping and successful Mermaid execution could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html]",
-          "action": "Have the author render and inspect the existing generated companion; regenerate it if rendering fails or content is inconsistent.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.1",
@@ -132,9 +120,21 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The principal subprocess, approval and persistence failures have detectable conditions and explicit handling.",
-          "evidence": "Checked the runner's actual spawn, timeout, exit and result behavior against §6, and compared the positive completion predicates with the existing Claude-envelope and Codex-event parsing code. The design distinguishes spawn/timeout, explicit refusal and incomplete or unreadable output; prevents approval when runs is false; retains checks after failed writes; and specifies cleanup without replacing the prior store before rename. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, src/workflow/storage.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
-          "action": "Retain these failure distinctions and exercise them with the proposed fake CLI and injected filesystem failures.",
+          "premise": "Subprocess failures and incomplete runs have detectable outcomes that prevent approval without demonstrated completion.",
+          "evidence": "The shared runner distinguishes spawn errors, timeouts and exit codes, kills the process group, and closes stdin. Existing provider types/parsers expose Claude is_error/result and Codex error/turn.failed events. The LLD adds explicit positive completion conditions and separates refusal from unreadable output, with runs:false blocking approval. [files: src/shared/process-group.ts, src/agent/providers/cli-provider.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Effort discovery uses evidence the installed CLIs actually expose rather than inferring support from successful execution.",
+          "evidence": "Read the recorded probes and checked the installed CLIs without running inference. codex debug models returned a models array containing slug and supported_reasoning_levels entries with effort names. Claude 2.1.310 --help listed low/medium/high/xhigh/max. The recorded probes establish that successful effort runs do not prove model-specific support; the proposed accepted versus recognised-unconfirmed distinction follows that evidence. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "Use the actual nested Codex reasoning-level objects in fake-CLI fixtures.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +144,9 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every upstream s4 acceptance criterion has named planned tests using applicable repository test seams.",
-          "evidence": "Compared DEF s4/ac1–ac5 with the acceptance mapping and inspected the fake-subprocess tests, real-daemon helper and registry override seams. The plan names tests for serial CLI checks, evidence, unchanged files, approval subsets, rejection, restart visibility and failed persistence. The helper supports temporary HOME and inherits environment variables for fake PATH and catalog overrides. This verifies the planned mapping, not execution of the unimplemented tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/agent/providers/__tests__/cli-subprocess.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts, src/daemon/model-registry.ts]",
-          "action": "Keep the mapping and add the alias-key regression described above.",
+          "premise": "Each S004 acceptance criterion maps to concrete unit or daemon integration tests using existing repository test seams.",
+          "evidence": "Compared DEF ac1–ac5 with the acceptance mapping. Every criterion has named checks, including serialization, evidence, approval guards, persistence and post-restart behavior. Read the fake-subprocess tests, daemon helpers and registry test seams: the proposed fake binaries, isolated HOME, socket RPC and restart approach are supported. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/agent/providers/__tests__/cli-subprocess.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts, src/daemon/model-registry.ts]",
+          "action": "None; these are planned tests, not verified passing implementations.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,21 +156,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "After approval and a restart, the integration test can save a new tier and immediately observe that tier through models.resolveRole.",
-          "evidence": "The planned success test orders \"after ... restart\" before \"config.write ... succeeds and models.resolveRole resolves it\". However, daemon startup calls loadAnalyzeConfig(), whose implementation uses \"cached ??= readAnalyzeConfig(getModelRegistry())\". config.write persists the candidate and calls reloadChatConfig(), but that function is a no-op returning 0. models.resolveRole reads the cached configuration. A tier saved after startup therefore needs another restart before role resolution reflects it. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/daemon/index.ts, src/config/analyze.ts, src/daemon/handler-runtime.ts, src/daemon/chat-handler.ts, src/daemon/model-definitions.ts]",
-          "action": "Save the tier before the restart that proves resolution, or explicitly perform a second restart after config.write. Apply the same ordering to approved and unapproved effort assertions; preserve the existing restart-required contract.",
+          "premise": "The proposed live-test fixture remains valid after removing Haiku and gpt-6-luna and their aliases.",
+          "evidence": "The LLD specifies a shipped-file copy with those models removed. The shipped catalog still has Claude cheap.model='haiku' and summariserModel='haiku', and Codex cheap.model='gpt-6-luna' and summariserModel='gpt-6-luna'. validateFamily explicitly fails when a tier default or summariser 'is not a model or alias' of its family. The fixture therefore fails validation before models.check reaches either CLI. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/assets/models/cloud-model-catalog.json, src/daemon/model-catalog.ts]",
+          "action": "Retarget both families' cheap-tier defaults and summariserModel to retained models in the isolated fixture. Assert catalog validation succeeds and registry.find cannot resolve either live-tested model or alias before running the checks.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         }
       ],
       "counts": {
-        "high": 1,
+        "high": 0,
         "med": 1,
-        "low": 9,
+        "low": 10,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-26T07:29:30.667Z",
+      "reviewedAt": "2026-10-26T07:42:44.618Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -740,7 +740,7 @@
           "fixturesNeeded": [
             "mcp-e2e startDaemon / childEnv with PATH prefixed by the fake-CLI dir",
             "The shipped definitions (or a copy via INSRC_MODEL_CATALOG_DIR)",
-            "For the success paths: a definitions copy (INSRC_MODEL_CATALOG_DIR) that does not list the model id the fake CLIs answer for"
+            "For the success paths: a definitions copy (INSRC_MODEL_CATALOG_DIR) that does not list the model id the fake CLIs answer for (a new id, so no shipped default needs retargeting), validated before the daemon starts"
           ]
         },
         {
@@ -755,10 +755,10 @@
           "level": "live",
           "purpose": "Confirm the parsers against the real installed CLIs (gated by INSRC_LIVE_TESTS=1, skipped otherwise).",
           "subjects": [
-            "src/daemon/__tests__/model-check.live.test.ts: uses an isolated definitions fixture (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) copied from the shipped file with the chosen real models and their aliases removed (claude-haiku-5-5 / haiku from cli-claude, gpt-6-luna from cli-codex), so the registry does not serve them and models.check reaches the CLI: an unknown codex model id gives runs:false 'refused the model'; gpt-6-luna runs and its verdicts match `codex debug models`; an unknown claude id gives 'refused the model'; haiku runs and reports an inputLimit"
+            "src/daemon/__tests__/model-check.live.test.ts: uses an isolated definitions fixture (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) copied from the shipped file with the chosen real models and their aliases removed (claude-haiku-5-5 / haiku from cli-claude, gpt-6-luna from cli-codex) and every default that named them retargeted to a retained model of the same family (cli-claude tierDefaults.cheap and summariserModel → 'sonnet'; cli-codex tierDefaults.cheap and summariserModel → 'gpt-5.6-luna'). Before any check the test asserts that validateModelCatalog accepts the fixture and that registry.find returns undefined for claude-haiku-5-5, haiku and gpt-6-luna. Then: an unknown codex model id gives runs:false 'refused the model'; gpt-6-luna runs and its verdicts match `codex debug models`; an unknown claude id gives 'refused the model'; haiku runs and reports an inputLimit"
           ],
           "fixturesNeeded": [
-            "Isolated definitions dir: the shipped file minus the live-tested models and aliases"
+            "Isolated definitions dir: the shipped file minus the live-tested models and aliases, with the cheap-tier defaults and summariser models that named them retargeted to retained models ('sonnet' for cli-claude, 'gpt-5.6-luna' for cli-codex); validated before use"
           ]
         }
       ],

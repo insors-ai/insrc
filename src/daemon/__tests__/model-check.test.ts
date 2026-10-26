@@ -311,6 +311,10 @@ test('model-check.test.ts: Claude check — recognised-unconfirmed / rejected, n
 		assert.equal(r2.inputLimit, undefined, JSON.stringify(modelUsage));
 	}
 
+	// The real help wraps the value list onto the description's next line.
+	fake({ help: 'Options:\n  --effort <level>                      Effort level for the current session\n                                        (low, medium, high, xhigh, max)\n  --environment <id>   Create a session (in the cloud)\n' });
+	assert.deepEqual((await claude('claude-new-1', ['xhigh', 'ultra'])).efforts.map(e => e.verdict), ['recognised-unconfirmed', 'rejected']);
+
 	// A notice line before the envelope does not hide it.
 	fake({ run: { 'claude-new-1': { exit: 0, stdout: `[claude-code:notice] something\n${envelope()}\n` } } });
 	assert.equal((await claude('claude-new-1', [])).runs, true);
@@ -352,7 +356,8 @@ test("model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuse
 });
 
 test('model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected', async () => {
-	for (const cfg of [{ help: 'Usage: claude [options]\n  --model <model>\n' }, { help: HELP, helpExit: 1 }, { help: '' }]) {
+	const listOfNextOption = 'Options:\n  --effort <level>   Effort level\n  --mode <m>         Mode (fast, slow)\n';
+	for (const cfg of [{ help: 'Usage: claude [options]\n  --model <model>\n' }, { help: HELP, helpExit: 1 }, { help: '' }, { help: listOfNextOption }]) {
 		fake(cfg);
 		const r = await claude('claude-new-1', ['high', 'max']);
 		assert.equal(r.runs, true, JSON.stringify(cfg));

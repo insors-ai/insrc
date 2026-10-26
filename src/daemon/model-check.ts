@@ -220,11 +220,14 @@ async function checkCodex(ctx: Context, claimed: readonly EffortLevel[]): Promis
 
 // ── the Claude procedure ────────────────────────────────────────────────────
 
-/** The --effort values `claude --help` lists, or undefined when they cannot be read. */
+/** The --effort values `claude --help` lists, or undefined when they cannot be read.
+ *  The parenthesised list may wrap onto the description's next line, but not
+ *  past the start of the next option. */
 function claudeEffortNames(r: ProcessGroupResult): string[] | undefined {
 	if (r.exitCode !== 0) return undefined;
-	const m = /--effort\b[^\n]*?\(([^)\n]*)\)/.exec(r.stdout);
-	const names = m?.[1]?.split(',').map(x => x.trim()).filter(x => x.length > 0) ?? [];
+	const m = /--effort\b([^(]*)\(([^)]*)\)/.exec(r.stdout);
+	if (m === null || /\n\s*-/.test(m[1] ?? '')) return undefined;
+	const names = (m[2] ?? '').split(',').map(x => x.trim()).filter(x => x.length > 0);
 	return names.length > 0 ? names : undefined;
 }
 

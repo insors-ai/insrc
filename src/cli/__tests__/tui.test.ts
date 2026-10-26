@@ -86,7 +86,7 @@ function fakeServices(): Services {
 			pullModels:   async () => [],
 		},
 		models: {
-			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude', families: [] }),
+			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:1', models: [{ id: 'fake-local:1', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 9000 }] }] }),
 			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
 			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
 			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),

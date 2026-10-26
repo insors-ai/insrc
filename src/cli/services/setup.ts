@@ -17,16 +17,35 @@ import { getSystemInfo, type SystemInfo } from '../../shared/system-info.js';
 import {
 	recommendModels,
 	toConfig,
+	type LocalModelChoice,
 	type ModelRecommendation,
 } from '../../shared/model-recommender.js';
+import type { ModelDefinitionsResult } from './models.js';
 import { PATHS } from '../../shared/paths.js';
 
 export function detect(): SystemInfo {
 	return getSystemInfo();
 }
 
-export function recommend(info: SystemInfo): ModelRecommendation {
-	return recommendModels(info);
+export function recommend(info: SystemInfo, local: LocalModelChoice): ModelRecommendation {
+	return recommendModels(info, local);
+}
+
+/** The message shown when Setup cannot ask the daemon which local model to recommend. */
+export const CANNOT_RECOMMEND = 'cannot recommend a local model: the daemon is not running';
+
+/** The local model to recommend from the daemon's definitions: the tool-loop
+ *  model of the family that has one (Ollama), with its installed state and
+ *  memory estimate; undefined when no family names one. */
+export function localModelFrom(defs: ModelDefinitionsResult): LocalModelChoice | undefined {
+	const family = defs.families.find(f => f.toolLoopModel !== undefined);
+	const model = family?.models.find(m => m.id === family.toolLoopModel);
+	if (family?.toolLoopModel === undefined) return undefined;
+	return {
+		model: family.toolLoopModel,
+		...(model?.installed !== undefined ? { installed: model.installed } : {}),
+		...(model?.memoryMb !== undefined ? { memoryMb: model.memoryMb } : {}),
+	};
 }
 
 /** Merge the recommendation into the existing config (existing values

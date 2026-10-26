@@ -65,7 +65,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			pullModels: async () => [],
 		},
 		models: {
-			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude', families: [] }),
+			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:1', models: [{ id: 'fake-local:1', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 9000 }] }] }),
 			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
 			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
 			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
@@ -355,4 +355,38 @@ test('a thrown error from either team command renders as a cross-prefixed line',
 	} });
 	assert.deepEqual(await runCommand('team init', ctx), ['✗ .insrc/policy.json already exists; it was left untouched']);
 	assert.deepEqual(await runCommand('team refresh', ctx), ['✗ a refresh is already running for this repository']);
+});
+
+test("command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down", async () => {
+	const seen: Array<{ model: string; installed?: boolean | undefined; memoryMb?: number | undefined }> = [];
+	const applied: unknown[] = [];
+	const pulled: string[][] = [];
+	const setupWith = (definitions: Services['models']['definitions']) => ctxWith({
+		models: { ...ctxWith().ctx.services.models, definitions },
+		setup: {
+			detect: () => ({}) as never,
+			recommend: (_info, local) => { seen.push(local); return { tier: 'standard', coder: { model: local.model, pull: true }, embedding: { model: 'e', pull: false }, context: { shape: '32k' } } as never; },
+			apply: rec => { applied.push(rec); return '/tmp/config.json'; },
+			modelsToPull: rec => [(rec as { coder: { model: string } }).coder.model],
+			pullModels: async models => { pulled.push([...models]); return models.map(model => ({ model, ok: true })); },
+		},
+	});
+	const answer = async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [
+		{ id: 'cli-claude' as const, cliKind: 'claude' as const, displayName: 'C', models: [] },
+		{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:2', models: [{ id: 'fake-local:2', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 5000 }] },
+	] });
+	const up = setupWith(answer);
+	assert.deepEqual(await runCommand('setup show', up.ctx), ['tier standard · local fake-local:2 · embedding e · context 32k']);
+	assert.deepEqual(seen[0], { model: 'fake-local:2', installed: false, memoryMb: 5000 });
+	assert.deepEqual(await runCommand('setup apply', up.ctx), ['config written to /tmp/config.json']);
+	assert.deepEqual(await runCommand('setup pull', up.ctx), ['models pulled']);
+	assert.deepEqual(pulled, [['fake-local:2']]);
+
+	// The daemon is down: every sub-command stops before recommending, applying or pulling.
+	const down = setupWith(async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); });
+	applied.length = 0; pulled.length = 0; seen.length = 0;
+	for (const sub of ['show', 'apply', 'pull']) {
+		assert.deepEqual(await runCommand(`setup ${sub}`, down.ctx), ['cannot recommend a local model: the daemon is not running'], sub);
+	}
+	assert.deepEqual([seen.length, applied.length, pulled.length], [0, 0, 0]);
 });

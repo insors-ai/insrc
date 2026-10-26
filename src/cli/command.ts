@@ -18,6 +18,8 @@ import { formatMcpOutcome } from './services/repo.js';
 import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
+import type { LocalModelChoice } from '../shared/model-recommender.js';
+import { CANNOT_RECOMMEND, localModelFrom } from './services/setup.js';
 
 export interface CommandCtx {
 	readonly services: Services;
@@ -344,8 +346,13 @@ function renderTrackerStep(step: TrackerSetupStep): string[] {
 }
 
 async function runSetup(sub: string | undefined, svc: Services, ctx: CommandCtx): Promise<string[]> {
+	if (sub !== undefined && sub !== 'show' && sub !== 'apply' && sub !== 'pull') return ['usage: setup show|apply|pull'];
+	// The local model to recommend is the one the daemon's definitions name.
+	let local: LocalModelChoice | undefined;
+	try { local = localModelFrom(await svc.models.definitions()); } catch { local = undefined; }
+	if (local === undefined) return [CANNOT_RECOMMEND];
 	const info = svc.setup.detect();
-	const rec = svc.setup.recommend(info);
+	const rec = svc.setup.recommend(info, local);
 	switch (sub) {
 		case undefined: case 'show':
 			return [`tier ${rec.tier} · local ${rec.coder.model} · embedding ${rec.embedding.model} · context ${rec.context.shape}`];

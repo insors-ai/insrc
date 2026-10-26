@@ -1204,7 +1204,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { getSystemInfo } = await import('../shared/system-info.js');
 			const { recommendModels, toConfig } = await import('../shared/model-recommender.js');
 			const info = getSystemInfo();
-			const recommendation = recommendModels(info);
+			// The local model is the definitions' tool-loop model (Epic ce99b72065d03b1b, s5).
+			const local = getModelRegistry().toolLoopModel();
+			const recommendation = recommendModels(info, { model: local.id, ...(local.memoryMb !== undefined ? { memoryMb: local.memoryMb } : {}) });
 			const config = toConfig(recommendation);
 			return { system: info, recommendation, config };
 		},

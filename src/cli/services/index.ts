@@ -73,7 +73,7 @@ export interface Services {
 	};
 	readonly setup: {
 		detect(): SystemInfo;
-		recommend(info: SystemInfo): ModelRecommendation;
+		recommend(info: SystemInfo, local: import('../../shared/model-recommender.js').LocalModelChoice): ModelRecommendation;
 		apply(rec: ModelRecommendation): string;
 		modelsToPull(rec: ModelRecommendation): string[];
 		pullModels(models: readonly string[], onProgress: (tick: PullTick) => void): Promise<PullResult[]>;

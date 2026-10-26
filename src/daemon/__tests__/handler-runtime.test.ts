@@ -75,7 +75,7 @@ const ADDED_RPC = [
 	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.park', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.syncComments',
 ];
-const ADDED_STREAM = ['approval.subscribe'];
+const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
 
 /** A dependency that fails the test if building the tables touches it. */
 function untouchable(name: string): never {

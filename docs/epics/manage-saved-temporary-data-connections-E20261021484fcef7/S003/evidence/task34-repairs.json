@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "releaseReady": false,
+  "firstSweep": "task34-first-sweep.json",
+  "focusedChecks": [
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-repaired-focused.txt",
+      "sha256": "97b99277e2343d1d673e9e5eb719c151ad6f2bf07f823c88c8f4f1bc0cf126de",
+      "counts": {
+        "tests": 43,
+        "pass": 43,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-native.txt",
+      "sha256": "eab1d677da19d5d58bf7eea59206904eef3ce9236717dff89b73529425049ee5",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-focused4.txt",
+      "sha256": "16a803b0f0cf3002dad8d986226e1c6e666c272f803a9dd1c828f4b01aad37ee",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-repair-build.txt",
+      "sha256": "6a9690302a8aad9a80dc103feb9cce849e92945f48c0f956a2663f04c17dbbaf",
+      "counts": {
+        "tests": null,
+        "pass": null,
+        "fail": null,
+        "cancelled": null,
+        "skipped": null,
+        "todo": null
+      }
+    }
+  ],
+  "repairs": [
+    "Restore Saved graph wrapper method replacement transparency while retaining Session access/call guards",
+    "Restore unattached Temporary edit probe upgrade-required refusal while retaining draft probe compatibility",
+    "Require explicit private pipeline execution and mint genuine Saved test authority",
+    "Align runtime catch/scope and root-bound typed refusal fixtures",
+    "Use constructed Redis listing fixture with lazy ready client",
+    "Use supported UI step route for actual Temporary data control; legacy UI one-shot remains refused",
+    "Restrict inlineSources to production build to preserve isolated sourceMap:false compilation"
+  ],
+  "retainedPending": [
+    "worker-stores full-suite timeout",
+    "file-tool directory search live-store exclusion failure",
+    "SQL Server Linux x64 live coverage",
+    "current-generation provider privacy enrollment",
+    "S001 review, prior S002 sweep, S004 and both S005 clients"
+  ],
+  "next": "Follow-up full sweep after these committed repairs; no claim of full-suite pass."
+}

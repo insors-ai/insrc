@@ -106,14 +106,16 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 });
 
 test('CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance', async () => {
-	const reportUrl = new URL('docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task33-release-evidence.json', root);
+	const reportUrl = new URL('docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-release-evidence.json', root);
 	const bytes = await readFile(reportUrl), report = JSON.parse(bytes.toString());
 	assert.equal(report.releaseReady, false);
 	for (const prerequisite of ['S001', 'S002SqlServer', 'S002Sweep', 'providerService', 'S004', 'S005']) assert.equal(report.externalPrerequisites[prerequisite].status, 'pending', prerequisite);
 	for (const client of ['vscode', 'jetbrains']) { assert.equal(report.externalPrerequisites.S005.clients[client].status, 'pending'); assert.deepEqual(report.externalPrerequisites.S005.clients[client].evidence, []); }
 	assert.deepEqual(report.externalPrerequisites.S005.requiredPreAddCopy, { retain: ['panel-close', 'root-switch'], expire: ['workbench-end', 'lease-loss', 'daemon-restart'] });
 	for (const label of ['INVENTORY', 'AUTH', 'RECONNECT', 'STREAM', 'MEMORY', 'REPLAY', 'COLLISION', 'NAMESPACE', 'LEASE', 'ISOLATION', 'DRIVER-LOGS', 'FILES', 'COMPAT', 'MCP', 'CLIENT-EGRESS', 'CONTEXT', 'SCOPE', 'FREEFORM', 'CACHE', 'RECURSION', 'PROVIDER', 'CONSUMER-LOGS', 'EMBED-DENY', 'ADHERENCE-CACHE', 'EXPIRY', 'GATE']) assert.ok(report.proofs['CM-S3-' + label].records.length > 0, label);
-	assert.equal(report.proofs['CM-S3-SWEEP'].status, 'pending-t34');
+	assert.equal(report.proofs['CM-S3-SWEEP'].status, 'failed-first-sweep-follow-up-pending');
+	const historical = JSON.parse(await readFile(new URL('docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task33-release-evidence.json', root), 'utf8'));
+	assert.equal(historical.proofs['CM-S3-SWEEP'].status, 'pending-t34');
 	for (const tree of ['src', 'out']) {
 		const gate = JSON.parse(await readFile(new URL(tree + '/assets/connection-management-gates.json', root), 'utf8'));
 		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, digest(await readFile(new URL(report.inventory.deployedPath, root))));

@@ -84,6 +84,7 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
 		if(method==='db.connections.v2.test'){
 			const request=parseDraftTestRequest(value), runtime=testPorts.sessionRuntime??connectionSessionRuntime;
+			if (request.key.scope === 'temporary' && request.expectedRevision !== undefined && !context.connectionSession) throw new ManagementServiceError('upgrade-required');
 			const probeContext=context.connectionSession ? await (runtime.probeContext?.(context,request)??Promise.reject(new ManagementServiceError('upgrade-required'))) : context;
 			return await connectionTestSupervisor.run(request,probeContext,async signal=>{
 				if(!await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())throw new ManagementServiceError('upgrade-required');

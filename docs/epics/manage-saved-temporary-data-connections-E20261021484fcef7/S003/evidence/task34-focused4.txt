@@ -1,0 +1,228 @@
+TAP version 13
+# [17:56:54] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 128
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-2WUjcx/graph.lmdb"
+# Subtest: the count of catch clauses in the runtime files equals the number of classified entries
+ok 1 - the count of catch clauses in the runtime files equals the number of classified entries
+  ---
+  duration_ms: 150.831916
+  type: 'test'
+  ...
+# [17:56:55] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 111
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/graph.lmdb"
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: ".github/workflows/broken.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: [unclosed\\n 2 | \\n-----^"
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "charts/web/values.yaml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | replicas: {[ not yaml\\n 2 | \\n-----^"
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "docker-compose.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | services: {[ not yaml\\n 2 | \\n-----^"
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "k8s/broken.yaml"
+#     err: "unexpected end of the stream within a flow collection (4:1)\\n\\n 1 | apiVersion: v1\\n 2 | kind: Service\\n 3 | metadata: {[ not yaml\\n 4 | \\n-----^"
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-kubernetes] infra.inventory.kubernetes: enumerated
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     yamlScanned: 6
+#     resourceCount: 1
+#     fileCount: 1
+#     truncated: false
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-ci] inventory.ci: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-ci"
+#     file: ".github/workflows/broken.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: [unclosed\\n 2 | \\n-----^"
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-ci] infra.inventory.ci: enumerated
+#     module: "analyze:runtimes:infra:inventory-ci"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     githubWorkflows: 1
+#     gitlabCi: 0
+#     truncated: false
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-docker] inventory.docker: compose parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     file: "docker-compose.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | services: {[ not yaml\\n 2 | \\n-----^"
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-docker] infra.inventory.docker: enumerated
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     dockerfiles: 1
+#     composeFiles: 0
+#     truncated: false
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-helm] inventory.helm: Chart.yaml parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-helm"
+#     file: "charts/bad/Chart.yaml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: {[ not yaml\\n 2 | \\n-----^"
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-helm] infra.inventory.helm: enumerated
+#     module: "analyze:runtimes:infra:inventory-helm"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     chartCount: 1
+#     truncated: false
+# [17:56:55] DEBUG: [analyze:runtimes:infra:inventory-terraform] inventory.terraform: HCL parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-terraform"
+#     file: "infra/broken.tf"
+#     err: "parse config: [infra/broken.tf:2,12-3,1: Invalid expression; Expected the start of an expression, but found an invalid expression token.]"
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-terraform] infra.inventory.terraform: enumerated
+#     module: "analyze:runtimes:infra:inventory-terraform"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     tfFiles: 2
+#     resourceCount: 0
+#     providerCount: 0
+#     moduleCount: 0
+#     variableCount: 1
+#     dataCount: 0
+#     outputCount: 0
+#     truncated: false
+# [17:56:55] INFO: [analyze:runtimes:infra:discovery-families] infra.discovery.families: classified
+#     module: "analyze:runtimes:infra:discovery-families"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     fileCount: 11
+#     familyCount: 6
+#     families: [
+#       "docker-compose",
+#       "dockerfile",
+#       "github-actions",
+#       "helm",
+#       "kubernetes",
+#       "terraform"
+#     ]
+# [17:56:55] INFO: [analyze:runtimes:infra:discovery-families] infra.discovery.families: classified
+#     module: "analyze:runtimes:infra:discovery-families"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/repo"
+#     fileCount: 12
+#     familyCount: 6
+#     families: [
+#       "docker-compose",
+#       "dockerfile",
+#       "github-actions",
+#       "helm",
+#       "kubernetes",
+#       "terraform"
+#     ]
+# Subtest: an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)
+ok 2 - an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)
+  ---
+  duration_ms: 140.770166
+  type: 'test'
+  ...
+# [17:56:55] INFO: [analyze:runtimes:infra:inventory-docker] infra.inventory.docker: enumerated
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-BafzHT/clean"
+#     dockerfiles: 1
+#     composeFiles: 0
+#     truncated: false
+# [17:56:55] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 112
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-JwcpIq/graph.lmdb"
+# Subtest: an adherence check whose model call fails is recorded by the walk as a failed task
+ok 3 - an adherence check whose model call fails is recorded by the walk as a failed task
+  ---
+  duration_ms: 125.170375
+  type: 'test'
+  ...
+# [17:56:55] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-JwcpIq/repo"
+#     repo: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-JwcpIq/repo"
+#     entityCount: 1
+# [17:56:55] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: no code excerpts hydrated
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "r1"
+#     taskId: "t01"
+#     subject: "settleRefund"
+# [17:56:55] INFO: [daemon:model-catalog] model definitions validated
+#     module: "daemon:model-catalog"
+#     dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+#     version: 1
+#     models: {
+#       "cli-claude": 4,
+#       "cli-codex": 7,
+#       "ollama": 1
+#     }
+# [17:56:55] WARN: [config:analyze] models.tiers.cheap: model 'qwen3.8:27b' is not listed (unlisted-model); using the tier default claude-haiku-5-5
+#     module: "config:analyze"
+#     tier: "cheap"
+#     requested: "qwen3.8:27b"
+#     reason: "unlisted-model"
+#     model: "claude-haiku-5-5"
+# [17:56:55] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: LLM call failed
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "r1"
+#     taskId: "t01"
+#     err: "model unavailable"
+# [17:56:55] DEBUG: [analyze:executor:registry] template runtime registered
+#     module: "analyze:executor:registry"
+#     templateId: "code.adherence.check"
+# [17:56:55] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-JwcpIq/repo"
+#     repo: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-JwcpIq/repo"
+#     entityCount: 1
+# [17:56:55] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: no code excerpts hydrated
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "dropped-or-failed-2c4aa128"
+#     taskId: "t01"
+#     subject: "settleRefund"
+# [17:56:55] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: LLM call failed
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "dropped-or-failed-2c4aa128"
+#     taskId: "t01"
+#     err: "model unavailable"
+# [17:56:55] WARN: [analyze:executor:walker] leaf task runtime threw
+#     module: "analyze:executor:walker"
+#     runId: "dropped-or-failed-2c4aa128"
+#     taskId: "t01"
+#     err: "code.adherence.check: the model call that judges adherence failed: model unavailable. 1 constraint(s) and 0 excerpt(s) were gathered and not judged."
+# [17:56:55] DEBUG: [analyze:executor:cache] wrote task output
+#     module: "analyze:executor:cache"
+#     runId: "dropped-or-failed-2c4aa128"
+#     taskId: "t01"
+#     status: "failed"
+#     produces: [
+#       "adherence-report"
+#     ]
+# Subtest: CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+ok 4 - CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+  ---
+  duration_ms: 1355.213292
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1479.78575

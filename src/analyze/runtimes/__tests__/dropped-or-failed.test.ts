@@ -83,7 +83,8 @@ const CLAUSES: Record<string, readonly { after: string; cls: ClauseClass }[]> = 
 		{ after: 'HCL parse failed', cls: 'expected: a terraform file cannot be parsed; it is named under skipped' },
 	],
 	'shared/adherence.ts': [
-		{ after: 'the model call that judges adherence failed', cls: 'rethrow' },
+		{ after: "connectionExecutionErrorCode(error) ?? 'unsupported-temporary'", cls: 'rethrow' },
+		{ after: 'The model that judges adherence could not be called', cls: 'rethrow' },
 		// ISSUE-0f17539c: the check enumerates its constraints on a topic; a failed enumeration fails the check with its own reason.
 		{ after: 'could not be enumerated from the documents of', cls: 'rethrow' },
 	],
@@ -130,7 +131,8 @@ test('the count of catch clauses in the runtime files equals the number of class
 	// Story s7 added one, a rethrow, in a twelfth file (shared/task-scope.ts).
 	// ISSUE-0f17539c added five: one rethrow in shared/adherence.ts, and four expected ones in a
 	// thirteenth file (shared/adherence-topic-constraints.ts).
-	assert.equal(Object.values(classified).reduce((a, b) => a + b, 0), 21);
+	// S003 adds one typed Session-policy rethrow at the adherence entry.
+	assert.equal(Object.values(classified).reduce((a, b) => a + b, 0), 22);
 	assert.equal(Object.keys(classified).length, 13);
 
 	// Each row is tied to the clause it classifies, in order.

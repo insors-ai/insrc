@@ -1706,7 +1706,7 @@
       ],
       "siteCount": 45,
       "sitesDigest": "806014a2a2beb938ab3ff4811911001bc75886d3ea6bc54c8c06bb864c85ae5e",
-      "sourceDigest": "aab0eed5140f499618868c27a7a2f5e72d710369156ca3ecba3821648d822707",
+      "sourceDigest": "f25b83e07955dc09fab1b3f742937dc55eba8767d768afde9167baadc730ed23",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -5960,7 +5960,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "d9bfd48e629e81bc73ee527c8bf29775a8a35b2fe145e11fb93df9a970da895a",
+      "sourceDigest": "e897f1a56799f7a35a1dad378eaa0b53a977dc69704825c58bd9846c086f515e",
       "boundaries": [
         "serialization"
       ]
@@ -5976,7 +5976,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "88067e898f65401d84cf7d0f524d34839744e7da17cac62699953d2ceff1af4e",
-      "sourceDigest": "dc73eba4b076a99c593627558ed4a2bcd7c6577fcdd8d886b674f702979f9368",
+      "sourceDigest": "88f1513a96fc13d374505953de4f3dec88b63943d1c1e65856d4668c72f637a4",
       "boundaries": [
         "serialization"
       ]
@@ -5992,7 +5992,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "0e66cf3107d616fa2a0943aff99280795cc32632d1e279b3e882932b02df5d28",
-      "sourceDigest": "c60b445f7c8bc8a48fe5743aa7997f961b924efcf1f546aa6de0fc9e5b623777",
+      "sourceDigest": "d2acdede4c4e74127ee4700ef23e8068be11da683860fe442aa2c499ba79447a",
       "boundaries": [
         "serialization"
       ]
@@ -7835,7 +7835,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "be4740a75208e5715bbe5b6c484fd6b383d46548f4f9f036fbb6e40ab885094e",
+      "sourceDigest": "25bc62b2ceab6822bad57fb918147ce894a36b38e41d823e0a8ea6d59c400430",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
@@ -24620,7 +24620,7 @@
       ],
       "siteCount": 242,
       "sitesDigest": "11c89522d5868993372615132c9bce57a80c0267b0835bd8bc40574e9cf73cc6",
-      "sourceDigest": "41c2a9c67486be0cbe7f4aaea4bc1e1b6f15baf3a9dba3b8f660294afb3d550c",
+      "sourceDigest": "029dff3bc1d1460e935f6c408a915536d8874332ce839e2ba78b4400e1a12fcf",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -38716,7 +38716,7 @@
     "analyze/context/bundle.ts": "814827114c72febd7841ac5b7b772b20c50c19c7bcf2dd98bca4f9dcf861a800",
     "analyze/context/cache.ts": "c92f93b08f741d1ff978c2d72dd7d9b7252c008c93f5d001bbf9d3c07c344b65",
     "analyze/context/decomposer.ts": "743aaf51f3346e3fb2bd1515eaadd7d1139c4048acb6707ff83f3e73f0fa732f",
-    "analyze/context/driver.ts": "aab0eed5140f499618868c27a7a2f5e72d710369156ca3ecba3821648d822707",
+    "analyze/context/driver.ts": "f25b83e07955dc09fab1b3f742937dc55eba8767d768afde9167baadc730ed23",
     "analyze/context/index.ts": "a6e7adb0f8a451998ed5f98b99d7f4339ae27a337de810ab02127d54156026d0",
     "analyze/context/invariants.ts": "357c9a0cefd342076d6fe6491a0d82e2647034390a1d788b4e4f1e571c9bcf77",
     "analyze/context/live-project-context.ts": "3bb8a6a20171a10a05526a72764163266536b07da5ed19db3d6bd0c336d1161c",
@@ -38850,9 +38850,9 @@
     "cli/panes/DebugPane.tsx": "d5b104db25062a6d1235ab6cb186e2c80ddd46c3e8cae5a8e5bad147c9d9476a",
     "cli/panes/LogsSection.tsx": "82dcee0b6e44d972f190eae53e1d5fb8fd26cf813e6f2d7f8b9c16d688f8ae94",
     "cli/panes/MCPSection.tsx": "1e9fd0f22c6f298835e0e584589f18fdc1a355be1b077639d0a8235c0804dc9c",
-    "cli/panes/ModelCheckScreen.tsx": "d9bfd48e629e81bc73ee527c8bf29775a8a35b2fe145e11fb93df9a970da895a",
-    "cli/panes/ModelTiersPane.tsx": "dc73eba4b076a99c593627558ed4a2bcd7c6577fcdd8d886b674f702979f9368",
-    "cli/panes/RepoModelsView.tsx": "c60b445f7c8bc8a48fe5743aa7997f961b924efcf1f546aa6de0fc9e5b623777",
+    "cli/panes/ModelCheckScreen.tsx": "e897f1a56799f7a35a1dad378eaa0b53a977dc69704825c58bd9846c086f515e",
+    "cli/panes/ModelTiersPane.tsx": "88f1513a96fc13d374505953de4f3dec88b63943d1c1e65856d4668c72f637a4",
+    "cli/panes/RepoModelsView.tsx": "d2acdede4c4e74127ee4700ef23e8068be11da683860fe442aa2c499ba79447a",
     "cli/panes/ReposPane.tsx": "2ed2cafd8805b3aaa6ac97f17c03d03c5f0dce95b8da38f3e7f50ba67f7b71ef",
     "cli/panes/SetupPane.tsx": "0cd72115f39ecc852ebc16f60acde4d2f1efc8fe25ddea207fb4dfc1c32176c2",
     "cli/panes/WorkflowsPane.tsx": "552f26f886719ac317057d59c4fce411ccfe1859afc2da4876827f6dddd5f0df",
@@ -38904,7 +38904,7 @@
     "daemon/chat-sessions.ts": "9c8b4d8f3f29a666b59ce5ab887ad57ccba8cb74738babfeb12842f9497d2ee1",
     "daemon/code-review-rpc.ts": "b399d07cbab2e1e40d0193455d51bd95a436a0e9a0577b7b8bd4f44e6e7babd0",
     "daemon/config-write.ts": "987c61104e13449702cb45304a8367eb3beddf137bf7ea4ecd49ea312d3dd8ce",
-    "daemon/connection-management-rpc.ts": "be4740a75208e5715bbe5b6c484fd6b383d46548f4f9f036fbb6e40ab885094e",
+    "daemon/connection-management-rpc.ts": "25bc62b2ceab6822bad57fb918147ce894a36b38e41d823e0a8ea6d59c400430",
     "daemon/connection-session-rpc.ts": "1a798accf4499af66b22ac8608149b7506883fd52c15b62b653d9339c78d3282",
     "daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "daemon/db/connection-reservations.ts": "d3ef8865918d2ef1237fcc3c1fa0fa2d976a6055c08a243aa82b51aa73993d62",
@@ -39230,7 +39230,7 @@
     "db/graph/keys.ts": "1b2616f1ec202dad4c9cd57343b6955965337fd987bc6ef9f81b95ad62edf53a",
     "db/graph/migrations.ts": "ac0be14738c470562743155d6992658466bab2ebf2ce8112bb9dd9037b66b00e",
     "db/graph/pending-class.ts": "7cca41c2677404a14c5c34f44e174b285b20ff7ac94fabbd37584e0b8f385cc4",
-    "db/graph/store.ts": "41c2a9c67486be0cbe7f4aaea4bc1e1b6f15baf3a9dba3b8f660294afb3d550c",
+    "db/graph/store.ts": "029dff3bc1d1460e935f6c408a915536d8874332ce839e2ba78b4400e1a12fcf",
     "db/graph/traversal.ts": "b8bb0f58aafe2e4cd74b2d9e25bd59e7e063da34d3574226e0f6a44d156990c8",
     "db/index-state.ts": "737c33611a604edb0d476d06173ee072d3d8283857dfca4ef18f75fbc1449d6c",
     "db/lance/artifact-vec.ts": "dd35356c75acafe57f66c81fe413a260d74798171f9e19042a6e423c790a1414",

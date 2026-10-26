@@ -1449,7 +1449,7 @@ function didNotProceed(cause: PipelineCause, message: string, extra: PipelineCau
  */
 async function tryExplorationPipeline(
 	args: {
-		connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
+		connectionExecution: import('../../shared/step-context.js').ConnectionExecutionContext;
 		invocationMode: ShaperMode;
 		shaperId:       ShaperId;
 		inputs:         RunShaperArgs['inputs'];

@@ -1,0 +1,1198 @@
+{
+  "version": 1,
+  "boundary": "S003 t34, first full sweep completed; repaired source awaiting follow-up sweep",
+  "releaseReady": false,
+  "inventory": {
+    "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+    "sha256": "e66331c0c5f7937340d0940dc6735468f5890c0517ef86e903d6b4013e6aa1a5",
+    "deployedPath": "src/assets/connection-management-inventory.json",
+    "deployedSha256": "c2f5655c9ce1f493d5b4b46124c580a7b25b077acd21db943513f9d5af914650",
+    "deployedFiles": 859,
+    "files": 514,
+    "sites": 7250,
+    "classifications": {
+      "provider-admission": 6,
+      "session-invocation": 83,
+      "client-process-boundary": 17,
+      "configuration-boundary": 12,
+      "daemon-admission-boundary": 33,
+      "owner-rpc-boundary": 5,
+      "session-transport-authority": 1,
+      "saved-foundation-boundary": 18,
+      "root-reservation-coordinator": 1,
+      "resource-local-log-authority": 1,
+      "owned-driver-foundation": 28,
+      "private-file-execution": 1,
+      "resolver-resource-foundation": 6,
+      "deployment-code-evidence": 1,
+      "shared-root-validation": 1,
+      "session-private-generations": 1,
+      "session-private-receipts": 1,
+      "session-management-decoding": 1,
+      "session-owner": 1,
+      "session-private-sdk-resources": 1,
+      "session-analysis-admission": 1,
+      "analysis-transport": 7,
+      "forbidden-session-workflow": 23,
+      "trusted-step-host": 1,
+      "routing-background-boundary": 18,
+      "tool-allowlist-boundary": 45,
+      "data-tool-boundary": 5,
+      "tool-dispatch": 3,
+      "persistent-storage-boundary": 31,
+      "forbidden-session-service": 124,
+      "background-indexing": 19,
+      "query-embedding-boundary": 1,
+      "mcp-client-boundary": 6,
+      "private-mcp-bootstrap": 1,
+      "shared-transport-foundation": 10
+    }
+  },
+  "buildProducer": {
+    "path": "copy-assets.mjs",
+    "sha256": "81c9d3956a31abadd6c016ca264197410d800bbfd4f4bba061d43fb9cf3017af",
+    "content": "only deployment code source/compiled checksums; no Session/repository data"
+  },
+  "proofs": {
+    "CM-S3-INVENTORY": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t1",
+          "commit": "fe5850574",
+          "ranAt": "2026-10-25T16:39:17.098Z",
+          "name": "CM-S3-INVENTORY: TypeScript-resolved alias/injection/factory/serializer baseline and missing-policy fail-closed tests",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+              "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+              "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+              "result": "pass"
+            },
+            {
+              "file": "src/shared/__tests__/connection-execution.test.ts",
+              "title": "CM-S3-INVENTORY: missing or forged execution never defaults to saved",
+              "result": "pass"
+            },
+            {
+              "file": "src/shared/__tests__/connection-execution.test.ts",
+              "title": "CM-S3-INVENTORY: explicit saved tuple is immutable, nonserializable and cancellation-bound",
+              "result": "pass"
+            },
+            {
+              "file": "src/shared/__tests__/connection-execution.test.ts",
+              "title": "CM-S3-INVENTORY: production analysis entry installs saved authority and rejects forged policy before source access",
+              "result": "pass"
+            },
+            {
+              "file": "src/shared/__tests__/connection-execution.test.ts",
+              "title": "CM-S3-INVENTORY: staged production executors refuse supplied unadmitted policy before loading state",
+              "result": "pass"
+            },
+            {
+              "file": "src/shared/__tests__/connection-execution.test.ts",
+              "title": "CM-S3-INVENTORY: lost carrier in a bound call cannot become saved or enter a provider",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-AUTH": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t2",
+          "commit": "9a4b23b89",
+          "ranAt": "2026-10-25T16:58:45.664Z",
+          "name": "CM-S3-AUTH: monotonic exact-deadline control lifecycle and session quota",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t3",
+          "commit": "19f388876",
+          "ranAt": "2026-10-25T17:14:45.564Z",
+          "name": "CM-S3-AUTH: role/root/audience token confusion,32-token quota and revocation",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t3",
+          "commit": "19f388876",
+          "ranAt": "2026-10-25T17:14:45.564Z",
+          "name": "CM-S3-AUTH: data sockets cannot call control RPCs",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t4",
+          "commit": "6e61c679a",
+          "ranAt": "2026-10-25T17:52:22.586Z",
+          "name": "CM-S3-AUTH: bounded strict RPC/unknown method decoding and main-daemon routing",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+              "title": "CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+              "title": "CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+              "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-RECONNECT": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t2",
+          "commit": "9a4b23b89",
+          "ranAt": "2026-10-25T16:58:45.664Z",
+          "name": "CM-S3-RECONNECT: real socket generation rollover preserves overlays",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t30",
+          "commit": "64ae043a3",
+          "ranAt": "2026-10-26T14:22:18.043Z",
+          "name": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+              "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-owner.test.ts",
+              "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-STREAM": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t5",
+          "commit": "65cbe88a9",
+          "ranAt": "2026-10-25T18:01:05.712Z",
+          "name": "CM-S3-STREAM: real server/router/maintenance terminal frame, disconnect, throwing delivery and delayed completion+drain",
+          "cases": [
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: real socket done retains handler completion and late registered drains",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: real socket error retains handler completion and late registered drains",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+              "title": "CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-MEMORY": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t6",
+          "commit": "ea3dba90b",
+          "ranAt": "2026-10-25T18:10:21.974Z",
+          "name": "CM-S3-MEMORY: effective keep/replace/clear config, safe projection and exact saved/keychain snapshots",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-entries.test.ts",
+              "title": "CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-entries.test.ts",
+              "title": "CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-entries.test.ts",
+              "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-REPLAY": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t6",
+          "commit": "ea3dba90b",
+          "ranAt": "2026-10-25T18:10:21.974Z",
+          "name": "CM-S3-REPLAY: entry/config quota refusal leaves no partial state",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-entries.test.ts",
+              "title": "CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-entries.test.ts",
+              "title": "CM-S3-REPLAY: cumulative config quota refuses create and update without partial state",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t7",
+          "commit": "d0fd984ae",
+          "ranAt": "2026-10-25T18:23:06.887Z",
+          "name": "CM-S3-REPLAY: same/changed payload, HMAC, ticket/receipt quotas and expiry truth",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+              "title": "CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+              "title": "CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+              "title": "CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+              "title": "CM-S3-REPLAY: ticket and receipt quotas never evict live operation history",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t7",
+          "commit": "d0fd984ae",
+          "ranAt": "2026-10-25T18:23:06.887Z",
+          "name": "CM-S3-REPLAY: concurrent real mutation and lost socket reply reconciliation",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+              "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-COLLISION": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t8",
+          "commit": "2f975f568",
+          "ranAt": "2026-10-25T18:45:25.724Z",
+          "name": "CM-S3-COLLISION: canonical managed/unmanaged adopted/unadopted save races in both orders",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-NAMESPACE": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t8",
+          "commit": "2f975f568",
+          "ranAt": "2026-10-25T18:45:25.724Z",
+          "name": "CM-S3-NAMESPACE: actual alias/relative/trailing-slash upsert refusal and preexisting distinct-target isolation",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+              "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-LEASE": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t9",
+          "commit": "ae630e99d",
+          "ranAt": "2026-10-25T19:19:58.845Z",
+          "name": "CM-S3-LEASE: full multi-call callback, busy update, delayed/failed construction",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t18",
+          "commit": "389675d84",
+          "ranAt": "2026-10-26T05:03:06.670Z",
+          "name": "CM-S3-LEASE: measure timeout/late rejection retains actual work and drain",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/owner-measurement.test.ts",
+              "title": "CM-S3-LEASE: measurement timeout retains actual work through late success or rejection",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-ISOLATION": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t9",
+          "commit": "ae630e99d",
+          "ranAt": "2026-10-25T19:19:58.845Z",
+          "name": "CM-S3-ISOLATION: private owner/root/revision drivers with distinct credentials/rows",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t31",
+          "commit": "d8928fce2",
+          "ranAt": "2026-10-26T16:11:42.294Z",
+          "name": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-service-isolation.test.ts",
+              "title": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-DRIVER-LOGS": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t10",
+          "commit": "966f6dd48",
+          "ranAt": "2026-10-25T19:44:45.908Z",
+          "name": "CM-S3-DRIVER-LOGS: immutable owner-only factory quiet authority, alias completeness and constructor refusal",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: missing forged copied and dropped factory policies refuse before config handoff",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: all 29 aliases forward context into 14 constructor guards before SDK creation",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t11",
+          "commit": "eef7a2a3f",
+          "ranAt": "2026-10-25T20:11:53.125Z",
+          "name": "CM-S3-DRIVER-LOGS: actual normal daemon PG/Redis/SDK idle/reconnect/error/disposal canaries and saved marker",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+              "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-FILES": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t12",
+          "commit": "47507bad6",
+          "ranAt": "2026-10-25T20:30:25.887Z",
+          "name": "CM-S3-FILES: native/converted resource identity,256MiB budget, zero spill/cache/INSTALL and cancellation",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+              "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t32",
+          "commit": "c14001644",
+          "ranAt": "2026-10-26T16:32:59.145Z",
+          "name": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
+              "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+              "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-COMPAT": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t13",
+          "commit": "b0f4ecf01",
+          "ranAt": "2026-10-25T20:43:00.361Z",
+          "name": "CM-S3-COMPAT: prepareTemporary edit/new draft source and compiled probe cancellation, zero commit writes",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-probe.test.ts",
+              "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-MCP": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t14",
+          "commit": "1caf36b1d",
+          "ranAt": "2026-10-25T21:04:02.362Z",
+          "name": "CM-S3-MCP: private pipe bootstrap, every fresh socket attach, trusted fourth host argument and epoch/root mismatch",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+              "title": "CM-S3-MCP: trusted fourth host argument is frozen nonserializable owner authority and caller JSON cannot replace it",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+              "title": "CM-S3-MCP: real private inherited pipe attaches every fresh socket and refuses wrong epoch root audience control tokens and lost bootstrap",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts",
+              "title": "CM-S3-MCP: current control refreshes only the data delegation on the same private pipe after resume",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-CLIENT-EGRESS": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t15",
+          "commit": "029156e6b",
+          "ranAt": "2026-10-25T21:22:28.740Z",
+          "name": "CM-S3-CLIENT-EGRESS: real forwardStep all analysis phases/one-shot deny before state/provider/output; all channels captured",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/analysis-client-refusal.test.ts",
+              "title": "CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/steps/__tests__/analysis-client-refusal.test.ts",
+              "title": "CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-CONTEXT": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t16",
+          "commit": "f0e7fae2b",
+          "ranAt": "2026-10-26T04:44:23.461Z",
+          "name": "CM-S3-CONTEXT: actual db/data tools, schema-drift, runtime and exploration resolver callbacks with saved positive controls",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/tool-owner-context.test.ts",
+              "title": "CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts",
+              "title": "CM-S1-M: schema drift retains its revision lease through both live schema and asynchronous Prisma comparison",
+              "result": "pass"
+            },
+            {
+              "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+              "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t18",
+          "commit": "389675d84",
+          "ranAt": "2026-10-26T05:03:06.670Z",
+          "name": "CM-S3-CONTEXT: owner-private measurement slot, both branches and saved pending map compatibility",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/owner-measurement.test.ts",
+              "title": "CM-S3-CONTEXT: owner-private measurement slots and source/pool branches",
+              "result": "pass"
+            },
+            {
+              "file": "src/analyze/__tests__/measurement-leases.test.ts",
+              "title": "CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-SCOPE": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t17",
+          "commit": "e0feeedcc",
+          "ranAt": "2026-10-26T04:54:11.092Z",
+          "name": "CM-S3-SCOPE: classifier/targetHint/prepareScope/stepScope/task-scope rootA temporary versus rootB saved ambiguity",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/root-bound-scope.test.ts",
+              "title": "CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility",
+              "result": "pass"
+            },
+            {
+              "file": "src/analyze/context/__tests__/scope.test.ts",
+              "title": "resolveScope connection cases: one, none, two, unparseable connections file",
+              "result": "pass"
+            },
+            {
+              "file": "src/analyze/context/__tests__/prepare-scope.test.ts",
+              "title": "resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-FREEFORM": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t19",
+          "commit": "cfa11cedf",
+          "ranAt": "2026-10-26T05:39:46.239Z",
+          "name": "CM-S3-FREEFORM: explicit/forced fallback, requestSize variants, direct/task loops and same tuple at every relay",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/freeform-owner-relay.test.ts",
+              "title": "CM-S3-FREEFORM: actual explicit forced and measured owner relays plus saved tool-loop compatibility",
+              "result": "pass"
+            },
+            {
+              "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts",
+              "title": "a module request keeps its own directory, and a bare repo path stands for a workspace scope",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-CACHE": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t20",
+          "commit": "de770ef58",
+          "ranAt": "2026-10-26T06:13:01.345Z",
+          "name": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/private-cache.test.ts",
+              "title": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t23",
+          "commit": "11d7d4a0e",
+          "ranAt": "2026-10-26T08:27:38.643Z",
+          "name": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/task-persistence.test.ts",
+              "title": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-RECURSION": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t21",
+          "commit": "6b25e6cbf",
+          "ranAt": "2026-10-26T06:30:28.548Z",
+          "name": "CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/root-run-memory.test.ts",
+              "title": "CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t22",
+          "commit": "80648023e",
+          "ranAt": "2026-10-26T07:05:50.981Z",
+          "name": "CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/nested-planner-memory.test.ts",
+              "title": "CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-PROVIDER": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t24",
+          "commit": "a4df478e8",
+          "ranAt": "2026-10-26T10:11:31.210Z",
+          "name": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+              "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "memory-only adapter refuses internal helper substitution before native construction",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t24",
+          "commit": "a4df478e8",
+          "ranAt": "2026-10-26T10:11:31.210Z",
+          "name": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
+          "cases": [],
+          "reported": {
+            "result": "pass",
+            "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final actual isolated Ollama source/compiled runs each pass zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt), using src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Actual complete/completeStructured, callback persistence denial, immutable method/profile proof, cancellation/expiry and private output snapshots through server close. Production configured-service proof stays pending; release disabled."
+          }
+        },
+        {
+          "taskId": "t25",
+          "commit": "9a9e14ad5",
+          "ranAt": "2026-10-26T10:35:13.787Z",
+          "name": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+              "title": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+              "result": "pass"
+            },
+            {
+              "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+              "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ],
+      "currentServiceProof": "pending; t24 live proof is historical, not current-generation enrollment"
+    },
+    "CM-S3-CONSUMER-LOGS": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t25",
+          "commit": "9a9e14ad5",
+          "ranAt": "2026-10-26T10:35:13.787Z",
+          "name": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+              "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t28",
+          "commit": "ca4b9f987",
+          "ranAt": "2026-10-26T11:32:56.351Z",
+          "name": "CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/analysis-diagnostics.test.ts",
+              "title": "CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        },
+        {
+          "taskId": "t29",
+          "commit": "54e4f7be4",
+          "ranAt": "2026-10-26T12:28:35.972Z",
+          "name": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/rpc-diagnostics.test.ts",
+              "title": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-EMBED-DENY": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t26",
+          "commit": "1f0151e05",
+          "ranAt": "2026-10-26T11:02:19.774Z",
+          "name": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/embedding-denial.test.ts",
+              "title": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-ADHERENCE-CACHE": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t27",
+          "commit": "7b17b4a50",
+          "ranAt": "2026-10-26T11:16:16.198Z",
+          "name": "CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path",
+          "cases": [
+            {
+              "file": "src/daemon/steps/__tests__/adherence-cache.test.ts",
+              "title": "CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-EXPIRY": {
+      "status": "recorded-task-evidence",
+      "records": [
+        {
+          "taskId": "t30",
+          "commit": "64ae043a3",
+          "ranAt": "2026-10-26T14:22:18.043Z",
+          "name": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+          "cases": [
+            {
+              "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+              "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-resources.test.ts",
+              "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-probe.test.ts",
+              "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-probe.test.ts",
+              "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
+              "result": "pass"
+            },
+            {
+              "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+              "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+              "result": "pass"
+            }
+          ],
+          "reported": null
+        }
+      ]
+    },
+    "CM-S3-GATE": {
+      "status": "focused-verification",
+      "records": [
+        {
+          "taskId": "t33",
+          "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+          "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled"
+        }
+      ]
+    },
+    "CM-S3-SWEEP": {
+      "status": "failed-first-sweep-follow-up-pending",
+      "records": [
+        {
+          "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-first-sweep.json",
+          "result": "fail",
+          "note": "Full sweep completed with 29 failures, 1 cancellation, 134 skips and 3 TODO; repairs and follow-up are recorded separately."
+        }
+      ]
+    }
+  },
+  "externalPrerequisites": {
+    "S001": {
+      "status": "pending",
+      "reason": "Independent foundation review deferred by user; not cleared by S003"
+    },
+    "S002SqlServer": {
+      "status": "pending",
+      "reason": "Actual Linux x64 CI/remote SQL Server coverage deferred by user; no local installation or EULA acceptance"
+    },
+    "S002Sweep": {
+      "status": "pending",
+      "reason": "Prior sweep retained failures/cancellation/skips/TODO; S003 does not retroactively relabel it",
+      "priorEvidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/evidence/t19-post-sweep.json"
+    },
+    "providerService": {
+      "status": "pending",
+      "reason": "Current-generation exact adapter/service privacy proof and enrollment remain pending; historical t24 results retained"
+    },
+    "S004": {
+      "status": "pending",
+      "reason": "Dependent removal/lifecycle story not implemented by S003"
+    },
+    "S005": {
+      "status": "pending",
+      "clients": {
+        "vscode": {
+          "status": "pending",
+          "evidence": []
+        },
+        "jetbrains": {
+          "status": "pending",
+          "evidence": []
+        }
+      },
+      "requiredPreAddCopy": {
+        "retain": [
+          "panel-close",
+          "root-switch"
+        ],
+        "expire": [
+          "workbench-end",
+          "lease-loss",
+          "daemon-restart"
+        ]
+      },
+      "reason": "External both-client acceptance only; a passing metadata assertion does not mean either client was verified"
+    }
+  },
+  "companions": [
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/er-model.html",
+      "sha256": "4ae9f154ce248a564e0f480cb8bfc85ac17d7c715896ffaed862be71a8844e56",
+      "sourceInspected": true,
+      "rendering": "unverified",
+      "reason": "iab reported Browser is not available; enabled browser inventory was empty. The embedded Mermaid/source model and descriptions remain present; Session owner/root/revision relationships are unchanged."
+    },
+    {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/sequence-diagram.html",
+      "sha256": "6ceda706787226119da0c2e71acfbcf858d4f0b4911aec0768385bd7db716ea2",
+      "sourceInspected": true,
+      "rendering": "unverified",
+      "reason": "iab reported Browser is not available; enabled browser inventory was empty. The embedded Mermaid/source model and descriptions remain present; Session owner/root/revision relationships are unchanged."
+    }
+  ]
+}

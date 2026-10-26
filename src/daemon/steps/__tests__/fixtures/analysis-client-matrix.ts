@@ -7,6 +7,8 @@ import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { once } from 'node:events';
 import { DatabaseSync } from 'node:sqlite';
+import { registerDbTools } from '../../../tools/builtins/db/index.js';
+import { executeTool } from '../../../tools/executor.js';
 import { runAnalyzeOneShot } from '../../analyze-oneshot.js';
 import { forwardStep } from '../../../../mcp/forward-step.js';
 import '../../../db/drivers/index.js';
@@ -34,18 +36,20 @@ test('CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unveri
  const database = new DatabaseSync(join(root, 'private.sqlite')); database.exec("CREATE TABLE data(marker TEXT); INSERT INTO data VALUES ('DATA_SECRET_CANARY')"); database.close();
  const overlays = new Map<string, import('../../db/session-entries.js').TemporaryConnectionOverlay>();
  const runtime = new ConnectionSessionRpc({ enabled: async () => true, isRegistered: async r => r === root, createOverlay: (r, h, c) => { const overlay = createTemporaryOverlay(r, h, c); overlays.set(h, overlay); return overlay; }, dropOverlay: o => o.close() });
+	registerDbTools();
  const table = stepToolTable(); let runners = 0, attaches = 0, uiRuns = 0, savedRuns = 0;
  for (const name of ['insrc_analyze', 'insrc_analyze_step']) { const original = table[name]!; table[name] = (...args) => { runners++; return original(...args); }; }
  // Exercise the real one-shot admission/intent/render path, using its existing run port for deterministic data work.
  table['insrc_analyze'] = (args, _signal, _progress, execution) => { runners++; return runAnalyzeOneShot(args, { wrap: fn => fn(), buildRun: async () => {
-  if (execution?.mode === 'session-memory') {
-   uiRuns++; const overlay = overlays.get(execution.connectionAccess.sessionHandle!)!;
-   const resolver = overlay.resolver(execution.connectionAccess, { assertActive: execution.assertActive, signal: execution.lifetime.signal, registerDrain: execution.lifetime.registerDrain });
-   const result = await resolver.withConnection(execution.connectionAccess, 'data', async driver => { assert.equal(driver.family, 'rdbms'); return driver.sample('data', { limit: 1 }); });
-   return { ok: true, bundle: { system: '', focus: '', summary: JSON.stringify(result), structure: '', surface: '', artefacts: '', upstream: '' } };
-  }
   savedRuns++; return { ok: true, bundle: { system: '', focus: '', summary: 'SAVED_POSITIVE_REPORT', structure: '', surface: '', artefacts: '', upstream: '' } };
  } }, execution); };
+	// Use the supported UI step host and actual registered data tool as the positive Session control.
+	table['insrc_analyze_step'] = async (_args, _signal, _progress, execution) => {
+		runners++; uiRuns++; assert.equal(execution?.mode, 'session-memory'); assert.ok(execution);
+		const result = await executeTool('db_sql_sample', { connectionId: 'data', target: 'data', limit: 1 }, { sessionId: 'fixture', repoPath: root, requestId: 1, send() { }, connectionExecution: execution });
+		assert.equal(result.success, true, JSON.stringify(result));
+		return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+	};
  const audience = new Map<string, string>(), rawFrames: unknown[] = [];
  const forward = runtime.forward(directDispatch(connectionManagementHandlers({ sessionRuntime: runtime }), { 'step.call': createStepCallHandler(table) }));
  const server = new IpcServer((request, deliver) => {
@@ -71,7 +75,7 @@ test('CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unveri
   const uiToken = { ...await ui.call<Record<string,string>>('db.connections.v2.session.delegate', { repoRoot: root, audience: 'workbench-ui' }), repoRoot: root };
   const socket = createConnection(join(directory, 'rpc.sock')); await once(socket, 'connect'); let buffer = '';
   try {
-   const result = new Promise<unknown>((resolve, reject) => { socket.on('error', reject); socket.on('data', chunk => { buffer += chunk; for (;;) { const end = buffer.indexOf('\n'); if (end < 0) return; const value = JSON.parse(buffer.slice(0,end)); buffer=buffer.slice(end+1); if (value.id===1 && value.result?.attached) socket.write(JSON.stringify({id:2,method:'step.call',stream:true,params:{tool:'insrc_analyze',args:{repo:root,focus:'UI data control'},context:{cwd:root}}})+'\n'); if(value.stream==='done')resolve(value.data); if(value.stream==='error')reject(new Error('UI analysis refused')); } }); });
+			const result = new Promise<unknown>((resolve, reject) => { socket.on('error', reject); socket.on('data', chunk => { buffer += chunk; for (;;) { const end = buffer.indexOf('\n'); if (end < 0) return; const value = JSON.parse(buffer.slice(0, end)); buffer = buffer.slice(end + 1); if (value.id === 1 && value.result?.attached) socket.write(JSON.stringify({ id: 2, method: 'step.call', stream: true, params: { tool: 'insrc_analyze', args: { repo: root, focus: 'UI data control' }, context: { cwd: root } } }) + '\n'); if (value.id === 2 && value.stream === 'done') { assert.ok(JSON.stringify(value.data).includes('unsupported-temporary')); assert.equal(uiRuns, 0); socket.write(JSON.stringify({ id: 3, method: 'step.call', stream: true, params: { tool: 'insrc_analyze_step', args: { phase: 'start' }, context: { cwd: root } } }) + '\n'); } if (value.id === 3 && value.stream === 'done') resolve(value.data); if (value.stream === 'error') reject(new Error('UI analysis refused')); } }); });
    socket.write(JSON.stringify({id:1,method:'db.connections.v2.session.attach',params:uiToken})+'\n'); assert.ok(JSON.stringify(await result).includes('DATA_SECRET_CANARY')); assert.equal(uiRuns,1);
   } finally { socket.destroy(); }
  } finally { await ui.close(); await server.close(); await runtime.close(); await rm(directory, { recursive: true, force: true }); }

@@ -1390,17 +1390,19 @@ function guardGraphHandles(store: GraphStore): GraphStore {
 	for (const key of Object.keys(store) as (keyof GraphStore)[]) {
 		const raw = store[key];
 		const denyReads = !structuralTables.has(key);
-		const methods = new Map<PropertyKey, unknown>();
+		const methods = new Map<PropertyKey, { original: Function; guarded: (...args: unknown[]) => unknown }>();
 		Reflect.set(store, key, new Proxy(raw, {
 			get(target, property) {
 				if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
 				const value = Reflect.get(target, property, target);
 				if (typeof value !== 'function') return value;
-				if (!methods.has(property)) methods.set(property, (...args: unknown[]) => {
+				if (methods.get(property)?.original !== value) methods.set(property, {
+					original: value, guarded: (...args: unknown[]) => {
 					if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
 					return value.apply(target, args);
+					}
 				});
-				return methods.get(property);
+				return methods.get(property)!.guarded;
 			},
 			set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
 		}));

@@ -25,7 +25,7 @@ await runInStepContext(ctx, async () => {
  // Lost explicit policy also refuses before evaluating a payload.
  assert.ok(JSON.stringify(await handleAnalyzeStep(denied)).includes('session-expired')); assert.equal(reads, 0);
 });
-const ui = mint('workbench-ui'); const uiResult = await runInStepContext({ cwd: '/fixture/root', connectionExecution: ui }, () => handleAnalyzeStep({ phase: 'unknown' }, ui)); assert.ok(JSON.stringify(uiResult).includes('bad-phase'));
+const ui = mint('workbench-ui'); const uiResult = await runInStepContext({ cwd: '/fixture/root', connectionExecution: ui }, () => handleAnalyzeStep({ phase: 'unknown' }, ui)); assert.ok(JSON.stringify(uiResult).includes('session-expired'));
 const saved = await handleAnalyzeStep({ phase: 'unknown' }); assert.ok(JSON.stringify(saved).includes('bad-phase'));
 // UI and unverified session calls never append trace; the unbound saved control does.
 const trace = await readFile(process.env['INSRC_ANALYZE_STEP_TRACE']!, 'utf8'); assert.equal(trace.includes('DATA_SECRET_CANARY'), false); assert.equal(trace.trim().split('\n').length, 1);

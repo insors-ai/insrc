@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "boundary": "S003 t33, before final t34 sweep",
+  "boundary": "S003 t34, first full sweep completed; repaired source awaiting follow-up sweep",
   "releaseReady": false,
   "inventory": {
     "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
-    "sha256": "c5d100c3bdf19f95658200ad305857d169c45dd81ed45f15781c71ebc1198668",
+    "sha256": "e66331c0c5f7937340d0940dc6735468f5890c0517ef86e903d6b4013e6aa1a5",
     "deployedPath": "src/assets/connection-management-inventory.json",
-    "deployedSha256": "800862d6fa5ab181d8bd4ab6da05e7e2e69ecb9c47f884870ce168ee91245080",
+    "deployedSha256": "c2f5655c9ce1f493d5b4b46124c580a7b25b077acd21db943513f9d5af914650",
     "deployedFiles": 859,
     "files": 514,
     "sites": 7250,
@@ -1121,8 +1121,14 @@
       ]
     },
     "CM-S3-SWEEP": {
-      "status": "pending-t34",
-      "records": []
+      "status": "failed-first-sweep-follow-up-pending",
+      "records": [
+        {
+          "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-first-sweep.json",
+          "result": "fail",
+          "note": "Full sweep completed with 29 failures, 1 cancellation, 134 skips and 3 TODO; repairs and follow-up are recorded separately."
+        }
+      ]
     }
   },
   "externalPrerequisites": {

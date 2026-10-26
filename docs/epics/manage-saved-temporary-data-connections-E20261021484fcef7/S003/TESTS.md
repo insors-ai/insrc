@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 72 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 75 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -350,3 +350,23 @@ Run at 2026-10-26T04:44:23.461Z on commit `f0e7fae2b`. Tests check: **passed**. 
 | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` | 0 | 19 | 0.9 s |  |
 | `src/daemon/steps/__tests__/tool-owner-context.test.ts` | 0 | 1 | 1.8 s |  |
 | `src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts` | 0 | 6 | 1.5 s |  |
+
+## t17
+
+Run at 2026-10-26T04:54:11.092Z on commit `e0feeedcc`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-SCOPE: classifier/targetHint/prepareScope/stepScope/task-scope rootA temporary versus rootB saved ambiguity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility | `src/daemon/steps/__tests__/root-bound-scope.test.ts` |
+| pass | resolveScope connection cases: one, none, two, unparseable connections file | `src/analyze/context/__tests__/scope.test.ts` |
+| pass | resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched | `src/analyze/context/__tests__/prepare-scope.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/prepare-scope.test.ts` | 0 | 8 | 1 s |  |
+| `src/analyze/context/__tests__/scope.test.ts` | 0 | 8 | 0.6 s |  |
+| `src/daemon/steps/__tests__/root-bound-scope.test.ts` | 0 | 1 | 1.7 s |  |

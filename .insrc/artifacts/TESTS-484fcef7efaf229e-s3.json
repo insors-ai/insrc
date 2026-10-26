@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T04:44:23.461Z",
+    "updatedAt": "2026-10-26T04:54:11.092Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1274,6 +1274,134 @@
               },
               {
                 "title": "CM-S1-V: parallel driver calls settle every library request before propagating a sibling failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "e0feeedcc",
+        "ranAt": "2026-10-26T04:54:11.092Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-SCOPE: classifier/targetHint/prepareScope/stepScope/task-scope rootA temporary versus rootB saved ambiguity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/root-bound-scope.test.ts",
+                "title": "CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/scope.test.ts",
+                "title": "resolveScope connection cases: one, none, two, unparseable connections file",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/prepare-scope.test.ts",
+                "title": "resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/prepare-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 972,
+            "titles": [
+              {
+                "title": "runShaper refuses a pairing the table does not allow before resolving the scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper accepts every pairing in the corrected table",
+                "result": "pass"
+              },
+              {
+                "title": "the pairing is checked for run mode only: classification and task inputs are not refused",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched",
+                "result": "pass"
+              },
+              {
+                "title": "prepareScope makes no pairing check outside run mode: a refused pairing resolves to what resolveScope gives",
+                "result": "pass"
+              },
+              {
+                "title": "generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed",
+                "result": "pass"
+              },
+              {
+                "title": "tool loop's path for classification and task modes is the resolved lookupPath",
+                "result": "pass"
+              },
+              {
+                "title": "inputs that carry neither a scope nor an intent fail as invalid input, not as a bare TypeError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 612,
+            "titles": [
+              {
+                "title": "resolveScope for each of the seven kinds, with nested repos",
+                "result": "pass"
+              },
+              {
+                "title": "a sibling directory that only shares a name prefix is not inside the repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null",
+                "result": "pass"
+              },
+              {
+                "title": "a registry that cannot be read leaves the repo unknown for the file-system kinds",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope symbol cases: split, no '#', none, two, '#' in the path",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol that resolves costs one read: the whole repo is read only when the file has no entities",
+                "result": "pass"
+              },
+              {
+                "title": "resolveScope connection cases: one, none, two, unparseable connections file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/root-bound-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1675,
+            "titles": [
+              {
+                "title": "CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility",
                 "result": "pass"
               }
             ],

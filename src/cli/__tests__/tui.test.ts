@@ -85,6 +85,13 @@ function fakeServices(): Services {
 			modelsToPull: () => [],
 			pullModels:   async () => [],
 		},
+		models: {
+			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude', families: [] }),
+			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
+			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			resolveRole: async () => ({ error: 'fake', recoverable: false as const }),
+		},
 		config: {
 			show:   async () => ({}),
 			write:  async () => ({ ok: true }),

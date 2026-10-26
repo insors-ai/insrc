@@ -9,7 +9,10 @@
  * object, `config.write` sets a dot-path, `config.reload` re-reads it.
  */
 
+import type { ConfigWriteResult } from '../../daemon/config-write.js';
 import { rpc } from '../client.js';
+
+export type { ConfigWriteResult };
 
 export function showConfig(): Promise<Record<string, unknown>> {
 	return rpc<Record<string, unknown>>('config.show');
@@ -19,8 +22,8 @@ export function showConfig(): Promise<Record<string, unknown>> {
  *  an array of literal segments when a key contains dots (e.g.
  *  `['models','tasks','context.assemble']`) — the daemon splits a
  *  string on '.', so a dotted key MUST be passed segmented. */
-export function writeConfig(path: string | string[], value: unknown): Promise<{ ok: boolean }> {
-	return rpc<{ ok: boolean }>('config.write', { path, value });
+export function writeConfig(path: string | string[], value: unknown): Promise<ConfigWriteResult> {
+	return rpc<ConfigWriteResult>('config.write', { path, value });
 }
 
 export function reloadConfig(): Promise<{ ok: boolean; reloaded?: unknown }> {

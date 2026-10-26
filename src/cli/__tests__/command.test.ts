@@ -64,6 +64,13 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			modelsToPull: () => [],
 			pullModels: async () => [],
 		},
+		models: {
+			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude', families: [] }),
+			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
+			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			resolveRole: async () => ({ error: 'fake', recoverable: false as const }),
+		},
 		config: {
 			show: async () => ({ models: { local: { embeddingDim: 768 }, tiers: { core: { runner: 'cli-claude', model: '' } } } }),
 			write: async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true }; },

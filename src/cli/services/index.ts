@@ -27,6 +27,8 @@ import * as config from './config.js';
 import * as maintenance from './maintenance.js';
 import * as team from './team.js';
 import * as debug from './debug.js';
+import { modelsService, type ModelsService } from './models.js';
+import type { ConfigWriteResult } from './config.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
 import type { PullTick, PullResult } from './setup.js';
@@ -78,7 +80,7 @@ export interface Services {
 	};
 	readonly config: {
 		show(): Promise<Record<string, unknown>>;
-		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
+		write(path: string | string[], value: unknown): Promise<ConfigWriteResult>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
 	};
 	readonly team: {
@@ -86,6 +88,8 @@ export interface Services {
 		teamRefresh(repoPath: string, branch?: string): Promise<string>;
 	};
 	readonly debug: DebugService;
+	/** The daemon's model definitions, unknown-model check / decisions and role resolution (Story s5). */
+	readonly models: ModelsService;
 }
 
 export function makeServices(): Services {
@@ -133,6 +137,7 @@ export function makeServices(): Services {
 			modelsToPull: setup.modelsToPull,
 			pullModels:   setup.pullModels,
 		},
+		models: modelsService(),
 		config: {
 			show:   config.showConfig,
 			write:  config.writeConfig,

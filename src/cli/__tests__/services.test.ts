@@ -93,3 +93,24 @@ test('makeServices() still returns every pre-existing facade (additive-only)', (
 		assert.equal(typeof svc[key], 'object', `Services.${key} present`);
 	}
 });
+
+test('services.test.ts: Services.models calls the matching rpc methods with their params', async () => {
+	const { modelsService } = await import('../services/models.js');
+	const calls: Array<[string, unknown]> = [];
+	const svc = modelsService(async <T,>(method: string, params?: unknown): Promise<T> => { calls.push([method, params]); return { method } as T; });
+	await svc.definitions();
+	await svc.check({ family: 'cli-codex', modelId: 'gpt-new', claimedEfforts: ['high'] });
+	await svc.approve({ checkId: 'c1', efforts: ['high'] });
+	await svc.reject({ checkId: 'c2' });
+	await svc.resolveRole({ role: 'review', repoPath: '/w/repo' });
+	assert.deepEqual(calls, [
+		['models.definitions', {}],
+		['models.check', { family: 'cli-codex', modelId: 'gpt-new', claimedEfforts: ['high'] }],
+		['models.approve', { checkId: 'c1', efforts: ['high'] }],
+		['models.reject', { checkId: 'c2' }],
+		['models.resolveRole', { role: 'review', repoPath: '/w/repo' }],
+	]);
+	// makeServices wires the facade (to the real socket client).
+	const all = makeServices();
+	for (const m of ['definitions', 'check', 'approve', 'reject', 'resolveRole'] as const) assert.equal(typeof all.models[m], 'function', m);
+});

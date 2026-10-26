@@ -1,0 +1,1208 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793038432316-b0ej0d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-26T18:19:53.534Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 361204,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicHash": "ce99b72065d03b1b",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1792924917927-2y1e5h",
+    "hldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed picker, approval flow and repo panel cover S006 acceptance criteria without implementing the Epic's non-goals.",
+          "evidence": "DEF §6.6 requires daemon-derived choices, approval before saving unknown models, and tier-per-role repo settings. LLD §§2.1–2.4 address all three. DEF §3 excludes new runner implementations and per-repo model overrides; neither is introduced. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence and UX companions render consistently with the proposed interactions and panel.",
+          "evidence": "Inspected both generated HTML sources. The sequence contains check → approval → successful restart → whole-tier write; the UX content describes role-tier choices and coreFloor. Rendering could not be checked: opening the sequence reported 'Browser is not available: iab', and browser discovery returned an empty list. Layout, clipping and Mermaid rendering remain unverified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/sequence-diagram.html, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/ux-mock.html]",
+          "action": "Render both existing companions and inspect them against the design; have the author correct or regenerate any inconsistencies.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current picker maintains provider choices, imports catalog defaults and efforts, and writes tier fields separately.",
+          "evidence": "Read the picker implementation: 'const PROVIDERS' lists three providers; catalogDefault and effortValues read CONFIG_CATALOG. commit writes runner and model separately, and pickAndWriteEffort writes the effort leaf. [files: vscode-plugin/src/models/model-tier-picker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current gateway drops daemon write metadata, and the repo panel edits overrides the daemon now refuses.",
+          "evidence": "Both gateway write methods reduce success to '{ ok: true }' and manufacture an invalid-path refusal. The panel renders ['tiers', tier, field] for runner/model. applyConfigWrite detects changed per-repo tiers and returns reason 'per-repo-tier'. [files: vscode-plugin/src/config/gateway.ts, vscode-plugin/src/panels/repo-config.ts, src/daemon/config-write.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing definitions and unknown-model APIs provide the information and decision semantics the picker proposes to reuse.",
+          "evidence": "Read modelDefinitions/projectDefinitions and checkModel/approveCheck/rejectCheck. Definitions include aliases, efforts, source, installed state and defaults. Approval rejects runs:false and rejected or unclaimed efforts; decisions return restartRequired only after store persistence succeeds. [files: src/daemon/model-definitions.ts, src/daemon/model-check.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing role taxonomy and webview bootstrap can support the proposed repo selects without a new messaging protocol.",
+          "evidence": "reasoningRoleTaxonomy exposes role ids and default tiers and already feeds buildPerRoleKeyMap. REPO_BOOTSTRAP listens for change on every '[data-segments]' element, parses literal segments, and posts null when the selected value is empty; it is not restricted to text inputs. [files: src/config/role-taxonomy.ts, vscode-plugin/src/config/key-map.ts, vscode-plugin/src/panels/webview-host.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design identifies the production wiring and lifecycle contract needed for its changed picker, panel and sync dependencies.",
+          "evidence": "Caller search and extension.ts reads locate production construction of runSetModelTier, createRepoConfigWriteHandler and createConfigSyncEngine in extension.ts. DaemonLifecycleController.run returns LifecycleResult with ok and state; commands.ts already reflects that result through its shared reflect function, supporting the proposed boolean adapter. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/daemon/controller.ts, vscode-plugin/src/daemon/commands.ts]",
+          "action": "None. The analyzer request returned no usable result during the review; these conclusions were checked through direct file reads and caller searches.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Whole-tier writes and literal repo paths preserve the daemon's stored shapes, while removing native tier keys can leave config.json tiers intact.",
+          "evidence": "setConfigAtPath assigns the supplied object at the final segment and creates intermediate records. applyConfigWrite accepts whole-tier objects and marks changed tiers/tasks/coreFloor restart-sensitive. The native sync engine only processes mapped keys, and extension.ts enumerates MERGED_KEY_MAP for pulls and changes; excluding tier keys therefore stops their synchronization without rewriting daemon tiers. [files: src/config/write-path.ts, src/daemon/config-write.ts, vscode-plugin/src/config/sync-engine.ts, vscode-plugin/src/extension.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S006 consumes the shared daemon contracts and adequately describes ownership of global tiers versus repo role assignments without redesigning sibling Stories.",
+          "evidence": "HLD §§5–6 assign sc3/sc4/sc5 to s2/s4/s3 and give S006 the VS Code surfaces. The LLD retains those RPC shapes. Its write paths describe one runner/model/effort value per global tier and repo-owned tasks[roleId]/coreFloor references to tiers, including literal-key handling and clearing compatibility. No persistent entity relationship requires an additional ERD to resolve ambiguity here. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/LLD.md, src/config/analyze.ts, src/daemon/config-write.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed error distinctions and restart gates are supported by actual IPC and decision outcomes.",
+          "evidence": "rpc distinguishes pre-send daemon absence, post-send DaemonDisconnectedError with code 'disconnected', server error messages, and malformed JSON. server.ts returns 'unknown method: <method>'. DecisionResult exposes unknown-check, invalid-efforts and write-failed; approval checks runs. LifecycleResult separately exposes ok and running state, so command completion alone is insufficient, as the design states. [files: src/shared/ipc-client.ts, src/daemon/server.ts, src/daemon/model-check.ts, vscode-plugin/src/daemon/controller.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each upstream S006 acceptance criterion maps to concrete tests using feasible existing seams.",
+          "evidence": "Compared DEF §6.6 with LLD §7 and existing test harnesses. ac1 maps to fake-definition picker choices, source/bundle checks and real-manifest mapping; ac2 maps to recorded check/approve/restart/write ordering and lifecycle-result tests; ac3 maps to rendered role selects and rejection of tier-write segments. Existing picker, panel, sync and command tests already inject the dependencies these tests need. This verifies the planned coverage, not execution of the future tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/LLD.md, vscode-plugin/src/models/__tests__/model-tier-picker.test.ts, vscode-plugin/src/panels/__tests__/repo-config.test.ts, vscode-plugin/src/config/__tests__/per-role-engine.test.ts, vscode-plugin/src/daemon/__tests__/commands.test.ts]",
+          "action": "Update existing fixtures for changed dependency signatures during implementation and run the specified tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-26T18:32:14.463Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-26T18:48:25.014Z",
+    "questionResolutions": {
+      "q6b52f29d": {
+        "question": "Checklist alt2 (partial): Each alternative is scored against ac1-ac3 and sc3-sc5; the Epic constraints are covered through those scores (k2 via ac1, k5 via ac2, k6 via ac3) but k1, k3, k4 and k7 have no explicit score entries. k1/k3/k4/k7 concern the daemon and the definitions file, which none of the alternatives touch, so no alternative differs on them.",
+        "status": "resolved",
+        "choice": "Shared invariant assessment",
+        "rationale": "User choice: one assessment covering k1, k3, k4 and k7 for all alternatives — none changes the daemon or the definitions file, so they do not differentiate the alternatives.",
+        "resolvedAt": "2026-10-26T19:12:55.055Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "In VS Code, 'insrc: Set model tier' offers exactly the families, models and effort levels the daemon's model definitions list, and saves a tier as one whole { runner, model, effort } value. A model id the family does not list is checked through its CLI by the daemon; the user sees each effort level's verdict and evidence, and the tier is saved only after they approve and the daemon restarts. The Repo Configuration panel lets a repo choose only which tier each role uses and its core floor. Refusals and 'restart to apply' come from the daemon and are shown with a Restart action — in the picker, the panel and native settings sync alike; the extension no longer carries a runner, model or effort list, or a copy of the settings catalog, and tier settings leave the VS Code Settings UI."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "The curated cloud catalog keeps its file (src/assets/models/cloud-model-catalog.json), its loader (validateModelCatalog, src/daemon/model-catalog.ts:162) and its boot hook (src/daemon/index.ts:381), as the DEF decided, and is extended in place; the boot hook moves ahead of the settings reconcile and the worker threads, because the settings defaults now come from the file. The file is extended into the model definitions: exactly one entry for each built-in family, each with its CLI kind (CLI families), its selectable models with aliases, accepted efforts and input limit, its tier defaults and summariser model (CLI families), the Ollama tool-loop default, and the default family. Each Ollama model's input limit is its context window and replaces the global models.shaper.ollamaNumCtx; the output cap ollamaNumPredict stays global. A ModelRegistry built from the file and the per-user approved-model store answers every model question in the daemon; each thread builds it on first use and caches it, the way it loads and caches settings today (src/config/analyze.ts:234). A daemon restart guarantees that every thread uses a changed file, approval or saved tier; until then, a thread that starts or first reads them after the change, such as a worker the supervisor replaces after a crash (src/daemon/threads/supervisor.ts:136-148), may already use it, as with settings today. That is harmless: every saved tier has passed config.write's checks and every approval a check in which the model ran. The settings catalog takes the defaults of its tier runner, tier model and local coreModel rows, and the allowed effort values, from the same file, so reconcile, the updater, the settings catalog loader and older plugins keep working unchanged and no model name stays in code. One read-only request, models.definitions, serves the definitions to clients and is the source of providers.listModels; models.resolveRole lets the TUI's review command run the model the daemon would. Unknown Claude and Codex models are checked through their CLI one call at a time and recorded only on the user's approval, and only for a check in which the model ran. A tier set to a model that is neither listed nor approved runs a tier default with a warning (decision A). Tiers become global-only; a repo keeps `tasks` and coreFloor. Every Story leaves the build and tests passing, keeping a named stopgap for anything a later Story migrates. Settings-write safety is out of scope (ISSUE-8dc75bc5).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc3",
+          "name": "models.definitions IPC request",
+          "purpose": "The one read-only request clients use to learn the definitions (k2): families with CLI kind and rejected ids, models with aliases, efforts and limits and whether they are shipped or user-approved, tier defaults, summariser model, tool-loop default, default family, and each listed Ollama model's installed state. providers.listModels is drawn from the same registry (s2/ac2).",
+          "interfaceSketch": "// request: 'models.definitions'  params: {}\ninterface ModelDefinitionsResult {\n  readonly version: number;\n  readonly defaultFamily: 'cli-claude' | 'cli-codex';\n  readonly families: readonly {\n    readonly id: FamilyId;\n    readonly cliKind?: 'claude' | 'codex' | undefined;\n    readonly displayName: string;\n    readonly tierDefaults?: Readonly<Record<TierName, TierDefault>> | undefined;\n    readonly summariserModel?: string | undefined;\n    readonly toolLoopModel?: string | undefined;\n    readonly rejectedModels?: readonly string[] | undefined;\n    readonly models: readonly {\n      readonly id: string;\n      readonly aliases: readonly string[];\n      readonly displayName?: string | undefined;\n      readonly efforts: readonly EffortLevel[];\n      readonly inputLimit?: InputLimit | undefined;\n      readonly source: 'shipped' | 'user-approved';\n      readonly installed?: boolean | undefined; // ollama only; absent when Ollama does not answer\n    }[];\n  }[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Unknown-model check and approval requests",
+          "purpose": "Checks a Claude or Codex model that is not in the definitions through its CLI, one call at a time (k1, k3), returns per-effort evidence, and records the user's decision as an ApprovedProfile (sc2) outside the shipped file and config.json (k4, k5). Approval is accepted only for a check in which the model ran without error. A decision applies at the next daemon restart, which the result says. Ollama has no such flow: only listed Ollama models are selectable.",
+          "interfaceSketch": "// 'models.check'   params: { family: 'cli-claude' | 'cli-codex'; modelId: string; claimedEfforts: EffortLevel[] }\ntype EffortVerdict = 'accepted' | 'rejected' | 'recognised-unconfirmed';\ninterface ModelCheckResult {\n  readonly checkId: string;\n  readonly family: 'cli-claude' | 'cli-codex';\n  readonly modelId: string;\n  readonly runs: boolean;\n  readonly inputLimit?: InputLimit | undefined;\n  readonly efforts: readonly { readonly effort: EffortLevel; readonly verdict: EffortVerdict; readonly evidence: string }[];\n  readonly error?: string | undefined; // CLI unreachable, or the CLI refused the model\n}\ntype DecisionResult =\n  | { readonly ok: true; readonly restartRequired: true }\n  | { readonly ok: false; readonly reason: 'unknown-check' | 'model-did-not-run' | 'invalid-efforts' | 'write-failed'; readonly detail: string };\n// 'models.approve' params: { checkId: string; efforts: EffortLevel[] } -> DecisionResult\n// 'models.reject'  params: { checkId: string }                       -> DecisionResult",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c11"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "Settings rules and models.resolveRole",
+          "purpose": "What changes in settings: the settings catalog's tier runner, tier model and local coreModel defaults and the allowed effort values come from the definitions; per-repo tier overrides are removed with a warning (k6, s3/ac5); ollamaNumCtx is pruned; config.write refuses a tier set to a rejected model (s4/ac4) and reports restartRequired for model settings. models.resolveRole gives the TUI's review command the tier, model, effort and provider settings the daemon would use for a role and repo.",
+          "interfaceSketch": "// config.write: request unchanged; result gains\ntype ConfigWriteResult =\n  | { readonly ok: true; readonly restartRequired?: boolean | undefined }\n  | { readonly ok: false; readonly reason?: 'invalid-path' | 'rejected-model' | undefined; readonly detail?: string | undefined };\n// 'models.resolveRole' params: { role: string; repoPath: string }\ninterface RoleResolution {\n  readonly tier: TierName;\n  readonly family: FamilyId;\n  readonly model: string;\n  readonly effort?: EffortLevel | undefined;\n  readonly inputLimit?: InputLimit | undefined;\n  readonly fallback?: { readonly reason: FallbackReason; readonly requested: string } | undefined;\n  readonly cli?: { readonly kind: 'claude' | 'codex' } | undefined;\n  readonly ollama?: { readonly host: string; readonly numCtx: number; readonly numPredict: number } | undefined;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c12"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The VS Code model-tier picker driven by models.definitions instead of its runner list and the bundled settings catalog's effort rows, removing the bundle's import of the settings catalog; the unknown-model check and approval prompt; the Repo Configuration panel without per-tier fields; showing restartRequired and offering insrc.daemon.restart. Tests: the picker offers exactly a fake answer's options and the bundle keeps no runner or model list (ac1); an unknown model is saved only after approval (ac2); the repo panel shows only `tasks` and coreFloor (ac3)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Extending the catalog file, its types (CloudModelCatalogFile, src/daemon/model-catalog.ts:48) and its validator in place; refreshing its contents with today's models, the aliases today's tier defaults use (opus, sonnet, haiku), the Ollama models insrc ships with and their context windows, and today's coreModel as the tool-loop default; the registry and its per-thread cache; moving the boot validation ahead of the settings reconcile and the worker threads; reading the approved-model store (a malformed store is logged and treated as empty); keeping the curated catalog's existing accessor answering providers.listModels from the new file shape until s2 replaces it. The validator refuses a missing or malformed file, an unknown, missing or repeated family, a CLI family without its CLI kind, tier defaults or summariser model, a model without an efforts list, a duplicate id or alias, a default that is not a model of its family, an Ollama model without a token input limit, and a tool-loop default that is not listed, naming the entry (ac3). Tests: one fixture per refusal reason (ac3); a model and alias added to a fixture are served after a restart with no code change (ac2); the file is validated before the settings reconcile, before any worker starts and before listen (ac1, k7); repeated requests in one thread return the same definitions even after the file changes on disk (ac1); a replacement worker started after the file, the store or config.json changed on disk uses the new values while a surviving thread keeps its own until the restart, and a thread whose first read comes after such a change likewise uses the new values; after a daemon restart every thread resolves the same definitions, approvals and tiers; providers.listModels still returns today's Claude and Codex models through the kept accessor; alias, effort and limit lookups; resolveTier distinguishes rejected-model from unlisted-model and falls back to the tier's family default, or the default family's for an Ollama tier."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The models.definitions handler and its method-class entry, the projection of the registry, each listed Ollama model's installed state from the existing bounded listing, and re-sourcing providers.listModels from the registry (for Ollama, listed models only), then removing the curated catalog accessor s1 kept. Tests: models.definitions returns every field of a fixture file (ac1); providers.listModels and models.definitions agree for every family, and an installed but unlisted Ollama model appears in neither (ac2); with Ollama not answering, installed is absent and the request still succeeds."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Moving every daemon consumer onto the registry: tier resolution, summariser selection, effort forwarding, CliProvider's input budget and CLI kind, OllamaProvider's num_ctx, the tool-loop model (an unlisted coreModel runs the tool-loop default with a warning) and the runner and model literals in routing, provider construction, attribution and workflow code; SUMMARISER_CLI_FALLBACK, CODEX_INPUT_BUDGET_CHARS and ollamaNumCtx go; DEFAULT_TIERS and TIER_EFFORTS stop being written in code and remain only as temporary exports drawn from the definitions for the TUI's model-tiers pane, which s5 migrates; no daemon code uses them. The settings catalog's tier and coreModel defaults and effort values are taken from the definitions; how the settings catalog reaches the file is decided in this Story's LLD and must work in every process that loads the settings catalog today (the daemon, the TUI, the updater, and the VS Code bundle until s6 drops its use). Reconcile removes per-repo tier overrides with a warning and prunes ollamaNumCtx; readRepoOverride and its callers go. config.write refuses a tier set to a rejected model and reports restartRequired. models.resolveRole and its method-class entry. Both installer copies take tier defaults and the tool-loop default from the file. Tests: an unset tier resolves to the file's default, and with a fixture whose defaults differ from today's, reconcile fills the fixture's values (ac1); an unsupported effort is dropped with a warning naming model and effort (ac2); a source scan fails on runner or model literals outside the family implementations, on any read of ollamaNumCtx, and on any daemon use of the temporary DEFAULT_TIERS or TIER_EFFORTS exports (ac3); the TUI still builds and its model-tiers pane shows the definitions' defaults; a repo's `tasks` choice applies with the global tier's model (ac4); reconcile removes per-repo tier overrides with a warning naming repo and tier and keeps `tasks` and coreFloor (ac5); an unlisted model falls back with the warning (decision A); a fixture Ollama model's input limit sets num_ctx; config.write refuses a rejected model and reports restartRequired; models.resolveRole matches the daemon's own resolution for a CLI tier and an Ollama tier; the settings catalog loader accepts the catalog and an unset JetBrains tier still shows the default family's values."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The per-family check procedures (Codex: the CLI's model list plus a run; Claude: a run, the input limit from the JSON output, recognised effort names), run one call at a time; telling a reachable CLI that refuses the model apart from an unreachable CLI; refusing approval unless the model ran without error; writing the store atomically and acknowledging a decision only once it is written; the method-class entries. Tests: checks against fake CLIs record each verdict and run one at a time (ac1); results list each claimed level with evidence and nothing is usable before approval (ac2); after approval and a restart only the approved levels are accepted (ac3); a rejected profile or unreachable CLI refuses the model with a reason, and approving a check whose model did not run is refused (ac4); after a restart an approved model appears in models.definitions as user-approved and a rejected one among the rejected ids (ac5); a failed store write returns write-failed and keeps the previous store."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The TUI model-tiers pane and its effort choices from models.definitions, removing the temporary DEFAULT_TIERS and TIER_EFFORTS exports s3 kept; the unknown-model check and approval screen; the repo settings view limited to `tasks` and coreFloor; showing restartRequired and offering maintenance.restart; the review command using models.resolveRole and building its provider from the answer instead of reading config.json; Setup recommending the definitions' tool-loop default instead of DEFAULT_LOCAL_MODEL, and saying it cannot recommend when the daemon is not running. Tests: the pane offers exactly the options of a fake models.definitions answer and no source file still exports or imports DEFAULT_TIERS or TIER_EFFORTS (ac1); saving an unknown model starts the check and shows its results (ac2); the repo view edits only `tasks` and coreFloor (ac3); the review command runs the model a fake models.resolveRole returns for a CLI and an Ollama tier; Setup recommends the fake answer's tool-loop default."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The JetBrains model-tiers section driven by models.definitions instead of ModelTiersModel.PROVIDERS; the unknown-model check and approval dialog; the per-repo settings without per-tier fields; showing restartRequired. Tests: the section offers exactly a fake answer's options and the plugin keeps no runner or model list (ac1); an unknown model is saved only after approval (ac2); the per-repo settings show only `tasks` and coreFloor (ac3)."
+        }
+      ],
+      "rolloutPhase": "Phase D — clients render the daemon's definitions",
+      "nonFunctional": {
+        "performance": "The file is parsed once per thread and every model question is an in-memory lookup; models.definitions touches no CLI and makes one bounded Ollama listing call, the same one providers.listModels makes today.",
+        "security": "No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home written only by the daemon; clients reach it only through models.approve and models.reject (k2).",
+        "observability": "A bad file stops the daemon with a log naming the entry (s1/ac3); a dropped effort logs model and effort (s3/ac2); a tier fallback logs tier, requested model, reason and the default used (decision A); a tool-loop substitution logs both models; removing a per-repo tier override logs repo and tier (s3/ac5); each CLI call of a check and its verdict is logged.",
+        "durability": "Approved and rejected profiles live outside the shipped file and config.json, so they survive restarts and updates; the store is replaced atomically and a decision is acknowledged only once written; a malformed store is logged and treated as empty. When an update ships a model the user had approved, the shipped definition wins. Existing `tasks`, coreFloor, ollamaNumPredict and every tier value already in config.json are kept. Between a change and the next restart, threads may differ (a replaced worker or a late first read uses the new values); the restart brings them together."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "runSetModelTier",
+          "signature": "runSetModelTier(deps: SetModelTierDeps): Promise<void>  // vscode-plugin/src/models/model-tier-picker.ts; SetModelTierDeps = { definitions(): Promise<ModelDefinitionsResult>; rawConfig(): Promise<Record<string, unknown>>; writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult>; check(p: { family: 'cli-claude' | 'cli-codex'; modelId: string; claimedEfforts: readonly string[] }): Promise<ModelCheckResult | { error: string }>; approve(p: { checkId: string; efforts: readonly string[] }): Promise<DecisionResult>; reject(p: { checkId: string }): Promise<DecisionResult>; restartDaemon(): Promise<boolean>; pick<T extends QuickPickItemLike>(items: readonly T[], opts: { placeHolder: string; canPickMany?: boolean }): Promise<T | readonly T[] | undefined>; input(opts: { prompt: string; value?: string }): Promise<string | undefined>; notify(message: string, ...actions: string[]): Promise<string | undefined> }",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "SetModelTierDeps",
+              "purpose": "Injected seams bound in vscode-plugin/src/extension.ts: models.definitions / models.check / models.approve / models.reject over the shared client, config.show and config.write through the config gateway, restartDaemon bound to restartDaemonAndReport (the controller's LifecycleResult, not the command's completion), showQuickPick (incl. canPickMany), showInputBox and showInformationMessage with actions. The listModels and catalog seams and the CONFIG_CATALOG import are removed.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Flow: tier -> family (the answer's families, current marked) -> model (that family's models: id with aliases, '(user-approved)' / '(not installed)' marks, plus 'Enter another model id…' for a CLI family only) -> effort ('' = CLI default, then the chosen model's efforts; skipped when the model lists none). The current tier is config.show's models.tiers.<tier> overlaid on the default family's tierDefaults[tier] from the answer. A served pick writes ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }); a typed id that is an id or alias of the family is treated as that served model; an unserved CLI id runs the check flow: claimed efforts (default: the family's effort names) -> check -> a QuickPick listing each level's verdict and evidence -> a multi-select of the non-rejected levels -> Approve / Reject / Cancel. Approve calls models.approve and saves nothing; the user is offered 'Restart daemon', and only after restartDaemon() resolves true (the lifecycle result is ok and the daemon is running) is the whole tier written (effort = the first approved level, or ''). Every write's result is shown: a refusal as 'not saved: <reason> — <detail>', restartRequired with a 'Restart daemon' action. Never throws; cancel at any step writes nothing."
+          },
+          "errors": [
+            {
+              "type": "notify: daemon not running",
+              "condition": "definitions() or rawConfig() rejects. Four distinct outcomes by the rejection: 'daemon is not running…' -> 'insrc: the daemon is not running — start it to set model tiers'; a DaemonDisconnectedError (code 'disconnected') -> 'the daemon closed the connection — try again'; a message starting 'unknown method: ' -> the text and 'update the daemon'; anything else (a handler error, 'invalid response from daemon') -> 'insrc: could not read the model definitions: <error text>'. Nothing is written in any case."
+            },
+            {
+              "type": "notify: check refused / did not run",
+              "condition": "check() answers { error } (already served, no CLI kind) or runs:false: the error and evidence are shown, approve is not offered."
+            },
+            {
+              "type": "notify: decision refused",
+              "condition": "approve()/reject() return ok:false: '<reason>: <detail>'; on unknown-check the user is offered 'Check again'."
+            },
+            {
+              "type": "notify: restart failed",
+              "condition": "restartDaemon() resolves false or rejects after an approval: 'approval recorded; the daemon did not restart — the tier was not saved', with 'Restart daemon' to retry; approve is never sent again."
+            },
+            {
+              "type": "notify: outcome unknown",
+              "condition": "a request rejects with DaemonDisconnectedError (code 'disconnected'): for check, 'the check was interrupted — check again'; for approve/reject/config.write, 'outcome unknown — reopen the picker to see the current tier'."
+            }
+          ],
+          "preconditions": [
+            "The daemon serves models.definitions, models.check, models.approve, models.reject and config.write with the sc5 result (s2-s4, s3)."
+          ],
+          "postconditions": [
+            "No write sets only part of a tier; a tier names a model of its runner's family (served, or approved and the daemon restarted).",
+            "The module imports no CONFIG_CATALOG, keeps no runner, model or effort list, and offers no free-text entry for an Ollama family."
+          ]
+        },
+        {
+          "name": "createDaemonConfigGateway",
+          "signature": "createDaemonConfigGateway(client: IpcClient): ConfigGateway  // vscode-plugin/src/config/gateway.ts; ConfigWriteResult (vscode-plugin/src/config/types.ts) = { ok: true; restartRequired?: boolean | undefined } | { ok: false; reason: string; detail?: string | undefined }",
+          "parameters": [
+            {
+              "name": "client",
+              "type": "IpcClient",
+              "purpose": "The shared daemon client.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ConfigGateway",
+            "meaning": "writeKey and writeKeyPath return the daemon's config.write answer: restartRequired on success; on refusal the daemon's reason ('invalid-path', 'rejected-model', 'per-repo-tier') and detail, falling back to 'refused' when an older daemon gives none. catalog() and rawConfig() are unchanged."
+          },
+          "errors": [
+            {
+              "type": "rejection",
+              "condition": "A socket failure still rejects, as today, so callers keep their unreachable-daemon handling."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Existing callers that read only ok and reason keep working (reason stays a string on refusal)."
+          ]
+        },
+        {
+          "name": "renderRepoConfig",
+          "signature": "renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer  // vscode-plugin/src/panels/repo-config.ts",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "RepoConfigRendererDeps",
+              "purpose": "registeredRepos() and rawConfig(), as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoConfigRenderer",
+            "meaning": "For the selected repo: a <select> per taxonomy role (reasoningRoleTaxonomy, the same source the per-role key map uses) with 'global' plus core / mid / cheap, preselected from models.byRepo[repo].tasks[roleId], carrying data-segments ['tasks', roleId]; and a coreFloor <select> ('global', core, mid, cheap) carrying ['coreFloor']. 'global' posts value '' which the existing webview script sends as null (clear). No runner, model or effort field, and no text input."
+          },
+          "errors": [
+            {
+              "type": "rejection",
+              "condition": "registeredRepos()/rawConfig() rejection propagates to the host's degraded panel, as today."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Every posted write's segments start with 'tasks' or 'coreFloor'."
+          ]
+        },
+        {
+          "name": "createRepoConfigWriteHandler",
+          "signature": "createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write: RepoConfigWrite) => void  // vscode-plugin/src/panels/repo-config.ts",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "RepoConfigWriteDeps",
+              "purpose": "consent, writeKeyPath, registeredRepos, status, logger, refresh, plus offerRestart(): void (shows the 'Restart daemon' action that runs insrc.daemon.restart).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(write: RepoConfigWrite) => void",
+            "meaning": "As today (shape check, registered repo, consent, write at ['models','byRepo',repoPath,...segments], status, refresh), and additionally: a write whose segments do not start with 'tasks' (exactly two segments) or 'coreFloor' (one segment) is dropped with a warning; a refusal shows '<reason> — <detail>'; restartRequired calls offerRestart()."
+          },
+          "errors": [
+            {
+              "type": "logged warning",
+              "condition": "write failure or rejection, as today; never throws."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No write from the panel targets models.byRepo.<repo>.tiers."
+          ]
+        },
+        {
+          "name": "buildConfigKeyMap",
+          "signature": "buildConfigKeyMap(manifest: ManifestConfiguration = MANIFEST_CONFIGURATION): ConfigKeyMap  // vscode-plugin/src/config/key-map.ts",
+          "parameters": [
+            {
+              "name": "manifest",
+              "type": "ManifestConfiguration",
+              "purpose": "The contributes.configuration properties of the extension's package.json (bundled as JSON), default the real manifest; tests pass a fixture.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ConfigKeyMap",
+            "meaning": "One entry per insrc.<path> property of the manifest except the plugin-local keys (isPluginLocalKey: insrc.chat.* and insrc.models.tasks.*, the same rule the manifest generator uses — the generator imports the predicate from key-map.ts so the two cannot drift; buildPerRoleKeyMap still builds the per-role entries), with a ConfigOption built from the property's type, enum and default (a string with enum -> 'enum', boolean, number, string), so the sync engine's validation keeps working. key-map.ts no longer imports src/config/config-catalog.ts; MERGED_KEY_MAP and CONFIG_KEY_MAP keep their shape."
+          },
+          "errors": [],
+          "preconditions": [
+            "package.json is generated from the catalog at build time (vscode-plugin/scripts/sync-manifest-catalog.mjs), so it carries every row the sync engine maps."
+          ],
+          "postconditions": [
+            "No entry maps a models.tiers.* key or a plugin-local key."
+          ]
+        },
+        {
+          "name": "restartDaemonAndReport",
+          "signature": "restartDaemonAndReport(deps: { controller: DaemonLifecycleController; status: StatusSurface }): Promise<boolean>  // NEW export beside registerDaemonCommands in vscode-plugin/src/daemon/commands.ts",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ controller: DaemonLifecycleController; status: StatusSurface }",
+              "purpose": "The same lifecycle controller and status surface registerDaemonCommands uses.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "Runs controller.run('restart'), reflects the LifecycleResult on the status surface exactly as the insrc.daemon.restart command does, and resolves true only when result.ok and result.state === 'running'. The insrc.daemon.restart command keeps its behaviour (it calls the same reflect path); the picker's restartDaemon seam and every 'Restart daemon' notification action are bound to this adapter, so success is the lifecycle result, not the command's completion."
+          },
+          "errors": [
+            {
+              "type": "false",
+              "condition": "controller.run rejects, or the result is not ok, or the state is not 'running': resolves false after reflecting what is known (a rejection is reflected as errored with its message)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The status surface shows the same outcome the command shows."
+          ]
+        },
+        {
+          "name": "createConfigSyncEngine",
+          "signature": "createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine  // vscode-plugin/src/config/sync-engine.ts; ConfigSyncDeps gains onRestartRequired(keys: readonly string[]): void",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ConfigSyncDeps",
+              "purpose": "As today (gateway, settings, notifier, keyMap) plus onRestartRequired, bound in vscode-plugin/src/extension.ts to an information message '<keys> saved — restart the daemon to apply' with a 'Restart daemon' action that calls restartDaemonAndReport.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ConfigSyncEngine",
+            "meaning": "applyChanges keeps validation, last-synced echo suppression and revert-on-refusal; a refusal now reads 'insrc: daemon rejected '<key>' — <reason>' plus ' — <detail>' when the daemon gives one; after a batch, if any accepted write reported restartRequired, onRestartRequired is called ONCE with those native keys (e.g. a per-role tier or coreFloor change)."
+          },
+          "errors": [
+            {
+              "type": "notifier.error",
+              "condition": "refusals and unreachable-daemon writes, as today, with the daemon's detail added."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No restartRequired answer from a native-settings write is dropped silently."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "VS Code native settings manifest (package.json contributes.configuration)",
+        "change": "field-remove",
+        "details": "vscode-plugin/scripts/sync-manifest-catalog.mjs skips the catalog's models.tiers.<tier>.runner / .model / .effort rows, so insrc.models.tiers.* leave the manifest and the Settings UI; every other row is generated as before. Values a user already has under insrc.models.tiers.* in settings.json are no longer read or written (VS Code shows them as unknown); the tiers in ~/.insrc/config.json are unchanged.",
+        "schemaDiff": "- insrc.models.tiers.{core,mid,cheap}.{runner,model,effort}",
+        "callSites": [
+          "vscode-plugin/scripts/sync-manifest-catalog.mjs",
+          "vscode-plugin/package.json",
+          "vscode-plugin/src/config/key-map.ts:51"
+        ]
+      },
+      {
+        "entity": "ConfigWriteResult (plugin)",
+        "change": "field-add",
+        "details": "Success gains restartRequired; refusal gains detail and carries the daemon's reason instead of the fixed 'invalid path' text.",
+        "schemaDiff": "{ ok: true } | { ok: false; reason: string }  ->  { ok: true; restartRequired?: boolean | undefined } | { ok: false; reason: string; detail?: string | undefined }",
+        "callSites": [
+          "vscode-plugin/src/config/types.ts:45",
+          "vscode-plugin/src/config/gateway.ts:42",
+          "vscode-plugin/src/config/sync-engine.ts"
+        ]
+      },
+      {
+        "entity": "RepoConfigWrite segments",
+        "change": "invariant-change",
+        "details": "Panel writes are ['tasks', roleId] or ['coreFloor'] under models.byRepo[repoPath]; ['tiers', tier, field] is no longer produced or accepted.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:183",
+          "vscode-plugin/src/panels/repo-config.ts:93",
+          "vscode-plugin/src/panels/repo-config.ts:131"
+        ]
+      },
+      {
+        "entity": "Model tier picker data",
+        "change": "field-remove",
+        "details": "ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG lookups (catalogDefault, effortValues) are removed; the picker types the sc3/sc4 answers structurally (no daemon import).",
+        "callSites": [
+          "vscode-plugin/src/models/model-tier-picker.ts:25",
+          "vscode-plugin/src/models/model-tier-picker.ts:74",
+          "vscode-plugin/src/models/model-tier-picker.ts:198"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "The picker reads models.definitions for every family, model (with aliases, source and installed state), effort list and tier default; nothing is cached between runs of the command."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "An unserved Claude or Codex id runs models.check; the verdicts and evidence are shown; models.approve with the chosen levels or models.reject records the decision; a restart (insrc.daemon.restart) precedes saving the tier. Ollama offers no typed id."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Tiers are written whole at models.tiers.<tier>; repo writes touch only tasks and coreFloor; config.write's reason, detail and restartRequired are shown, with a Restart action on restartRequired."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not running when 'insrc: Set model tier' starts.",
+          "detection": "deps.definitions() or deps.rawConfig() rejects with the shared client's 'daemon is not running' error.",
+          "response": "notify 'insrc: the daemon is not running — start it to set model tiers'; the flow ends before any pick.",
+          "userImpact": "No tier can be chosen until the daemon runs; nothing is written.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An older daemon does not know models.definitions / models.check.",
+          "detection": "The rpc rejects with the daemon's own unknown-method answer, recognised by its message starting 'unknown method: ' (src/daemon/server.ts:87).",
+          "response": "notify the error text and 'update the daemon (insrc: Update daemon)'; nothing is written.",
+          "userImpact": "The user learns the daemon must be updated.",
+          "recoverable": true
+        },
+        {
+          "scenario": "config.write refuses the tier (rejected-model, invalid-path) or a repo write (per-repo-tier, invalid-path).",
+          "detection": "The ConfigWriteResult has ok:false; the gateway now carries the daemon's reason and detail.",
+          "response": "notify 'insrc: <tier> not saved: <reason> — <detail>' (picker) or set the status line and refresh (panel).",
+          "userImpact": "The user sees why; the previous value stays.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A save succeeds but needs a restart to apply.",
+          "detection": "The ConfigWriteResult has ok:true and restartRequired:true.",
+          "response": "notify '… saved — restart the daemon to apply' with a 'Restart daemon' action that runs insrc.daemon.restart.",
+          "userImpact": "The user can apply the change at once or later.",
+          "recoverable": true
+        },
+        {
+          "scenario": "models.check answers invalid params (the id is already served by the family, or the family has no CLI kind) or a check whose model did not run.",
+          "detection": "check() resolves { error } or a ModelCheckResult with runs:false.",
+          "response": "Show the error and each level's evidence; Approve is not offered (Reject and Cancel are). For an already-served id the picker re-reads models.definitions and offers it as a normal pick.",
+          "userImpact": "Nothing unusable can be approved or saved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "models.approve or models.reject refuses (unknown-check after a daemon restart, invalid-efforts, write-failed).",
+          "detection": "DecisionResult ok:false.",
+          "response": "notify '<reason>: <detail>'; on unknown-check offer 'Check again', which reruns models.check.",
+          "userImpact": "The tier is not saved; the user can check again.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The restart after an approval fails.",
+          "detection": "restartDaemon() resolves false or rejects.",
+          "response": "notify 'approval recorded; the daemon did not restart — the tier was not saved' with 'Restart daemon' to retry the restart and then save; models.approve is not called again.",
+          "userImpact": "The approval is kept; the tier waits for a working restart.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon closes the connection mid-request.",
+          "detection": "The rpc rejects with DaemonDisconnectedError (code 'disconnected').",
+          "response": "For check: 'the check was interrupted — check again'. For approve, reject or config.write: 'outcome unknown — reopen the picker to see the current tier' (the request may have completed).",
+          "userImpact": "The user is not told something failed that may have succeeded.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo panel receives a write whose segments are not ['tasks', roleId] or ['coreFloor'] (a stale webview or a forged message).",
+          "detection": "createRepoConfigWriteHandler checks the first segment and the segment count before consent.",
+          "response": "Drop it with a logged warning; no consent prompt, no write.",
+          "userImpact": "None; per-repo tiers cannot be written from the panel.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The restart a 'Restart daemon' action or the picker asks for does not bring the daemon back.",
+          "detection": "restartDaemonAndReport's LifecycleResult is not ok or its state is not 'running' (or controller.run rejects).",
+          "response": "The status surface shows the result as the restart command does; the picker reports 'the daemon did not restart — the tier was not saved' and offers the action again.",
+          "userImpact": "No tier is saved against a daemon that did not come back.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A native setting change (a per-role tier, the core floor, the local coreModel) is saved and the daemon says a restart is required.",
+          "detection": "The gateway's ConfigWriteResult for that write has restartRequired:true.",
+          "response": "After the batch, onRestartRequired is called once with the changed keys; the extension shows '<keys> saved — restart the daemon to apply' with a 'Restart daemon' action.",
+          "userImpact": "Native edits that need a restart say so instead of silently not applying.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Any other failed request: the daemon's handler throws, the reply is malformed ('invalid response from daemon'), or another socket error.",
+          "detection": "The rpc rejects with a message that is neither 'daemon is not running…', a DaemonDisconnectedError (code 'disconnected'), nor 'unknown method: …'.",
+          "response": "notify 'insrc: <what> failed: <error text>' with no update or start advice; nothing is written.",
+          "userImpact": "The user sees the real error instead of misleading advice.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A tier in config.json names a model its family no longer lists (or one that is not yet approved and restarted).",
+          "expected": "The model step marks it '(current, not listed — runs the default)' and it is not selectable; the user can pick a listed model or enter it to check."
+        },
+        {
+          "input": "A family without tierDefaults (Ollama) is chosen.",
+          "expected": "The model step preselects the family's toolLoopModel; effort is skipped when the chosen model lists no efforts and '' is written."
+        },
+        {
+          "input": "The chosen model does not accept the tier's current effort.",
+          "expected": "The effort step offers only '' and the model's efforts with none marked current; the whole-tier write carries the chosen value."
+        },
+        {
+          "input": "The user types an alias of a listed model in 'Enter another model id…'.",
+          "expected": "It resolves to the canonical id and is saved as a normal pick, with no check."
+        },
+        {
+          "input": "The answer's family list is empty or a family lists no models.",
+          "expected": "'No models available' with Refresh (re-reads models.definitions); nothing is written."
+        },
+        {
+          "input": "A user's settings.json still has insrc.models.tiers.* values.",
+          "expected": "They are ignored by the extension (no longer in the manifest or the key map); config.json's tiers are unchanged."
+        },
+        {
+          "input": "A repo with no byRepo entry is opened in the panel.",
+          "expected": "Every role shows 'global' and coreFloor 'global'; the first change creates models.byRepo.<repo>.tasks.<role> (or coreFloor) only."
+        },
+        {
+          "input": "A repo path or role id containing dots.",
+          "expected": "Written as single literal segments via the array form, as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The picker and the panel never throw into VS Code; every failure path notifies and writes nothing it did not mean to (vscode-plugin/src/models/model-tier-picker.ts:105 outer backstop; vscode-plugin/src/panels/repo-config.ts:131 never-throw handler).",
+          "source": "c10"
+        },
+        {
+          "text": "Per-repo writes go through the consent gate, only for a registered repo, via the config.write array form, and the panel re-renders from fresh config afterwards (vscode-plugin/src/panels/repo-config.ts:131).",
+          "source": "c10"
+        },
+        {
+          "text": "Native settings sync keeps validating each native value against its option's type and enum before writing, and reverts a refused or failed write (vscode-plugin/src/config/sync-engine.ts); only the source of the option metadata moves from the bundled catalog to the manifest.",
+          "source": "c10"
+        },
+        {
+          "text": "The per-role native keys keep writing ['models','tasks',roleId] through buildPerRoleKeyMap (vscode-plugin/src/config/key-map.ts:72).",
+          "source": "c10"
+        },
+        {
+          "text": "The extension reaches the definitions and settings only over daemon IPC; it imports no daemon or settings-catalog module at run time (k2).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through npx tsx --test (vscode-plugin tests run from the repo root, e.g. npx tsx --test vscode-plugin/src/models/__tests__/model-tier-picker.test.ts); fakes for every injected seam, no vscode import.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The picker flow over a fake models.definitions answer whose names match nothing in the shipped file, and the check / approve / restart / save order, over fake seams.",
+          "subjects": [
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's families, its models (with aliases, '(user-approved)' and '(not installed)' marks) and '' plus the chosen model's efforts; a pick makes ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }); an Ollama family offers no 'Enter another model id…'; a typed alias resolves to the canonical id and saves without a check; a stale configured model is marked and not selectable; a refusal shows '<reason> — <detail>' and restartRequired offers 'Restart daemon'; definitions rejecting with 'daemon is not running', a DaemonDisconnectedError, 'unknown method: models.definitions' and a plain handler error each give their own message (only the unknown-method one says to update the daemon) and write nothing",
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: unknown model — an unserved CLI id calls check with the family's effort names, shows each level's verdict and evidence, offers only non-rejected levels; Approve calls approve with the chosen levels and writes nothing; the tier is written only after restartDaemon() resolves true; a failed restart writes nothing and a retry does not approve again; Reject calls reject and writes nothing; runs:false or { error } offers no Approve; unknown-check offers 'Check again'; a disconnected approve reports 'outcome unknown'",
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config (source scan)"
+          ],
+          "fixturesNeeded": [
+            "A fake ModelDefinitionsResult with families 'cli-claude' and 'cli-codex' plus an Ollama family, model ids unlike the shipped file (fx-a, fx-b with alias xb, loc:1), one user-approved and one not-installed model",
+            "Scripted fake check / approve / reject / restart seams that record calls"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The Repo Configuration panel and its write handler, the gateway's write result, and the key map built from the manifest.",
+          "subjects": [
+            "vscode-plugin/src/panels/__tests__/repo-config.test.ts: the rendered form has a select per taxonomy role (global / core / mid / cheap, preselected from tasks) and a coreFloor select, and no runner, model, effort or tiers field; the handler writes ['models','byRepo',repo,'tasks',roleId] and ['models','byRepo',repo,'coreFloor'] after consent, drops a ['tiers', …] write without prompting, shows a refusal's reason and detail, and calls offerRestart on restartRequired",
+            "vscode-plugin/src/config/__tests__/gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }",
+            "vscode-plugin/src/config/__tests__/key-map.test.ts: buildConfigKeyMap over a manifest fixture yields one entry per insrc.<path> row with type / enum / default taken from the manifest, and none for models.tiers.*; key-map.ts does not import src/config/config-catalog.ts"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The manifest stays in lock-step with the settings catalog minus the tier rows, and the bundle no longer carries the catalog.",
+          "subjects": [
+            "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts: package.json contributes every catalog row except models.tiers.*, with the catalog's type, default and enum",
+            "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts: the committed manifest is in sync with the generator (which skips the tier rows) and the generator is idempotent",
+            "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts: the extension type-checks and bundles, and the bundle contains no settings-catalog rows (no models.tiers.<tier>.runner default or effort enum) and no models definitions file"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The native settings sync still works with the manifest-built key map.",
+          "subjects": [
+            "vscode-plugin/src/config/__tests__/sync-engine.test.ts and per-role-engine.test.ts keep passing over their fixture key maps (engine behaviour); the production map is covered by manifest-key-map-engine.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The native sync engine over the REAL manifest-built merged key map, and the restart adapter.",
+          "subjects": [
+            "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts: createConfigSyncEngine with MERGED_KEY_MAP (built from the real package.json) and a fake gateway: a global key write and a per-role write reach config.write at the right path; insrc.models.tiers.* and insrc.chat.* changes are not mapped and write nothing; an out-of-enum value is refused and reverted; a write answering restartRequired calls onRestartRequired once for the batch; a refusal's message carries the daemon's detail",
+            "vscode-plugin/src/daemon/__tests__/commands.test.ts: restartDaemonAndReport resolves true only for { ok:true, state:'running' }, false for not-ok, a stopped or errored state, or a rejecting controller, and reflects the result on the status surface like the restart command"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and each pick writes the whole tier",
+            "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+            "key-map.test.ts: no entry for models.tiers.* and no import of the settings catalog",
+            "manifest-catalog.test.ts: the manifest contributes no models.tiers.* keys",
+            "vscode-bundle-catalog.test.ts: the bundle contains no settings-catalog rows or definitions file",
+            "manifest-key-map-engine.test.ts: tier keys are not mapped by the real merged key map and write nothing"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after approval and a successful restart; reject writes nothing; runs:false offers no approve",
+            "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "repo-config.test.ts: the form has role tier selects and coreFloor only, and the handler drops any tiers write"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The VS Code picker keeps its own runner list and reads tier defaults and effort values from the bundled settings catalog, lists models per provider through providers.listModels and writes a tier field by field (vscode-plugin/src/models/model-tier-picker.ts:25, :74, :198, :285). The bundle imports src/config/config-catalog.ts at run time for the native-settings key map (vscode-plugin/src/config/key-map.ts:12), and the manifest contributes insrc.models.tiers.<tier>.runner/.model/.effort with static enums and model defaults. The gateway drops config.write's reason, detail and restartRequired (vscode-plugin/src/config/gateway.ts:42). The Repo Configuration panel edits per-repo tiers.<tier>.{runner,model}, which the daemon now refuses (vscode-plugin/src/panels/repo-config.ts:93).",
+      "stateAfter": "The picker offers only what models.definitions lists, runs the check / approve / restart flow for an unlisted Claude or Codex id, and writes each tier whole. The bundle imports no settings catalog: the key map is built from the extension's manifest, which no longer contributes the tier keys. Write results carry the daemon's reason, detail and restartRequired, with a Restart action. The Repo Configuration panel offers a tier per role and the core floor only.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Carry config.write's restartRequired, reason and detail through the gateway's ConfigWriteResult; existing callers keep reading ok and reason.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add restartDaemonAndReport beside the lifecycle commands, add onRestartRequired to the sync engine's deps and the daemon's refusal detail to its messages, and bind both in extension.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Build the native-settings key map from the manifest's contributed properties instead of the bundled catalog; stop generating the models.tiers.* rows in the manifest and regenerate package.json; update the manifest / bundle contract tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Move the model-tier picker onto models.definitions with whole-tier writes and the unknown-model check flow; bind the new seams (definitions, check, approve, reject, restart, input, actioned notify) in extension.ts and extend the vscode.d.ts stub with showInputBox and canPickMany; remove the bundled-effort test.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Replace the Repo Configuration panel's per-repo tier inputs with role tier and coreFloor selects; the write handler accepts only tasks and coreFloor segments and offers a restart on restartRequired.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No daemon request or config shape changes; config.json keeps the same models.tiers objects (now written whole) and byRepo tasks / coreFloor. Users with insrc.models.tiers.* in their VS Code settings.json see those keys reported as unknown and no longer synced; the tiers in ~/.insrc/config.json, which the daemon uses, are unchanged and are edited with 'insrc: Set model tier'. The extension now needs a daemon that serves models.definitions / models.check (s2, s4): against an older daemon the picker says to update the daemon and writes nothing. Native settings other than the tier keys sync exactly as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Picker and panel on the daemon; tier keys leave native settings; key map from the manifest",
+        "oneLineSummary": "The picker reads models.definitions and writes whole tiers (with the check flow), the repo panel edits tasks and coreFloor, write results keep the daemon's reason and restartRequired, the native tier keys are dropped, and the key map is built from the extension's own manifest so the bundle no longer imports the settings catalog.",
+        "approach": "runSetModelTier takes a definitions() seam (models.definitions) instead of listModels and the bundled catalog: tier -> family (defs.families) -> model (that family's models with aliases, plus 'Enter another model id…' for a CLI family) -> effort ('' plus the model's efforts), then ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }). The tier's current value comes from config.show (rawConfig) overlaid on the family's tierDefaults from the answer. An id the family does not serve goes through models.check -> a QuickPick of per-effort verdicts with evidence -> a multi-select of the non-rejected levels -> models.approve or models.reject; on approval the user is offered insrc.daemon.restart and the tier is saved only after a successful restart (never re-approving). The Repo Configuration panel renders a select per taxonomy role (tier or 'global') writing ['models','byRepo',repo,'tasks',roleId] (null clears) and a coreFloor select writing ['models','byRepo',repo,'coreFloor'], with no runner or model field. The gateway's ConfigWriteResult becomes { ok:true; restartRequired? } | { ok:false; reason; detail? } from the daemon's answer; the picker and panel show the reason and, on restartRequired, offer insrc.daemon.restart. The manifest generator skips the models.tiers.* rows (tiers are edited only through the picker, whole), and key-map.ts builds its entries from the manifest's contributed properties (type, enum, default) instead of importing CONFIG_CATALOG; the manifest-catalog checks become 'manifest = catalog minus the tier rows'.",
+        "pros": [
+          "Meets ac1 fully: the bundle keeps no runner, model or effort list and no copy of the settings catalog; every option comes from models.definitions",
+          "No native path can write half a tier, matching the daemon's whole-tier rule and the TUI",
+          "Refusal reasons (rejected-model, per-repo-tier) and restartRequired reach the user",
+          "Reuses the existing QuickPick picker, panel, consent gate, writeKeyPath array form and the insrc.daemon.restart command"
+        ],
+        "cons": [
+          "Users lose editing tiers in the VS Code Settings UI; any insrc.models.tiers.* values already in settings.json stop syncing (migration note needed)",
+          "Touches the native-settings key map and the manifest generator as well as the picker and panel"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Same picker and panel; keep native tier keys; key map from the daemon's config.catalog",
+        "oneLineSummary": "As a1 for the picker, panel and write results, but the native tier rows stay in the manifest and the key map is built at run time from the daemon's config.catalog options.",
+        "approach": "The picker, check flow, repo panel and gateway change as in a1. The bundle drops its CONFIG_CATALOG import by building the key map from the config.catalog answer the sync engine already fetches (options carry type, enum and default). The manifest keeps insrc.models.tiers.<tier>.runner/.model/.effort, regenerated from the catalog at build time, so native edits keep writing single tier leaves.",
+        "pros": [
+          "Keeps tier editing in the VS Code Settings UI",
+          "Key-map metadata always matches the running daemon"
+        ],
+        "cons": [
+          "The manifest still carries a static runner enum, model defaults and an effort enum, i.e. a model list kept in the extension (ac1/k2)",
+          "Native edits write one tier leaf at a time, so a runner can be saved without a model of its family — the hazard the whole-tier write removes",
+          "The sync engine needs the daemon before it can map any native key, a new startup dependency"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Keeps Settings-UI tier editing but violates ac1 and only partially keeps the whole-tier rule; it also makes native sync depend on the daemon at startup."
+      },
+      {
+        "id": "a3",
+        "name": "Picker and panel only; keep the bundled catalog as a named stopgap",
+        "oneLineSummary": "Rework only the picker, check flow, repo panel and write results; leave key-map.ts importing CONFIG_CATALOG and the native tier rows as they are.",
+        "approach": "The picker and panel change as in a1 and the gateway keeps the daemon's reason and restartRequired. key-map.ts and the manifest are untouched, recorded as a stopgap for a later change.",
+        "pros": [
+          "Smallest change; native settings sync is untouched"
+        ],
+        "cons": [
+          "Leaves the bundle importing the settings catalog, which this Story's boundary says it removes",
+          "Native tier keys keep their static enums and single-leaf writes, so ac1's 'no runner or model list kept in the extension' does not hold"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Smallest, but fails ac1 and leaves the bundle's catalog import the Story boundary says it removes."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Checklist alt2 (partial): Each alternative is scored against ac1-ac3 and sc3-sc5; the Epic constraints are covered through those scores (k2 via ac1, k5 via ac2, k6 via ac3) but k1, k3, k4 and k7 have no explicit score entries. k1/k3/k4/k7 concern the daemon and the definitions file, which none of the alternatives touch, so no alternative differs on them.",
+      "Tier settings leave the VS Code Settings UI (the manifest stops contributing insrc.models.tiers.*): tiers are then edited only through 'insrc: Set model tier', whole. Keeping the native keys would mean a static runner / effort list in the extension and single-leaf tier writes. Confirm removing them?"
+    ],
+    "sequenceDefinition": {
+      "narrative": "How an unknown model is checked, approved and only then saved: the tier write waits for both the user's approval and a daemon restart.",
+      "participants": [
+        {
+          "id": "user",
+          "label": "User",
+          "description": "The developer running 'insrc: Set model tier'."
+        },
+        {
+          "id": "picker",
+          "label": "Model tier picker",
+          "description": "runSetModelTier in vscode-plugin/src/models/model-tier-picker.ts."
+        },
+        {
+          "id": "daemon",
+          "label": "insrc daemon",
+          "description": "Serves models.definitions, models.check, models.approve and config.write."
+        }
+      ],
+      "messages": [
+        {
+          "from": "user",
+          "to": "picker",
+          "label": "choose tier, family, 'Enter another model id…'",
+          "description": "Types an id the family does not list."
+        },
+        {
+          "from": "picker",
+          "to": "daemon",
+          "label": "models.check(family, modelId, claimedEfforts)",
+          "description": "The daemon runs the CLI one call at a time."
+        },
+        {
+          "from": "daemon",
+          "to": "picker",
+          "label": "ModelCheckResult",
+          "description": "runs, input limit and a verdict with evidence per level."
+        },
+        {
+          "from": "picker",
+          "to": "user",
+          "label": "verdicts and evidence; choose levels; Approve / Reject",
+          "description": "Rejected levels cannot be chosen; runs:false offers no Approve."
+        },
+        {
+          "from": "picker",
+          "to": "daemon",
+          "label": "models.approve(checkId, efforts)",
+          "description": "Records the decision; nothing is saved to the tier yet."
+        },
+        {
+          "from": "picker",
+          "to": "user",
+          "label": "'Approved — restart the daemon to use it' [Restart daemon]",
+          "description": "The tier is saved only after a successful restart."
+        },
+        {
+          "from": "picker",
+          "to": "daemon",
+          "label": "restartDaemonAndReport (ok and running), then config.write(['models','tiers',tier], {runner, model, effort})",
+          "description": "The restart's lifecycle result gates the one whole-tier write; its refusal or restartRequired is shown."
+        }
+      ]
+    },
+    "uxDefinition": {
+      "narrative": "The reworked Repo Configuration panel: for the chosen repo, one tier choice per role and the core floor; no runner, model or effort field.",
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Repo Configuration",
+          "weight": "bolder",
+          "size": "medium",
+          "description": "Panel title."
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "repo",
+          "label": "Repo",
+          "choices": [
+            {
+              "title": "/work/insrc",
+              "value": "/work/insrc"
+            },
+            {
+              "title": "/work/other.repo",
+              "value": "/work/other.repo"
+            }
+          ],
+          "description": "The daemon's registered repos."
+        },
+        {
+          "type": "TextBlock",
+          "text": "Model tiers for this repo's roles. 'global' uses the global choice; tiers themselves are set with 'insrc: Set model tier'.",
+          "wrap": true,
+          "isSubtle": true,
+          "description": "Hint: per-repo settings choose a tier per role, never a model."
+        },
+        {
+          "type": "Container",
+          "description": "One row per taxonomy role.",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "description": "A role whose repo tier is set.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "context.assemble",
+                      "description": "Role id."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "Input.ChoiceSet",
+                      "id": "tasks.context.assemble",
+                      "choices": [
+                        {
+                          "title": "global",
+                          "value": ""
+                        },
+                        {
+                          "title": "core",
+                          "value": "core"
+                        },
+                        {
+                          "title": "mid",
+                          "value": "mid"
+                        },
+                        {
+                          "title": "cheap",
+                          "value": "cheap"
+                        }
+                      ],
+                      "description": "Writes models.byRepo[repo].tasks['context.assemble']; global clears it."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "A role using the global choice.",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "review",
+                      "description": "Role id."
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "Input.ChoiceSet",
+                      "id": "tasks.review",
+                      "choices": [
+                        {
+                          "title": "global",
+                          "value": ""
+                        },
+                        {
+                          "title": "core",
+                          "value": "core"
+                        },
+                        {
+                          "title": "mid",
+                          "value": "mid"
+                        },
+                        {
+                          "title": "cheap",
+                          "value": "cheap"
+                        }
+                      ],
+                      "description": "Unset: the role uses its global tier."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "coreFloor",
+          "label": "Core floor",
+          "choices": [
+            {
+              "title": "global",
+              "value": ""
+            },
+            {
+              "title": "core",
+              "value": "core"
+            },
+            {
+              "title": "mid",
+              "value": "mid"
+            },
+            {
+              "title": "cheap",
+              "value": "cheap"
+            }
+          ],
+          "description": "Writes models.byRepo[repo].coreFloor; global clears it."
+        },
+        {
+          "type": "TextBlock",
+          "text": "updated tasks.context.assemble for /work/insrc — restart the daemon to apply",
+          "color": "warning",
+          "wrap": true,
+          "description": "Status after a save that needs a restart; a Restart daemon action is offered."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "HLD-ce99b72065d03b1b",
+      "quotedText": "s6 boundary: the VS Code model-tier picker driven by models.definitions, removing the bundle's import of the settings catalog; the unknown-model check and approval prompt; the Repo Configuration panel without per-tier fields; restartRequired with insrc.daemon.restart."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate (the VS Code model-tier picker)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/models/model-tier-picker.ts:74",
+      "quotedText": "const PROVIDERS: ReadonlyArray<{ readonly id: ModelProvider; readonly label: string }> = ["
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "DEF-ce99b72065d03b1b",
+      "quotedText": "c4: the daemon owns model facts; clients reach them only over daemon IPC (k1, k2)."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/gateway.ts:42"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/repo-config.ts:35",
+      "quotedText": "const TIER_FIELDS = ['runner', 'model'] as const;"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/cli/panes/ModelCheckScreen.tsx"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "DEF-ce99b72065d03b1b",
+      "quotedText": "c10: the VS Code plugin's model-tier picker, native settings sync and Repo Configuration panel."
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/key-map.ts:12",
+      "quotedText": "import { CONFIG_CATALOG, type ConfigOption } from '../../../src/config/config-catalog.js';"
+    }
+  ]
+}

@@ -59,11 +59,12 @@ s4 adds three daemon requests that let a user adopt a Claude or Codex model the 
 
 **Errors:**
 - `{ error: 'invalid-params: ...', recoverable: false }` when family not a CLI family of the definitions, modelId empty or not a string, claimedEfforts not an array of non-empty strings, or modelId already a model or alias the family serves (registry.find).
-- `ModelCheckResult with runs:false and error` when The CLI could not be reached (spawn failure or timeout) — error begins 'the <kind> CLI could not be reached:' — or the CLI reached its service and refused the model (claude is_error / codex error or turn.failed event) — error begins 'the <kind> CLI refused the model:' with the CLI's message.
+- `ModelCheckResult with runs:false and error` when The CLI could not be reached — runInProcessGroup's result has spawnError (e.g. ENOENT) or timedOut — error begins 'the <kind> CLI could not be reached:' — or the CLI reached its service and refused the model (claude is_error / codex error or turn.failed event) — error begins 'the <kind> CLI refused the model:' with the CLI's message.
 
 **Preconditions:**
 - The daemon validated the definitions at boot.
 - Only one CLI call of any check runs at a time daemon-wide (a module-level serial chain); concurrent checks queue.
+- Every CLI call goes through runInProcessGroup (src/shared/process-group.ts:73), the exported process-group runner whose ProcessGroupResult carries spawnError and timedOut; cli-provider's private runSubprocess is not used or changed.
 
 **Postconditions:**
 - Nothing is written: the store and config.json are unchanged (ac2).
@@ -80,13 +81,13 @@ s4 adds three daemon requests that let a user adopt a Claude or Codex model the 
 - `checkId: string` — A check this daemon ran since it started.
 - `efforts: EffortLevel[]` — The levels the user allows; each must be one the check did not reject.
 
-**Returns:** `DecisionResult` — { ok: true, restartRequired: true } once the store holds an approved ApprovedProfile { family, modelId, status: 'approved', efforts (the requested levels), inputLimit (from the check), decidedAt, cliVersion }; the registry, config.write and models.definitions use it after the next restart (ac3, ac5).
+**Returns:** `DecisionResult` — { ok: true, restartRequired: true } once the store holds an approved ApprovedProfile { family, modelId, status: 'approved', efforts (the requested levels), inputLimit (from the check), decidedAt, cliVersion }; the registry, config.write and models.definitions use it after the next restart (ac3, ac5). When the check's effort discovery was unreadable or rejected every claimed level, the model can still be approved with efforts [] (it ran); no effort can be approved from such a check.
 
 **Errors:**
 - `{ ok: false, reason: 'unknown-check' }` when No pending check with that id (never run, evicted, or the daemon restarted).
 - `{ ok: false, reason: 'model-did-not-run' }` when The check's runs is false (unreachable CLI or refused model).
 - `{ ok: false, reason: 'invalid-efforts' }` when An effort is not one of the check's claimed levels, or its verdict was 'rejected'; detail names it.
-- `{ ok: false, reason: 'write-failed' }` when The existing store is not a readable { version, profiles[] } document, or writing / renaming the temp file failed; the previous store is kept unchanged.
+- `{ ok: false, reason: 'write-failed' }` when The existing store is not a { version: 1, profiles[] } document (unreadable, malformed JSON, not an object, version missing, not a number or not 1, or profiles not an array), or writing / renaming the temp file failed; the previous store is kept unchanged and no file is created or replaced.
 
 **Preconditions:**
 - checkId names a pending check.
@@ -120,7 +121,7 @@ s4 adds three daemon requests that let a user adopt a Claude or Codex model the 
 
 ### 3.1 `Approved-model store (PATHS.approvedModels, ~/.insrc/approved-models.json)` — invariant-change
 
-The store s1 reads (ApprovedProfile entries, sc2) gains its only writer. The daemon appends one profile per decision; the latest decidedAt per (family, modelId) wins when the registry reads it (s1), so a later decision supersedes an earlier one without rewriting it. The document shape { version: 1, profiles: ApprovedProfile[] } is unchanged; existing entries, including ones the reader skips as invalid, are kept verbatim. Written atomically: <path>.tmp then rename, the directory created if missing.
+The store s1 reads (ApprovedProfile entries, sc2) gains its only writer. The daemon appends one profile per decision; the latest decidedAt per (family, modelId) wins when the registry reads it (s1), so a later decision supersedes an earlier one without rewriting it. The document shape { version: 1, profiles: ApprovedProfile[] } is unchanged; existing entries, including ones the reader skips as invalid, are kept verbatim. Written atomically: <path>.tmp then rename, the directory created if missing. The writer accepts an existing document only when it is an object whose version is the number 1 and whose profiles is an array (the reader's root check plus the version this writer produces); a document with another version is left alone (write-failed) so a newer daemon's store is never rewritten. The new profile is validated with the reader's own profileProblem before writing.
 
 ```
 + writer: models.approve / models.reject append { family, modelId, status, efforts, inputLimit?, decidedAt, cliVersion }
@@ -146,6 +147,28 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 - `src/daemon/__tests__/handler-runtime.test.ts:47`
 - `src/daemon/handler-runtime.ts`
 
+### 3.4 `model-registry.ts validation exports` — field-add
+
+src/daemon/model-registry.ts exports its existing profileProblem(entry) (today module-private) unchanged, so the writer validates a new profile with exactly the rule the reader applies, and the contract tests call it directly. readStore and buildModelRegistry are not changed; reader behaviour is identical. Read-back tests go through getModelRegistry with the existing _setApprovedModelsPathForTests / _resetModelRegistryForTests seams, and through the exported buildModelRegistry.
+
+```
++ export function profileProblem(e: unknown): string | undefined  (export only; body unchanged)
+```
+
+**Call sites:**
+- `src/daemon/model-registry.ts:113`
+- `src/daemon/model-registry.ts:119`
+- `src/daemon/model-registry.ts:126`
+- `src/daemon/model-registry.ts:201`
+
+### 3.5 `Subprocess seam for checks` — field-add
+
+model-check.ts runs every CLI call through the exported runInProcessGroup(command, args, opts) of src/shared/process-group.ts, mapping ProcessGroupResult: spawnError → 'could not be reached: <spawnError>', timedOut → 'could not be reached: timed out after <n> s', otherwise stdout/stderr/exitCode are parsed per call. No change to cli-provider.ts.
+
+**Call sites:**
+- `src/shared/process-group.ts:24`
+- `src/shared/process-group.ts:73`
+
 ## 4. Diagrams
 
 - [Sequence diagram](docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html)
@@ -164,11 +187,11 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 **Error cases**
 
 - **The family's CLI binary is not installed or not on PATH.** (recoverable)
-  - Detection: The spawn of `<kind> --version` (the first call of every check) fails with ENOENT / a spawn error event from runSubprocess.
+  - Detection: runInProcessGroup's result for `<kind> --version` (the first call of every check) carries spawnError (e.g. ENOENT).
   - Response: The check stops without further calls and returns runs:false, efforts each 'rejected' with evidence 'not checked: the CLI could not be reached', and error 'the <kind> CLI could not be reached: <spawn message>'. Logged with family, model and the spawn error.
   - User impact: The user sees why the model cannot be checked; models.approve on this check is refused with model-did-not-run (ac4).
 - **A CLI call hangs (no network, a login prompt, a stuck process).** (recoverable)
-  - Detection: runSubprocess's timeout (per-call bound in ModelCheckDeps, default 120 s) fires and kills the child; the call reports a timeout.
+  - Detection: runInProcessGroup's result has timedOut true (the per-call timeoutMs from ModelCheckDeps, default 120 s, fired and the process group was killed).
   - Response: Same as an unreachable CLI: runs:false, error 'the <kind> CLI could not be reached: timed out after <n> s'. The serial chain moves on to the next queued call.
   - User impact: The check returns an explained failure instead of blocking later checks.
 - **The CLI reaches its service and refuses the model (unknown model, no access).** (recoverable)
@@ -178,13 +201,13 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 - **The CLI output cannot be parsed (no JSON envelope, `codex debug models` not JSON or without a models array, a changed CLI format).** (recoverable)
   - Detection: JSON.parse throws, or the parsed value lacks the expected fields (envelope without is_error/result; list without models[]).
   - Response: For the run: runs:false with error 'the <kind> CLI refused the model: unrecognised output: <first 200 chars>' is NOT used — instead error 'the <kind> CLI gave unreadable output: <first 500 chars>' and runs:false. For the Codex list: every effort 'rejected' with evidence 'the CLI's model list could not be read'. For Claude help: every effort 'rejected' with evidence 'the CLI's --effort values could not be read'. Never guesses support.
-  - User impact: The user sees the check could not decide; no profile can be approved from it.
+  - User impact: The user sees what the check could not decide. When the run itself was unreadable, runs is false and nothing can be approved; when only effort discovery was unreadable, every level is rejected, so no effort can be approved, though a model that ran can still be approved with efforts [].
 - **The Claude run succeeds but modelUsage has no contextWindow for the model.** (recoverable)
   - Detection: modelUsage is absent, empty, or its entry has no positive integer contextWindow.
   - Response: runs stays true and inputLimit is omitted (the CLI's own refusal then decides, as sc1 allows for a CLI model without inputLimit); logged.
   - User impact: The model can still be approved; its prompts are not pre-trimmed by a stated limit.
 - **The store file is unreadable or not a { version, profiles[] } document when a decision is written.** (recoverable)
-  - Detection: readFileSync throws something other than ENOENT, JSON.parse throws, or the parsed value is not an object with an array `profiles`.
+  - Detection: readFileSync throws something other than ENOENT, JSON.parse throws, or the parsed value is not an object whose version is the number 1 and whose profiles is an array (a missing, non-numeric or other version, e.g. {"profiles":[]} or {"version":"broken","profiles":[]} or version 2, fails).
   - Response: models.approve / models.reject return { ok:false, reason:'write-failed', detail naming the problem } and write nothing, so a hand-edited or damaged store is never overwritten. The pending check is kept so the user can retry after fixing the file.
   - User impact: The decision is not recorded and the user is told why; the existing file is untouched.
 - **Writing or renaming the temp store file fails (disk full, permissions, read-only home).** (recoverable)
@@ -224,6 +247,7 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 | A 33rd check is run while 32 are pending. | The oldest pending check is evicted; approving it later returns unknown-check. |
 | approve then reject (or approve twice) on the same checkId. | The first decision consumes the check; the second returns unknown-check. |
 | The user approves a model that a later daemon update ships in the definitions. | Nothing in s4 changes: the shipped definition wins in the registry (sc2 durability rule). |
+| A store at version 2 (written by a newer daemon) when a decision is written. | write-failed naming the unsupported version; the file is not rewritten, so a newer format is never downgraded. |
 
 **Invariants to preserve**
 
@@ -241,15 +265,16 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 **Test levels**
 
 - **unit** — The check procedures, verdicts, serialisation, decision guards and atomic store write of src/daemon/model-check.ts, with fake CLIs and a temp store.
-  - Subjects: `src/daemon/__tests__/model-check.test.ts: Codex check — `codex debug models` listing the model with low/medium/high: claimed ['high','ultra'] gives high accepted, ultra rejected with the listed levels as evidence even though the fake exec succeeds at ultra (lc2); a model absent from the list gives every effort rejected; the exec run decides runs; no inputLimit`, `model-check.test.ts: Claude check — the fake run's envelope gives runs:true and inputLimit { unit: 'tokens', max: contextWindow }; claimed names listed by the fake --help are recognised-unconfirmed with evidence saying the CLI cannot confirm per-model support, others rejected; no effort is ever 'accepted' (lc3); a missing contextWindow omits inputLimit`, `model-check.test.ts: unreachable vs refusing — a missing binary (ENOENT) and a fake that sleeps past a short injected timeout both give runs:false with 'could not be reached'; a Claude is_error envelope and a Codex turn.failed/model_not_found stream give 'refused the model' with the CLI's message; unreadable output gives runs:false`, `model-check.test.ts: one at a time — two concurrent checkModel calls against fakes that record start/end timestamps and a lock file: no two CLI children overlap; a failing first check does not stop the second`, `model-check.test.ts: invalid params — unknown/ollama family, empty modelId, non-array efforts, and a model or alias the family already serves are refused with invalid-params and no CLI call (the fake records none)`, `model-check.test.ts: decisions — unknown-check, model-did-not-run, invalid-efforts (rejected or unclaimed level) refused with nothing written; approve writes an approved profile with only the requested efforts, the check's inputLimit and cliVersion, and decidedAt; reject writes a rejected profile with efforts []; a consumed or evicted (33rd) check returns unknown-check`, `model-check.test.ts: store write — missing store and missing directory created; existing entries (including invalid ones) kept verbatim and the new one appended; a malformed store and a failing rename (store path's directory made read-only, or an injected fs) return write-failed and leave the previous bytes unchanged with no leftover .tmp; every written store is read back by readStore/buildModelRegistry`
+  - Subjects: `src/daemon/__tests__/model-check.test.ts: Codex check — `codex debug models` listing the model with low/medium/high: claimed ['high','ultra'] gives high accepted, ultra rejected with the listed levels as evidence even though the fake exec succeeds at ultra (lc2); a model absent from the list gives every effort rejected; the exec run decides runs; no inputLimit`, `model-check.test.ts: Claude check — the fake run's envelope gives runs:true and inputLimit { unit: 'tokens', max: contextWindow }; claimed names listed by the fake --help are recognised-unconfirmed with evidence saying the CLI cannot confirm per-model support, others rejected; no effort is ever 'accepted' (lc3); a missing contextWindow omits inputLimit`, `model-check.test.ts: unreachable vs refusing — a missing binary (ENOENT) and a fake that sleeps past a short injected timeout both give runs:false with 'could not be reached'; a Claude is_error envelope and a Codex turn.failed/model_not_found stream give 'refused the model' with the CLI's message; unreadable output gives runs:false; the unreachable cases are driven through runInProcessGroup's spawnError and timedOut`, `model-check.test.ts: one at a time — two concurrent checkModel calls against fakes that record start/end timestamps and a lock file: no two CLI children overlap; a failing first check does not stop the second`, `model-check.test.ts: invalid params — unknown/ollama family, empty modelId, non-array efforts, and a model or alias the family already serves are refused with invalid-params and no CLI call (the fake records none)`, `model-check.test.ts: decisions — unknown-check, model-did-not-run, invalid-efforts (rejected or unclaimed level) refused with nothing written; approve writes an approved profile with only the requested efforts, the check's inputLimit and cliVersion, and decidedAt; reject writes a rejected profile with efforts []; a consumed or evicted (33rd) check returns unknown-check`, `model-check.test.ts: store write — missing store and missing directory created; existing entries (including invalid ones) kept verbatim and the new one appended; a malformed store, a store without version, with a string version, with version 2, and a failing rename (store path's directory made read-only, or an injected fs) each return write-failed and leave the previous bytes unchanged (or no file created) with no leftover .tmp; every written store is read back through getModelRegistry (via _setApprovedModelsPathForTests / _resetModelRegistryForTests) and buildModelRegistry`, `model-check.test.ts: unreadable effort discovery — a fake `codex debug models` / `claude --help` printing garbage while the run succeeds gives runs:true with every effort rejected; approve with any effort returns invalid-efforts and approve with [] succeeds`
   - Fixtures: `Temp definitions dir from the shipped file via _setModelCatalogDirForTests, temp store via _setApprovedModelsPathForTests`, `Fake `claude` and `codex` scripts (node shebang) whose behaviour is chosen per test by env vars: --version text, `debug models` JSON, exec --json event stream, --print JSON envelope, --help text, sleep, and a call log`
 - **integration** — The three requests through the real daemon, and the decision's effect after a restart on config.write, tier resolution and models.definitions.
   - Subjects: `src/daemon/__tests__/models-daemon-s4.test.ts: start the daemon in a temp HOME with fake CLIs first on PATH; models.check returns per-effort evidence and leaves approved-models.json and config.json unchanged; config.write of a tier to the checked model before approval is not admitted as listed (decision A / not-served)`, `models-daemon-s4.test.ts: models.approve with a subset of the passing levels → restartRequired:true and the store holds the profile; after maintenance restart (stop + start) models.definitions lists the model under its family with source 'user-approved' and only the approved efforts; config.write of a tier to it succeeds and models.resolveRole resolves it with an approved effort, while an unapproved effort is dropped with the warning`, `models-daemon-s4.test.ts: models.reject → after restart models.definitions lists the id among the family's rejectedModels and config.write of a tier to it is refused with the reason; a check against an absent CLI (PATH without the fake) returns 'could not be reached' and models.approve returns model-did-not-run`, `src/daemon/__tests__/handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class.test classifies them as session`
-  - Fixtures: `mcp-e2e startDaemon / childEnv with PATH prefixed by the fake-CLI dir`, `The shipped definitions (or a copy via INSRC_MODEL_CATALOG_DIR)`
+  - Fixtures: `mcp-e2e startDaemon / childEnv with PATH prefixed by the fake-CLI dir`, `The shipped definitions (or a copy via INSRC_MODEL_CATALOG_DIR)`, `For the success paths: a definitions copy (INSRC_MODEL_CATALOG_DIR) that does not list the model id the fake CLIs answer for`
 - **contract** — The result and decision shapes match sc4 and the written profile matches the sc2 entry shape s1 reads.
-  - Subjects: `model-check.test.ts: every ModelCheckResult has exactly the sc4 fields (checkId, family, modelId, runs, efforts[{effort, verdict in accepted|rejected|recognised-unconfirmed, evidence}], optional inputLimit/error); DecisionResult is { ok:true, restartRequired:true } or { ok:false, reason in the four values, detail }`, `model-check.test.ts: each profile written is accepted by model-registry's profileProblem (no problem) and appears through buildModelRegistry as a user-approved model or a rejected id`
+  - Subjects: `model-check.test.ts: every ModelCheckResult has exactly the sc4 fields (checkId, family, modelId, runs, efforts[{effort, verdict in accepted|rejected|recognised-unconfirmed, evidence}], optional inputLimit/error); DecisionResult is { ok:true, restartRequired:true } or { ok:false, reason in the four values, detail }`, `model-check.test.ts: each profile written passes model-registry's exported profileProblem (undefined) and appears through buildModelRegistry and getModelRegistry as a user-approved model or a rejected id`
 - **live** — Confirm the parsers against the real installed CLIs (gated by INSRC_LIVE_TESTS=1, skipped otherwise).
-  - Subjects: `src/daemon/__tests__/model-check.live.test.ts: an unknown codex model id gives runs:false 'refused the model'; a listed codex model's efforts match `codex debug models`; an unknown claude id gives 'refused the model'; the haiku alias runs and reports an inputLimit`
+  - Subjects: `src/daemon/__tests__/model-check.live.test.ts: uses an isolated definitions fixture (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) copied from the shipped file with the chosen real models and their aliases removed (claude-haiku-5-5 / haiku from cli-claude, gpt-6-luna from cli-codex), so the registry does not serve them and models.check reaches the CLI: an unknown codex model id gives runs:false 'refused the model'; gpt-6-luna runs and its verdicts match `codex debug models`; an unknown claude id gives 'refused the model'; haiku runs and reports an inputLimit`
+  - Fixtures: `Isolated definitions dir: the shipped file minus the live-tested models and aliases`
 
 **Acceptance mapping**
 
@@ -271,12 +296,12 @@ Adds ['models.check', 'session', false], ['models.approve', 'session', false], [
 
 **Steps**
 
-1. Add src/daemon/model-check.ts with the CLI check procedures, output parsers, serial chain and pending-check table; no caller yet. — ↩ rollbackable
-2. Add the store writer to model-check.ts: read the current document (missing = new), refuse a malformed one, append the profile, write <store>.tmp and rename; reuse model-registry's profile validation on the new entry before writing. — ↩ rollbackable
+1. Add src/daemon/model-check.ts with the CLI check procedures (every call through runInProcessGroup from src/shared/process-group.ts), output parsers, serial chain and pending-check table; no caller yet. — ↩ rollbackable
+2. Export the existing profileProblem from src/daemon/model-registry.ts (no behaviour change), then add the store writer to model-check.ts: read the current document (missing = new), refuse one that is not { version: 1, profiles[] }, validate the new profile with profileProblem, append it, write <store>.tmp and rename. — ↩ rollbackable
 3. Register models.check, models.approve and models.reject in buildHandlerRuntime, add their 'session' method-class entries and add them to RECORDED_RPC. — ↩ rollbackable
 4. Add the unit, contract and real-daemon tests (fake CLIs on PATH, restart between decision and use) and the gated live test. — ↩ rollbackable
 
-**Backward compat:** Additive only: three new IPC methods; no existing request, result shape or config key changes. The store keeps its { version: 1, profiles[] } shape and existing entries are copied through verbatim, so a store written by s4 is read by the s1 reader unchanged, and a daemon rolled back to before s4 still reads it (the reader already exists). Clients that never call the new methods behave exactly as before; the UIs adopt them in s5–s7.
+**Backward compat:** Additive only: three new IPC methods; no existing request, result shape or config key changes. The store keeps its { version: 1, profiles[] } shape and existing entries are copied through verbatim, so a store written by s4 is read by the s1 reader unchanged, and a daemon rolled back to before s4 still reads it (the reader already exists). Clients that never call the new methods behave exactly as before; the UIs adopt them in s5–s7. model-registry.ts only gains an export of an existing function.
 
 ## 9. Alternatives considered
 

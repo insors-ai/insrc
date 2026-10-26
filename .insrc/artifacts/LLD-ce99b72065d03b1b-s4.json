@@ -24,7 +24,168 @@
     "hldBaseRunId": "wf-1792924917927-2y1e5h",
     "hldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers s4/ac1–ac5 and its CLI-only, evidence-based effort constraints.",
+          "evidence": "DEF §6.4 requires sequential CLI checks, per-effort evidence, explicit approval, refusal after rejection or unreachable CLI, and definitions projection. HLD §6.4 assigns the procedures, atomic writer and RPC entries to s4. The LLD addresses these through the three requests and restart-based integration with the existing registry. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md]",
+          "action": "Retain this scope; resolve the specific implementation-contract gaps below.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing registry and handlers already support serving approved models, rejecting rejected models, and dropping unsupported efforts after loading the store.",
+          "evidence": "getModelRegistry caches buildModelRegistry(validateModelCatalog(), readStore(storePath())). buildModelRegistry adds profiles with source 'user-approved'; resolveTier returns droppedEffort for unsupported levels. projectDefinitions exposes approved models and effective rejected ids. applyConfigWrite refuses changed tier selections naming an effectively rejected model. These function bodies support the proposed reuse without redesigning their behavior. [files: src/daemon/model-registry.ts, src/daemon/model-definitions.ts, src/daemon/config-write.ts, src/daemon/__tests__/config-write-models.test.ts]",
+          "action": "Retain the existing reader, projection and settings behavior. Inspected source supplements the analyzer, whose returned graph coverage was incomplete.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The new model-check module can reuse cli-provider's runSubprocess with the failure-reporting interface described.",
+          "evidence": "cli-provider.ts declares 'async function runSubprocess(' without exporting it; its production callers are private runClaude and runCodex. SubprocessResult exposes stdout, stderr, exitCode, durationMs and optional stalled, rather than spawn-error events or a timedOut field. spawnOnce converts spawnError to exitCode -1 and timeout to -9. The LLD relies on this helper but lists no change making it accessible or defining that adaptation. [files: src/agent/providers/cli-provider.ts, src/shared/process-group.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "Specify an accessible subprocess seam and its result contract. Either explicitly factor/export the required helper and preserve caller behavior, or reuse exported runInProcessGroup, which already returns spawnError and timedOut. Include the selected change sites.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Registering the requests in buildHandlerRuntime and classifying them as session methods keeps their pending table and serial chain on the main daemon thread.",
+          "evidence": "index.ts constructs buildHandlerRuntime on the main thread and states 'session methods run here, as before'; only routed classes are forwarded to workers. method-class.ts contains the existing models.definitions and models.resolveRole session entries. handler-runtime.test.ts compares handler keys against RECORDED_RPC, while method-class.test.ts compares the registry against the constructed handlers. [files: src/daemon/index.ts, src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/__tests__/handler-runtime.test.ts, src/daemon/threads/__tests__/method-class.test.ts]",
+          "action": "Retain the three registration sites and classification checks.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The writer and contract tests can reuse model-registry's profileProblem and readStore without changing that module.",
+          "evidence": "model-registry.ts declares 'function profileProblem(e: unknown)' and 'function readStore(path: string)' without exports. LLD migration step 2 explicitly says to 'reuse model-registry’s profile validation', and its contract tests call for profiles to be accepted by profileProblem, while §5 says the reader and registry do not change. Direct imports from the proposed new module or tests would fail. [files: src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "Add an explicit validation API change site or factor validation into a shared module, preserving reader semantics. Specify whether read-back tests exercise getModelRegistry through its existing reset/path seams or require another API.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Appending compatible profiles preserves decision history and lets the existing reader select the effective decision without migration.",
+          "evidence": "ApprovedProfile contains the proposed family, modelId, status, efforts, optional inputLimit, decidedAt and cliVersion fields. buildModelRegistry keys profiles by family/modelId and uses 'Date.parse(p.decidedAt) >= Date.parse(prev.decidedAt)', so a timestamp tie favors the later entry. Shipped definitions shadow approved profiles. The readStore implementation skips invalid entries, making raw-document preservation appropriate for the writer. [files: src/daemon/model-registry.ts, src/shared/paths.ts, src/workflow/storage.ts]",
+          "action": "Keep the append strategy and preserve raw existing entries rather than reconstructing them from readStore's filtered output.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The specified writer validation prevents overwriting every malformed existing store.",
+          "evidence": "LLD §6 detects an invalid document when it is 'not an object with an array profiles'; it omits validation of version. The real reader additionally checks 'typeof root[\"version\"] !== \"number\"'. Thus {\"profiles\":[]} or {\"version\":\"broken\",\"profiles\":[]} passes the stated writer detection despite being rejected by the reader, contradicting the promise that a malformed store is never overwritten. [files: src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "Specify complete root validation, including version, before creating or replacing any file. Define handling of unsupported versions and test missing/wrong-type version documents with previous bytes unchanged.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design preserves adjacent Story ownership and adequately documents its new persistent and transient relationships in prose.",
+          "evidence": "HLD sc4 assigns these requests and the writer to s4; sc1/sc2, sc3 and sc5 retain the catalog/registry, definitions projection and settings behavior. LLD §§2–3 document a bounded daemon-owned checkId table, at most one successful consuming decision per check, append-only profile history keyed by family/modelId, and registry consumption after reload. No UI layout or settings redesign is introduced. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/daemon/model-registry.ts]",
+          "action": "Retain these boundaries and relationship descriptions. An additional ERD or UX mock is unnecessary for the relationships and scope described.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders correctly and remains visually consistent with the design.",
+          "evidence": "Inspected the actual HTML's narrative, Mermaid source, participant table and message descriptions. They describe check → CLI → result → decision → atomic store replacement → acknowledgment → registry read consistently with the LLD. Rendering could not be inspected: creating the browser tab returned 'Browser is not available: iab', and browser inventory returned an empty list. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/sequence-diagram.html]",
+          "action": "Have the author verify the generated HTML in a rendering-capable environment and correct/regenerate it if necessary. Visual layout and successful Mermaid rendering remain unverified.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Unreadable effort-discovery output makes every resulting profile impossible to approve.",
+          "evidence": "LLD §6 says unreadable Codex-list or Claude-help output rejects every effort and that 'no profile can be approved from it'. However, §2.2 refuses approval only when runs is false or requested efforts are rejected/unclaimed. A successful model run can leave runs true, and the explicit empty-efforts edge case permits approve with []. The existing ModelDefinition and profile reader accept empty effort arrays. Consequently the stated guards permit approval after unreadable effort discovery. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/daemon/model-catalog.ts, src/daemon/model-registry.ts]",
+          "action": "Make the policy consistent. If successful runs may be approved with no effort, narrow the error-path statement accordingly. If unreadable discovery must block all approval, specify a blocking state/guard and its contract and tests.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every upstream acceptance criterion has a corresponding planned test using available repository test infrastructure.",
+          "evidence": "Compared DEF s4/ac1–ac5 with the LLD acceptance table: checks/serialization, evidence/no preapproval use, approved efforts, rejection/unreachable CLI, and post-restart definitions each have named tests. cli-subprocess.test.ts demonstrates executable fake CLIs and timeout/process-group checks. mcp-e2e.ts provides temporary-HOME daemon startup, socket RPC and stop/start support. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md, src/agent/providers/__tests__/cli-subprocess.test.ts, src/mcp/__tests__/helpers/mcp-e2e.ts]",
+          "action": "Retain the acceptance mapping; implement the planned tests with the corrections identified in this review. This verifies test design, not passing results for unimplemented s4.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The planned live models.check test can use the shipped haiku alias to prove a successful Claude check and inputLimit extraction.",
+          "evidence": "The shipped catalog contains '\"id\": \"claude-haiku-5-5\", \"aliases\": [\"haiku\"]'. Registry find matches both ids and aliases. LLD §2.1 requires models.check to refuse any model or alias already served, but §7 proposes a live test where 'the haiku alias runs and reports an inputLimit'. With shipped definitions, that request must return invalid-params before invoking Claude. [files: src/assets/models/cloud-model-catalog.json, src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/LLD.md]",
+          "action": "Use an isolated catalog fixture that excludes the selected real model and alias, or explicitly test the low-level parser/probe separately. Ensure the analogous listed-Codex success test also uses a model absent from the test registry.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 3,
+        "med": 2,
+        "low": 7,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-26T07:15:18.466Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {
@@ -219,12 +380,13 @@
             },
             {
               "type": "ModelCheckResult with runs:false and error",
-              "condition": "The CLI could not be reached (spawn failure or timeout) — error begins 'the <kind> CLI could not be reached:' — or the CLI reached its service and refused the model (claude is_error / codex error or turn.failed event) — error begins 'the <kind> CLI refused the model:' with the CLI's message."
+              "condition": "The CLI could not be reached — runInProcessGroup's result has spawnError (e.g. ENOENT) or timedOut — error begins 'the <kind> CLI could not be reached:' — or the CLI reached its service and refused the model (claude is_error / codex error or turn.failed event) — error begins 'the <kind> CLI refused the model:' with the CLI's message."
             }
           ],
           "preconditions": [
             "The daemon validated the definitions at boot.",
-            "Only one CLI call of any check runs at a time daemon-wide (a module-level serial chain); concurrent checks queue."
+            "Only one CLI call of any check runs at a time daemon-wide (a module-level serial chain); concurrent checks queue.",
+            "Every CLI call goes through runInProcessGroup (src/shared/process-group.ts:73), the exported process-group runner whose ProcessGroupResult carries spawnError and timedOut; cli-provider's private runSubprocess is not used or changed."
           ],
           "postconditions": [
             "Nothing is written: the store and config.json are unchanged (ac2).",
@@ -251,7 +413,7 @@
           ],
           "returns": {
             "type": "DecisionResult",
-            "meaning": "{ ok: true, restartRequired: true } once the store holds an approved ApprovedProfile { family, modelId, status: 'approved', efforts (the requested levels), inputLimit (from the check), decidedAt, cliVersion }; the registry, config.write and models.definitions use it after the next restart (ac3, ac5)."
+            "meaning": "{ ok: true, restartRequired: true } once the store holds an approved ApprovedProfile { family, modelId, status: 'approved', efforts (the requested levels), inputLimit (from the check), decidedAt, cliVersion }; the registry, config.write and models.definitions use it after the next restart (ac3, ac5). When the check's effort discovery was unreadable or rejected every claimed level, the model can still be approved with efforts [] (it ran); no effort can be approved from such a check."
           },
           "errors": [
             {
@@ -268,7 +430,7 @@
             },
             {
               "type": "{ ok: false, reason: 'write-failed' }",
-              "condition": "The existing store is not a readable { version, profiles[] } document, or writing / renaming the temp file failed; the previous store is kept unchanged."
+              "condition": "The existing store is not a { version: 1, profiles[] } document (unreadable, malformed JSON, not an object, version missing, not a number or not 1, or profiles not an array), or writing / renaming the temp file failed; the previous store is kept unchanged and no file is created or replaced."
             }
           ],
           "preconditions": [
@@ -317,7 +479,7 @@
       {
         "entity": "Approved-model store (PATHS.approvedModels, ~/.insrc/approved-models.json)",
         "change": "invariant-change",
-        "details": "The store s1 reads (ApprovedProfile entries, sc2) gains its only writer. The daemon appends one profile per decision; the latest decidedAt per (family, modelId) wins when the registry reads it (s1), so a later decision supersedes an earlier one without rewriting it. The document shape { version: 1, profiles: ApprovedProfile[] } is unchanged; existing entries, including ones the reader skips as invalid, are kept verbatim. Written atomically: <path>.tmp then rename, the directory created if missing.",
+        "details": "The store s1 reads (ApprovedProfile entries, sc2) gains its only writer. The daemon appends one profile per decision; the latest decidedAt per (family, modelId) wins when the registry reads it (s1), so a later decision supersedes an earlier one without rewriting it. The document shape { version: 1, profiles: ApprovedProfile[] } is unchanged; existing entries, including ones the reader skips as invalid, are kept verbatim. Written atomically: <path>.tmp then rename, the directory created if missing. The writer accepts an existing document only when it is an object whose version is the number 1 and whose profiles is an array (the reader's root check plus the version this writer produces); a document with another version is left alone (write-failed) so a newer daemon's store is never rewritten. The new profile is validated with the reader's own profileProblem before writing.",
         "schemaDiff": "+ writer: models.approve / models.reject append { family, modelId, status, efforts, inputLimit?, decidedAt, cliVersion }",
         "callSites": [
           "src/daemon/model-registry.ts:49",
@@ -340,6 +502,27 @@
           "src/daemon/threads/method-class.ts:156",
           "src/daemon/__tests__/handler-runtime.test.ts:47",
           "src/daemon/handler-runtime.ts"
+        ]
+      },
+      {
+        "entity": "model-registry.ts validation exports",
+        "change": "field-add",
+        "details": "src/daemon/model-registry.ts exports its existing profileProblem(entry) (today module-private) unchanged, so the writer validates a new profile with exactly the rule the reader applies, and the contract tests call it directly. readStore and buildModelRegistry are not changed; reader behaviour is identical. Read-back tests go through getModelRegistry with the existing _setApprovedModelsPathForTests / _resetModelRegistryForTests seams, and through the exported buildModelRegistry.",
+        "schemaDiff": "+ export function profileProblem(e: unknown): string | undefined  (export only; body unchanged)",
+        "callSites": [
+          "src/daemon/model-registry.ts:113",
+          "src/daemon/model-registry.ts:119",
+          "src/daemon/model-registry.ts:126",
+          "src/daemon/model-registry.ts:201"
+        ]
+      },
+      {
+        "entity": "Subprocess seam for checks",
+        "change": "field-add",
+        "details": "model-check.ts runs every CLI call through the exported runInProcessGroup(command, args, opts) of src/shared/process-group.ts, mapping ProcessGroupResult: spawnError → 'could not be reached: <spawnError>', timedOut → 'could not be reached: timed out after <n> s', otherwise stdout/stderr/exitCode are parsed per call. No change to cli-provider.ts.",
+        "callSites": [
+          "src/shared/process-group.ts:24",
+          "src/shared/process-group.ts:73"
         ]
       }
     ],
@@ -369,14 +552,14 @@
       "errorCases": [
         {
           "scenario": "The family's CLI binary is not installed or not on PATH.",
-          "detection": "The spawn of `<kind> --version` (the first call of every check) fails with ENOENT / a spawn error event from runSubprocess.",
+          "detection": "runInProcessGroup's result for `<kind> --version` (the first call of every check) carries spawnError (e.g. ENOENT).",
           "response": "The check stops without further calls and returns runs:false, efforts each 'rejected' with evidence 'not checked: the CLI could not be reached', and error 'the <kind> CLI could not be reached: <spawn message>'. Logged with family, model and the spawn error.",
           "userImpact": "The user sees why the model cannot be checked; models.approve on this check is refused with model-did-not-run (ac4).",
           "recoverable": true
         },
         {
           "scenario": "A CLI call hangs (no network, a login prompt, a stuck process).",
-          "detection": "runSubprocess's timeout (per-call bound in ModelCheckDeps, default 120 s) fires and kills the child; the call reports a timeout.",
+          "detection": "runInProcessGroup's result has timedOut true (the per-call timeoutMs from ModelCheckDeps, default 120 s, fired and the process group was killed).",
           "response": "Same as an unreachable CLI: runs:false, error 'the <kind> CLI could not be reached: timed out after <n> s'. The serial chain moves on to the next queued call.",
           "userImpact": "The check returns an explained failure instead of blocking later checks.",
           "recoverable": true
@@ -392,7 +575,7 @@
           "scenario": "The CLI output cannot be parsed (no JSON envelope, `codex debug models` not JSON or without a models array, a changed CLI format).",
           "detection": "JSON.parse throws, or the parsed value lacks the expected fields (envelope without is_error/result; list without models[]).",
           "response": "For the run: runs:false with error 'the <kind> CLI refused the model: unrecognised output: <first 200 chars>' is NOT used — instead error 'the <kind> CLI gave unreadable output: <first 500 chars>' and runs:false. For the Codex list: every effort 'rejected' with evidence 'the CLI's model list could not be read'. For Claude help: every effort 'rejected' with evidence 'the CLI's --effort values could not be read'. Never guesses support.",
-          "userImpact": "The user sees the check could not decide; no profile can be approved from it.",
+          "userImpact": "The user sees what the check could not decide. When the run itself was unreadable, runs is false and nothing can be approved; when only effort discovery was unreadable, every level is rejected, so no effort can be approved, though a model that ran can still be approved with efforts [].",
           "recoverable": true
         },
         {
@@ -404,7 +587,7 @@
         },
         {
           "scenario": "The store file is unreadable or not a { version, profiles[] } document when a decision is written.",
-          "detection": "readFileSync throws something other than ENOENT, JSON.parse throws, or the parsed value is not an object with an array `profiles`.",
+          "detection": "readFileSync throws something other than ENOENT, JSON.parse throws, or the parsed value is not an object whose version is the number 1 and whose profiles is an array (a missing, non-numeric or other version, e.g. {\"profiles\":[]} or {\"version\":\"broken\",\"profiles\":[]} or version 2, fails).",
           "response": "models.approve / models.reject return { ok:false, reason:'write-failed', detail naming the problem } and write nothing, so a hand-edited or damaged store is never overwritten. The pending check is kept so the user can retry after fixing the file.",
           "userImpact": "The decision is not recorded and the user is told why; the existing file is untouched.",
           "recoverable": true
@@ -493,6 +676,10 @@
         {
           "input": "The user approves a model that a later daemon update ships in the definitions.",
           "expected": "Nothing in s4 changes: the shipped definition wins in the registry (sc2 durability rule)."
+        },
+        {
+          "input": "A store at version 2 (written by a newer daemon) when a decision is written.",
+          "expected": "write-failed naming the unsupported version; the file is not rewritten, so a newer format is never downgraded."
         }
       ],
       "invariantsToPreserve": [
@@ -531,11 +718,12 @@
           "subjects": [
             "src/daemon/__tests__/model-check.test.ts: Codex check — `codex debug models` listing the model with low/medium/high: claimed ['high','ultra'] gives high accepted, ultra rejected with the listed levels as evidence even though the fake exec succeeds at ultra (lc2); a model absent from the list gives every effort rejected; the exec run decides runs; no inputLimit",
             "model-check.test.ts: Claude check — the fake run's envelope gives runs:true and inputLimit { unit: 'tokens', max: contextWindow }; claimed names listed by the fake --help are recognised-unconfirmed with evidence saying the CLI cannot confirm per-model support, others rejected; no effort is ever 'accepted' (lc3); a missing contextWindow omits inputLimit",
-            "model-check.test.ts: unreachable vs refusing — a missing binary (ENOENT) and a fake that sleeps past a short injected timeout both give runs:false with 'could not be reached'; a Claude is_error envelope and a Codex turn.failed/model_not_found stream give 'refused the model' with the CLI's message; unreadable output gives runs:false",
+            "model-check.test.ts: unreachable vs refusing — a missing binary (ENOENT) and a fake that sleeps past a short injected timeout both give runs:false with 'could not be reached'; a Claude is_error envelope and a Codex turn.failed/model_not_found stream give 'refused the model' with the CLI's message; unreadable output gives runs:false; the unreachable cases are driven through runInProcessGroup's spawnError and timedOut",
             "model-check.test.ts: one at a time — two concurrent checkModel calls against fakes that record start/end timestamps and a lock file: no two CLI children overlap; a failing first check does not stop the second",
             "model-check.test.ts: invalid params — unknown/ollama family, empty modelId, non-array efforts, and a model or alias the family already serves are refused with invalid-params and no CLI call (the fake records none)",
             "model-check.test.ts: decisions — unknown-check, model-did-not-run, invalid-efforts (rejected or unclaimed level) refused with nothing written; approve writes an approved profile with only the requested efforts, the check's inputLimit and cliVersion, and decidedAt; reject writes a rejected profile with efforts []; a consumed or evicted (33rd) check returns unknown-check",
-            "model-check.test.ts: store write — missing store and missing directory created; existing entries (including invalid ones) kept verbatim and the new one appended; a malformed store and a failing rename (store path's directory made read-only, or an injected fs) return write-failed and leave the previous bytes unchanged with no leftover .tmp; every written store is read back by readStore/buildModelRegistry"
+            "model-check.test.ts: store write — missing store and missing directory created; existing entries (including invalid ones) kept verbatim and the new one appended; a malformed store, a store without version, with a string version, with version 2, and a failing rename (store path's directory made read-only, or an injected fs) each return write-failed and leave the previous bytes unchanged (or no file created) with no leftover .tmp; every written store is read back through getModelRegistry (via _setApprovedModelsPathForTests / _resetModelRegistryForTests) and buildModelRegistry",
+            "model-check.test.ts: unreadable effort discovery — a fake `codex debug models` / `claude --help` printing garbage while the run succeeds gives runs:true with every effort rejected; approve with any effort returns invalid-efforts and approve with [] succeeds"
           ],
           "fixturesNeeded": [
             "Temp definitions dir from the shipped file via _setModelCatalogDirForTests, temp store via _setApprovedModelsPathForTests",
@@ -553,7 +741,8 @@
           ],
           "fixturesNeeded": [
             "mcp-e2e startDaemon / childEnv with PATH prefixed by the fake-CLI dir",
-            "The shipped definitions (or a copy via INSRC_MODEL_CATALOG_DIR)"
+            "The shipped definitions (or a copy via INSRC_MODEL_CATALOG_DIR)",
+            "For the success paths: a definitions copy (INSRC_MODEL_CATALOG_DIR) that does not list the model id the fake CLIs answer for"
           ]
         },
         {
@@ -561,14 +750,17 @@
           "purpose": "The result and decision shapes match sc4 and the written profile matches the sc2 entry shape s1 reads.",
           "subjects": [
             "model-check.test.ts: every ModelCheckResult has exactly the sc4 fields (checkId, family, modelId, runs, efforts[{effort, verdict in accepted|rejected|recognised-unconfirmed, evidence}], optional inputLimit/error); DecisionResult is { ok:true, restartRequired:true } or { ok:false, reason in the four values, detail }",
-            "model-check.test.ts: each profile written is accepted by model-registry's profileProblem (no problem) and appears through buildModelRegistry as a user-approved model or a rejected id"
+            "model-check.test.ts: each profile written passes model-registry's exported profileProblem (undefined) and appears through buildModelRegistry and getModelRegistry as a user-approved model or a rejected id"
           ]
         },
         {
           "level": "live",
           "purpose": "Confirm the parsers against the real installed CLIs (gated by INSRC_LIVE_TESTS=1, skipped otherwise).",
           "subjects": [
-            "src/daemon/__tests__/model-check.live.test.ts: an unknown codex model id gives runs:false 'refused the model'; a listed codex model's efforts match `codex debug models`; an unknown claude id gives 'refused the model'; the haiku alias runs and reports an inputLimit"
+            "src/daemon/__tests__/model-check.live.test.ts: uses an isolated definitions fixture (INSRC_MODEL_CATALOG_DIR / _setModelCatalogDirForTests) copied from the shipped file with the chosen real models and their aliases removed (claude-haiku-5-5 / haiku from cli-claude, gpt-6-luna from cli-codex), so the registry does not serve them and models.check reaches the CLI: an unknown codex model id gives runs:false 'refused the model'; gpt-6-luna runs and its verdicts match `codex debug models`; an unknown claude id gives 'refused the model'; haiku runs and reports an inputLimit"
+          ],
+          "fixturesNeeded": [
+            "Isolated definitions dir: the shipped file minus the live-tested models and aliases"
           ]
         }
       ],
@@ -618,12 +810,12 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add src/daemon/model-check.ts with the CLI check procedures, output parsers, serial chain and pending-check table; no caller yet.",
+          "action": "Add src/daemon/model-check.ts with the CLI check procedures (every call through runInProcessGroup from src/shared/process-group.ts), output parsers, serial chain and pending-check table; no caller yet.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Add the store writer to model-check.ts: read the current document (missing = new), refuse a malformed one, append the profile, write <store>.tmp and rename; reuse model-registry's profile validation on the new entry before writing.",
+          "action": "Export the existing profileProblem from src/daemon/model-registry.ts (no behaviour change), then add the store writer to model-check.ts: read the current document (missing = new), refuse one that is not { version: 1, profiles[] }, validate the new profile with profileProblem, append it, write <store>.tmp and rename.",
           "rollbackable": true
         },
         {
@@ -637,7 +829,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Additive only: three new IPC methods; no existing request, result shape or config key changes. The store keeps its { version: 1, profiles[] } shape and existing entries are copied through verbatim, so a store written by s4 is read by the s1 reader unchanged, and a daemon rolled back to before s4 still reads it (the reader already exists). Clients that never call the new methods behave exactly as before; the UIs adopt them in s5–s7.",
+      "backwardCompat": "Additive only: three new IPC methods; no existing request, result shape or config key changes. The store keeps its { version: 1, profiles[] } shape and existing entries are copied through verbatim, so a store written by s4 is read by the s1 reader unchanged, and a daemon rolled back to before s4 still reads it (the reader already exists). Clients that never call the new methods behave exactly as before; the UIs adopt them in s5–s7. model-registry.ts only gains an export of an existing function.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

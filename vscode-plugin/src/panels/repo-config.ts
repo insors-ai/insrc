@@ -53,15 +53,15 @@ function isRepoModelWrite(segments: readonly string[]): boolean {
   return (segments.length === 2 && segments[0] === 'tasks' && segments[1] !== '') || (segments.length === 1 && segments[0] === 'coreFloor');
 }
 
-/** A tier <select> carrying its write segments; '' (global) clears the repo's choice. */
-function tierSelect(label: string, segments: readonly string[], current: string): string {
+/** A table row: a label and a tier <select> carrying its write segments; '' (global) clears the repo's choice. */
+function tierRow(label: string, segments: readonly string[], current: string): string {
   // The segments are carried as a JSON array (NOT a dot-joined string): a role id is
   // dotted (`context.assemble`) and a naive split('.') would mis-nest it — the hazard the
   // config.write ARRAY form exists to avoid. escapeHtml keeps the attribute intact.
   const options = ['', ...TIER_CHOICES]
     .map((t) => `<option value="${t}"${t === current ? ' selected' : ''}>${t === '' ? 'global' : t}</option>`)
     .join('');
-  return `<label class="field">${escapeHtml(label)} <select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></label>`;
+  return `<tr><td>${escapeHtml(label)}</td><td><select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></td></tr>`;
 }
 
 /** Read a nested string at `path` in an unknown object tree, or undefined. */
@@ -109,16 +109,16 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     // may choose. Pre-filled from the daemon's stored value; 'global' = no repo choice.
     const raw = await deps.rawConfig();
     const roles = reasoningRoleTaxonomy().roles
-      .map((role) => tierSelect(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
+      .map((role) => tierRow(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
       .join('');
-    const floor = tierSelect('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
+    const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
 
     return (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
-      `<fieldset class="roles"><legend>Role tiers</legend>${roles}</fieldset>` +
-      `<fieldset class="floor"><legend>Core floor</legend>${floor}</fieldset>` +
+      `<h3>Role tiers</h3><table class="role-tiers">${roles}</table>` +
+      `<h3>Core floor</h3><table class="core-floor">${floor}</table>` +
       `</section>`
     );
   };

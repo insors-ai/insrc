@@ -21,16 +21,24 @@ const ALLOWED = ['shell-helper.ts'];
 /** import or export ... from the module, a side-effect import, a dynamic import or a require of 'node:child_process' | 'child_process'. */
 const CHILD_PROCESS = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"](?:node:)?child_process['"]/;
 
+/** Source extensions the daemon could load; a spawn in any of them bypasses the lifecycle. */
+const SOURCE = /\.(?:ts|tsx|js|mjs|cjs)$/;
+/**
+ * The one exclusion: the tests themselves (a __tests__ directory and *.test.* files). They may spawn a real
+ * process to prepare a fixture, and they never ship in a tool. Everything else under the tree is scanned,
+ * including type fixtures, fixture directories and plain JavaScript.
+ */
+function isTestCode(name: string, isDir: boolean): boolean {
+	return isDir ? name === '__tests__' : /\.test\.[cm]?[jt]sx?$/.test(name);
+}
+
 function listSources(root: string): string[] {
 	const out: string[] = [];
 	for (const entry of readdirSync(root, { withFileTypes: true })) {
 		const full = join(root, entry.name);
-		if (entry.isDirectory()) {
-			if (entry.name === '__tests__' || entry.name === '__type-tests__' || entry.name === 'fixtures') continue;
-			out.push(...listSources(full));
-		} else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) {
-			out.push(full);
-		}
+		if (isTestCode(entry.name, entry.isDirectory())) continue;
+		if (entry.isDirectory()) out.push(...listSources(full));
+		else if (SOURCE.test(entry.name)) out.push(full);
 	}
 	return out;
 }
@@ -61,9 +69,17 @@ test('child-process-inventory.test.ts: a temporary file that imports it in a tem
 		writeFileSync(join(root, 'builtins', 'e.ts'), "import 'node:child_process';\n");
 		writeFileSync(join(root, 'builtins', 'f.ts'), "export { spawn } from 'node:child_process';\n");
 		writeFileSync(join(root, 'builtins', 'g.ts'), "export * from \"child_process\";\n");
+		mkdirSync(join(root, '__type-tests__')); mkdirSync(join(root, 'fixtures'));
+		writeFileSync(join(root, '__type-tests__', 'h.ts'), "import { spawn } from 'node:child_process';\n");
+		writeFileSync(join(root, 'fixtures', 'i.mjs'), "import { spawn } from 'node:child_process';\n");
+		writeFileSync(join(root, 'builtins', 'j.js'), "const cp = require('child_process');\n");
+		// test code is the one exclusion
+		mkdirSync(join(root, '__tests__'));
+		writeFileSync(join(root, '__tests__', 'k.ts'), "import { spawn } from 'node:child_process';\n");
+		writeFileSync(join(root, 'builtins', 'l.test.ts'), "import { spawn } from 'node:child_process';\n");
 		assert.deepEqual(
 			findChildProcessImports(root, ['shell-helper.ts']).sort(),
-			['builtins/a.ts', 'builtins/b.ts', 'builtins/c.ts', 'builtins/d.ts', 'builtins/e.ts', 'builtins/f.ts', 'builtins/g.ts'],
+			['__type-tests__/h.ts', 'builtins/a.ts', 'builtins/b.ts', 'builtins/c.ts', 'builtins/d.ts', 'builtins/e.ts', 'builtins/f.ts', 'builtins/g.ts', 'builtins/j.js', 'fixtures/i.mjs'],
 		);
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });

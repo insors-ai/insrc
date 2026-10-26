@@ -4,10 +4,11 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s3",
     "createdAt": "2026-10-25T19:57:09.103Z",
-    "updatedAt": "2026-10-25T21:37:41.604Z",
+    "updatedAt": "2026-10-26T07:01:18.660Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
-    "epicSlug": "per-family-model-definitions-served-daemon"
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "approvedAt": "2026-10-26T07:01:19.612Z"
   },
   "body": {
     "tasks": [
@@ -62,611 +63,625 @@
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "scripts/check-model-definitions.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/assets/models/cloud-model-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/model-tiers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/analyze-tiering.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/check-model-definitions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-defs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/legacy-config.baseline.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/analyze.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/config-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/local.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/model-defaults.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "tsconfig.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/tsconfig.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/reconcile-defs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/settings-cache-reset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/reconcile.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/boot-cold-import.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/config-boot-reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/lifecycle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/embedder-keepalive.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/embedder-lazy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/tui.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/tier-defaults.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/tier-resolution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/provider-bypass-audit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/role-router-global-tiers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/role-router.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/role-router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/shaper-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/PROVENANCE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/repo-shaper-override.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/code-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/input-budget.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/provider-from-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/summariser-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/claude-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/client-family.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/list-models.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/model-definitions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/model-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-context.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-oneshot.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/mcp/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/workflow/attribution.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/workflow/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/config-write-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-resolve-role.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/config-write.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/tui-shipped-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/panes/model-tiers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/services/workflow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/cli/shipped-model-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "jetbrains-plugin/src/test/resources/fixtures/model-tiers-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "scripts/insrc-daemon-install.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/installer-defs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/assets/insrc-daemon-install.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/scripts/sync-manifest-catalog.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-literal-scan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-daemon-s3.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-25T21:37:41.604Z"
+        "timestamp": "2026-10-26T07:01:18.660Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-ce99b72065d03b1b-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:01:18.660Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S003/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T07:01:18.660Z"
       }
     ],
-    "commit": "5e89d4996"
+    "commit": "cb8d2f4f1"
   }
 }

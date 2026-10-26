@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T16:55:26.711Z",
+    "updatedAt": "2026-10-26T17:15:41.397Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2339,9 +2339,9 @@
       },
       {
         "taskId": "t33",
-        "commit": "5be989c84",
-        "ranAt": "2026-10-26T16:55:26.711Z",
-        "testsPassed": false,
+        "commit": "51b3bdb11",
+        "ranAt": "2026-10-26T17:15:41.397Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions",
@@ -2371,7 +2371,7 @@
               {
                 "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
                 "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "file": "src/daemon/db/__tests__/connection-leases.test.ts",
@@ -2438,7 +2438,7 @@
             "file": "src/daemon/db/__tests__/connection-leases.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1285,
+            "durationMs": 1605,
             "titles": [
               {
                 "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
@@ -2495,7 +2495,7 @@
             "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1610,
+            "durationMs": 1592,
             "titles": [
               {
                 "title": "CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required",
@@ -2526,9 +2526,9 @@
           },
           {
             "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1328,
+            "durationMs": 1982,
             "titles": [
               {
                 "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
@@ -2560,7 +2560,7 @@
               },
               {
                 "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -2569,7 +2569,7 @@
             "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1942,
+            "durationMs": 2151,
             "titles": [
               {
                 "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
@@ -2586,7 +2586,7 @@
             "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5932,
+            "durationMs": 6082,
             "titles": [
               {
                 "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
@@ -2607,7 +2607,7 @@
             "file": "src/daemon/db/__tests__/saved-management.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1925,
+            "durationMs": 1900,
             "titles": [
               {
                 "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
@@ -2636,7 +2636,7 @@
             "file": "src/daemon/db/__tests__/session-probe.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8780,
+            "durationMs": 9134,
             "titles": [
               {
                 "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
@@ -2653,7 +2653,7 @@
             "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1419,
+            "durationMs": 2987,
             "titles": [
               {
                 "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
@@ -2670,7 +2670,7 @@
             "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9843,
+            "durationMs": 10424,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
@@ -2683,8 +2683,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: fail: 'CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate' in src/daemon/db/__tests__/connection-reservations.test.ts"
+        ]
       }
     ]
   }

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 122 pass, 1 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 123 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -661,9 +661,7 @@ Run at 2026-10-26T16:32:59.145Z on commit `c14001644`. Tests check: **passed**. 
 
 ## t33
 
-Run at 2026-10-26T16:55:26.711Z on commit `5be989c84`. Tests check: **failed**. 12 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
-
-named test cases that did not pass: fail: 'CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate' in src/daemon/db/__tests__/connection-reservations.test.ts
+Run at 2026-10-26T17:15:41.397Z on commit `51b3bdb11`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions**
 
@@ -673,7 +671,7 @@ named test cases that did not pass: fail: 'CM-S3-NAMESPACE: alias relative and t
 | pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
 | pass | CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture | `src/daemon/db/__tests__/driver-field-audit.test.ts` |
 | pass | CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications | `src/daemon/db/__tests__/driver-field-audit.test.ts` |
-| fail | CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate | `src/daemon/db/__tests__/connection-reservations.test.ts` |
+| pass | CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate | `src/daemon/db/__tests__/connection-reservations.test.ts` |
 | pass | CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage | `src/daemon/db/__tests__/connection-leases.test.ts` |
 | pass | CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family | `src/daemon/db/__tests__/saved-management.test.ts` |
 | pass | CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state | `src/daemon/db/__tests__/connection-management-rpc.test.ts` |
@@ -697,12 +695,12 @@ named test cases that did not pass: fail: 'CM-S3-NAMESPACE: alias relative and t
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 12 | 1.3 s |  |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 12 | 1.6 s |  |
 | `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 6 | 1.6 s |  |
-| `src/daemon/db/__tests__/connection-reservations.test.ts` | 1 | 8 | 1.3 s |  |
-| `src/daemon/db/__tests__/draft-test-routes.test.ts` | 0 | 2 | 1.9 s |  |
-| `src/daemon/db/__tests__/driver-field-audit.test.ts` | 0 | 3 | 5.9 s |  |
+| `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 2 s |  |
+| `src/daemon/db/__tests__/draft-test-routes.test.ts` | 0 | 2 | 2.2 s |  |
+| `src/daemon/db/__tests__/driver-field-audit.test.ts` | 0 | 3 | 6.1 s |  |
 | `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 5 | 1.9 s |  |
-| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 8.8 s |  |
-| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 1.4 s |  |
-| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 9.8 s |  |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 9.1 s |  |
+| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 3 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.4 s |  |

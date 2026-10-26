@@ -77,7 +77,7 @@ test("tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact suc
 		for (const name of readdirSync(d)) {
 			const p = join(d, name);
 			if (statSync(p).isDirectory()) { if (name !== '__tests__') walk(p); continue; }
-			if (/\.(ts|tsx)$/.test(name) && /\bgetModelRegistry\b/.test(readFileSync(p, 'utf8'))) offenders.push(relative(SRC, p));
+			if (/\.(ts|tsx|mts)$/.test(name) && /\bgetModelRegistry\b/.test(readFileSync(p, 'utf8'))) offenders.push(relative(SRC, p));
 		}
 	};
 	walk(join(SRC, 'cli'));

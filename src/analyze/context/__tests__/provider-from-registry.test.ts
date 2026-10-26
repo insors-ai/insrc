@@ -214,6 +214,12 @@ test("provider-from-registry.test.ts: the router's summariser resolution names t
 	const { provider, resolution } = createRoleRouter({ registry }).resolveSummariser(halfEdited);
 	assert.equal((provider as Cli).defaultModel, 'gpt-s');
 	assert.equal(resolution.model, 'gpt-s');
+	// An effort the substituted model does not accept is neither forwarded nor reported.
+	const withEffort = createRoleRouter({ registry }).resolveSummariser({ ...halfEdited, summariserEffort: 'turbo' });
+	assert.equal((withEffort.provider as Cli).effort, undefined);
+	assert.equal(withEffort.resolution.effort, undefined);
+	const accepted = createRoleRouter({ registry }).resolveSummariser({ ...halfEdited, summariserEffort: 'low' });
+	assert.deepEqual([(accepted.provider as Cli).effort, accepted.resolution.effort], ['low', 'low']);
 	const local = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama', model: 'llama:small' } } }), SHAPER, DEPTH, registry);
 	const r = createRoleRouter({ registry }).resolveSummariser({ ...local, summariserModel: 'gpt-x' });
 	assert.equal((r.provider as unknown as { model: string }).model, 'llama:loop');

@@ -210,14 +210,14 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 			const overrides = deps.registry !== undefined ? { registry: deps.registry } : undefined;
 			const provider = buildSummariserProvider(cfg, overrides);
 			// The model the provider runs, as the same selection chose it.
-			const { model } = summariserSelection(cfg, overrides);
+			const { model, effort } = summariserSelection(cfg, overrides);
 			const fallback = cfg.tierResolutions?.cheap?.fallback;
 			const resolution: RoleResolution = {
 				role:           SUMMARISER_ROLE,
 				tier:           'cheap',
 				runner:         cfg.summariserProvider,
 				model:          model.id,
-				...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}),
+				...(effort !== undefined ? { effort } : {}),
 				clampedByFloor: false,
 				...(fallback !== undefined ? { fallback } : {}),
 			};

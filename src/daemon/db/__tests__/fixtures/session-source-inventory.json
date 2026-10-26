@@ -1364,7 +1364,7 @@
       ],
       "siteCount": 24,
       "sitesDigest": "79b2f4ff23f348c6bd82c400f180b639851925ddf88b9f46d4ca0637c90fa153",
-      "sourceDigest": "1972c749bef80acb71f0d56d95d0b029dafcfd7af2e7597b83b1c4f8d9fdbf39",
+      "sourceDigest": "08c04a873b9e0ba1a9c8731ce8bbf28533a6bd82a023aeb0667898ecee309215",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1605,7 +1605,7 @@
       ],
       "siteCount": 45,
       "sitesDigest": "c7e010de3b7d51b43dcd8e9ed0ce1126c99e97a63120249651f5f12cc52a8315",
-      "sourceDigest": "5de9bb636200f59ff51481b3d7c85bfbfec11bec1dd93f5eeb95d2557a89c32e",
+      "sourceDigest": "145eab3e02519b2c83b0bfa017ae5b348716b09f68dc2b3623a23152a8540bdd",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1741,7 +1741,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "247186affb54184145cc25b91fa049ce19b8906bbf8942029c0e95e8b812587d",
-      "sourceDigest": "79b12068479ec199c23d5883cdf6c80c5e921f8a48cf30f052cd6a88c8627b56",
+      "sourceDigest": "577a2a7f9c7be1de849dc60ffba3ffb8572acf71ab2c1d13f706c3f3c1fdc4ad",
       "boundaries": [
         "provider-factory"
       ]
@@ -1913,7 +1913,7 @@
       ],
       "siteCount": 18,
       "sitesDigest": "862111a97b3b5998f80230c5df3e52bff516582f0d646df3ee8b50e558ab9dce",
-      "sourceDigest": "3090a46151467c7bcd7e40a9a2d89f341cdc23fee4647149b8a259029bdd3e8c",
+      "sourceDigest": "8437dd4677df10e8080b4b5ef271ed5dee0d45f00fe4139b41a083a92a040646",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -2971,7 +2971,7 @@
       ],
       "siteCount": 19,
       "sitesDigest": "fd0c44bc69e60e00f6c243668c37d4444e4538fbc6e09da060d98c7a96988b02",
-      "sourceDigest": "4210a40e1217b8658f20b944be83ec15d8044be93885d830346a68f0e3cad53b",
+      "sourceDigest": "ae2cfee64b96cdf89addbe244756a60930375f5853da77bd1c3ccf31733267ed",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -5213,6 +5213,53 @@
         "filesystem-read",
         "provider-factory",
         "provider-use",
+        "serialization"
+      ]
+    },
+    "src/analyze/session-reuse.ts": {
+      "classification": "session-invocation",
+      "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "acquisition:resolver-member",
+          "savedConnectionResolver.list"
+        ],
+        [
+          "connection-use",
+          "savedConnectionResolver.list"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
+        ]
+      ],
+      "siteCount": 8,
+      "sitesDigest": "185329a38e0cd50f56eddbad8d008e69547972d557a9dec360fca0f70b4d1abc",
+      "sourceDigest": "b4739aa9f7702b44e4e5a23661291c059b1ee169cbc16aac9fb4c354c5caee45",
+      "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:symbol:savedConnectionResolver",
+        "connection-use",
         "serialization"
       ]
     },
@@ -7527,7 +7574,7 @@
       ],
       "siteCount": 28,
       "sitesDigest": "7361f037222b47316c113cc37873720870d7277099083d9578cff7ff216c4dad",
-      "sourceDigest": "c44191931d2c1b87b21a328ad085bfafd3d7e9483cb77b1d4ba57a0f112aac6a",
+      "sourceDigest": "14306f66340dd8bacbe3be7408318093235f672b2947efd9ab5713ef2fadf95d",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -10437,6 +10484,14 @@
           "CACHE.get"
         ],
         [
+          "connection-factory",
+          "CACHE.get"
+        ],
+        [
+          "acquisition:pool-port-call",
+          "CACHE.get(access.lookupRoot)"
+        ],
+        [
           "acquisition:pool-port-call",
           "CACHE.get(repoPath)"
         ],
@@ -10515,6 +10570,18 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "diagnostic",
@@ -10601,6 +10668,14 @@
           "saved.safeList"
         ],
         [
+          "acquisition:pool-member",
+          "saved.safeList"
+        ],
+        [
+          "connection-use",
+          "saved.safeList"
+        ],
+        [
           "connection-use",
           "saved.safeList"
         ],
@@ -10675,11 +10750,15 @@
         [
           "connection-use",
           "session.withConnection"
+        ],
+        [
+          "filesystem-read",
+          "statSync"
         ]
       ],
-      "siteCount": 65,
-      "sitesDigest": "3cd3026c5a82062a0cfd6bc6dd0949ca02ef94da8dd8b9b282afb43e390c1eda",
-      "sourceDigest": "8a120ff31fd1e429780862bd664f66e1846f9d865e2ec7d4e040d4281d3eecd1",
+      "siteCount": 73,
+      "sitesDigest": "7d2d014542782ecf6cf08c0a6236cf0ece47b1ad9c48744813e5e30e534f9a25",
+      "sourceDigest": "d9fe24a6bfd4ff66f4ccd91b1926a5e68fc124e82a96944d6b9dc7585875a12b",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",
@@ -10692,7 +10771,9 @@
         "acquisition:symbol:savedConnectionResolver",
         "connection-factory",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/daemon/db/pool.ts": {
@@ -13625,7 +13706,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "e9159fc4d21b56fcc656c0042d17e1a82a087b082ce9afcc1ecbe447b7397c6b",
-      "sourceDigest": "0d75b2b9ce19036e8499eb74d684e4e5a07c83a0feba08b5b908da863a147097",
+      "sourceDigest": "377e80ca3f2e35c89107c616b1b3a1301f0ec9170ba23cd4438e836e9d515c0e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -13651,7 +13732,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "109ebb2ba18368b8fb215d157e078bd55c52bb72d9c2517599ebce9a3d6ec6fc",
-      "sourceDigest": "4f37601c9f4685d7f4660d8f4edc2f2431134f80353ce0c22635ebc71bb85fff",
+      "sourceDigest": "72c00cdcf2f0510ca61ef398823af298f1b257562996bf4b614e95a51ecb24a3",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -13700,7 +13781,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "d3158b005d1aed746c77a22bc193bb1aeb6ecce956130fff06f3aeb920c1760e",
-      "sourceDigest": "e014cacc677ebd818e9281bd7df3aff97f7ec125cc9ac746e45bb851cbb72d87",
+      "sourceDigest": "dd883c48e4fb1c6eaafec9b7790f8debc3acf2f73f1542969bd311816bb5661a",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -13739,7 +13820,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "b7da36500156e42ab868266a1d99ae52827182baccfd423ade3d0ebf91efd000",
-      "sourceDigest": "3cb8c141adb0d20f5e24738a6027dd9831cd237731c7d604f0fe43e4337aa77a",
+      "sourceDigest": "366cf3721299b6ccc428cdf986a3a7ac2c9f5e4881037ab635b161e8b07c8566",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -13772,9 +13853,25 @@
       ],
       "siteCount": 5,
       "sitesDigest": "548e01d39b546b8e58d5298cf6a28c6ecddbdf7473102eca0fbf94fc2c4efe3c",
-      "sourceDigest": "638f4c89a50f116c46c78c8a5b5f9d28046fda44843dbf45c334f6acf7126982",
+      "sourceDigest": "76d09de8114cfe16191202af4b77529c488f46e4e313c5b7dc01e498ff4cbfc8",
       "boundaries": [
         "diagnostic",
+        "serialization"
+      ]
+    },
+    "src/daemon/steps/analyze-step/state-store.ts": {
+      "classification": "analysis-transport",
+      "rationale": "Session analysis host boundary; unverified MCP phases refuse before state/output/prompt access and UI daemon execution retains memory-only authority through all serializers.",
+      "sites": [
+        [
+          "serialization",
+          "randomBytes(24).toString"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "0a8fa578588129a8711aceeca9f5377aad737091e433d30e41f55a90d9e94b01",
+      "sourceDigest": "20db561799fd35c3dc0f2b59327078852b35915ea2ca210033fb2ce549fef526",
+      "boundaries": [
         "serialization"
       ]
     },
@@ -21321,7 +21418,7 @@
       ],
       "siteCount": 31,
       "sitesDigest": "b1fe411c7fdc0f61d18ef3f2a98e4b6792cc645c1255474f810d766f88c8826c",
-      "sourceDigest": "df6c530b7ab76f25b5feae233f03c085c3a946c1eb6f607500a54d95116f2b1d",
+      "sourceDigest": "e8257f449754a5759ecf62abbe359ed9b9f214725ab3c0360f7d7e91f94aafee",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -29954,7 +30051,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "f5463792f7442de1b6667602cae5523983ee3eaac5853d02b5079c5c61c9b9e0",
-      "sourceDigest": "d36bd2b15447fe673b3b78fcb5cd827b90c1be5d3c0188caecc6624bec932c66",
+      "sourceDigest": "b80391bd6ff229ad58a98eb5029727f577b06a82a840d26802ff53ee6ede3eeb",
       "boundaries": [
         "unresolved-call"
       ]

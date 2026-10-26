@@ -321,24 +321,27 @@ export function buildShaperProvider(
  * summariser costs one serial subprocess per doc, so it always pins the cheap
  * tier's model and never runs on the CLI's own default model.
  */
-/** The summariser's family and model: the cheap tier's model when it is a model
- *  of its family, else the family's summariser model (a CLI) or the tool-loop
- *  model (Ollama) — never a CLI's own default. */
-export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): { registry: ModelRegistry; family: FamilyId; model: ResolvedModel } {
+/** The summariser's family, model and effort: the cheap tier's model when it
+ *  is a model of its family, else the family's summariser model (a CLI) or the
+ *  tool-loop model (Ollama) — never a CLI's own default; the cheap tier's
+ *  effort only when that model accepts it. */
+export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): { registry: ModelRegistry; family: FamilyId; model: ResolvedModel; effort: EffortLevel | undefined } {
 	const registry = overrides?.registry ?? getModelRegistry();
 	const family = cfg.summariserProvider;
-	const found = registry.find(family, cfg.summariserModel);
-	if (found !== undefined) return { registry, family, model: found };
-	const cli = registry.cliKind(family) !== undefined;
-	const model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
-	log.warn({ family, configured: cfg.summariserModel, model: model.id }, cli
-		? "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model"
-		: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model');
-	return { registry, family, model };
+	let model = registry.find(family, cfg.summariserModel);
+	if (model === undefined) {
+		const cli = registry.cliKind(family) !== undefined;
+		model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
+		log.warn({ family, configured: cfg.summariserModel, model: model.id }, cli
+			? "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model"
+			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model');
+	}
+	const effort = cfg.summariserEffort !== undefined && model.efforts.includes(cfg.summariserEffort) ? cfg.summariserEffort : undefined;
+	return { registry, family, model, effort };
 }
 
 export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): LLMProvider {
-	const { registry, family, model } = summariserSelection(cfg, overrides);
-	log.info({ family, model: model.id }, 'summariser provider: built from the model definitions');
-	return familyProvider(registry, family, model, registry.cliKind(family) !== undefined ? { effort: cfg.summariserEffort } : {});
+	const { registry, family, model, effort } = summariserSelection(cfg, overrides);
+	log.info({ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions');
+	return familyProvider(registry, family, model, { effort });
 }

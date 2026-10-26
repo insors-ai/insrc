@@ -1,33 +1,20 @@
 import assert from 'node:assert/strict';
-import test, { mock } from 'node:test';
-import { createServer } from 'node:http';
-import type { ServerResponse } from 'node:http';
-import { setTimeout as delay } from 'node:timers/promises';
-import { OllamaProvider } from '../ollama.js';
-
-async function endpoint(reply: (response: ServerResponse) => void) {
-	const server = createServer((request, response) => { request.resume(); request.once('end', () => reply(response)); });
-	await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve)); const address = server.address(); assert.ok(address && typeof address === 'object');
-	return { provider: new OllamaProvider('qwen3.8:27b', 'http://127.0.0.1:' + address.port, 2048, undefined, 'memory-only'), async close() { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); } };
+import test from 'node:test';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+let matrix: Promise<void> | undefined;
+function runMatrix(): Promise<void> {
+	return matrix ??= new Promise((resolve, reject) => {
+		const baseline = Object.fromEntries(['DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'].map(key => [key, '']));
+		const child = spawn(process.execPath, ['--import', 'tsx', '--test', fileURLToPath(new URL('../../../daemon/steps/__tests__/fixtures/provider-transport.ts', import.meta.url))], { env: { ...process.env, ...baseline, INSRC_MODE: 'probe-worker', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
+		let output = ''; child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; }); const timer = setTimeout(() => child.kill('SIGKILL'), 25000);
+		child.once('error', error => { clearTimeout(timer); reject(error); }); child.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0, output); assert.match(output, /# pass 5\b/); for (const key of ['fail', 'cancelled', 'skipped', 'todo']) assert.match(output, new RegExp('# ' + key + ' 0\\b')); resolve(); } catch (error) { reject(error); } });
+	});
 }
+test('memory-only Ollama transport rejects malformed frames before SDK console diagnostics', async () => { await runMatrix(); });
+test('memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame', async () => { await runMatrix(); });
+test('memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics', async () => { await runMatrix(); });
 
-test('memory-only Ollama transport rejects malformed frames before SDK console diagnostics', async () => {
-	let warnings = 0; const spy = mock.method(console, 'warn', () => { warnings++; });
-	const f = await endpoint(response => { response.writeHead(200, { 'content-type': 'application/x-ndjson' }); response.end('CM_PRIVATE_MALFORMED_FRAME\n'); });
-	try { await assert.rejects(f.provider.complete([{ role: 'user', content: 'fixture' }]), error => error instanceof Error && !error.message.includes('CM_PRIVATE_MALFORMED_FRAME')); assert.equal(warnings, 0); }
-	finally { spy.mock.restore(); await f.close(); }
-});
+test('admitted Session expiry during real structured validation prevents the next SDK retry', async () => { await runMatrix(); });
 
-test('memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame', async () => {
-	let release!: () => void, entered!: () => void; const ready = new Promise<void>(r => { entered = r; });
-	const f = await endpoint(response => { response.writeHead(200, { 'content-type': 'application/x-ndjson' }); response.write(JSON.stringify({ model: 'fixture', message: { role: 'assistant', content: 'fixture-ok' }, done: true }) + '\n'); release = () => response.end(); entered(); });
-	try { const work = f.provider.complete([{ role: 'user', content: 'fixture' }]); await ready; assert.equal(await Promise.race([work.then(() => true), delay(40).then(() => false)]), false); release(); assert.equal((await work).text, 'fixture-ok'); }
-	finally { release?.(); await f.close(); }
-});
-
-test('memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics', async () => {
-	let messages = 0; const spy = mock.method(console, 'log', () => { messages++; });
-	const f = await endpoint(response => { response.writeHead(503); response.end('CM_PRIVATE_HTTP_ERROR'); });
-	try { await assert.rejects(f.provider.complete([{ role: 'user', content: 'fixture' }]), error => error instanceof Error && !error.message.includes('CM_PRIVATE_HTTP_ERROR')); assert.equal(messages, 0); }
-	finally { spy.mock.restore(); await f.close(); }
-});
+test('memory-only adapter refuses internal helper substitution before native construction', async () => { await runMatrix(); });

@@ -1,5 +1,5 @@
 import { assertConnectionProviderAttempt } from '../../shared/connection-provider.js';
-import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { ConnectionExecutionError, assertExplicitConnectionExecution, currentStepContext } from '../../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -60,12 +60,13 @@ const quietLog = { info() { }, warn() { } };
  * issue at once -- the retry prompt then gets the full picture and
  * the LLM can fix everything in one pass.
  */
-const ajv = new Ajv({
+const ajvOptions = {
 	allErrors:        true,
 	useDefaults:      false,
 	removeAdditional: false,
 	strict:           false,        // be tolerant of `description`, `examples`, etc. typebox emits
-});
+};
+const ajv = new Ajv(ajvOptions);
 
 
 // ---------------------------------------------------------------------------
@@ -85,16 +86,27 @@ export type ValidationResult<T> =
  * `schema` reference across calls (typebox makes this natural -- the
  * schema is a module-level constant in the callsite's `*-schemas.ts`).
  */
+function assertValidationExecution(execution?: ConnectionExecutionContext): void {
+	const bound = currentStepContext()?.connectionExecution;
+	if (execution !== undefined || bound?.mode === 'session-memory') assertExplicitConnectionExecution(execution);
+	else bound?.assertActive();
+}
+
 export function validateAgainstSchema<T>(
 	schema: StructuredSchema,
 	raw:    unknown,
+	execution?: ConnectionExecutionContext,
 ): ValidationResult<T> {
+	assertValidationExecution(execution);
 	let validate: ValidateFunction;
 	try {
-		validate = ajv.compile(schema);
+		validate = (execution?.mode === 'session-memory' ? new Ajv(ajvOptions) : ajv).compile(schema);
 	} catch (err) {
+		assertValidationExecution(execution);
+		if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] };
 	}
+	assertValidationExecution(execution);
 	if (validate(raw)) {
 		return { ok: true, value: raw as T };
 	}
@@ -241,6 +253,7 @@ export async function withStructuredRetry<T>(
 		}
 
 		const result = validate(raw);
+		assertConnectionProviderAttempt(execution);
 		if (result.ok) {
 			if (attempt > 1) {
 				log.info({ attempt, maxAttempts }, 'structured-output: validation passed after retry');

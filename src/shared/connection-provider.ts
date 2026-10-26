@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { LLMProvider } from './types.js';
-import { assertExplicitConnectionExecution, currentStepContext, ConnectionExecutionError } from './step-context.js';
+import { assertExplicitConnectionExecution, currentStepContext, ConnectionExecutionError, runWithConnectionExecution } from './step-context.js';
 import type { ConnectionExecutionContext } from './step-context.js';
 
 /** Immutable diagnostic status; neither this value nor caller evidence grants authority. */
@@ -130,10 +130,10 @@ export function admitConnectionProvider(candidate: LLMProvider, execution?: Conn
 		const signal = requested && requested !== execution.lifetime.signal ? AbortSignal.any([requested, execution.lifetime.signal]) : execution.lifetime.signal;
 		const assertCall = () => { guard(); if (signal.aborted) throw new ConnectionExecutionError('session-expired'); };
 		assertCall();
-		const work = attempts.run({ execution, proof }, async () => {
+		const work = runWithConnectionExecution(execution, () => attempts.run({ execution, proof }, async () => {
 			try { const value = await fn(signal); assertCall(); return value; }
 			catch (error) { assertCall(); if (error instanceof ConnectionExecutionError) throw error; throw new ConnectionExecutionError('unsupported-temporary'); }
-		});
+		}));
 		execution.lifetime.registerDrain(work); return work;
 	};
 	return Object.freeze({

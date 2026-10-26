@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T08:40:22.115Z",
+    "updatedAt": "2026-10-26T09:18:51.492Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1688,9 +1688,9 @@
       },
       {
         "taskId": "t24",
-        "commit": "303dbae66",
-        "ranAt": "2026-10-26T08:40:22.115Z",
-        "testsPassed": true,
+        "commit": "3ed81f134",
+        "ranAt": "2026-10-26T09:18:51.492Z",
+        "testsPassed": false,
         "tests": [
           {
             "name": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
@@ -1701,6 +1701,21 @@
                 "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
                 "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
                 "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "fail"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "fail"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "fail"
               }
             ],
             "files": []
@@ -1709,35 +1724,55 @@
             "name": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
             "level": "live",
             "source": "mapping",
-            "cases": [
-              {
-                "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
-                "title": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
-                "result": "pass"
-              }
-            ],
-            "files": []
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; actual isolated source and compiled live runs both pass with zero skips in task24-live-source-output.txt and task24-live-compiled-output.txt. Reproducible test: src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1, then INSRC_PROVIDER_MODE=compiled, Node22. Production configured-service proof stays pending; tests close their private servers."
+            }
           }
         ],
         "files": [
           {
+            "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 630,
+            "titles": [
+              {
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "fail"
+              },
+              {
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "fail"
+              },
+              {
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 673,
+            "durationMs": 704,
             "titles": [
               {
                 "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
                 "result": "pass"
               },
               {
-                "title": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
+                "title": "CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence",
                 "result": "pass"
               }
             ],
             "otherFailures": []
           }
-        ]
+        ],
+        "note": "named test cases that did not pass: fail: 'memory-only Ollama transport rejects malformed frames before SDK console diagnostics' in src/agent/providers/__tests__/ollama-private-transport.test.ts; fail: 'memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame' in src/agent/providers/__tests__/ollama-private-transport.test.ts; fail: 'memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics' in src/agent/providers/__tests__/ollama-private-transport.test.ts"
       }
     ]
   }

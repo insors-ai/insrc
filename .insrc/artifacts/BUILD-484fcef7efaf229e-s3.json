@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T08:40:22.115Z",
+    "updatedAt": "2026-10-26T09:18:51.492Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -118,1976 +118,2018 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-source-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-source-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/request-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-execution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/connection-access.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/walker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-connections-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-table-describe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/db-tables-list.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-connections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-objects.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/schema-table.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/freeform-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-management-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-owner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-root.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-owner.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task4-rpc.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-session-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-enablement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/channel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task5-streams.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/maintenance-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/worker-requests.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task6-memory.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-entries.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-entries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task7-replay.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-ledger.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-ledger.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task8-reservations.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-reservations.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-rpc-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/connection-reservations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/managed-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool-cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task9-resources.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-resources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/driver-guard.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-resources.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task10-factory-authority.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/driver-log-policy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/connection-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/driver-field-matrix.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/driver-log-policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/cassandra.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/clickhouse.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/duckdb-file.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/dynamodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/etcd.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/memcached.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mongodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mssql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mysql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/nats.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/oracle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/pg.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/redis.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/sqlite.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/db-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task11-sdk-diagnostics.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-driver-logs-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-sdk-diagnostics.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/sql-probe-servers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-driver-logs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/logger.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task11-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task12-files.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-file-resources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/file-execution.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task12-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-file-resources-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task13-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task13-probes.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/draft-test-routes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-probe-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-probe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/db/draft-test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task14-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task14-step-bootstrap.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-mcp.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/session-host-bootstrap.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/session-pipe-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/mcp/forward-step.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/mcp/session-bootstrap.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task15-analysis-egress.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task15-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analysis-client-refusal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/analysis-refusal-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analysis-admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-oneshot.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/answer-turn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/bundle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/narrow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/analysis-client-matrix.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task16-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task16-owner-context.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/tool-owner-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/tool-owner-context.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/data/schema-drift.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/db/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/access.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task17-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task17-root-bound-scope.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/task-scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/root-bound-scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/root-bound-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task18-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task18-owner-measurement.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/owner-measurement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/owner-measurement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task19-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task19-freeform-relay.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/agent/read-only-tool-loop.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/prepare-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/decomposer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/synthesizer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/failed-lookups.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/freeform-probe-params.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/freeform-owner-relay.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/freeform-owner-relay.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/fixtures/saved-exploration-executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/cache-invalidation.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/completeness.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/driver.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/executor-placeholders.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task20-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task20-focused-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task20-private-cache.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/cache-invalidation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/cache.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/session-reuse.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/private-cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/private-cache.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/exploration-cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task20-corrected-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task21-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task21-focused-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task21-root-memory.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/orchestrator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/private-paths.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/run-order.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/run-report.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/live-runs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/persistence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/root-run-memory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/root-run-memory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task22-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task22-focused-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task22-nested-memory.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/__tests__/cache.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/__tests__/driver-unit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/__tests__/recursive.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/recursive.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/nested-planner-memory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/nested-planner-memory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task22-corrected-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-consumers-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-exploration-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-inventory-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-persistence.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-storage-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task23-writers-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/bootstrap.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/config/feedback.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/config/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/fixtures/task-persistence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/task-persistence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/step-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/compaction.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/conversations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/doc-summaries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/export-names.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/index-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/artifact-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/cleanup.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/config-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/conn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/entity-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/response-segment-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/session-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/turn-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/lance/working-memory-bullets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/repos.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/db/todos.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/connection-persistence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/render.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-build-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-consumers-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-inventory-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-named-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-process-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-session-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-summariser-output.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/agent/providers/structured-output.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/role-router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/context/shaper-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/capability-reuse-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-constraint-enumerate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-decision-trace.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/constraint-enumerate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/decision-trace.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/generic/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/aggregator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/provider-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/connection-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:40:22.115Z"
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-live-compiled-output.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-live-source-output.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-transport-output.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/fixtures/provider-live.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/provider-admission.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:51.492Z"
       }
     ],
-    "commit": "303dbae66"
+    "commit": "3ed81f134"
   }
 }

@@ -250,6 +250,7 @@ export class OllamaProvider implements LLMProvider {
   ) {
 		assertConnectionProviderAdmission(execution);
 		this.connectionMemoryOnly = memoryProfile === 'memory-only';
+		if (this.connectionMemoryOnly) assertOriginalAdapterMethods();
 		if (this.connectionMemoryOnly && ['DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG'].some(key => process.env[key] && !['0', 'false'].includes(process.env[key]!.toLowerCase()))) throw new ConnectionExecutionError('unsupported-temporary');
 		if (this.connectionMemoryOnly) Object.freeze(this.capabilities);
     const d = localDefaults();
@@ -284,20 +285,37 @@ export class OllamaProvider implements LLMProvider {
     this.client = new Ollama({ host, fetch: longTimeoutFetch });
     // A cancellable call gets its own client over the SAME agent, whose fetch
     // carries the call's signal, so aborting ends that request (and its stream).
-    this.signalledClient = (signal: AbortSignal) => new Ollama({
+		this.signalledClient = (signal: AbortSignal) => {
+			const client = new Ollama({
       host,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
 			fetch: ((input: any, init?: any) => guardedFetch(input, init, signal)) as unknown as typeof globalThis.fetch,
-    });
+			}); if (this.connectionMemoryOnly) { Object.freeze(Object.getOwnPropertyDescriptor(client, 'config')?.value); Object.freeze(client); } return client;
+		};
 		const client = this.client, signalled = this.signalledClient, selectedModel = this.model, capabilities = this.capabilities, contextSize = this.numCtx, quirks = this.quirks;
 		const own = (key: string) => Object.getOwnPropertyDescriptor(this, key)?.value;
 		const prototype = Object.getPrototypeOf(this);
-		const methods = ['complete', 'completeStructured', 'stream', 'embed'] as const;
-		const nativeMethods = methods.map(key => Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)?.value);
+		// Capture the full adapter/SDK/dispatcher method chains, including private
+		// helpers. A changed getter is compared as a descriptor, never evaluated.
+		const chains = [this, this.client, agent].flatMap(value => {
+			const rows: { prototype: object; keys: PropertyKey[]; descriptors: PropertyDescriptor[] }[] = [];
+			for (let node = Object.getPrototypeOf(value) as object | null;node && node !== Object.prototype;node = Object.getPrototypeOf(node) as object | null) {
+				const keys = Reflect.ownKeys(node); rows.push({ prototype: node, keys, descriptors: keys.map(key => Object.getOwnPropertyDescriptor(node, key)!) });
+			} return rows;
+		});
+		const chainChanged = () => chains.some(row => {
+			const keys = Reflect.ownKeys(row.prototype);
+			return keys.length !== row.keys.length || keys.some((key, index) => {
+				const descriptor = Object.getOwnPropertyDescriptor(row.prototype, key)!, expected = row.descriptors[index]!;
+				return key !== row.keys[index] || descriptor.value !== expected.value || descriptor.get !== expected.get || descriptor.set !== expected.set;
+			});
+		});
+		if (this.connectionMemoryOnly) { Object.freeze(Object.getOwnPropertyDescriptor(this.client, 'config')?.value); Object.freeze(this.client); Object.freeze(this); }
 		nativePrivacyIdentities.set(this, recordLocalConnectionProvider(this, {
 			modelId: this.model, host, source: new URL(import.meta.url).pathname, memoryOnly: this.connectionMemoryOnly,
 			assertUnchanged: () => {
-				if (Object.getPrototypeOf(this) !== prototype || own('client') !== client || own('signalledClient') !== signalled || own('model') !== selectedModel || own('connectionMemoryOnly') !== true || own('numCtx') !== contextSize || own('quirks') !== quirks || !Object.isFrozen(quirks) || own('capabilities') !== capabilities || !Object.isFrozen(capabilities) || own('supportsTools') !== true || methods.some((key, index) => Object.getOwnPropertyDescriptor(this, key) !== undefined || Object.getOwnPropertyDescriptor(prototype, key)?.value !== nativeMethods[index])) throw new ConnectionExecutionError('unsupported-temporary');
+				assertOriginalAdapterMethods();
+				if (Object.getPrototypeOf(this) !== prototype || own('client') !== client || own('signalledClient') !== signalled || own('model') !== selectedModel || own('connectionMemoryOnly') !== true || own('numCtx') !== contextSize || own('quirks') !== quirks || !Object.isFrozen(quirks) || own('capabilities') !== capabilities || !Object.isFrozen(capabilities) || own('supportsTools') !== true || !Object.isFrozen(this) || !Object.isFrozen(client) || chainChanged()) throw new ConnectionExecutionError('unsupported-temporary');
 			}
 		}));
 
@@ -742,7 +760,7 @@ export class OllamaProvider implements LLMProvider {
           throw wrapOllamaError(err);
         }
       },
-      (raw) => validateAgainstSchema<T>(schema, raw),
+			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
       // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
       opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
 			opts?.connectionExecution,
@@ -798,6 +816,14 @@ export class OllamaProvider implements LLMProvider {
 }
 
 /** Tool turns an Ollama reviewer session may take; its deadline is the real bound. */
+// Module-load baseline prevents a pre-construction helper substitution from
+// being mistaken for a native implementation when identity is first recorded.
+const originalAdapterMethods = new Map(Reflect.ownKeys(OllamaProvider.prototype).map(key => [key, Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)!]));
+function assertOriginalAdapterMethods(): void {
+	const keys = Reflect.ownKeys(OllamaProvider.prototype);
+	if (keys.length !== originalAdapterMethods.size || keys.some(key => { const actual = Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)!, expected = originalAdapterMethods.get(key); return !expected || actual.value !== expected.value || actual.get !== expected.get || actual.set !== expected.set; })) throw new ConnectionExecutionError('unsupported-temporary');
+}
+
 const REVIEW_SESSION_MAX_TURNS = 40;
 
 // ---------------------------------------------------------------------------

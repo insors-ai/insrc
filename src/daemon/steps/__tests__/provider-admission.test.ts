@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
+import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
 import { admitConnectionProvider, assertConnectionProviderAdmission, connectionProviderPrivacyStatus, verifyLocalConnectionProvider } from '../../../shared/connection-provider.js';
-import { sessionConnectionExecution, savedConnectionExecution, ConnectionExecutionError, runWithConnectionExecution } from '../../../shared/step-context.js';
+import { sessionConnectionExecution, savedConnectionExecution, ConnectionExecutionError, runWithConnectionExecution, runInStepContext } from '../../../shared/step-context.js';
 import type { SessionConnectionExecution } from '../../../shared/step-context.js';
 import { RequestLifetime } from '../../request-context.js';
 import { buildShaperProvider, resolveRoleProvider, familyProvider, runWithRoutingContext } from '../../../analyze/context/shaper-provider.js';
@@ -11,7 +15,7 @@ import { runAggregator } from '../../../analyze/runtimes/shared/aggregator.js';
 import { runReadOnlyToolLoop, emitStructuredAnswer } from '../../../agent/read-only-tool-loop.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
-import { withStructuredRetry } from '../../../agent/providers/structured-output.js';
+import { withStructuredRetry, validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { decompose } from '../../../analyze/context/decomposer.js';
 import { synthesize } from '../../../analyze/context/synthesizer.js';
 import { classify } from '../../../analyze/classifier/driver.js';
@@ -35,6 +39,11 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 		assert.equal(selected.tier, 'core'); assert.equal(selected.clampedByFloor, true); assert.equal(warm.resolution.model, selected.model);
 		assert.equal(router.resolveProviderForRole('design.contract.detail', cfg), warm);
 		assert.equal(admitConnectionProvider(warm.provider), warm.provider);
+		let filesystemWrites = 0, filesystemReads = 0, spawned = 0;
+		const spies = [mock.method(fs, 'readFileSync', () => { filesystemReads++; throw Error('unexpected filesystem read'); }), mock.method(fsPromises, 'readFile', async () => { filesystemReads++; throw Error('unexpected filesystem read'); }), mock.method(fsPromises, 'mkdtemp', async () => { filesystemWrites++; throw Error('unexpected temporary directory'); }), mock.method(fs, 'writeFileSync', () => { filesystemWrites++; throw Error('unexpected filesystem write'); }), mock.method(fsPromises, 'writeFile', async () => { filesystemWrites++; throw Error('unexpected filesystem write'); }), mock.method(fs, 'mkdtempSync', () => { filesystemWrites++; throw Error('unexpected temporary file'); }), mock.method(childProcess, 'spawn', () => { spawned++; throw Error('unexpected spawn'); }), mock.method(childProcess, 'fork', () => { spawned++; throw Error('unexpected fork'); })];
+		syncBuiltinESMExports();
+		try {
+
 		await assert.rejects(verifyLocalConnectionProvider({ complete() { sends++; } } as never, poison as never), refusal());
 		for (const candidate of [poison, warm.provider, { kind: 'ollama', model: selected.model, capabilities: { structuredOutput: true }, complete() { sends++; } }]) {
 			for (const evidence of [undefined, { mode: 'verified-local', modelId: selected.model, evidenceDigest: 'copied-stale-digest' }, poison]) {
@@ -65,6 +74,8 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 		assert.throws(() => admitConnectionProvider(poison as never, { ...a.execution, provider: { mode: 'verified-local', modelId: 'spoof', evidenceDigest: 'copied' } } as SessionConnectionExecution), refusal('session-expired'));
 		a.expire(); assert.throws(() => assertConnectionProviderAdmission(a.execution), refusal('session-expired'));
 		assert.equal(reads, 0); assert.equal(sends, 0);
+			assert.equal(filesystemReads, 0); assert.equal(filesystemWrites, 0); assert.equal(spawned, 0);
+		} finally { for (const spy of spies) spy.mock.restore(); syncBuiltinESMExports(); }
 		// Actual shared structured helper rechecks after the awaited attempt, before
 		// validation or correction-note construction, even for a Saved request.
 		const lifetime = new RequestLifetime(), saved = savedConnectionExecution({ lookupRoot: '/private/saved-provider', daemonEpoch: 'saved' }, lifetime, { emit() { } }); let calls = 0, validations = 0;
@@ -72,6 +83,8 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 		assert.equal(calls, 1); assert.equal(validations, 0); lifetime.complete(); await lifetime.drained;
 		const retryLifetime = new RequestLifetime(), retrySaved = savedConnectionExecution({ lookupRoot: '/private/saved-retry', daemonEpoch: 'saved' }, retryLifetime, { emit() { } }); let retryCalls = 0;
 		await assert.rejects(withStructuredRetry(async () => { retryCalls++; return {}; }, () => { retryLifetime.abort(); return { ok: false, errors: ['private'] }; }, 3, retrySaved), refusal('session-expired')); assert.equal(retryCalls, 1); retryLifetime.complete(); await retryLifetime.drained;
+		const validationLifetime = new RequestLifetime(), validationSaved = savedConnectionExecution({ lookupRoot: '/private/saved-validation', daemonEpoch: 'saved' }, validationLifetime, { emit() { } });
+		await runInStepContext({ cwd: '/private/saved-validation', connectionExecution: validationSaved }, async () => { assert.deepEqual(validateAgainstSchema({ type: 'string' }, 'saved-validation'), { ok: true, value: 'saved-validation' }); }); validationLifetime.complete(); await validationLifetime.drained;
 		let typedCalls = 0; await assert.rejects(withStructuredRetry(async () => { typedCalls++; throw new ConnectionExecutionError('unsupported-temporary'); }, () => ({ ok: true, value: {} }), 3), refusal()); assert.equal(typedCalls, 1);
 	} finally { a.lifetime.abort(); a.lifetime.complete(); await a.lifetime.drained; }
 });

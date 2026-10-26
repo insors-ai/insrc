@@ -13,4 +13,4 @@ ok 3 - CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error r
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2143.345
+# duration_ms 2130.867792

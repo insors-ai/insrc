@@ -34,8 +34,9 @@ try {
 	PATHS.config = join(root, 'config.json'); await writeFile(PATHS.config, JSON.stringify({ logLevel: 'trace' })); PATHS.insrc = root; PATHS.logDir = join(root, 'logs'); PATHS.daemonLog = join(PATHS.logDir, 'daemon.log'); PATHS.agentLog = join(PATHS.logDir, 'agent.log');
 	const { OllamaProvider } = await import(new URL('agent/providers/ollama.js', base).href) as typeof import('../../../../agent/providers/ollama.js');
 	const { verifyLocalConnectionProvider, admitConnectionProvider } = await import(new URL('shared/connection-provider.js', base).href) as typeof import('../../../../shared/connection-provider.js');
-	const { sessionConnectionExecution, runWithConnectionExecution } = await import(new URL('shared/step-context.js', base).href) as typeof import('../../../../shared/step-context.js');
+	const { sessionConnectionExecution, runWithConnectionExecution, currentStepContext } = await import(new URL('shared/step-context.js', base).href) as typeof import('../../../../shared/step-context.js');
 	const { RequestLifetime } = await import(new URL('daemon/request-context.js', base).href) as typeof import('../../../request-context.js');
+	const { assertNoSessionPersistence } = await import(new URL('shared/connection-persistence.js', base).href) as typeof import('../../../../shared/connection-persistence.js');
 	const { getLogger } = await import(new URL('shared/logger.js', base).href) as typeof import('../../../../shared/logger.js');
 	const candidate = new OllamaProvider(model, host, 2048, undefined, 'memory-only');
 	const assertService = () => { assert.ok(!closed && !spawnError); assert.ok(child.pid); process.kill(child.pid, 0); };
@@ -49,13 +50,16 @@ try {
 		const otherLifetime = new RequestLifetime(); const otherOwner = sessionConnectionExecution(Object.freeze({ lookupRoot: root, daemonEpoch: 'live-private', sessionHandle: 'other-owner' }), { bindingId: 'other', audience: 'workbench-ui', controlGeneration: 1, lifetime: otherLifetime, assertActive() { } });
 		try { await runWithConnectionExecution(otherOwner, async () => { await assert.rejects(facade.complete(poison as never, poison), { code: 'session-expired' }); }); assert.equal(reads, 0); } finally { otherLifetime.abort(); otherLifetime.complete(); await otherLifetime.drained; }
 		const cancelled = new AbortController(); cancelled.abort(); await assert.rejects(facade.complete([], { signal: cancelled.signal }), { code: 'session-expired' });
-		const reply = await facade.complete([{ role: 'user', content: 'Return exactly this marker: ' + canary }], { maxTokens: 128, temperature: 0, disableThinking: true }); assert.ok(reply.text.includes(canary));
+		let callbackPolicyChecks = 0;
+		const reply = await facade.complete([{ role: 'user', content: 'Return exactly this marker: ' + canary }], { maxTokens: 128, temperature: 0, disableThinking: true, onToken() { assert.equal(currentStepContext()?.connectionExecution, execution); assert.throws(() => assertNoSessionPersistence(), { code: 'unsupported-temporary' }); callbackPolicyChecks++; } }); assert.ok(callbackPolicyChecks > 0); assert.ok(reply.text.includes(canary));
 		const structured = await facade.completeStructured<{ marker: string }>([{ role: 'user', content: 'Return a JSON object with marker equal to ' + canary }], { type: 'object', properties: { marker: { type: 'string' } }, required: ['marker'], additionalProperties: false }, { maxTokens: 128, maxAttempts: 2, disableThinking: true }); assert.equal(structured.marker, canary);
 		getLogger('provider-live-saved-control').info({ marker: 'CM_SAVED_LIVE_CONTROL' }, 'saved logs stay visible');
 		const bytes = await snapshots(); assert.ok(bytes.some(b => b.includes('CM_SAVED_LIVE_CONTROL'))); assert.ok(bytes.every(b => !b.includes(canary)));
 		assert.throws(() => admitConnectionProvider(candidate, execution, { ...proof }), { code: 'unsupported-temporary' });
 		const other = new OllamaProvider(model, host, 2048, undefined, 'memory-only'); assert.throws(() => admitConnectionProvider(other, execution, proof), { code: 'unsupported-temporary' });
-		const descriptor = Object.getOwnPropertyDescriptor(candidate, 'model')!; let modelReads = 0; Object.defineProperty(candidate, 'model', { get() { modelReads++; throw Error('private-mutated-model'); }, configurable: true }); await assert.rejects(async () => facade.complete([]), { code: 'unsupported-temporary' }); assert.equal(modelReads, 0); Object.defineProperty(candidate, 'model', descriptor);
+		let modelReads = 0; assert.throws(() => Object.defineProperty(candidate, 'model', { get() { modelReads++; throw Error('private-mutated-model'); }, configurable: true }), TypeError); assert.equal(modelReads, 0);
+		const prototype = Object.getPrototypeOf(candidate);
+		for (const helper of ['clientFor', 'completeStreaming']) { const descriptor = Object.getOwnPropertyDescriptor(prototype, helper)!; let helperReads = 0; Object.defineProperty(prototype, helper, { get() { helperReads++; throw Error('private-helper'); }, configurable: true }); try { await assert.rejects(facade.complete(poison as never, poison), { code: 'unsupported-temporary' }); assert.equal(helperReads, 0); } finally { Object.defineProperty(prototype, helper, descriptor); } }
 		active = false; await assert.rejects(async () => facade.complete([{ role: 'user', content: 'must not send' }]), { code: 'session-expired' });
 		child.kill('SIGTERM'); await childClosed; const finalBytes = await snapshot(root); assert.ok(finalBytes.every(b => !b.includes(canary)));
 		process.stdout.write(JSON.stringify({ completed: true, mode: process.argv[2] ?? 'source', model, actualService: true, admittedComplete: true, admittedStructured: true, privateOutputs: finalBytes.length, savedLogControl: true, copiedAndWrongInstanceDenied: true, expiredDenied: true }) + '\n');

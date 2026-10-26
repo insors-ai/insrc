@@ -601,11 +601,23 @@
         ],
         [
           "provider-adapter",
+          "assertOriginalAdapterMethods"
+        ],
+        [
+          "provider-adapter",
+          "assertOriginalAdapterMethods"
+        ],
+        [
+          "provider-adapter",
           "cancel"
         ],
         [
           "provider-adapter",
           "cancel"
+        ],
+        [
+          "provider-adapter",
+          "chainChanged"
         ],
         [
           "diagnostic",
@@ -880,9 +892,9 @@
           "wrapOllamaError"
         ]
       ],
-      "siteCount": 78,
-      "sitesDigest": "b3a408116bec7faf4911433fd99d44c31da7e12be979c45fed7fdd7dc649ff65",
-      "sourceDigest": "bbbc5989c50f5b215c85d2413b49d3e150d59569bb38d838a97ce69042a272a0",
+      "siteCount": 81,
+      "sitesDigest": "5ab770204d17a21c68e467764a6e1475799d533342f00f030599fd45b54a52d7",
+      "sourceDigest": "8db2eaec1f4c37508d921a2c4a4b3393ef5df65e55e51ba1e0f36708423c9914",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -988,6 +1000,18 @@
       "classification": "provider-admission",
       "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use.",
       "sites": [
+        [
+          "provider-adapter",
+          "assertValidationExecution"
+        ],
+        [
+          "provider-adapter",
+          "assertValidationExecution"
+        ],
+        [
+          "provider-adapter",
+          "assertValidationExecution"
+        ],
         [
           "provider-adapter",
           "buildRetryNote"
@@ -1145,9 +1169,9 @@
           "validate"
         ]
       ],
-      "siteCount": 39,
-      "sitesDigest": "7a90160387f40c04c73aa327857ad887a4afd82bee4634d06519cd98dd652928",
-      "sourceDigest": "92b9861add7bef3d0dc5397f2df55bb75a6cab60419686aacd8ab818b68bfffa",
+      "siteCount": 42,
+      "sitesDigest": "cd6f3d7dcf9d24c1419ded6f229e79f1159e794ea5d1c8b14d9eb9139759abc0",
+      "sourceDigest": "bddcf85e1435f1a8fcbef7d0af14be0733797d63eb2a5d6c81d442fe405968e6",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -30850,7 +30874,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "21a9db16bb8681e02caf77463d28a2f4d9fc8905ae1cbd020d41b5f7afba1b7d",
-      "sourceDigest": "8993865d0d3ecf0e5a7fc936c5b59c61950d84120fc54ca5e8fb0d47bf5039ac",
+      "sourceDigest": "22173fc721ac883cb656d06142a2c8edf2a7e6e74c0d216221820a809d28610d",
       "boundaries": [
         "filesystem-read",
         "provider-adapter",

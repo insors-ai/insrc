@@ -4,10 +4,11 @@
     "epicHash": "ce99b72065d03b1b",
     "storyId": "s4",
     "createdAt": "2026-10-26T08:16:23.074Z",
-    "updatedAt": "2026-10-26T08:41:35.439Z",
+    "updatedAt": "2026-10-26T11:05:56.917Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-23T09:24:56.590Z",
-    "epicSlug": "per-family-model-definitions-served-daemon"
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "approvedAt": "2026-10-26T11:05:57.256Z"
   },
   "body": {
     "tasks": [
@@ -46,79 +47,93 @@
           "file": "src/daemon/__tests__/model-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/model-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-check.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/model-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/evidence/model-check-live.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-check.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-daemon-s4.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-26T08:41:35.439Z"
+        "timestamp": "2026-10-26T11:05:56.917Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-ce99b72065d03b1b-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T11:05:56.917Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S004/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T11:05:56.917Z"
       }
     ],
-    "commit": "17bfd35c3"
+    "commit": "d631359a0"
   }
 }

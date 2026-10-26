@@ -18,3 +18,5 @@ Rerun of the probe test alone after the cleanup change (the probe now always tri
 ✔ jira-live.test.ts: the disposable-project probe records the real success text of each project mutation (10051 ms)
 ℹ pass 1
 ℹ fail 0
+
+Key substitution: after the runs above the assistant told the user that scratch keys ZZPROBE2 to ZZPROBE5 had been used instead of the confirmed ZZPROBE (the trash holds ZZPROBE to ZZPROBE5), and asked whether that was accepted. The user's chat reply was: "1. OK". The values actually used were: source IN (read only), keys ZZPROBE2, ZZPROBE3, ZZPROBE4 and ZZPROBE5, and the user's own email as lead.

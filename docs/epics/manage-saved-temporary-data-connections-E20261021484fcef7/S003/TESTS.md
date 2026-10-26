@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 110 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -640,3 +640,21 @@ Run at 2026-10-26T16:11:42.294Z on commit `d8928fce2`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-service-isolation.test.ts` | 0 | 1 | 6.1 s |  |
+
+## t32
+
+Run at 2026-10-26T16:21:32.698Z on commit `0265a1de6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls | `src/daemon/db/__tests__/session-file-matrix.test.ts` |
+| pass | CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 6.3 s |  |
+| `src/daemon/db/__tests__/session-file-matrix.test.ts` | 0 | 1 | 7.9 s |  |

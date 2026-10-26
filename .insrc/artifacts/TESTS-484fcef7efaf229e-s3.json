@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T16:11:42.294Z",
+    "updatedAt": "2026-10-26T16:21:32.698Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2272,6 +2272,64 @@
             "titles": [
               {
                 "title": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t32",
+        "commit": "0265a1de6",
+        "ranAt": "2026-10-26T16:21:32.698Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
+                "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6325,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7923,
+            "titles": [
+              {
+                "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
                 "result": "pass"
               }
             ],

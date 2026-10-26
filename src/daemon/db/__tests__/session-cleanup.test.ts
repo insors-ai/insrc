@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { runProbeMatrix } from './fixtures/session-probe-matrix.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 let matrix: Promise<void> | undefined;
@@ -13,5 +14,5 @@ function runMatrix() {
 		}
 	})();
 }
-test('CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles', async () => { await runMatrix(); });
+test('CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles', async () => { await runMatrix(); await runProbeMatrix(['end', 'deadline', 'restart']); });
 test('CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work', async () => { await runMatrix(); });

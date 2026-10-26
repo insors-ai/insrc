@@ -155,6 +155,7 @@ s2 built t1 to t8 (commits tagged `Insrc-Story: b7a68147dcf72034/s2`); BUILD app
 
 Follow-ups, not yet done:
 - MED, **before s7**: `callTool` must check that the registered tool under `tool.id` is the definition passed (same object or same `outputSchema`) and fail `rejected` otherwise; today unchecked data can reach the caller with a trusted type.
+  - **Done in s7 (2026-10-27):** `src/daemon/tools/provenance.ts` records each failure-net copy's immediate original and `callTool` refuses a registered tool whose chain does not reach the definition passed (see "s7 built" below).
 - MED: `convertText`'s deadline path should wait (hard cap) for the aborted provider call to settle before retrying or releasing the queue slot, or state that providers must honour the signal.
 - MED: the live test 'a deliberately altered output fails the cross-check' alters nothing; add a truly altered and a truncated output case.
 - LOW: `| undefined` on `Tool.outputSchema` and `TierOutcome.stop`; `convertText` returns only `retries-exhausted` (the LLD contradicts itself on returning `shape-mismatch` / `value-not-in-text`); input check runs after the approval gate (s3 should run it first); a queued conversion notices cancellation only after getting the slot; `callTool` duplicates the executor's no-data failure.
@@ -449,3 +450,29 @@ Where the old s7 criteria went: old ac1 (sites move) to s9 ac1 and s10 ac1 and a
 **Terminal client approval service.** The old ac1 named it. `src/cli/services/approval.ts` runs no git or gh (checked 2026-10-26: the only literal `git` calls in `src/cli/services` are `maintenance.ts`, the exempt self-update, and `workflow.ts`, s10). It has no site; the s10 replacement table lists it as "no site", and the s9 and s10 LLDs confirm the rest of `src/cli/services` (`setup.ts`, `daemon.ts`, `debug.ts`, `connection-maintenance.ts`) by a complete search.
 
 The s7 LLD (revision 2, blocked) is superseded by a new LLD for the narrowed s7.
+
+## s7 built (2026-10-27): what s9 and s10 build against
+
+s7 t1 to t11 are built and gated; t12 is this note. Tasks passed the build gate except t4's inventory check (see below).
+
+**New tools**
+- `git_config`, `git_ls_remote` (class none) and `git_update_ref`, `git_rm` (class destructive, always ask), in `src/daemon/tools/builtins/git/`. Every safety condition of the callers' rules (`isSafeRefName`, `assertSafeArg`) is in the input schema (`git/safe-args.ts`), so unsafe input is rejected before any approval request. The s8 coverage table marks them "built by s7".
+- `gh_tracker` (`gh/tracker.ts`), 15 fixed-endpoint ops: `issue_create_typed`, `sub_issue_link`, `issue_id`, `comments_list`, `comment_post`, `issues_by_labels`, `issues_titles`, `milestone_create`, `token_scopes`, `org_issue_types_list`, `org_issue_type_create`, `current_login`, `user_by_host`, `tasks_query`, `project_create`. Owner, repo and org names are pattern-checked in the schema; the three paginated listings carry `--paginate` and a fixed `-q` filter and are read one line per item. Raw `gh api` stays excluded. `gh_tracker` is the 69th gh tool.
+- `tools.call` (stream method, `src/daemon/tools/call-handler.ts`): params `{ toolId, input, repoPath, caller, approvalMode? }`, one `done` frame with the `ToolResult`, an `invalid-params` error frame for bad params, session id `tools-call:<connection identity>`. Closing the stream cancels the call. Approvals travel on `approval.subscribe`; with no subscriber a destructive call is denied `no-client`.
+
+**Foundations**
+- One process lifecycle (`shell-helper.ts`): the executor resolves one effective signal per call (`tool-signal.ts`, AsyncLocalStorage); every subprocess runs in its own process group, is killed with the group on abort or time-out and settles within 2 s; `spawnManaged` is the streaming entry. Hooks run outside every tool call's signal context. Five tool files (`exec-detached`, `k8s`, `ssh`, `test`, `aws/logs`) moved onto it. Scope: subprocesses only; in-process HTTP, database and file work is not interrupted (open question).
+- `git_cat_file` takes `timeoutMs` (1 to 30000, lower only). The refresh git tools carry `deps.signal`.
+- All 38 git definitions are in `gitToolDefinitions` (`git/definitions.ts`), checked with `satisfies TypedTool`; a compile-time check (`typecheck:tools`, `tsconfig.typecheck.json`) runs in the build.
+- **The `callTool` prerequisite from the s2 follow-ups is done:** `provenance.ts` and the check in `call-tool.ts`.
+- `scripts/forbidden-spawn-scan.mjs` runs in the build in **report mode** and lists direct spawns, wrapper calls and direct builtin `execute` calls outside `src/daemon/tools` (55 sites on 2026-10-27, including `gitDiffTool.execute` in `grounding.ts` and `changed-files.ts`). Exempt: `cli/services/maintenance.ts`, `daemon/installed-commit.ts`, `indexer/index.ts`.
+
+**Hand-over**
+- **s9** builds the sending side of the shared deadline signal (`src/workflow/team/policy-refresh.ts` and `git-async.ts`) and moves the workflow-library and daemon sites; s7 only made the git tools honour `deps.signal` and the remaining time.
+- **s10** moves the tracker, `src/cli/services/workflow.ts` and the remaining callers, deletes the old wrappers (`workflow/tracker/github.ts`, the direct spawns), and switches the scan to failing mode (`--fail`).
+- The DEF still needs its s7 revision (title, size L, five criteria; user's option 3); the HLD keeps the whole-cutover text.
+
+**Decisions and known gaps**
+- **t4 override (user, 2026-10-27, "option 1"):** the `child_process` inventory test exempts test code, which is the LLD's meaning; the build gate read the acceptance text as "any file". The BUILD approval carries this as an override reason.
+- Daemon review of the s7 LLD stayed `block` after cycle 4 (3 MED, the build's obligations: `withFailureNet` converts only `UnsafeArgError`; `runToolHooks` keeps `input: unknown` and a readonly result; the `gh auth status` probe keeps partial captured text). The LLD was approved with an override.
+- Pre-existing flake, unrelated to s7: `src/daemon/threads/__tests__/indexing-port.test.ts` "daemon.status queue fields" fails about 4 runs in 6 (also on the commit before t10). `git-tools-integration.test.ts` may hang at exit; use `--test-force-exit`.

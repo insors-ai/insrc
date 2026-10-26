@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { registerBuiltinTools } from '../../index.js';
@@ -72,4 +74,16 @@ test('gh-coverage.test.ts: the coverage table names the tracker family as s7\'s 
 	const served = new Set(GH_COVERAGE.flatMap(r => r.toolIds ?? []));
 	assert.equal(served.has('gh_tracker'), false);
 	assert.ok(getTool('gh_tracker'));
+});
+
+test('gh-coverage.test.ts: the plan note lists the tools s7 built, marks the callTool prerequisite done and states the s9 and s10 hand-over', () => {
+	const note = readFileSync(join(process.cwd(), 'docs', 'plans', 'tool-registry.md'), 'utf8');
+	const built = note.slice(note.indexOf('## s7 built'));
+	assert.ok(built.length > 0 && note.includes('## s7 built'), 'the note has the s7 section');
+	for (const id of ['git_config', 'git_ls_remote', 'git_update_ref', 'git_rm', 'gh_tracker', 'tools.call']) assert.ok(built.includes(`\`${id}\``), id);
+	for (const op of ['issue_create_typed', 'tasks_query', 'project_create']) assert.ok(built.includes(`\`${op}\``), op);
+	assert.match(note, /Done in s7 \(2026-10-27\):\*\* `src\/daemon\/tools\/provenance\.ts`/);
+	assert.match(built, /\*\*s9\*\* builds the sending side of the shared deadline signal/);
+	assert.match(built, /\*\*s10\*\* moves the tracker/);
+	assert.match(built, /switches the scan to failing mode/);
 });

@@ -74,3 +74,54 @@ test('complete public domain surface preserves ownership basis replay and additi
     assert.equal(unsupported.quality.includes('reported'), false); assert.deepEqual(unsupported.effectiveOwners, []);
   }
 });
+
+test('public reducer composes correction reconciliation cumulative and transfer accounting with qualified capability evidence', async () => {
+  const api = await import('../index.js');
+  const reducer = new api.DefaultUsageReducer();
+  const { capability } = await import('./fixtures/domain-fixtures.js');
+  const counters = { inputUncachedTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0, outputTokens: 2, reasoningTokens: 1 };
+  const s = start(), f = finish({ counters });
+  const corrected = signed({ ...f, eventId: 'corrected', recordKind: 'usage.corrected' as const,
+    observation: { ...f.observation, counters: { ...counters, inputUncachedTokens: 20 } },
+    control: { supersedesEventId: f.eventId, reason: 'fixture:replacement', provenanceEventIds: [] } });
+  const destination = { ...binding, artifactId: 'TASK-0123456789abcdef-s1-t2', workItemId: 's1/t2', version: 'destination-v1' };
+  const transfer = signed({ ...f, eventId: 'transfer', recordKind: 'transfer.committed' as const, callId: null, observation: null,
+    control: { transferId: 'move', originalObservationRef: { rootArtifactId: binding.rootArtifactId, eventId: f.eventId, callId: f.callId },
+      sourceRootId: binding.rootArtifactId, destinationRootId: binding.rootArtifactId, fromArtifactId: binding.artifactId, destinationArtifactId: destination.artifactId,
+      expectedBindingVersion: binding.version, reason: 'fixture:assignment', mode: 'same-root' as const, preparedEventId: null, acceptedEventId: null } });
+  const rows = [s, f, corrected, transfer], original = JSON.stringify(rows), scope = scoped(rows);
+  const evidence = { ...scope, expectedBindings: [binding, destination], evidence: { ...scope.evidence, expectedBindingVersions: [binding, destination].map(({ rootArtifactId, artifactId, version }) => ({ rootArtifactId, artifactId, version })) } };
+  const result = await reducer.reduce(stream(rows), evidence);
+  assert.equal(result.knownTokens, '22'); assert.deepEqual(result.basisEventIds, ['corrected']);
+  assert.equal(api.requireEffectiveOwners(result)[0]!.artifactId, destination.artifactId);
+  assert.deepEqual(api.requireEffectiveOwners(result)[0]!.basisEventIds, ['corrected']);
+  assert.deepEqual(await reducer.reduce(stream([...rows].reverse()), evidence), result);
+  assert.equal(JSON.stringify(rows), original);
+
+  const aggregate = signed({ ...s, eventId: 'aggregate-start', callId: 'aggregate', context: { ...s.context, granularity: 'invocation-total' as const } });
+  const aggregateEnd = signed({ ...f, eventId: 'aggregate-end', callId: 'aggregate', observation: { ...f.observation, sourceCapabilityId: 'aggregate-cap' } });
+  const overlap = [s, f, aggregate, aggregateEnd];
+  const aggregateCapability = { ...capability, capabilityId: 'aggregate-cap', granularity: 'invocation-total' as const, physicalCallCoverage: 'unknown' as const };
+  assert.deepEqual(api.validateSourceCapability(aggregateCapability), []);
+  assert.ok(api.validateSourceCapability({ ...aggregateCapability, physicalCallCoverage: 'complete' }).length);
+  const reconciliation = signed({ ...f, eventId: 'reconciliation', recordKind: 'usage.reconciled' as const, callId: null, observation: null,
+    control: { group: scope.group, candidateEventIds: ['finish', 'aggregate-end'], selectedEventIds: ['aggregate-end'], excludedEventIds: ['finish'],
+      previousReconciliationEventId: null, coverage: 'aggregate-fallback' as const, sourceCapabilityId: 'aggregate-cap', evidenceEventIds: [], reason: 'fixture:basis' } });
+  const selected = [...overlap, reconciliation], selectedScope = scoped(selected);
+  const reconciled = await reducer.reduce(stream(selected), { ...selectedScope, evidence: { ...selectedScope.evidence, sourceCapabilities: [capability, aggregateCapability] } });
+  assert.equal(reconciled.knownTokens, '12'); assert.deepEqual(reconciled.basisEventIds, ['aggregate-end']);
+
+  const frames = ['baseline', 'current'].flatMap((name, index) => [
+    signed({ ...s, eventId: `${name}-start`, callId: name, context: { ...s.context, granularity: 'cumulative-snapshot' as const, nativeSessionId: 'session' } }),
+    signed({ ...f, eventId: `${name}-end`, callId: name, observation: { ...f.observation, sourceCapabilityId: 'cumulative-cap',
+      counters: { ...counters, inputUncachedTokens: index === 0 ? 10 : 30, outputTokens: index === 0 ? 2 : 7 },
+      cumulative: { nativeSessionId: 'session', frameId: name, baselineEventId: index === 0 ? 'origin' : 'baseline-end' } } }),
+  ]);
+  const frameScope = scoped(frames);
+  const cumulative = await reducer.reduce(stream(frames), { ...frameScope, evidence: { ...frameScope.evidence,
+    referenceOnlyEventIds: ['baseline-start', 'baseline-end'], baselineEventId: 'baseline-end', selectedCurrentEventId: 'current-end',
+    sourceCapabilities: [{ ...capability, capabilityId: 'cumulative-cap', granularity: 'cumulative-snapshot', physicalCallCoverage: 'unknown', baselineRequired: true }],
+  } });
+  assert.equal(cumulative.knownTokens, '25'); assert.deepEqual(cumulative.basisEventIds, ['current-end']);
+  assert.deepEqual(api.requireEffectiveOwners(cumulative)[0]!.basisEventIds, ['current-end']);
+});

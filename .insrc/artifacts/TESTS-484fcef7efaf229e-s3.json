@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T06:46:52.093Z",
+    "updatedAt": "2026-10-26T07:05:50.981Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1616,8 +1616,8 @@
       },
       {
         "taskId": "t22",
-        "commit": "3a495f84c",
-        "ranAt": "2026-10-26T06:46:52.093Z",
+        "commit": "80648023e",
+        "ranAt": "2026-10-26T07:05:50.981Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1639,7 +1639,7 @@
             "file": "src/daemon/steps/__tests__/nested-planner-memory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2721,
+            "durationMs": 2108,
             "titles": [
               {
                 "title": "CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO",

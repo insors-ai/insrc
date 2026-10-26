@@ -447,7 +447,7 @@ Run at 2026-10-26T06:30:28.548Z on commit `6b25e6cbf`. Tests check: **passed**. 
 
 ## t22
 
-Run at 2026-10-26T06:46:52.093Z on commit `3a495f84c`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T07:05:50.981Z on commit `80648023e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-RECURSION: nested planner measure/execute/aggregate/resume and no attempt/feedback/final-plan IO**
 
@@ -459,4 +459,4 @@ Run at 2026-10-26T06:46:52.093Z on commit `3a495f84c`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/__tests__/nested-planner-memory.test.ts` | 0 | 1 | 2.7 s |  |
+| `src/daemon/steps/__tests__/nested-planner-memory.test.ts` | 0 | 1 | 2.1 s |  |

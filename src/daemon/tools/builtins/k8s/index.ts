@@ -8,11 +8,10 @@
  */
 
 import { onUtf8Data } from '../../../../shared/utf8-stream.js';
-import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runShell } from '../../shell-helper.js';
+import { runShell, spawnManaged } from '../../shell-helper.js';
 import { registerTool } from '../../registry.js';
 import type {
   Tool, ToolApprovalGate, ToolDeps, ToolInput, ToolResult,
@@ -491,63 +490,60 @@ export const k8sLogsTool: Tool = {
     const started = Date.now();
     let buf = '';
     let bytes = 0;
+    let stderrCapture = '';
+
+    const flush = () => {
+      if (buf) {
+        deps.send({ id: deps.requestId, stream: 'progress', data: { message: buf } });
+        buf = '';
+      }
+    };
+    // What the tool reports once the follow has ended (or never started): the same for an exit, an abort and a cap.
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const ok = code === 0 || (timedOut && code === null);
+      const data: K8sLogsData = {
+        pod, container, cluster, follow: true,
+        exitCode: code, bytes, durationMs, timedOut, stdout: '',
+      };
+      return {
+        output: [
+          `Log follow ended${timedOut ? ' (runtime cap hit)' : ''} after ${durationMs} ms.`,
+          `Streamed ${bytes} B from \`${pod}\`${container ? ` [${container}]` : ''}.`,
+          stderrCapture ? '\n**stderr tail**\n```\n' + stderrCapture.replace(/\n+$/, '').slice(-1000) + '\n```' : '',
+        ].filter(Boolean).join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: `exit ${code}` }),
+        data,
+      };
+    };
+
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted follow gives.
+    const m = spawnManaged(cmd!, args, { timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
 
     return new Promise<ToolResult>(resolve => {
-      const child = spawn(cmd!, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
-      const timer = setTimeout(() => {
-        timedOut = true;
-        child.kill('SIGTERM');
-      }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGTERM');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
-
-      const flush = () => {
-        if (buf) {
-          deps.send({ id: deps.requestId, stream: 'progress', data: { message: buf } });
-          buf = '';
-        }
-      };
-
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         bytes += chunkBytes;
         buf += decodedChunk;
         if (buf.length >= 512 || buf.includes('\n')) { flush(); }
       });
-      let stderrCapture = '';
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => {
         stderrCapture += decodedChunk;
         deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + decodedChunk } });
       });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         flush();
         resolve(fail('k8s_logs', `spawn failed: ${err.message}`));
       });
 
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
+      void m.settled.then(exit => {
         flush();
-        const durationMs = Date.now() - started;
-        const ok = code === 0 || (timedOut && code === null);
-        const data: K8sLogsData = {
-          pod, container, cluster, follow: true,
-          exitCode: code, bytes, durationMs, timedOut, stdout: '',
-        };
-        resolve({
-          output: [
-            `Log follow ended${timedOut ? ' (runtime cap hit)' : ''} after ${durationMs} ms.`,
-            `Streamed ${bytes} B from \`${pod}\`${container ? ` [${container}]` : ''}.`,
-            stderrCapture ? '\n**stderr tail**\n```\n' + stderrCapture.replace(/\n+$/, '').slice(-1000) + '\n```' : '',
-          ].filter(Boolean).join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: `exit ${code}` }),
-          data,
-        });
+        resolve(ended(exit.code, exit.timedOut));
       });
     });
   },
@@ -634,52 +630,50 @@ export const k8sExecTool: Tool = {
     argv.push(...clusterArgv(cluster));
     argv.push('--', ...cmd);
 
-    // Need custom spawn to write stdin if provided.
+    // The command needs its stdin piped when one is given.
     const [command, ...args] = argv;
     const started = Date.now();
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(command!, args, {
-        stdio: [stdin !== undefined ? 'pipe' : 'ignore', 'pipe', 'pipe'],
-        shell: false,
-      });
-      let stdout = '';
-      let stderr = '';
-      let timedOut = false;
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutMs);
-      const onAbort = () => child.kill('SIGKILL');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
+    let stdout = '';
+    let stderr = '';
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const ok = code === 0 && !timedOut;
+      const data: K8sExecData = {
+        pod, container, cluster, command: cmd,
+        exitCode: code, stdout, stderr, timedOut, durationMs,
+      };
+      return {
+        output: [
+          ok
+            ? `Exec ok in ${durationMs} ms on \`${pod}\`${container ? ` [${container}]` : ''}.`
+            : `**Exec failed** (exit ${code}${timedOut ? ', timed out' : ''}) on \`${pod}\`.`,
+          stdout ? '\n**stdout**\n```\n' + stdout.replace(/\n+$/, '') + '\n```' : '',
+          stderr ? '\n**stderr**\n```\n' + stderr.replace(/\n+$/, '') + '\n```' : '',
+        ].filter(Boolean).join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: `exit ${code}` }),
+        data,
+      };
+    };
 
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => { stdout += decodedChunk; });
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
+    // The shared lifecycle owns the process group, the time limit and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted exec gives.
+    const m = spawnManaged(command!, args, {
+      stdio: [stdin !== undefined ? 'pipe' : 'ignore', 'pipe', 'pipe'],
+      timeoutMs, signal: deps.signal,
+    });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => { stdout += decodedChunk; });
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => { stderr += decodedChunk; });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         resolve(fail('k8s_exec', `spawn failed: ${err.message}`));
       });
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
-        const durationMs = Date.now() - started;
-        const ok = code === 0 && !timedOut;
-        const data: K8sExecData = {
-          pod, container, cluster, command: cmd,
-          exitCode: code, stdout, stderr, timedOut, durationMs,
-        };
-        resolve({
-          output: [
-            ok
-              ? `Exec ok in ${durationMs} ms on \`${pod}\`${container ? ` [${container}]` : ''}.`
-              : `**Exec failed** (exit ${code}${timedOut ? ', timed out' : ''}) on \`${pod}\`.`,
-            stdout ? '\n**stdout**\n```\n' + stdout.replace(/\n+$/, '') + '\n```' : '',
-            stderr ? '\n**stderr**\n```\n' + stderr.replace(/\n+$/, '') + '\n```' : '',
-          ].filter(Boolean).join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: `exit ${code}` }),
-          data,
-        });
-      });
+      void m.settled.then(exit => resolve(ended(exit.code, exit.timedOut)));
 
       if (stdin !== undefined && child.stdin) {
         child.stdin.end(stdin);
@@ -765,46 +759,44 @@ export const k8sPortForwardTool: Tool = {
 
     const [command, ...args] = argv;
     const started = Date.now();
-    return new Promise<ToolResult>(resolve => {
-      const child = spawn(command!, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
-      let timedOut = false;
-      const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, maxRuntimeMs);
-      const onAbort = () => child.kill('SIGTERM');
-      deps.signal?.addEventListener('abort', onAbort, { once: true });
+    const ended = (code: number | null, timedOut: boolean): ToolResult => {
+      const durationMs = Date.now() - started;
+      const data: K8sPortForwardData = {
+        resource, cluster, mappings,
+        exitCode: code, durationMs, timedOut,
+      };
+      const ok = code === 0 || (timedOut && code === null);
+      return {
+        output: [
+          `Port-forward ended${timedOut ? ' (runtime cap)' : ''} after ${durationMs} ms.`,
+          `Resource: \`${resource}\`; mappings: ${mappings.join(', ')}.`,
+        ].join('\n'),
+        format: 'markdown',
+        success: ok,
+        ...(ok ? {} : { error: `exit ${code}` }),
+        data,
+      };
+    };
 
-      onUtf8Data(child.stdout, (decodedChunk, chunkBytes) => {
+    // The shared lifecycle owns the process group, the runtime cap and the abort; with an already-aborted
+    // signal nothing is spawned and the result is the one an aborted forward gives.
+    const m = spawnManaged(command!, args, { timeoutMs: maxRuntimeMs, signal: deps.signal });
+    if (!m.spawned) { return ended(null, false); }
+    const { child } = m;
+
+    return new Promise<ToolResult>(resolve => {
+      onUtf8Data(child.stdout!, (decodedChunk, chunkBytes) => {
         deps.send({ id: deps.requestId, stream: 'progress', data: { message: decodedChunk } });
       });
-      onUtf8Data(child.stderr, (decodedChunk, chunkBytes) => {
+      onUtf8Data(child.stderr!, (decodedChunk, chunkBytes) => {
         deps.send({ id: deps.requestId, stream: 'progress', data: { message: '[stderr] ' + decodedChunk } });
       });
 
       child.on('error', err => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
         resolve(fail('k8s:port-forward', `spawn failed: ${err.message}`));
       });
 
-      child.on('close', code => {
-        clearTimeout(timer);
-        deps.signal?.removeEventListener('abort', onAbort);
-        const durationMs = Date.now() - started;
-        const data: K8sPortForwardData = {
-          resource, cluster, mappings,
-          exitCode: code, durationMs, timedOut,
-        };
-        const ok = code === 0 || (timedOut && code === null);
-        resolve({
-          output: [
-            `Port-forward ended${timedOut ? ' (runtime cap)' : ''} after ${durationMs} ms.`,
-            `Resource: \`${resource}\`; mappings: ${mappings.join(', ')}.`,
-          ].join('\n'),
-          format: 'markdown',
-          success: ok,
-          ...(ok ? {} : { error: `exit ${code}` }),
-          data,
-        });
-      });
+      void m.settled.then(exit => resolve(ended(exit.code, exit.timedOut)));
     });
   },
 };

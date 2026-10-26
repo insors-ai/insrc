@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -210,17 +211,14 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 	// aren't strong enough to enforce this).
 	validatePlanTopology(explorations);
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:            args.runId,
 			answerType:       raw.answerType,
 			explorationCount: explorations.length,
 			target:           args.intent.target,
 			scope:            args.intent.scope,
 			focus:            args.intent.focus,
-		},
-		'decomposer: plan emitted',
-	);
+	}, 'decomposer: plan emitted']);
 
 	return {
 		answerType:    raw.answerType,

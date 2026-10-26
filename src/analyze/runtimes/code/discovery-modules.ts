@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -80,15 +81,12 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 				? { name: m.entity.name, path: m.entity.file, repo: m.entity.repo, directory: m.directory, fileCount: m.fileCount, entityId: m.entity.id }
 				: { name: m.name, path: m.directory, repo: repoPath, directory: m.directory, fileCount: m.fileCount });
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:    args.runId,
 				taskId:   args.task.taskId,
 				repoPath,
 				moduleCount: modules.length,
-			},
-			'code.discovery.modules: enumerated modules',
-		);
+		}, 'code.discovery.modules: enumerated modules']);
 
 		return {
 			outputs: new Map<string, unknown>([['modules', modules]]),

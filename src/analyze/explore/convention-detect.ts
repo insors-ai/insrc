@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -104,10 +105,7 @@ export async function runConventionDetect(
 	);
 
 	if (under.length === 0) {
-		log.info(
-			{ runId: ctx.runId, path: params.path },
-			'convention.detect: no entities under path',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, path: params.path }, 'convention.detect: no entities under path']);
 		return {
 			type:              'convention.detect',
 			// The graph holds no entity under the path: empty, and complete.
@@ -138,8 +136,7 @@ export async function runConventionDetect(
 		else if (e.name.startsWith('_')) privatePrefixCount++;
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:        ctx.runId,
 			path:         params.path,
 			totalEntities: under.length,
@@ -147,9 +144,7 @@ export async function runConventionDetect(
 			classes:      namingSchema.classes,
 			testFiles:    namingSchema.testFiles,
 			idioms:       baseClassIdioms.length,
-		},
-		'convention.detect: complete',
-	);
+	}, 'convention.detect: complete']);
 
 	// The counts and the naming schema are computed over every entity under the
 	// path; the two cuts are on the base-class idioms.

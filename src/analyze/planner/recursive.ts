@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -160,10 +161,7 @@ async function walk(
 		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope, { signal: opts.signal, connectionExecution: execution });
 		assertSessionReuseNow(execution);
 		const measuredChild: ClassifiedIntent = { ...childIntent, scope: childMeasure.size };
-		log.info(
-			{ runId: opts.runId, taskId: task.taskId, size: childMeasure.size, determined: childMeasure.determined, sizeHint: childMeasure.sizeHint, note: childMeasure.note },
-			'recursive planner: the child plan was measured',
-		);
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('info', () => [{ runId: opts.runId, taskId: task.taskId, size: childMeasure.size, determined: childMeasure.determined, sizeHint: childMeasure.sizeHint, note: childMeasure.note }, 'recursive planner: the child plan was measured']);
 
 		const parentTaskPath = buildParentTaskPath(input.parentTaskPath, task.taskId);
 		const childInput: PlanBuilderInput = {
@@ -184,24 +182,18 @@ async function walk(
 			assertSessionReuseNow(execution);
 			if (execution?.mode === 'session-memory') { childErrors.set(task.taskId, new Error('Child planning failed.')); continue; }
 			if (err instanceof MaxPlanDepthExceededError) {
-				log.info(
-					{
+				captureAnalysisDiagnostics(log, opts.connectionExecution).emit('info', () => [{
 						runId:        opts.runId,
 						taskId:       task.taskId,
 						currentDepth: err.currentDepth,
 						cap:          err.cap,
-					},
-					'recursive planner: depth cap hit on planner-template subtree',
-				);
+				}, 'recursive planner: depth cap hit on planner-template subtree']);
 			} else {
-				log.warn(
-					{
+				captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{
 						runId:  opts.runId,
 						taskId: task.taskId,
 						err:    (err as Error).message,
-					},
-					'recursive planner: child plan build failed',
-				);
+				}, 'recursive planner: child plan build failed']);
 			}
 			childErrors.set(task.taskId, err as Error);
 		}

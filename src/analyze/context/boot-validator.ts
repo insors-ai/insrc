@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -173,14 +174,14 @@ export function validateAnalyzePrompts(): void {
 			continue;
 		}
 
-		log.debug({ componentId, path: abs, bytes: body.length }, 'analyze prompt loaded');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ componentId, path: abs, bytes: body.length }, 'analyze prompt loaded']);
 	}
 
 	if (failures.length > 0) {
 		throw new AnalyzePromptValidationError(failures);
 	}
 
-	log.info({ count: components.length }, 'analyze prompts validated');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ count: components.length }, 'analyze prompts validated']);
 }
 
 function resolveRelativeToInsrcRoot(relativePath: string): string {

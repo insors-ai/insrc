@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -142,14 +143,14 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 				try {
 					dockerfiles.push(parseDockerfile(f.relPath, await readFile(f.absPath, 'utf8')));
 				} catch (err) {
-					log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.docker: Dockerfile read failed -- skipping');
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ file: f.relPath, err: (err as Error).message }, 'inventory.docker: Dockerfile read failed -- skipping']);
 					skipped.push(unreadableFile(f.relPath, err));
 				}
 			} else if (COMPOSE_RE.test(base)) {
 				try {
 					composeFiles.push(parseCompose(f.relPath, load(await readFile(f.absPath, 'utf8'))));
 				} catch (err) {
-					log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.docker: compose parse failed -- skipping');
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ file: f.relPath, err: (err as Error).message }, 'inventory.docker: compose parse failed -- skipping']);
 					skipped.push(unreadableFile(f.relPath, err));
 				}
 			}
@@ -159,10 +160,7 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 		composeFiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
 		const inventory = { dockerfiles, composeFiles };
-		log.info(
-			{ runId: args.runId, taskId: args.task.taskId, repoPath, dockerfiles: dockerfiles.length, composeFiles: composeFiles.length, truncated },
-			'infra.inventory.docker: enumerated',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath, dockerfiles: dockerfiles.length, composeFiles: composeFiles.length, truncated }, 'infra.inventory.docker: enumerated']);
 		return {
 			outputs: new Map<string, unknown>([['docker-inventory', inventory]]),
 			completeness: fileWalkCompleteness(dockerfiles.length + composeFiles.length, truncated, { skipped }),

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -49,7 +50,7 @@ export function registerTemplateRuntime(runtime: TemplateRuntime, admission?: { 
 	if (admission?.sessionMemory === 'read-only') { Object.freeze(runtime); sessionReadOnly.set(runtime, runtime.execute); }
 	else sessionReadOnly.delete(runtime);
 	REGISTRY.set(runtime.templateId, runtime);
-	log.debug({ templateId: runtime.templateId }, 'template runtime registered');
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ templateId: runtime.templateId }, 'template runtime registered']);
 }
 
 export function getRuntime(templateId: string): TemplateRuntime | undefined {

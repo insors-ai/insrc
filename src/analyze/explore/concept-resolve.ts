@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -537,7 +538,7 @@ export async function runConceptResolve(
 	const params = parseParams(exp);
 	const tokens = tokenise(params.query);
 	if (tokens.length === 0) {
-		log.debug({ query: params.query }, 'concept.resolve: no salient tokens');
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('debug', () => [{ query: params.query }, 'concept.resolve: no salient tokens']);
 		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
@@ -551,7 +552,7 @@ export async function runConceptResolve(
 	// the matching set.
 	const matchTokens = tokens.filter(t => !STRUCTURAL_TOKENS.has(t));
 	if (matchTokens.length === 0) {
-		log.debug({ query: params.query, tokens }, 'concept.resolve: no non-structural tokens; empty result');
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('debug', () => [{ query: params.query, tokens }, 'concept.resolve: no non-structural tokens; empty result']);
 		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
@@ -608,8 +609,7 @@ export async function runConceptResolve(
 		},
 	}));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:   ctx.runId,
 			query:   params.query,
 			tokens,
@@ -617,9 +617,7 @@ export async function runConceptResolve(
 			scoredCount:    scored.length,
 			returnedCount:  hits.length,
 			topPath: hits[0]?.path,
-		},
-		'concept.resolve: complete',
-	);
+	}, 'concept.resolve: complete']);
 
 	return {
 		type: 'concept.resolve',

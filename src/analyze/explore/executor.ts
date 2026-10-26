@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -250,11 +251,8 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'exploration failed',
-					);
-					output = failedOutput(exp, err);
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'exploration failed']);
+					output = failedOutput(exp, err, execution);
 				}
 			}
 		}
@@ -267,8 +265,7 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 	}
 
 	const totalMs = Date.now() - start;
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:       args.runId,
 			answerType:  args.plan.answerType,
 			total:       results.length,
@@ -276,9 +273,7 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 			failed:      results.filter(r => r.output.type === 'failed').length,
 			unsupported: results.filter(r => r.output.type === 'unsupported').length,
 			totalMs,
-		},
-		'plan executed',
-	);
+	}, 'plan executed']);
 
 	await assertSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -580,11 +575,8 @@ async function stepPlanWithContext(
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'multi-turn exploration failed in prepare',
-					);
-					output = failedOutput(exp, err);   // never cached
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'multi-turn exploration failed in prepare']);
+					output = failedOutput(exp, err, execution);   // never cached
 				}
 				if (prep === undefined) {
 					// failed above: fall through to record the output
@@ -644,11 +636,8 @@ async function stepPlanWithContext(
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'multi-turn exploration failed',
-					);
-					output = failedOutput(exp, err);
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'multi-turn exploration failed']);
+					output = failedOutput(exp, err, execution);
 				}
 			}
 		}
@@ -661,8 +650,7 @@ async function stepPlanWithContext(
 	}
 
 	const totalMs = priorMs + (Date.now() - runStart);
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:       args.runId,
 			answerType:  args.plan.answerType,
 			total:       results.length,
@@ -670,9 +658,7 @@ async function stepPlanWithContext(
 			failed:      results.filter(r => r.output.type === 'failed').length,
 			unsupported: results.filter(r => r.output.type === 'unsupported').length,
 			totalMs,
-		},
-		'stepPlan: multi-turn plan executed',
-	);
+	}, 'stepPlan: multi-turn plan executed']);
 
 	await assertSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -696,7 +682,8 @@ async function stepPlanWithContext(
  * the lookup had found before it failed (a `LookupFailedError`'s findings)
  * is copied to `partial`.
  */
-export function failedOutput(exp: Exploration, err: unknown): FailedExplorationOutput {
+export function failedOutput(exp: Exploration, err: unknown, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): FailedExplorationOutput {
+	if (execution?.mode === 'session-memory') return { type: 'failed', requested: exp.type, errorCode: 'temporary-failure', message: 'Temporary exploration failed.' };
 	const partial = err instanceof LookupFailedError ? err.partial : [];
 	return {
 		type:      'failed',

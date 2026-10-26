@@ -1229,6 +1229,14 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -1239,14 +1247,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -1262,8 +1262,8 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "74329ff830d2c19ce41222bc1afbe6d3d43ab8387049bd8c8c09ffeaf8c0be51",
-      "sourceDigest": "cf8778c039013d0d0cbe386dda0ec0c30dc0b38e25361cd86300b28469879687",
+      "sitesDigest": "85d04a86865d6f8aa806957d3a04b5946cc07bd966529249cfae9ca13b3565df",
+      "sourceDigest": "b1ccc3bd565b8eb1221371dbe5cc43ae9ed338447f416c1e95f71530633729bf",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1323,7 +1323,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "e0d48fb0472dc1e29792ef3f6ff1876e792d2402bbf531e5041c8e147f6e520c",
-      "sourceDigest": "f9e2583d1ad28312782ea2f44ee423f54d343a77dbe75369ff2beffed0061c82",
+      "sourceDigest": "afca34cfa84cd8a9e586d4e670ea358c049103443428802ec90e2e8a52a42e49",
       "boundaries": [
         "diagnostic"
       ]
@@ -1333,16 +1333,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -1354,11 +1354,12 @@
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "b8507f3fcf349baca961853408e212425a97ce4fc4f409f812819c40c599d561",
-      "sourceDigest": "4864b7a5b6e5abb129f58072d2a3a2683faf7cde5c481f2d6ce57f98ceeb550f",
+      "sitesDigest": "b62b1c413cdd4ba2c2ee5058b24da02135b97d303ebef7c08dd938e2f72e576a",
+      "sourceDigest": "908a21a572249b30a8f12f2121a3958b1f6a546fd992140a079f1d6f05386705",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/context/cache.ts": {
@@ -1378,6 +1379,30 @@
           "cacheFilePathFor"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -1392,30 +1417,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -1463,8 +1464,8 @@
         ]
       ],
       "siteCount": 24,
-      "sitesDigest": "79b2f4ff23f348c6bd82c400f180b639851925ddf88b9f46d4ca0637c90fa153",
-      "sourceDigest": "08c04a873b9e0ba1a9c8731ce8bbf28533a6bd82a023aeb0667898ecee309215",
+      "sitesDigest": "f63ebfb3d03f7bdc08efef3ddf7c4d405b5d10bd93691b40d95b06dc42f1c9e6",
+      "sourceDigest": "c92f93b08f741d1ff978c2d72dd7d9b7252c008c93f5d001bbf9d3c07c344b65",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1478,16 +1479,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -1507,8 +1508,8 @@
         ]
       ],
       "siteCount": 7,
-      "sitesDigest": "0f2745c69a49b877b92a9ca4d54e98ed4ff2d2fda07bb6a3db3104f1db777d8b",
-      "sourceDigest": "bda917a23dcd0df2c0e45ff012df6c83585810029bf491d18fa05605d2e61ebd",
+      "sitesDigest": "d35a58cbfbf241c8b2c0893b11cedef6160a23d9ce5cd69ffefe38620cbdde91",
+      "sourceDigest": "96817fceadf6fce3a7469564a18a4f1c1061f6b4c1ecfe3c4ab91cab08e22f71",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1533,6 +1534,66 @@
         [
           "storage-call",
           "cacheFilePathFor"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
         ],
         [
           "diagnostic",
@@ -1569,66 +1630,6 @@
         [
           "storage-call",
           "listRepos"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -1704,8 +1705,8 @@
         ]
       ],
       "siteCount": 45,
-      "sitesDigest": "c7e010de3b7d51b43dcd8e9ed0ce1126c99e97a63120249651f5f12cc52a8315",
-      "sourceDigest": "ebcf5f5e37b38d39e319bcf633cb1a1090d28d32902e2893d63429e942f2c1e1",
+      "sitesDigest": "806014a2a2beb938ab3ff4811911001bc75886d3ea6bc54c8c06bb864c85ae5e",
+      "sourceDigest": "aab0eed5140f499618868c27a7a2f5e72d710369156ca3ecba3821648d822707",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -1722,6 +1723,30 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -1736,37 +1761,14 @@
         [
           "storage-call",
           "listRepos"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
         ]
       ],
       "siteCount": 10,
-      "sitesDigest": "8effc64c6035541384692035442315f234bcab0164fbeeff3b21456ffef97d3a",
-      "sourceDigest": "c8b9e6c276b5ee28734d440274cd424794d550e5c6bc9622c6d47ecddec227d3",
+      "sitesDigest": "1b0ee0d7115785e1226191ae0178d4eb3ea7b863205bb39af94535338bac19bc",
+      "sourceDigest": "357c9a0cefd342076d6fe6491a0d82e2647034390a1d788b4e4f1e571c9bcf77",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -1803,27 +1805,28 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "64a45fb1762836f3f273bd08c93d005ba32e9f8db2479c15974f61ccf138a66e",
-      "sourceDigest": "95869a7213d8e6129789c4967718a2cf73fe879cf8fb37e74d038177e0d41c06",
+      "sitesDigest": "c0a142ec4708770387b7d2608a98ebb3594eb0a76944f4b3a5cb6424115dedbb",
+      "sourceDigest": "79c7d8f1bf2ce406ec6fdbc3a42f6a1cc2635360a7e9233d151c4761f78800e9",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/context/role-router.ts": {
@@ -1875,6 +1878,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "storage-call",
           "findEntitiesByFile"
         ],
@@ -1889,10 +1896,6 @@
         [
           "storage-call",
           "listRepos"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
         ],
         [
           "acquisition:resolver-member",
@@ -1924,13 +1927,14 @@
         ]
       ],
       "siteCount": 12,
-      "sitesDigest": "0748edaacd2418214c37bd106a8bf10577f0d03f8d510c2ba40caa5bbeec2eda",
-      "sourceDigest": "11007f4707d2edd13683151173cd77574fbdac10eb0828d78915d7331368b3d4",
+      "sitesDigest": "fde98d1dd02211d8591c461841dece54c2311eb17991a87498a63c2ce3ea8d0b",
+      "sourceDigest": "05fd722e503ec2fefd95d2ce57a48e028367586468ee0246e6044c9e3dd3bf3b",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
         "connection-use",
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -1955,6 +1959,26 @@
           "buildShaperProvider"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "provider-adapter",
           "CliProvider"
         ],
@@ -1977,26 +2001,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "provider-adapter",
@@ -2012,13 +2016,14 @@
         ]
       ],
       "siteCount": 18,
-      "sitesDigest": "862111a97b3b5998f80230c5df3e52bff516582f0d646df3ee8b50e558ab9dce",
-      "sourceDigest": "0e39863e11844d2f7122d4a1da78c7474e5084f5c9c2f7c955fe4863d3505f04",
+      "sitesDigest": "a64ec2fe06169854c8f726d219a5ceb3a294e6bf74e8e3fd982f0cb24b9c5aec",
+      "sourceDigest": "e67419f9f4e2155a99b0a2d19356cc19e5fa04fc22cd01f2adf48f3d5f9e6c3b",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
         "provider-factory",
         "provider-use",
+        "serialization",
         "unresolved-call"
       ]
     },
@@ -2026,6 +2031,10 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "diagnostic",
           "getLogger"
@@ -2037,10 +2046,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -2060,8 +2065,8 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "2956b9bb82d711ba46bf0f45215f58a7ee55b0e07fb556cb78350b647bd99728",
-      "sourceDigest": "b76156c01e0a589d763ffb29942045d4513165efe271f61eb4a8973f923a5e60",
+      "sitesDigest": "e231e3a0cac5fb4bb67ca8b5f6b2bb0362a9dd8aea5d7780c632b6ee85f427bf",
+      "sourceDigest": "b4d4fb13aac5b3afcfe0bbec169d670f0e8c195f968320a8a9a6054f600b798f",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2076,6 +2081,18 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getEntity"
         ],
@@ -2086,18 +2103,6 @@
         [
           "storage-call",
           "listEntitiesByKinds"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
         ],
         [
           "provider-adapter",
@@ -2113,12 +2118,13 @@
         ]
       ],
       "siteCount": 9,
-      "sitesDigest": "3f098ebe0fa0ccc6513aae67e0d4d11e49621f1c0e9d93e217d36c3606b68032",
-      "sourceDigest": "ed88c81facf122b5118ead5b11d78c86bc39d03d83f035fbd28519c15e511635",
+      "sitesDigest": "ebe3eefcf502166e28aa6277f4065b926cc1772245e7f4b4cd7df3acc49d1a18",
+      "sourceDigest": "3cae13336e6b11c5c6aaa7869af1959b4af6ba5516eeae809d9699054a6d0321",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
         "provider-use",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2131,6 +2137,22 @@
           "atomicWriteJson"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -2141,22 +2163,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -2208,8 +2214,8 @@
         ]
       ],
       "siteCount": 20,
-      "sitesDigest": "912ad775730610a5d7071cfc54e5fa8a2c2a1bec068f6f5d03c574392c505c09",
-      "sourceDigest": "2a43e405d7af17b0e86e5a73664b5a68cd85ea22a753ac4a1b51d8dbb26bb68c",
+      "sitesDigest": "125710ab27e8b57d711e1c38307b9912983b9e6ab592ef922dbd138d866830dc",
+      "sourceDigest": "83ee20f12f5ed5c220eff7e28b469a0d1d8efab4b6a4ffa09e6c009e3a17dec3",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2223,19 +2229,20 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
         ],
         [
           "diagnostic",
-          "log.debug"
+          "getLogger"
         ]
       ],
       "siteCount": 2,
-      "sitesDigest": "ab6f0a529c022eaff5c5fec06b248effb91824bbba10f1d82c9a7f3ffaf44850",
-      "sourceDigest": "1c20e99714164c9333d782a7c4a4cd597692fc8d9368f422a0c6c82700e520c2",
+      "sitesDigest": "5e28714139e2a39eea3e1ff459565e2ce5791779a57565034acb82ba31c99181",
+      "sourceDigest": "827b8a0646129d7341bacd72224ef963aaf3b64aefe8cf175741307dd13c0b43",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/executor/walker.ts": {
@@ -2244,6 +2251,50 @@
       "sites": [
         [
           "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
           "emit"
         ],
         [
@@ -2257,50 +2308,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "serialization",
@@ -2328,8 +2335,8 @@
         ]
       ],
       "siteCount": 21,
-      "sitesDigest": "56aa9bbdda91e09d4a28cbbab082dbeb8d63ab6f611b6e57eb8245324d515b8f",
-      "sourceDigest": "9d1a021841c19841a2d55abab0a26ab3bdbebc6ceb572bbb0cf4388277355737",
+      "sitesDigest": "7a63ebcdefcecad2b192f72ee097a8bd208650ab5ab0959e42067084d274c8d9",
+      "sourceDigest": "ddbaba63e72c925bc61efcbbc2ebd082dbfdaffbdabee3a653f0f987db70e3d3",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -2341,24 +2348,24 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "provider-use",
@@ -2374,19 +2381,28 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "adf8dfe67c57cfaf2169f0e2fe14cd09e5049137ae7f695b4cb1ba805b3ac7c6",
-      "sourceDigest": "5968c0880cd03fb5c9941fea16373c48681b2e504ad8da32cad9754bc39064c9",
+      "sitesDigest": "f3889a9b0e6d2fd013ed5449445195c3c77773e3600420c11acc73cff5e607b2",
+      "sourceDigest": "725c24bb929ea31037eef4148c71c69d17219750200b2fa47f328339478e515b",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
         "provider-factory",
-        "provider-use"
+        "provider-use",
+        "serialization"
       ]
     },
     "src/analyze/explore/class-hierarchy.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "entityIdsByU64s"
@@ -2436,14 +2452,6 @@
           "inNeighbors"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "storage-call",
           "outNeighbors"
         ],
@@ -2453,10 +2461,11 @@
         ]
       ],
       "siteCount": 16,
-      "sitesDigest": "1f9d4db8ff18091722fe1515a69ac8e024beedc04a4608f059038becde9d63f3",
-      "sourceDigest": "c7cda55721c7c6bef846e2d98c0a3ed62c8d6a7653595904fcb1cc7aabec5e3a",
+      "sitesDigest": "6b23cd87216a512d2f5064265727d2d0a9e9d96a50ca51d779a2685e172bf306",
+      "sourceDigest": "fcc4cd02eb0c69ee8fafcb742355d3d010f6e90661ec13c74fd951db31e617be",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2464,6 +2473,18 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "getDb"
@@ -2477,18 +2498,6 @@
           "listEntitiesForRepo"
         ],
         [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "filesystem-read",
           "readdirSync"
         ],
@@ -2498,11 +2507,12 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "5f37ddc167f17815bf6cdd7ed6d0aaf3d42dd20f025dcfb0119c4beb07fd492f",
-      "sourceDigest": "25f5b800b70f825a7ca40840e5fa0a7d3d87a6e861f457c2486db592af625e0d",
+      "sitesDigest": "b2db2a52c817f7d98ea4b29c295c25fa02e3be55688f92f7024ffcddd3607269",
+      "sourceDigest": "6b4e3db58884513145c244695d293c3b9ab49fa2b052a7701837182037a2cad0",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2511,25 +2521,34 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
         ],
         [
           "diagnostic",
-          "log.info"
+          "getLogger"
         ]
       ],
       "siteCount": 2,
-      "sitesDigest": "63133c8157429cb2b7e20f5b28c969888f1f60b499b9ecbdd2fafa24083acbcd",
-      "sourceDigest": "a1c468496e0f5a77d0da3ab5f57d71abf8d2d9273a1b9f090731d0c86bb7b2a7",
+      "sitesDigest": "6dcda06c9a1b15bee9b251965b86e9011bb4ac4f0f861575856219ff83c8b5b8",
+      "sourceDigest": "4d252363fd52c0a62f2d09dd92d870c57c37c0981899f50a470a210fbb0ffee4",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/convention-detect.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "entityIdsByU64s"
@@ -2555,23 +2574,16 @@
           "listEntitiesForRepo"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "storage-call",
           "outNeighbors"
         ]
       ],
       "siteCount": 9,
-      "sitesDigest": "774a279e30f01e629e29ffb0486c7659ff1aeeefff5888090575f79dd005840e",
-      "sourceDigest": "ae78ded0ca11770f166a9423783b2d79e0aae773b43b42c0f31ca828db601ccb",
+      "sitesDigest": "a92b079df13e4e6241820c9885e9d24ecf67e5cb6a91bcf796d648959abb34e2",
+      "sourceDigest": "d0c84ce5844cc8d9654eecbd73c55796fee6616727a257a4c183081172f22c3c",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2579,6 +2591,14 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "entityIdsByU64s"
@@ -2620,14 +2640,6 @@
           "inNeighbors"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "storage-call",
           "outNeighbors"
         ],
@@ -2637,10 +2649,11 @@
         ]
       ],
       "siteCount": 14,
-      "sitesDigest": "52edab2924488f079515f405267c7e3637c62f47590d88e5a961e0a290dcee5c",
-      "sourceDigest": "dcbcc3b8a594b2ce4876255a8e60aaa4446af10ddbc93c67fdc99b61b6e6a41b",
+      "sitesDigest": "19cfa1f72914fdf7fac40302cde16ef5067a05f7c599eb947aa7f518d4ad3638",
+      "sourceDigest": "1b5590431414dd868566b7297fd684a0084d5ba805052d8696fe9076387150e7",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2659,6 +2672,10 @@
         [
           "acquisition:symbol:acquirePool",
           "acquirePool"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
         ],
         [
           "acquisition:symbol:createConnectionResolver",
@@ -2681,10 +2698,6 @@
           "getLogger"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "acquisition:resolver-member",
           "resolver.list"
         ],
@@ -2694,8 +2707,8 @@
         ]
       ],
       "siteCount": 11,
-      "sitesDigest": "535569d048456b2f566ad5fe0668447402ea079a8047e07060529ef6e578606c",
-      "sourceDigest": "c54bbe169bae8884180b143f092bef8c56171aa0318342072d58cba7a12ba069",
+      "sitesDigest": "e04b73230846d230fca8e504823d240a59c3ca792f1e6c5448202091ab64e242",
+      "sourceDigest": "dd115253fb49cac408d9111d51354e35024141da1d4eb51885aad0614763b298",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -2703,7 +2716,8 @@
         "acquisition:symbol:createConnectionResolver",
         "connection-factory",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/db-table-describe.ts": {
@@ -2725,6 +2739,10 @@
         [
           "acquisition:symbol:acquirePool",
           "acquirePool"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
         ],
         [
           "acquisition:symbol:createConnectionResolver",
@@ -2755,10 +2773,6 @@
           "kv.describeNamespace"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "acquisition:resolver-member",
           "resolver.withConnection"
         ],
@@ -2768,8 +2782,8 @@
         ]
       ],
       "siteCount": 14,
-      "sitesDigest": "b7334c8fd18e901458728768160fc4e3a6657c664eceb5651a5a019fab94389a",
-      "sourceDigest": "631d99e01101aefded7f771024ea8138ec72fcd8502463a1b6f448bf6a12fb3e",
+      "sitesDigest": "0acda8add2088fc11abb9373f71f680158b0067f34ae3ec1203a89d83c8044ab",
+      "sourceDigest": "4d0fde0ca43993cc4a6496b0f54096bc7ea9e73c93f15783c4751ee8c63f0b1f",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -2777,7 +2791,8 @@
         "acquisition:symbol:createConnectionResolver",
         "connection-factory",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/db-tables-list.ts": {
@@ -2795,6 +2810,10 @@
         [
           "acquisition:symbol:acquirePool",
           "acquirePool"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
         ],
         [
           "acquisition:symbol:createConnectionResolver",
@@ -2821,10 +2840,6 @@
           "kv.listNamespaces"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "connection-use",
           "rdbms.listTables"
         ],
@@ -2838,8 +2853,8 @@
         ]
       ],
       "siteCount": 13,
-      "sitesDigest": "b5cd9fbd0ba992c47ee35351f253e7c808002891c995e12ca70ca229f8b75a4b",
-      "sourceDigest": "ee19933c42ac6dd744a46eceb2f012df5f3919be140e6cc962df185334fe61e9",
+      "sitesDigest": "2ed24c777ec873ad2892281df7e9776a33ba27dbc8b16d0064c51ac0296d4af9",
+      "sourceDigest": "4dedf32257a80b0e7ca4712539bf4362882c3e9bd9af3340c17b70ddfb310519",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:resolver-port-call",
@@ -2847,13 +2862,22 @@
         "acquisition:symbol:createConnectionResolver",
         "connection-factory",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/doc-constraint-enumerate.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
         [
           "storage-call",
           "getDb"
@@ -2865,14 +2889,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -2888,13 +2904,14 @@
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "741a8ab93a45f04a2016d8b9cbc7dd9647790b8be2c4839673e46736dbff5e59",
-      "sourceDigest": "2385063efa7978ecfb73f58d8e06b6d06f2910ba2583619b7cf0aace190badf3",
+      "sitesDigest": "dcf5ed7ce94f537d3ab7eb020b4d69c6d870e3e9e8c5992fabb8535e8b2b4c72",
+      "sourceDigest": "a0375e2f71efb6e517b204773b3c6abed709f9910b1ed2e4659dd9d671cefe6c",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
         "provider-factory",
         "provider-use",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2902,6 +2919,14 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
         [
           "serialization",
           "finalizeDocDecisionTrace"
@@ -2917,14 +2942,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "serialization",
@@ -2948,8 +2965,8 @@
         ]
       ],
       "siteCount": 11,
-      "sitesDigest": "471560b69c25fcac8ebdbc4b99b8f27d0523176d344c454aeb56b6b5bdd8dffd",
-      "sourceDigest": "0e201b5ee0dfaf3e9a414dcd24f07189cbd896d373fec7b38e82aa156f40faea",
+      "sitesDigest": "1b2eaba63e7bf997d40d46058186266e906172e708e8936ea387f7c94138adf9",
+      "sourceDigest": "80a9bf5a430e219934fa319e205bc838dd25a1c3b1cb54b81ac2533c5bc96469",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -2964,6 +2981,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -2974,17 +2995,14 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "8ea5c98bdcf08ac43691415cafe5f3a4339700c9752a1c45dee4bcf27385bd49",
-      "sourceDigest": "f1e31810dd7a7e5cf04f5d790ff9c0043b12370ced17a9ef297e96ef7ba10bd1",
+      "sitesDigest": "d254655c20dbef508817e8c72797a7dbf00852c635f1c40817952469299bd6bc",
+      "sourceDigest": "5c5051f7e24aec18b13b701c261ff90df86dc539dc223c51cb3d503504dd7a2f",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -2992,6 +3010,26 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "completenessOf"
@@ -3025,26 +3063,6 @@
           "getLogger"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "storage-call",
           "lookupRepoId"
         ],
@@ -3070,8 +3088,8 @@
         ]
       ],
       "siteCount": 19,
-      "sitesDigest": "fd0c44bc69e60e00f6c243668c37d4444e4538fbc6e09da060d98c7a96988b02",
-      "sourceDigest": "6b6cbe658454f4b51d9d8641cd4dd795a1ab30a222fd888157fe909214244ad7",
+      "sitesDigest": "8014bad785d66de44d6627284510d0020932afab50e374b28ed4890e4a8f264d",
+      "sourceDigest": "961833f3d34e61c9cc9185442219455cfe068de9ab092499f98620e2a1ec5500",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -3083,29 +3101,38 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 3,
-      "sitesDigest": "af3bfcce6f4c542dbdd778c1995b710ab6427dad4bacaa4a607ffa6e8f55db58",
-      "sourceDigest": "8828cdd56a1d1230e5dcfdf7e895c1a39df62fc8cadd59f029b8f17476f351e5",
+      "sitesDigest": "b1718303f1b144a81e1960981bc6604af2b212771dfe985e8ee25ff382ecce35",
+      "sourceDigest": "7116756ff6822ee627bfa5e8b41183172fbdb7ba8545fa751c6a3f0802e9e852",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/import-graph.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "entityIdsByU64s"
@@ -3143,23 +3170,16 @@
           "listEntitiesForRepo"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "storage-call",
           "outNeighbors"
         ]
       ],
       "siteCount": 12,
-      "sitesDigest": "10b74c23eaa9d2b38c5c37ab736908015db86280451e5479e9b3d75fc5024e7c",
-      "sourceDigest": "af2bb5ef98d9a6ff16db18bf952472938da2eb75e4ad8fdbfca7b4414c3f0c79",
+      "sitesDigest": "839b32b3dbc9d62f00e1f18ef3881e3fe808644242c183add1fc0ccb7ffbb468",
+      "sourceDigest": "916611321a927044e78f37d1961f462f056b863d85a998180d8e7578012fb056",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3184,6 +3204,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -3194,17 +3218,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "010b188dd126b895d2456ed6d5b7877b397a923fa4032823e4f5621094de26a1",
-      "sourceDigest": "fcee3b214cf97ba0ccd7c77c3ce27e1f0224756fc0c5ec82e9944ef0e70c8fdc",
+      "sitesDigest": "4ed04c7c72d4f66ce7099abc8bb89c32650d19e8128bb53fd77accc21d842dad",
+      "sourceDigest": "1a475ced1ad6d08fc7dfdaf93df59b185af04b24e497ddb667693a32bd76c8bf",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3213,6 +3234,14 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -3223,14 +3252,6 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -3254,11 +3275,12 @@
         ]
       ],
       "siteCount": 10,
-      "sitesDigest": "46fc2c0cec070fdea28513c63c204b0aac691ac843433d8b9de9f36eb1035e11",
-      "sourceDigest": "44b6226f41407bae5ad374db8b3951237710498c2c87e1772edc2ac288f3521e",
+      "sitesDigest": "d4d8df638b11d8c5302074a5fd0186e7c2221adf6e553e4fa84a36061f7e2c4e",
+      "sourceDigest": "1d9e720d9ddcb258fb7eededdbbf181e1482c1add3ac031bd49243741062c5d0",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3267,25 +3289,30 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
         ],
         [
           "diagnostic",
-          "log.info"
+          "getLogger"
         ]
       ],
       "siteCount": 2,
-      "sitesDigest": "2586e08735043ad7ad24340095d21c8799b8e4a328a69f5f2f55e32d1883a0ed",
-      "sourceDigest": "1773da8d0ed5fd35893dbc953f26e68341ecac4e7f848f20474f071ad007da8a",
+      "sitesDigest": "54a890b866e34db8922e824eaef1ba3278ea4255f141ecda693a2df79939f615",
+      "sourceDigest": "c66e17fbe685c870364c36313c5e3fa7828798d3afdf97692fb3ae61b61c2d20",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/explore/symbol-locate.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "findEntitiesByName"
@@ -3301,17 +3328,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "9b2a7bf6585ab45980faf257089b3ee0e9cb44b1b93b2a6eb0bbe601f5184153",
-      "sourceDigest": "e50b96a08faad48a8e737aa2c42c599f67a25edd3b1ee8b98d3c8ea02c3eeca5",
+      "sitesDigest": "b730169abfcdea1523d62768d9c42414bdbb9551e27e100e43c203753916a385",
+      "sourceDigest": "5271db1b57011368f4c60588faddc56317ebcb238d576d3e3f5be3a687735fde",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3319,6 +3343,10 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "getDb"
@@ -3330,17 +3358,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "bc8ff42e363b20a6a61cbead0c509bb911a9ec17b037cae8cc0a7b703963599a",
-      "sourceDigest": "9cb24af091998dee19d6af98924244986cf3885aacb16794e17b5008700b2b7c",
+      "sitesDigest": "9c4314e74712e524c7d1797b5feed52ce231069c7fa7b90de19e3eadf9c04b2c",
+      "sourceDigest": "44be075c3c57300cfbd6cf8a8aedd25ec0859a6835f952d592a07e10f9359e8b",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3348,6 +3373,14 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, ctx.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "findCallers"
@@ -3367,21 +3400,14 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 7,
-      "sitesDigest": "84f796c2f4ece4f4d5f9db843208a3e545d27f5cf1213e9afcccbad4a6791b25",
-      "sourceDigest": "6c59479257470861dad874d597820bc1234f1ca184da852a2942a0d2b4db158e",
+      "sitesDigest": "29ae33b7f43474955bb25645025ba594512597a8b897259ed8cb49ed3223385a",
+      "sourceDigest": "0d5d610729d9f320d6206963c18ec1254f06f1dda857c1c3b495522e37097153",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -3436,6 +3462,10 @@
         [
           "acquisition:pool-port-call",
           "acquireDataPool(scope.poolPath)"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, options?.connectionExecution).emit"
         ],
         [
           "acquisition:symbol:createConnectionResolver",
@@ -3514,10 +3544,6 @@
           "listRepos"
         ],
         [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
           "acquisition:pool-member",
           "pool!.safeList"
         ],
@@ -3587,8 +3613,8 @@
         ]
       ],
       "siteCount": 45,
-      "sitesDigest": "6f761a2a6d87cc131469d2ba8e006d11d901d5063b286fcef3b844a9212783f7",
-      "sourceDigest": "80d223941594ace8c4ec1f0147a18f7bf7c6e80fd2538a62fe8b5fda76952c5b",
+      "sitesDigest": "ad8fe97afbfe5ac4b5c32891600877bda47dabc51be0f59c6713d04f6c29f0f0",
+      "sourceDigest": "777a85c92f638fb907bcd8f74dde33b3bb157567f8e51539747e027ffee0a931",
       "boundaries": [
         "acquisition:pool-member",
         "acquisition:pool-port-call",
@@ -3619,6 +3645,74 @@
         [
           "storage-call",
           "assertRunRecordSource"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
         ],
         [
           "storage-call",
@@ -3701,74 +3795,6 @@
           "getLogger"
         ],
         [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "storage-call",
           "records.close"
         ],
@@ -3806,8 +3832,8 @@
         ]
       ],
       "siteCount": 49,
-      "sitesDigest": "af8c3a6dd874a2cce5c29e1aa7918332bc8a2176f1a1f1c10c4e7f2d022803c1",
-      "sourceDigest": "a8a79c0d84ccd4ea2dd904a7cbf77d2a519c25dc6081c9a2e60bbe81d0d51ed5",
+      "sitesDigest": "4a07af6b1740c3ddc27b65a9510406a4228ce64985c32391cd441570d0fceb21",
+      "sourceDigest": "bb4c479e0ee152d2d58280291ed97ad43dcca2c1f3d2df5c4b803584f0a4c3ce",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -3879,6 +3905,30 @@
           "atomicWriteJson"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -3897,30 +3947,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -3992,8 +4018,8 @@
         ]
       ],
       "siteCount": 43,
-      "sitesDigest": "8aec89ccd684fa0b2e4c88b15f7041766345abae4266d587a3ca574983ca6430",
-      "sourceDigest": "6cc51d3da3b4ab65895f343b7dbff7b4ed5028decc19479b8364575ce242cdad",
+      "sitesDigest": "d42e811418064700e82c914c82783746bd648899050ffc7a34031d85ee8fb90e",
+      "sourceDigest": "211aeb9b4d220d90d91db80c5d5afd17ed3bea51e9143d3f91dd2257029571ca",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -4019,6 +4045,30 @@
           "atomicWriteJson"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "storage-call",
           "expandTaskPathSegments"
         ],
@@ -4033,30 +4083,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -4148,8 +4174,8 @@
         ]
       ],
       "siteCount": 35,
-      "sitesDigest": "6b4c7531c66b9512ffb8aa91f05dc60d3ae68238f0c2c6af4c34f6313a806c0a",
-      "sourceDigest": "d4b6d7d60c01ca9e28d093918b45e9582abdf1839fecfcfb5802d03d1d82136d",
+      "sitesDigest": "c47e6b8a6f056cf4da01fbd79360da7914ae510986c1effd760f09740ff0d0ac",
+      "sourceDigest": "818829487ba8e8b56f797e48a680b622d4c6415ff4f2024b8da76ef8fd72fceb",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -4162,6 +4188,14 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
         [
           "serialization",
           "decodePlanParams"
@@ -4197,14 +4231,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -4244,8 +4270,8 @@
         ]
       ],
       "siteCount": 20,
-      "sitesDigest": "6a6864f84669785debc7c7a94f24f4aac80269e59d92adf8ecf9e4f0881ea581",
-      "sourceDigest": "ade0200655025bd18d9ddb5a843dfeea985c6970da470add7920361056de73aa",
+      "sitesDigest": "119c788fab5803696f28fd4b8808de3d8cddf2206ea7607225b1fb0a8163c30e",
+      "sourceDigest": "8a5361dfd477106e29850f61f038c842c793ab41886030425d39a50d131d2b28",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -4260,27 +4286,28 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, opts.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "a0dc8d0563e28de80b7a08a86086ebceeab53d053b7d7fa541f8421275b042e9",
-      "sourceDigest": "2a03269051c5894deafdf9f8dee046f18f79efbce364bd7a7b4e95d982b39676",
+      "sitesDigest": "81d2568a017aea6a90c609119c834261ef89f3a0ecb530f7925b40c5035d15cc",
+      "sourceDigest": "2e4e542f95cfcdbc1e4c3c00a1c62281e8994f23b95ece0ef6c2f8e9c45f6c4c",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/planner/render-catalog.ts": {
@@ -4324,23 +4351,24 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 3,
-      "sitesDigest": "30b6ff2ca6014b2a5227470c1f15d465e23d803b662aa04e94f57426843f90f5",
-      "sourceDigest": "dbfdced4e7afc1b4d2c404311f98cf09854efd9bd8ce37449eb7e0eae602975c",
+      "sitesDigest": "78c573993fb8bd2d78e63e979a741e8d855d3b25ad1301dfb69876f911fab8b4",
+      "sourceDigest": "43a419132d2a0a52ded24f3aa6ac788966c85f7f9e74cff1f9919271f7b31d50",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/planner/templates/registry.ts": {
@@ -4348,19 +4376,20 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
-          "diagnostic",
-          "getLogger"
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
         ],
         [
           "diagnostic",
-          "log.debug"
+          "getLogger"
         ]
       ],
       "siteCount": 2,
-      "sitesDigest": "bf775b55b6cdb562e3375d009f077d4e6b5401a8d3a63bb0605938d63625812a",
-      "sourceDigest": "21d6bc02acef80b4c1474f021568b50740f9cc8aabc9e35bfea1277ab8054aae",
+      "sitesDigest": "eda23b1d602aa07a6305a0465b9f3211632ca056aa500431bece825bee106408",
+      "sourceDigest": "d0a66b5830f32910eca09a21a9c5e8d5c178af8901ce67882f39c37f36adc67e",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/planner/validate.ts": {
@@ -4449,27 +4478,28 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "2def50309c6fca0d4eb6a0b9d0042feaa9d252a2ea30d7a82f5e14437aa2ee0a",
-      "sourceDigest": "5fbc8d3336062bda74e2ff64104e0c834e6e7089da2dd1c1ff2bfea15773153b",
+      "sitesDigest": "3ec17c770c3f9a74ea6b6a889a24f9c4bf1410f09191a20803218e57e97e3e23",
+      "sourceDigest": "7fe34e0cbdf0e80351b9271df61e5e015e814eddd8a408da614a3cc071b99a3c",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/code/adherence-check.ts": {
@@ -4505,6 +4535,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -4515,17 +4549,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "21b664d0446805f1a4f1fc3291a4cc3cbe5d1793ece3e165ded5ae659570b4ff",
-      "sourceDigest": "247dd514680861e53c2a5fe7713584bf6b0aa0919331974c5377540e437b8abf",
+      "sitesDigest": "bc092a129644d21aea4015baba0e00788bc7deb5149c1dfe665446e943712bd8",
+      "sourceDigest": "90f5a0d284f53c7b9efee7ba61a5bf883bd2555576600af3f304a3a70e29959d",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -4534,6 +4565,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -4544,17 +4579,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "9492da55db3c3c037856c42f356a4732b859a95940a2f1272f0aaec8ba7f1b49",
-      "sourceDigest": "df39caa071c8c58c8f6061d19bd61a269ea60601d634f2daf1e00b27a33b190b",
+      "sitesDigest": "7d5c1f2cee9c7664eb865ab463aeb825d246b5a362d2bfba13cb82e94d0815fb",
+      "sourceDigest": "feaa83cac1b35af3da0ce656bcf8e8e9efb452bd232c2b2eecc71e800d2739b9",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -4562,6 +4594,14 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "findImports"
@@ -4577,21 +4617,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "8d30ec6d66aa6ee571da27b36b8cd6023f8710d0ecf7bf2bc06a870596287f2c",
-      "sourceDigest": "9d8c3341e217be6f53fbe9bbdd9d73ac167cc12806582d958eceb1114074a953",
+      "sitesDigest": "f0da115b7f19ea3c588cb0e3578c19eaeb858daf86610389bc29a05ac62fb59d",
+      "sourceDigest": "1640b8ed18265b0fb976a86048c0459ca6515411d0860333d140ebd0021ed46e",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -4599,6 +4632,10 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "getDb"
@@ -4618,17 +4655,14 @@
         [
           "storage-call",
           "listEntitiesForRepo"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "13c86279d84dcec4dba8e4f0ca29c82e291c8c8e2bd58023444d2d269834d0a2",
-      "sourceDigest": "d5daca5fa48eeb1b73b3bddb498f9452b81116e6bcdd4ca9e4e0d9f7b4f4ad79",
+      "sitesDigest": "ef9cc2e2eea849b288fa93f2e36cad1911a94b59f96c193523ebb916d5261c1f",
+      "sourceDigest": "fe034ec4b6607e72556f6f185d7d87d7801b57102c7427659317e10af1586d67",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -4735,6 +4769,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "acquisition:resolver-member",
           "dataConnectionResolver.list"
         ],
@@ -4753,26 +4791,31 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "dbb92b75f18d83ea576460010ae2058831c455d904e0dad26bf6cc4b5a70ea2b",
-      "sourceDigest": "34f7ce6f8aa109dbeae4147df829566e0d96025163f17ea5762b098b7c84de70",
+      "sitesDigest": "af7973ae30c3af5d185cbe78452f72bab7dbbf6135e916497ef9ec24fc8c44c1",
+      "sourceDigest": "3cd09a4a48b99b3c41955a89f39a44035edfa1414dd41be40208ba769b74122f",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:dataConnectionResolver",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/data/discovery-objects.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "acquisition:resolver-member",
           "dataConnectionResolver.list"
@@ -4810,32 +4853,33 @@
           "k.listNamespaces"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "connection-use",
           "r.listTables"
         ]
       ],
       "siteCount": 12,
-      "sitesDigest": "ab13343befc43c890fd1ca20a0ac0ffbb1acce4539133bbf24205eb0171f38fd",
-      "sourceDigest": "9eeae63db9fc96a6a107ef91414a6126fac6be9c8e7d00842a7d1b0749cd9bd8",
+      "sitesDigest": "6e36aca6ca81b396010afb0d6e10b6788e0c4f74199431abb1d402963db2cf15",
+      "sourceDigest": "1f4c00e0d8e95e9146d21f0ae14d9a8827f07d7cf3b57e41bb5eb3ad26b18995",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:dataConnectionResolver",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/data/schema-table.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "acquisition:resolver-member",
           "dataConnectionResolver.withConnection"
@@ -4861,14 +4905,6 @@
           "getLogger"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "connection-use",
           "r.describe"
         ],
@@ -4878,13 +4914,14 @@
         ]
       ],
       "siteCount": 10,
-      "sitesDigest": "3d05f376d8d343d48c1150d354e1d36ff551a3a35e0306723a8b060a06917b5f",
-      "sourceDigest": "de1f541ba237bc1ca0fc28ffc17397b9e82fdb71b36895c1eec1ce3a23997f11",
+      "sitesDigest": "725453a861376c9f8b8d7bd0f64fe0492e9b67bb76a317cc9375cb7d777509f8",
+      "sourceDigest": "44c898d52c1383c8aace0b7ae3437123c1c5c4e528c5257b84cc27202929d848",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:dataConnectionResolver",
         "connection-use",
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/docs/constraint-enumerate.ts": {
@@ -4929,6 +4966,10 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -4947,17 +4988,14 @@
         [
           "storage-call",
           "listEntitiesByKinds"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "822cd149f501732d9afde769dad4b2f39008efd818f1bcbeeee6e2e568f84931",
-      "sourceDigest": "f0ea98f7d39c08cf222027d90ae2e7ed35e54371814d958fa7aaab55be9890de",
+      "sitesDigest": "2e4f3f737dded5d3d901b2d47b28e5ff489720bb67140418a394d454b76f0f48",
+      "sourceDigest": "5c6e4be668188c752ed58cf88f7e056effe67d97acd7bf55f89c303261746845",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "storage-call"
       ]
     },
@@ -4965,6 +5003,10 @@
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
         [
           "storage-call",
           "getDb"
@@ -4992,15 +5034,11 @@
         [
           "storage-call",
           "listEntitiesByKinds"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ]
       ],
       "siteCount": 8,
-      "sitesDigest": "2a0b14c58ceffef47bb282d0f246b937b9c16175cdc4c09efbce7eba7b816444",
-      "sourceDigest": "9f3f45846467c7d2dbfac6aba7a4815d58e0ee2497ff5befcb818128c6bf0416",
+      "sitesDigest": "a4ead6c9e4a9badea39c603ab58364d8280a07ab96216a484b2088a48e0e4212",
+      "sourceDigest": "9d35e936568c6241c11c242adb954d485c1acefd67c6cadd5cea64b628d08606",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -5048,16 +5086,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-read",
@@ -5065,11 +5103,12 @@
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "73d1eeac7ba8c705383cf188c15790e915a8fc628b25723bfcda9aa3bf6292b8",
-      "sourceDigest": "87dfb2bf31c899915cfeaf561feaa6ddc87fa0f3fa395df5299b24864c77740e",
+      "sitesDigest": "9edada6a41f5d950a7818a990320a07a1e76bb9521b984145e3348ee087f989c",
+      "sourceDigest": "a061ed5de1335c8908b07ed32611d7245dc62081c5e7dab4795a26ff9f744b12",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/infra/inventory-ci.ts": {
@@ -5077,16 +5116,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -5094,11 +5133,12 @@
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "dad11f5bff925bc76dee67d570ad0b7efc34566d18a756b497912b2e5695e3a3",
-      "sourceDigest": "98728ec362ad16e1c44eb2b1649d1d0728ae1ff108ba4dde5e8e2abb41d31ee8",
+      "sitesDigest": "028cb52f0c77ce967772c569391d6f5cc292b9abb8213b8f8b3ee88b0ced1d1a",
+      "sourceDigest": "fbb7d15c19e05a51d31b069912636ed0e2a024294bdffb2d03034399c7feec76",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/infra/inventory-docker.ts": {
@@ -5106,20 +5146,20 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -5131,11 +5171,12 @@
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "8f394a59629412a5168d1533038047a777e010b50c43773b759ecce7542a59d9",
-      "sourceDigest": "7b49326952baea244287c73add2e7826b34a27087f7b37b68475ff4831b1c4d2",
+      "sitesDigest": "5b7efd2f26cb940ef4681f6573c22a19a76869f50520c58c61a335af61d4f7a7",
+      "sourceDigest": "b0b4a5ae795696356793ec2d1cd0eb5fcb2e33a4e82060dc6193530c2823f257",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/infra/inventory-helm.ts": {
@@ -5143,16 +5184,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -5164,11 +5205,12 @@
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "24435dc5c76ebb01d63a3279860335aa820ee4ba6731347f8565e29cbabd1bad",
-      "sourceDigest": "0c883b9d8d3415684010277509f0cd262005884eefad10e35a99e66edc505132",
+      "sitesDigest": "b0087a8ba1af4187c2c317c532ff3259609715f888d6daab47c8b6c5a601e0a7",
+      "sourceDigest": "c8bd28a0fe00ab66095e7a425b3af49a83e672704f7c85cb3e9c5a662b63093f",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/infra/inventory-kubernetes.ts": {
@@ -5176,16 +5218,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -5193,11 +5235,12 @@
         ]
       ],
       "siteCount": 4,
-      "sitesDigest": "2d6c8534c35489947ef066d29c8916fd3602a698b8425998f8df7fe04d22643d",
-      "sourceDigest": "d5b5263ecae8a3675831cb2b8ed5537723eb79ec9bb30f0f7ae13a1a00899f7a",
+      "sitesDigest": "21d4951e576e0f4f90993b61aef426da2a036d15ada924688857c4c96822a697",
+      "sourceDigest": "17ba49f49e9e47815b8bf85bbb5bdb4fe894bf80770c88b3f83828ce322f2d30",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/infra/inventory-terraform.ts": {
@@ -5205,20 +5248,20 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "filesystem-read",
@@ -5226,11 +5269,12 @@
         ]
       ],
       "siteCount": 5,
-      "sitesDigest": "8c85e23c5544a9311338c0c07ec38055283c0413e82ef8d98687809652b24638",
-      "sourceDigest": "eaf97e2624a8da654af772869288f1edc779c7b8767e9964a97d322b45009924",
+      "sitesDigest": "e1254c94052d22f760cb1d59bdaf3c4ba3d5692c8d80141d29c8945d8a176258",
+      "sourceDigest": "582bf421273e87cdc9d57b2284a75adb10301f8c0ebee90e957fd6bc60bb7845",
       "boundaries": [
         "diagnostic",
-        "filesystem-read"
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/analyze/runtimes/shared/adherence-topic-constraints.ts": {
@@ -5240,6 +5284,26 @@
         [
           "serialization",
           "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
         ],
         [
           "diagnostic",
@@ -5252,26 +5316,6 @@
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "filesystem-write",
@@ -5299,8 +5343,8 @@
         ]
       ],
       "siteCount": 15,
-      "sitesDigest": "a1b7286d7f04d152c8a53394b5c7475f6b67d72bef89ea541ec96d06719ba83b",
-      "sourceDigest": "5d3e1c43fccf7b075e08422904bab8965d8a280b76088b3c475ecbc68d88fb4b",
+      "sitesDigest": "1b6b28addd3d1df6cb7a304e168e1d7c579dd87501ebf807a9bbef7a5db24c0b",
+      "sourceDigest": "799670382eef7b333c465daaa8f623b8499dbc53023850ad91d8347876159ec8",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -5317,6 +5361,22 @@
           "admitConnectionProvider"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(savedLog).emit"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -5343,18 +5403,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "provider-use",
@@ -5367,20 +5415,17 @@
         [
           "provider-factory",
           "resolveRoleProvider"
-        ],
-        [
-          "diagnostic",
-          "savedLog.info"
         ]
       ],
       "siteCount": 15,
-      "sitesDigest": "4abb093461b03aa1845ebff9d53869e0ba04be91c0f636edb305d3aaf356acb7",
-      "sourceDigest": "e4de2706f5aa1a96c41982a2a8ff3181d0759de717fdf858eb7455d67cf0c876",
+      "sitesDigest": "75033cd895e69f38e81f82fd39a42a986095d570899980c3e6a3de8783a742db",
+      "sourceDigest": "080c7990f5129ced08048b625a62956b77b830623b082802b73e7a3a912785ae",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
         "provider-factory",
         "provider-use",
+        "serialization",
         "storage-call"
       ]
     },
@@ -5389,16 +5434,16 @@
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
       "sites": [
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
         [
           "serialization",
           "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
         ],
         [
           "provider-use",
@@ -5414,8 +5459,8 @@
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "9b16a6ca5cf24f8bc06074ffeb6c987a0f6a249e044c25393646785be6e056c5",
-      "sourceDigest": "63f4d2bff6eb78b765489ed019ea6f3ff6ef2135129858ac7d224f9fb529d7de",
+      "sitesDigest": "aac81a44883421a8ee20f16e1ad0b60ebd66f0dc69b12db2d4f5241668645ae1",
+      "sourceDigest": "987b9f23a8b6bbd0218ce10cdfe4c083fe888f2be043f8098f04e6c95877c24d",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -5480,6 +5525,30 @@
           "buildSummariserProvider"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log, args.connectionExecution).emit"
+        ],
+        [
           "storage-call",
           "entityU64ForId"
         ],
@@ -5490,30 +5559,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.debug"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
         ],
         [
           "provider-use",
@@ -5541,8 +5586,8 @@
         ]
       ],
       "siteCount": 16,
-      "sitesDigest": "b21388c527a9af59d1e9cce9d40c35250f5763c8f43a06de5992f7f904383002",
-      "sourceDigest": "8f8efdf43a1689a921b947961bdfa527bc1bb22d67e8b76217a4f0a47ae799b1",
+      "sitesDigest": "642d7bc72ff5d08aa34d3590c2f70f46513ad13a700184a74c09f83a4b983908",
+      "sourceDigest": "d46a2c537fce57dc4546a0380f3a4eb13e3071dcf09679b343a733ca4d725b84",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

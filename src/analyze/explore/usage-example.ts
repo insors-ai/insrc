@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -126,15 +127,12 @@ export async function runUsageExample(
 	}
 
 	if (target === undefined) {
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 				runId:      ctx.runId,
 				symbolName: params.symbolName,
 				entityId:   params.entityId,
 				ambiguous:  ambiguousCandidates,
-			},
-			'usage.example: target not resolved; returning empty output',
-		);
+		}, 'usage.example: target not resolved; returning empty output']);
 		return {
 			type:         'usage.example',
 			// Nothing in the graph carries this name or id: an empty result, and a complete one.
@@ -166,17 +164,14 @@ export async function runUsageExample(
 		...(e.signature !== undefined && e.signature.length > 0 ? { signature: e.signature } : {}),
 	}));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:         ctx.runId,
 			subject:       params.symbolName ?? params.entityId,
 			targetId:      target.id,
 			totalCallers:  callers.length,
 			returned:      hits.length,
 			ambiguous:     ambiguousCandidates,
-		},
-		'usage.example: complete',
-	);
+	}, 'usage.example: complete']);
 
 	return {
 		type:            'usage.example',

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -228,17 +229,14 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			placeholderCount,
 		};
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:           args.runId,
 				taskId:          args.task.taskId,
 				family:          familyKey,
 				docCount:        documents.length,
 				decisions:       decisions.length,
 				constraints:     constraints.length,
-			},
-			'docs.family.summarise: rolled up family',
-		);
+		}, 'docs.family.summarise: rolled up family']);
 
 		return {
 			outputs: new Map<string, unknown>([['family-summary', output]]),

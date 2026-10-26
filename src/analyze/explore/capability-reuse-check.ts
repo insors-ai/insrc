@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -149,14 +150,11 @@ export async function runCapabilityReuseCheck(
 				maxTokens:       2_048,
 			},
 		);
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 				runId:      ctx.runId,
 				capability: prepared.prepared.capability,
 				returned:   raw.verdicts.length,
-			},
-			'capability.reuse-check: LLM verdicts received',
-		);
+		}, 'capability.reuse-check: LLM verdicts received']);
 	} catch (err) {
 		throw new LookupFailedError(
 			`capability.reuse-check: the model call that judges the candidates failed: ${errorMessage(err)}`,
@@ -239,10 +237,7 @@ export async function prepareCapabilityReuseCheck(
 	const concept = await runConceptResolve(conceptExp, ctx);
 
 	if (concept.hits.length === 0) {
-		log.info(
-			{ runId: ctx.runId, capability },
-			'capability.reuse-check: concept.resolve returned no hits',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, capability }, 'capability.reuse-check: concept.resolve returned no hits']);
 		return {
 			kind: 'short-circuit',
 			shortCircuit: {
@@ -272,10 +267,7 @@ export async function prepareCapabilityReuseCheck(
 			const prof = await runModuleProfile(profileExp, ctx);
 			profiles.push({ path: h.path, profile: prof.profile, score: h.score });
 		} catch (err) {
-			log.warn(
-				{ runId: ctx.runId, path: h.path, err: (err as Error).message },
-				'capability.reuse-check: module.profile failed for candidate; keeping as unrelated placeholder',
-			);
+			captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('warn', () => [{ runId: ctx.runId, path: h.path, err: (err as Error).message }, 'capability.reuse-check: module.profile failed for candidate; keeping as unrelated placeholder']);
 			profiles.push({ path: h.path, profile: undefined, score: h.score });
 			skipped.push({
 				what:   h.path,
@@ -348,16 +340,13 @@ export function finalizeCapabilityReuseCheck(
 		};
 	});
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log).emit('info', () => [{
 			runId,
 			capability: prepared.capability,
 			hits:       prepared.conceptHits,
 			candidates: candidates.length,
 			skippedLLM: llmSkipReason !== undefined,
-		},
-		'capability.reuse-check: complete',
-	);
+	}, 'capability.reuse-check: complete']);
 
 	// A candidate the model gave no verdict for is shown as 'unrelated' by default.
 	const unjudged: SkippedItem[] = llmSkipReason !== undefined ? [] : prepared.profiles

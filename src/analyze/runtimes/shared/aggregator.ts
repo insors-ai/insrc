@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -133,16 +134,13 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 		throw classifyError(err);
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:         args.runId,
 			target:        args.target,
 			scope:         args.scope,
 			findingCount:  llmOutput.findings.length,
 			upstreamTasks: countOutputs(args.upstreamOutputs),
-		},
-		'aggregator: LLM call ok',
-	);
+	}, 'aggregator: LLM call ok']);
 
 	return {
 		summary:  llmOutput.summary,

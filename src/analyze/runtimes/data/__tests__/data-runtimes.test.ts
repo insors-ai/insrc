@@ -1,3 +1,4 @@
+import { PATHS } from '../../../../shared/paths.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -319,7 +320,7 @@ function resolveRelativeToInsrcRoot(relPath: string): string {
 // ---------------------------------------------------------------------------
 // Integration tests against a real SQLite connection.
 // Pattern mirrors daemon/db/__tests__/sqlite-driver.test.ts:
-//   - tmp HOME (some drivers cache state under ~/.insrc)
+//   - private data-driver configuration root
 //   - tmp repo dir; write db-connections.json
 //   - SQLite fixture: 2 small tables + 1 FK
 // ---------------------------------------------------------------------------
@@ -329,7 +330,7 @@ if (!GATE) {
 	test('data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)', { skip: true }, () => {});
 }
 
-let originalHome: string | undefined;
+let originalInsrPath: string;
 let tmpHome:      string;
 let repoRoot:     string;
 
@@ -361,11 +362,10 @@ async function buildSqliteFixture(): Promise<string> {
 test.before(async () => {
 	if (!GATE) return;
 
-	// Sandbox HOME so the data-driver pool config layer doesn't write
-	// to the user's real ~/.insrc.
-	originalHome = process.env['HOME'];
+	// Isolate the captured PATHS root used by the data-driver config layer.
+	originalInsrPath = PATHS.insrc;
 	tmpHome = mkdtempSync(join(tmpdir(), 'insrc-data-rt-home-'));
-	process.env['HOME'] = tmpHome;
+	PATHS.insrc = tmpHome;
 
 	repoRoot = mkdtempSync(join(tmpdir(), 'insrc-data-rt-repo-'));
 
@@ -390,7 +390,7 @@ test.after(async () => {
 	const { closeAll, _resetCacheForTests } = await import('../../../../daemon/db/pool-cache.js');
 	await closeAll();
 	_resetCacheForTests();
-	if (originalHome !== undefined) process.env['HOME'] = originalHome;
+	PATHS.insrc = originalInsrPath;
 	if (tmpHome)  { try { rmSync(tmpHome,  { recursive: true, force: true }); } catch { /* */ } }
 	if (repoRoot) { try { rmSync(repoRoot, { recursive: true, force: true }); } catch { /* */ } }
 });
@@ -462,7 +462,7 @@ test('discovery.objects: unknown connectionId -> throws (no such connection)',
 	await assert.rejects(
 		dataDiscoveryObjectsRuntime.execute(
 			mkArgs(mkIntent('workspace', repoRoot), task, 'rt-data-obj-missing')),
-		/no connection 'does-not-exist'/,
+			{ code: 'not-found' },
 	);
 });
 

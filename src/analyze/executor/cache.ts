@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -71,10 +72,7 @@ export function writeTaskOutput(runId: string, record: TaskExecutionRecord, pare
 	assertSessionContinuationNow(record, execution);
 	const path = taskOutputPathFor(runId, record.taskId, parentTaskPath, execution);
 	atomicWriteJson(path, record);
-	log.debug(
-		{ runId, taskId: record.taskId, status: record.status, produces: record.produces },
-		'wrote task output',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ runId, taskId: record.taskId, status: record.status, produces: record.produces }, 'wrote task output']);
 	return path;
 }
 
@@ -86,7 +84,7 @@ export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: s
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as TaskExecutionRecord;
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, 'task output unreadable; treating as miss');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ path, err: (err as Error).message }, 'task output unreadable; treating as miss']);
 		return null;
 	}
 }
@@ -99,7 +97,7 @@ export function purgeTaskOutput(runId: string, taskId: string, execution?: Conne
 	try { unlinkSync(path); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ path, err: (err as Error).message }, 'purgeTaskOutput: non-ENOENT');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'purgeTaskOutput: non-ENOENT']);
 		}
 	}
 }
@@ -115,7 +113,7 @@ export function purgeAllTaskOutputs(runId: string, execution?: ConnectionExecuti
 	try { rmSync(dir, { recursive: true }); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ dir, err: (err as Error).message }, 'purgeAllTaskOutputs: non-ENOENT');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ dir, err: (err as Error).message }, 'purgeAllTaskOutputs: non-ENOENT']);
 		}
 	}
 }

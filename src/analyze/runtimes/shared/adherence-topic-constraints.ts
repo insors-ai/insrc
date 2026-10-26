@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 import { assertNoSessionEmbedding } from '../../../shared/connection-provider.js';
 import { assertNoSessionPersistence } from '../../../shared/connection-persistence.js';
 import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
@@ -139,10 +140,7 @@ export async function constraintsForTopic(args: ConstraintsForTopicArgs): Promis
 		atomicWriteJson(path, record);
 	} catch (err) {
 		// The enumeration in hand is still good; only the reuse is lost.
-		log.warn(
-			{ runId: args.runId, taskId: args.taskId, path, err: (err as Error).message },
-			"the enumeration's record could not be written; a later check on this topic will enumerate again",
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, taskId: args.taskId, path, err: (err as Error).message }, "the enumeration's record could not be written; a later check on this topic will enumerate again"]);
 		return { output, reused: false };
 	}
 	return { output, record: path, reused: false };
@@ -154,7 +152,7 @@ export function purgeConstraintRecords(runId: string, execution?: ConnectionExec
 	const dir = dirname(PATHS.analyzeConstraintRecord(runId, 'unused'));
 	try { rmSync(dir, { recursive: true, force: true }); }
 	catch (err) {
-		log.debug({ dir, err: (err as Error).message }, 'purgeConstraintRecords: could not remove');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ dir, err: (err as Error).message }, 'purgeConstraintRecords: could not remove']);
 	}
 }
 
@@ -170,7 +168,7 @@ function readRecord(path: string, args: ConstraintsForTopicArgs): ConstraintReco
 		text = readFileSync(path, 'utf8');
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.warn({ path, err: (err as Error).message }, "the enumeration's record could not be read; enumerating again");
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ path, err: (err as Error).message }, "the enumeration's record could not be read; enumerating again"]);
 		}
 		return null;
 	}
@@ -178,12 +176,12 @@ function readRecord(path: string, args: ConstraintsForTopicArgs): ConstraintReco
 	try {
 		parsed = JSON.parse(text);
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, "the enumeration's record is not JSON; enumerating again");
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ path, err: (err as Error).message }, "the enumeration's record is not JSON; enumerating again"]);
 		return null;
 	}
 	const reason = notThisRecord(parsed, args);
 	if (reason !== null) {
-		log.warn({ path, reason }, "the enumeration's record is not usable; enumerating again");
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ path, reason }, "the enumeration's record is not usable; enumerating again"]);
 		return null;
 	}
 	return parsed as ConstraintRecord;

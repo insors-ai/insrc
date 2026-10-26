@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -159,14 +160,11 @@ export async function runManifestsLocate(
 		});
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:  ctx.runId,
 			total:  hits.length,
 			families: familyCounts,
-		},
-		'manifests.locate: complete',
-	);
+	}, 'manifests.locate: complete']);
 
 	return {
 		type:      'manifests.locate',

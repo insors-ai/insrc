@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -99,7 +100,7 @@ export async function runImportGraph(
 	}
 
 	if (inScopeFiles.length === 0) {
-		log.info({ runId: ctx.runId, path }, 'import.graph: no in-scope files');
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, path }, 'import.graph: no in-scope files']);
 		return {
 			type: 'import.graph',
 			// No file of the graph lies under the path: an empty result, and a complete one.
@@ -194,8 +195,7 @@ export async function runImportGraph(
 		totalOutDegree: totalOut,
 	};
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:         ctx.runId,
 			path,
 			inScopeFiles:  inScopeFiles.length,
@@ -203,9 +203,7 @@ export async function runImportGraph(
 			totalOut,
 			topImporters:  topImporters.length,
 			topImportees:  topImportees.length,
-		},
-		'import.graph: complete',
-	);
+	}, 'import.graph: complete']);
 
 	return { type: 'import.graph', completeness, summary };
 }

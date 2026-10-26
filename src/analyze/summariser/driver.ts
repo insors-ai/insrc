@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -205,7 +206,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 		&& existing.contentHash === contentHash
 		&& existing.modelId    === modelId
 		&& existing.errorCode  === undefined) {
-		log.debug({ entityId: entity.id, file: entity.file }, 'summariseDoc: skip-if-unchanged');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ entityId: entity.id, file: entity.file }, 'summariseDoc: skip-if-unchanged']);
 		return { ok: true, skipped: 'unchanged', summary: existing };
 	}
 
@@ -236,10 +237,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 	} catch (err) {
 		const errorCode = classifyErrorCode(err);
 		const errorMessage = (err as Error).message ?? String(err);
-		log.warn(
-			{ entityId: entity.id, file: entity.file, errorCode, err: errorMessage },
-			'summariseDoc: LLM call failed; writing placeholder row',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ entityId: entity.id, file: entity.file, errorCode, err: errorMessage }, 'summariseDoc: LLM call failed; writing placeholder row']);
 		const placeholder = buildPlaceholder(family, entity, modelId, contentHash, errorCode);
 		try {
 			// A good summary stored while the model ran is never replaced by the placeholder.
@@ -248,10 +246,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 			// The document is no longer current: that, not the model error, is the result.
 			if (outcome !== 'written') return { ok: false, skipped: outcome };
 		} catch (writeErr) {
-			log.warn(
-				{ entityId: entity.id, err: (writeErr as Error).message },
-				'summariseDoc: placeholder write failed',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ entityId: entity.id, err: (writeErr as Error).message }, 'summariseDoc: placeholder write failed']);
 		}
 		return { ok: false, errorCode, errorMessage };
 	}
@@ -284,22 +279,18 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 	try {
 		const outcome = await writeDocSummaryIfCurrent(db, entity.id, entity.repo, summary);
 		if (outcome !== 'written') {
-			log.debug({ entityId: entity.id, file: entity.file, outcome }, 'summariseDoc: document changed while summarising; not stored');
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ entityId: entity.id, file: entity.file, outcome }, 'summariseDoc: document changed while summarising; not stored']);
 			return { ok: false, skipped: outcome };
 		}
 	} catch (writeErr) {
-		log.warn(
-			{ entityId: entity.id, err: (writeErr as Error).message },
-			'summariseDoc: persistence failed',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ entityId: entity.id, err: (writeErr as Error).message }, 'summariseDoc: persistence failed']);
 		return {
 			ok:           false,
 			errorCode:    'persistence-failed',
 			errorMessage: (writeErr as Error).message,
 		};
 	}
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			entityId:      entity.id,
 			file:          entity.file,
 			family:        summary.family,
@@ -307,9 +298,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 			decisions:     summary.keyDecisions.length,
 			constraints:   summary.keyConstraints.length,
 			related:       summary.relatedEntities.length,
-		},
-		'summariseDoc: written',
-	);
+	}, 'summariseDoc: written']);
 	return { ok: true, summary };
 }
 

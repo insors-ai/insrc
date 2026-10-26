@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -224,10 +225,7 @@ export async function prepareDocConstraintEnumerate(
 	});
 
 	if (sections.length === 0) {
-		log.info(
-			{ runId: args.runId, subject, ctx: args.logContext },
-			'doc.constraint.enumerate: no matching sections',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, subject, ctx: args.logContext }, 'doc.constraint.enumerate: no matching sections']);
 		return {
 			kind: 'short-circuit',
 			shortCircuit: {
@@ -301,17 +299,14 @@ export function finalizeDocConstraintEnumerate(
 	const validIds = new Set(prepared.validEntityIds);
 	const filtered = raw.constraints.filter(c => validIds.has(c.sourceEntityId));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log).emit('info', () => [{
 			runId,
 			ctx:       logContext,
 			subject:   prepared.subject,
 			retrieved: prepared.retrievedSectionCount,
 			extracted: raw.constraints.length,
 			surviving: filtered.length,
-		},
-		'doc.constraint.enumerate: extraction complete',
-	);
+	}, 'doc.constraint.enumerate: extraction complete']);
 
 	return {
 		type:                  'doc.constraint.enumerate',

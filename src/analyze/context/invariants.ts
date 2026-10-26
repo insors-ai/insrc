@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -237,7 +238,7 @@ export async function ensureNonEmptyClosure(
 ): Promise<string | undefined> {
 	// Data-only scopes don't need a code graph.
 	if (scope.kind === 'connection') {
-		log.debug({ scope: scope.value }, 'ensureNonEmptyClosure: skipping connection-kind scope');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scope.value }, 'ensureNonEmptyClosure: skipping connection-kind scope']);
 		return undefined;
 	}
 
@@ -257,10 +258,7 @@ export async function ensureNonEmptyClosure(
 		// the invariant cannot evaluate its precondition. The driver
 		// proceeds; downstream tools that need graph data will either
 		// fall back or fail with their own errors.
-		log.debug(
-			{ scope: scopePath, err: (err as Error).message },
-			'ensureNonEmptyClosure: registry read failed; skipping invariant',
-		);
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, err: (err as Error).message }, 'ensureNonEmptyClosure: registry read failed; skipping invariant']);
 		return undefined;
 	}
 
@@ -270,10 +268,7 @@ export async function ensureNonEmptyClosure(
 	// state (there's no expected closure to compare against), so we
 	// skip silently and let the shaper fall back to filesystem tools.
 	if (repos.length === 0) {
-		log.debug(
-			{ scope: scopePath },
-			'ensureNonEmptyClosure: registry pristine; skipping invariant',
-		);
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath }, 'ensureNonEmptyClosure: registry pristine; skipping invariant']);
 		return undefined;
 	}
 
@@ -302,10 +297,7 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	log.debug(
-		{ scope: scopePath, repo: best.path, entityCount: entities.length },
-		'ensureNonEmptyClosure: closure non-empty',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, repo: best.path, entityCount: entities.length }, 'ensureNonEmptyClosure: closure non-empty']);
 	return best.path;
 }
 
@@ -337,11 +329,11 @@ export async function ensureRepoQueryable(
 	try {
 		repos = deps?.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
 	} catch (err) {
-		log.debug({ scope: scopePath, err: (err as Error).message }, 'ensureRepoQueryable: registry read failed; skipping the check');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, err: (err as Error).message }, 'ensureRepoQueryable: registry read failed; skipping the check']);
 		return;
 	}
 	if (repos.length === 0) {
-		log.debug({ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check']);
 		return;
 	}
 	const repo = longestPrefixRepo(scopePath, repos);

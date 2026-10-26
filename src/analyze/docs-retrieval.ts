@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from './connection-access.js';
 import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
 import { connectionExecutionErrorCode, ConnectionExecutionError } from '../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
@@ -189,10 +190,7 @@ export async function retrieveDocSections(
 		candidatesByRepo.push(...(area === undefined ? inRepo : inRepo.filter(e => inDocsArea(area, e.file))));
 	}
 	if (candidatesByRepo.length === 0) {
-		log.debug(
-			{ query: args.query, closureRepos: args.closureRepos, area: args.area },
-			'retrieveDocSections: no doc entities in closure',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ query: args.query, closureRepos: args.closureRepos, area: args.area }, 'retrieveDocSections: no doc entities in closure']);
 		return [];
 	}
 	const candidateById = new Map<string, Entity>();
@@ -207,10 +205,7 @@ export async function retrieveDocSections(
 		queryVec = await vectorPass.embedQuery(args.query, args.connectionExecution);
 	} catch (err) {
 		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
-		log.debug(
-			{ err: (err as Error).message },
-			'retrieveDocSections: query embed failed; vector pass skipped',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ err: (err as Error).message }, 'retrieveDocSections: query embed failed; vector pass skipped']);
 		queryVec = [];
 		if (args.report !== undefined) args.report.vectorPassSkipped = `the query could not be embedded (${(err as Error).message})`;
 	}
@@ -247,10 +242,7 @@ export async function retrieveDocSections(
 			}
 		} catch (err) {
 			const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
-			log.debug(
-				{ err: (err as Error).message },
-				'retrieveDocSections: vector ANN failed; falling back to keyword only',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ err: (err as Error).message }, 'retrieveDocSections: vector ANN failed; falling back to keyword only']);
 			if (args.report !== undefined) args.report.vectorPassSkipped = `the vector search failed (${(err as Error).message})`;
 		}
 	}

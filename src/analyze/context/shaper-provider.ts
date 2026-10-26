@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -228,7 +229,7 @@ export function familyProvider(
 	if (kind !== undefined) {
 		const effort = opts.effort !== undefined && model?.efforts.includes(opts.effort) === true ? opts.effort : undefined;
 		if (opts.effort !== undefined && effort === undefined) {
-			log.warn({ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort');
+			captureAnalysisDiagnostics(log).emit('warn', () => [{ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort']);
 		}
 		const inputBudgetChars = model?.inputLimit?.unit === 'chars' ? model.inputLimit.max : undefined;
 		return new CliProvider({
@@ -272,7 +273,7 @@ export function shaperSelection(cfg: AnalyzeConfig, overrides?: ShaperProviderOv
 	let model = registry.find(family, requested);
 	if (model === undefined && registry.cliKind(family) === undefined) {
 		model = registry.toolLoopModel();
-		if (requested !== '') log.warn({ family, requested, model: model.id }, 'shaper provider: the model is not a listed local model; running the tool-loop model');
+		if (requested !== '') captureAnalysisDiagnostics(log).emit('warn', () => [{ family, requested, model: model!.id }, 'shaper provider: the model is not a listed local model; running the tool-loop model']);
 	}
 	const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
 	const source = roleRunner !== undefined ? 'role' : globalExplicit !== undefined ? 'config' : 'client';
@@ -309,10 +310,7 @@ export function buildShaperProvider(
 	// per-run caller (arg or ambient client-provider context) > the default family.
 	// See resolveShaperKind and shaperSelection.
 	const { registry, family, model, effort, source } = shaperSelection(cfg, overrides);
-	log.info(
-		{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
-		'shaper provider: built from the model definitions',
-	);
+	captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs }, 'shaper provider: built from the model definitions']);
 	return familyProvider(registry, family, model, { effort, cliTimeoutMs: overrides?.cliTimeoutMs });
 }
 
@@ -340,9 +338,9 @@ export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperP
 	if (model === undefined) {
 		const cli = registry.cliKind(family) !== undefined;
 		model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
-		log.warn({ family, configured: cfg.summariserModel, model: model.id }, cli
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ family, configured: cfg.summariserModel, model: model!.id }, cli
 			? "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model"
-			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model');
+			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model']);
 	}
 	const effort = cfg.summariserEffort !== undefined && model.efforts.includes(cfg.summariserEffort) ? cfg.summariserEffort : undefined;
 	return { registry, family, model, effort };
@@ -351,6 +349,6 @@ export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperP
 export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>, execution?: ConnectionExecutionContext): LLMProvider {
 	assertConnectionProviderAdmission(execution);
 	const { registry, family, model, effort } = summariserSelection(cfg, overrides);
-	log.info({ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions']);
 	return familyProvider(registry, family, model, { effort });
 }

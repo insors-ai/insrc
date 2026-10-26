@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -95,10 +96,7 @@ export async function runDataModelTrace(
 	const targets = allTargets.slice(0, MAX_TARGETS);
 
 	if (targets.length === 0) {
-		log.info(
-			{ runId: ctx.runId, entityName: params.entityName },
-			'data-model.trace: no target resolved',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, entityName: params.entityName }, 'data-model.trace: no target resolved']);
 		return {
 			type:         'data-model.trace',
 			// The graph holds no class, interface or type of this name: empty, and complete.
@@ -175,15 +173,12 @@ export async function runDataModelTrace(
 		});
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:      ctx.runId,
 			entityName: params.entityName,
 			targets:    targets.length,
 			nodes:      nodes.length,
-		},
-		'data-model.trace: complete',
-	);
+	}, 'data-model.trace: complete']);
 
 	// One limit on the targets, and two applied to EACH target.
 	const limited: ReachedLimit[] = [];

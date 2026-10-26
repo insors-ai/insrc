@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from './connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -652,7 +653,7 @@ async function measureConnection(
 	const limitMs = sourceLimitMs(options);
 	const late = (what: string, err: unknown): void => {
 		if (session) return; // The owner-local quiet policy outlives the bounded waiter and authority.
-		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
+		captureAnalysisDiagnostics(log, options?.connectionExecution).emit('debug', () => [{ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`]);
 	};
 	let pending: PendingListing;
 	if (session) {

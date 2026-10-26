@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /**
  * Resolve a request's scope ONCE.
  *
@@ -186,7 +187,7 @@ async function containingRepoOrNull(path: string, deps: ScopeDeps): Promise<stri
 	try {
 		repos = await deps.listRepos();
 	} catch (err) {
-		log.debug({ path, err: (err as Error).message }, 'resolveScope: registry read failed; repo unknown');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'resolveScope: registry read failed; repo unknown']);
 		return null;
 	}
 	return longestPrefixRepo(path, repos)?.path ?? null;

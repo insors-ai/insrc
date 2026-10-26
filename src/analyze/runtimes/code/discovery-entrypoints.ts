@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -88,15 +89,12 @@ export const codeDiscoveryEntrypointsRuntime: TemplateRuntime = {
 			entityId:  e.id,
 		}));
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:           args.runId,
 				taskId:          args.task.taskId,
 				repoPath,
 				entrypointCount: entrypoints.length,
-			},
-			'code.discovery.entrypoints: enumerated entrypoints',
-		);
+		}, 'code.discovery.entrypoints: enumerated entrypoints']);
 
 		return {
 			outputs: new Map<string, unknown>([['entrypoints', entrypoints]]),

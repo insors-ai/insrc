@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -155,8 +156,7 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 			internalHelpers,
 		};
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:                args.runId,
 				taskId:               args.task.taskId,
 				moduleId,
@@ -164,9 +164,7 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 				exportCount:          exports.length,
 				internalHelperCount:  internalHelpers.length,
 				depth:                deep ? 'deep' : 'shallow',
-			},
-			'code.surface.functional: extracted surface',
-		);
+		}, 'code.surface.functional: extracted surface']);
 
 		return {
 			outputs: new Map<string, unknown>([['functional-surface', surface]]),

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -43,7 +44,7 @@ let LATCHED = false;
  */
 export function registerBuiltinRuntimes(): void {
 	if (LATCHED) {
-		log.debug('registerBuiltinRuntimes: already latched (no-op)');
+		captureAnalysisDiagnostics(log).emit('debug', () => ['registerBuiltinRuntimes: already latched (no-op)']);
 		return;
 	}
 	LATCHED = true;
@@ -63,9 +64,9 @@ export function registerBuiltinRuntimes(): void {
 			registerTemplateRuntime(rt, memoryReadOnly.has(rt) ? { sessionMemory: 'read-only' } : undefined);
 			total++;
 		}
-		log.debug({ family: fam.name, count: fam.runtimes.length }, 'family runtimes registered');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ family: fam.name, count: fam.runtimes.length }, 'family runtimes registered']);
 	}
-	log.info({ total }, 'analyze runtimes registered');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ total }, 'analyze runtimes registered']);
 }
 
 // ---------------------------------------------------------------------------

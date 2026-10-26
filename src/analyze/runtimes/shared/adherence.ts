@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 import { assertAnalysisConnectionExecution } from '../../connection-access.js';
 import { assertNoSessionEmbedding, admitConnectionProvider } from '../../../shared/connection-provider.js';
 import { ConnectionExecutionError, connectionExecutionErrorCode, runWithConnectionExecution } from '../../../shared/step-context.js';
@@ -262,10 +263,7 @@ async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMPro
 	assertAnalysisConnectionExecution(execution);
 
 	if (excerpts.length === 0) {
-		log.warn(
-			{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, subject },
-			`${templateId}: no ${subjectLabel.toLowerCase()} excerpts hydrated`,
-		);
+		captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit('warn', () => [{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, subject }, `${templateId}: no ${subjectLabel.toLowerCase()} excerpts hydrated`]);
 	}
 
 	// The excerpts are the check's sources. The lookup stops at maxExcerpts and
@@ -309,10 +307,7 @@ async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMPro
 		// do its work. It throws, and the walk records the task as failed. (It
 		// used to return every constraint as "missing implementation", which
 		// reads as a finding.)
-		log.warn(
-			{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, err: (err as Error).message },
-			`${templateId}: LLM call failed`,
-		);
+		captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit('warn', () => [{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, err: (err as Error).message }, `${templateId}: LLM call failed`]);
 		throw new Error(
 			`${templateId}: the model call that judges adherence failed: ${(err as Error).message}. ` +
 			`${constraints.length} constraint(s) and ${excerpts.length} excerpt(s) were gathered and not judged.`,
@@ -326,8 +321,7 @@ async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMPro
 	const missingImpl    = Array.isArray(raw['missingImpl'])    ? raw['missingImpl']    as unknown[] : [];
 	const contradictions = Array.isArray(raw['contradictions']) ? raw['contradictions'] as unknown[] : [];
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.executeArgs.connectionExecution).emit('info', () => [{
 			runId:          executeArgs.runId,
 			taskId:         executeArgs.task.taskId,
 			[subjectKey]:   subject,
@@ -336,9 +330,7 @@ async function runAdherenceWithContext(args: AdherenceRunArgs, admitted?: LLMPro
 			drifts:         drifts.length,
 			missingImpl:    missingImpl.length,
 			contradictions: contradictions.length,
-		},
-		`${templateId}: complete`,
-	);
+	}, `${templateId}: complete`]);
 
 	return {
 		subject,
@@ -576,14 +568,11 @@ async function hydrateFromConstraintIds(
 			heading:        c.docTitle,
 		});
 	}
-	savedLog.info(
-		{
+	captureAnalysisDiagnostics(savedLog).emit('info', () => [{
 			templateContext: 'runAdherenceCheck',
 			requestedIds:    ids.length,
 			hydrated:        out.length,
-		},
-		'runAdherenceCheck: hydrated constraints from constraintIds',
-	);
+	}, 'runAdherenceCheck: hydrated constraints from constraintIds']);
 	return out;
 }
 

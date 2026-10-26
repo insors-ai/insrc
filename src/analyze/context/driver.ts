@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -255,7 +256,7 @@ export function saveToolResults(
 		writeFileSync(path, JSON.stringify(toolResults, null, 2), 'utf8');
 		return { path, count: toolResults.length, chars: toolResults.reduce((n, r) => n + r.content.length, 0) };
 	} catch (err) {
-		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'tool-loop results could not be written to a file; they stay in the failure');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ dir, err: err instanceof Error ? err.message : String(err) }, 'tool-loop results could not be written to a file; they stay in the failure']);
 		return undefined;
 	}
 }
@@ -460,10 +461,7 @@ async function prepareShaperCache(args: ShaperEntryArgs, execution?: import('../
 			: undefined;
 		const served = await servedFromCache(cached, scopeCheck, lastIndexedOf);
 		if (served) {
-			log.debug(
-				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
-				'shaper cache hit',
-			);
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) }, 'shaper cache hit']);
 			return { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle: withCurrentHint(cached, inputs) };
 		}
 		invalidateBundle(runId, cacheKey, execution);
@@ -549,16 +547,13 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		await assertSessionReuse(execution);
 		assertSessionReuseNow(execution);
 		if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, pipelineBundle.bundle, execution);
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId,
 				mode:              invocationMode,
 				shaperId,
 				pipeline:          'exploration',
 				explorationCount:  pipelineBundle.explorationCount,
-			},
-			'shaper invocation complete (exploration pipeline)',
-		);
+		}, 'shaper invocation complete (exploration pipeline)']);
 		return pipelineBundle.bundle;
 	}
 
@@ -627,10 +622,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	await assertSessionReuse(execution);
 	assertSessionReuseNow(execution);
 	if (execution.mode !== 'session-memory') writeBundle(runId, cacheKey, bundle, execution);
-	log.info(
-		{ runId, mode: invocationMode, shaperId, toolCalls: toolCallCount },
-		'shaper invocation complete',
-	);
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId, mode: invocationMode, shaperId, toolCalls: toolCallCount }, 'shaper invocation complete']);
 	return bundle;
 }
 
@@ -1170,7 +1162,7 @@ export function localToolLoopModel(cfg: AnalyzeConfig, registry: ModelRegistry =
 	chosen ??= registry.find(registry.toolLoopModel().family, coreModel);
 	if (chosen === undefined) {
 		chosen = registry.toolLoopModel();
-		if (coreModel !== '') log.warn({ requested: coreModel, model: chosen.id }, `models.local.coreModel '${coreModel}' is not a listed Ollama model; the tool loop runs ${chosen.id}`);
+		if (coreModel !== '') captureAnalysisDiagnostics(log).emit('warn', () => [{ requested: coreModel, model: chosen!.id }, `models.local.coreModel '${coreModel}' is not a listed Ollama model; the tool loop runs ${chosen!.id}`]);
 	}
 	return { model: chosen.id, numCtx: chosen.inputLimit?.max ?? 0 };
 }
@@ -1269,10 +1261,7 @@ export async function resolveRepoLastIndexedAt(scopePath: string): Promise<numbe
 	try {
 		repos = await listRepos(null);
 	} catch (err) {
-		log.debug(
-			{ scopePath, err: (err as Error).message },
-			'resolveRepoLastIndexedAt: registry read failed; skipping freshness check',
-		);
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scopePath, err: (err as Error).message }, 'resolveRepoLastIndexedAt: registry read failed; skipping freshness check']);
 		return undefined;
 	}
 
@@ -1506,10 +1495,7 @@ async function tryExplorationPipeline(
 		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint, { connectionExecution: execution, signal: execution.lifetime.signal });
 	assertAnalysisConnectionExecution(execution);
 	const intent: ClassifiedIntent = { ...unsized, scope: area.size };
-	log.info(
-		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note, reused },
-		reused ? "exploration pipeline: the caller's measure of the named area was used" : 'exploration pipeline: the named area was measured',
-	);
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note, reused }, reused ? "exploration pipeline: the caller's measure of the named area was used" : 'exploration pipeline: the named area was measured']);
 
 	// (a) Decompose. LLM unavailable / prompt missing -> fall through
 	// (there is no LLM to run anyway). Schema-unrecoverable OR an
@@ -1526,23 +1512,14 @@ async function tryExplorationPipeline(
 		assertAnalysisConnectionExecution(execution);
 		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof DecomposerLlmUnavailableError) {
-			log.info(
-				{ runId: args.runId, err: err.message },
-				'exploration pipeline: the planning call failed',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, err: err.message }, 'exploration pipeline: the planning call failed']);
 			return didNotProceed('planner-model-failed', err.detail);
 		}
 		if (err instanceof DecomposerPromptMissingError) {
-			log.info(
-				{ runId: args.runId, err: err.message },
-				'exploration pipeline: the planning prompt is missing',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, err: err.message }, 'exploration pipeline: the planning prompt is missing']);
 			return didNotProceed('planner-prompt-missing', err.message, { promptPath: err.path });
 		}
-		log.warn(
-			{ runId: args.runId, err: (err as Error).message },
-			'exploration pipeline: decomposer failed; using freeform.probe fallback',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, err: (err as Error).message }, 'exploration pipeline: decomposer failed; using freeform.probe fallback']);
 		plan = steps.fallbackFreeformPlan(intent, args.shaperId);
 		usedFallback = true;
 	}
@@ -1569,15 +1546,12 @@ async function tryExplorationPipeline(
 	const hasExplorations = plan.explorations.length > 0;
 	const hasFreeformProbe = plan.explorations.some(e => e.type === 'freeform.probe');
 	if ((!isRecipedAnswer && !hasFreeformProbe) || !hasExplorations) {
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:            args.runId,
 				shaperId:         args.shaperId,
 				answerType:       plan.answerType,
 				explorationCount: plan.explorations.length,
-			},
-			'exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback',
-		);
+		}, 'exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback']);
 		plan = steps.fallbackFreeformPlan(intent, args.shaperId);
 		usedFallback = true;
 	}
@@ -1643,15 +1617,12 @@ async function tryExplorationPipeline(
 	// stamp reflects the real work done.
 	const freeformOnly = extractSoleFreeformResult(executed);
 	if (freeformOnly !== null) {
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:         args.runId,
 				shaperId:      args.shaperId,
 				usedFallback,
 				toolCallCount: freeformOnly.toolCallCount,
-			},
-			'exploration pipeline: freeform.probe short-circuit',
-		);
+		}, 'exploration pipeline: freeform.probe short-circuit']);
 		return {
 			kind:             'bundle',
 			raw:              freeformOnly.rawBundle,
@@ -1703,24 +1674,18 @@ async function tryExplorationPipeline(
 		assertAnalysisConnectionExecution(execution);
 		if (err instanceof ConnectionExecutionError) throw err;
 		if (err instanceof SynthesizerLlmUnavailableError) {
-			log.info(
-				{ runId: args.runId, err: err.message },
-				'exploration pipeline: the answer-writing call failed',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, err: err.message }, 'exploration pipeline: the answer-writing call failed']);
 			return didNotProceed('answer-model-failed', err.detail, { found });
 		}
 		if (err instanceof SynthesizerPromptMissingError) {
-			log.info(
-				{ runId: args.runId, err: err.message },
-				'exploration pipeline: the answer-writing prompt is missing',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, err: err.message }, 'exploration pipeline: the answer-writing prompt is missing']);
 			return didNotProceed('answer-prompt-missing', err.message, { promptPath: err.path, found });
 		}
 		// Anything else the answer-writing step raises (for example its
 		// output never took the required shape) is its own cause -- not
 		// a failed model call.
 		const message = err instanceof Error ? err.message : String(err);
-		log.warn({ runId: args.runId, err: message }, 'exploration pipeline: the answer-writing step failed');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, err: message }, 'exploration pipeline: the answer-writing step failed']);
 		return didNotProceed('answer-invalid', message, { found });
 	}
 }

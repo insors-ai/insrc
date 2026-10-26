@@ -1,0 +1,44 @@
+TAP version 13
+# Subtest: a data task with a connection scope works on that connection only
+ok 1 - a data task with a connection scope works on that connection only
+# Subtest: a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)
+ok 2 - a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)
+# Subtest: the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code
+ok 3 - the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code
+# Subtest: requireStringParam: present non-empty -> returns; missing -> throws INV-5
+ok 4 - requireStringParam: present non-empty -> returns; missing -> throws INV-5
+# Subtest: requireStringParam: empty string -> throws (empty != non-empty)
+ok 5 - requireStringParam: empty string -> throws (empty != non-empty)
+# Subtest: optionalStringParam: present -> value; missing -> undefined; empty -> throws
+ok 6 - optionalStringParam: present -> value; missing -> undefined; empty -> throws
+# Subtest: registerBuiltinRuntimes registers all 4 data runtimes
+ok 7 - registerBuiltinRuntimes registers all 4 data runtimes
+# Subtest: runtime templateIds match expected ids
+ok 8 - runtime templateIds match expected ids
+# Subtest: DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 9 - DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+# Subtest: discovery.connections: lists the registered sqlite connection (no secret leak)
+ok 10 - discovery.connections: lists the registered sqlite connection (no secret leak)
+# Subtest: discovery.objects: lists rdbms tables for the sqlite connection
+ok 11 - discovery.objects: lists rdbms tables for the sqlite connection
+# Subtest: discovery.objects: kind filter narrows the result
+ok 12 - discovery.objects: kind filter narrows the result
+# Subtest: discovery.objects: unknown connectionId -> throws (no such connection)
+ok 13 - discovery.objects: unknown connectionId -> throws (no such connection)
+# Subtest: discovery.objects: missing connectionId param -> INV-5 message
+ok 14 - discovery.objects: missing connectionId param -> INV-5 message
+# Subtest: schema.table: describes the users table -- columns + types + nullability
+ok 15 - schema.table: describes the users table -- columns + types + nullability
+# Subtest: schema.table: describes orders table -- FK to users surfaces
+ok 16 - schema.table: describes orders table -- FK to users surfaces
+# Subtest: schema.table: missing table param -> INV-5 message
+ok 17 - schema.table: missing table param -> INV-5 message
+# Subtest: schema.table: nonexistent table -> driver error propagates
+ok 18 - schema.table: nonexistent table -> driver error propagates
+# tests 18
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 587.599416

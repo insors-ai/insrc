@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -103,10 +104,7 @@ export async function runClassHierarchy(
 	targets = targets.filter(e => ctx.ignoreFilter.isIncluded(e.file));
 
 	if (targets.length === 0) {
-		log.info(
-			{ runId: ctx.runId, subject },
-			'class.hierarchy: no target resolved',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, subject }, 'class.hierarchy: no target resolved']);
 		return {
 			type:         'class.hierarchy',
 			// The graph holds no class or interface of this name: empty, and complete.
@@ -172,15 +170,12 @@ export async function runClassHierarchy(
 		});
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:   ctx.runId,
 			subject,
 			targets: targets.length,
 			nodes:   nodes.length,
-		},
-		'class.hierarchy: complete',
-	);
+	}, 'class.hierarchy: complete']);
 
 	return {
 		type:         'class.hierarchy',

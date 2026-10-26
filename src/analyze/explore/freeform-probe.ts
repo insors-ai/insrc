@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -178,10 +179,7 @@ export async function runFreeformProbe(
 			// The search did not finish. That is a lookup that could not run, not
 			// one that found nothing: it fails, and what its tool calls had
 			// returned goes with the failure.
-			log.warn(
-				{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId, toolResults: err.toolResults.length },
-				'freeform.probe: tool-loop exhausted',
-			);
+			captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('warn', () => [{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId, toolResults: err.toolResults.length }, 'freeform.probe: tool-loop exhausted']);
 			throw new LookupFailedError(
 				`freeform.probe: the search did not finish: ${err.message}. ` +
 				'Refine the request or ask for a specific lookup.',
@@ -195,15 +193,12 @@ export async function runFreeformProbe(
 	}
 
 	assertAnalysisConnectionExecution(connectionExecution);
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:         ctx.runId,
 			purpose:       params.purpose,
 			shaperId:      params.shaperId,
 			toolCallCount,
-		},
-		'freeform.probe: complete',
-	);
+	}, 'freeform.probe: complete']);
 
 	return {
 		type:      'freeform.probe',

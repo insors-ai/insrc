@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -59,10 +60,7 @@ export async function runDbConnectionsList(
 		};
 	});
 
-	log.info(
-		{ runId: ctx.runId, repoPath: ctx.repoPath, count: connections.length },
-		'db.connections.list: complete',
-	);
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, repoPath: ctx.repoPath, count: connections.length }, 'db.connections.list: complete']);
 
 	return {
 		type:        'db.connections.list',

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -114,7 +115,7 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 			try {
 				doc = load(await readFile(f.absPath, 'utf8'));
 			} catch (err) {
-				log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.helm: Chart.yaml parse failed -- skipping');
+				captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ file: f.relPath, err: (err as Error).message }, 'inventory.helm: Chart.yaml parse failed -- skipping']);
 				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
@@ -143,10 +144,7 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 		charts.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
 		const inventory = { charts };
-		log.info(
-			{ runId: args.runId, taskId: args.task.taskId, repoPath, chartCount: charts.length, truncated },
-			'infra.inventory.helm: enumerated',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath, chartCount: charts.length, truncated }, 'infra.inventory.helm: enumerated']);
 		return {
 			outputs: new Map<string, unknown>([['helm-inventory', inventory]]),
 			completeness: fileWalkCompleteness(charts.length, truncated, { skipped }),

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -143,10 +144,7 @@ export async function runModuleProfile(
 
 	if (stat.isFile()) {
 		const profile = await profileFile(path, entities, measurer, partlyRead);
-		log.info(
-			{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount },
-			'module.profile: file profiled',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount }, 'module.profile: file profiled']);
 		return {
 			type: 'module.profile',
 			completeness: buildCompleteness({ returned: 1, partlyRead, basis: 'filesystem', basisNote: ENTRYPOINT_RULE }),
@@ -156,8 +154,7 @@ export async function runModuleProfile(
 
 	const skipped: SkippedItem[] = [];
 	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead, skipped);
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:       ctx.runId,
 			path,
 			kind:        'dir',
@@ -166,9 +163,7 @@ export async function runModuleProfile(
 			exports:     profile.exports.length,
 			entrypoints: profile.entrypoints.length,
 			entityCount: profile.entityCount,
-		},
-		'module.profile: dir profiled',
-	);
+	}, 'module.profile: dir profiled']);
 	return {
 		type: 'module.profile',
 		// Every immediate child of the directory is listed; nothing is cut by count.

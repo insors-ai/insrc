@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -97,7 +98,7 @@ export interface RepoIgnoreFilter {
 export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
 	const absRepo = resolve(repoPath);
 	if (!existsSync(join(absRepo, '.git'))) {
-		log.debug({ repo: absRepo }, 'not a git repo; using permissive filter');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ repo: absRepo }, 'not a git repo; using permissive filter']);
 		return permissiveFilter(absRepo);
 	}
 
@@ -115,10 +116,7 @@ export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
 		);
 		files = stdout.split('\0').filter(Boolean);
 	} catch (err) {
-		log.warn(
-			{ repo: absRepo, err: String(err) },
-			'git ls-files failed; degrading to permissive filter',
-		);
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ repo: absRepo, err: String(err) }, 'git ls-files failed; degrading to permissive filter']);
 		return permissiveFilter(absRepo);
 	}
 
@@ -141,10 +139,7 @@ export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
 		}
 	}
 
-	log.debug(
-		{ repo: absRepo, files: trackedFiles.size, dirs: trackedDirs.size },
-		'repo ignore filter ready',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ repo: absRepo, files: trackedFiles.size, dirs: trackedDirs.size }, 'repo ignore filter ready']);
 
 	return {
 		repoPath:  absRepo,

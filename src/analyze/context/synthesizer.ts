@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -153,8 +154,7 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 		throw errClass;
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:            args.runId,
 			target:           args.target,
 			explorationCount: args.executed.results.length,
@@ -162,9 +162,7 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 			structureLen:     raw.structure?.length ?? 0,
 			surfaceLen:       raw.surface?.length ?? 0,
 			artefactsLen:     raw.artefacts?.length ?? 0,
-		},
-		'synthesizer: bundle emitted',
-	);
+	}, 'synthesizer: bundle emitted']);
 
 	return raw;
 }

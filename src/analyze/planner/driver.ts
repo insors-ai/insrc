@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -307,17 +308,14 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		if (failure === null) {
 			// Promote the accepted attempt to the final slot.
 			if (execution?.mode !== 'session-memory') writePlanFinal(persistArgs, stamped, execution);
-			log.info(
-				{
+			captureAnalysisDiagnostics(log).emit('info', () => [{
 					runId:       opts.runId,
 					target:      stamped.target,
 					scope:       stamped.scope,
 					taskCount:   stamped.tasks.length,
 					attempt:     attempt + 1,
 					isChildPlan: parentTaskPath !== undefined,
-				},
-				'Plan Builder accepted',
-			);
+			}, 'Plan Builder accepted']);
 			return rememberSessionContinuation(stamped, execution);
 		}
 
@@ -337,17 +335,14 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		// so the audit trail has both halves of the round-trip.
 		if (execution?.mode !== 'session-memory') writeFeedback(persistArgs, attempt + 1, failure, execution);
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log).emit('info', () => [{
 				runId:       opts.runId,
 				attempt:     attempt + 1,
 				invariantId: failure.invariantId,
 				message:     failure.message,
 				repeatOfPrevious: priorFailures.length > 0 &&
 					priorFailures[priorFailures.length - 1]!.invariantId === failure.invariantId,
-			},
-			'Plan Builder validation failure -- corrective retry',
-		);
+		}, 'Plan Builder validation failure -- corrective retry']);
 
 		// Echoed in wire form, so the retry's example matches what the model must emit.
 		messages = appendCorrectionTurn(messages, encodePlanParams(stamped, wire), failure, priorFailures);

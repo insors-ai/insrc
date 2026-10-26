@@ -214,3 +214,28 @@ test('record and scope binding validation reject unrelated epic and standalone-s
     assert.ok(result.quality.includes('conflict')); assert.deepEqual(result.effectiveOwners, []);
   }
 });
+
+test('cross-call model slices reject mixed qualification and conflicting models while labeling requested-only totals', async () => {
+  const reducer = new DefaultUsageReducer();
+  const pair = (id: string, actual: string | null, requested = 'requested'): LedgerRecord[] => [
+    signed({ ...start(), eventId: `${id}-start`, callId: id, context: { ...start().context, reportedModel: actual, requestedModel: requested } }),
+    signed({ ...finish(), eventId: `${id}-end`, callId: id, observation: { ...finish().observation, reportedModel: actual } }),
+  ];
+  for (const rows of [
+    [...pair('a', null), ...pair('b', 'model-b')],
+    [...pair('a', 'model-a'), ...pair('b', 'model-b')],
+    [...pair('a', null), ...pair('b', null, 'different-requested')],
+  ]) {
+    const result = await reducer.reduce(stream(rows), scoped(rows));
+    assert.equal(result.knownTokens, '0'); assert.ok(result.quality.includes('conflict'));
+    assert.ok(result.notices.includes('model-slice-conflict:/'));
+    assert.equal(requireEffectiveOwners(result).length, 2);
+    assert.ok(requireEffectiveOwners(result).every(owner => owner.state === 'conflict' && owner.artifactId === null));
+    assert.deepEqual(await reducer.reduce(stream([...rows].reverse()), scoped(rows)), result);
+  }
+  for (const actual of [null, 'model-a']) {
+    const rows = [...pair('a', actual), ...pair('b', actual)], result = await reducer.reduce(stream(rows), scoped(rows));
+    assert.equal(result.knownTokens, '6');
+    assert.equal(result.notices.includes('model-requested-only:slice'), actual === null);
+  }
+});

@@ -190,6 +190,21 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   for (const callId of resolved.blockedCalls) badCalls.add(callId);
   for (const notice of resolved.notices) notices.add(notice);
   for (const flag of resolved.quality) quality.add(flag);
+  // A model slice is one qualification level across every selected call.
+  // Unknown actual identity must not inherit another call's confirmed model.
+  const selectedStarts = [...resolved.heads.values()].map(head => ({ head, start: starts.get(head.callId)! }));
+  const actualModels = new Set<string>(), requestedModels = new Set<string>();
+  let unknownActual = false;
+  for (const { head, start } of selectedStarts) {
+    requestedModels.add(start.context.requestedModel);
+    const actual = start.context.reportedModel ?? head.observation.reportedModel;
+    if (actual === null) unknownActual = true;
+    for (const model of [start.context.reportedModel, head.observation.reportedModel]) if (model !== null) actualModels.add(model);
+  }
+  if (actualModels.size > 1 || (unknownActual && actualModels.size > 0) || requestedModels.size > 1) {
+    for (const { head } of selectedStarts) badCalls.add(head.callId);
+    notices.add('model-slice-conflict:/'); quality.add('conflict'); quality.add('unavailable');
+  } else if (unknownActual) notices.add(`model-requested-only:${scope.group.modelSliceId}`);
   let known = 0n, estimated = 0n;
   const basis: string[] = [];
   const owners: EffectiveOwner[] = [];

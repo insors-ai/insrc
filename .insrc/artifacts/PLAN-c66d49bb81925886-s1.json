@@ -1,0 +1,546 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793017860651-2meqya",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:40:09.179Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 546338,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "epicSlug": "retain-durable-artifact-token-usage",
+    "storyId": "s1",
+    "lldRunId": "wf-1793015298554-i9ai1b",
+    "lldEffectiveHash": "eaf9512e20671aafb347befad4d5530b4b8c755dad32fa7859c2c69d3aa96867",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "1aa1b680645cbe65bf699da7d5c5ff51ce8db5412247be4d0515f58ef9fb0546",
+        "at": "2026-10-26T14:18:49.935Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T14:52:34.084Z"
+      }
+    },
+    "rangeBase": "8f6fb868f7930cd1b794a41d57017e197b4aa64c"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the first story's pure usage-accounting foundation in dependency order: typed facts and schemas, safe source identity and attribution validation, bounded deterministic reduction, then effective ownership and qualified source evidence. Finish by composing the public contracts and proving that packaged schemas and all six acceptance criteria work without provider capture, filesystem ledgers or daemon reporting."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define immutable usage and attribution types",
+        "summary": "Add proposed src/workflow/usage/types.ts with HLD-compatible sc1/sc2 interfaces, closed v1 payload variants, normalized counters/quality, closure/capability evidence and AMD-1 effectiveOwners types. Export types only initially; preserve existing provider, identity and content contracts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All usage/control discriminators and required/null payload combinations are represented without provider SDK types or mutable history.",
+          "UsageBinding, attribution input and EffectiveAccounting retain approved signatures; effectiveOwners is optional for compatibility but fully typed, including unresolved states and immutable capture provenance.",
+          "Safe-counter/sequence, ID, group and resource-limit constants are explicit. Existing ArtifactIds behavior is consumed unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: compiler-backed valid/invalid v1 discriminator fixtures and HLD sc1/sc2 plus AMD-1 type compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add versioned logical and Avro schemas",
+        "summary": "Add proposed src/workflow/usage/ledger-record.v1.schema.json, src/workflow/usage/ledger-record.v1.avsc.json and src/workflow/usage/schemas.ts. Statically import JSON with ESM attributes, define typed nullable context/observation/control records and validate in-memory record encoding only.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Logical schema rejects unknown fields/kinds, illegal payload combinations, unsafe counts and invalid null/default shapes.",
+          "Avro record fixtures round-trip exact safe counters, nullable model/counter fields and both transfer modes without opaque transcript blobs.",
+          "Production imports cause schema JSON emission under NodeNext/resolveJsonModule; no source-tree fs lookup, Avro file/header writer or copy-assets assumption is introduced."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: closed logical schema and in-memory typed Avro round-trips, null defaults, exact counters and illegal payload cases"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement bounded canonical source identity",
+        "summary": "Implement proposed src/workflow/usage/canonical.ts for strict safe-data traversal, canonical source bytes and the usage-specific digest. Ignore only service-assigned sequence/recordedAt/digest; keep capture owner and all typed source payload in identity.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Reordered object keys produce equal identity; changed source payload/owner is different; changing only service metadata does not create another source event.",
+          "Object inputs use one central usage-domain safe snapshot/serialization boundary; getters/toJSON/custom prototypes/cycles/sparse arrays/symbols/undefined/invalid Unicode and unsafe values are rejected without invoking hooks. Traversal, retained bookkeeping and output are bounded; initial JavaScript own-key enumeration allocation is excluded. Oversized arrays are rejected before key enumeration.",
+          "16 KiB/depth/node limits and the exact domain-separated SHA-256 format are enforced; existing lifecycle/design-corpus canonicalizers remain unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/identity.test.ts: source equality versus server metadata, owner/payload conflicts, canonical key order and unsafe getter/prototype/cycle/Unicode/limit inputs"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Validate record, scope and capability boundaries",
+        "summary": "Implement proposed src/workflow/usage/validation.ts and pure capability-declaration validation in src/workflow/usage/capabilities.ts. Combine safe-data guards, closed schemas, digest checks, counter quality and typed closure evidence, with stable notice/error codes.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Malformed/version-unknown inputs yield explicit notices rather than silent zero; no getter/prototype side effects reach schema evaluation.",
+          "Reported, estimated, unavailable and pending constraints, disjoint counters, reasoning subset and safe integer limits match approved rules.",
+          "Closed scope evidence validates expected IDs/count/set digest, reference-only roles, capability evidence and binding versions; a completeness boolean alone is insufficient.",
+          "Capability claims without version/source evidence remain unqualified; structural validation does not claim root ownership, authorization or native physical-call completeness."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/validation.test.ts: closed shape/version/digest/counter/quality rules and scope evidence refusals"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: malformed/unqualified declarations cannot claim native completeness"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement charged-subject attribution policy",
+        "summary": "Implement proposed src/workflow/usage/attribution.ts with the mandatory normalized activity table and supplied binding consistency checks. Consume ArtifactIds syntax/kinds without resolving actual repository roots or instrumenting dispatch.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "DEF/HLD/LLD/PLAN/TASK/BUILD/ISSUE/SPEC and nested context positive cases charge the exact approved subject.",
+          "Design reviews require the reviewed LLD; task work/validation requires its TASK; shared validation/code review requires story BUILD. CR/TASKS/summary references never add charges.",
+          "Wrong kind/hash/story/task/subject, missing parent context and unsupported activities produce explicit notices without root fallback, registry changes or provider calls."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/attribution.test.ts: full positive/negative charged-subject table, context inheritance and non-additive reference cases"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Build bounded group reduction and exact totals",
+        "summary": "Implement the core of proposed src/workflow/usage/reducer.ts: bounded collection, event/call identity consistency, closure checks, deterministic notice ordering and exact reported/estimated metric partitions. Keep incomplete behavior internal until final composition; do not publish a stubbed reducer API.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Validate at most 1024 records/8 MiB per group and compare unique input IDs/count/digest to the expected descriptor; duplicate delivery is non-additive.",
+          "Exact bigint accumulation returns decimal strings, including safe-input sums beyond Number.MAX_SAFE_INTEGER; reasoning is never added twice.",
+          "Known zero, partial counters, pending/interrupted/unavailable/legacy/missing and failed calls with reported consumption remain distinct.",
+          "Iterator failure/cancellation or resource overflow rejects with no successful partial total; frozen input remains unchanged.",
+          "Count every received row and canonical byte against the processing budget, including identical replay floods; separately compare unique IDs/count/digest for closure."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: bounded unique/input accounting, exact bigint metrics and known/estimated/pending/unavailable partitions"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/usage/__tests__/domain-contract.test.ts: truncated closure, iterator failure/cancellation, duplicate flood and no successful resource-truncated total"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Resolve correction and aggregate observation bases",
+        "summary": "Extend private reducer graph/basis logic for terminal/correction heads and explicit aggregate/leaf reconciliation. Preserve originals, validate current candidate sets and surface missing/forked/cyclic/conflicting references.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Out-of-order complete closure is permutation-invariant; missing starts/predecessors, multiple unlinked finishes, correction forks/cycles and cross-group references cannot select a speculative winner.",
+          "A full replacement correction contributes once; selected/excluded observation heads are unique/disjoint and account for the current candidate set.",
+          "Aggregate fallback and qualified complete-leaf decomposition never overlap; partial leaves cannot manufacture residuals or a physical-call count.",
+          "New candidates or stale corrected heads invalidate an old reconciliation until an explicit successor covers them."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/reconciliation.test.ts: replacement corrections, forks/cycles/missing refs, aggregate fallback/decomposition and stale/new candidate invalidation"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: shuffled complete groups and repeated delivery retain deterministic basis/totals"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Validate cumulative baseline intervals",
+        "summary": "Extend reducer basis logic for qualified cumulative evidence: select one endpoint/baseline interval, allow explicitly reference-only prior-invocation baselines and prevent overlapping deltas from being added.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Baseline, intermediate frames and reference-only records do not add consumption; two endpoints sharing a baseline are overlapping candidates, not two charges.",
+          "Same-session/model-slice monotone fixtures produce exact disjoint counter deltas only for the selected validated interval.",
+          "Missing/reset/different-session/model or unknown bucket baselines yield explicit unknown/partial outcomes; no timestamp winner or cross-session subtraction.",
+          "Cross-invocation baselines are accepted only under declared reference-only closure and qualified native session/model evidence."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: cumulative selected interval, reference-only cross-invocation baseline, common-baseline overlap, resets and model/session mismatches"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Expose effective ownership and transfer state",
+        "summary": "Implement pure owner-version evaluation and the approved AMD-1 effectiveOwners result in the reducer. Separate same-root single commitments from cross-root prepared/accepted/committed reference chains; perform no transfer IO.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A valid same-root transfer.committed with null phase refs changes the effective artifact once; a cross-root commit requires its matching phase/closure evidence.",
+          "Pending transfer retains the current committed owner; conflicting versions, cycles/forks or missing ownership proof produce explicit unresolved mappings, not destination charges.",
+          "Every new result contains typed effectiveOwners tying call/basis to effective root/artifact/version, capture owner and provenance. Grouping consumers cannot fall back to capture IDs when mapping is absent.",
+          "Replay is idempotent; no counters or original observations are copied/mutated. No root resolver, writer, lock or coordinator is introduced."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/transfer-state.test.ts: same-root single commitment, cross-root phase closure, pending/conflicting owner versions and typed effectiveOwners provenance/replay"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Qualify source capability evidence and fixtures",
+        "summary": "Complete the source-capability survey and proposed src/workflow/usage/__tests__/fixtures/source-capabilities.v1.json using exact inspected source revisions/tool versions and sanitized contract envelopes. Extend capability validation fixtures without adding native adapters or live capture.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Survey records evidence/version, granularity, physical-call coverage, input/cache/reasoning conventions and qualification status for every entry.",
+          "Ollama final/missing-counter/warm-up source cases preserve absent metrics; CLI/native leaf visibility is marked unknown unless qualified evidence proves it.",
+          "Invocation aggregates, cumulative snapshots and synthetic external-host declarations cannot be relabeled complete physical calls; estimates cannot replace missing reported counters.",
+          "No transcripts/credentials or historical backfill are retained; no provider, controller-host or daemon telemetry implementation is added."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: version/source-evidence survey, Ollama absent counters, CLI aggregate/cumulative/unknown leaf and explicitly synthetic external-host cases"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Compose public contracts and verify packaged handoff",
+        "summary": "Publish complete runtime implementations and schema/type exports from proposed src/workflow/usage/index.ts, then run the public domain-contract fixtures and compiled-output schema smoke checks. Validate the additive migration and sc1/sc2 handoff to later stories.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "UsageReducer.validate/reduce and UsageAttributionPolicy.validate match approved HLD/LLD signatures and all six acceptance criteria pass through the public domain surface.",
+          "No placeholder implementations, hidden filesystem/provider/DB side effects or sibling service activation remain; immutable source facts and typed effective ownership agree across replay/permutation fixtures.",
+          "In a private /tmp fixture containing copied compiled usage/identity modules, package metadata and dependency access but no source tree, production exports load both schemas under the supported Node runtime. Do not move/delete workspace src; schema digests and record round-trips match source fixtures.",
+          "Run npm run build, npx tsx --test 'src/workflow/usage/__tests__/*.test.ts' and npx tsx --test src/workflow/__tests__/artifact-ids.test.ts. Report unrelated baseline failures without scope expansion; document no data rewrite and optional-owner compatibility."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/usage/__tests__/domain-contract.test.ts: complete public domain surface, ownership/basis consistency, replay/permutation and no sibling side effects"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: isolated /tmp compiled-output imports with no source tree and matching schema digests"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/artifact-ids.test.ts: existing canonical identity regression suite"
+          },
+          {
+            "level": "integration",
+            "name": "npm run build and the focused src/workflow/usage/__tests__/*.test.ts suite pass or unrelated baseline blockers are explicitly identified"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "LedgerRecord local shape and payload digests",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Exact counters/quality bounds",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Canonical payload equivalence and safe data traversal",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "UsageAttributionPolicy activity/subject rules",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "UsageReducer bounded group reduction",
+        "coveredByTaskIds": [
+          "t6",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Correction/reconciliation reference graphs",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cumulative interval basis and model/session baselines",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Transfer reference-state evaluation",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Versioned JSON schema and Avro record type catalog",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "HLD-compatible public interfaces and unknown-version outcomes",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "SourceCapability evidence declarations",
+        "coveredByTaskIds": [
+          "t4",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Validating and reducing shuffled/replayed golden groups",
+        "coveredByTaskIds": [
+          "t7",
+          "t9",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Complete versus truncated closure descriptors",
+        "coveredByTaskIds": [
+          "t6",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Iterator error/cancellation and resource-bound outcomes",
+        "coveredByTaskIds": [
+          "t6",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Input immutability and absence of sibling side effects",
+        "coveredByTaskIds": [
+          "t3",
+          "t6",
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md#5-interaction-with-shared-contracts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:116"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:148"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:156"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:175"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md#6-error-paths"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:197"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/LLD.md:185"
+    }
+  ]
+}

@@ -499,6 +499,8 @@ A TUI adapter turns ModelDefinitionsResult back into a ModelDefinitionsFile + ap
 
 - `qbd2a4e65` — Checklist ep3 (partial): the k5 invariant (an unknown model is saved only after approval) is a DEF constraint carried by the HLD (c1); its code evidence is the s4 check result shape (src/daemon/model-check.ts), not an s1 analyze bundle.
   - **resolved**: Correct the LLD evidence mapping — User choice: trace k5 from the DEF through HLD c1 to the s4 check result shape (src/daemon/model-check.ts); s5's tests cover approve → restart → save. _(2026-10-26T12:32:39.470Z)_
+- `qda996789` — sc5 (owner s3): config.write still accepts models.byRepo.<repo>.tiers (and partial tier fields) from any client; only the next boot's reconcile prunes per-repo tiers. The TUI no longer sends either (the command bar refuses model keys); should config.write refuse them so VS Code (s6), JetBrains (s7) and hand-written requests are held to k6 too?
+  - **resolved**: Reject at config.write — User choice: config.write refuses writes that would leave models.byRepo.<repo>.tiers (or fields under it), naming the keys; built inside s5 as a small daemon change with tests. _(2026-10-26T12:38:09.353Z)_
 
 ## Citations
 

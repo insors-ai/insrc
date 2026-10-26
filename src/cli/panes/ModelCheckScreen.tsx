@@ -149,6 +149,9 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 		if (step.kind === 'approved' && input === 'R' && step.problem !== 'restarting…') { restartThenSave(step.efforts); return; }
 		if (step.kind !== 'result') return;
 		const { result } = step;
+		if (input === 'x') { decide('reject', result); return; }
+		// A model that does not run can only be rejected (or left): no levels to pick, nothing to approve.
+		if (!result.runs) return;
 		if (key.upArrow || input === 'k') { setCursor(c => Math.max(0, c - 1)); return; }
 		if (key.downArrow || input === 'j') { setCursor(c => Math.min(result.efforts.length - 1, c + 1)); return; }
 		if (input === ' ') {
@@ -157,8 +160,7 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 			setAllowed(prev => { const next = new Set(prev); if (next.has(e.effort)) next.delete(e.effort); else next.add(e.effort); return next; });
 			return;
 		}
-		if (input === 'a' && result.runs) { decide('approve', result); return; }
-		if (input === 'x') decide('reject', result);
+		if (input === 'a') decide('approve', result);
 	}, { isActive: step.kind !== 'claims' });
 
 	const title = <Text bold>Check {target.modelId} through the {kind} CLI <Text dimColor>({target.tier} tier)</Text></Text>;
@@ -199,11 +201,15 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 			{step.kind === 'result' && (
 				<Box flexDirection="column">
 					{step.result.efforts.length === 0 && <Text dimColor>no effort levels claimed</Text>}
-					{step.result.efforts.map((e, i) => (
-						<Text key={e.effort} {...(i === cursor ? { color: 'cyan' } : {})}>
-							{`${i === cursor ? '›' : ' '}[${allowed.has(e.effort) ? 'x' : ' '}] ${e.effort} — ${VERDICT[e.verdict] ?? e.verdict}: ${e.evidence}`}
-						</Text>
-					))}
+					{step.result.efforts.map((e, i) => {
+						const verdict = `${e.effort} — ${VERDICT[e.verdict] ?? e.verdict}: ${e.evidence}`;
+						if (!step.result.runs) return <Text key={e.effort}>{`  ${verdict}`}</Text>;
+						return (
+							<Text key={e.effort} {...(i === cursor ? { color: 'cyan' } : {})}>
+								{`${i === cursor ? '›' : ' '}[${allowed.has(e.effort) ? 'x' : ' '}] ${verdict}`}
+							</Text>
+						);
+					})}
 					<Text dimColor>runs: {step.result.runs ? 'yes' : 'no'}{step.result.inputLimit !== undefined ? ` · input limit: ${step.result.inputLimit.max} ${step.result.inputLimit.unit}` : ''}</Text>
 					{step.result.error !== undefined && <Text color="red">{step.result.error}</Text>}
 				</Box>
@@ -211,7 +217,9 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 			<Box marginTop={1}>
 				<KeyHints hints={
 					step.kind === 'result'
-						? [['↑/↓', 'select'], ['space', 'allow level'], ...(step.result.runs ? [['a', 'approve'] as const] : []), ['x', 'reject'], ['esc', 'back']]
+						? (step.result.runs
+						? [['↑/↓', 'select'], ['space', 'allow level'], ['a', 'approve'], ['x', 'reject'], ['esc', 'back']]
+						: [['x', 'reject'], ['esc', 'back']])
 						: step.kind === 'approved' ? [['R', 'restart and save'], ['esc', 'later']]
 						: step.kind === 'interrupted' ? [['c', 'check again'], ['esc', 'back']]
 						: step.kind === 'unknown' ? [['l', 'reload'], ['c', 'check again'], ['esc', 'back']]

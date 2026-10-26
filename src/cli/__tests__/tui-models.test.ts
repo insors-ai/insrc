@@ -210,11 +210,15 @@ test('tui-models.test.ts: unknown model check, approve then restart then save, r
 	r = await openCheck(d.svc);
 	frame = r.lastFrame() ?? '';
 	assert.match(frame, /the codex CLI refused the model: nope/);
-	assert.match(frame, /\[x\] lo — accepted: listed/, 'a runs:false result still shows its verdicts');
+	assert.match(frame, /lo — accepted: listed/, 'a runs:false result still shows its verdicts');
 	assert.match(frame, /runs: no/);
-	assert.doesNotMatch(frame, /a approve/);
-	await press(r.stdin, 'a');
+	assert.doesNotMatch(frame, /\[x\]|\[ \]/, 'no levels to toggle');
+	assert.match(frame, /x reject\s+esc back/);
+	assert.doesNotMatch(frame, /a approve|space allow level|select/, 'only reject / back are offered');
+	await press(r.stdin, 'a', ' ');
 	assert.deepEqual(d.approves, []);
+	await press(r.stdin, 'x');
+	assert.deepEqual(d.rejects, [{ checkId: 'c2' }], 'reject still works');
 	r.unmount();
 });
 

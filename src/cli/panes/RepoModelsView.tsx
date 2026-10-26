@@ -44,6 +44,8 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 	const [sel, setSel] = useState(0);
 	const [prompt, setPrompt] = useState<Row | undefined>(undefined);
 	const [nonce, setNonce] = useState(0);
+	// A write and the reload after it are in flight: each edit writes the whole tasks map, so the next waits for the fresh one.
+	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		let live = true;
@@ -55,6 +57,8 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 				if (live) { setRaw(cfg); setDefs(d); }
 			} catch (err) {
 				if (live) setError(daemonProblem(err));
+			} finally {
+				if (live) setSaving(false);
 			}
 		})();
 		return () => { live = false; };
@@ -74,6 +78,7 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 	const global = useMemo(() => (defs === undefined ? undefined : computeEffectiveTiers(parseTiering(models), defs)), [raw, defs]);
 
 	const save = (path: string[], value: unknown): void => {
+		setSaving(true);
 		void svc.config.write(path, value)
 			.then((res: ConfigWriteResult) => {
 				ui.toast(!res.ok
@@ -81,7 +86,7 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 					: `saved ${path.join(' › ')}${res.restartRequired === true ? ' — restart the daemon to apply' : ''}`);
 				setNonce(n => n + 1);
 			})
-			.catch((err: unknown) => ui.toast(`✗ save failed: ${err instanceof Error ? err.message : String(err)}`));
+			.catch((err: unknown) => { ui.toast(`✗ save failed: ${err instanceof Error ? err.message : String(err)}`); setNonce(n => n + 1); });
 	};
 
 	const commit = (row: Row, input: string): void => {
@@ -100,7 +105,10 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
 		if (input === 'r') { setNonce(n => n + 1); return; }
-		if (input === 'e' && cur !== undefined) { setPrompt(cur); ui.capture(true); }
+		if (input === 'e' && cur !== undefined) {
+			if (saving) { ui.toast('saving — edit again once the view reloads'); return; }
+			setPrompt(cur); ui.capture(true);
+		}
 	}, { isActive: prompt === undefined });
 
 	const title = `Repos · models · ${repoPath}`;

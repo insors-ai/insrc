@@ -368,3 +368,58 @@ test('tui-models.test.ts: check screen recovers from an expired check, offers an
 	assert.equal(d.writes.length, before, 'no tier write after the screen is gone');
 	r.unmount();
 });
+
+test('tui-models.test.ts: an edit waits for the previous save to reload; a save whose connection drops is read back; an older daemon refusing the check is named', async () => {
+	// Repo models view: while a tasks write is in flight, a second edit is refused instead of rebuilding the map from the old snapshot.
+	const REPO = '/w/r';
+	const { svc, writes } = tiersServices({});
+	svc.daemon.getStatus = async () => status({ repos: [repo(REPO)] });
+	let release: () => void = () => {};
+	svc.config.write = (path, value) => { writes.push([path, value]); return new Promise(res => { release = () => res({ ok: true }); }); };
+	let r = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '2', 'm'); await settle();
+	await press(r.stdin, 'j', 'e');
+	for (let i = 0; i < 8; i++) { r.stdin.write('\x7f'); await settle(); }
+	r.stdin.write('cheap'); await settle(); r.stdin.write('\r'); await settle();
+	assert.equal(writes.length, 1);
+	await press(r.stdin, 'j', 'e');
+	assert.match(r.lastFrame() ?? '', /saving — edit again once the view reloads/);
+	assert.doesNotMatch(r.lastFrame() ?? '', /tier in this repo/, 'no prompt while the save is in flight');
+	release(); await settle(); await settle();
+	await press(r.stdin, 'e');
+	assert.match(r.lastFrame() ?? '', /tier in this repo/, 'editable again after the reload');
+	r.unmount();
+
+	// Check screen: the save's connection drops after the write landed — read back, reported saved, restart line shown.
+	const landed = checkServices({});
+	const tiers: Record<string, unknown> = { core: { runner: 'cli-codex', model: 'x-a', effort: 'lo' } };
+	landed.svc.config.show = async () => ({ models: { tiers } });
+	landed.svc.config.write = async (path, value) => {
+		landed.writes.push([path, value]);
+		tiers['core'] = value;
+		throw Object.assign(new Error('the daemon closed the connection before answering config.write'), { code: 'disconnected' });
+	};
+	r = await openCheck(landed.svc);
+	await press(r.stdin, 'a', 'R'); await settle(); await settle();
+	let frame = r.lastFrame() ?? '';
+	assert.match(frame, /Tiers \(family/, 'back on the pane: the tier was found in the config');
+	assert.match(frame, /restart the daemon to apply \(R\)/);
+	assert.doesNotMatch(frame, /was not saved/);
+	r.unmount();
+
+	// ...and when it did not land, it says so.
+	const lost = checkServices({});
+	lost.svc.config.write = async () => { throw Object.assign(new Error('the daemon closed the connection before answering config.write'), { code: 'disconnected' }); };
+	r = await openCheck(lost.svc);
+	await press(r.stdin, 'a', 'R'); await settle(); await settle();
+	assert.match(r.lastFrame() ?? '', /approval recorded; the tier was not saved: the daemon closed the connection/);
+	r.unmount();
+
+	// An older daemon without models.check: its refusal and the update hint.
+	const old = checkServices({ check: [async () => { throw new Error("unknown method 'models.check'"); }] });
+	r = await openCheck(old.svc);
+	frame = r.lastFrame() ?? '';
+	assert.match(frame, /the daemon could not answer: unknown method 'models\.check' — if it is older/);
+	r.unmount();
+});

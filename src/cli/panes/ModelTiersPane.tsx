@@ -65,6 +65,8 @@ export function ModelTiersPane(): ReactElement {
 	const [checking, setChecking] = useState<ModelCheckTarget | undefined>(undefined);
 	const [restartPending, setRestartPending] = useState(false);
 	const [nonce, setNonce] = useState(0);
+	// A write and the reload after it are in flight: edits write whole objects from the loaded config, so the next waits for the fresh one.
+	const [saving, setSaving] = useState(false);
 
 	// Load the config snapshot and the definitions (the daemon owns both).
 	useEffect(() => {
@@ -78,7 +80,7 @@ export function ModelTiersPane(): ReactElement {
 			} catch (err) {
 				if (live) setError(daemonProblem(err));
 			} finally {
-				if (live) setLoading(false);
+				if (live) { setLoading(false); setSaving(false); }
 			}
 		})();
 		return () => { live = false; };
@@ -110,9 +112,10 @@ export function ModelTiersPane(): ReactElement {
 	};
 
 	const save = (path: string, value: unknown): void => {
+		setSaving(true);
 		void svc.config.write(path, value)
 			.then(res => report(path, res))
-			.catch((err: unknown) => ui.toast(`✗ save failed: ${err instanceof Error ? err.message : String(err)}`));
+			.catch((err: unknown) => { ui.toast(`✗ save failed: ${err instanceof Error ? err.message : String(err)}`); setNonce(n => n + 1); });
 	};
 
 	const saveTier = (tier: TierName, next: TierModel | undefined): void => {
@@ -159,6 +162,7 @@ export function ModelTiersPane(): ReactElement {
 
 	useInput((input, key) => {
 		if (rows.length === 0 || eff === undefined || defs === undefined || cur === undefined) return;
+		if (saving && ['f', 'm', 'e', 'n'].includes(input)) { ui.toast('saving — edit again once the pane reloads'); return; }
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
 		if (input === 'r') { setNonce(n => n + 1); return; }
@@ -207,14 +211,14 @@ export function ModelTiersPane(): ReactElement {
 
 	if (checking !== undefined) {
 		const target = checking;
-return (
-	<ModelCheckScreen
-		target={target}
-		defs={defs}
-		onClose={(saved, restartRequired) => { setChecking(undefined); if (restartRequired === true) setRestartPending(true); if (saved) setNonce(n => n + 1); }}
-		onPickServed={(id, fresh) => { setChecking(undefined); saveTier(target.tier, switchModel(fresh, eff.tiers[target.tier], id)); }}
-	/>
-);
+		return (
+			<ModelCheckScreen
+				target={target}
+				defs={defs}
+				onClose={(saved, restartRequired) => { setChecking(undefined); if (restartRequired === true) setRestartPending(true); if (saved) setNonce(n => n + 1); }}
+				onPickServed={(id, fresh) => { setChecking(undefined); saveTier(target.tier, switchModel(fresh, eff.tiers[target.tier], id)); }}
+			/>
+		);
 	}
 
 	if (prompt !== undefined) {

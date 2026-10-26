@@ -62,7 +62,7 @@ test('model-recommender.test.ts: recommendModels uses the passed local model, in
 
 	// The module names no model of the shipped definitions.
 	const src = readFileSync(join(ROOT, 'src', 'shared', 'model-recommender.ts'), 'utf8');
-	const defs = JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ models: Array<{ id: string; aliases?: string[] }> }> };
+	const defs = JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ models: Array<{ id: string; aliases?: string[] | undefined }> }> };
 	for (const f of defs.families) for (const m of f.models) for (const name of [m.id, ...(m.aliases ?? [])]) {
 		assert.ok(!src.includes(`'${name}'`) && !src.includes(`"${name}"`), `model-recommender.ts names ${name}`);
 	}

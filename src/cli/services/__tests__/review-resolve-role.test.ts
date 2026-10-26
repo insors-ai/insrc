@@ -82,9 +82,9 @@ test('review-resolve-role.test.ts: reviewArtifact builds its provider from a fak
 	// No answer: 'cannot review: …', and no review runs.
 	c = capture();
 	await assert.rejects(reviewArtifact(REPO, MD, c.reviewFile, async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); }), /^Error: cannot review: the daemon is not running$/);
-// Any other rejection (an older daemon without models.resolveRole) keeps its text and names the update.
-await assert.rejects(reviewArtifact(REPO, MD, c.reviewFile, async () => { throw new Error("unknown method 'models.resolveRole'"); }),
-	/^Error: cannot review: the daemon could not answer: unknown method 'models.resolveRole' — if it is older than this TUI, update it \(daemon update\)$/);
+	// Any other rejection (an older daemon without models.resolveRole) keeps its text and names the update.
+	await assert.rejects(reviewArtifact(REPO, MD, c.reviewFile, async () => { throw new Error("unknown method 'models.resolveRole'"); }),
+		/^Error: cannot review: the daemon could not answer: unknown method 'models.resolveRole' — if it is older than this TUI, update it \(daemon update\)$/);
 	await assert.rejects(reviewArtifact(REPO, MD, c.reviewFile, async () => ({ error: "unknown role 'review'", recoverable: false as const })), /cannot review: unknown role 'review'/);
 	assert.equal(c.seen.length, 0, 'reviewFile never called');
 

@@ -24,7 +24,7 @@ import type { ReactElement } from 'react';
 
 import type { TierName } from '../../config/analyze.js';
 import type { CliFamilyId } from '../../daemon/model-catalog.js';
-import type { DecisionResult, ModelCheckResult, ModelDefinitionsResult } from '../services/models.js';
+import { daemonProblem, type DecisionResult, type ModelCheckResult, type ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { familyOf, servedModel, tierPath } from './model-tiers.js';
@@ -87,19 +87,19 @@ export function ModelCheckScreen(props: {
 		svc.models.check({ family: target.family as CliFamilyId, modelId: target.modelId, claimedEfforts: efforts })
 			.then(r => {
 				if (!('checkId' in r)) {
-	const error = r.error;
-	setStep({ kind: 'refused', error });
-	// The daemon refuses an id it already serves: if the fresh definitions list it, offer it as a normal pick.
-	svc.models.definitions()
-		.then(d => { const served = servedModel(d, target.family, target.modelId); if (served !== undefined && live.current) setStep({ kind: 'refused', error, served: { id: served.id, defs: d } }); })
-		.catch(() => { /* nothing to offer: the refusal is already shown */ });
-	return;
-}
+					const error = r.error;
+					setStep({ kind: 'refused', error });
+					// The daemon refuses an id it already serves: if the fresh definitions list it, offer it as a normal pick.
+					svc.models.definitions()
+						.then(d => { const served = servedModel(d, target.family, target.modelId); if (served !== undefined && live.current) setStep({ kind: 'refused', error, served: { id: served.id, defs: d } }); })
+						.catch(() => { /* nothing to offer: the refusal is already shown */ });
+					return;
+				}
 				setAllowed(new Set(r.efforts.filter(e => e.verdict !== 'rejected').map(e => e.effort)));
 				setCursor(0);
 				setStep({ kind: 'result', result: r });
 			})
-			.catch((err: unknown) => setStep(disconnected(err) ? { kind: 'interrupted' } : { kind: 'refused', error: message(err) }));
+			.catch((err: unknown) => setStep(disconnected(err) ? { kind: 'interrupted' } : { kind: 'refused', error: daemonProblem(err).text }));
 	};
 
 	const decide = (action: 'approve' | 'reject', result: ModelCheckResult): void => {
@@ -110,11 +110,11 @@ export function ModelCheckScreen(props: {
 			: svc.models.reject({ checkId: result.checkId });
 		call.then(d => {
 			if (!d.ok) {
-	ui.toast(`✗ ${d.reason}: ${d.detail}`);
-	// unknown-check: the daemon no longer holds this check (a restart or eviction) — only a fresh check helps.
-	setStep(d.reason === 'unknown-check' ? { kind: 'expired' } : { kind: 'result', result });
-	return;
-}
+				ui.toast(`✗ ${d.reason}: ${d.detail}`);
+				// unknown-check: the daemon no longer holds this check (a restart or eviction) — only a fresh check helps.
+				setStep(d.reason === 'unknown-check' ? { kind: 'expired' } : { kind: 'result', result });
+				return;
+			}
 			if (action === 'reject') { ui.toast(`rejected ${target.modelId} — restart the daemon to apply`); props.onClose(false); return; }
 			setStep({ kind: 'approved', efforts, busy: false });
 		}).catch((err: unknown) => {
@@ -138,8 +138,9 @@ export function ModelCheckScreen(props: {
 				return;
 			}
 			if (!live.current) return;
+			const tier = { runner: target.family, model: target.modelId, effort: efforts[0] ?? '' };
 			try {
-				const saved = await svc.config.write(tierPath(target.tier), { runner: target.family, model: target.modelId, effort: efforts[0] ?? '' });
+				const saved = await svc.config.write(tierPath(target.tier), tier);
 				if (!saved.ok) {
 					setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; the tier was not saved: ${saved.reason ?? 'refused'}${saved.detail !== undefined ? ` — ${saved.detail}` : ''}` });
 					return;
@@ -148,9 +149,26 @@ export function ModelCheckScreen(props: {
 				ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId}${restartRequired ? ' — restart the daemon to apply (R)' : ''}`);
 				props.onClose(true, restartRequired);
 			} catch (err) {
-				setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; the tier was not saved: ${message(err)}` });
+				// A lost connection may come after the write landed: read the config back before saying it did not.
+				if (disconnected(err) && await tierInConfig(tier)) {
+					ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId} — restart the daemon to apply (R)`);
+					props.onClose(true, true);
+					return;
+				}
+				if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; the tier was not saved: ${message(err)}` });
 			}
 		})();
+	};
+
+	/** Whether the config now holds exactly this tier (false when it cannot be read). */
+	const tierInConfig = async (tier: { runner: string; model: string; effort: string }): Promise<boolean> => {
+		try {
+			const models = (await svc.config.show())['models'] as { tiers?: Record<string, { runner?: unknown; model?: unknown; effort?: unknown }> } | undefined;
+			const saved = models?.tiers?.[target.tier];
+			return saved?.runner === tier.runner && saved.model === tier.model && (saved.effort ?? '') === tier.effort;
+		} catch {
+			return false;
+		}
 	};
 
 	/** After a lost connection: read the definitions to see whether the decision was recorded. */
@@ -213,8 +231,8 @@ export function ModelCheckScreen(props: {
 			{step.kind === 'checking' && <Text dimColor>checking {target.modelId} through the {kind} CLI…</Text>}
 			{step.kind === 'deciding' && <Text dimColor>recording the decision…</Text>}
 			{step.kind === 'refused' && <Text color="red">{step.error}</Text>}
-{step.kind === 'refused' && step.served !== undefined && <Text>{`${step.served.id} is served by the family now — save it as the ${target.tier} model (s)`}</Text>}
-{step.kind === 'expired' && <Text color="yellow">the daemon no longer holds this check (it restarted or dropped it) — check again (c)</Text>}
+			{step.kind === 'refused' && step.served !== undefined && <Text>{`${step.served.id} is served by the family now — save it as the ${target.tier} model (s)`}</Text>}
+			{step.kind === 'expired' && <Text color="yellow">the daemon no longer holds this check (it restarted or dropped it) — check again (c)</Text>}
 			{step.kind === 'interrupted' && <Text color="yellow">the check was interrupted: the daemon closed the connection — check again (c)</Text>}
 			{step.kind === 'unknown' && (
 				<Box flexDirection="column">
@@ -252,8 +270,8 @@ export function ModelCheckScreen(props: {
 						? [['↑/↓', 'select'], ['space', 'allow level'], ['a', 'approve'], ['x', 'reject'], ['esc', 'back']]
 						: [['x', 'reject'], ['esc', 'back']])
 						: step.kind === 'approved' ? (step.busy ? [] : [['R', 'restart and save'], ['esc', 'later']])
-: step.kind === 'refused' && step.served !== undefined ? [['s', 'save as the tier model'], ['esc', 'back']]
-: step.kind === 'expired' ? [['c', 'check again'], ['esc', 'back']]
+						: step.kind === 'refused' && step.served !== undefined ? [['s', 'save as the tier model'], ['esc', 'back']]
+						: step.kind === 'expired' ? [['c', 'check again'], ['esc', 'back']]
 						: step.kind === 'interrupted' ? [['c', 'check again'], ['esc', 'back']]
 						: step.kind === 'unknown' ? [['l', 'reload'], ['c', 'check again'], ['esc', 'back']]
 						: [['esc', 'back']]

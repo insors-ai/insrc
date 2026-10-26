@@ -340,98 +340,56 @@
         "properties": {
           "insrc.models.tiers.core.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "core-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "The core tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
+            "scope": "machine"
           },
           "insrc.models.tiers.core.model": {
             "type": "string",
-            "default": "opus",
-            "markdownDescription": "core-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "The core tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.tiers.core.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "core-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "The core tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "mid-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "The mid tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
+            "scope": "machine"
           },
           "insrc.models.tiers.mid.model": {
             "type": "string",
-            "default": "sonnet",
-            "markdownDescription": "mid-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "The mid tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "The mid tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "cheap-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "The cheap tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
+            "scope": "machine"
           },
           "insrc.models.tiers.cheap.model": {
             "type": "string",
-            "default": "haiku",
-            "markdownDescription": "cheap-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "The cheap tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "The cheap tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.",
             "scope": "machine"
           },
           "insrc.models.coreFloor": {

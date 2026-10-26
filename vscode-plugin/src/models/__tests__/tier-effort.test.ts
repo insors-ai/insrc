@@ -1,21 +1,17 @@
 /**
  * Story E20261023a27df028:S001 / t6 — the reasoning effort in the VS Code plugin:
- * the manifest declares the three effort settings exactly as the catalog does, and
- * the 'insrc: Set model tier' picker offers an effort step for a CLI tier.
+ * the 'insrc: Set model tier' picker offers an effort step for a CLI tier. (The
+ * manifest's tier rows carry no effort list since Epic ce99b72065d03b1b s6; see
+ * manifest-catalog.test.ts.)
  *
  * Run: npx tsx --test vscode-plugin/src/models/__tests__/tier-effort.test.ts
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 import { CONFIG_CATALOG } from '../../../../src/config/config-catalog.js';
 import { runSetModelTier, type QuickPickItemLike, type SetModelTierDeps } from '../model-tier-picker.js';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 interface Item extends QuickPickItemLike { readonly kind?: string; readonly value?: string }
 
@@ -39,19 +35,7 @@ async function run(values: Map<string, unknown>, picks: readonly string[]) {
   return { writes, shown };
 }
 
-test("VS Code manifest declares insrc.models.tiers.<tier>.effort matching the catalog, and the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)", async () => {
-  const manifest = JSON.parse(readFileSync(join(HERE, '..', '..', '..', 'package.json'), 'utf8')) as {
-    contributes: { configuration: { properties?: Record<string, unknown> } | { properties?: Record<string, unknown> }[] };
-  };
-  const sections = Array.isArray(manifest.contributes.configuration) ? manifest.contributes.configuration : [manifest.contributes.configuration];
-  const props = Object.assign({}, ...sections.map((s) => s.properties ?? {})) as Record<string, { type?: string; default?: unknown; enum?: unknown; scope?: string }>;
-  for (const tier of ['core', 'mid', 'cheap']) {
-    const row = CONFIG_CATALOG.find((o) => o.path === `models.tiers.${tier}.effort`)!;
-    const decl = props[`insrc.models.tiers.${tier}.effort`];
-    assert.ok(decl, `insrc.models.tiers.${tier}.effort is declared`);
-    assert.deepEqual([decl.type, decl.default, decl.enum, decl.scope], ['string', row.default, row.enumValues, 'machine']);
-  }
-
+test("the tier picker offers an effort step for CLI runners and writes ['models','tiers',tier,'effort'] (from the plugin's bundled catalog, whatever the daemon's)", async () => {
   // A CLI tier: the model is unchanged (no model write), the effort step offers the CLI default + five values
   // with the saved one marked, and the pick is written. The daemon's snapshot has no effort row at all.
   const values = new Map<string, unknown>([['models.tiers.core.runner', 'cli-codex'], ['models.tiers.core.model', 'gpt-6.1-sol'], ['models.tiers.core.effort', 'medium']]);

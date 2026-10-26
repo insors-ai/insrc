@@ -7,7 +7,11 @@
  * the model defaults and effort levels follow the model definitions file and no
  * model fact is written by hand. A row the catalog no longer has is removed; a
  * new row is added to the section titled with its group. Plugin-local keys
- * (insrc.chat.*) and the per-role insrc.models.tasks.* axis are left alone.
+ * (insrc.chat.* and the per-role insrc.models.tasks.* axis, the key map's
+ * isPluginLocalKey) are left alone. The tier rows (models.tiers.<tier>.runner /
+ * .model / .effort) carry no enum and default '' (Epic ce99b72065d03b1b, Story s6):
+ * their valid values come from the daemon's model definitions, and the extension
+ * checks a tier edit against them.
  * Idempotent: a second run writes nothing.
  *
  * Run (the catalog is TypeScript): npx tsx scripts/sync-manifest-catalog.mjs [--check]
@@ -21,8 +25,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 // SYNC_MANIFEST_PKG: another manifest to sync (tests run it on a temp copy).
 const pkgPath = process.env.SYNC_MANIFEST_PKG ?? join(here, '..', 'package.json');
 const { CONFIG_CATALOG } = await import(pathToFileURL(join(here, '..', '..', 'src', 'config', 'config-catalog.ts')).href);
+const { isPluginLocalKey: isLocal } = await import(pathToFileURL(join(here, '..', 'src', 'config', 'key-map.ts')).href);
 
-const isLocal = (key) => key.startsWith('insrc.chat.') || key.startsWith('insrc.models.tasks.');
+/** A tier row: its valid values are the daemon's definitions, not a list in the manifest. */
+const TIER_ROW = /^models\.tiers\.([^.]+)\.(runner|model|effort)$/;
+const isTierRow = (row) => TIER_ROW.test(row.path);
+const TIER_FIELD = { runner: 'model family (runner)', model: 'model', effort: 'reasoning effort' };
+/** A tier row's description, naming no family, model or effort (those are the daemon's). */
+const tierDescription = (row) => { const [, tier, field] = TIER_ROW.exec(row.path); return `The ${tier} tier's ${TIER_FIELD[field]}.`; };
+const TIER_NOTE = ' Valid values come from the daemon\'s model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`.';
 const jsonType = (t) => (t === 'enum' ? 'string' : t);
 
 /** The manifest with every catalog-backed key regenerated from `catalog`. */
@@ -51,6 +62,11 @@ export function syncManifest(pkg, catalog) {
 
 /** A key's schema from its catalog row, keeping the existing key order. */
 function schemaOf(existing, row) {
+	if (isTierRow(row)) {
+		const tier = { ...existing, type: 'string', default: '', markdownDescription: tierDescription(row) + TIER_NOTE, scope: 'machine' };
+		delete tier.enum;
+		return tier;
+	}
 	const next = { ...existing, type: jsonType(row.type), default: row.default, markdownDescription: row.desc, scope: 'machine' };
 	if (row.type === 'enum') next.enum = [...row.enumValues];
 	else delete next.enum;

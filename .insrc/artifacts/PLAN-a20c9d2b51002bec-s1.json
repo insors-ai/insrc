@@ -1,0 +1,425 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793001887430-23j7tj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:06:30.696Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 100295,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "epicSlug": "fix-23-failing-tests-workflow-gate",
+    "storyId": "s1",
+    "lldRunId": "wf-1793001444573-acy973",
+    "lldEffectiveHash": "f5d6ef44665142b0e5f1b5fd1283512fb76b415d0da102a70f7674cbb8667703",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a2669933ee69548db1be50f8641453aa28cbbde095a45260ebff5434cf37cf7b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.420Z"
+      }
+    },
+    "rangeBase": "b99ff365f5d872fa5b3d17df059e913cf0b30bfd"
+  },
+  "body": {
+    "summary": {
+      "prose": "A test-only Story in three parts. First a shared builder of valid code review records with its own test. Then the four gate test files move onto it one at a time. Last five independent tests are corrected at their own causes, and the workflow and db sweeps run once at the end to compare with the base.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the shared builder of valid code review records and its test",
+        "summary": "Add a non-test helper file under src/workflow/__tests__/helpers that builds a code review record (verdict, counts, subject.changedFiles covering every BUILD changeLog file, subject.buildFingerprint from reviewedBuildFingerprint, and optional meta so a test can set the author and reviewer parties) for a given BUILD record. Add a separate .test.ts file that checks reviewBuildGap accepts the builder's record and still refuses each invalid variant: no verdict, no changedFiles, no buildFingerprint, a stale fingerprint, an uncovered changeLog file.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The builder's record gives reviewBuildGap undefined for a BUILD with a two-file changeLog",
+          "Each of the five invalid variants is refused with the gate's own message",
+          "The builder file is not named .test.ts and the builder has its own test file",
+          "No production file is changed"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review-record-builder.test.ts: the builder's record passes reviewBuildGap for a BUILD with a two-file changeLog"
+          },
+          {
+            "level": "unit",
+            "name": "review-record-builder.test.ts: reviewBuildGap still refuses a review with no verdict, no changedFiles, no buildFingerprint, a stale fingerprint or an uncovered changeLog file"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Move approve-codereview-gate.test.ts onto the builder",
+        "summary": "Make writeCR of approve-codereview-gate.test.ts build its body through the shared builder, and give its BUILD fixtures a changeLog the review covers. Keep the corrupt-record case as it is.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The five failing tests of the file (ac1, ac3 twice, ac5, ac6) pass",
+          "The five passing tests still pass",
+          "No test is skipped or deleted"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "approve-codereview-gate.test.ts: all ten tests pass through the real approve path"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Move approve-build-completion.test.ts onto the builder",
+        "summary": "Make writeCR of approve-build-completion.test.ts build its body through the shared builder, with BUILD fixtures whose changeLog the review covers.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The four failing tests (ac1, ac2, ac5, ac6) pass",
+          "The other tests of the file still pass",
+          "No test is skipped or deleted"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "approve-build-completion.test.ts: every test of the file passes through the real approve path"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Move bugfix-orchestration.test.ts onto the builder",
+        "summary": "Make writeCR of bugfix-orchestration.test.ts build its body through the shared builder.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The two failing ac3 tests pass",
+          "The rest of the file still passes",
+          "No test is skipped or deleted"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bugfix-orchestration.test.ts: every test of the file passes, including the two ac3 completion tests"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Move other-party-review-gate.test.ts onto the builder",
+        "summary": "Make the code review record the file writes come from the shared builder, passing the author and reviewer parties the test already sets through the builder's optional meta; keep the corrupt-record write.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The eight failing T7 tests pass",
+          "The rest of the file still passes",
+          "No test is skipped or deleted"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "other-party-review-gate.test.ts: every test of the file passes, including the eight T7 tests"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Bring the artifact write inventory in line with the daemon",
+        "summary": "Read src/daemon/handler-runtime.ts and src/daemon/index.ts, add the inventory entry the scanner needs for the first and correct or remove the stale entry for the second.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "artifact-write-inventory.test.ts passes",
+          "The entries say what each file really does",
+          "The scanner and its controls are unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "artifact-write-inventory.test.ts: every writer file is inventoried, annotated and classified as the design says"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Make convert-repeat independent of the clock",
+        "summary": "Mask the 'at' timestamps when the test compares an uninterrupted apply with a crashed-and-rerun apply.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "convert-repeat.test.ts passes on repeated runs",
+          "A real difference other than the timestamp still fails the comparison"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Make call-limits independent of the user's config",
+        "summary": "Give the deadline assertions DEFAULT_DESIGN_REVIEW_SETTINGS so the test does not read ~/.insrc/config.json.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "call-limits.test.ts passes with this machine's config",
+          "It would also pass with no config file"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "call-limits.test.ts: REVIEW_CALL_LIMITS holds the five call-type rows and every silence limit is below its call's limit"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Point build-record t7 at the converted records",
+        "summary": "Read the lowercase s1 records the repository conversion produced for the three hashes; if a hash has no record, fail with a clear message instead of skipping.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "build-record.test.ts t7 passes",
+          "The three hashes are all checked"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "build-record.test.ts: t7 the three hand-filled records prove the gap was real"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Make the LMDB lock-loss test describe the installed library",
+        "summary": "Run the reproduction first and record the code and message the installed library gives for the raw case and the store-backed case separately, then assert them and keep the transaction and healthy-control assertions.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "lock-loss-reproduction.test.ts passes",
+          "Each case states the code it observed, taken from a run before any assertion changed",
+          "The transaction and healthy-control assertions are unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "lock-loss-reproduction.test.ts: reproduction against the real library"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Run the workflow and db sweeps once and compare with the base",
+        "summary": "After all tasks, run the workflow and db test sweeps in foreground chunks and compare failing and skipped counts with the base commit.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "No test fails in the workflow and db sweeps",
+          "No test is skipped that was not skipped on the base"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the workflow and db sweeps report no failing test and no new skipped test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the builder of valid review records used by the gate tests",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reviewBuildGap in src/workflow/code-review/build-freshness.ts",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/approve-build-completion.test.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/other-party-review-gate.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/convert/__tests__/convert-repeat.test.ts",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review/__tests__/call-limits.test.ts",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-a20c9d2b51002bec-s1 contract details and test strategy"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-a20c9d2b51002bec-s1 migration steps 1, 2 and 6"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-a20c9d2b51002bec-s1 error paths and migration steps 3 to 5"
+    }
+  ]
+}

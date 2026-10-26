@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-06161a76-5586-4580-befd-944041af92ce",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.878Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the workflow and db sweeps once and compare with the base",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "43e4cdc12dc76d93e97b8ec6fb75e915ca147f5e4bf0f342e5d7f16bea50e584",
+        "at": "2026-10-26T08:07:56.878Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.878Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the workflow and db sweeps once and compare with the base",
+    "summary": "After all tasks, run the workflow and db test sweeps in foreground chunks and compare failing and skipped counts with the base commit.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "No test fails in the workflow and db sweeps",
+      "No test is skipped that was not skipped on the base"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the workflow and db sweeps report no failing test and no new skipped test"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-497c8af1-6054-4fa3-9ad6-734092731b04",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.877Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the LMDB lock-loss test describe the installed library",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc34f9d10219a85a43eff660bc8b68d2583dd035943936bdb1233cd2821679b5",
+        "at": "2026-10-26T08:07:56.877Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.877Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the LMDB lock-loss test describe the installed library",
+    "summary": "Run the reproduction first and record the code and message the installed library gives for the raw case and the store-backed case separately, then assert them and keep the transaction and healthy-control assertions.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "lock-loss-reproduction.test.ts passes",
+      "Each case states the code it observed, taken from a run before any assertion changed",
+      "The transaction and healthy-control assertions are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lock-loss-reproduction.test.ts: reproduction against the real library"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -205,7 +205,7 @@ TU4 can implement coverage projection against TU1's accepted representation whil
 
 | Planned epic | Tracking status |
 | --- | --- |
-| TU1 Durable artifact usage accounting | Defined as [DEF c66d49bb81925886](../docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/DEF.md) with four ordered stories; revision 7 approved by explicit human review override on 26 October 2026; final independent report retained: 0 HIGH / 10 MED, five unjudged after CLI stalls. Next stage: design.epic HLD |
+| TU1 Durable artifact usage accounting | Defined as [DEF c66d49bb81925886](../docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/DEF.md) with four ordered stories; revision 7 approved by explicit human review override on 26 October 2026; final independent report retained: 0 HIGH / 10 MED, five unjudged after CLI stalls. HLD revision 3 completed at [HLD.md](../docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/HLD.md), with six shared contracts and all 23 criteria mapped. Independent review: WARN, 0 HIGH / 0 MED; reviewer rendering unavailable, local diagram rendering verified. Awaiting HLD approval |
 | TU2 Daemon workflow model capture | Proposed; depends on TU1 |
 | TU3 External controller usage reporting | Proposed; depends on TU1 and TU2 |
 | TU4 Hierarchical usage read model | Proposed; depends on TU1 and TU2 |

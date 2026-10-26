@@ -1,0 +1,449 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793001444573-acy973",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:00:03.124Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 155415,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "epicSlug": "fix-23-failing-tests-workflow-gate",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793001444573-acy973",
+    "hldEffectiveHash": "f5d6ef44665142b0e5f1b5fd1283512fb76b415d0da102a70f7674cbb8667703",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bae0286666fd95a831f07871443e324b5861e06175be3bd8e1f88eb2ca0a62fc",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-10-26T08:04:37.014Z",
+        "report": {
+          "entityId": "LLD-a20c9d2b51002bec-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-5860aec14bb2180634801505c843b558"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:04:37.017Z"
+      }
+    },
+    "rangeBase": "b99ff365f5d872fa5b3d17df059e913cf0b30bfd"
+  },
+  "body": {
+    "summary": {
+      "prose": "No production contract changes. The Story corrects 23 tests whose expectations are out of date with code that is right. The gate tests get one shared builder of valid code review records, so they satisfy the current freshness rule instead of the rule being relaxed; the inventory, convert-repeat, call-limits, build-record and LMDB tests are each corrected at their own cause.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix the known failing tests of the workflow gate, artifact, review-limit and LMDB areas"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "reviewBuildGap",
+          "signature": "reviewBuildGap(build: unknown, review: unknown, repoPath: string): string | undefined",
+          "parameters": [
+            {
+              "name": "build",
+              "type": "unknown",
+              "purpose": "the BUILD record being approved",
+              "optional": false
+            },
+            {
+              "name": "review",
+              "type": "unknown",
+              "purpose": "its code review record",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "root for resolving changed files",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "the reason the review cannot satisfy completion, or undefined when it is fresh and complete"
+          },
+          "errors": [],
+          "preconditions": [
+            "unchanged by this Story"
+          ],
+          "postconditions": [
+            "a review without a verdict, a changedFiles list or a matching buildFingerprint is still refused"
+          ]
+        },
+        {
+          "name": "reviewedBuildFingerprint",
+          "signature": "reviewedBuildFingerprint(build: unknown): string",
+          "parameters": [
+            {
+              "name": "build",
+              "type": "unknown",
+              "purpose": "the BUILD record",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "the content hash a valid review carries as subject.buildFingerprint"
+          },
+          "errors": [],
+          "preconditions": [
+            "unchanged by this Story"
+          ],
+          "postconditions": [
+            "the shared test builder of valid review records calls it, so fixtures follow the rule"
+          ]
+        },
+        {
+          "name": "reviewDeadlineMs",
+          "signature": "reviewDeadlineMs(complexity: DesignComplexity, settings?: DesignReviewSettings): number",
+          "parameters": [
+            {
+              "name": "complexity",
+              "type": "DesignComplexity",
+              "purpose": "issue, feature or epic",
+              "optional": false
+            },
+            {
+              "name": "settings",
+              "type": "DesignReviewSettings",
+              "purpose": "defaults to the settings read from the user's config",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "the whole-review deadline in ms, capped at HARD_REVIEW_DEADLINE_MS"
+          },
+          "errors": [],
+          "preconditions": [
+            "unchanged by this Story"
+          ],
+          "postconditions": [
+            "the call-limits test passes DEFAULT_DESIGN_REVIEW_SETTINGS so it does not read the user's config"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A rebuilt gate fixture is still incomplete (a missing changedFiles entry for a changeLog file, or a stale fingerprint) so the gate refuses it again",
+          "detection": "the test asserts the specific outcome (completed, withheld, blocked) and fails with the gate's own message, e.g. 'the code review does not cover BUILD file'",
+          "response": "the shared builder derives changedFiles from the BUILD's changeLog and the fingerprint from reviewedBuildFingerprint, so the fixture is valid by construction",
+          "userImpact": "none; tests only",
+          "recoverable": true
+        },
+        {
+          "scenario": "The build-record t7 test cannot find a hand-filled record because a record is missing after the repository conversion",
+          "detection": "readFileSync throws ENOENT for the path",
+          "response": "read the lowercase s1 record the conversion produced; if one of the three hashes has no record, say so in the test rather than skipping it",
+          "userImpact": "none; tests only",
+          "recoverable": true
+        },
+        {
+          "scenario": "The LMDB behaviour differs between library versions",
+          "detection": "the read throws a different code than the test pins",
+          "response": "the test asserts what the installed library does for each case and states the code observed, so a library upgrade changes the test on purpose",
+          "userImpact": "none; tests only",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The call-limits test runs on a machine whose ~/.insrc/config.json sets designReview limits",
+          "expected": "the test passes the default settings explicitly and gives the same result on every machine"
+        },
+        {
+          "input": "The convert-repeat comparison between an uninterrupted run and a crashed-and-rerun run",
+          "expected": "equal except for the 'at' timestamps, which the comparison masks"
+        },
+        {
+          "input": "The inventory scanner finds a file with an entry that no longer matches, and a file with no entry",
+          "expected": "the stale entry is corrected or removed and the new file is inventoried with the class and way it writes"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "reviewBuildGap still refuses a code review with no readable verdict, no changedFiles list, no buildFingerprint, a fingerprint that differs from the BUILD, or one that does not cover a changeLog file",
+          "source": "c1"
+        },
+        {
+          "text": "Production code is not changed to make a test pass; any production edit must be justified by a root cause that is a code defect",
+          "source": "c1"
+        },
+        {
+          "text": "No test is skipped, deleted or weakened to make the sweep green",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The shared builder of valid code review records satisfies reviewBuildGap, and each way of making it invalid is still refused",
+          "subjects": [
+            "the builder of valid review records used by the gate tests",
+            "reviewBuildGap in src/workflow/code-review/build-freshness.ts"
+          ],
+          "fixturesNeeded": [
+            "a BUILD record with a changeLog of two files"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The 20 gate tests complete, withhold and block as their names say, through the real approve path",
+          "subjects": [
+            "src/workflow/__tests__/approve-build-completion.test.ts",
+            "src/workflow/__tests__/approve-codereview-gate.test.ts",
+            "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "src/workflow/__tests__/other-party-review-gate.test.ts"
+          ],
+          "fixturesNeeded": [
+            "temporary repository with BUILD and CR records written through the shared builder"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The five corrected tests describe the current code and are independent of the machine",
+          "subjects": [
+            "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "src/workflow/convert/__tests__/convert-repeat.test.ts",
+            "src/workflow/review/__tests__/call-limits.test.ts",
+            "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "src/db/graph/__tests__/lock-loss-reproduction.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "approve-build-completion.test.ts: ac1 epic-batch sweep includes a pending BUILD",
+            "approve-codereview-gate.test.ts: ac1 enforce on + CR block + no override",
+            "other-party-review-gate.test.ts: T7 a BUILD record written AND code-reviewed by the controller is withheld",
+            "bugfix-orchestration.test.ts: ac3 a bugfix BUILD + enforce + CR pass -> completes"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "artifact-write-inventory.test.ts: every writer file is inventoried",
+            "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+            "call-limits.test.ts: REVIEW_CALL_LIMITS holds the five call-type rows",
+            "build-record.test.ts: t7",
+            "lock-loss-reproduction.test.ts: reproduction against the real library"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the builder test: a review without a verdict, changedFiles or buildFingerprint, or with a stale fingerprint or an uncovered changeLog file, is still refused by reviewBuildGap"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "the full workflow and db sweeps report no failing test and no skipped test that was not skipped before"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with npx tsx --test"
+    },
+    "migration": {
+      "stateBefore": "23 tests fail on the base commit: 20 gate tests write code review records the tightened freshness rule refuses (src/workflow/code-review/build-freshness.ts), and 3 + 3 others are out of date with the code, the repository conversion, the user's config or the installed LMDB library.",
+      "stateAfter": "All 23 tests pass and describe current behaviour; the freshness rule is unchanged; the gate tests build their review records through one shared builder; no test is skipped or deleted; no production file changes unless a root cause turns out to be a code defect.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the shared builder of valid code review records and its own test that the gate still refuses each way of making a record invalid",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Move the four gate test files onto the builder, one file at a time, running each file after the change",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Correct the artifact write inventory entries for src/daemon/handler-runtime.ts and src/daemon/index.ts after reading what each file does",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make the convert-repeat comparison ignore the clock, the call-limits test use the default settings, and the build-record t7 test read the lowercase s1 records",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Make the LMDB lock-loss test assert what the installed library does, stating the code it observes",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Run the workflow and db sweeps and compare the failing and skipped counts with the base",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes; only test files and, if one is found to be a real defect, the named production file.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One shared valid-review fixture builder",
+        "oneLineSummary": "The four gate test files build their code review records through one helper that fills verdict, changedFiles and the BUILD fingerprint from reviewedBuildFingerprint; the other seven tests are fixed in place.",
+        "approach": "Add a test helper that, given the BUILD record a test writes, produces a code review record whose body carries the verdict, subject.changedFiles covering every changeLog file, and subject.buildFingerprint computed by reviewedBuildFingerprint. The four gate files call it instead of hand-writing CR bodies. The gate code is not touched. The other seven tests are corrected one by one: the inventory entries, the clock-free convert-repeat comparison, the call-limits test using DEFAULT_DESIGN_REVIEW_SETTINGS, the build-record t7 path, and the LMDB expectation.",
+        "pros": [
+          "The gate stays exactly as strict as it is.",
+          "One definition of a valid review record, so a future change to the freshness rule is fixed in one place.",
+          "Each failure is fixed at its own cause."
+        ],
+        "cons": [
+          "The helper must track the freshness rule by calling reviewedBuildFingerprint, so it couples to that function."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Edit each gate fixture inline",
+        "oneLineSummary": "Add the three missing fields by hand to every CR fixture in the four gate files.",
+        "approach": "Without a helper, extend each hand-written CR record in the four gate test files with changedFiles and a buildFingerprint computed in place. The other seven tests are fixed as in a1.",
+        "pros": [
+          "No new shared file."
+        ],
+        "cons": [
+          "The same fixture logic is repeated in about twenty places and drifts when the rule changes again.",
+          "Easy to leave one fixture subtly invalid."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correct but repeats the fixture logic across about twenty tests and drifts when the rule changes."
+      },
+      {
+        "id": "a3",
+        "name": "Relax the gate to accept bare reviews",
+        "oneLineSummary": "Make reviewBuildGap accept a review without a fingerprint or changedFiles so the old fixtures pass.",
+        "approach": "Weaken reviewBuildGap so a missing buildFingerprint or changedFiles is treated as fresh. Rejected by the Story: it removes the 2026-10-24 protection against approving a BUILD with a stale or unbound review.",
+        "pros": [
+          "Smallest edit for the 20 gate tests."
+        ],
+        "cons": [
+          "Loosens a safety gate the Story forbids loosening.",
+          "Undoes the intent of commits 1ed200db1, e0c3e97d5, d7db76538."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates the Story's rule that the gate is not loosened."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/build-freshness.ts",
+      "quotedText": "return 'the code review structure cannot be verified'"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/template.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/call-limits.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/__tests__/build-record.test.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifact-write-inventory.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/convert/__tests__/convert-repeat.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/graph/__tests__/lock-loss-reproduction.test.ts"
+    }
+  ]
+}

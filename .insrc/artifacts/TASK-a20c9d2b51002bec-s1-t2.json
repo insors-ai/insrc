@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02c9d392-ed98-46b4-8e9f-15d72f013f83",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.868Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move approve-codereview-gate.test.ts onto the builder",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cba467d517f35c82fe28a84f803f723f5a99be5001f559ca0d78bd4a49284c6e",
+        "at": "2026-10-26T08:07:56.868Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.868Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move approve-codereview-gate.test.ts onto the builder",
+    "summary": "Make writeCR of approve-codereview-gate.test.ts build its body through the shared builder, and give its BUILD fixtures a changeLog the review covers. Keep the corrupt-record case as it is.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The five failing tests of the file (ac1, ac3 twice, ac5, ac6) pass",
+      "The five passing tests still pass",
+      "No test is skipped or deleted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approve-codereview-gate.test.ts: all ten tests pass through the real approve path"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

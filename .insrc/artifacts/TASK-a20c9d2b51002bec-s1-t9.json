@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a0bf6c53-3874-467a-beb0-6e71e7d91ffa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.875Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Point build-record t7 at the converted records",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44130144f5d46362fd1c14584b41870a7465b5c84b1d12842f394d329952c75e",
+        "at": "2026-10-26T08:07:56.875Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.876Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Point build-record t7 at the converted records",
+    "summary": "Read the lowercase s1 records the repository conversion produced for the three hashes; if a hash has no record, fail with a clear message instead of skipping.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "build-record.test.ts t7 passes",
+      "The three hashes are all checked"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "build-record.test.ts: t7 the three hand-filled records prove the gap was real"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

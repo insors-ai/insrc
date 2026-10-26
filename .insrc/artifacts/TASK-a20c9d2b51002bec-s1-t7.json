@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3956cd59-681e-4d8e-b4f0-4e4ebb1972cd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.873Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make convert-repeat independent of the clock",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cbb35d164fd2265e4aef9c8d786166bffa9e1c95d2bae893e9000cbf05975fab",
+        "at": "2026-10-26T08:07:56.873Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.874Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make convert-repeat independent of the clock",
+    "summary": "Mask the 'at' timestamps when the test compares an uninterrupted apply with a crashed-and-rerun apply.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "convert-repeat.test.ts passes on repeated runs",
+      "A real difference other than the timestamp still fails the comparison"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

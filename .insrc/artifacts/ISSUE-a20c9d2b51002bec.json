@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793001158019-i1h3nk",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T07:53:29.899Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 51879,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "a20c9d2b51002bec",
+    "epicSlug": "fix-23-failing-tests-workflow-gate",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d799f94933207b3ccbcc1187faad9273a7d5bdc88610e29f524af2d0c9c79793",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T07:57:16.861Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "a20c9d2b51002bec",
+      "slug": "EPIC-a20c9d2b51002bec"
+    }
+  },
+  "body": {
+    "title": "Fix the 23 failing tests of the workflow gate, artifact inventory, convert, review limits, build record and LMDB areas",
+    "reproduction": "Run 'npx tsx --test --test-force-exit \"src/workflow/**/*.test.ts\"': 22 tests fail on the base commit. Run 'npx tsx --test --test-force-exit src/db/graph/__tests__/lock-loss-reproduction.test.ts': 1 test fails (the read throws code 22, the test expects -30775). The 22 are: approve-build-completion (ac1, ac2, ac5, ac6), approve-codereview-gate (ac1, ac3 twice, ac5, ac6), bugfix-orchestration (ac3 twice), other-party-review-gate (T7, 8 tests), artifact-write-inventory (1), convert-repeat (1), review call-limits (1) and build-record t7 (1). Observed: approving a BUILD with a prepared code review returns 'Code review is out of date or incomplete: the code review structure cannot be verified' instead of the completion or 'code review BLOCKS' result the tests expect; the inventory test reports 'src/daemon/handler-runtime.ts: writes artifacts or passes a writer on but has no inventory entry' and 'src/daemon/index.ts: the entry names a file that uses none of writeArtifact...'; convert-repeat differs from an uninterrupted run only in an 'at' timestamp; call-limits fails 'design-session: below the review deadline'; build-record t7 fails with ENOENT on .insrc/artifacts/BUILD-972bf31d13c81a2f-S001.json.",
+    "rootCause": "Gate tests (20): the completion gate was tightened on 2026-10-24 (commits 1ed200db1, e0c3e97d5, d7db76538): reviewBuildGap in src/workflow/code-review/build-freshness.ts now refuses a code review whose body has no readable verdict, a changedFiles list, or a buildFingerprint matching the BUILD, so the older test fixtures that write bare code review records are refused with 'the code review structure cannot be verified'; the code follows the newer rule and the fixtures are stale (to be confirmed per test). Inventory (1): src/daemon/handler-runtime.ts writes artifacts or passes a writer on but has no entry in the inventory the test checks, and the entry for src/daemon/index.ts names a file that no longer uses a writer, so the inventory is out of date with the daemon. Convert-repeat (1): the result of an interrupted-then-rerun apply differs from an uninterrupted run only in the 'at' timestamps, so the test compares clock-dependent text. Call-limits (1): the design-session limit is not below the review deadline; whether the limit or the assertion is wrong is not yet determined. Build-record t7 (1): the test reads a BUILD record from the repository's own .insrc/artifacts that does not exist in this checkout; it depends on a file that is not committed. LMDB (1): the installed lmdb-js raises code 22 where the test expects -30775 for a read after the lock files are removed; the test pins library behaviour that differs from the installed version (to be confirmed).",
+    "fixIntent": "For each of the 23 tests decide from its root cause whether the code or the test is wrong, and correct that one: bring the stale gate fixtures up to the current freshness rule without loosening the rule; bring the writer inventory in line with the daemon files; make the convert-repeat comparison independent of the clock; settle the design-session limit against the review deadline in whichever of limit or assertion is wrong; make the build-record test independent of an uncommitted file; and make the LMDB test describe the behaviour of the installed library. Leave no test skipped or deleted to make the sweep green."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/build-freshness.ts:22-30",
+      "quotedText": "return 'the code review structure cannot be verified'"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/approve-codereview-gate.test.ts:85"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/artifact-write-inventory.test.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/convert/__tests__/convert-repeat.test.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/__tests__/call-limits.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/__tests__/build-record.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/graph/__tests__/lock-loss-reproduction.test.ts:53"
+    }
+  ]
+}

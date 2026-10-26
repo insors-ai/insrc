@@ -1,0 +1,1433 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 17,
+        "contentHash": "a20a851a286d22e79384a56b739274d948f78a20400dc92db918b280f4115078",
+        "at": "2026-10-26T08:45:28.805Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "createdAt": "2026-10-26T08:09:00.838Z",
+    "updatedAt": "2026-10-26T08:45:28.686Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "epicSlug": "fix-23-failing-tests-workflow-gate",
+    "revision": 17
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0d38388a8",
+        "ranAt": "2026-10-26T08:09:00.838Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-record-builder.test.ts: the builder's record passes reviewBuildGap for a BUILD with a two-file changeLog",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-record-builder.test.ts",
+                "title": "review-record-builder.test.ts: the builder's record passes reviewBuildGap for a BUILD with a two-file changeLog",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review-record-builder.test.ts: reviewBuildGap still refuses a review with no verdict, no changedFiles, no buildFingerprint, a stale fingerprint or an uncovered changeLog file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-record-builder.test.ts",
+                "title": "review-record-builder.test.ts: reviewBuildGap still refuses a review with no verdict, no changedFiles, no buildFingerprint, a stale fingerprint or an uncovered changeLog file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-record-builder.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 444,
+            "titles": [
+              {
+                "title": "review-record-builder.test.ts: the builder's record passes reviewBuildGap for a BUILD with a two-file changeLog",
+                "result": "pass"
+              },
+              {
+                "title": "review-record-builder.test.ts: reviewBuildGap still refuses a review with no verdict, no changedFiles, no buildFingerprint, a stale fingerprint or an uncovered changeLog file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bea53b892",
+        "ranAt": "2026-10-26T08:21:14.172Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "approve-codereview-gate.test.ts: all ten tests pass through the real approve path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac1: enforce on + CR block + no override → skipped, not approved, codeReview[] blocked",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac3: CR warn → approved, codeReview[] warn + counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac3: CR pass → approved, codeReview[] pass + counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac6: clean meta.review + CR block → withheld ONLY by the code-review gate",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+                "title": "ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/approve-codereview-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 671,
+            "titles": [
+              {
+                "title": "ac1: enforce on + CR block + no override → skipped, not approved, codeReview[] blocked",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: CR warn → approved, codeReview[] warn + counts",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: CR pass → approved, codeReview[] pass + counts",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory",
+                "result": "pass"
+              },
+              {
+                "title": "batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: clean meta.review + CR block → withheld ONLY by the code-review gate",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "100305e6f",
+        "ranAt": "2026-10-26T08:22:45.122Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "approve-build-completion.test.ts: every test of the file passes through the real approve path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac3: BUILD + enforce ON + absent CR => withheld into skipped[], not approved, codeReview[] no-review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac6: a story-scoped artifact whose basename is NOT BUILD- is not withheld even under enforce (basename predicate)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (distinct from meta.review)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+                "title": "ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/approve-build-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 816,
+            "titles": [
+              {
+                "title": "ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: BUILD + enforce ON + absent CR => withheld into skipped[], not approved, codeReview[] no-review",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: a story-scoped artifact whose basename is NOT BUILD- is not withheld even under enforce (basename predicate)",
+                "result": "pass"
+              },
+              {
+                "title": "ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (distinct from meta.review)",
+                "result": "pass"
+              },
+              {
+                "title": "ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "edbc44ef0",
+        "ranAt": "2026-10-26T08:27:25.008Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bugfix-orchestration.test.ts: every test of the file passes, including the two ac3 completion tests",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 591,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "cbb27dd24",
+        "ranAt": "2026-10-26T08:31:54.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "other-party-review-gate.test.ts: every test of the file passes, including the eight T7 tests",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 a DEF with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 a HLD with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 a LLD with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 the message names the reviewer that is needed: a controller review for daemon-authored work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 an ISSUE with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 an SPEC with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T5 an PLAN with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a DEF authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a DEF authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a DEF authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a DEF authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a HLD authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a HLD authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a HLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a HLD authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a LLD authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a LLD authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a LLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 a LLD authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 an other-party review whose verdict BLOCKS still withholds without an override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 an unknown author never withholds by itself",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T6 the same-party rule applies to any artifact that carries a review, also one that needs none",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record whose Story has no code review is withheld (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record whose Story has no code review is withheld (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 the party of a code review is its lifecycle review's when it has one",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 a code review that cannot be read is no code review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T7 the TUI approve service applies the same rules: it calls the same function",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T8 a batch approval lists every withheld artifact in skipped[] with its reason, and approves the rest",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a DEF fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a DEF fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a DEF fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a HLD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a HLD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a HLD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a LLD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a LLD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a LLD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+                "title": "T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/other-party-review-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1516,
+            "titles": [
+              {
+                "title": "T5 a DEF with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "T5 a HLD with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "T5 a LLD with no review is withheld; an override reason approves it and is written on the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "T5 the message names the reviewer that is needed: a controller review for daemon-authored work",
+                "result": "pass"
+              },
+              {
+                "title": "T5 an ISSUE with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "title": "T5 an SPEC with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "title": "T5 an PLAN with no review is approved on the approval alone",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a DEF authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a DEF authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a DEF authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a DEF authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a HLD authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a HLD authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a HLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a HLD authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a LLD authored AND reviewed by the controller is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a LLD authored by the controller and reviewed by the daemon with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a LLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T6 a LLD authored by the daemon and reviewed by the controller with nothing blocking is approved",
+                "result": "pass"
+              },
+              {
+                "title": "T6 an other-party review whose verdict BLOCKS still withholds without an override",
+                "result": "pass"
+              },
+              {
+                "title": "T6 an unknown author never withholds by itself",
+                "result": "pass"
+              },
+              {
+                "title": "T6 the same-party rule applies to any artifact that carries a review, also one that needs none",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record whose Story has no code review is withheld (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record whose Story has no code review is withheld (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)",
+                "result": "pass"
+              },
+              {
+                "title": "T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label",
+                "result": "pass"
+              },
+              {
+                "title": "T7 the party of a code review is its lifecycle review's when it has one",
+                "result": "pass"
+              },
+              {
+                "title": "T7 a code review that cannot be read is no code review",
+                "result": "pass"
+              },
+              {
+                "title": "T7 the TUI approve service applies the same rules: it calls the same function",
+                "result": "pass"
+              },
+              {
+                "title": "T8 a batch approval lists every withheld artifact in skipped[] with its reason, and approves the rest",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a DEF fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a DEF fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a DEF fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a HLD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a HLD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a HLD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a LLD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a LLD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a LLD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              },
+              {
+                "title": "T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "470aa245b",
+        "ranAt": "2026-10-26T08:33:08.897Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "artifact-write-inventory.test.ts: every writer file is inventoried, annotated and classified as the design says",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1690,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "941c3d258",
+        "ranAt": "2026-10-26T08:34:16.665Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-repeat.test.ts",
+                "title": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-repeat.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1184,
+            "titles": [
+              {
+                "title": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more",
+                "result": "pass"
+              },
+              {
+                "title": "convert-repeat",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "f806f8c33",
+        "ranAt": "2026-10-26T08:35:30.518Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "call-limits.test.ts: REVIEW_CALL_LIMITS holds the five call-type rows and every silence limit is below its call's limit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/call-limits.test.ts",
+                "title": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/__tests__/call-limits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 652,
+            "titles": [
+              {
+                "title": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row",
+                "result": "pass"
+              },
+              {
+                "title": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap",
+                "result": "pass"
+              },
+              {
+                "title": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap",
+                "result": "pass"
+              },
+              {
+                "title": "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "66ef2c1fc",
+        "ranAt": "2026-10-26T08:39:58.120Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-record.test.ts: t7 the three hand-filled records prove the gap was real",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1130,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing lifecycle approval (+ its override) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "build-record.test.ts: the completion record needs no legacy stamp",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and the lifecycle still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist whose prior commit does not resolve records HEAD (ISSUE-b97752e9: one that resolves is kept)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SIX omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SIX omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "fc37dab1f",
+        "ranAt": "2026-10-26T08:43:46.363Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lock-loss-reproduction.test.ts: reproduction against the real library",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "reproduction against the real library: read throws (-30775 on macOS, 22 on Linux), synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7377,
+            "titles": [
+              {
+                "title": "reproduction against the real library: read throws (-30775 on macOS, 22 on Linux), synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              },
+              {
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              },
+              {
+                "title": "store library after another process removed its locks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "fc37dab1f",
+        "ranAt": "2026-10-26T08:45:28.686Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "the workflow and db sweeps report no failing test and no new skipped test",
+            "level": "integration",
+            "source": "none",
+            "cases": [],
+            "files": []
+          }
+        ],
+        "files": [],
+        "note": "named tests matched no test file: the workflow and db sweeps report no failing test and no new skipped test (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ae4a07a3-338d-45c2-bc8f-b5253892729a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.870Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move bugfix-orchestration.test.ts onto the builder",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1485ea63173fff2032adfde44210f619ccdfd8b227f0805bd0c0b69906045d33",
+        "at": "2026-10-26T08:07:56.870Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.870Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move bugfix-orchestration.test.ts onto the builder",
+    "summary": "Make writeCR of bugfix-orchestration.test.ts build its body through the shared builder.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The two failing ac3 tests pass",
+      "The rest of the file still passes",
+      "No test is skipped or deleted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bugfix-orchestration.test.ts: every test of the file passes, including the two ac3 completion tests"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

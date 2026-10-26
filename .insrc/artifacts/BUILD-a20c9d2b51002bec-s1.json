@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 14,
+        "contentHash": "d35c9bf12cee34a8e038e02dcf81527ca76f7e92ab8260bba4a58c103bbed91b",
+        "at": "2026-10-26T09:18:08.424Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 14,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T09:18:09.799Z",
+        "override": {
+          "reason": "t10 gate cannot verify observation chronology (evidence in git and docs/plans/workflow-gate-test-fixes.md); t11 is a sweep the gate cannot map to a case; workflow and db sweeps run clean (0 failures, no new skips)."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a5bf62fb-4cd0-48a8-8ffc-8389295e6ec6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:09:00.838Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "revision": 14,
+    "updatedAt": "2026-10-26T08:45:28.686Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "fix-23-failing-tests-workflow-gate"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": false
+      },
+      {
+        "id": "t11",
+        "passed": false
+      }
+    ],
+    "summary": "No code change in t11. Sweeps run by the builder on this commit (foreground, --test-force-exit): src/workflow/** 2389 tests, 0 fail, 6 skipped (before the Story 2387 tests, 22 fail, 6 skipped); src/db/** 598 tests, 0 fail, 0 skipped (before 1 fail). The integration test of this task is those two sweeps, which are too large to map to one case, so no mapping is given.",
+    "testRecord": {
+      "md": "docs/standalone/fix-23-failing-tests-workflow-gate-E20261026a20c9d2b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/valid-code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/review-record-builder.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-codereview-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-build-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/bugfix-orchestration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/other-party-review-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-repeat.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/call-limits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/workflow-gate-test-fixes.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T09:18:02.294Z"
+      }
+    ],
+    "commit": "e65881cf2"
+  },
+  "citations": []
+}

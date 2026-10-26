@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9f3bcf23-25d3-412f-b125-62cc4f2fedb8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.869Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move approve-build-completion.test.ts onto the builder",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5d10cbf2714b47cd854adbf9408f91c6bea1343b4727839acb75adabc824de07",
+        "at": "2026-10-26T08:07:56.869Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.869Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move approve-build-completion.test.ts onto the builder",
+    "summary": "Make writeCR of approve-build-completion.test.ts build its body through the shared builder, with BUILD fixtures whose changeLog the review covers.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The four failing tests (ac1, ac2, ac5, ac6) pass",
+      "The other tests of the file still pass",
+      "No test is skipped or deleted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approve-build-completion.test.ts: every test of the file passes through the real approve path"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

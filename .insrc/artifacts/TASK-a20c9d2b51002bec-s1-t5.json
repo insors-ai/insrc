@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd1644f5-c8ea-4fbd-a2e7-b866aa247cac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.871Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move other-party-review-gate.test.ts onto the builder",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a20c9d2b51002bec-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6c085f1a0736dadbfe7c546510324cb03670662784c1d653ea7daf4df4a8030d",
+        "at": "2026-10-26T08:07:56.871Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.872Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move other-party-review-gate.test.ts onto the builder",
+    "summary": "Make the code review record the file writes come from the shared builder, passing the author and reviewer parties the test already sets through the builder's optional meta; keep the corrupt-record write.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The eight failing T7 tests pass",
+      "The rest of the file still passes",
+      "No test is skipped or deleted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "other-party-review-gate.test.ts: every test of the file passes, including the eight T7 tests"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

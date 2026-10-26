@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6e29c698-d4e8-4ec3-a6f3-32b4c0d1395a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.874Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make call-limits independent of the user's config",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "df3825ece126bcc7583d98892a325795e61b1b8f8ac5a6bfb66fdf7ad9563694",
+        "at": "2026-10-26T08:07:56.874Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.875Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make call-limits independent of the user's config",
+    "summary": "Give the deadline assertions DEFAULT_DESIGN_REVIEW_SETTINGS so the test does not read ~/.insrc/config.json.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "call-limits.test.ts passes with this machine's config",
+      "It would also pass with no config file"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "call-limits.test.ts: REVIEW_CALL_LIMITS holds the five call-type rows and every silence limit is below its call's limit"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

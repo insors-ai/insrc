@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5c061a86-8c69-4e59-9bfc-bf1037642246",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.866Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the shared builder of valid code review records and its test",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5d6de8e9c40aecd6f315d5b7ebf20326154ea1444ed41a6d2159e2dd7e6e13f",
+        "at": "2026-10-26T08:07:56.866Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.867Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the shared builder of valid code review records and its test",
+    "summary": "Add a non-test helper file under src/workflow/__tests__/helpers that builds a code review record (verdict, counts, subject.changedFiles covering every BUILD changeLog file, subject.buildFingerprint from reviewedBuildFingerprint, and optional meta so a test can set the author and reviewer parties) for a given BUILD record. Add a separate .test.ts file that checks reviewBuildGap accepts the builder's record and still refuses each invalid variant: no verdict, no changedFiles, no buildFingerprint, a stale fingerprint, an uncovered changeLog file.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "The builder's record gives reviewBuildGap undefined for a BUILD with a two-file changeLog",
+      "Each of the five invalid variants is refused with the gate's own message",
+      "The builder file is not named .test.ts and the builder has its own test file",
+      "No production file is changed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review-record-builder.test.ts: the builder's record passes reviewBuildGap for a BUILD with a two-file changeLog"
+      },
+      {
+        "level": "unit",
+        "name": "review-record-builder.test.ts: reviewBuildGap still refuses a review with no verdict, no changedFiles, no buildFingerprint, a stale fingerprint or an uncovered changeLog file"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

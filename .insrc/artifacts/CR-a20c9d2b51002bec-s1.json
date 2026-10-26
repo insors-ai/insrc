@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb9bedd0af1dea20a072ab5aae180088ff21300dde39610d7167ea132ed4c82f",
+        "at": "2026-10-26T08:50:58.529Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793004548435-wyl0bn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:49:14.377Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 104151,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "epicSlug": "fix-23-failing-tests-workflow-gate",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 120239,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/workflow/runners/build/__tests__/build-record.test.ts"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/workflow-gate-test-fixes.md",
+        "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+        "src/workflow/__tests__/approve-build-completion.test.ts",
+        "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/__tests__/helpers/valid-code-review.ts",
+        "src/workflow/__tests__/other-party-review-gate.test.ts",
+        "src/workflow/__tests__/review-record-builder.test.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/convert/__tests__/convert-repeat.test.ts",
+        "src/workflow/review/__tests__/call-limits.test.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts"
+      ],
+      "buildFingerprint": "6eea05a679fadc4d8ab91d9d16ca7cbf907d565e1efbd088a963506f1125fb48",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "plans/model-token-usage-implementation.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/__tests__/approve-build-completion.test.ts:1",
+            "message": "The sweep coverage is present but failing/unverified: the listed files pass, but the record does not establish complete workflow and db sweeps or confirm no new skipped tests. BUILD tasks t10 and t11 report failure; the passing lock-loss reproduction file alone does not establish sweep success.",
+            "expectationRef": "the workflow and db sweeps report no failing test and no new skipped test",
+            "confidence": "observation",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  },
+  "citations": []
+}

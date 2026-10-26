@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2bf3b4f5-fe85-4870-99ec-8158b910fb84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T08:07:56.872Z",
+    "epicCreatedAt": "2026-10-26T07:53:29.899Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a20c9d2b51002bec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bring the artifact write inventory in line with the daemon",
+      "parent": {
+        "entityId": "STORY-a20c9d2b51002bec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a20c9d2b51002bec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "053d27159ffb44d2f860e53bfd6ae1826644dad1b8343c62a977281fa5fadd35",
+        "at": "2026-10-26T08:07:56.872Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T08:07:56.873Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bring the artifact write inventory in line with the daemon",
+    "summary": "Read src/daemon/handler-runtime.ts and src/daemon/index.ts, add the inventory entry the scanner needs for the first and correct or remove the stale entry for the second.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "artifact-write-inventory.test.ts passes",
+      "The entries say what each file really does",
+      "The scanner and its controls are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "artifact-write-inventory.test.ts: every writer file is inventoried, annotated and classified as the design says"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

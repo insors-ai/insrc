@@ -423,3 +423,47 @@ test('tui-models.test.ts: an edit waits for the previous save to reload; a save 
 	assert.match(frame, /the daemon could not answer: unknown method 'models\.check' — if it is older/);
 	r.unmount();
 });
+
+test('tui-models.test.ts: a lost connection reads as daemon down; r waits for a pending repo save; an unreadable read-back is reported as unknown', async () => {
+	// The daemon closed the connection mid-request: the pane shows its daemon-down message.
+	const gone = tiersServices({});
+	gone.svc.models.definitions = async () => { throw Object.assign(new Error('the daemon closed the connection before answering models.definitions'), { code: 'disconnected' }); };
+	let r = render(createElement(App, { services: gone.svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5');
+	assert.ok((r.lastFrame() ?? '').includes(MODEL_TIERS_DOWN));
+	r.unmount();
+
+	// Repos models view: r during an in-flight save does not reload (the reload could unlock editing on the old snapshot).
+	const REPO = '/w/r2';
+	const pend = tiersServices({});
+	pend.svc.daemon.getStatus = async () => status({ repos: [repo(REPO)] });
+	let shows = 0;
+	const show = pend.svc.config.show;
+	pend.svc.config.show = async () => { shows++; return show(); };
+	let release: () => void = () => {};
+	pend.svc.config.write = (path, value) => { pend.writes.push([path, value]); return new Promise(res => { release = () => res({ ok: true }); }); };
+	r = render(createElement(App, { services: pend.svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '2', 'm'); await settle();
+	await press(r.stdin, 'e');
+	for (let i = 0; i < 8; i++) { r.stdin.write('\x7f'); await settle(); }
+	r.stdin.write('mid'); await settle(); r.stdin.write('\r'); await settle();
+	const before = shows;
+	await press(r.stdin, 'r'); await settle();
+	assert.equal(shows, before, 'no reload while the save is pending');
+	release(); await settle(); await settle();
+	assert.equal(shows, before + 1, "the save's own reload runs");
+	r.unmount();
+
+	// Check screen: the save's connection drops and the config cannot be read back: the outcome is unknown, not "not saved".
+	const blind = checkServices({});
+	blind.svc.config.write = async () => { throw Object.assign(new Error('the daemon closed the connection before answering config.write'), { code: 'disconnected' }); };
+	r = await openCheck(blind.svc);
+	blind.svc.config.show = async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); };
+	await press(r.stdin, 'a', 'R'); await settle(); await settle();
+	const frame = r.lastFrame() ?? '';
+	assert.match(frame, /whether core was saved is unknown/);
+	assert.doesNotMatch(frame, /the tier was not saved/);
+	r.unmount();
+});

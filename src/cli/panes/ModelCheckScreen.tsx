@@ -150,9 +150,14 @@ export function ModelCheckScreen(props: {
 				props.onClose(true, restartRequired);
 			} catch (err) {
 				// A lost connection may come after the write landed: read the config back before saying it did not.
-				if (disconnected(err) && await tierInConfig(tier)) {
+				const found = disconnected(err) ? await tierInConfig(tier) : 'no';
+				if (found === 'yes') {
 					ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId} — restart the daemon to apply (R)`);
 					props.onClose(true, true);
+					return;
+				}
+				if (found === 'unknown') {
+					if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; the connection was lost while saving and the config could not be read back, so whether ${target.tier} was saved is unknown — go back (esc) and reload the pane (r) to see` });
 					return;
 				}
 				if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; the tier was not saved: ${message(err)}` });
@@ -160,14 +165,14 @@ export function ModelCheckScreen(props: {
 		})();
 	};
 
-	/** Whether the config now holds exactly this tier (false when it cannot be read). */
-	const tierInConfig = async (tier: { runner: string; model: string; effort: string }): Promise<boolean> => {
+	/** Whether the config now holds exactly this tier; 'unknown' when it cannot be read. */
+	const tierInConfig = async (tier: { runner: string; model: string; effort: string }): Promise<'yes' | 'no' | 'unknown'> => {
 		try {
-			const models = (await svc.config.show())['models'] as { tiers?: Record<string, { runner?: unknown; model?: unknown; effort?: unknown }> } | undefined;
+			const models = (await svc.config.show())['models'] as { tiers?: Record<string, { runner?: unknown; model?: unknown; effort?: unknown }> | undefined } | undefined;
 			const saved = models?.tiers?.[target.tier];
-			return saved?.runner === tier.runner && saved.model === tier.model && (saved.effort ?? '') === tier.effort;
+			return saved?.runner === tier.runner && saved.model === tier.model && (saved.effort ?? '') === tier.effort ? 'yes' : 'no';
 		} catch {
-			return false;
+			return 'unknown';
 		}
 	};
 

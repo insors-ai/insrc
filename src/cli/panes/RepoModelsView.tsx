@@ -104,7 +104,8 @@ export function RepoModelsView(props: { repoPath: string; onClose: () => void })
 		if (error !== undefined) { if (input === 'r') setNonce(n => n + 1); return; }
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
-		if (input === 'r') { setNonce(n => n + 1); return; }
+		// A reload while a save is in flight could finish first and unlock editing on the old snapshot.
+		if (input === 'r') { if (!saving) setNonce(n => n + 1); return; }
 		if (input === 'e' && cur !== undefined) {
 			if (saving) { ui.toast('saving — edit again once the view reloads'); return; }
 			setPrompt(cur); ui.capture(true);

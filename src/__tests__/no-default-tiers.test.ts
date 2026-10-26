@@ -50,6 +50,8 @@ const RULES: ReadonlyArray<readonly [string, RegExp]> = [
 	['imports', new RegExp(`(?:import|require)\\s*\\([^)]*\\)\\s*\\)?\\s*\\.\\s*${NAME}`)],
 	// export const|let|var|function|class|… NAME
 	['exports', new RegExp(`(^|\\n)\\s*export\\s+(?:declare\\s+)?(?:const|let|var|function|class|enum|type|interface)\\s+${NAME}`)],
+	// export const a = 1, NAME = … (any declarator of the statement)
+	['exports', new RegExp(`(^|\\n)\\s*export\\s+(?:declare\\s+)?(?:const|let|var)\\s[^;]*,\\s*${NAME}\\s*[=:;,]`)],
 	// export { …, NAME, … } (from '…')  (any line breaks)
 	['exports', new RegExp(`(^|\\n)\\s*export\\s*(?:type\\s*)?\\{[^}]*${NAME}[^}]*\\}`)],
 	// export default NAME
@@ -79,6 +81,8 @@ test('no-default-tiers.test.ts: no file under src imports or exports DEFAULT_TIE
 		[`export { ${EFFORTS} } from "./x.js";`, 'exports'],
 		[`export {\n\tfoo,\n\t${TIERS},\n};`, 'exports'],
 		[`export default ${TIERS};`, 'exports'],
+		[`export const other = 1, ${TIERS} = {};`, 'exports'],
+		[`export let a: number,\n\t${EFFORTS}: string[];`, 'exports'],
 	];
 	for (const [code, kind] of caught) assert.ok(violations(code).includes(kind), `not caught: ${JSON.stringify(code)}`);
 	// Mentions that are neither an import nor an export are not violations.

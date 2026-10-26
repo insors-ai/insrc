@@ -1135,6 +1135,20 @@
             "todo": 3
           },
           "currentSourceFullSweep": "pending"
+        },
+        {
+          "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-source-sweep.json",
+          "result": "fail",
+          "counts": {
+            "tests": 6667,
+            "pass": 6528,
+            "fail": 1,
+            "cancelled": 1,
+            "skipped": 134,
+            "todo": 3
+          },
+          "snapshotCommit": "8743a8f70a364afa21a55859b06499050654aca0",
+          "sourceDrift": []
         }
       ]
     }

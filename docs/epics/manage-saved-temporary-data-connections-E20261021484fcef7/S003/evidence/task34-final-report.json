@@ -61,16 +61,16 @@
     "cli/services/models.ts",
     "daemon/connection-session-rpc.ts"
   ],
-  "fullSweepOnFinalSource": "pending; no claim that focused follow-ups constitute a full passing sweep",
+  "fullSweepOnFinalSource": "completed-failed",
   "resolvedSinceSnapshot": [
     "Build-command literal assertion corrected and passing focused",
     "Session cancellation fixtures now open real owners and use exact revisions; production dispatch now parses cancelTest requestId; cancellation, malformed payload and cross-owner controls pass focused",
-    "migration-walk: all 18 pass alone without force-exit; broad-suite cancellation remains recorded, cause unverified"
+    "migration-walk: all 18 pass alone without force-exit; broad-suite cancellation remains recorded, cause unverified",
+    "Final source full sweep completed after the real cancellation fix; prior focused and broad results remain archived."
   ],
   "remainingIssues": [
-    "Previously recorded live-store directory search failure",
-    "Previously recorded worker-stores timeout",
-    "migration-walk broad-suite cancellation not reproduced in focused run"
+    "src/daemon/threads/__tests__/worker-stores.test.ts",
+    "file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link"
   ],
   "externalPrerequisites": [
     "S001 deferred review",
@@ -83,5 +83,26 @@
   "concurrentSourceCommit": "1784db2f1",
   "currentBaseCommit": "8ec0398dd319b6318776b84026cf4246db3d0014",
   "daemonRestarted": false,
-  "releaseEnabled": false
+  "releaseEnabled": false,
+  "finalSourceSweep": "task34-final-source-sweep.json",
+  "finalSourceCounts": {
+    "tests": 6667,
+    "pass": 6528,
+    "fail": 1,
+    "cancelled": 1,
+    "skipped": 134,
+    "todo": 3
+  },
+  "finalSourceFailureTitles": [
+    "src/daemon/threads/__tests__/worker-stores.test.ts",
+    "file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link"
+  ],
+  "finalSourceSnapshot": "8743a8f70a364afa21a55859b06499050654aca0",
+  "sourceChangesAfterFinalSnapshot": [],
+  "evidenceOnlyChangesAfterSweep": true,
+  "resolvedInFinalSourceRun": [
+    "The updated build-command assertion passed",
+    "Both real Session cancellation route tests passed",
+    "All migration-walk cases completed without the prior broad-suite cancellation"
+  ]
 }

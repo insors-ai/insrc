@@ -129,7 +129,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/cli/services/setup.ts', class: 'non-artifact', via: 'raw', note: 'setup configuration' },
 	{ file: 'src/config/reconcile-io.ts', class: 'non-artifact', via: 'both', note: 'configuration file reconcile, with injectable writers' },
 	{ file: 'src/config/templates.ts', class: 'non-artifact', via: 'raw', note: 'configuration templates' },
-	{ file: 'src/daemon/index.ts', class: 'non-artifact', via: 'raw', note: 'daemon pid and status files' },
+	{ file: 'src/daemon/handler-runtime.ts', class: 'non-artifact', via: 'raw', note: 'the config.write handler replaces ~/.insrc/config.json (the daemon configuration), never an artifact head' },
 	{ file: 'src/daemon/steps/build-step/validation-checks.ts', class: 'non-artifact', via: 'raw', note: 'temporary validation output' },
 	{ file: 'src/daemon/update-runner.ts', class: 'non-artifact', via: 'raw', note: 'daemon update state' },
 	{ file: 'src/db/graph/store.ts', class: 'non-artifact', via: 'raw', note: 'graph store file moves' },

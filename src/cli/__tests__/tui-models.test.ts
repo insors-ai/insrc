@@ -22,7 +22,8 @@ import type { ConfigWriteResult } from '../services/config.js';
 import type { ModelDefinitionsResult } from '../services/models.js';
 import { MODEL_TIERS_DOWN } from '../panes/ModelTiersPane.js';
 import { CANNOT_RECOMMEND } from '../services/setup.js';
-import { fakeServices, settle } from './helpers/fake-services.js';
+import { REPO_MODELS_DOWN } from '../panes/RepoModelsView.js';
+import { fakeServices, repo, settle, status } from './helpers/fake-services.js';
 
 export const DEFS: ModelDefinitionsResult = {
 	version: 1,
@@ -236,5 +237,53 @@ test('tui-models.test.ts: interrupted check and outcome-unknown decision', async
 	await press(r.stdin, 'l'); await settle();
 	assert.match(r.lastFrame() ?? '', /recorded: approved — restart the daemon to use it/);
 	assert.equal(b.approves.length, 1, 'not approved again');
+	r.unmount();
+});
+
+test('tui-models.test.ts: repo models view edits only tasks and coreFloor', async () => {
+	const REPO = '/w/my.repo';
+	const { svc, writes } = tiersServices({ core: { runner: 'cli-codex', model: 'x-a', effort: 'lo' } }, [{ ok: true, restartRequired: true }, { ok: true }, { ok: true }]);
+	svc.daemon.getStatus = async () => status({ repos: [repo(REPO)] });
+	svc.config.show = async () => ({ models: { tiers: { core: { runner: 'cli-codex', model: 'x-a', effort: 'lo' } }, byRepo: { [REPO]: { tasks: { 'design.alternatives.judge': 'mid' } } } } });
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(stdin, '2', 'm'); await settle();
+	let frame = lastFrame() ?? '';
+	assert.match(frame, /Repos · models · \/w\/my\.repo/, 'the view of the selected repo');
+	assert.match(frame, /core\s+FakeX \/ x-a/, 'global tier models shown read-only');
+	assert.match(frame, /coreFloor\s+global/);
+	assert.match(frame, /design\.alternatives\.enumerate\s+global/);
+	assert.match(frame, /design\.alternatives\.judge\s+mid/);
+	assert.doesNotMatch(frame, /runner|effort|\bf family|\bn new model/i, 'no runner, model or effort field');
+
+	const retype = async (value: string): Promise<void> => {
+		for (let i = 0; i < 8; i++) { stdin.write('\x7f'); await settle(); }
+		stdin.write(value); await settle();
+		stdin.write('\r'); await settle(); await settle();
+	};
+	// coreFloor → mid, at the literal-segment path (the dotted repo path is one segment).
+	await press(stdin, 'e'); await retype('mid');
+	// The first role → cheap: the whole tasks map, dotted role ids as flat keys.
+	await press(stdin, 'j', 'e'); await retype('cheap');
+	// Clearing a role (global) drops its key from the map.
+	await press(stdin, 'j', 'e'); await retype('global');
+	assert.deepEqual(writes, [
+		[['models', 'byRepo', REPO, 'coreFloor'], 'mid'],
+		[['models', 'byRepo', REPO, 'tasks'], { 'design.alternatives.judge': 'mid', 'design.alternatives.enumerate': 'cheap' }],
+		[['models', 'byRepo', REPO, 'tasks'], {}],
+	]);
+	assert.ok(writes.every(([path]) => !JSON.stringify(path).includes('tiers')), 'nothing written under tiers');
+	unmount();
+
+	// Daemon down: the view says so and offers no edit.
+	const down = tiersServices({});
+	down.svc.daemon.getStatus = async () => status({ repos: [repo(REPO)] });
+	down.svc.models.definitions = async () => { throw new Error('daemon is not running'); };
+	const r = render(createElement(App, { services: down.svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '2', 'm'); await settle();
+	assert.ok((r.lastFrame() ?? '').includes(REPO_MODELS_DOWN));
+	await press(r.stdin, 'e');
+	assert.deepEqual(down.writes, []);
 	r.unmount();
 });

@@ -6,7 +6,8 @@
 /**
  * Repos pane — the registered repositories and their indexing status.
  * ↑/↓ selects (the highlighted repo is what the Workflows pane targets);
- * a add · d remove · i reindex.
+ * a add · d remove · i reindex · t tracker setup · m the selected repo's
+ * models view (role tiers and coreFloor; tiers themselves are global).
  */
 
 import { Box, Text, useInput } from 'ink';
@@ -20,13 +21,14 @@ import { formatMcpOutcome } from '../services/repo.js';
 import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
 import { trackerStatusGlyph, trackerReportSummary } from './tracker-report.js';
+import { RepoModelsView } from './RepoModelsView.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
 
 const STATUS_COLOR: Record<RegisteredRepo['status'], string> = {
 	ready: 'green', indexing: 'yellow', pending: 'gray', error: 'red',
 };
 
-type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove' | 'tracker';
+type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove' | 'tracker' | 'models';
 
 export function ReposPane(props: {
 	daemon: DaemonState;
@@ -99,10 +101,13 @@ export function ReposPane(props: {
 		else if (input === 'i' && current !== undefined) act('reindex', async () => `reindexing ${await svc.repo.reindex(current.path)}`);
 		else if (input === 'd' && current !== undefined) { setModal('confirm-remove'); ui.capture(true); }
 		else if (input === 't' && current !== undefined) runTrackerSetup(current.path);
+		else if (input === 'm') setModal('models');
 	}, { isActive: modal === 'none' && !captured });
 
 	// The tracker report modal dismisses on any key.
 	useInput(() => { setModal('none'); setReport(null); setRunning(false); ui.capture(false); }, { isActive: modal === 'tracker' });
+
+	if (modal === 'models') return <RepoModelsView repoPath={props.selectedRepo} onClose={() => setModal('none')} />;
 
 	if (modal === 'add') {
 		return (
@@ -192,7 +197,7 @@ export function ReposPane(props: {
 				? <Text dimColor>{props.daemon.running ? 'no repositories registered — press a to add one' : 'daemon down — start it in the Daemon pane'}</Text>
 				: repos.map((r, i) => <RepoRow key={r.path} repo={r} selected={i === clamped} />)}
 			<Box marginTop={1}>
-				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex'], ['t', 'tracker setup']]} />
+				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex'], ['t', 'tracker setup'], ['m', 'models']]} />
 			</Box>
 		</Panel>
 	);

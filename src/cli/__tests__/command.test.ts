@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runCommand, COMMAND_HELP, type CommandCtx } from '../command.js';
+import { runCommand, COMMAND_HELP, MODEL_KEY_REFUSAL, type CommandCtx } from '../command.js';
 import type { Services } from '../services/index.js';
 
 interface Spies {
@@ -185,6 +185,33 @@ test('config set keeps a non-JSON token as a string', async () => {
 	const { ctx, spies } = ctxWith();
 	await runCommand('config set models.local qwen3-coder:latest', ctx);
 	assert.deepEqual(spies.configWrite, [{ path: 'models.local', value: 'qwen3-coder:latest' }]);
+});
+
+test('command.test.ts: config set / unset refuse model keys and report refusals and restartRequired', async () => {
+	const { ctx, spies } = ctxWith();
+	const refused = [
+		'config set models {}',
+		'config set models.tiers.core.runner cli-codex',
+		'config set models.tiers {"core":{}}',
+		'config set models.tasks.context.assemble cheap',
+		'config set models.byRepo {"/w/repo":{"tiers":{}}}',
+		'config set models.byRepo./w/repo.coreFloor mid',
+		'config unset models.tiers.core',
+		'config unset models.byRepo',
+		'config unset models',
+	];
+	for (const line of refused) assert.deepEqual(await runCommand(line, ctx), [MODEL_KEY_REFUSAL], line);
+	assert.deepEqual(spies.configWrite, [], 'no model key reaches config.write');
+
+	// A non-model key is written; restartRequired adds the restart hint.
+	ctx.services.config.write = async (path, value) => { spies.configWrite.push({ path: path as string, value }); return { ok: true, restartRequired: true }; };
+	assert.deepEqual(await runCommand('config set analyze.timeoutMs 1000', ctx), ['set analyze.timeoutMs = 1000', '(restart the daemon to apply)']);
+	assert.deepEqual(spies.configWrite, [{ path: 'analyze.timeoutMs', value: 1000 }]);
+
+	// A refusal prints the reason and detail, never 'set' / 'unset'.
+	ctx.services.config.write = async () => ({ ok: false, reason: 'invalid-path', detail: 'analyze.timeoutMs is not a known option' });
+	assert.deepEqual(await runCommand('config set analyze.timeoutMs fast', ctx), ['✗ not saved: invalid-path — analyze.timeoutMs is not a known option']);
+	assert.deepEqual(await runCommand('config unset analyze.timeoutMs', ctx), ['✗ not saved: invalid-path — analyze.timeoutMs is not a known option']);
 });
 
 test('pane switches the active pane', async () => {

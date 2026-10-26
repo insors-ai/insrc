@@ -4,9 +4,12 @@
   "releaseReady": false,
   "inventory": {
     "path": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
-    "sha256": "582890bf20a528b9bdb9aa36625176bc7d1b2cab64df307cba619db22ab7261a",
+    "sha256": "c5d100c3bdf19f95658200ad305857d169c45dd81ed45f15781c71ebc1198668",
+    "deployedPath": "src/assets/connection-management-inventory.json",
+    "deployedSha256": "800862d6fa5ab181d8bd4ab6da05e7e2e69ecb9c47f884870ce168ee91245080",
+    "deployedFiles": 859,
     "files": 514,
-    "sites": 7245,
+    "sites": 7250,
     "classifications": {
       "provider-admission": 6,
       "session-invocation": 83,

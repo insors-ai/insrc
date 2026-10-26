@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T16:32:59.145Z",
+    "updatedAt": "2026-10-26T16:55:26.711Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2336,6 +2336,355 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t33",
+        "commit": "5be989c84",
+        "ranAt": "2026-10-26T16:55:26.711Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+                "result": "fail"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+                "title": "CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1285,
+            "titles": [
+              {
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1610,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 1328,
+            "titles": [
+              {
+                "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1942,
+            "titles": [
+              {
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5932,
+            "titles": [
+              {
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1925,
+            "titles": [
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8780,
+            "titles": [
+              {
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1419,
+            "titles": [
+              {
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9843,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate' in src/daemon/db/__tests__/connection-reservations.test.ts"
       }
     ]
   }

@@ -16,13 +16,22 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 	const directory = await mkdtemp(join(tmpdir(), 'cm-session-gate-'));
 	try {
 		const build = JSON.parse(await readFile(new URL('out/assets/connection-management-build.json', root), 'utf8')) as Build;
-		const valid = { version: 2, ready: true, sourceFiles: build.sourceFiles, compiledFiles: build.compiledFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes };
+		const inventoryBytes = await readFile(new URL('src/assets/connection-management-inventory.json', root));
+		// Synthetic completion statuses are private positive verifier controls, never shipped/client acceptance.
+		const report = JSON.parse(await readFile(new URL('src/assets/connection-management-evidence.json', root), 'utf8'));
+		report.releaseReady = true;
+		for (const item of Object.values(report.externalPrerequisites) as any[]) item.status = 'verified';
+		for (const client of Object.values(report.externalPrerequisites.S005.clients) as any[]) { client.status = 'verified'; client.evidence = ['private-verification-fixture']; }
+		for (const proof of Object.values(report.proofs) as any[]) { proof.status = 'verified'; if (!proof.records.length) proof.records = [{ privateVerificationFixture: true }]; }
+		const reportBytes = JSON.stringify(report); await writeFile(join(directory, 'inventory.json'), inventoryBytes); await writeFile(join(directory, 'report.json'), reportBytes);
+		const valid = { version: 2, ready: true, sourceFiles: build.sourceFiles, compiledFiles: build.compiledFiles, inventoryFile: 'inventory.json', testReportFile: 'report.json', inventoryDigest: digest(inventoryBytes), testReportDigest: digest(reportBytes), scopes };
 		const path = join(directory, 'proof.json');
 		const compiled = await import(new URL('out/daemon/db/management-enablement.js', root).href) as typeof import('../management-enablement.js');
 		for (const verify of [connectionManagementEnablement, compiled.connectionManagementEnablement]) {
 			const check = async (proof: unknown) => { await writeFile(path, JSON.stringify(proof)); return (await verify(pathToFileURL(path), ['sc5'])).ready; };
 			assert.equal(await check(valid), true, 'a complete current build must be a positive verification control');
 			for (const proof of [
+				{ ...valid, inventoryDigest: 'a'.repeat(64) }, { ...valid, testReportDigest: 'b'.repeat(64) }, { ...valid, inventoryFile: 'missing.json' }, { ...valid, testReportFile: 'missing.json' },
 				{ ...valid, ready: false }, { ...valid, sourceFiles: {} }, { ...valid, compiledFiles: {} },
 				{ ...valid, scopes: scopes.filter(scope => scope !== 'sc7') }, { ...valid, scopes: scopes.filter(scope => scope !== 'sc6') },
 				{ ...valid, sourceFiles: { ...valid.sourceFiles, 'shared/connection-persistence.ts': '0'.repeat(64) } },
@@ -30,6 +39,16 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 				{ ...valid, sourceFiles: valid.compiledFiles, compiledFiles: valid.sourceFiles },
 				{ ...valid, sourceFiles: { ...valid.sourceFiles, '../outside.ts': '0'.repeat(64) } },
 			]) assert.equal(await check(proof), false);
+			await writeFile(join(directory, 'inventory.json'), Buffer.concat([inventoryBytes, Buffer.from(' ')])); assert.equal(await check(valid), false); await writeFile(join(directory, 'inventory.json'), inventoryBytes);
+			await writeFile(join(directory, 'report.json'), reportBytes + ' '); assert.equal(await check(valid), false); await writeFile(join(directory, 'report.json'), reportBytes);
+			const pending = JSON.stringify({ ...report, releaseReady: false }); await writeFile(join(directory, 'report.json'), pending); assert.equal(await check({ ...valid, testReportDigest: digest(pending) }), false); await writeFile(join(directory, 'report.json'), reportBytes);
+			for (const key of Object.keys(report.externalPrerequisites)) {
+				const pendingReport = JSON.parse(reportBytes); pendingReport.externalPrerequisites[key].status = 'pending'; const bytes = JSON.stringify(pendingReport); await writeFile(join(directory, 'report.json'), bytes);
+				assert.equal(await check({ ...valid, testReportDigest: digest(bytes) }), false, key + ' pending cannot be cleared by a ready flag');
+			}
+			await writeFile(join(directory, 'report.json'), reportBytes);
+			const incomplete = JSON.parse(inventoryBytes.toString()); delete incomplete.files['src/shared/connection-persistence.ts']; const incompleteBytes = JSON.stringify(incomplete); await writeFile(join(directory, 'inventory.json'), incompleteBytes);
+			assert.equal(await check({ ...valid, inventoryDigest: digest(incompleteBytes) }), false); await writeFile(join(directory, 'inventory.json'), inventoryBytes);
 			assert.equal((await verify(new URL('missing.json', pathToFileURL(directory + '/')), ['sc5'])).ready, false);
 			assert.equal((await verify(undefined, ['sc5'])).ready, false, 'shipped capability must stay disabled');
 		}
@@ -58,7 +77,11 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		await writeFile(manifestPath, JSON.stringify(manifest));
 		const copied = await import(pathToFileURL(join(copy, 'out/daemon/db/management-enablement.js')).href) as typeof import('../management-enablement.js');
 		const proof = { ...valid, sourceFiles, compiledFiles }, proofPath = pathToFileURL(join(copy, 'proof.json'));
-		const ready = async () => { await writeFile(proofPath, JSON.stringify(proof)); return (await copied.connectionManagementEnablement(proofPath, ['sc5'])).ready; };
+		const ready = async () => {
+			const inventory = JSON.stringify({ productionFiles: sourceFiles, files: Object.fromEntries(Object.entries(sourceFiles).map(([path, sourceDigest]) => ['src/' + path, { sourceDigest, classification: 'verification-fixture', rationale: 'Private copied verifier fixture; no product evidence claim.' }])) });
+			await writeFile(join(copy, 'inventory.json'), inventory); await writeFile(join(copy, 'report.json'), reportBytes); proof.inventoryDigest = digest(inventory); proof.testReportDigest = digest(reportBytes);
+			await writeFile(proofPath, JSON.stringify(proof)); return (await copied.connectionManagementEnablement(proofPath, ['sc5'])).ready;
+		};
 		assert.equal(await ready(), true);
 		const helper = join(copy, 'src/shared/pure-session-helper.ts'); await writeFile(helper, '// source generation two'); sourceFiles['shared/pure-session-helper.ts'] = digest(await readFile(helper));
 		assert.equal(await ready(), false, 'current individual hashes cannot turn an old compiled build into current source evidence');
@@ -93,6 +116,6 @@ test('CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recor
 	assert.equal(report.proofs['CM-S3-SWEEP'].status, 'pending-t34');
 	for (const tree of ['src', 'out']) {
 		const gate = JSON.parse(await readFile(new URL(tree + '/assets/connection-management-gates.json', root), 'utf8'));
-		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, digest(await readFile(new URL(report.inventory.path, root))));
+		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, digest(await readFile(new URL(report.inventory.deployedPath, root))));
 	}
 });

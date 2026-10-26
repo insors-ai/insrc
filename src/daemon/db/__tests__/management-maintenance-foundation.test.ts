@@ -67,7 +67,11 @@ test('release evidence remains disabled until the completed build supplies verif
 	for (const name of [...CONNECTION_FOUNDATION_GATE_FILES,...CONNECTION_TEST_GATE_FILES]) sourceFiles[name+'.ts']=createHash('sha256').update(await readFile(new URL('../../../'+name+'.ts',import.meta.url))).digest('hex');
 	const compiledFiles: Record<string, string> = {};
 	for (const name of Object.keys(sourceFiles)) { const compiled = name.replace(/\.ts$/, '.js'); compiledFiles[compiled] = createHash('sha256').update(await readFile(new URL('../../../../out/' + compiled, import.meta.url))).digest('hex'); }
-	const valid = { version: 2, ready: true, sourceFiles, compiledFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
+	const hash = (bytes: string) => createHash('sha256').update(bytes).digest('hex');
+	const inventory = JSON.stringify({ productionFiles: sourceFiles, files: Object.fromEntries(Object.entries(sourceFiles).map(([path, sourceDigest]) => ['src/' + path, { sourceDigest, classification: 'verification-fixture', rationale: 'Private positive verification fixture; no product release claim.' }])) });
+	const report = JSON.stringify({ releaseReady: true, recordedAt: 'first' });
+	await writeFile(join(dir, 'inventory.json'), inventory); await writeFile(join(dir, 'report.json'), report);
+	const valid = { version: 2, ready: true, sourceFiles, compiledFiles, inventoryFile: 'inventory.json', testReportFile: 'report.json', inventoryDigest: hash(inventory), testReportDigest: hash(report), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
 	await writeFile(path, JSON.stringify(valid));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, true);
 	await writeFile(path,JSON.stringify({...valid,scopes:['sc1','sc2','sc3','sc8']}));
@@ -77,8 +81,10 @@ test('release evidence remains disabled until the completed build supplies verif
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready,false,'S002-only hashes cannot enable missing foundation evidence');
 	await writeFile(path,JSON.stringify(valid));
 	const initial = (await connectionManagementEnablement(pathToFileURL(path))).digest;
-	await writeFile(path, JSON.stringify({ ...valid, testReportDigest: 'c'.repeat(64) }));
+	const updatedReport = JSON.stringify({ releaseReady: true, recordedAt: 'later' }); await writeFile(join(dir, 'report.json'), updatedReport);
+	await writeFile(path, JSON.stringify({ ...valid, testReportDigest: hash(updatedReport) }));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).digest, initial, 'report timestamps do not change running code identity');
+	await writeFile(join(dir, 'report.json'), report);
 	await writeFile(path, JSON.stringify({ ...valid, sourceFiles: { ...sourceFiles, 'daemon/db/management.ts': '0'.repeat(64) } }));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
 	await writeFile(path, JSON.stringify({ ...valid, scopes: ['sc1', 'sc2', 'sc3'] }));

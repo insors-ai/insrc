@@ -10363,6 +10363,18 @@
       "sites": [
         [
           "serialization",
+          "bytes.toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.parse"
         ],
         [
@@ -10388,11 +10400,19 @@
         [
           "filesystem-read",
           "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "779c2010a181762eddad86be92fce8914e56e9ca5e375fee62f02a7bf33d08e4",
-      "sourceDigest": "a2478e848ff76302746fe5020e61ca0aa70b57d84f520945b032a03d8e93b4cf",
+      "siteCount": 12,
+      "sitesDigest": "795faa1b9cbbfbb92dd3379dfde92e8aad730d5848e17fa990242014615a7d50",
+      "sourceDigest": "89d2b93ef8aa3995c7f2dbc78a4d6b82e277268a8c8bdffc1fa404eff4f2db2d",
       "boundaries": [
         "filesystem-read",
         "serialization"

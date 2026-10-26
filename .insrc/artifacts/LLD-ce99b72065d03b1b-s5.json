@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed scope covers S005's upstream acceptance criteria and the HLD's additional review-command and Setup requirements.",
-          "evidence": "DEF §6.5 requires definitions-driven choices, unknown-model approval, and repo role-tier editing. HLD §6.5 additionally requires restart feedback, models.resolveRole for reviews, and definitions-driven Setup. Each has a corresponding contract and implementation step in this LLD. Existing stored relationships are retained and the Services-to-daemon interactions are described; no additional ERD is necessary. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "None for scope coverage; correct the implementation-contract gaps reported below.",
+          "premise": "The design covers S005's acceptance criteria and the additional TUI migrations assigned by the HLD.",
+          "evidence": "DEF §6.5 requires definitions-driven choices, unknown-model approval and repo role-tier editing. HLD §6.5 additionally assigns restart feedback, daemon-resolved reviews, Setup recommendations and removal of temporary exports. Each has a corresponding contract, migration step and test in the LLD. Existing map relationships are retained and their ownership and write paths are documented; an additional ERD is unnecessary. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/config/analyze.ts, src/config/write-path.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -47,10 +47,22 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
+          "severity": "MED",
+          "premise": "The UX definition and generated companion consistently document the approval continuation specified in §2.4.",
+          "evidence": "Both uxDefinition and the generated HTML describe Approve as 'models.approve with the ticked levels, then the tier is saved.' Neither depicts the required approval-recorded state or restart-before-save continuation. This conflicts with §2.4. The distinction is material: approveCheck returns restartRequired:true without replacing the cached registry, and config.write can still refuse a previously rejected model. [files: .insrc/artifacts/LLD-ce99b72065d03b1b-s5.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/daemon/model-check.ts, src/daemon/config-write.ts]",
+          "action": "Correct uxDefinition to show approval recorded → restart → save, including restart failure and retry without re-approving, then regenerate the companion.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "coverage-of-intent.3",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The generated UX companion renders consistently with the proposed Model Tiers, approval, and repo models flows.",
-          "evidence": "Inspected uxDefinition, its companions reference, and the generated HTML source. The source includes the three relevant views, verdict evidence, approval controls, and restart feedback. Browser rendering was attempted, but the in-app browser was unavailable and the browser inventory was empty. Layout, clipping, readability, and rendered consistency could not be verified. [files: .insrc/artifacts/LLD-ce99b72065d03b1b-s5.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
-          "action": "Render the existing companion and inspect those properties before claiming visual verification; request author regeneration if rendering reveals inconsistencies.",
+          "premise": "The linked UX companion renders legibly and consistently with the design.",
+          "evidence": "Inspected the structured UX definition, companion reference and generated HTML source. Opening the companion through the in-app browser failed with 'Browser is not available: iab'; browser inventory was empty. Rendered layout, clipping and readability could not be checked. [files: .insrc/artifacts/LLD-ce99b72065d03b1b-s5.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
+          "action": "Render the regenerated companion in an available browser and verify its layout and states.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -60,8 +72,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The current Model Tiers pane resolves through the shipped registry and saves individual tier fields.",
-          "evidence": "computeEffectiveTiers calls 'resolveTier(tiering, t, shippedModelRegistry())'. buildRows assigns separate runner/model/effort paths through tierFieldPath, and save passes that individual path to svc.config.write. EFFORT_CYCLE is derived from TIER_EFFORTS. These function bodies support the migration description. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/shipped-model-registry.ts]",
+          "premise": "The principal current-behaviour claims in §7 match the implementation.",
+          "evidence": "computeEffectiveTiers calls resolveTier with shippedModelRegistry; ModelTiersPane writes individual runner/model/effort paths and uses the static effort cycle. reviewArtifact constructs a local router and calls loadAnalyzeConfig. Setup uses DEFAULT_LOCAL_MODEL. ReposPane has no models view, and runConfig awaits config.write but discards its result. The literal scan excludes src/cli and the recommender. These were verified by function-body reads after analyze returned an off-topic, incomplete map. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/panes/ReposPane.tsx, src/cli/services/workflow.ts, src/cli/command.ts, src/shared/model-recommender.ts, src/daemon/__tests__/model-literal-scan.test.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -71,58 +83,22 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Changing to any family can select that family's tierDefault model and effort.",
-          "evidence": "model-catalog.ts explicitly describes CliFamilyId as 'the only ones with tier defaults and a summariser'. The shipped Ollama family has models and toolLoopModel but no tierDefaults. FamilyDefinitionEntry also makes tierDefaults optional. Cycling over all defs.families and applying §2.3's family-tierDefault rule therefore leaves switching to Ollama undefined. [files: src/daemon/model-catalog.ts, src/daemon/model-definitions.ts, src/assets/models/cloud-model-catalog.json, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Specify and test a definitions-driven selection rule for a family without tierDefaults, including Ollama, without changing sc1/sc3's contract.",
+          "severity": "LOW",
+          "premise": "The proposed Services.models facade can reuse the implemented daemon contracts without recreating registry or probing logic.",
+          "evidence": "modelDefinitions supplies family/model/alias/effort/default/installed fields; checkModel, approveCheck and rejectCheck expose the described check and decision shapes. resolveRoleWire supplies family, model, effort, inputLimit and provider settings. ConfigWriteResult already carries restartRequired or refusal details. Services currently has no models facade, so the proposed wrappers are new client plumbing. [files: src/cli/services/index.ts, src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/daemon/config-write.ts, src/daemon/handler-runtime.ts]",
+          "action": "Reuse these existing wire types, aliasing ResolvedRole if the client calls it RoleResolution.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Constructing OllamaProvider with the resolved model, host, and numCtx avoids reading config.json in the TUI review process.",
-          "evidence": "OllamaProvider's constructor unconditionally executes 'const d = localDefaults()' even when all three arguments are supplied. localDefaults calls loadLocalProviderConfig, whose uncached path uses 'readFileSync(PATHS.config, ...)' when the file exists. Thus §2.7's 'No config.json read' postcondition does not follow from the proposed constructor call. Pointing HOME at a missing config file would not detect this. [files: src/agent/providers/ollama.ts, src/config/local.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Account for the constructor's implicit configuration dependency and provide a config-free construction path, or explicitly revise the invariant. Verify with an existing config file and an observable prohibition on local config access.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.1",
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The change inventory covers the callers affected by making Services.setup.recommend asynchronous and definitions-dependent.",
-          "evidence": "src/cli/command.ts runSetup currently executes 'const rec = svc.setup.recommend(info)' and immediately reads rec.tier/rec.coder, passes rec to apply, and passes it to modelsToPull. The LLD changes recommend to async recommend(info, defs), but its command changes cover runConfig only. The untouched setup command would fail type checking and would lack definitions and daemon-down handling. [files: src/cli/command.ts, src/cli/services/index.ts, src/cli/services/setup.ts, src/cli/__tests__/command.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Add runSetup and its command tests to the inventory; specify fetching definitions, awaiting recommendation, and handling unavailable definitions for show/apply/pull.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "DEFAULT_TIERS and TIER_EFFORTS have no consumers outside src/cli after s3.",
-          "evidence": "tier-defaults.test.ts imports 'assembleConfig, DEFAULT_TIERS, parseTiering'; config-catalog-defs.test.ts imports 'DEFAULT_TIERS, TIER_EFFORTS' and asserts both; model-catalog-asset.test.ts imports and asserts DEFAULT_TIERS. These are consumers outside src/cli and are not included in the removal inventory. Deleting the exports without migrating them breaks those test modules. The existing literal scan excludes __tests__, so it does not establish the claimed absence. [files: src/config/__tests__/tier-defaults.test.ts, src/config/__tests__/config-catalog-defs.test.ts, src/daemon/__tests__/model-catalog-asset.test.ts, src/daemon/__tests__/model-literal-scan.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Inventory and migrate these test consumers before removing the exports, and include them in verification of the removal.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Every TUI tier edit writes a whole tier object, preventing a runner from being saved with the previous family's model.",
-          "evidence": "runConfig forwards arbitrary keys to config.write. The proposed §2.6 guard restricts per-repo paths but still permits 'config set models.tiers.core.runner cli-codex'. applyConfigWrite permits runner-leaf writes unless they select a rejected model; it does not require family/model consistency. Consequently the command bar still permits the partial tier write that §3.2 says is eliminated. [files: src/cli/command.ts, src/daemon/config-write.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Specify how command-bar tier-field edits satisfy the same whole-tier invariant, or refuse those edits and direct users to a supported whole-tier operation. Add a command regression test.",
+          "severity": "MED",
+          "premise": "The change inventory covers existing callers affected by making reviewArtifact require daemon role resolution.",
+          "evidence": "review-source-roots-daemon.test.ts calls reviewArtifact with only its existing third-argument reviewFile seam. Its store-child daemon registers source-root/status methods but no models.resolveRole. same-party-refusal.test.ts calls 'reviewArtifact(f.repo, f.md)' without a daemon fixture and expects SamePartyReviewError. The new default RPC resolution runs before reviewFile, so these tests will fail before reaching their intended assertions. Neither migration is identified in the LLD. [files: src/cli/services/workflow.ts, src/cli/services/__tests__/review-source-roots-daemon.test.ts, src/db/graph/__tests__/helpers/store-child.ts, src/workflow/review/__tests__/same-party-refusal.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Add both callers to the inventory and inject the new resolveRole seam or extend their daemon fixtures while preserving source-root and same-party assertions.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -132,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The repo view's whole-map writes and literal array paths preserve existing repo and role keys without a stored-shape migration.",
-          "evidence": "toConfigSegments uses array segments verbatim. nextRoleTiers copies the existing map and deletes only the cleared role. parseTiering reads tasks as flat role keys and byRepo as literal repo-path keys; a null coreFloor produces no parsed override. These match the proposed repo-view writes and preserve the existing storage shape. [files: src/config/write-path.ts, src/config/analyze.ts, src/cli/panes/model-tiers.ts]",
-          "action": "Retain these array-path and whole-map rules.",
+          "premise": "Whole-tier writes and segmented repo paths preserve the existing stored shapes and dotted dynamic keys.",
+          "evidence": "parseTiering reads global tiers and flat tasks maps, including per-repo tasks/coreFloor. setConfigAtPath uses array elements verbatim, and nextRoleTiers copies the map while setting or deleting a flat role key. The proposed paths therefore preserve dotted repo names and role ids without a storage migration. [files: src/config/analyze.ts, src/config/write-path.ts, src/cli/panes/model-tiers.ts, src/daemon/config-write.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,21 +120,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "HIGH",
-          "premise": "Allowing command-bar tasks.* dot paths preserves dotted role ids and repo paths.",
-          "evidence": "§2.6 explicitly permits tasks.* and forwards a dot-string key. toConfigSegments implements string paths with 'String(path).split(...)'. A permitted key such as models.byRepo./w/repo.tasks.context.assemble is stored as nested tasks.context.assemble, while parseTiering expects the flat key 'context.assemble' and ignores the nested object as an invalid tier. A repo directory containing dots is likewise split into different keys. [files: src/cli/command.ts, src/config/write-path.ts, src/config/analyze.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Define unambiguous repo/role addressing for commands and translate to literal segments plus whole-map updates, or refuse unsupported dotted leaf edits. Test dotted role ids and dotted repo directories.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.3",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The proposed command-bar path guard ensures no TUI write can introduce per-repo tier objects.",
-          "evidence": "runConfig accepts JSON object values through parseValue and forwards parent-object writes. A restriction only on keys under models.byRepo.<repo> does not cover 'config set models.byRepo {\"/w/repo\":{\"tiers\":{\"core\":{\"runner\":\"cli-codex\",\"model\":\"x\"}}}}'. setConfigAtPath writes that object unchanged, and applyConfigWrite checks rejected models only in global tiers. The design itself confirms that daemon-side per-repo tier refusal is absent. [files: src/cli/command.ts, src/config/write-path.ts, src/daemon/config-write.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Extend the TUI guard to cover ancestor-object writes and their values, so the claimed invariant holds without depending on a future sc5 change. Include parent-write tests.",
+          "premise": "The proposed default-tier overlay preserves existing effort-only settings when a tier's model is unset or invalid.",
+          "evidence": "§2.2 specifies using the definitions' tierDefault when no configured tier survives, but omits AnalyzeTiering.efforts. parseTiering deliberately retains effort before dropping an empty model: 'if (effort !== undefined) efforts[tier] = effort' precedes 'if (model === \"\") continue'. Daemon tierSetting then uses 'const chosen = effort ?? def.effort'. An existing regression explicitly asserts that core.model:'' with core.effort:'high' displays high. Following the new overlay rule would display and edit a different effort from the daemon. [files: src/config/analyze.ts, src/cli/__tests__/model-tiers.test.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Specify effort precedence through tiering.efforts, preserving absent versus explicit empty effort, and retain the regression using fake definitions with a differing default effort.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -168,33 +132,33 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S005 consumes the existing model IPC contracts while leaving catalog, registry, checking, and daemon resolution ownership with the adjacent Stories.",
-          "evidence": "The implemented models.definitions projection supplies families/models/efforts; model-check supplies check/approve/reject and DecisionResult; model-definitions supplies resolveRoleWire; config-write supplies ConfigWriteResult. The LLD introduces client wrappers and rendering rather than replacing those implementations. It explicitly leaves daemon-side per-repo refusal with sc5's owner. [files: src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/daemon/config-write.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Keep fixes to client selection, addressing, and sequencing within this boundary; coordinate any necessary shared-contract change with its owner.",
+          "premise": "S005 consumes the existing shared contracts and leaves daemon validation and IDE migrations with their owning stories.",
+          "evidence": "HLD §6.5 assigns these TUI migrations to S005. The LLD reuses sc3/sc4/sc5 and explicitly leaves daemon-side refusal of per-repo tiers to sc5's owner. applyConfigWrite currently checks rejected global models rather than prohibiting byRepo tiers, matching that stated limitation. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/daemon/config-write.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Keeping setup.apply unchanged is consistent with the invariant that TUI config access occurs only through daemon requests.",
+          "evidence": "§2.1 leaves setup.apply unchanged, while §5 says 'config, definitions and approvals come only through daemon requests'. The existing apply implementation directly calls readFileSync(PATHS.config, ...) and writeFileSync(PATHS.config, ...). A Services facade does not make these operations daemon requests; the proposed implementation retains this exception. [files: src/cli/services/setup.ts, src/cli/services/index.ts, src/cli/panes/SetupPane.tsx, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Narrow the invariant to the migrated model-settings paths and explicitly document Setup's existing config-I/O exception, or design a daemon-mediated apply path within agreed scope.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "error-paths.1",
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A previously rejected model can be approved and immediately saved to the tier before the offered restart.",
-          "evidence": "approveCheck records the new profile, deletes the pending check, and returns restartRequired:true. It does not replace the cached registry. getModelRegistry returns the existing registry until restart. config.write uses that registry, and rejectedIn refuses a changed tier naming an id still in registry.rejected. Therefore the proposed 'approve, then save the tier' sequence fails for a previously rejected model, and retrying approval encounters unknown-check because the successful decision consumed it. [files: src/daemon/model-check.ts, src/daemon/model-registry.ts, src/daemon/config-write.ts, src/daemon/handler-runtime.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Specify a restart-aware continuation for re-approval and distinguish 'approval recorded, tier save pending/failed' from decision failure. Test a cached rejection followed by successful approval, tier saving, restart failure, and retry.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "Failed checks, invalid parameters, and refused decisions expose the discriminants needed by the proposed error screens.",
-          "evidence": "checkModel returns invalid-params with recoverable:false for invalid requests, otherwise a result containing runs, efforts/evidence, and optional error. approveCheck refuses runs:false with model-did-not-run and validates allowed efforts; pendingCheck returns unknown-check; failed persistence returns write-failed. The shared rpc client rejects socket failures and response errors. These support the specified refusal messages and withholding approval after a failed run. [files: src/daemon/model-check.ts, src/shared/ipc-client.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Preserve the distinction between rejected RPC promises, error replies, decision refusals, and the post-approval save failure described above.",
+          "premise": "The specified check, decision and restart failures are detectable through the reused contracts, and the textual continuation preserves a successful approval.",
+          "evidence": "checkModel returns invalid-params or runs/efforts/error; approveCheck rejects failed runs and invalid efforts. Decision persistence returns write-failed without consuming the pending check, while success deletes it and returns restartRequired:true. maintenance.restart returns ok:false/error or can reject. §2.4 correctly retains approval state, retries restart without resending approval, and distinguishes a later tier-save refusal. [files: src/daemon/model-check.ts, src/daemon/config-write.ts, src/cli/services/maintenance.ts, src/shared/ipc-client.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Keep these distinctions in implementation and bring the UX companion into agreement.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -204,21 +168,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each upstream S005 acceptance criterion maps to a relevant planned test.",
-          "evidence": "The LLD maps ac1 to fake-definition choices, whole-tier writes, and source scanning; ac2 to check/verdict/approval behavior; ac3 to repo tasks/coreFloor writes and command refusals. The existing tui.test.ts uses ink-testing-library with injected Services, and command.test.ts exercises runCommand with recording fake services, supporting the proposed test approach. This confirms the mapping, not execution of the future tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts]",
-          "action": "Retain the mapping and add the concrete regressions identified in this review, including migrations of existing export consumers.",
+          "premise": "Each S005 acceptance criterion maps to concrete tests using repository-supported test mechanisms.",
+          "evidence": "ac1 maps to differing fake definitions, picker keystrokes, whole-tier write assertions and source scans; ac2 maps to check/evidence/approval/rejection and restart/save sequencing; ac3 maps to repo-map writes and command-bar guards. Existing tests establish node:test, ink-testing-library and injected Services as usable mechanisms. This verifies the proposed coverage mapping, not execution of the unimplemented tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts, src/cli/__tests__/model-tiers.test.ts, src/daemon/__tests__/model-literal-scan.test.ts]",
+          "action": "Implement the mapped tests, adding the retained-effort regression and existing review-caller migrations identified above.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 7,
-        "med": 1,
-        "low": 7,
+        "high": 1,
+        "med": 3,
+        "low": 8,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-26T11:16:58.366Z",
+      "reviewedAt": "2026-10-26T11:24:04.819Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -418,7 +382,7 @@
           ],
           "returns": {
             "type": "EffectiveTiers",
-            "meaning": "Per tier: the configured {runner, model, effort} when set, else the default family's tierDefault resolved to the model's canonical id (source 'default'); plus a per-tier note when the configured model is not served by its family (it will run the tier default until approved and the daemon restarted). Roles, coreFloor and stale overrides as today."
+            "meaning": "Per tier: the configured {runner, model, effort} when a tier survives parseTiering; else (unset, or dropped for an empty model) the default family's tierDefault model resolved to its canonical id (source 'default') with effort tiering.efforts[tier] when present — an explicit '' stays '' — else the tierDefault's effort, the same precedence the daemon applies (tierSetting: effort ?? default effort); plus a per-tier note when the configured model is not served by its family (it runs the tier default until approved and the daemon restarted). Roles, coreFloor and stale overrides as today."
           },
           "errors": [],
           "preconditions": [
@@ -568,7 +532,7 @@
             }
           ],
           "preconditions": [
-            "The daemon is running."
+            "The daemon is running, or a resolveRole seam is injected (tests)."
           ],
           "postconditions": [
             "The review runs the family, model, effort and Ollama host / numCtx the daemon resolves (sc5)."
@@ -613,7 +577,8 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "No local model name is chosen by the TUI."
+            "No local model name is chosen by the TUI.",
+            "svc.setup.apply keeps its existing direct write of config.json (unchanged by s5; settings-write safety is out of scope, ISSUE-8dc75bc5)."
           ]
         },
         {
@@ -692,6 +657,16 @@
         "callSites": [
           "src/cli/panes/SetupPane.tsx:28",
           "src/cli/services/setup.ts:28"
+        ]
+      },
+      {
+        "entity": "reviewArtifact callers in tests",
+        "change": "field-modify",
+        "details": "The two existing callers that reach reviewArtifact without a daemon that answers models.resolveRole pass the new resolveRole seam (a fake CLI answer) so their source-root and same-party assertions still run: src/cli/services/__tests__/review-source-roots-daemon.test.ts and src/workflow/review/__tests__/same-party-refusal.test.ts.",
+        "callSites": [
+          "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+          "src/workflow/review/__tests__/same-party-refusal.test.ts",
+          "src/cli/services/workflow.ts:244"
         ]
       }
     ],
@@ -833,6 +808,10 @@
         {
           "input": "A repo path containing dots (e.g. /w/my.repo) in the Repos models view.",
           "expected": "Written at ['models','byRepo','/w/my.repo','tasks'] as one literal segment."
+        },
+        {
+          "input": "config.json has models.tiers.core.model '' with models.tiers.core.effort 'high' (parseTiering drops the tier but keeps the effort).",
+          "expected": "The pane shows the default family's core tierDefault model with effort 'high', matching the daemon; with effort '' it shows '' (CLI default), not the tierDefault's effort."
         }
       ],
       "invariantsToPreserve": [
@@ -841,7 +820,7 @@
           "source": "c10"
         },
         {
-          "text": "The TUI never opens daemon-owned state: config, definitions and approvals come only through daemon requests (Services facade), and the review command's model choice comes from models.resolveRole, never from tier config read in the TUI.",
+          "text": "The model-settings paths s5 migrates (the Model Tiers pane, the check screen, the Repos models view, the command bar's model keys, the review command and the Setup recommendation) read and write only through daemon requests (Services facade); the review command's model choice comes from models.resolveRole. Setup's existing apply, which writes config.json directly, is unchanged and out of scope (ISSUE-8dc75bc5).",
           "source": "c2"
         },
         {
@@ -865,11 +844,11 @@
           "level": "unit",
           "purpose": "The pure tier overlay over a fake definitions answer, the recommender with a passed-in local model, the command-bar guard and result rendering, and the review command's provider construction.",
           "subjects": [
-            "src/cli/__tests__/model-tiers.test.ts: computeEffectiveTiers(tiering, fakeDefs) — an unset tier shows the fake default family's tierDefault as a canonical id; a set tier shows its value; a configured model the family does not serve carries the 'not served' note; effort choices for a tier are exactly '' plus the chosen model's efforts in the fake answer; no import of DEFAULT_TIERS / TIER_EFFORTS / shippedModelRegistry",
+            "src/cli/__tests__/model-tiers.test.ts: computeEffectiveTiers(tiering, fakeDefs) — an unset tier shows the fake default family's tierDefault as a canonical id; a set tier shows its value; a configured model the family does not serve carries the 'not served' note; effort choices for a tier are exactly '' plus the chosen model's efforts in the fake answer; no import of DEFAULT_TIERS / TIER_EFFORTS / shippedModelRegistry; the effort regression: core.model '' with core.effort 'high' shows 'high' over a fake tierDefault effort 'low', an explicit '' shows '', and no effort shows the tierDefault's",
             "src/cli/__tests__/model-tiers.test.ts: tier edit helpers — changing family yields { runner: newFamily, model: its tierDefault model, effort: its tierDefault effort or '' }, and for a family without tierDefaults (the fake Ollama family) { model: its toolLoopModel, effort: '' }; changing model drops an effort the new model does not list; a typed id that is an alias resolves to the canonical id; an unserved id of a CLI family asks for a check; an unserved Ollama id is refused",
             "src/cli/__tests__/command.test.ts: config set / unset — keys models, models.tiers.core.runner, models.tiers, models.tasks.context.assemble, models.byRepo and models.byRepo./w/repo.coreFloor are refused with the pointer message and the fake config.write is never called (including an object value for models.byRepo); a non-model key is written; an ok:false result prints '✗ not saved: <reason> — <detail>' and never 'set'; restartRequired prints the restart hint; `setup show|apply|pull` fetch the fake definitions and recommend its toolLoopModel, and with models.definitions rejecting each prints 'cannot recommend a local model: the daemon is not running' and calls neither apply nor pullModels",
             "src/shared/__tests__/model-recommender.test.ts: recommendModels(info, { model: 'fake-local:1', installed: false }) recommends that model with pull true; installed absent falls back to info.ollama.models; the module names no definitions model",
-            "src/cli/services/__tests__/review-resolve-role.test.ts: reviewArtifact with a fake resolveRole — a cli answer builds CliProvider with that kind, model, effort and a chars input budget; an ollama answer builds OllamaProvider whose model, host and numCtx are the answer's even when HOME holds a config.json naming another core model and host; the model label is '<family>:<model>'; a rejecting or { error } resolveRole throws 'cannot review: …' and reviewFile is never called; the review path imports no createRoleRouter / loadAnalyzeConfig / registry",
+            "src/cli/services/__tests__/review-resolve-role.test.ts: reviewArtifact with a fake resolveRole — a cli answer builds CliProvider with that kind, model, effort and a chars input budget; an ollama answer builds OllamaProvider whose model, host and numCtx are the answer's even when HOME holds a config.json naming another core model and host; the model label is '<family>:<model>'; a rejecting or { error } resolveRole throws 'cannot review: …' and reviewFile is never called; the review path imports no createRoleRouter / loadAnalyzeConfig / registry; src/cli/services/__tests__/review-source-roots-daemon.test.ts and src/workflow/review/__tests__/same-party-refusal.test.ts pass the resolveRole seam and keep their source-root and same-party assertions",
             "src/__tests__/no-default-tiers.test.ts: no file under src (tests included) imports or exports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts does not exist"
           ],
           "fixturesNeeded": [
@@ -948,7 +927,7 @@
         },
         {
           "order": 4,
-          "action": "Switch the review command to models.resolveRole and build its provider from the answer; delete src/cli/shipped-model-registry.ts and its test.",
+          "action": "Switch the review command to models.resolveRole and build its provider from the answer, giving the two existing test callers (review-source-roots-daemon, same-party-refusal) the resolveRole seam; delete src/cli/shipped-model-registry.ts and its test.",
           "rollbackable": true
         },
         {
@@ -1198,7 +1177,7 @@
                 {
                   "type": "Action.Submit",
                   "title": "Approve selected levels (a)",
-                  "description": "models.approve with the ticked levels, then the tier is saved."
+                  "description": "models.approve with the ticked levels; the approval is recorded but nothing is saved yet (see the approved state)."
                 },
                 {
                   "type": "Action.Submit",
@@ -1211,6 +1190,49 @@
                   "description": "Leaves with no decision."
                 }
               ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Check screen after a successful approval: the tier is saved only after a daemon restart.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Approved <model> (levels: high, xhigh) — restart the daemon to use it",
+              "description": "Approval recorded by the daemon; the running daemon still uses its cached definitions.",
+              "wrap": true,
+              "weight": "bolder"
+            },
+            {
+              "type": "ActionSet",
+              "description": "R restarts the daemon and only then saves the tier; the approval is never sent again.",
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "Restart and save models.tiers.<tier> (R)",
+                  "description": "svc.daemon.restart, then config.write('models.tiers.<tier>', { runner, model, effort: the first allowed level })."
+                },
+                {
+                  "type": "Action.Submit",
+                  "title": "Later (esc)",
+                  "description": "Leaves the approval recorded; the tier can be set from the pane after a restart."
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "approval recorded; restart failed: <detail> — the tier was not saved (R retries)",
+              "description": "Shown when the restart fails; R retries restart-then-save.",
+              "wrap": true,
+              "color": "attention"
+            },
+            {
+              "type": "TextBlock",
+              "text": "approval recorded; the tier was not saved: <reason> — <detail>",
+              "description": "Shown when the save after the restart is refused.",
+              "wrap": true,
+              "color": "attention"
             }
           ]
         },

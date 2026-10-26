@@ -174,7 +174,16 @@
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-26T12:25:04.195Z"
+    "approvedAt": "2026-10-26T12:25:04.195Z",
+    "questionResolutions": {
+      "qbd2a4e65": {
+        "question": "Checklist ep3 (partial): the k5 invariant (an unknown model is saved only after approval) is a DEF constraint carried by the HLD (c1); its code evidence is the s4 check result shape (src/daemon/model-check.ts), not an s1 analyze bundle.",
+        "status": "resolved",
+        "choice": "Correct the LLD evidence mapping",
+        "rationale": "User choice: trace k5 from the DEF through HLD c1 to the s4 check result shape (src/daemon/model-check.ts); s5's tests cover approve → restart → save.",
+        "resolvedAt": "2026-10-26T12:32:39.470Z"
+      }
+    }
   },
   "body": {
     "summary": {

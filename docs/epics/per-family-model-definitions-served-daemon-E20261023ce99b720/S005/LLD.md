@@ -495,22 +495,20 @@ A TUI adapter turns ModelDefinitionsResult back into a ModelDefinitionsFile + ap
 - sc5 (owner s3): config.write still accepts models.byRepo.<repo>.tiers (and partial tier fields) from any client; only the next boot's reconcile prunes per-repo tiers. The TUI no longer sends either (the command bar refuses model keys); should config.write refuse them so VS Code (s6), JetBrains (s7) and hand-written requests are held to k6 too?
 - recommendModels keeps a generic VRAM estimate for the local model to size the context shape; the definitions carry no memory figure for an Ollama model. Should the definitions gain one, or is the estimate acceptable?
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qbd2a4e65` — Checklist ep3 (partial): the k5 invariant (an unknown model is saved only after approval) is a DEF constraint carried by the HLD (c1); its code evidence is the s4 check result shape (src/daemon/model-check.ts), not an s1 analyze bundle.
+  - **resolved**: Correct the LLD evidence mapping — User choice: trace k5 from the DEF through HLD c1 to the s4 check result shape (src/daemon/model-check.ts); s5's tests cover approve → restart → save. _(2026-10-26T12:32:39.470Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-26T11:53:50.143Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| coverage-of-intent | The linked UX companion renders consistently with the proposed interaction. | Read the generated HTML, including its screen content and element descriptions. It contains tier selection, check results, approval-before-restart, restart/save failures and repo settings. Browser rendering could not be checked: opening the in-app browser returned 'Browser is not available: iab', and browser inventory was empty. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html] | Render the existing companion and verify layout, readability and consistency before accepting visual verification. |
+- **[[c1]]** `prior-artifact` `HLD-ce99b72065d03b1b` — "s5 boundary: the TUI model-tiers pane from models.definitions, the unknown-model check and approval screen, the repo settings view limited to tasks and coreFloor, restartRequired, the review command v"
+- **[[c2]]** `analyze-bundle` `s1 symbol.locate (Daemon requests and services the TUI reaches)` — "The TUI reaches the daemon only through rpc behind the Services facade (src/cli/services/index.ts), which tests replace with a fake."
+- **[[c3]]** `code` `src/cli/panes/model-tiers.ts:59` — "export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {"
+- **[[c4]]** `code` `src/cli/panes/ModelTiersPane.tsx:91` — "const v = input.trim();"
+- **[[c5]]** `code` `src/cli/services/workflow.ts:244` — "export async function reviewArtifact("
+- **[[c6]]** `code` `src/cli/command.ts:390` — "case 'set': {"
+- **[[c7]]** `code` `src/shared/model-recommender.ts:108` — "export function recommendModels(info: SystemInfo): ModelRecommendation {"
+- **[[c8]]** `code` `src/daemon/__tests__/model-literal-scan.test.ts:30` — "{ file: 'src/cli/', owner: 's5', why: 'the TUI moves to models.definitions / models.resolveRole in s5' },"
+- **[[c9]]** `step-output` `s3` — "winnerId a2: satisfies ac1, ac2 and ac3 with sc3, sc4, sc5, k2, k5 and k6."
+- **[[c10]]** `code` `src/cli/panes/model-tiers.ts:129` — "export function nextRoleTiers("

@@ -158,6 +158,8 @@ test('cumulative model identity considers starts finishes and intermediate frame
     ['model-a', null, 'model-b', 'model-b'],
     ['model-a', null, null, 'model-b'],
     [null, 'model-a', 'model-b', null],
+    [null, null, 'model-b', 'model-b'],
+    ['model-a', null, null, null],
     ['model-a', null, 'model-a', null],
   ]) {
     const rows = [

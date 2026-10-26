@@ -134,8 +134,9 @@ function isStringList(v: unknown): v is string[] {
 	return Array.isArray(v) && v.every(x => typeof x === 'string');
 }
 
-/** Why an entry is not a valid ApprovedProfile, or undefined when it is. */
-function profileProblem(e: unknown): string | undefined {
+/** Why an entry is not a valid ApprovedProfile, or undefined when it is. The
+ *  store writer (model-check.ts) validates a new profile with the same rule. */
+export function profileProblem(e: unknown): string | undefined {
 	if (typeof e !== 'object' || e === null || Array.isArray(e)) return 'not an object';
 	const p = e as Record<string, unknown>;
 	if (p['family'] !== 'cli-claude' && p['family'] !== 'cli-codex') return `unknown family '${String(p['family'])}'`;

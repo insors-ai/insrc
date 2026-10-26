@@ -23,6 +23,7 @@ import { _setModelCatalogDirForTests } from '../model-catalog.js';
 import { projectDefinitions } from '../model-definitions.js';
 import {
 	getModelRegistry,
+	profileProblem,
 	_resetModelRegistryForTests,
 	_setApprovedModelsPathForTests,
 	type ApprovedProfile,
@@ -252,4 +253,28 @@ test('model-registry.test.ts: getModelRegistry() returns the same cached registr
 	const second = getModelRegistry();
 	assert.equal(second, first);
 	assert.deepEqual(second.models('cli-codex').map(m => m.id), ['gpt-a', 'gpt-b']);
+});
+
+test('model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips', () => {
+	const valid = profile({ modelId: 'gpt-x', status: 'approved', decidedAt: '2026-10-01T00:00:00Z', efforts: ['high'], inputLimit: { unit: 'tokens', max: 1000 } });
+	assert.equal(profileProblem(valid), undefined);
+	const invalid: Array<[unknown, RegExp]> = [
+		['a string', /not an object/],
+		[[valid], /not an object/],
+		[{ ...valid, family: 'ollama' }, /unknown family 'ollama'/],
+		[{ ...valid, modelId: '' }, /missing modelId/],
+		[{ ...valid, status: 'pending' }, /status 'pending'/],
+		[{ ...valid, efforts: [1] }, /efforts is not a list of strings/],
+		[{ ...valid, decidedAt: 'yesterday' }, /decidedAt is not a date/],
+		[{ ...valid, cliVersion: 2 }, /missing cliVersion/],
+		[{ ...valid, inputLimit: { unit: 'bytes', max: 1 } }, /inputLimit is not \{ unit, max \}/],
+		[{ ...valid, inputLimit: { unit: 'tokens', max: 0 } }, /inputLimit is not \{ unit, max \}/],
+	];
+	for (const [entry, reason] of invalid) assert.match(profileProblem(entry) ?? '', reason, JSON.stringify(entry));
+
+	// The reader applies the same rule: only the valid entry survives a store holding all of them.
+	const { storeFile } = use(baseline());
+	writeFileSync(storeFile, JSON.stringify({ version: 1, profiles: [...invalid.map(([e]) => e), valid] }));
+	_resetModelRegistryForTests();
+	assert.deepEqual(getModelRegistry().models('cli-codex').filter(m => m.source === 'user-approved').map(m => m.id), ['gpt-x']);
 });

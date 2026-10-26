@@ -6,7 +6,7 @@
 /**
  * Contract test for the shipped model definitions file (Epic ce99b72065d03b1b,
  * Story s1 · t1): it validates, ships via copy-assets, lists every model and
- * alias today's defaults use, and its tier defaults equal DEFAULT_TIERS. Since
+ * alias today's defaults use, and its tier defaults equal SHIPPED_MODEL_DEFAULTS. Since
  * s3 the installer reads its defaults from this file and the summariser comes
  * from each family's summariserModel.
  *
@@ -19,7 +19,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assembleConfig, DEFAULT_TIERS } from '../../config/analyze.js';
+import { assembleConfig } from '../../config/analyze.js';
+import { SHIPPED_MODEL_DEFAULTS } from '../../config/model-defaults.js';
 import { buildSummariserProvider } from '../../analyze/context/shaper-provider.js';
 import { buildModelRegistry } from '../model-registry.js';
 import {
@@ -66,10 +67,10 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	assert.deepEqual(qwen?.inputLimit, { unit: 'tokens', max: 32768 });
 	assert.equal(ollama.toolLoopModel, 'qwen3.6:27b');
 
-	// Tier defaults equal DEFAULT_TIERS (cli-claude) and the installer's Codex block.
+	// Tier defaults equal SHIPPED_MODEL_DEFAULTS (cli-claude) and the installer's Codex block.
 	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		assert.equal(DEFAULT_TIERS[tier].runner, 'cli-claude');
-		assert.deepEqual(claude.tierDefaults?.[tier], { model: DEFAULT_TIERS[tier].model });
+		assert.equal(SHIPPED_MODEL_DEFAULTS.tiers[tier].runner, 'cli-claude');
+		assert.deepEqual(claude.tierDefaults?.[tier], { model: SHIPPED_MODEL_DEFAULTS.tiers[tier].model });
 	}
 	// The installer reads the tier defaults and the tool-loop model from this file (installer-defs.test.ts runs it).
 	const installer = readFileSync(join(repoRoot, 'scripts', 'insrc-daemon-install.sh'), 'utf8');

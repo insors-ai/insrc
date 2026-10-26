@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { TierName } from '../../config/analyze.js';
+import type { CliFamilyId } from '../../daemon/model-catalog.js';
 import type { DecisionResult, ModelCheckResult, ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
@@ -72,7 +73,7 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 	const runCheck = (efforts: readonly string[]): void => {
 		setClaimed(efforts);
 		setStep({ kind: 'checking' });
-		svc.models.check({ family: target.family as 'cli-claude' | 'cli-codex', modelId: target.modelId, claimedEfforts: efforts })
+		svc.models.check({ family: target.family as CliFamilyId, modelId: target.modelId, claimedEfforts: efforts })
 			.then(r => {
 				if (!('checkId' in r)) { setStep({ kind: 'refused', error: r.error }); return; }
 				setAllowed(new Set(r.efforts.filter(e => e.verdict !== 'rejected').map(e => e.effort)));

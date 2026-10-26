@@ -114,31 +114,11 @@ export interface TierModel {
 	readonly effort?: TierEffort | undefined;
 }
 
-/** The efforts of the shipped model definitions (de-duplicated); whether a model
- *  accepts one is decided per model by the registry. Temporary export: only
- *  src/cli may import it (s5 removes it). */
-export const TIER_EFFORTS: readonly string[] = SHIPPED_MODEL_DEFAULTS.efforts;
 /** An effort level name (the definitions file is the authority for level names). */
 export type TierEffort = EffortLevel;
 
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
 export type RoleTierAssignment = Readonly<Record<string, TierName>>;
-
-/**
- * Built-in tier → model defaults: the shipped definitions' default family and
- * its tier defaults (Epic ce99b72065d03b1b, s3). Temporary export: only src/cli
- * may import it (s5 removes it); the daemon resolves tiers through the registry.
- */
-export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
-	core:  shippedTier('core'),
-	mid:   shippedTier('mid'),
-	cheap: shippedTier('cheap'),
-};
-
-function shippedTier(tier: TierName): TierModel {
-	const d = SHIPPED_MODEL_DEFAULTS.tiers[tier];
-	return { runner: d.runner as AnalyzeShaperProviderKind, model: d.model, ...(d.effort !== '' ? { effort: d.effort } : {}) };
-}
 
 /** What a repo may choose (models.byRepo[repo]): the tier for a role and the
  *  core floor — never the model behind a tier. */
@@ -151,7 +131,7 @@ export interface RepoTiering {
 export interface TieringOverride extends RepoTiering {
 	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
 	/** Global scope only: each tier entry's valid effort, kept even when the tier
-	 *  itself was dropped (an empty or invalid model), so a DEFAULT_TIERS fallback
+	 *  itself was dropped (an empty or invalid model), so the shipped-default fallback
 	 *  still runs at the configured effort. */
 	readonly efforts?:   Readonly<Partial<Record<TierName, TierEffort>>> | undefined;
 }
@@ -192,7 +172,7 @@ export interface AnalyzeConfig {
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
 	/** Per-role model tiering (sc1). `tiers` is always fully populated (parsed
-	 *  override merged over DEFAULT_TIERS) so the RoleRouter resolves a concrete
+	 *  override merged over the shipped defaults) so the RoleRouter resolves a concrete
 	 *  tier for every role. */
 	readonly tiering:        AnalyzeTiering;
 	/** Each global tier's resolution through the model registry, including any

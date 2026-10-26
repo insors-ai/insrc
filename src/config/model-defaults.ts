@@ -11,10 +11,9 @@
  * syntactically broken file fails tsc; its structure is checked by the build
  * gate (scripts/check-model-definitions.mjs) and, at run time, by the daemon's
  * validateModelCatalog(). This module only DERIVES defaults from it — the
- * settings catalog rows, local.ts's coreModel default and the temporary
- * DEFAULT_TIERS / TIER_EFFORTS exports — and the derivation never throws: a
- * missing field yields '' or no default. Every run-time model decision in the
- * daemon goes through the validated registry instead.
+ * settings catalog rows and local.ts's coreModel default — and the derivation
+ * never throws: a missing field yields '' or no default. Every run-time model
+ * decision in the daemon goes through the validated registry instead.
  *
  * Imports only the JSON and type-only modules (no logger, no registry, no
  * file I/O), so the settings catalog's import chain stays loadable at module

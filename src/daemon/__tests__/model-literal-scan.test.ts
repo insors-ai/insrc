@@ -4,11 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Source scan over daemon code (Epic ce99b72065d03b1b, Story s3 · t10): every
- * model decision reads the model definitions, so daemon code names no model,
- * no CLI family id and no runner 'ollama' outside the definitions' owners and
- * the family implementations, reads no models.shaper.ollamaNumCtx and imports
- * neither DEFAULT_TIERS nor TIER_EFFORTS (temporary exports for src/cli).
+ * Source scan over src (Epic ce99b72065d03b1b, Story s3 · t10; since s5 it
+ * covers the TUI under src/cli and the recommender too): every model decision
+ * reads the model definitions, so source names no model, no CLI family id and
+ * no runner 'ollama' outside the definitions' owners and the family
+ * implementations, reads no models.shaper.ollamaNumCtx and imports neither
+ * DEFAULT_TIERS nor TIER_EFFORTS (removed in s5).
  * Comments are not scanned. Each exclusion names the Story (or decision) that
  * owns it.
  *
@@ -26,14 +27,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 interface Exclusion { readonly file: string; readonly owner: string; readonly why: string }
 
 /** Whole trees outside the scan. */
-const EXCLUDED_TREES: readonly Exclusion[] = [
-	{ file: 'src/cli/', owner: 's5', why: 'the TUI moves to models.definitions / models.resolveRole in s5' },
-];
+const EXCLUDED_TREES: readonly Exclusion[] = [];
 
 /** Model-name literals allowed outside the definitions file. */
-const MODEL_NAME_EXCLUSIONS: readonly Exclusion[] = [
-	{ file: 'src/shared/model-recommender.ts', owner: 's5', why: 'DEFAULT_LOCAL_MODEL, replaced by the definitions in s5' },
-];
+const MODEL_NAME_EXCLUSIONS: readonly Exclusion[] = [];
 
 /** Where a CLI family id may be written: the definitions' owners and the family implementation. */
 const FAMILY_ID_OWNERS: readonly Exclusion[] = [
@@ -52,6 +49,7 @@ const OLLAMA_NON_RUNNER: readonly Exclusion[] = [
 	{ file: 'src/daemon/handler-runtime.ts', owner: 's3', why: "the 'ollama' npm package import and the daemon-wide ollama.host config key" },
 	{ file: 'src/shared/system-info.ts', owner: 's3', why: 'the SystemInfo ollama detection key' },
 	{ file: 'src/workflow/types.ts', owner: 's3', why: "the legacy run-label union ('client' | 'ollama')" },
+	{ file: 'src/cli/services/setup.ts', owner: 's5', why: "the 'ollama' program `setup pull` runs (spawn), not a runner" },
 ];
 
 /** The model ids and aliases the shipped definitions name. */
@@ -160,4 +158,17 @@ test('model-literal-scan.test.ts: the scan passes on the tree and fails on an in
 		assert.ok(e.why.length > 10, e.file);
 		assert.ok(statSync(join(ROOT, e.file)).isFile() || statSync(join(ROOT, e.file)).isDirectory(), e.file);
 	}
+});
+
+test('model-literal-scan.test.ts: the scan covers src/cli and the recommender', () => {
+	const files = daemonFiles();
+	for (const f of ['src/cli/panes/ModelTiersPane.tsx', 'src/cli/panes/ModelCheckScreen.tsx', 'src/cli/services/setup.ts', 'src/shared/model-recommender.ts']) {
+		assert.ok(files.includes(f), `${f} is scanned`);
+		const found = scan([f], g => readFileSync(join(ROOT, g), 'utf8') + "\nconst m = 'claude-opus-5-5';\n");
+		assert.deepEqual(found, [`${f}: model-name literal 'claude-opus-5-5'`], `a model literal in ${f} is caught`);
+	}
+	assert.deepEqual(scan(files.filter(f => f.startsWith('src/cli/') || f === 'src/shared/model-recommender.ts')), []);
+	// No exclusion covers the TUI tree or the recommender's model names.
+	assert.deepEqual(EXCLUDED_TREES, []);
+	assert.equal(MODEL_NAME_EXCLUSIONS.some(e => e.file.startsWith('src/cli') || e.file === 'src/shared/model-recommender.ts'), false);
 });

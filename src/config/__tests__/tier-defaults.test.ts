@@ -19,7 +19,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assembleConfig, DEFAULT_TIERS, parseTiering } from '../analyze.js';
+import { assembleConfig, parseTiering, type AnalyzeShaperProviderKind, type TierModel, type TierName } from '../analyze.js';
+import { SHIPPED_MODEL_DEFAULTS } from '../model-defaults.js';
 import { CONFIG_CATALOG } from '../config-catalog.js';
 import { buildSummariserProvider } from '../../analyze/context/shaper-provider.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
@@ -33,12 +34,17 @@ const DEPTH  = { XS: 2, S: 3, M: 4, L: 5, XL: 6 };
 const defaultOf = (path: string): unknown => CONFIG_CATALOG.find(o => o.path === path)?.default;
 /** The model a CliProvider was constructed with (private, read for the assertion). */
 const pinnedModel = (p: unknown): string | undefined => (p as { defaultModel?: string }).defaultModel;
+/** A tier's built-in default: the shipped definitions' default family and its tier default. */
+const shippedTier = (tier: TierName): TierModel => {
+  const d = SHIPPED_MODEL_DEFAULTS.tiers[tier];
+  return { runner: d.runner as AnalyzeShaperProviderKind, model: d.model, ...(d.effort !== '' ? { effort: d.effort } : {}) };
+};
 
 test('src/config/__tests__/tier-defaults.test.ts: the config catalog\'s cheap and mid tier defaults equal DEFAULT_TIERS', () => {
-  assert.deepEqual(DEFAULT_TIERS.cheap, { runner: 'cli-claude', model: 'haiku' });
+  assert.deepEqual(shippedTier('cheap'), { runner: 'cli-claude', model: 'haiku' });
   for (const tier of ['mid', 'cheap'] as const) {
-    assert.equal(defaultOf(`models.tiers.${tier}.runner`), DEFAULT_TIERS[tier].runner, `${tier} runner`);
-    assert.equal(defaultOf(`models.tiers.${tier}.model`), DEFAULT_TIERS[tier].model, `${tier} model`);
+    assert.equal(defaultOf(`models.tiers.${tier}.runner`), shippedTier(tier).runner, `${tier} runner`);
+    assert.equal(defaultOf(`models.tiers.${tier}.model`), shippedTier(tier).model, `${tier} model`);
   }
 });
 
@@ -50,7 +56,7 @@ test('src/config/__tests__/tier-defaults.test.ts: the summariser follows the che
   assert.ok(provider instanceof CliProvider, 'the default summariser is a CLI provider');
   assert.equal(pinnedModel(provider), 'claude-haiku-5-5', 'the model is pinned, not the CLI default');
   // A cheap tier on ollama keeps the summariser local, as before.
-  const local = assembleConfig({ tiers: { core: DEFAULT_TIERS.core, mid: DEFAULT_TIERS.mid, cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }, SHAPER, DEPTH);
+  const local = assembleConfig({ tiers: { core: shippedTier('core'), mid: shippedTier('mid'), cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }, SHAPER, DEPTH);
   assert.ok(buildSummariserProvider(local) instanceof OllamaProvider);
 });
 

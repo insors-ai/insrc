@@ -19,7 +19,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,7 +48,7 @@ function step4b(): string {
 	return script.slice(start, end);
 }
 
-function dryRun(cli: 'claude' | 'codex', embedder: 'ollama' | 'onnx', defs: unknown = FIXTURE): Record<string, any> {
+function dryRun(cli: 'claude' | 'codex', embedder: 'ollama' | 'onnx', defs: unknown = FIXTURE, expectFail = false): Record<string, any> {
 	const dir = mkdtempSync(join(tmpdir(), 'installer-defs-'));
 	try {
 		const checkout = join(dir, 'daemon');
@@ -62,6 +62,12 @@ function dryRun(cli: 'claude' | 'codex', embedder: 'ollama' | 'onnx', defs: unkn
 			input: cli === 'codex' ? 'codex\n' : '',
 			encoding: 'utf8', timeout: 60_000,
 		});
+		if (expectFail) {
+			assert.notEqual(r.status, 0, r.stdout);
+			assert.match(r.stderr, /no model family in .* runs the claude CLI/);
+			assert.equal(existsSync(join(home, '.insrc', 'config.json')), false, 'no config.json is written');
+			return {};
+		}
 		assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
 		return JSON.parse(readFileSync(join(home, '.insrc', 'config.json'), 'utf8')) as Record<string, any>;
 	} finally {
@@ -114,4 +120,6 @@ test("installer-defs.test.ts: both installer copies are identical with no tier-m
 	twoCodex.families[0]!.cliKind = 'codex';
 	twoCodex.defaultFamily = 'cli-codex';
 	assert.equal(dryRun('codex', 'ollama', twoCodex)['models'].tiers.core.runner, 'cli-codex');
+	// No family runs the chosen CLI: the installer stops with an actionable error.
+	dryRun('claude', 'ollama', twoCodex, true);
 });

@@ -1872,6 +1872,14 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "provider-adapter",
           "OllamaProvider"
         ],
@@ -1884,9 +1892,9 @@
           "OllamaProvider"
         ]
       ],
-      "siteCount": 19,
-      "sitesDigest": "067f46db26177a429f24e8e80730e8cf70671606551044f1af4c6494cebdbc3e",
-      "sourceDigest": "cd72c01eb94dbcba71bf4ec07e9c3488ad04f23f7ec33376072fd246d9a96e87",
+      "siteCount": 21,
+      "sitesDigest": "1158f95b9681f771a643936f642b22c10f9d657e20cbf39cb02910541837ecbb",
+      "sourceDigest": "e22ff9abb51296eb3335ffc890cce634157de7f312ba482928dda7d30826c345",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -7264,7 +7272,7 @@
       ],
       "siteCount": 20,
       "sitesDigest": "adbbb31091a5d08d7bfd0be0fc33489c5bae8a6d71fefa6d56f1ee2aae7005b4",
-      "sourceDigest": "e52090eca2266b4379771b4633b3318b535c5eb9bd5f50a1d29f0893180cfa81",
+      "sourceDigest": "b399d07cbab2e1e40d0193455d51bd95a436a0e9a0577b7b8bd4f44e6e7babd0",
       "boundaries": [
         "diagnostic",
         "provider-factory",
@@ -17978,7 +17986,7 @@
       ],
       "siteCount": 25,
       "sitesDigest": "871d1654b4fe43d7e441a23ecf39ea31b6bc1341925c1449eab4e184f35a84ca",
-      "sourceDigest": "6ea346cf7b9e9fb399276d8f7c28f325d1495b7fb4ff7851c69cb37bca2f7d99",
+      "sourceDigest": "ea6d8f8d5fca6c9dc79f4a9a1480262693f47e953be4c756b40fdffc19ab9e2e",
       "boundaries": [
         "diagnostic",
         "provider-factory",

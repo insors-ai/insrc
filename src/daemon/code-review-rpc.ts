@@ -28,8 +28,8 @@ import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../work
 import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../workflow/runners/build/range-base.js';
 import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.js';
-import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
-import { familyForClient, getModelRegistry } from './model-registry.js';
+import { buildShaperProvider, shaperModelLabel } from '../analyze/context/shaper-provider.js';
+import { familyForClient } from './model-registry.js';
 import {
 	loadAnalyzeConfig,
 	type AnalyzeConfig,
@@ -254,13 +254,7 @@ function modelLabelFor(
 	cfg:           AnalyzeConfig,
 	clientDefault: AnalyzeShaperProviderKind | undefined,
 ): string {
-	const effective = resolveShaperKind({
-		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
-		clientDefault,
-	});
-	const cli = getModelRegistry().cliKind(effective);
-	if (cli === undefined) return `${effective}:${cfg.shaperModel}`;
-	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
+	return shaperModelLabel(cfg, clientDefault !== undefined ? { clientDefault } : undefined);
 }
 
 export { buildAuthorParty };

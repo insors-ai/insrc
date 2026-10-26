@@ -290,6 +290,7 @@ const defs = JSON.parse(require("fs").readFileSync(file, "utf8"));
 if (what === "toolloop") { process.stdout.write(defs.families.find(f => f.cliKind === undefined).toolLoopModel); process.exit(0); }
 const def = defs.families.find(f => f.id === defs.defaultFamily);
 const fam = def !== undefined && def.cliKind === kind ? def : defs.families.find(f => f.cliKind === kind);
+if (fam === undefined) { process.stderr.write("no model family in " + file + " runs the " + kind + " CLI\n"); process.exit(3); }
 const t = fam.tierDefaults;
 if (what === "summary") { process.stdout.write(["core", "mid", "cheap"].map(n => n + "=" + t[n].model).join(", ")); process.exit(0); }
 const tier = n => JSON.stringify({ runner: fam.id, model: t[n].model, ...(t[n].effort !== undefined ? { effort: t[n].effort } : {}) });
@@ -305,7 +306,8 @@ if [ "$ASSUME_YES" -eq 0 ]; then
 		*)                     CLI_CHOICE="claude" ;;
 	esac
 fi
-ok "CLI: $CLI_CHOICE ($(model_defs "$CLI_CHOICE" summary))"
+CLI_SUMMARY="$(model_defs "$CLI_CHOICE" summary)" || die "no model family in $MODEL_DEFS runs the $CLI_CHOICE CLI -- choose another CLI or fix the definitions file" 3
+ok "CLI: $CLI_CHOICE ($CLI_SUMMARY)"
 ANALYZE_TIERS_JSON="$(model_defs "$CLI_CHOICE" tiers)"
 LOCAL_CORE_MODEL="$(model_defs "$CLI_CHOICE" toolloop)"
 

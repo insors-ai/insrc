@@ -180,3 +180,29 @@ test("provider-from-registry.test.ts: resolveValidateProvider reuses the router'
 	assert.ok(substituted instanceof CliProvider);
 	assert.deepEqual([kindOf(substituted), substituted.defaultModel, substituted.effort, substituted.inputBudgetChars], ['codex', 'gpt-x', 'turbo', 5000]);
 });
+
+test("provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds", async () => {
+	const registry = getModelRegistry();
+	const { shaperModelLabel } = await import('../shaper-provider.js');
+	const config = (tiers: Record<string, unknown>) => assembleConfig(parseTiering({ tiers }), SHAPER, DEPTH, registry);
+
+	// The client picks ollama while the core tier names a CLI model: the tool-loop model runs, not 'gpt-x'.
+	const unset = { ...config({}), shaperProviderExplicit: false };
+	const local = buildShaperProvider(unset, { registry, clientDefault: 'ollama' });
+	assert.ok(local instanceof OllamaProvider);
+	assert.equal((local as unknown as { model: string }).model, 'llama:loop');
+	assert.equal(numCtxOf(local), 8192);
+	assert.equal(shaperModelLabel(unset, { registry, clientDefault: 'ollama' }), 'ollama:llama:loop');
+
+	// A listed CLI model: the label names it, as the provider runs it.
+	const codex = config({ core: { runner: 'cli-codex', model: 'gpt-x' } });
+	assert.equal((buildShaperProvider(codex, { registry }) as Cli).defaultModel, 'gpt-x');
+	assert.equal(shaperModelLabel(codex, { registry }), 'codex:gpt-x');
+	// A model of another family under the client's CLI: the CLI default runs, and the label says so.
+	const claudeCore = { ...config({ core: { runner: 'cli-claude', model: 'z' } }), shaperProviderExplicit: false };
+	assert.equal((buildShaperProvider(claudeCore, { registry, clientDefault: 'cli-codex' }) as Cli).defaultModel, undefined);
+	assert.equal(shaperModelLabel(claudeCore, { registry, clientDefault: 'cli-codex' }), 'codex');
+	// An Ollama tier with a listed model.
+	const ollamaCore = config({ core: { runner: 'ollama', model: 'llama:big' } });
+	assert.equal(shaperModelLabel(ollamaCore, { registry }), 'ollama:llama:big');
+});

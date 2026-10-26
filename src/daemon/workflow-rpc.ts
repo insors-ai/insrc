@@ -29,10 +29,10 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
-import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
+import { buildShaperProvider, shaperModelLabel, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
 import type { RoleId } from '../config/role-taxonomy.js';
-import { familyForClient, getModelRegistry } from './model-registry.js';
+import { familyForClient } from './model-registry.js';
 import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { resolveStageFocus } from '../workflow/seed-focus.js';
@@ -621,13 +621,7 @@ function modelLabelFor(
 	cfg:           AnalyzeConfig,
 	clientDefault: AnalyzeShaperProviderKind | undefined,
 ): string {
-	const effective = resolveShaperKind({
-		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
-		clientDefault,
-	});
-	const cli = getModelRegistry().cliKind(effective);
-	if (cli === undefined) return `${effective}:${cfg.shaperModel}`;
-	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
+	return shaperModelLabel(cfg, clientDefault !== undefined ? { clientDefault } : undefined);
 }
 
 function formatFailure(f: { readonly ok: boolean; readonly message?: string; readonly details?: readonly string[] }): string {

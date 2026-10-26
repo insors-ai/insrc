@@ -104,6 +104,13 @@
         "choice": "Subprocess-only cancellation",
         "rationale": "User chose option 1.",
         "resolvedAt": "2026-10-26T18:12:36.503Z"
+      },
+      "q9926b80d": {
+        "question": "Audit items graded partial: dm1 (the call sites for the scan exemptions, the IPC handler and the tsconfig come from earlier bundles and the plan note, not from an s1 bundle of this run) and sbdry5 (the four s8 git commands, the callTool provenance check and the universal cancellation lifecycle, which migrates five non-git tool files, are built here by the user's decisions of 2026-10-26 and the plan note, and the sending side of the shared deadline is s9's).",
+        "status": "resolved",
+        "choice": "Proceed with explicit provenance and boundaries",
+        "rationale": "User chose option 1.",
+        "resolvedAt": "2026-10-26T18:13:27.676Z"
       }
     }
   },

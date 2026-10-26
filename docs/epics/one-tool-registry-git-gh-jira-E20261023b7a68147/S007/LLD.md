@@ -1158,6 +1158,8 @@ Do not change the framing; document that results over 100 items may fail to pars
   - **resolved**: Align DEF now; retain HLD history — User chose option 3: revise the DEF for s7 (title, size L, five criteria) while the HLD keeps its whole-cutover description with a reference to the narrowing. _(2026-10-26T18:11:35.078Z)_
 - `q729df4d8` — The cancellation guarantee covers subprocesses. Registered tools that do non-subprocess work (in-process HTTP calls, database or file operations) are not interrupted by the signal; whether they should be is not decided here.
   - **resolved**: Subprocess-only cancellation — User chose option 1. _(2026-10-26T18:12:36.503Z)_
+- `q9926b80d` — Audit items graded partial: dm1 (the call sites for the scan exemptions, the IPC handler and the tsconfig come from earlier bundles and the plan note, not from an s1 bundle of this run) and sbdry5 (the four s8 git commands, the callTool provenance check and the universal cancellation lifecycle, which migrates five non-git tool files, are built here by the user's decisions of 2026-10-26 and the plan note, and the sending side of the shared deadline is s9's).
+  - **resolved**: Proceed with explicit provenance and boundaries — User chose option 1. _(2026-10-26T18:13:27.676Z)_
 
 ## Citations
 

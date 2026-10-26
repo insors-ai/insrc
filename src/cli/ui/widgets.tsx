@@ -27,7 +27,7 @@ export function KeyHints(props: { hints: readonly (readonly [string, string])[] 
 	return (
 		<Box>
 			{props.hints.map(([k, label], i) => (
-				<Text key={`${i}:${k}`} dimColor>
+				<Text key={k} dimColor>
 					{i > 0 ? '   ' : ''}<Text color="yellow">{k}</Text> {label}
 				</Text>
 			))}

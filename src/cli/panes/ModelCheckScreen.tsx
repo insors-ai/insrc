@@ -215,7 +215,8 @@ export function ModelCheckScreen(props: { target: ModelCheckTarget; defs: ModelD
 				</Box>
 			)}
 			<Box marginTop={1}>
-				<KeyHints hints={
+				{/* Keyed by the hint set: a remount, so a hint that moves (esc) never keeps a stale layout. */}
+				<KeyHints key={step.kind === 'result' ? `result:${step.result.runs}` : step.kind} hints={
 					step.kind === 'result'
 						? (step.result.runs
 						? [['↑/↓', 'select'], ['space', 'allow level'], ['a', 'approve'], ['x', 'reject'], ['esc', 'back']]

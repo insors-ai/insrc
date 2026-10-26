@@ -1,5 +1,5 @@
 /** Release evidence is generated only after the S001 build/test gates pass. */
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { canonicalRequestJson } from './management-tickets.js';
 export interface ManagementEnablement {
@@ -33,6 +33,18 @@ export const CONNECTION_SESSION_GATE_FILES = [
 	'daemon/steps/analyze-step/phases/start', 'daemon/steps/analyze-step/phases/plan', 'daemon/steps/analyze-step/phases/narrow', 'daemon/steps/analyze-step/phases/bundle',
 	'shared/step-context', 'shared/connection-management', 'shared/connection-management-wire',
 ] as const;
+
+/** The complete deployed production tree, including new consumers and pure helpers. */
+async function productionSources(directory: URL, prefix = ''): Promise<string[]> {
+	const files: string[] = [];
+	for (const entry of await readdir(directory, { withFileTypes: true })) {
+		if (entry.name === '__tests__') continue;
+		const name = prefix + entry.name;
+		if (entry.isDirectory()) files.push(...await productionSources(new URL(entry.name + '/', directory), name + '/'));
+		else if (entry.isFile() && /\.tsx?$/.test(name) && !/\.(?:d|test)\.tsx?$/.test(name)) files.push(name);
+	}
+	return files.sort();
+}
 export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url), additionalScopes: readonly string[] = []): Promise<ManagementEnablement> {
 	try {
 		const evidence = JSON.parse(await readFile(evidenceUrl, 'utf8')) as {
@@ -44,17 +56,25 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 			testReportDigest: string;
 			scopes: string[];
 		};
-		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc4', 'sc8', ...additionalScopes].some(scope => !evidence.scopes?.includes(scope)))
+		const session = additionalScopes.includes('sc5');
+		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc4', 'sc8', ...additionalScopes, ...(session ? ['sc6', 'sc7'] : [])].some(scope => !evidence.scopes?.includes(scope)))
 			throw new Error();
-		const files = import.meta.url.endsWith('.ts') ? evidence.sourceFiles : evidence.compiledFiles;
-		if (!files || Object.keys(files).length < 10)
-			throw new Error();
-		const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js';
-		if ([...CONNECTION_FOUNDATION_GATE_FILES, ...CONNECTION_TEST_GATE_FILES, ...(additionalScopes.includes('sc5') ? CONNECTION_SESSION_GATE_FILES : [])].some(path => !Object.hasOwn(files, path + extension))) throw new Error();
-		for (const [path, expected] of Object.entries(files)) {
-			if (path.startsWith('/') || path.split('/').includes('..') || !/^[a-f0-9]{64}$/.test(expected))
-				throw new Error();
-			if (createHash('sha256').update(await readFile(new URL('../../' + path, import.meta.url))).digest('hex') !== expected)
+		const sourceRoot = new URL('../../../src/', import.meta.url), compiledRoot = new URL('../../../out/', import.meta.url);
+		const required = [...CONNECTION_FOUNDATION_GATE_FILES, ...CONNECTION_TEST_GATE_FILES, ...(session ? CONNECTION_SESSION_GATE_FILES : [])];
+		for (const [root, files, extension] of [[sourceRoot, evidence.sourceFiles, '.ts'], [compiledRoot, evidence.compiledFiles, '.js']] as const) {
+			if (!files || Array.isArray(files) || Object.keys(files).length < 10 || required.some(path => !Object.hasOwn(files, path + extension))) throw new Error();
+			for (const [path, expected] of Object.entries(files)) {
+				if (path.startsWith('/') || path.includes('\\') || path.split('/').some(part => part === '..' || part === '.' || !part) || !/^[a-f0-9]{64}$/.test(expected) || !(extension === '.ts' ? /\.tsx?$/.test(path) : path.endsWith('.js')))
+					throw new Error();
+				if (createHash('sha256').update(await readFile(new URL(path, root))).digest('hex') !== expected) throw new Error();
+			}
+		}
+		const compiledNames = Object.keys(evidence.sourceFiles).map(path => path.replace(/\.tsx?$/, '.js')).sort();
+		if (canonicalRequestJson(compiledNames) !== canonicalRequestJson(Object.keys(evidence.compiledFiles).sort())) throw new Error();
+		if (session) {
+			const build = JSON.parse(await readFile(new URL('assets/connection-management-build.json', compiledRoot), 'utf8')) as { version: number; producerDigest: string; sourceFiles: Record<string, string>; compiledFiles: Record<string, string> };
+			if (build.version !== 1 || build.producerDigest !== createHash('sha256').update(await readFile(new URL('../../../copy-assets.mjs', import.meta.url))).digest('hex')) throw new Error();
+			if (canonicalRequestJson(Object.keys(evidence.sourceFiles).sort()) !== canonicalRequestJson(await productionSources(sourceRoot)) || canonicalRequestJson(evidence.sourceFiles) !== canonicalRequestJson(build.sourceFiles) || canonicalRequestJson(evidence.compiledFiles) !== canonicalRequestJson(build.compiledFiles))
 				throw new Error();
 		}
 		return { ready: true, digest: createHash('sha256').update(canonicalRequestJson({ version: evidence.version, sourceFiles: evidence.sourceFiles, compiledFiles: evidence.compiledFiles, inventoryDigest: evidence.inventoryDigest, scopes: [...evidence.scopes].sort() })).digest('hex') };

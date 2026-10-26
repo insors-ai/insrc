@@ -65,7 +65,9 @@ test('release evidence remains disabled until the completed build supplies verif
 	for (const name of names)
 		sourceFiles['daemon/db/' + name + '.ts'] = createHash('sha256').update(await readFile(new URL('../' + name + '.ts', import.meta.url))).digest('hex');
 	for (const name of [...CONNECTION_FOUNDATION_GATE_FILES,...CONNECTION_TEST_GATE_FILES]) sourceFiles[name+'.ts']=createHash('sha256').update(await readFile(new URL('../../../'+name+'.ts',import.meta.url))).digest('hex');
-	const valid = { version: 2, ready: true, sourceFiles, compiledFiles: sourceFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
+	const compiledFiles: Record<string, string> = {};
+	for (const name of Object.keys(sourceFiles)) { const compiled = name.replace(/\.ts$/, '.js'); compiledFiles[compiled] = createHash('sha256').update(await readFile(new URL('../../../../out/' + compiled, import.meta.url))).digest('hex'); }
+	const valid = { version: 2, ready: true, sourceFiles, compiledFiles, inventoryDigest: 'a'.repeat(64), testReportDigest: 'b'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
 	await writeFile(path, JSON.stringify(valid));
 	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, true);
 	await writeFile(path,JSON.stringify({...valid,scopes:['sc1','sc2','sc3','sc8']}));

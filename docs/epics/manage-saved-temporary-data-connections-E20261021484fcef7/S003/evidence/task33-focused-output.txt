@@ -1,0 +1,132 @@
+TAP version 13
+# Subtest: repoIdOf
+ok 1 - repoIdOf
+# Subtest: loadConnections
+ok 2 - loadConnections
+# Subtest: saveConnections
+ok 3 - saveConnections
+# Subtest: CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+ok 4 - CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+# Subtest: CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+ok 5 - CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+# Subtest: CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+ok 6 - CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+# Subtest: CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+ok 7 - CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+# Subtest: CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+ok 8 - CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+# Subtest: CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+ok 9 - CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+# Subtest: CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+ok 10 - CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+# Subtest: CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+ok 11 - CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+# Subtest: CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+ok 12 - CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+# Subtest: CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+ok 13 - CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+# Subtest: CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+ok 14 - CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+# Subtest: CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+ok 15 - CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+# Subtest: CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required
+ok 16 - CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required
+# Subtest: CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references
+ok 17 - CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references
+# Subtest: CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects
+ok 18 - CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects
+# Subtest: CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys
+ok 19 - CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys
+# Subtest: CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state
+ok 20 - CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state
+# Subtest: CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes
+ok 21 - CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes
+# Subtest: CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+ok 22 - CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+ok 23 - CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+ok 24 - CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+ok 25 - CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+ok 26 - CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+ok 27 - CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+# Subtest: CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+ok 28 - CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+# Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+ok 29 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+# Subtest: CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+ok 30 - CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+# Subtest: CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+ok 31 - CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+# Subtest: CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+ok 32 - CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+# Subtest: CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+ok 33 - CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+# Subtest: SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+ok 34 - SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+# Subtest: CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+ok 35 - CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+# Subtest: CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+ok 36 - CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+# Subtest: CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+ok 37 - CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+# Subtest: CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+ok 38 - CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+# Subtest: CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+ok 39 - CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+# Subtest: CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+ok 40 - CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+# Subtest: CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+ok 41 - CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+# Subtest: CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+ok 42 - CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+# Subtest: CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+ok 43 - CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+# Subtest: CM-S2-A7: all file probe aliases load owned readers with actual targets and no persistent effects
+ok 44 - CM-S2-A7: all file probe aliases load owned readers with actual targets and no persistent effects
+# Subtest: maintenance metadata is protected and partial adoption blocks legacy writers
+ok 45 - maintenance metadata is protected and partial adoption blocks legacy writers
+# Subtest: exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+ok 46 - exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+# Subtest: target filesystem denies legacy subprocess writes and isolates detached descriptors
+ok 47 - target filesystem denies legacy subprocess writes and isolates detached descriptors
+# Subtest: release evidence remains disabled until the completed build supplies verified gates
+ok 48 - release evidence remains disabled until the completed build supplies verified gates
+# Subtest: signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+ok 49 - signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+# Subtest: CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes
+ok 50 - CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes
+# Subtest: CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+ok 51 - CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+# Subtest: CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+ok 52 - CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+# Subtest: CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+ok 53 - CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+# Subtest: CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+ok 54 - CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+# Subtest: CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+ok 55 - CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+# Subtest: CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+ok 56 - CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+# Subtest: CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+ok 57 - CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+ok 58 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 59 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 60 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 61 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+1..61
+# tests 70
+# suites 3
+# pass 70
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13523.73175

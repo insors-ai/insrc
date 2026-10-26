@@ -6,6 +6,7 @@
     "target": "es2022",
     "types": ["node"],
     "sourceMap": true,
+    "inlineSources": true,
     "declaration": true,
     "declarationMap": true,
     "noUncheckedIndexedAccess": true,

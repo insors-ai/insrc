@@ -10358,12 +10358,28 @@
       ]
     },
     "src/daemon/db/management-enablement.ts": {
-      "classification": "saved-foundation-boundary",
-      "rationale": "S001/S002 saved or probe foundation. Session path may use only documented readonly/profile/preparation ports; saved storage is forbidden for temporary data and writes require shared reservation guard.",
+      "classification": "deployment-code-evidence",
+      "rationale": "Readonly release verification hashes only fixed application source/compiled trees and the post-tsc build manifest/producer, never repository connection inputs or Session data. Both trees and complete production source coverage must match the same build generation; missing client/removal scopes and stale or missing manifests refuse. Shipped ready:false and empty scopes keep pending foundation, SQL Server, provider and both-client evidence disabled.",
       "sites": [
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "readdir"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
+        ],
+        [
+          "filesystem-read",
+          "readFile"
         ],
         [
           "filesystem-read",
@@ -10374,9 +10390,9 @@
           "readFile"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "030cf323768852ec8338a2cf441885a15ef5fa91eee8fd32033362796a721319",
-      "sourceDigest": "6e18cd950b1047d64f955d55b31cbbca02df88bea017cbe9ee9a1a144898e5a2",
+      "siteCount": 7,
+      "sitesDigest": "779c2010a181762eddad86be92fce8914e56e9ca5e375fee62f02a7bf33d08e4",
+      "sourceDigest": "a2478e848ff76302746fe5020e61ca0aa70b57d84f520945b032a03d8e93b4cf",
       "boundaries": [
         "filesystem-read",
         "serialization"

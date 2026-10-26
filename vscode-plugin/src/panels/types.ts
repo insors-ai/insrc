@@ -180,7 +180,8 @@ export interface RepoConfigRendererDeps {
 
 /**
  * One per-repo field write emitted by the Repo Configuration form (S007). `segments`
- * is the trailing path UNDER models.byRepo[repoPath] (e.g. ['tiers','core','runner']);
+ * is the trailing path UNDER models.byRepo[repoPath]: ['tasks', roleId] or ['coreFloor'] (a repo
+ * never sets a tier's runner, model or effort — Epic ce99b72065d03b1b, Story s6);
  * the write handler prefixes ['models','byRepo',repoPath] before the config.write
  * ARRAY form. `value` is the field value, or null to clear an override.
  */

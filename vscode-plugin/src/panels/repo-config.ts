@@ -8,14 +8,16 @@
  * `renderRepoConfig` is a (selected)=>Promise<string> that reads its OWN data
  * (registeredRepos + the raw config over config.show) so the host stays a pure
  * dispatcher: it renders a repo <select> (the daemon's registered repos, folder-
- * independent — ac1/lc1) and, for the selected repo, DISCRETE form fields for that
- * repo's per-repo model-tiering overrides (models.byRepo[repoPath].tiers.<tier>.
- * {runner,model}) — authored through inputs, NOT raw JSON (ac3). Each field emits a
+ * independent — ac1/lc1) and, for the selected repo, DISCRETE form fields for what a
+ * repo may choose: the tier each role uses (models.byRepo[repoPath].tasks[roleId]) and
+ * the repo's core floor — never a runner, model or effort, which are global (Epic
+ * ce99b72065d03b1b, Story s6, k6). Each field emits a
  * {type:'repoWrite',repoPath,segments,value} message. A registeredRepos()/rawConfig()
  * rejection PROPAGATES so the host degrades the panel.
  *
  * `createRepoConfigWriteHandler` is the onRepoConfigWrite sink: it validates the
- * write, cross-checks the repoPath is a registered repo, asks sc4 consent (a write
+ * write (only ['tasks', roleId] and ['coreFloor'] are accepted), cross-checks the repoPath
+ * is a registered repo, asks sc4 consent (a write
  * mutates daemon config, k4), and ONLY on 'accepted' writes via the sc8 writeKeyPath
  * ARRAY form (['models','byRepo',repoPath,...segments]) — reusing the existing
  * config.write (no new daemon capability, k3). The outcome surfaces via sc2 and the
@@ -23,16 +25,15 @@
  * vscode, no cloud (k2/k5).
  */
 
+import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import { escapeHtml } from './html.js';
 import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
 
-/** The per-repo tiers rendered as discrete fields (the primary per-repo override surface). */
-const TIERS = ['core', 'mid', 'cheap'] as const;
-/** The two editable fields of each tier. */
-const TIER_FIELDS = ['runner', 'model'] as const;
+/** The tier names a role or the core floor may choose ('' = use the global choice). */
+const TIER_CHOICES = ['core', 'mid', 'cheap'] as const;
 
 /** Injected inputs for the consent-gated per-repo write orchestration (S007). */
 export interface RepoConfigWriteDeps {
@@ -43,6 +44,24 @@ export interface RepoConfigWriteDeps {
   readonly logger: { warn(message: string): void };
   /** Re-render the panel from fresh config after a write (truthful; the k5 discipline). */
   readonly refresh: () => void;
+  /** Offer a daemon restart for a write that applies only after one (a 'Restart daemon' action). */
+  readonly offerRestart: (message: string) => void;
+}
+
+/** Whether a write targets what a repo may set: ['tasks', roleId] or ['coreFloor']. */
+function isRepoModelWrite(segments: readonly string[]): boolean {
+  return (segments.length === 2 && segments[0] === 'tasks' && segments[1] !== '') || (segments.length === 1 && segments[0] === 'coreFloor');
+}
+
+/** A tier <select> carrying its write segments; '' (global) clears the repo's choice. */
+function tierSelect(label: string, segments: readonly string[], current: string): string {
+  // The segments are carried as a JSON array (NOT a dot-joined string): a role id is
+  // dotted (`context.assemble`) and a naive split('.') would mis-nest it — the hazard the
+  // config.write ARRAY form exists to avoid. escapeHtml keeps the attribute intact.
+  const options = ['', ...TIER_CHOICES]
+    .map((t) => `<option value="${t}"${t === current ? ' selected' : ''}>${t === '' ? 'global' : t}</option>`)
+    .join('');
+  return `<label class="field">${escapeHtml(label)} <select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></label>`;
 }
 
 /** Read a nested string at `path` in an unknown object tree, or undefined. */
@@ -86,32 +105,20 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       return `${picker}<p class="placeholder">Choose a repo to edit its per-repo overrides.</p>`;
     }
 
-    // The per-repo form: the model-tiering overrides at models.byRepo[repoPath].tiers.
-    // Each field is a discrete input (NOT raw JSON, ac3), pre-filled from the daemon's
-    // stored value (empty = using the global/default tier), posting a repoWrite.
+    // The per-repo form: the tier each role uses (tasks) and the core floor — what a repo
+    // may choose. Pre-filled from the daemon's stored value; 'global' = no repo choice.
     const raw = await deps.rawConfig();
-    const rows = TIERS.map((tier) => {
-      const fields = TIER_FIELDS.map((field) => {
-        const cur = readStringAt(raw, ['models', 'byRepo', active, 'tiers', tier, field]) ?? '';
-        // The trailing segments are carried as a JSON array (NOT a dot-joined string):
-        // a config segment may legitimately contain a dot (a dotted roleId like
-        // `context.assemble`), and a naive split('.') would mis-nest it — the exact
-        // hazard the config.write ARRAY form exists to avoid. JSON survives a `"`-bearing
-        // value because the attribute is escapeHtml'd (browser decodes it back before parse).
-        const segments = JSON.stringify(['tiers', tier, field]);
-        return (
-          `<label class="field">${escapeHtml(field)} ` +
-          `<input type="text" data-segments="${escapeHtml(segments)}" value="${escapeHtml(cur)}" ` +
-          `placeholder="(default)" /></label>`
-        );
-      }).join('');
-      return `<fieldset class="tier"><legend>${escapeHtml(tier)}</legend>${fields}</fieldset>`;
-    }).join('');
+    const roles = reasoningRoleTaxonomy().roles
+      .map((role) => tierSelect(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
+      .join('');
+    const floor = tierSelect('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
 
     return (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
-      `<p class="hint">Per-repo model tiers for this repo. Leave a field blank to use the global default.</p>${rows}` +
+      `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
+      `<fieldset class="roles"><legend>Role tiers</legend>${roles}</fieldset>` +
+      `<fieldset class="floor"><legend>Core floor</legend>${floor}</fieldset>` +
       `</section>`
     );
   };
@@ -137,6 +144,11 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
     ) {
       return;
     }
+    // A repo chooses only role tiers and its core floor: tiers are global (k6).
+    if (!isRepoModelWrite(write.segments)) {
+      deps.logger.warn(`insrc: ignoring a per-repo write to ${JSON.stringify(write.segments)} — a repo sets only tasks and coreFloor`);
+      return;
+    }
     void (async () => {
       try {
         const repos = await deps.registeredRepos();
@@ -156,8 +168,9 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
           state: deps.status.current().state,
           detail: result.ok
             ? `updated ${label} for ${write.repoPath}`
-            : `per-repo write refused: ${result.reason}`,
+            : `per-repo write refused: ${result.reason}${result.detail !== undefined ? ` — ${result.detail}` : ''}`,
         });
+        if (result.ok && result.restartRequired === true) deps.offerRestart(`insrc: updated ${label} for ${write.repoPath} — restart the daemon to apply`);
         deps.refresh(); // truthful re-render from fresh config (accepted-ok OR refused).
       } catch (err) {
         deps.logger.warn(`insrc: the per-repo config write failed — ${err instanceof Error ? err.message : String(err)}`);

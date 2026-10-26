@@ -420,6 +420,7 @@ export function activate(context: vscode.ExtensionContext): void {
       status,
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
+      offerRestart,
     }),
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2

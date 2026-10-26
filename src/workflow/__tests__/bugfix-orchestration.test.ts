@@ -27,6 +27,7 @@ import { nextAfterIssue } from '../bugfix/next-after-issue.js';
 import { admitBugfixAdvance } from '../bugfix/admit.js';
 import { locateAndStampParent, defaultStampDeps } from '../bugfix/stamp.js';
 import { advanceBugfixAfterIssue } from '../bugfix/advance.js';
+import { validCodeReview } from './helpers/valid-code-review.js';
 import type { StampDeps } from '../bugfix/types.js';
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { ParentLocation } from '../locate/index.js';
@@ -277,12 +278,17 @@ async function withRepo(fn: (repo: string, dir: string) => void | Promise<void>)
 }
 function writeBuild(dir: string, storyId: string): string {
 	const p = join(dir, `BUILD-${HASH}-${storyId}.json`);
-	writeFileSync(p, JSON.stringify({ meta: { workflow: 'build', epicHash: HASH, storyId }, body: {}, citations: [] }, null, 2));
+	// a BUILD names the files it changed, and the review must cover them
+	const changeLog = [{ target: { file: 'src/a.ts' } }, { target: { file: 'src/b.ts' } }];
+	writeFileSync(p, JSON.stringify({ meta: { workflow: 'build', epicHash: HASH, storyId }, body: { changeLog }, citations: [] }, null, 2));
 	return p;
 }
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'block'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
-	writeFileSync(json, JSON.stringify({ meta: { workflow: 'code-review', epicHash: HASH, storyId, reviewedBy: 'daemon' }, body: { kind: 'code-review', epicHash: HASH, storyId, verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 0, low: 0 } } }, null, 2));
+	// bound to the BUILD of the Story as it is now
+	const build: unknown = JSON.parse(readFileSync(join(repo, '.insrc', 'artifacts', `BUILD-${HASH}-${storyId}.json`), 'utf8'));
+	const review = validCodeReview(build, verdict, { meta: { workflow: 'code-review', epicHash: HASH, storyId, reviewedBy: 'daemon' }, counts: { high: verdict === 'block' ? 2 : 0, med: 0, low: 0 } });
+	writeFileSync(json, JSON.stringify({ meta: review.meta, body: { kind: 'code-review', epicHash: HASH, storyId, ...review.body } }, null, 2));
 }
 const isApproved = (p: string): boolean =>
 	approvalStateOf((JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown }).meta) === 'approved';

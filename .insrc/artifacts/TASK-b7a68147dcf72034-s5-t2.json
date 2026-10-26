@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8f47589-765a-49b1-8bab-a8af996a4082",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.256Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Failure mapping, failure net and approval class",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc2a14132754c07629463b30d01af3d2ad86885f831fd2cd547f67237d98b8d8",
+        "at": "2026-10-25T14:50:47.256Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.257Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Failure mapping, failure net and approval class",
+    "summary": "Add ghFailureOf with its one precedence and the unknown-outcome rule for mutating calls, withGhFailureNet keeping the concrete schema types, and ghApprovalClass with the destructive rules (close, merge, delete, transfer, every rename including newName and newTag, logout, visibility, force and clobber, non-empty extraArgs, unknown op). Carries its own unit tests.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "paired-flag fixtures give the precedence time-out, abort, signal, stdin error, stderr overflow, unmarked cut, non-zero exit",
+      "a mutating failure after execution began carries the unknown-outcome sentence and never says the value was not set",
+      "callTool over withGhFailureNet type-checks against the tool's own schemas",
+      "an unknown op resolves to destructive"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gh-failures.test.ts: the one precedence timedOut, aborted, signal, stdinError, stderrOverflow, unmarked cut, non-zero exit, pinned by paired-flag fixtures"
+      },
+      {
+        "level": "unit",
+        "name": "gh-failures.test.ts: a signal-only termination is rejected for a read and carries the unknown-outcome sentence for a mutating call"
+      },
+      {
+        "level": "unit",
+        "name": "gh-failures.test.ts: spawn error, authentication text, probe-only authentication text, ambiguous failure with a clean probe and network text map to missing-tool, missing-signin, missing-signin, rejected and unreachable"
+      },
+      {
+        "level": "unit",
+        "name": "gh-approval.test.ts: every rename, close, merge, delete, transfer, logout, visibility, force, clobber and non-empty extraArgs is destructive and an unknown op is destructive"
+      },
+      {
+        "level": "unit",
+        "name": "call-tool.type-test.ts: callTool over withGhFailureNet keeps the concrete input and result types"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,708 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792937224422-g622os",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:10:23.989Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 197876,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s5",
+    "lldRunId": "wf-1792934729806-6vtgnn",
+    "lldEffectiveHash": "e550742c2f67133a9a5ac7bf4254013a40b0e3245595502144da99dacb6f669c",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fcfc8417a57f0782071eca8a1c0de3691af619214f6f36798adc761c76f35559",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:46.869Z"
+      }
+    },
+    "rangeBase": "b987f9b7a0a9e167892dd791e94af6a31b79834f"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding five shared gh helpers, converting the 46 existing gh tools onto them without changing their ids or inputs, adding 22 family tools from an op table, and then proving all of it against the installed gh with coverage, input, parser and prompt checks. The work goes in order: helpers, the conversions with the two visible behaviour changes, the compatibility tests, the three groups of family tools, the inventory and the cross-cutting tests, and last the docs and the HLD amendment.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Time-limit table, byte adapter and ghExec",
+        "summary": "In helpers.ts add the per-job limit table and ghTimeoutMs, the byte-to-text adapter over runShellBytes, GhOutcome and ghExec with the key option, stdin input, cut-is-answer cap, abort signal and the one sign-in probe; no caller passes its own timeout. Carries its own unit tests.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ghTimeoutMs returns the table limit for every existing tool and never less than its limit today, and the class default for an unknown key",
+          "ghExec always runs through runShellBytes, never puts input text in argv, and returns every runShellBytes field plus the limit applied and the probe result",
+          "the byte adapter yields valid text for a cut crossing a multibyte character"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default"
+          },
+          {
+            "level": "unit",
+            "name": "gh-timeouts.test.ts: no existing tool's limit is below its limit today"
+          },
+          {
+            "level": "unit",
+            "name": "gh-capture.test.ts: byte-to-text adapter decodes with replacement and stays valid text when a cut crosses a multibyte character"
+          },
+          {
+            "level": "unit",
+            "name": "gh-exec.test.ts: ghExec runs through runShellBytes, keeps input out of argv and returns the limit applied and the probe result"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Failure mapping, failure net and approval class",
+        "summary": "Add ghFailureOf with its one precedence and the unknown-outcome rule for mutating calls, withGhFailureNet keeping the concrete schema types, and ghApprovalClass with the destructive rules (close, merge, delete, transfer, every rename including newName and newTag, logout, visibility, force and clobber, non-empty extraArgs, unknown op). Carries its own unit tests.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "paired-flag fixtures give the precedence time-out, abort, signal, stdin error, stderr overflow, unmarked cut, non-zero exit",
+          "a mutating failure after execution began carries the unknown-outcome sentence and never says the value was not set",
+          "callTool over withGhFailureNet type-checks against the tool's own schemas",
+          "an unknown op resolves to destructive"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gh-failures.test.ts: the one precedence timedOut, aborted, signal, stdinError, stderrOverflow, unmarked cut, non-zero exit, pinned by paired-flag fixtures"
+          },
+          {
+            "level": "unit",
+            "name": "gh-failures.test.ts: a signal-only termination is rejected for a read and carries the unknown-outcome sentence for a mutating call"
+          },
+          {
+            "level": "unit",
+            "name": "gh-failures.test.ts: spawn error, authentication text, probe-only authentication text, ambiguous failure with a clean probe and network text map to missing-tool, missing-signin, missing-signin, rejected and unreachable"
+          },
+          {
+            "level": "unit",
+            "name": "gh-approval.test.ts: every rename, close, merge, delete, transfer, logout, visibility, force, clobber and non-empty extraArgs is destructive and an unknown op is destructive"
+          },
+          {
+            "level": "unit",
+            "name": "call-tool.type-test.ts: callTool over withGhFailureNet keeps the concrete input and result types"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Convert the issue and pr tools",
+        "summary": "Convert the existing issue.ts and pr.ts tools to typebox input (JSON equal to the snapshot) and output schemas, ghExec with a limit key, ghApprovalClass and withGhFailureNet; legacy failure text stays in output and error; register the converted tools. gh_pr_diff keeps its behaviour in this task.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "each converted tool's input schema serialises identically to its snapshot row",
+          "each tool result validates against its output schema and existing result data keeps its shape",
+          "no call in issue.ts or pr.ts passes its own timeout"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-compat.test.ts: issue and pr tools' input schemas serialise identically to the snapshot"
+          },
+          {
+            "level": "integration",
+            "name": "gh-output-schemas.test.ts: issue and pr tool results validate against their output schemas for success and failure"
+          },
+          {
+            "level": "unit",
+            "name": "gh-timeouts.test.ts: no ghExec call in issue.ts or pr.ts passes its own timeout"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Convert the repo, release and project tools",
+        "summary": "Convert repo.ts, release.ts and project.ts the same way; gh_release_edit becomes destructive when newTag is set and gh_repo_clone destructive when extraArgs is non-empty; extraArgs stays in the schema; gh_release_delete, gh_repo_delete and gh:project:item-delete become destructive; register the converted tools.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "snapshot equality of the input schemas, with extraArgs and newTag unchanged",
+          "the destructive and per-input classes resolve as the LLD table says",
+          "repo clone keeps its 600 s limit and release create its 180 s limit through the table"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-compat.test.ts: repo, release and project tools' input schemas serialise identically to the snapshot, extraArgs and newTag unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "gh-approval.test.ts: gh_release_edit with newTag and gh_repo_clone with extraArgs are destructive and common without them"
+          },
+          {
+            "level": "unit",
+            "name": "gh-timeouts.test.ts: no ghExec call in repo.ts, release.ts or project.ts passes its own timeout and clone keeps 600 s"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Convert actions and change gh_pr_diff and gh_run_view",
+        "summary": "Convert actions.ts; move gh_pr_diff and gh_run_view to the cut-is-answer capture and sc3 conversion with key-value cross-check, add truncated to gh_run_view, and make a failed log command a real failure; register the converted tools.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a capture cut at the cap is a success with truncated true and valid text across a multibyte character",
+          "a failed gh run view log command fails the call with stderr in error",
+          "a failed cross-check gives conversion-failed with the raw text in failure.original"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-capture.test.ts: gh_pr_diff and gh_run_view cut at the cap are successes with truncated true and valid text"
+          },
+          {
+            "level": "integration",
+            "name": "gh-convert-text.test.ts: gh_pr_diff and gh_run_view conversions cross-check against the raw text and a failed cross-check gives conversion-failed with the raw text in failure.original"
+          },
+          {
+            "level": "integration",
+            "name": "gh-failures.test.ts: a failed gh run view log command fails the call with stderr in error"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Approval mapping test and compatibility tests",
+        "summary": "Update approval-class-mapping.test.ts with the PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set and the addedByS5 list without editing the 228-row snapshot, and add gh-compat.test.ts for ids, old inputs, result shapes and legacy failure text.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "the eight listed tools resolve to common or destructive, never none",
+          "the snapshot file is byte-identical and the 46 ids are all registered",
+          "old inputs run the same gh argv"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "approval-class-mapping.test.ts: PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 members resolve to common or destructive and never none, and the snapshot is not edited"
+          },
+          {
+            "level": "integration",
+            "name": "gh-compat.test.ts: the 46 existing ids are registered, old inputs run the same argv, result data keeps its shape and legacy failure text stays in output and error"
+          },
+          {
+            "level": "integration",
+            "name": "gh-typed-call.test.ts: the 46 existing tools called through typed callTool keep their concrete result types"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Family infrastructure and the repository families",
+        "summary": "Commit the op-table schema builder first (required, optional, exactly-one-of, at-least-one groups, enums, expression strings), the output union with the literal op, and the tab and config parsers, as their own commit with unit tests; then add gh_issue_manage, gh_pr_manage, gh_release_asset, gh_repo_manage, gh_run_manage, gh_workflow_manage and gh_project_manage with their classes and limits, and register them.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "every op builds the argv the LLD table gives for its fields and rejects a field the op does not accept",
+          "release download rejects an input with none of tag, pattern and archive, and set-default needs exactly one of repository, view, unset",
+          "project link and unlink carry no --format and every project op returns op, ok, target, message"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gh-parsers.test.ts: tab-column parser and config list parser on the fixtures"
+          },
+          {
+            "level": "unit",
+            "name": "gh-op-schema.test.ts: requiredness, exclusive pairs, at-least-one groups, enums and expression strings of the builder"
+          },
+          {
+            "level": "integration",
+            "name": "gh-family-tools.test.ts: issue, pr, release asset, repo, run, workflow and project ops build the argv the table gives and return the literal op"
+          },
+          {
+            "level": "unit",
+            "name": "gh-inputs.test.ts: release download requires a tag, a non-empty pattern list or an archive; set-default needs exactly one of repository, view, unset"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Label, gist, secret, variable, cache, ssh-key and gpg-key families",
+        "summary": "Add gh_label, gh_gist, gh_secret, gh_variable, gh_cache, gh_ssh_key and gh_gpg_key, including stdin delivery for secret and variable values and public keys, envFile, the gist list columns, untyped key list rows, and the gist edit and rename rules; register them and carry their unit tests.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "secretValue and value reach gh on standard input and never appear in argv or error text",
+          "gist rename is destructive, gist edit offers add, remove and desc only",
+          "ssh-key and gpg-key list return rows as string arrays"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-family-tools.test.ts: secret and variable set deliver the value on standard input or through envFile and never in argv"
+          },
+          {
+            "level": "unit",
+            "name": "gh-inputs.test.ts: gist rename's three positionals, gist edit without content or filename, exactly-one-of rules of secret, variable, cache and key adds"
+          },
+          {
+            "level": "unit",
+            "name": "gh-parsers.test.ts: gist list columns and ssh-key and gpg-key rows as string arrays"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Search, ruleset, org, auth, status, codespace, config and extension families",
+        "summary": "Add gh_search with its per-group flags and fixed --json fields, gh_ruleset, gh_org, gh_auth, gh_status, gh_codespace, gh_config and gh_extension, with sc3 conversion for auth status, ruleset list and status, the deterministic config parser, and the codespace create preview notice with --default-permissions always passed; register them and carry their unit tests.",
+        "size": "L",
+        "order": 9,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "search qualifier expressions such as >100 and 5..20 pass through unchanged",
+          "codespace create always passes --default-permissions, has no defaultPermissions field and its preview states the permissions are accepted",
+          "auth logout and switch need hostname and user, and every codespace op except list and create needs codespace"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gh-search-inputs.test.ts: comparison and range expressions pass through unchanged for comments, interactions, reactions, followers, forks, stars, size and the date qualifiers"
+          },
+          {
+            "level": "integration",
+            "name": "gh-family-tools.test.ts: codespace create always passes --default-permissions and has no defaultPermissions field"
+          },
+          {
+            "level": "integration",
+            "name": "gh-convert-text.test.ts: auth status and ruleset list keyValues are checked against the raw text"
+          },
+          {
+            "level": "unit",
+            "name": "gh-inputs.test.ts: auth logout and switch need hostname and user; codespace ops need codespace except list and create; delete needs codespace and offers no all"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "GH_COVERAGE, GH_INPUTS and their tests",
+        "summary": "Add the coverage and input inventory data, check that all 68 tools are registered, and add the tests that read the installed gh: command coverage, flags from FLAGS, positionals from USAGE, synthetic rows, per-op schema accounting and the prompt sweep.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "every command of the installed gh has a GH_COVERAGE row and every excluded row has a reason",
+          "every flag and positional has a GH_INPUTS row and every schema field is accounted for",
+          "the prompt sweep fails on an optional selector whose absence makes gh prompt"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, covered rows name registered tools and ops, excluded rows have a reason, and all 68 tools are registered"
+          },
+          {
+            "level": "integration",
+            "name": "gh-inputs.test.ts: every flag and positional has a GH_INPUTS row and every schema field is accounted for by a flag, positional or synthetic row"
+          },
+          {
+            "level": "integration",
+            "name": "gh-inputs.test.ts: prompt sweep reads the prompt cases from the installed gh help and requires each argument in the schema or always passed"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Fake gh fixture, parser check and cross-cutting tests",
+        "summary": "Add the fake gh binary fixture and only the cross-cutting tests that need it or the installed gh: the real-CLI parser check with the canary, approval request display and masking, timeouts, failure mapping through real calls, output schema checks and search expression tests; per-task unit tests stay in their own tasks.",
+        "size": "L",
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "every op's argv with --help as its own final token parses against the installed gh and the canary prints help with no request",
+          "a fake gh that outlives its limit ends with a timed-out message naming the command and the limit",
+          "secretValue is masked and ssh-key text longer than 2000 characters shows exactly its first 2000 characters and the length"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gh-parser.test.ts: every op's argv with --help as its own final token parses against the installed gh under an empty HOME, no token and a closed-port proxy, and the gh issue delete 1 --help canary makes no request"
+          },
+          {
+            "level": "integration",
+            "name": "gh-approval.test.ts: secretValue masked, key text up to 2000 characters shown whole, a longer key shown as its first 2000 characters and the length, keyFile shows only the path, codespace create preview states the permissions are accepted, a declined destructive call does not run gh"
+          },
+          {
+            "level": "integration",
+            "name": "gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out naming the command and the limit, a mutating time-out adds that the outcome is unknown, and no ghExec call outside the table passes its own timeout"
+          },
+          {
+            "level": "integration",
+            "name": "gh-failures.test.ts: a fake gh that closes its stdin early gives a stdin error that is a failure even at exit 0"
+          },
+          {
+            "level": "integration",
+            "name": "gh-output-schemas.test.ts: every output of a family tool carries the literal op and validates for success and failure"
+          },
+          {
+            "level": "live",
+            "name": "gh-live.test.ts: gh_auth status, gh_config list, gh_search repos with limit 1, gh_gist list columns and a bad token giving missing-signin (INSRC_LIVE_TESTS=1)"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Docs and the HLD amendment",
+        "summary": "Record the s5 outcome in docs/plans/tool-registry.md and file the nonFunctional.retarget amendment for the per-job limits as a pending artifact for the user to approve; if the amend tool cannot file it, record it in docs/plans/tool-registry.md and tell the user.",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "docs/plans/tool-registry.md has an s5 outcome section",
+          "the retarget amendment exists as a pending artifact, or the fallback record and the message to the user are done"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "tool-registry doc check: the s5 outcome section exists and the amendment artifact or fallback record is present"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "ghTimeoutMs",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ghApprovalClass",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ghFailureOf",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "tab-column parser",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh config list parser",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "byte-to-text adapter",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "per-op input schemas in GhOpContracts",
+        "coveredByTaskIds": [
+          "t7",
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 22 family tools and every op in GhOpContracts",
+        "coveredByTaskIds": [
+          "t7",
+          "t8",
+          "t9",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 46 existing tools through typed callTool",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh_pr_diff and gh_run_view cut at the cap",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "secret and variable set with stdin and envFile",
+        "coveredByTaskIds": [
+          "t8",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "codespace create with and without --default-permissions",
+        "coveredByTaskIds": [
+          "t9",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "withGhFailureNet",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "approval exchange for destructive ops",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "output union discriminated by the literal op",
+        "coveredByTaskIds": [
+          "t7",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "GH_COVERAGE against gh --help command listing",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "GH_INPUTS (flags from FLAGS, positionals from USAGE, synthetic fields) against each op's schema fields",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "real-CLI parser check: each op's argv built from representative values (first enum member, integer 1, the fixed --json field list, a placeholder string) with --help appended as its own final token, run against the installed gh under an empty temporary HOME and GH_CONFIG_DIR, no token and a closed-port proxy, asserting exit 0 and a USAGE section (covers the flags the tools add themselves, such as --format, --visibility and --default-permissions), plus a canary case for a mutating command; it proves flag validity only",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "prompt sweep: the prompt cases are read from the installed gh's help text (commands whose help says an interactive prompt is used when an argument is absent, or that a flag avoids a prompt), and each such argument is required in the schema or always passed",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "approval-class-mapping.test.ts with the PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set and addedByS5 list",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "schema JSON equality with the 228-row snapshot for the existing tools",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "no ghExec call outside the table passes its own timeout",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh_auth status",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh_config list",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh_search repos with limit 1",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "gh_gist list columns",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "missing-signin text with a bad token in the environment",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails (shared helpers, failure mapping, approval class, GH_COVERAGE, GH_INPUTS)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges (GhOpContracts, GhToolOutputs, GhApprovalClassMapping, gh time limit)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 errorPaths (failure precedence, prompts, unknown outcome, rejected inputs)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy (levels, subjects, acceptance mapping)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 migration (rollout order and backward compatibility)"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md#s5-decisions-2026-10-25"
+    }
+  ]
+}

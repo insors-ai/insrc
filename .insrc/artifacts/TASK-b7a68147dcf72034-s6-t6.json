@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f74bede-c533-426d-b8b0-3b5459e06807",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.382Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "jira_workitem reads (5 ops)",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0badb482d1f3d4b1ac4aa2d3029aa1a48a1a2a1b6b4f24bcef0976b7dfb2248f",
+        "at": "2026-10-25T19:41:57.382Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.383Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "jira_workitem reads (5 ops)",
+    "summary": "Create src/daemon/tools/builtins/jira/workitem.ts with the jira_workitem family and its read ops: view, search, count, attachment-list and watcher-list, with their fields, rules, class none, limits (30 s, search and count 60 s) and answer builders.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "view, search, count, attachment-list and watcher-list are class none and return their declared shapes from recorded output",
+      "search and count take exactly one of jql and filter, search passes a finite --limit within 1 to 500 (default 50) and never --paginate, and count reads the 'Number of work items in the search' line",
+      "the argv of each op matches the acli command and flags"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "jira-workitem-reads.test.ts: each read op returns its declared shape and its argv matches acli"
+      },
+      {
+        "level": "integration",
+        "name": "jira-workitem-reads.test.ts: search and count take exactly one of jql and filter and search is limited"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

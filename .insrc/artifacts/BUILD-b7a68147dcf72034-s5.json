@@ -1,0 +1,421 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 34,
+        "contentHash": "e1036795fb00f6f37abd946401abc1822e558db9f59ea05e2ab913982bfa5f46",
+        "at": "2026-10-25T17:50:37.697Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 34,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T17:50:48.348Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-30b8d32f-e89f-456d-a6d5-ab2b2e969a91",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:56:19.569Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "revision": 34,
+    "updatedAt": "2026-10-25T17:39:05.767Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_fakegh.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-capture.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-exec.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/helpers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/actions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/pr.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/release.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/repo.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-approval.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-failure-net.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-failures.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/call-tool.type-test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/legacy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/project.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-convert-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/convert.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/fixtures/added-by-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_cases.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-op-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-parsers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/op-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/parsers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-inputs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/manage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/resources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_providers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-search-inputs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/account.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_ghhelp.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/inputs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/_family-rows.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-parser.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/tool-registry.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-25T17:50:25.300Z"
+      }
+    ],
+    "commit": "15170ccc3",
+    "summary": "Docs only: the s5 outcome section (with the deviations and the known gaps) in docs/plans/tool-registry.md, and the nonFunctional.retarget amendment for the per-job gh limits filed as the pending artifact AMD-b7a68147dcf72034-9 through the amendments store (proposeAmendment); the user approves it."
+  },
+  "citations": []
+}

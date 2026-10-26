@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5945bf0d-c585-4d4b-a428-4ebe07d22f08",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.254Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Time-limit table, byte adapter and ghExec",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c134dc954ee613b269c8855ec728a8cf4a59dbe46057d8447ab588dd26ecd3cc",
+        "at": "2026-10-25T14:50:47.255Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.255Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Time-limit table, byte adapter and ghExec",
+    "summary": "In helpers.ts add the per-job limit table and ghTimeoutMs, the byte-to-text adapter over runShellBytes, GhOutcome and ghExec with the key option, stdin input, cut-is-answer cap, abort signal and the one sign-in probe; no caller passes its own timeout. Carries its own unit tests.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "ghTimeoutMs returns the table limit for every existing tool and never less than its limit today, and the class default for an unknown key",
+      "ghExec always runs through runShellBytes, never puts input text in argv, and returns every runShellBytes field plus the limit applied and the probe result",
+      "the byte adapter yields valid text for a cut crossing a multibyte character"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default"
+      },
+      {
+        "level": "unit",
+        "name": "gh-timeouts.test.ts: no existing tool's limit is below its limit today"
+      },
+      {
+        "level": "unit",
+        "name": "gh-capture.test.ts: byte-to-text adapter decodes with replacement and stays valid text when a cut crosses a multibyte character"
+      },
+      {
+        "level": "unit",
+        "name": "gh-exec.test.ts: ghExec runs through runShellBytes, keeps input out of argv and returns the limit applied and the probe result"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

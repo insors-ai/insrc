@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "89ecc321e7fa44f5246cb8ae456ba267c832454492e5ed7e681d4cf5ab95fb6a",
+        "at": "2026-10-25T17:50:08.897Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792950546146-06wirn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T17:49:06.146Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 62750,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/builtins/gh/__tests__/_fakegh.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-capture.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-exec.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts",
+        "src/daemon/tools/builtins/gh/helpers.ts",
+        "src/daemon/tools/builtins/gh/actions.ts",
+        "src/daemon/tools/builtins/gh/issue.ts",
+        "src/daemon/tools/builtins/gh/pr.ts",
+        "src/daemon/tools/builtins/gh/release.ts",
+        "src/daemon/tools/builtins/gh/repo.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-approval.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-failure-net.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-failures.test.ts",
+        "src/daemon/tools/call-tool.type-test.ts",
+        "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-compat.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts",
+        "src/daemon/tools/builtins/gh/schemas.ts",
+        "src/daemon/tools/builtins/gh/legacy.ts",
+        "src/daemon/tools/builtins/gh/project.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-convert-text.test.ts",
+        "src/daemon/tools/builtins/gh/convert.ts",
+        "src/daemon/tools/__tests__/fixtures/added-by-s5.json",
+        "src/daemon/tools/builtins/gh/__tests__/_cases.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-typed-call.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-op-schema.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-parsers.test.ts",
+        "src/daemon/tools/builtins/gh/op-table.ts",
+        "src/daemon/tools/builtins/gh/parsers.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-inputs.test.ts",
+        "src/daemon/tools/builtins/gh/index.ts",
+        "src/daemon/tools/builtins/gh/manage.ts",
+        "src/daemon/tools/builtins/gh/resources.ts",
+        "src/daemon/tools/builtins/gh/__tests__/_providers.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-search-inputs.test.ts",
+        "src/daemon/tools/builtins/gh/account.ts",
+        "src/daemon/tools/builtins/gh/__tests__/_ghhelp.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts",
+        "src/daemon/tools/builtins/gh/coverage.ts",
+        "src/daemon/tools/builtins/gh/inputs.ts",
+        "src/daemon/tools/builtins/gh/__tests__/_family-rows.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-live.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-parser.test.ts",
+        "docs/plans/tool-registry.md"
+      ],
+      "buildFingerprint": "b3754261e4265a3bbd3a0ce719975ef035253bd5929c402f042de23121b9d3f2",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

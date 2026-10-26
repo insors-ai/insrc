@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-af87fd22-c189-4874-a860-c1abeffc6767",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.267Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Fake gh fixture, parser check and cross-cutting tests",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4f4be47a537833d89c982ad566317e45585670c9c23c5ae133c188878b21504c",
+        "at": "2026-10-25T14:50:47.267Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.268Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake gh fixture, parser check and cross-cutting tests",
+    "summary": "Add the fake gh binary fixture and only the cross-cutting tests that need it or the installed gh: the real-CLI parser check with the canary, approval request display and masking, timeouts, failure mapping through real calls, output schema checks and search expression tests; per-task unit tests stay in their own tasks.",
+    "size": "L",
+    "order": 11,
+    "acceptanceChecks": [
+      "every op's argv with --help as its own final token parses against the installed gh and the canary prints help with no request",
+      "a fake gh that outlives its limit ends with a timed-out message naming the command and the limit",
+      "secretValue is masked and ssh-key text longer than 2000 characters shows exactly its first 2000 characters and the length"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gh-parser.test.ts: every op's argv with --help as its own final token parses against the installed gh under an empty HOME, no token and a closed-port proxy, and the gh issue delete 1 --help canary makes no request"
+      },
+      {
+        "level": "integration",
+        "name": "gh-approval.test.ts: secretValue masked, key text up to 2000 characters shown whole, a longer key shown as its first 2000 characters and the length, keyFile shows only the path, codespace create preview states the permissions are accepted, a declined destructive call does not run gh"
+      },
+      {
+        "level": "integration",
+        "name": "gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out naming the command and the limit, a mutating time-out adds that the outcome is unknown, and no ghExec call outside the table passes its own timeout"
+      },
+      {
+        "level": "integration",
+        "name": "gh-failures.test.ts: a fake gh that closes its stdin early gives a stdin error that is a failure even at exit 0"
+      },
+      {
+        "level": "integration",
+        "name": "gh-output-schemas.test.ts: every output of a family tool carries the literal op and validates for success and failure"
+      },
+      {
+        "level": "live",
+        "name": "gh-live.test.ts: gh_auth status, gh_config list, gh_search repos with limit 1, gh_gist list columns and a bad token giving missing-signin (INSRC_LIVE_TESTS=1)"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

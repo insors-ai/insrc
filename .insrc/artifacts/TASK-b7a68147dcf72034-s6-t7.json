@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e0c01ff0-667d-4a51-8247-7e20a7ca500c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.383Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "jira_workitem changes (10 ops)",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4203e229aea4e11ce9e60a5e67a4f24683d5710a0f79eb0d24c39c4c746d1c04",
+        "at": "2026-10-25T19:41:57.383Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.384Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "jira_workitem changes (10 ops)",
+    "summary": "Extend src/daemon/tools/builtins/jira/workitem.ts with create, edit, transition, assign, clone, archive, unarchive, delete, attachment-delete and watcher-remove, with their fields, rules, classes, 60 s limits and answer builders.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "create, edit, transition, assign, clone, archive, unarchive and watcher-remove are common; delete and attachment-delete are destructive",
+      "edit, transition, assign, clone, archive, unarchive and delete take keys only (one to 50), refuse jql, filter and from-file, and pass --yes",
+      "transition takes the target status by name; clone reads the new key from the message; a FAILURE result at exit 0 comes back as a rejected failure",
+      "the argv of each op matches the acli command and flags and each op's recorded answer fits its output member"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "jira-workitem-changes.test.ts: each changing op returns {ok, target, message} and its argv matches acli"
+      },
+      {
+        "level": "integration",
+        "name": "jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, filter and from-file refused"
+      },
+      {
+        "level": "integration",
+        "name": "jira-workitem-changes.test.ts: a FAILURE result at exit 0 and a partial batch are rejected failures"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

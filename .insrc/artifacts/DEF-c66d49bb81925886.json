@@ -1,0 +1,666 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792990627175-kf6hvr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T04:57:41.638Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 34463,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "epicSlug": "retain-durable-artifact-token-usage",
+    "authoredBy": "controller",
+    "revision": 5,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "5ea8be3eacd4edf1d2ff4c8b1965b6a24242fab92aa15da0150cba6976e7bc00",
+        "at": "2026-10-26T06:05:35.382Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 5,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 29,
+          "low": 16
+        },
+        "at": "2026-10-26T06:20:11.110Z",
+        "report": {
+          "entityId": "DEF-c66d49bb81925886",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-da8e5c916b55d3cc4115e4e4451fd516"
+        }
+      }
+    }
+  },
+  "body": {
+    "title": "Retain durable artifact token usage",
+    "flavor": "enhancement",
+    "summary": "Keep a durable, trustworthy model-usage ledger per root artifact, independently of artifact JSON. One append-only Avro file contains the root and descendant activities, with charged ownership retained for reporting through DuckDB and the later Delivery board.",
+    "problem": "People cannot reliably account for the model work consumed while creating and reviewing workflow artifacts. A provider response may contain usage figures, but those figures alone do not establish a durable, attributable history through retries, corrections, interrupted runs and artifact rewrites. Without a shared accounting boundary, later capture and delivery features can lose consumed work, count overlapping observations twice, misattribute shared or reviewed work, or present missing measurement as zero, leaving task, story and epic explanations untrustworthy.",
+    "nonGoals": [
+      {
+        "text": "Instrument workflow or provider inference dispatch sites, or implement native Claude/Codex/Ollama usage extraction.",
+        "rationale": "TU2 owns automatic capture and provider normalization. TU1 qualifies measurement boundaries as contract evidence and supplies the foundation it consumes."
+      },
+      {
+        "text": "Implement controller-host reporting integrations or new controller-facing MCP telemetry flows.",
+        "rationale": "TU3 owns host capability negotiation, reporting and host integrations; TU1 supplies shared event/source semantics and daemon-owned accounting access."
+      },
+      {
+        "text": "Compute task/story/epic subtree totals or add usage to DeliverySnapshot and board UI.",
+        "rationale": "TU4 owns work hierarchy read models and TU5 owns client presentation. TU1 reduces observations for accounting without building those products."
+      },
+      {
+        "text": "Replace the generic common artifact store, lifecycle, journal or artifact identity scheme.",
+        "rationale": "The existing common artifact core is the persistence substrate. Only additive accounting extensions and preservation changes belong here."
+      },
+      {
+        "text": "Add monetary pricing, invoice reconciliation, budgets, inference interception, automatic model downgrades or raw prompt/response retention.",
+        "rationale": "The PRD scopes token accounting and provenance; these would introduce unrelated product and privacy/accuracy contracts."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The documented common-artifact model supplies canonical identity, parent relationships and lifecycle boundaries. The new usage service reuses these contracts without storing usage inside artifact JSON.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "Usage is external to content files. Artifact hashing covers description, body and citations; root-ledger appends must leave artifact JSON bytes, approval, revision and signoff unchanged.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "The shared provider response has optional usage; inputTokens and outputTokens are required when usage exists, while cache counters are optional. Provider response usage alone does not establish durable artifact-level coverage.",
+        "confidence": "high",
+        "source": "c7"
+      },
+      {
+        "text": "Native and controller observation granularity must be qualified before a producer contract claims physical-call completeness. The PRD allows disclosed aggregate/unknown evidence, not fabricated per-call facts.",
+        "confidence": "med",
+        "source": "c2"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "type": "stakeholder",
+        "text": "Store one authoritative append-only Avro file at <project>/.insrc/usage/<root-artifact-id>/events.avro for each canonical epic, standalone or issue root. Root and descendant records share this file; every event carries rootArtifactId and charged artifactId. Artifact JSON contains no usage arrays. Journals and Parquet caches are recovery/derived data only.",
+        "source": "c15"
+      },
+      {
+        "id": "k2",
+        "type": "invariant",
+        "text": "Each actual model attempt has one stable call identity and one charged owner. Transport replay is idempotent; distinct model retries remain distinct usage. Logical requests, native invocations, references and causal links are not extra charges.",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "type": "contract",
+        "text": "Effective observations preserve originals while handling correction chains, overlap reconciliation and explicit attribution transfers. Invalid references, conflicting identities, forks and cycles are visible conflicts, never silent last-writer-wins or duplicate counts.",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "type": "invariant",
+        "text": "Reported, estimated, pending, unavailable and historical not-recorded states remain distinguishable. Cache buckets are disjoint, reasoning is not counted twice, cumulative snapshots are not summed, and aggregate-only evidence never claims an observed physical-call count.",
+        "source": "c2"
+      },
+      {
+        "id": "k5",
+        "type": "invariant",
+        "text": "Ledger append freshness is independent of artifact JSON bytes, content revision/hash/status/signoffs. Regeneration, codecs and ordinary lifecycle writes do not touch ledger bytes. Paired export/import, retention, supersession and binary-safe branch reconciliation preserve acknowledged history.",
+        "source": "c15"
+      },
+      {
+        "id": "k6",
+        "type": "contract",
+        "text": "A daemon-owned single writer per repository/root durably acknowledges complete Avro blocks and required directory metadata. Concurrent submissions and interrupted tails recover without losing acknowledged events. Reserve valid stable root/child identities before content exists, without fabricated bodies, duplicate ledgers or repeated inference.",
+        "source": "c15"
+      },
+      {
+        "id": "k7",
+        "type": "stakeholder",
+        "text": "Reviews charge the reviewed LLD, task work charges TASK, and shared story validation/code review charges BUILD; generic reference records cannot duplicate those charges. Preserve dispatch-time ownership and explicit transfer provenance.",
+        "source": "c1"
+      },
+      {
+        "id": "k8",
+        "type": "convention",
+        "text": "Reuse canonical artifact identities and parent links and daemon-owned persistence interfaces. Provider calls use sequential awaits rather than Promise.all; retain the documented in-progress summary/index queue overlap exception. Preserve CLI-only cloud inference and required critical model tiers.",
+        "source": "c15"
+      },
+      {
+        "id": "k9",
+        "type": "contract",
+        "text": "Missing ledgers, legacy absence, unsupported schemas and malformed evidence remain explicit quality states, never complete zero. One live file per root has measurable growth/read/recovery limits; no silent truncation, rotation or schema rewrite. Root transfer/import must not duplicate charges.",
+        "source": "c15"
+      },
+      {
+        "id": "k10",
+        "type": "stakeholder",
+        "text": "TU1 is complete with validated accounting services, preservation/recovery evidence and producer contracts; completion does not depend on later capture, controller, hierarchy or board epics.",
+        "source": "c4"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Distinguish and reconcile immutable usage observations",
+        "userValue": "An accounting consumer can tell which model work was observed, what remains unknown, and which observation contributes without double counting corrections or overlap.",
+        "sizeEstimate": "L",
+        "dependsOn": [],
+        "existingCapabilityRefs": [
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Identify logical requests, actual attempts, source granularity, model identity and charged ownership without treating references or transport delivery as new consumption."
+          },
+          {
+            "statement": "Resolve observations conservatively while preserving every original fact and disclosing uncertainty, conflicts and explicit ownership changes."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "usage evidence for retries of delivery and for genuinely separate model attempts",
+            "when": "the evidence is accepted and interpreted",
+            "then": "replayed delivery identifies the same event, actual attempts remain separate, and each attempt has one charged owner plus workflow-step/run and source/model provenance",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "reported counters, estimates, unavailable counters, pending attempts and legacy absence",
+            "when": "a consumer reads their meaning",
+            "then": "reported zero is distinct from every missing/estimated state, cache buckets do not overlap, reasoning is not added again, and unsafe or invalid counts cannot become trusted usage",
+            "operationalizes": [
+              "k4",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a corrected observation or aggregate evidence overlapping observed constituent calls",
+            "when": "the effective accounting contribution is requested",
+            "then": "only the accepted non-overlapping observation basis contributes, original facts remain available, and unsupported or unreconciled overlap is explicitly unresolved rather than silently added",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "duplicate identities with different payloads or correction/reconciliation references that fork, cycle or do not resolve",
+            "when": "the evidence is interpreted",
+            "then": "the conflict is visible and untrusted branches cannot silently replace known facts or increase a claimed complete total",
+            "operationalizes": [
+              "k3",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "dispatch-time attribution followed by an explicit change of ownership",
+            "when": "the accounting history is interpreted",
+            "then": "the effective owner is unambiguous, the prior owner and reason remain traceable, and the same consumption is not charged to both owners",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "qualified evidence about what a native or external source can expose",
+            "when": "the accounting contract describes that source",
+            "then": "per-call observations, invocation aggregates, cumulative observations and unknown physical-call counts remain distinguishable without requiring TU2/TU3 instrumentation to exist",
+            "operationalizes": [
+              "k4",
+              "k10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Persist root and descendant usage in a recoverable Avro ledger",
+        "userValue": "A producer can rely on one root usage file retaining all acknowledged root and child activity, even before artifact content exists.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Append root and descendant events to one root Avro container through a serialized daemon writer, with durable acknowledgment, duplicate detection and interrupted-tail recovery."
+          },
+          {
+            "statement": "Reserve canonical root and child identities before content creation and resolve pending attribution without copying usage into artifact JSON."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a usage submission associated with an existing artifact",
+            "when": "the service acknowledges durable acceptance and then restarts",
+            "then": "the complete accepted Avro event remains readable exactly once in the canonical root file with its original event, root and charged-artifact identities",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "simultaneous root/child submissions, interruption during block/header/directory persistence, or corruption in committed data",
+            "when": "recovery and replay complete",
+            "then": "acknowledged blocks survive, incomplete tails are detected/recovered, interior corruption is surfaced, identical replay adds no charge and conflicting identity reuse remains visible",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "usage targeted at a stable intended artifact identity before valid artifact content exists",
+            "when": "the producer records usage and the artifact is subsequently created",
+            "then": "the evidence survives in the reserved root ledger and attribution resolves once without copying records into artifact JSON, fabricating content or approval, or retaining a second final ledger",
+            "operationalizes": [
+              "k1",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a durable start without a final usable observation",
+            "when": "the service recovers after interruption",
+            "then": "the attempt is represented as pending/interrupted with unavailable usage rather than successful measured zero",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a persistence failure before start acknowledgment or after a model result was obtained",
+            "when": "the producer receives the accounting outcome",
+            "then": "it can distinguish durable acceptance from failure/pending recovery, retry recording safely, and is never instructed to rerun inference to repair accounting",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Keep usage independent of artifact lifecycle and reconcile ledger transfers",
+        "userValue": "A reviewer retains both a trustworthy usage history and the approved content state while normal artifact operations continue.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s2"
+        ],
+        "existingCapabilityRefs": [
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Keep artifact writes separate from the root ledger while preserving history through paired import/export, supersession, deletion/retention and binary-safe branch reconciliation."
+          },
+          {
+            "statement": "Keep observational freshness separate from content revision, approval and signoff while exposing legacy and unsupported evidence honestly."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an approved or signed-off artifact with recorded usage",
+            "when": "only usage facts are appended",
+            "then": "root usage freshness advances while artifact JSON bytes, content hash/revision, approval and signoff remain unchanged",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an artifact with an external root usage ledger",
+            "when": "it undergoes supported rewriting, regeneration, content revision, lifecycle updates or kind-specific serialization and round-trip import/export",
+            "then": "ordinary content operations leave ledger bytes intact; paired import/export retains usage or explicitly discloses missing ledger history",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "rejected, cancelled or superseded work that consumed model usage",
+            "when": "new content or a successor artifact is recorded",
+            "then": "the consumed history remains attributable and is not erased or copied into a second charge",
+            "operationalizes": [
+              "k2",
+              "k5",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "independent branch histories containing distinct events and an identical replay",
+            "when": "the histories are reconciled",
+            "then": "daemon-mediated binary-safe import retains both distinct events once, conflicting IDs remain explicit and no ordinary text merge or timestamp chooses a winner",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "an older artifact with no ledger or a ledger with an unsupported writer/record schema",
+            "when": "normal artifact read/write operations occur",
+            "then": "content remains usable, artifact writers leave ledger bytes intact and accounting reports not-recorded or unsupported rather than complete zero",
+            "operationalizes": [
+              "k5",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "an explicit ownership transfer across canonical roots interrupted between durable steps",
+            "when": "recovery and reporting complete",
+            "then": "the original charged event remains auditable, transfer references reconcile once and neither duplicate charging nor a silent gap is presented as complete",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k5",
+              "k9"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Provide daemon accounting access and operational guarantees",
+        "userValue": "Later capture and read-model features can use a scoped, documented accounting service without implementing their own store or relying on an unfinished board.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3"
+        ],
+        "existingCapabilityRefs": [
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Provide daemon-owned artifact-level submission and reading with explicit acceptance, recovery, conflict and unsupported-version outcomes."
+          },
+          {
+            "statement": "Expose root watermarks, bounded record access and committed report snapshots consumable by the daemon DuckDB query layer, without requiring hierarchical reporting implementation in TU1."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a producer or reader with valid repository and artifact context",
+            "when": "it uses the accounting service",
+            "then": "it can submit and read attributable artifact-level usage and receive explicit durable/pending/conflict/unsupported results without direct database access or a second ledger",
+            "operationalizes": [
+              "k1",
+              "k6",
+              "k8",
+              "k10"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "invalid identity, wrong scope, unresolved ownership or a caller attempting to target arbitrary files",
+            "when": "the request reaches accounting access",
+            "then": "it is rejected or explicitly held unresolved without modifying an unrelated artifact or inventing attribution",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k7",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a retained history large enough to require bounded reading",
+            "when": "a consumer reads successive portions at a recorded usage watermark",
+            "then": "it can traverse the acknowledged history consistently without silent omission, while growth/retention outcomes and any limits are explicit",
+            "operationalizes": [
+              "k6",
+              "k9",
+              "k10"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a recovery backlog, unsupported evidence or a retention/merge problem",
+            "when": "the service is inspected or retried",
+            "then": "the unresolved state and recoverable outcome are visible, no acknowledged history is silently truncated, and content approval semantics stay independent",
+            "operationalizes": [
+              "k3",
+              "k5",
+              "k6",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the accounting foundation and its documented producer/preservation contracts",
+            "when": "its acceptance fixtures run without provider capture, host reporting, hierarchical delivery queries or board code",
+            "then": "the foundation is complete and consumable, and no out-of-scope product capability or weaker inference policy is introduced",
+            "operationalizes": [
+              "k8",
+              "k10"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "the agreed first-release root-file scale and physical Avro schema",
+            "when": "library, schema evolution, paging and committed-snapshot qualification run",
+            "then": "measured size/read/recovery bounds are recorded, DuckDB-compatible decoding is demonstrated and unsupported schema migration is explicit",
+            "operationalizes": [
+              "k6",
+              "k9",
+              "k10"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261026c66d49bb:FR001",
+          "statement": "Retain immutable, attributable usage facts for workflow artifacts, including the model, step/run, request/attempt, activity and measurement provenance.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261026c66d49bb:FR002",
+          "statement": "Select one trustworthy effective observation for consumed work while retaining correction, reconciliation and ownership history, and disclose unresolved accounting conflicts.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261026c66d49bb:FR003",
+          "statement": "Persist root and descendant records in one recoverable Avro ledger per canonical root, including concurrent appends and reserved identities before artifact content exists.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261026c66d49bb:FR004",
+          "statement": "Keep artifact JSON and usage persistence independent through lifecycle changes, paired import/export, retention and binary-safe branch reconciliation.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261026c66d49bb:FR005",
+          "statement": "Provide daemon-owned artifact-level accounting access and explicit compatibility, coverage and operational outcomes for later producers and read models.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261026c66d49bb:S001:FR001",
+          "statement": "Identify logical requests, actual attempts, source granularity, model identity and charged ownership without treating references or transport delivery as new consumption.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261026c66d49bb:S001:FR002",
+          "statement": "Resolve observations conservatively while preserving every original fact and disclosing uncertainty, conflicts and explicit ownership changes.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261026c66d49bb:S002:FR001",
+          "statement": "Append root and descendant events to one root Avro container through a serialized daemon writer, with durable acknowledgment, duplicate detection and interrupted-tail recovery.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261026c66d49bb:S002:FR002",
+          "statement": "Reserve canonical root and child identities before content creation and resolve pending attribution without copying usage into artifact JSON.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261026c66d49bb:S003:FR001",
+          "statement": "Keep artifact writes separate from the root ledger while preserving history through paired import/export, supersession, deletion/retention and binary-safe branch reconciliation.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261026c66d49bb:S003:FR002",
+          "statement": "Keep observational freshness separate from content revision, approval and signoff while exposing legacy and unsupported evidence honestly.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261026c66d49bb:S004:FR001",
+          "statement": "Provide daemon-owned artifact-level submission and reading with explicit acceptance, recovery, conflict and unsupported-version outcomes.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261026c66d49bb:S004:FR002",
+          "statement": "Expose root watermarks, bounded record access and committed report snapshots consumable by the daemon DuckDB query layer, without requiring hierarchical reporting implementation in TU1.",
+          "scope": "item",
+          "itemRef": "s4"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/c1.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/c2.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "plans/evidence/tu1-root-ledger-review/c3.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "plans/evidence/tu1-root-ledger-review/roadmap.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:13",
+      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "plans/evidence/tu1-root-ledger-review/c6.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "plans/evidence/tu1-root-ledger-review/c7.txt:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:19",
+      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:21",
+      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "plans/evidence/model-token-usage-tu1-review-evidence.md:23",
+      "quotedText": "Targeted evidence; source excerpts support proposed requirements, not claims that accounting is already implemented."
+    },
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": "plans/evidence/tu1-root-ledger-review/grounding.json:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    },
+    {
+      "id": "c15",
+      "kind": "stakeholder",
+      "ref": "plans/evidence/model-token-usage-root-storage-decision.json:1",
+      "quotedText": "Current source evidence for the revised root-ledger definition; proposed behavior still requires implementation."
+    }
+  ]
+}

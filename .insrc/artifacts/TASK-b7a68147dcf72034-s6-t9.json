@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0ba7a09-dd95-4f86-a69c-699bceb8615d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.386Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "jira_project (7 ops) and jira_auth (1 op)",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e390f847aa03826dcc74350feec5883a4335e23bd46ede087429b7e45271f70",
+        "at": "2026-10-25T19:41:57.386Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.386Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "jira_project (7 ops) and jira_auth (1 op)",
+    "summary": "Create project.ts (list, view, create from an existing project, update, archive, restore, delete) and auth.ts (status) with fields, rules, classes, limits and answer builders; the project mutation readers accept the success mark only until the probe records the real text.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "project create requires fromProject, key and name and builds acli jira project create --from-project SRC --key NEW --name N with optional --description, --url and --lead-email, never --from-json or --generate-json",
+      "project archive and delete are destructive, create, update and restore are common, list and view are none; list takes exactly one of limit (1 to 200, default 30) and recent",
+      "jira_auth status is class none and reads the sign-in state without any model call"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "jira-project-auth.test.ts: every project op and auth status returns its declared shape and its argv matches acli"
+      },
+      {
+        "level": "integration",
+        "name": "jira-project-auth.test.ts: project create needs fromProject and a non-company-managed source is a rejected failure"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-af69385a-95a2-4b60-a1ce-8161b0f1feb1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.376Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Jira input layer: limits, identifier patterns, schema bounds, key normaliser, value checks",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b47603ca80363e7403f9d99969068345f2e3155a81ec621ccda906ef5da0d06",
+        "at": "2026-10-25T19:41:57.376Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.377Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Jira input layer: limits, identifier patterns, schema bounds, key normaliser, value checks",
+    "summary": "Create src/daemon/tools/builtins/jira/limits.ts (JIRA_LIMITS, JIRA_PATTERNS) and input.ts (jiraInputSchema, normalizeKeys, checkJiraValues). Pure functions over the exported gh op-table types; no gh file is edited.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "jiraInputSchema sets maximum 500, 200 and 200 on the search, project list and comment list limit fields, maxItems 50 on every key array and a pattern on every identifier field",
+      "51 keys supplied, even with repeats, are refused by the schema; normalizeKeys keeps first-seen order and drops repeats",
+      "checkJiraValues refuses a value that starts with '-' in every identifier field (key, keys, project, toProject, projectKey, fromProject, id, user, type name, status, assignee)",
+      "no file under src/daemon/tools/builtins/gh is changed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "jira-inputs.test.ts: jiraInputSchema sets maximum 500, 200 and 200, maxItems 50 and identifier patterns"
+      },
+      {
+        "level": "unit",
+        "name": "jira-inputs.test.ts: 51 keys with repeats are refused and normalizeKeys keeps first-seen order"
+      },
+      {
+        "level": "unit",
+        "name": "jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every identifier field"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

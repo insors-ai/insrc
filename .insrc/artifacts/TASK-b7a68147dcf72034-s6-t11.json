@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-13552485-988a-45ff-a51b-48ac33e2b705",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.388Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Live tests, project probe and documentation",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bef2ab4371bdcdb39ff25eb2cf5e198970f8c61bf4e7c3194d28b554c7a4b456",
+        "at": "2026-10-25T19:41:57.388Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.388Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live tests, project probe and documentation",
+    "summary": "Add the INSRC_LIVE_TESTS-gated live tests (reads, a work item create and delete, and the disposable-project probe gated by a company-managed source project key, a scratch project key and a lead email), run the read-only and work item ones, run the project probe only after the user confirms the three values, record the real success text of each project mutation as fixtures, and document the five tools, their classes and the recorded text in docs/plans/tool-registry.md.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "the live tests skip with a reason when INSRC_LIVE_TESTS or the probe variables are not set",
+      "the read-only live ops return their declared shape against the signed-in site",
+      "the project probe runs only after the user confirms the three values; it then creates the scratch project from the source, updates, archives, restores and deletes it, deletes it even if a step fails, and stores the success text of each as fixtures that the project readers are tested against; if the site refuses project creation the refusal text is recorded and the project readers stay on the success mark",
+      "docs/plans/tool-registry.md lists the five tools, their classes and the recorded project mutation text"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "jira-live.test.ts: read ops view, search, count, list, types, status and visibility return their declared shape"
+      },
+      {
+        "level": "live",
+        "name": "jira-live.test.ts: one work item create then delete in a scratch project with cleanup of any clone"
+      },
+      {
+        "level": "live",
+        "name": "jira-live.test.ts: the disposable-project probe records the real success text of each project mutation"
+      },
+      {
+        "level": "smoke",
+        "name": "jira-docs.test.ts: docs/plans/tool-registry.md lists the five tools, their classes and the excluded and unsupported lists"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

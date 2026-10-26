@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cdbe98f3-55ad-437a-aba8-b19c25254a9f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.381Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "defineJiraFamily, approval and preview",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3c0e5e73351a9b397eee71533a8ed90fdec24b0a795f0394d9c8b743387f7fbf",
+        "at": "2026-10-25T19:41:57.381Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.382Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "defineJiraFamily, approval and preview",
+    "summary": "Create src/daemon/tools/builtins/jira/family.ts: defineJiraFamily takes the ops, builds the input schema with jiraInputSchema, runs refuseInput with dashSafe true, checkJiraValues, normalizeKeys, jiraArgv and acliExec, maps failures with jiraFailureOf, calls the op's answer builder, wraps the tool in withGhFailureNet and returns a GhFamilyTool; approval is a function of the op (an unknown op is destructive) with a small preview. Tested on a small table of sample ops.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a family built from sample ops refuses unknown ops, missing, extra and exclusive-group fields through the run-time input check before acli runs",
+      "a reader failure comes back from executeTool as kind rejected and a builder that returns data outside its op's union, or no data, comes back as kind schema-mismatch",
+      "the approval function returns none, common or destructive per op and destructive for an unknown op",
+      "the returned value is a GhFamilyTool carrying its ops and no gh file is changed"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs"
+      },
+      {
+        "level": "integration",
+        "name": "jira-output-validation.test.ts: a builder that returns data outside its union, or no data, is schema-mismatch through executeTool"
+      },
+      {
+        "level": "integration",
+        "name": "jira-failures.test.ts: reader failures are rejected through executeTool"
+      },
+      {
+        "level": "unit",
+        "name": "jira-approval.test.ts: the approval function per op and an unknown op is destructive and denied with no client"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

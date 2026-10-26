@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5e8db23a-ff92-4d6d-923a-cb4b11015959",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.269Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Docs and the HLD amendment",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "415ed14a93bc12df9fd7813aee13309c98315e0165ceb1c9bec30e57ef09e5cf",
+        "at": "2026-10-25T14:50:47.269Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.269Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Docs and the HLD amendment",
+    "summary": "Record the s5 outcome in docs/plans/tool-registry.md and file the nonFunctional.retarget amendment for the per-job limits as a pending artifact for the user to approve; if the amend tool cannot file it, record it in docs/plans/tool-registry.md and tell the user.",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "docs/plans/tool-registry.md has an s5 outcome section",
+      "the retarget amendment exists as a pending artifact, or the fallback record and the message to the user are done"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "tool-registry doc check: the s5 outcome section exists and the amendment artifact or fallback record is present"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

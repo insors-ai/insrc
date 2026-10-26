@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "95fb1a5a8c00b75af1402909010143a3e803a1569ce34875ba9fa3497e0d892a",
+        "at": "2026-10-26T06:08:45.226Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792993653091-iukpmc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T05:47:42.065Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 1263159,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "freshness-timeout",
+      "waitedMs": 120527,
+      "inFlight": false,
+      "pendingCodeIndexJobs": 0,
+      "staleFiles": [
+        "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/README.md",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status-unauthorized.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-clone.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-edit-success.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-missing-key.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-no-transition.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-partial.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/count.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-group.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-role.txt",
+        "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/_fakeacli.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-argv.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/attachment-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update-bad.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-delete.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-types.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/watcher-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-output-schemas.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/_sample.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-approval.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-output-validation.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/search.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/view.json",
+        "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-comment-create.json",
+        "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-view.json",
+        "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/_all-ops.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-parser.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-spawn-only.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-docs.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-archive.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-create.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-delete.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-restore.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-update.txt",
+        "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt"
+      ]
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt",
+        "docs/plans/tool-registry.md",
+        "src/daemon/tools/builtins/index.ts",
+        "src/daemon/tools/builtins/jira/__tests__/.gitignore",
+        "src/daemon/tools/builtins/jira/__tests__/_all-ops.ts",
+        "src/daemon/tools/builtins/jira/__tests__/_fakeacli.ts",
+        "src/daemon/tools/builtins/jira/__tests__/_sample.ts",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/README.md",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/attachment-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status-unauthorized.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-clone.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-comment-create.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-edit-success.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-missing-key.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-no-transition.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-partial.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update-bad.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/count.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-delete.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/link-types.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-archive.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-create.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-delete.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-restore.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-update.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/project-view.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/search.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/view.json",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-group.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-role.txt",
+        "src/daemon/tools/builtins/jira/__tests__/fixtures/watcher-list.json",
+        "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-approval.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-argv.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-docs.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-output-schemas.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-output-validation.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-parser.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-spawn-only.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+        "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts",
+        "src/daemon/tools/builtins/jira/answers.ts",
+        "src/daemon/tools/builtins/jira/auth.ts",
+        "src/daemon/tools/builtins/jira/comment.ts",
+        "src/daemon/tools/builtins/jira/coverage.ts",
+        "src/daemon/tools/builtins/jira/exec.ts",
+        "src/daemon/tools/builtins/jira/family.ts",
+        "src/daemon/tools/builtins/jira/index.ts",
+        "src/daemon/tools/builtins/jira/input.ts",
+        "src/daemon/tools/builtins/jira/limits.ts",
+        "src/daemon/tools/builtins/jira/link.ts",
+        "src/daemon/tools/builtins/jira/project.ts",
+        "src/daemon/tools/builtins/jira/readers.ts",
+        "src/daemon/tools/builtins/jira/schemas.ts",
+        "src/daemon/tools/builtins/jira/workitem.ts"
+      ],
+      "buildFingerprint": "a648cd8baf7ff5e4c0a7d5214623bf6359293c63ad54c23752a8ed38d801314f",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/LLD-b7a68147dcf72034-s6.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/workitem.ts:103",
+            "message": "Clone requires toProject and rejects calls that omit it, although the approved contract declares toProject optional. The live CLI requirement explains the implementation choice but does not satisfy the approved input contract.",
+            "expectationRef": "LLD contract 14: jira_workitem"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/project.ts:61",
+            "message": "Mutation readers accept operation-specific text without a success mark and reject a mark alone. This departs from the approved requirement that create, update, restore, archive and delete readers accept the success mark only. Recorded live output satisfies the probe requirement but does not amend that reader contract.",
+            "expectationRef": "LLD contract 17: jira_project"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/schemas.ts:25",
+            "message": "Both visibility properties are optional, so an empty object passes validation despite containing neither approved answer shape. Require either groups or roles so callers receive the requested visibility data.",
+            "expectationRef": "LLD data-model change 2: Jira answer shapes"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/project.ts:45",
+            "message": "Project mutations use patternAnswer, which accepts operation-specific success text without a check mark. This affects create, update, archive, restore and delete: an exit-0 response lacking the required mark can set ok instead of rejecting with ToolFailure and retaining stdout in original. Require the check mark before accepting these results.",
+            "expectationRef": "LLD error case 6: A text-result command (comment update or delete, link create or delete, project mutation) exits 0 without the success mark"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/answers.ts:17",
+            "message": "For an unreadable answer longer than 2000 characters, rejected() truncates stdout before storing it in failure.original. This loses the raw text required by the clause, potentially removing the malformed row or JSON content needed to diagnose the failure. Preserve the complete raw answer in original.",
+            "expectationRef": "LLD error case 11: A read answer cannot be parsed (count line, visibility heading, visibility rows that do not match the stated count, an unrecognised body line, JSON)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/workitem.ts:13",
+            "message": "withValues removes every top-level null property from work-item view and search results. Extra REST properties with null values therefore disappear instead of passing through as unknown, as required.",
+            "expectationRef": "LLD edge case 18: An extra or null property in the REST object"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/project.ts:19",
+            "message": "brief retains only key, id and name in project list and view results, discarding all extra REST properties, including null values. The clause requires those properties to pass through as unknown.",
+            "expectationRef": "LLD edge case 18: An extra or null property in the REST object"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts:152",
+            "message": "The probe records archive output before updating `archived`. If the archive succeeds but writing its fixture throws, `finally` sees `archived === false`, skips restore, and attempts to delete an archived project, which Jira refuses. This leaves the scratch project behind, contrary to the requirement to delete it even if a step fails. Update cleanup state before the fallible recording operation.",
+            "expectationRef": "PLAN task t11: Live tests, project probe and documentation"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 88,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/coverage.ts:12",
+            "message": "Optional toolIds omits the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/coverage.ts:13",
+            "message": "Optional op omits the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/coverage.ts:14",
+            "message": "Optional reason omits the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/answers.ts:16",
+            "message": "Optional original parameter omits the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/answers.ts:26",
+            "message": "Optional clone property omits the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/input.ts:43",
+            "message": "Optional type and items properties omit the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/readers.ts:89",
+            "message": "AuthStatus's optional site, email and authType properties omit the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/jira/__tests__/_fakeacli.ts:33",
+            "message": "The options type's optional stdout, probe and exit properties omit the explicitly required `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "HIGH",
+            "location": "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts:136",
+            "message": "The preflight treats every failed view as proof that the scratch key is free. A network or permission failure can hide an existing project; create then fails, but the unconditional cleanup attempts to delete that existing project. Require positive evidence of absence before enabling cleanup.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/exec.ts:15",
+            "message": "The new local bytesToText duplicates the UTF-8 capture conversion previously imported from gh/helpers.js. Maintaining two implementations risks divergent handling of truncated multibyte output; retain the existing shared helper.",
+            "counterpartRef": "src/daemon/tools/builtins/gh/helpers.ts:bytesToText",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts:79",
+            "message": "Temporary work item cleanup ignores the delete result. A refused or timed-out deletion lets the read test pass while leaving the item behind without reporting cleanup failure. Assert the cleanup result and include the item key in the failure.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 1,
+      "med": 10,
+      "low": 8
+    }
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8048dc1e-6744-440c-95cf-14a13bd66f4a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.261Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Approval mapping test and compatibility tests",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebf5b3979da8d80ca70312ad89768ccfd55faa75a8f9ecf2a2904b897eeff398",
+        "at": "2026-10-25T14:50:47.261Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.262Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Approval mapping test and compatibility tests",
+    "summary": "Update approval-class-mapping.test.ts with the PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 set and the addedByS5 list without editing the 228-row snapshot, and add gh-compat.test.ts for ids, old inputs, result shapes and legacy failure text.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "the eight listed tools resolve to common or destructive, never none",
+      "the snapshot file is byte-identical and the 46 ids are all registered",
+      "old inputs run the same gh argv"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approval-class-mapping.test.ts: PER_INPUT_OR_DESTRUCTIVE_SINCE_S5 members resolve to common or destructive and never none, and the snapshot is not edited"
+      },
+      {
+        "level": "integration",
+        "name": "gh-compat.test.ts: the 46 existing ids are registered, old inputs run the same argv, result data keeps its shape and legacy failure text stays in output and error"
+      },
+      {
+        "level": "integration",
+        "name": "gh-typed-call.test.ts: the 46 existing tools called through typed callTool keep their concrete result types"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

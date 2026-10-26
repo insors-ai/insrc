@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0802e107-b964-4c7d-accf-68d5b1ccfce5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:41:57.379Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Argv, executor and failure mapper",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e17f988a3da07808c3cdaa629774b813be18a4d86a825fc6b7032e4f4b00d6e",
+        "at": "2026-10-25T19:41:57.379Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T19:41:57.379Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Argv, executor and failure mapper",
+    "summary": "Create src/daemon/tools/builtins/jira/exec.ts with jiraArgv (head acli, free text as one --flag=value token, no --paginate), acliExec (runShellBytes, standard input closed, one 'acli jira auth status' probe after an unexplained failure) and jiraFailureOf (precedence and positive-evidence sign-in rule), plus the fake acli test harness _fakeacli.ts.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "jiraArgv starts with acli jira, replaces the gh head of buildArgv, passes --yes where acli has it, never --paginate and never --from-json or --generate-json",
+      "a free-text value that starts with '-' is passed as one --flag=value token",
+      "jiraFailureOf returns missing-tool for a spawn failure or exit 127, timed-out with 'outcome is unknown' for a changing op, and missing-signin only when the probe completed and said unauthorized; a probe that failed on network, time-out or spawn never gives missing-signin",
+      "a known rejection text is rejected without running the probe and an output cut at the capture cap is a failure"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "jira-argv.test.ts: jiraArgv head, --yes, literal --json, finite --limit, never --paginate and free text as one --flag=value token"
+      },
+      {
+        "level": "unit",
+        "name": "jira-failures.test.ts: jiraFailureOf precedence and the probe rules"
+      },
+      {
+        "level": "integration",
+        "name": "jira-failures.test.ts: not installed, not signed in, network probe, time-out and truncated output through a fake acli"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

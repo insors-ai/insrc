@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f0b8d45-e0e0-439c-a29e-6932eb8aa463",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.265Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Search, ruleset, org, auth, status, codespace, config and extension families",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1c061e3a710d7219ff1ae56aaf33520f5caefa9fa58891958e963e876f4b4df",
+        "at": "2026-10-25T14:50:47.265Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.266Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Search, ruleset, org, auth, status, codespace, config and extension families",
+    "summary": "Add gh_search with its per-group flags and fixed --json fields, gh_ruleset, gh_org, gh_auth, gh_status, gh_codespace, gh_config and gh_extension, with sc3 conversion for auth status, ruleset list and status, the deterministic config parser, and the codespace create preview notice with --default-permissions always passed; register them and carry their unit tests.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "search qualifier expressions such as >100 and 5..20 pass through unchanged",
+      "codespace create always passes --default-permissions, has no defaultPermissions field and its preview states the permissions are accepted",
+      "auth logout and switch need hostname and user, and every codespace op except list and create needs codespace"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gh-search-inputs.test.ts: comparison and range expressions pass through unchanged for comments, interactions, reactions, followers, forks, stars, size and the date qualifiers"
+      },
+      {
+        "level": "integration",
+        "name": "gh-family-tools.test.ts: codespace create always passes --default-permissions and has no defaultPermissions field"
+      },
+      {
+        "level": "integration",
+        "name": "gh-convert-text.test.ts: auth status and ruleset list keyValues are checked against the raw text"
+      },
+      {
+        "level": "unit",
+        "name": "gh-inputs.test.ts: auth logout and switch need hostname and user; codespace ops need codespace except list and create; delete needs codespace and offers no all"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

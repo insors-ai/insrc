@@ -1,0 +1,588 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 20,
+        "contentHash": "b49829b57740da9876582433a9f8f2acc7a82da2c96ca6877ec24a0b602aa0d6",
+        "at": "2026-10-26T06:23:05.090Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 20,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T06:23:16.487Z",
+        "override": {
+          "reason": "Approved by the user on 2026-10-26 after two degraded code review rounds. The remaining findings are deviations from the approved LLD found by running the real acli on the user's site (clone needs --to-project; project commands print recorded texts, some without a check mark; status and assignee joined as --flag=value; results keep what callers need), each tested and documented in docs/plans/tool-registry.md under 's6 outcome'. The t11 gate failure (probe key substitution accepted by the user in chat; live-run fixes in earlier tasks' files) is overridden too."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-13da5c51-18e3-47ad-a149-bf1dc0a2aac9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T19:43:56.030Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "revision": 20,
+    "updatedAt": "2026-10-26T04:50:42.158Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": false
+      }
+    ],
+    "summary": "Fixed the two probe defects the judge named: the cleanup flag is set before create is called (so a throw still cleans up), and a failed update, archive, restore or delete is recorded as a separate '-failed' file instead of overwriting the success fixture. The recorded success fixtures and the passing live run are unchanged by this edit (the code path of a passing run is the same). The user accepted the key substitution in chat (\"1. OK\"); the earlier-file fixes came from the live runs and carry tests.",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S006/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/input.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/limits.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status-unauthorized.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/auth-status.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-clone.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-edit-success.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-missing-key.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-no-transition.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-partial.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/count.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-group.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/visibility-role.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/readers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/_fakeacli.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-argv.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/exec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/attachment-list.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-list.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update-bad.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/comment-update.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/link-delete.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/link-list.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/link-types.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/watcher-list.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-schemas.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/answers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/_sample.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-approval.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-validation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/family.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/search.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/view.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/workitem.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/batch-comment-create.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/comment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/link.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-list.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-view.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/auth.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/project.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/_all-ops.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-parser.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-spawn-only.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/tool-registry.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-docs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/jira-live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-archive.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-create.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-delete.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-restore.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/fixtures/project-update.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/jira/__tests__/.gitignore"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T06:22:53.903Z"
+      }
+    ],
+    "commit": "020e2b0ff"
+  },
+  "citations": []
+}

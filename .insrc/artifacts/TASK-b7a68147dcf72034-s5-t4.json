@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-81b1c610-2644-473f-82d3-12b08173db25",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.259Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Convert the repo, release and project tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b5dc57f5e32f77055b973b19a0b4db1237baa119c5916c17916cd99fc614afb0",
+        "at": "2026-10-25T14:50:47.259Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.259Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Convert the repo, release and project tools",
+    "summary": "Convert repo.ts, release.ts and project.ts the same way; gh_release_edit becomes destructive when newTag is set and gh_repo_clone destructive when extraArgs is non-empty; extraArgs stays in the schema; gh_release_delete, gh_repo_delete and gh:project:item-delete become destructive; register the converted tools.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "snapshot equality of the input schemas, with extraArgs and newTag unchanged",
+      "the destructive and per-input classes resolve as the LLD table says",
+      "repo clone keeps its 600 s limit and release create its 180 s limit through the table"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gh-compat.test.ts: repo, release and project tools' input schemas serialise identically to the snapshot, extraArgs and newTag unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "gh-approval.test.ts: gh_release_edit with newTag and gh_repo_clone with extraArgs are destructive and common without them"
+      },
+      {
+        "level": "unit",
+        "name": "gh-timeouts.test.ts: no ghExec call in repo.ts, release.ts or project.ts passes its own timeout and clone keeps 600 s"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

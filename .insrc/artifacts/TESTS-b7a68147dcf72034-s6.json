@@ -1,0 +1,944 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 19,
+        "contentHash": "495c7856039c6e42a76f78923cb40ddd35f6f72320cc7bfe6bf1b7193437fe52",
+        "at": "2026-10-26T04:50:42.412Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s6",
+    "createdAt": "2026-10-25T19:43:56.030Z",
+    "updatedAt": "2026-10-26T04:50:42.158Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 19
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9587afed1",
+        "ranAt": "2026-10-25T19:43:56.030Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-inputs.test.ts: jiraInputSchema sets maximum 500, 200 and 200, maxItems 50 and identifier patterns",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+                "title": "jira-inputs.test.ts: jiraInputSchema sets maximum 500, 200 and 200, maxItems 50 and identifier patterns",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-inputs.test.ts: 51 keys with repeats are refused and normalizeKeys keeps first-seen order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+                "title": "jira-inputs.test.ts: 51 keys with repeats are refused and normalizeKeys keeps first-seen order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every identifier field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+                "title": "jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every identifier field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 630,
+            "titles": [
+              {
+                "title": "jira-inputs.test.ts: jiraInputSchema sets maximum 500, 200 and 200, maxItems 50 and identifier patterns",
+                "result": "pass"
+              },
+              {
+                "title": "jira-inputs.test.ts: 51 keys with repeats are refused and normalizeKeys keeps first-seen order",
+                "result": "pass"
+              },
+              {
+                "title": "jira-inputs.test.ts: checkJiraValues refuses a leading-dash value in every identifier field",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c462e5383",
+        "ranAt": "2026-10-25T19:45:54.968Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-parsers.test.ts: readBatch handles all SUCCESS, all FAILURE at exit 0, partial, a count mismatch and the clone key from the message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+                "title": "jira-parsers.test.ts: readBatch handles all SUCCESS, all FAILURE at exit 0, partial, a count mismatch and the clone key from the message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-parsers.test.ts: readCount and parseAuthStatus read recorded acli text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+                "title": "jira-parsers.test.ts: readCount and parseAuthStatus read recorded acli text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-parsers.test.ts: readVisibility group and role cases including count mismatch, heading only, unrecognised line and ANSI escapes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+                "title": "jira-parsers.test.ts: readVisibility group and role cases including count mismatch, heading only, unrecognised line and ANSI escapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-parsers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 402,
+            "titles": [
+              {
+                "title": "jira-parsers.test.ts: readBatch handles all SUCCESS, all FAILURE at exit 0, partial, a count mismatch and the clone key from the message",
+                "result": "pass"
+              },
+              {
+                "title": "jira-parsers.test.ts: readCount and parseAuthStatus read recorded acli text",
+                "result": "pass"
+              },
+              {
+                "title": "jira-parsers.test.ts: readVisibility group and role cases including count mismatch, heading only, unrecognised line and ANSI escapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "651dd02a5",
+        "ranAt": "2026-10-25T19:50:01.377Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-argv.test.ts: jiraArgv head, --yes, literal --json, finite --limit, never --paginate and free text as one --flag=value token",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-argv.test.ts",
+                "title": "jira-argv.test.ts: jiraArgv head, --yes, literal --json, finite --limit, never --paginate and free text as one --flag=value token",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-failures.test.ts: jiraFailureOf precedence and the probe rules",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+                "title": "jira-failures.test.ts: jiraFailureOf precedence and the probe rules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-failures.test.ts: not installed, not signed in, network probe, time-out and truncated output through a fake acli",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+                "title": "jira-failures.test.ts: not installed, not signed in, network probe, time-out and truncated output through a fake acli",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-argv.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 458,
+            "titles": [
+              {
+                "title": "jira-argv.test.ts: jiraArgv head, --yes, literal --json, finite --limit, never --paginate and free text as one --flag=value token",
+                "result": "pass"
+              },
+              {
+                "title": "jira-argv.test.ts: an op that would write a forbidden flag, or does not use the custom output, is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 796,
+            "titles": [
+              {
+                "title": "jira-failures.test.ts: jiraFailureOf precedence and the probe rules",
+                "result": "pass"
+              },
+              {
+                "title": "jira-failures.test.ts: not installed, not signed in, network probe, time-out and truncated output through a fake acli",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "929bd64f7",
+        "ranAt": "2026-10-25T19:53:33.070Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-answers.test.ts: the batch builder lists failed and succeeded ids and says the batch was partly applied",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts",
+                "title": "jira-answers.test.ts: the batch builder lists failed and succeeded ids and says the batch was partly applied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-answers.test.ts: the success-mark builder rejects any other exit-0 text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts",
+                "title": "jira-answers.test.ts: the success-mark builder rejects any other exit-0 text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-output-schemas.test.ts: each shape accepts its recorded answer, passes extra properties through and rejects a wrong literal op",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-schemas.test.ts",
+                "title": "jira-output-schemas.test.ts: each shape accepts its recorded answer, passes extra properties through and rejects a wrong literal op",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-answers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 382,
+            "titles": [
+              {
+                "title": "jira-answers.test.ts: the batch builder lists failed and succeeded ids and says the batch was partly applied",
+                "result": "pass"
+              },
+              {
+                "title": "jira-answers.test.ts: the success-mark builder rejects any other exit-0 text",
+                "result": "pass"
+              },
+              {
+                "title": "jira-answers.test.ts: the JSON and count builders read what acli printed or fail without guessing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-schemas.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 650,
+            "titles": [
+              {
+                "title": "jira-output-schemas.test.ts: each shape accepts its recorded answer, passes extra properties through and rejects a wrong literal op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "9e99d4dba",
+        "ranAt": "2026-10-25T19:55:51.562Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+                "title": "jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-output-validation.test.ts: a builder that returns data outside its union, or no data, is schema-mismatch through executeTool",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-validation.test.ts",
+                "title": "jira-output-validation.test.ts: a builder that returns data outside its union, or no data, is schema-mismatch through executeTool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-failures.test.ts: reader failures are rejected through executeTool",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+                "title": "jira-failures.test.ts: reader failures are rejected through executeTool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-approval.test.ts: the approval function per op and an unknown op is destructive and denied with no client",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-approval.test.ts",
+                "title": "jira-approval.test.ts: the approval function per op and an unknown op is destructive and denied with no client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 542,
+            "titles": [
+              {
+                "title": "jira-approval.test.ts: the approval function per op and an unknown op is destructive and denied with no client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-failures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 885,
+            "titles": [
+              {
+                "title": "jira-failures.test.ts: jiraFailureOf precedence and the probe rules",
+                "result": "pass"
+              },
+              {
+                "title": "jira-failures.test.ts: not installed, not signed in, network probe, time-out and truncated output through a fake acli",
+                "result": "pass"
+              },
+              {
+                "title": "jira-failures.test.ts: reader failures are rejected through executeTool",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 632,
+            "titles": [
+              {
+                "title": "jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-output-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 522,
+            "titles": [
+              {
+                "title": "jira-output-validation.test.ts: a builder that returns data outside its union, or no data, is schema-mismatch through executeTool",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "5ffefaeea",
+        "ranAt": "2026-10-25T19:57:45.683Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-workitem-reads.test.ts: each read op returns its declared shape and its argv matches acli",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts",
+                "title": "jira-workitem-reads.test.ts: each read op returns its declared shape and its argv matches acli",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-workitem-reads.test.ts: search and count take exactly one of jql and filter and search is limited",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts",
+                "title": "jira-workitem-reads.test.ts: search and count take exactly one of jql and filter and search is limited",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-reads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 572,
+            "titles": [
+              {
+                "title": "jira-workitem-reads.test.ts: each read op returns its declared shape and its argv matches acli",
+                "result": "pass"
+              },
+              {
+                "title": "jira-workitem-reads.test.ts: search and count take exactly one of jql and filter and search is limited",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "8afdbe196",
+        "ranAt": "2026-10-25T19:59:56.983Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-workitem-changes.test.ts: each changing op returns {ok, target, message} and its argv matches acli",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+                "title": "jira-workitem-changes.test.ts: each changing op returns {ok, target, message} and its argv matches acli",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, filter and from-file refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+                "title": "jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, filter and from-file refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-workitem-changes.test.ts: a FAILURE result at exit 0 and a partial batch are rejected failures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+                "title": "jira-workitem-changes.test.ts: a FAILURE result at exit 0 and a partial batch are rejected failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-workitem-changes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 650,
+            "titles": [
+              {
+                "title": "jira-workitem-changes.test.ts: each changing op returns {ok, target, message} and its argv matches acli",
+                "result": "pass"
+              },
+              {
+                "title": "jira-workitem-changes.test.ts: keys only, repeated keys sent once, jql, filter and from-file refused",
+                "result": "pass"
+              },
+              {
+                "title": "jira-workitem-changes.test.ts: a FAILURE result at exit 0 and a partial batch are rejected failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "51eb8a5b6",
+        "ranAt": "2026-10-25T20:02:09.518Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-comment-link.test.ts: every comment and link op returns its declared shape and its argv matches acli",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts",
+                "title": "jira-comment-link.test.ts: every comment and link op returns its declared shape and its argv matches acli",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-comment-link.test.ts: text commands without the success mark are rejected and visibility rules are enforced",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts",
+                "title": "jira-comment-link.test.ts: text commands without the success mark are rejected and visibility rules are enforced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-comment-link.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 638,
+            "titles": [
+              {
+                "title": "jira-comment-link.test.ts: every comment and link op returns its declared shape and its argv matches acli",
+                "result": "pass"
+              },
+              {
+                "title": "jira-comment-link.test.ts: text commands without the success mark are rejected and visibility rules are enforced",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "705dd7fef",
+        "ranAt": "2026-10-25T20:04:29.828Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-project-auth.test.ts: every project op and auth status returns its declared shape and its argv matches acli",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts",
+                "title": "jira-project-auth.test.ts: every project op and auth status returns its declared shape and its argv matches acli",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-project-auth.test.ts: project create needs fromProject and a non-company-managed source is a rejected failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts",
+                "title": "jira-project-auth.test.ts: project create needs fromProject and a non-company-managed source is a rejected failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-project-auth.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 606,
+            "titles": [
+              {
+                "title": "jira-project-auth.test.ts: every project op and auth status returns its declared shape and its argv matches acli",
+                "result": "pass"
+              },
+              {
+                "title": "jira-project-auth.test.ts: project create needs fromProject and a non-company-managed source is a rejected failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "d520bdd3a",
+        "ranAt": "2026-10-25T20:09:59.133Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-coverage.test.ts: every acli command is covered or in the amended exclusion list, checked against REQUIRED_OPS, and the exclusion list equals the amendment table",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+                "title": "jira-coverage.test.ts: every acli command is covered or in the amended exclusion list, checked against REQUIRED_OPS, and the exclusion list equals the amendment table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-coverage.test.ts: JIRA_UNSUPPORTED names a transition by id and the list of transitions and neither is a registered op",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+                "title": "jira-coverage.test.ts: JIRA_UNSUPPORTED names a transition by id and the list of transitions and neither is a registered op",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-coverage.test.ts: classes are 6 destructive, 12 none, 14 common, 32 in all",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+                "title": "jira-coverage.test.ts: classes are 6 destructive, 12 none, 14 common, 32 in all",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-parser.test.ts: the commands and flags of the real acli match the coverage table, including the project flags (skipped when acli is absent)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-parser.test.ts",
+                "title": "jira-parser.test.ts: the commands and flags of the real acli match the coverage table, including the project flags (skipped when acli is absent)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-spawn-only.test.ts: with fake jira, jira-cli and go-jira on PATH only acli is run across every op",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-spawn-only.test.ts",
+                "title": "jira-spawn-only.test.ts: with fake jira, jira-cli and go-jira on PATH only acli is run across every op",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-family.test.ts: the five tools and 32 ops are registered and each op returns its declared shape",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+                "title": "jira-family.test.ts: the five tools and 32 ops are registered and each op returns its declared shape",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jira-registration.test.ts: registerJiraTools adds exactly five tool ids and changes no existing one",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts",
+                "title": "jira-registration.test.ts: registerJiraTools adds exactly five tool ids and changes no existing one",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "jira-registration.test.ts passes: the five jira ids are the only addition after registerGhTools and every earlier definition is the same object (src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 460,
+            "titles": [
+              {
+                "title": "jira-coverage.test.ts: every acli command is covered or in the amended exclusion list, checked against REQUIRED_OPS, and the exclusion list equals the amendment table",
+                "result": "pass"
+              },
+              {
+                "title": "jira-coverage.test.ts: JIRA_UNSUPPORTED names a transition by id and the list of transitions and neither is a registered op",
+                "result": "pass"
+              },
+              {
+                "title": "jira-coverage.test.ts: classes are 6 destructive, 12 none, 14 common, 32 in all",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-family.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 990,
+            "titles": [
+              {
+                "title": "jira-family.test.ts: a sample family refuses unknown ops, missing, extra and exclusive-group fields before acli runs",
+                "result": "pass"
+              },
+              {
+                "title": "jira-family.test.ts: the five tools and 32 ops are registered and each op returns its declared shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-parser.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2961,
+            "titles": [
+              {
+                "title": "jira-parser.test.ts: the commands and flags of the real acli match the coverage table, including the project flags (skipped when acli is absent)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-registration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 765,
+            "titles": [
+              {
+                "title": "jira-registration.test.ts: registerJiraTools adds exactly five tool ids and changes no existing one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-spawn-only.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "jira-spawn-only.test.ts: with fake jira, jira-cli and go-jira on PATH only acli is run across every op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "cdf053255",
+        "ranAt": "2026-10-26T04:50:42.158Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jira-live.test.ts: read ops view, search, count, list, types, status and visibility return their declared shape",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt (first test passed)"
+            }
+          },
+          {
+            "name": "jira-live.test.ts: one work item create then delete in a scratch project with cleanup of any clone",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt (second test passed; SCRUM has its 4 original work items afterwards)"
+            }
+          },
+          {
+            "name": "jira-live.test.ts: the disposable-project probe records the real success text of each project mutation",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/acli-recorded/jira-live-run-2026-10-26.txt (third test passed with key ZZPROBE4); it wrote src/daemon/tools/builtins/jira/__tests__/fixtures/project-*.txt, which jira-project-auth.test.ts reads"
+            }
+          },
+          {
+            "name": "jira-docs.test.ts: docs/plans/tool-registry.md lists the five tools, their classes and the excluded and unsupported lists",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/jira/__tests__/jira-docs.test.ts",
+                "title": "jira-docs.test.ts: docs/plans/tool-registry.md lists the five tools, their classes and the excluded and unsupported lists",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/jira/__tests__/jira-docs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 448,
+            "titles": [
+              {
+                "title": "jira-docs.test.ts: docs/plans/tool-registry.md lists the five tools, their classes and the excluded and unsupported lists",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

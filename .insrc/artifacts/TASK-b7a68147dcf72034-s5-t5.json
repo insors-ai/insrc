@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b2320790-b043-4e03-8227-a55423df4c03",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-25T14:50:47.260Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Convert actions and change gh_pr_diff and gh_run_view",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3f4e20d31e672f8dd37d854cc0f0e905d357c50f6b3622951c2c4b5aba62556",
+        "at": "2026-10-25T14:50:47.260Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-25T14:50:47.260Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Convert actions and change gh_pr_diff and gh_run_view",
+    "summary": "Convert actions.ts; move gh_pr_diff and gh_run_view to the cut-is-answer capture and sc3 conversion with key-value cross-check, add truncated to gh_run_view, and make a failed log command a real failure; register the converted tools.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a capture cut at the cap is a success with truncated true and valid text across a multibyte character",
+      "a failed gh run view log command fails the call with stderr in error",
+      "a failed cross-check gives conversion-failed with the raw text in failure.original"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gh-capture.test.ts: gh_pr_diff and gh_run_view cut at the cap are successes with truncated true and valid text"
+      },
+      {
+        "level": "integration",
+        "name": "gh-convert-text.test.ts: gh_pr_diff and gh_run_view conversions cross-check against the raw text and a failed cross-check gives conversion-failed with the raw text in failure.original"
+      },
+      {
+        "level": "integration",
+        "name": "gh-failures.test.ts: a failed gh run view log command fails the call with stderr in error"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -53,7 +53,9 @@ function writeArtifact(
 	if (opts.storyId !== undefined) meta['storyId'] = opts.storyId;
 	if (opts.review !== undefined)  Object.assign(meta, reviewedMeta());   // a passing design review of its own
 	const p = join(dir, name);
-	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
+	// a BUILD names the files it changed, and the review must cover them
+	const body = opts.workflow === 'build' ? { changeLog: [{ target: { file: 'src/a.ts' } }, { target: { file: 'src/b.ts' } }] } : {};
+	writeFileSync(p, JSON.stringify({ meta, body, citations: [] }, null, 2));
 	// A design artifact given no review of its own gets a passing other-party one:
 	// approval requires it, and these tests are about the CODE-review gate.
 	if (opts.review === undefined && /^(DEF|HLD|LLD)-/.test(name)) stampOtherPartyReview(p);

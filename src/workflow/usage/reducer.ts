@@ -11,8 +11,10 @@ export class UsageReductionError extends Error implements UsageDomainError {
 }
 export interface CollectedGroup {
   readonly records: ReadonlyMap<string, LedgerRecord>;
+  readonly eventIds: ReadonlySet<string>;
   readonly conflicts: ReadonlySet<string>;
   readonly conflictingCalls: ReadonlySet<string>;
+  readonly ambiguousControl: boolean;
   readonly notices: readonly string[];
   readonly receivedRows: number;
   readonly receivedBytes: number;
@@ -35,7 +37,7 @@ async function nextRecord(iterator: AsyncIterator<LedgerRecord>, signal?: AbortS
 export async function collectGroup(records: AsyncIterable<LedgerRecord>, signal?: AbortSignal): Promise<CollectedGroup> {
   const unique = new Map<string, LedgerRecord>(), sources = new Map<string, string>(), conflicts = new Set<string>(), notices = new Set<string>();
   const conflictingCalls = new Set<string>();
-  let receivedRows = 0, receivedBytes = 0, invalid = false, done = false;
+  let receivedRows = 0, receivedBytes = 0, invalid = false, done = false, ambiguousControl = false;
   let iterator: AsyncIterator<LedgerRecord> | undefined;
   try {
     iterator = records[Symbol.asyncIterator]();
@@ -65,9 +67,13 @@ export async function collectGroup(records: AsyncIterable<LedgerRecord>, signal?
       const prior = sources.get(snapshot.eventId);
       if (prior !== undefined && prior !== source) {
         conflicts.add(snapshot.eventId); notices.add(`identity-conflict:${snapshot.eventId}`);
-        const previousCall = unique.get(snapshot.eventId)?.callId;
+        const previous = unique.get(snapshot.eventId), previousCall = previous?.callId;
         if (previousCall) conflictingCalls.add(previousCall);
         if (snapshot.callId) conflictingCalls.add(snapshot.callId);
+        if (previous?.callId === null || snapshot.callId === null) ambiguousControl = true;
+        // No variant of a conflicted ID is a usable reference-graph node.
+        // Retain its ID/fingerprint for closure and replay-work accounting only.
+        unique.delete(snapshot.eventId);
       }
       if (prior === undefined) { sources.set(snapshot.eventId, source); unique.set(snapshot.eventId, snapshot); }
     }
@@ -80,7 +86,7 @@ export async function collectGroup(records: AsyncIterable<LedgerRecord>, signal?
       try { void Promise.resolve(iterator.return()).catch(() => {}); } catch { /* best effort */ }
     }
   }
-  return { records: unique, conflicts, conflictingCalls, notices: [...notices].sort(), receivedRows, receivedBytes, invalid };
+  return { records: unique, eventIds: new Set(sources.keys()), conflicts, conflictingCalls, ambiguousControl, notices: [...notices].sort(), receivedRows, receivedBytes, invalid };
 }
 
 /** Sum only known components. Unknown required buckets remain explicitly unknown. */
@@ -108,7 +114,7 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   const scope = JSON.parse(canonicalData(input, USAGE_LIMITS.groupBytes)) as AccountingScope;
   const collected = await collectGroup(records, options.signal);
   const notices = new Set(collected.notices), quality = new Set<UsageQuality>();
-  const actual = [...collected.records.keys()].sort(), expected = [...scope.evidence.expectedEventIds].sort();
+  const actual = [...collected.eventIds].sort(), expected = [...scope.evidence.expectedEventIds].sort();
   if (actual.length !== scope.evidence.expectedRecordCount || eventSetDigest(actual) !== scope.evidence.eventSetDigest || canonicalData(actual, USAGE_LIMITS.groupBytes) !== canonicalData(expected, USAGE_LIMITS.groupBytes)) {
     notices.add('closure-incomplete:/evidence/expectedEventIds'); quality.add('unavailable');
   }
@@ -118,7 +124,7 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   }
   if (collected.invalid) return empty([...notices], [...quality, 'conflict', 'unavailable']);
   const rows = [...collected.records.values()].sort((a, b) => a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0);
-  if (rows.some(row => row.recordKind === 'usage.reconciled' && collected.conflicts.has(row.eventId))) return empty([...notices], [...quality, 'conflict', 'unavailable']);
+  if (collected.ambiguousControl) return empty([...notices], [...quality, 'conflict', 'unavailable']);
   if (rows.some(row => row.recordKind.startsWith('transfer.'))) return empty([...notices, 'unsupported-control:/'], [...quality, 'unsupported', 'unavailable']);
   const starts = new Map<string, RequestStarted>(), startIdentity = new Map<string, string>(), badCalls = new Set(collected.conflictingCalls);
   const referenceOnly = new Set(scope.evidence.referenceOnlyEventIds);

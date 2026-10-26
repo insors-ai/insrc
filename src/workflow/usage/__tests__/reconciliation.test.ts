@@ -62,6 +62,14 @@ test('aggregate fallback and qualified complete-leaf basis never add overlapping
   const conflict = await reduceGroupCore(stream(ambiguous), evidence(ambiguous));
   assert.equal(conflict.knownTokens, '0'); assert.ok(conflict.quality.includes('conflict'));
   assert.deepEqual(await reduceGroupCore(stream([...ambiguous].reverse()), evidence(ambiguous)), conflict, 'conflicting control IDs never choose an arrival-order winner');
+  const conflictingKind = signed({ ...reconcile(['a-end', 'b-end'], ['a-end', 'b-end'], 'complete-leaf'), eventId: 'a-end' });
+  const mixedKinds = [...a, ...b, conflictingKind];
+  const mixedResult = await reduceGroupCore(stream(mixedKinds), evidence(mixedKinds));
+  assert.equal(mixedResult.knownTokens, '0');
+  assert.deepEqual(await reduceGroupCore(stream([...mixedKinds].reverse()), evidence(mixedKinds)), mixedResult, 'conflicting record kinds are equally unusable in every order');
+  const crossKind = signed({ ...correction(b[1], 'a-end', 4), callId: 'a', control: { supersedesEventId: 'b-end', reason: 'fixture:ambiguous-kind', provenanceEventIds: [] } });
+  const mixedObservationKinds = [...a, ...b, crossKind];
+  assert.deepEqual(await reduceGroupCore(stream(mixedObservationKinds), evidence(mixedObservationKinds)), await reduceGroupCore(stream([...mixedObservationKinds].reverse()), evidence(mixedObservationKinds)));
   assert.equal('physicalCallCount' in leafResult, false);
   const partial = evidence(decomposed);
   const partialResult = await reduceGroupCore(stream(decomposed), { ...partial, evidence: { ...partial.evidence, sourceCapabilities: partial.evidence.sourceCapabilities.map(item => item.capabilityId === 'fixture' ? { ...item, physicalCallCoverage: 'partial' } : item) } });

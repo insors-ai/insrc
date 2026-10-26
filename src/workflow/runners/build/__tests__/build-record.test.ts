@@ -19,7 +19,7 @@
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -531,7 +531,10 @@ test('t7: the three hand-filled records prove the gap was real — and are now w
 	// records carry body.commit with no producer in the codebase, so a human typed
 	// them. A build now produces the same shape without hand-editing.
 	for (const h of ['972bf31d13c81a2f', 'c90f3fe60b90dd44', 'be8708a9cd20e286']) {
-		const rec = JSON.parse(readFileSync(join('.insrc', 'artifacts', `BUILD-${h}-S001.json`), 'utf8')) as { body: { commit?: string } };
+		// the repository conversion (schema version 2) names the records with the lowercase story id
+		const file = join('.insrc', 'artifacts', `BUILD-${h}-s1.json`);
+		assert.ok(existsSync(file), `the shipped record ${file} exists`);
+		const rec = JSON.parse(readFileSync(file, 'utf8')) as { body: { commit?: string } };
 		assert.equal(typeof rec.body.commit, 'string', `BUILD-${h} carries a hand-filled commit`);
 	}
 	await withGitRepo(async (repo, head) => {

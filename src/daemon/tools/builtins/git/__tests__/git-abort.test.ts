@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 
 import { cleanup } from '../../../__tests__/_proc.js';
 import { executeTool } from '../../../executor.js';
+import { getTool } from '../../../registry.js';
 import { cancelledFail, fail } from '../helpers.js';
 import { registerForTests, toolDeps } from './_repo.js';
 import { installStandInGit } from './_standin.js';
@@ -37,10 +38,15 @@ test('git-abort.test.ts: every refresh tool fails rejected on an already-aborted
 	standIn = installStandInGit('sleep 30');
 	registerForTests();
 	for (const [id, input] of CALLS) {
-		const r = await executeTool(id, input, { ...toolDeps('/tmp'), signal: aborted() });
+		// called directly, the tool itself returns a rejected failure and starts nothing
+		const r = await getTool(id)!.execute(input, { ...toolDeps('/tmp'), signal: aborted() });
 		assert.equal(r.success, false, id);
-		assert.equal(r.failure?.kind, 'denied', id);
-		assert.equal(r.failure?.denial, 'cancelled', id);
+		assert.equal(r.failure?.kind, 'rejected', id);
+		assert.match(r.failure?.message ?? '', /cancel/i, id);
+		// through the executor the call is stopped before the tool starts
+		const e = await executeTool(id, input, { ...toolDeps('/tmp'), signal: aborted() });
+		assert.equal(e.failure?.kind, 'denied', id);
+		assert.equal(e.failure?.denial, 'cancelled', id);
 	}
 	assert.deepEqual(standIn.calls(), [], 'no git process was started');
 });
@@ -61,13 +67,26 @@ test('git-abort.test.ts: every refresh tool stops its running command on an abor
 });
 
 test('git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands', async () => {
-	standIn = installStandInGit('sleep 30');
+	const FS = '\\037';
+	// the header completes at once; the diff sleeps and the abort comes while it runs
+	standIn = installStandInGit(`case "$*" in
+  *--no-patch*) printf 'aaaa${FS}bbbb${FS}${FS}An${FS}a@x${FS}2026-01-01T00:00:00Z${FS}subj${FS}body' ;;
+  *--numstat*) echo 'stat' ;;
+  *) sleep 30 ;;
+esac`);
 	registerForTests();
 	const c = new AbortController();
-	setTimeout(() => c.abort(), 150);
+	setTimeout(() => c.abort(), 400);
 	const r = await executeTool('git_show', { cwd: '/tmp', ref: 'HEAD' }, { ...toolDeps('/tmp'), signal: c.signal });
 	assert.equal(r.success, false);
-	assert.equal(standIn.calls().length, 1, 'only the header command started; neither diff nor stat did');
+	assert.equal(standIn.calls().length, 2, 'the header and the diff started; the stat did not');
+	// and an abort during the header means neither the diff nor the stat starts
+	standIn.restore(); cleanup(standIn.dir);
+	standIn = installStandInGit('sleep 30');
+	const c2 = new AbortController();
+	setTimeout(() => c2.abort(), 150);
+	await executeTool('git_show', { cwd: '/tmp', ref: 'HEAD' }, { ...toolDeps('/tmp'), signal: c2.signal });
+	assert.equal(standIn.calls().length, 1, 'only the header started');
 });
 
 test('git-abort.test.ts: git_show returns a cancelled failure, never a success, when the abort comes after the header and the diff and during the stat', async () => {

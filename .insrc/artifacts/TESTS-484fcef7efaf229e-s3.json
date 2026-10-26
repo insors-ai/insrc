@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T16:21:32.698Z",
+    "updatedAt": "2026-10-26T16:32:59.145Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2281,8 +2281,8 @@
       },
       {
         "taskId": "t32",
-        "commit": "0265a1de6",
-        "ranAt": "2026-10-26T16:21:32.698Z",
+        "commit": "c14001644",
+        "ranAt": "2026-10-26T16:32:59.145Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2309,7 +2309,7 @@
             "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6325,
+            "durationMs": 15496,
             "titles": [
               {
                 "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
@@ -2326,7 +2326,7 @@
             "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7923,
+            "durationMs": 8216,
             "titles": [
               {
                 "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",

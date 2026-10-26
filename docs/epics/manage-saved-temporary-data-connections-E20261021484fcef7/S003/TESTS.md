@@ -643,7 +643,7 @@ Run at 2026-10-26T16:11:42.294Z on commit `d8928fce2`. Tests check: **passed**. 
 
 ## t32
 
-Run at 2026-10-26T16:21:32.698Z on commit `0265a1de6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-26T16:32:59.145Z on commit `c14001644`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls**
 
@@ -656,5 +656,5 @@ Run at 2026-10-26T16:21:32.698Z on commit `0265a1de6`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 6.3 s |  |
-| `src/daemon/db/__tests__/session-file-matrix.test.ts` | 0 | 1 | 7.9 s |  |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 15.5 s |  |
+| `src/daemon/db/__tests__/session-file-matrix.test.ts` | 0 | 1 | 8.2 s |  |

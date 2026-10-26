@@ -2,8 +2,9 @@
  * git_for_each_ref -- list refs with chosen fields, filtered by what they contain or are merged into (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { forEachRefFormat, parseForEachRef, parseOutput } from './parsers.js';
 import { GitForEachRefDataSchema } from './schemas.js';
@@ -18,7 +19,7 @@ export const FOR_EACH_REF_FIELDS = [
 const DEFAULT_FIELDS = ['refname', 'objectname'];
 const SORT_KEY = /^-?[a-z*][a-z:*\-=0-9]*$/i;
 
-export const gitForEachRefTool: Tool = {
+export const gitForEachRefTool = {
   id: 'git_for_each_ref',
   description: 'List refs (branches, tags, remote-tracking refs) with the chosen fields. Filter by pattern, by commits they contain, are merged into, are not merged into, or point at.',
   inputSchema: Type.Object({
@@ -59,4 +60,4 @@ export const gitForEachRefTool: Tool = {
     const body = parsed.value.map(r => fields.map(f => r[f]).join('  ')).join('\n') || '(no refs)';
     return { output: body, format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

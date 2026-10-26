@@ -5,13 +5,14 @@
  * reports (git dir, top level, inside a work tree, shallow). The answer is the lines git printed.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { GitRevParseDataSchema } from './schemas.js';
 import type { GitRevParseData } from './schemas.js';
 
-export const gitRevParseTool: Tool = {
+export const gitRevParseTool = {
   id: 'git_rev_parse',
   description: 'Resolve a revision to its object name (optionally abbreviated or verified), or report a repository fact: git dir, top level, inside a work tree, shallow.',
   inputSchema: Type.Object({
@@ -53,4 +54,4 @@ export const gitRevParseTool: Tool = {
     const data: GitRevParseData = { values };
     return { output: values.join('\n') || '(nothing)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

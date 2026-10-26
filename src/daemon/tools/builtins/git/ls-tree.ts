@@ -2,14 +2,15 @@
  * git_ls_tree -- list the entries of a tree object (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { parseLsTree, parseNulList, parseOutput } from './parsers.js';
 import { GitLsTreeDataSchema } from './schemas.js';
 import type { GitLsTreeData } from './schemas.js';
 
-export const gitLsTreeTool: Tool = {
+export const gitLsTreeTool = {
   id: 'git_ls_tree',
   description: 'List the entries (mode, type, object name, path) of the tree at a revision, optionally recursively or limited to paths; or only their names.',
   inputSchema: Type.Object({
@@ -49,4 +50,4 @@ export const gitLsTreeTool: Tool = {
     const data: GitLsTreeData = { entries: entries.value };
     return { output: entries.value.map(e => `${e.mode} ${e.type} ${e.sha}\t${e.path}`).join('\n') || '(empty tree)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

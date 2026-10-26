@@ -4,14 +4,15 @@
  * (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, str } from './helpers.js';
 import { parseOutput, parsePathHistory, PATH_HISTORY_FORMAT } from './parsers.js';
 import { GitPathHistoryDataSchema } from './schemas.js';
 import type { GitPathHistoryData } from './schemas.js';
 
-export const gitPathHistoryTool: Tool = {
+export const gitPathHistoryTool = {
   id: 'git_path_history',
   description: 'List the commits (sha, committer time, subject) that touched a path, newest first or oldest first, optionally only those that added/deleted/modified/renamed it, along the first parent, or whose change adds or removes a text.',
   inputSchema: Type.Object({
@@ -51,4 +52,4 @@ export const gitPathHistoryTool: Tool = {
     const data: GitPathHistoryData = { commits: parsed.value };
     return { output: parsed.value.map(c => `${c.sha}\t${c.committerTime}${c.subject ? `\t${c.subject}` : ''}`).join('\n') || '(no commits)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

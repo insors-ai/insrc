@@ -12,9 +12,10 @@
  * push will be needed.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, branchForReport, fail, failureKind, ranToExit, readFailure, readShortSha, spawnFail, rejectInput } from './helpers.js';
 import { GitAmendDataSchema } from './schemas.js';
 import type { GitAmendData } from './schemas.js';
@@ -24,7 +25,7 @@ export type GitAmendMode = 'message' | 'staged';
 
 export type { GitAmendData } from './schemas.js';
 
-export const gitAmendTool: Tool = {
+export const gitAmendTool = {
   id: 'git_amend',
   description: 'Amend the most recent commit. mode=message rewrites only the text; mode=staged folds staged changes in.',
   inputSchema: Type.Object({
@@ -132,7 +133,7 @@ export const gitAmendTool: Tool = {
     }
     return { output: lines.join('\n'), format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 /**
  * True when HEAD matches (or is an ancestor of) the upstream branch --

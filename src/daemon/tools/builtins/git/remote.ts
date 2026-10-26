@@ -2,9 +2,10 @@
  * git:remote -- list / add / remove / set-url / rename remotes.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
 import { GitRemoteDataSchema } from './schemas.js';
 import type { GitRemoteData, GitRemoteEntry } from './schemas.js';
@@ -13,7 +14,7 @@ export type GitRemoteOp = 'list' | 'add' | 'remove' | 'set-url' | 'rename';
 
 export type { GitRemoteData, GitRemoteEntry } from './schemas.js';
 
-export const gitRemoteTool: Tool = {
+export const gitRemoteTool = {
   id: 'git_remote',
   description: 'Manage remote URLs. list is read-only; add / remove / set-url / rename gate.',
   inputSchema: Type.Object({
@@ -108,7 +109,7 @@ export const gitRemoteTool: Tool = {
     }
     return { output: `git remote ${op} \`${name}\` OK.`, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 function parseRemotes(raw: string): GitRemoteEntry[] {
   const map = new Map<string, GitRemoteEntry>();

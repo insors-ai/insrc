@@ -11,9 +11,10 @@
  *   show   <ref>           -- show contents (no approval)
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail } from './helpers.js';
 import { GitStashDataSchema } from './schemas.js';
 import type { GitStashData, GitStashEntry } from './schemas.js';
@@ -22,7 +23,7 @@ export type GitStashOp = 'list' | 'push' | 'pop' | 'apply' | 'drop' | 'clear' | 
 
 export type { GitStashData, GitStashEntry } from './schemas.js';
 
-export const gitStashTool: Tool = {
+export const gitStashTool = {
   id: 'git_stash',
   description: 'Manage the stash stack. list / show are read-only; push / pop / apply / drop / clear gate.',
   inputSchema: Type.Object({
@@ -120,4 +121,4 @@ export const gitStashTool: Tool = {
       format: 'markdown', success: true, data,
     };
   },
-};
+} satisfies TypedTool;

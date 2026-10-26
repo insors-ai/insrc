@@ -7,6 +7,7 @@
  * result.data.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import { assertSafeArg, fail, spawnFail } from './helpers.js';
@@ -15,7 +16,7 @@ import { GitLogDataSchema } from './schemas.js';
 import type { GitLogData } from './schemas.js';
 
 export type { GitLogCommit, GitLogData } from './schemas.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 
 // ---------------------------------------------------------------------------
 // Tool
@@ -24,7 +25,7 @@ import type { Tool, ToolInput, ToolResult } from '../../types.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 500;
 
-export const gitLogTool: Tool = {
+export const gitLogTool = {
   id: 'git_log',
   description: 'Show commit history, optionally filtered by ref, path, author, message, or date range.',
   inputSchema: Type.Object({
@@ -88,7 +89,7 @@ export const gitLogTool: Tool = {
       data,
     };
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // Helpers

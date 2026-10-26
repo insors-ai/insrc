@@ -2,9 +2,10 @@
  * git:tag -- list / create / delete tags.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
 import { GitTagDataSchema } from './schemas.js';
 import type { GitTagData, GitTagEntry } from './schemas.js';
@@ -13,7 +14,7 @@ export type GitTagOp = 'list' | 'create' | 'delete';
 
 export type { GitTagData, GitTagEntry } from './schemas.js';
 
-export const gitTagTool: Tool = {
+export const gitTagTool = {
   id: 'git_tag',
   description: 'List / create / delete tags. list is read-only; create and delete gate.',
   inputSchema: Type.Object({
@@ -103,4 +104,4 @@ export const gitTagTool: Tool = {
     if (r.code !== 0) { return fail('git_tag', r, { mutating: true }); }
     return { output: `Deleted tag \`${name}\`.`, format: 'markdown', success: true, data: { op, target: name } satisfies GitTagData };
   },
-};
+} satisfies TypedTool;

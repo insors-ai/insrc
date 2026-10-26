@@ -2,14 +2,15 @@
  * git_ls_files -- list the files git tracks, or the untracked and ignored ones (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, str } from './helpers.js';
 import { parseNulList, parseOutput } from './parsers.js';
 import { GitLsFilesDataSchema } from './schemas.js';
 import type { GitLsFilesData } from './schemas.js';
 
-export const gitLsFilesTool: Tool = {
+export const gitLsFilesTool = {
   id: 'git_ls_files',
   description: 'List files: the tracked ones (default), the untracked ones (others), or the ignored ones; optionally limited to paths. Names are returned exactly, whatever characters they hold.',
   inputSchema: Type.Object({
@@ -43,4 +44,4 @@ export const gitLsFilesTool: Tool = {
     const data: GitLsFilesData = { files: parsed.value };
     return { output: parsed.value.join('\n') || '(no files)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

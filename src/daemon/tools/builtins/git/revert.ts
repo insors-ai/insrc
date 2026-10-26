@@ -6,10 +6,11 @@
  * through the continue / abort / skip flow.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { runShell } from '../../shell-helper.js';
 import { Type } from '@sinclair/typebox';
 import type { ShellResult } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, branchForReport, fail, ranToExit, spawnFail, rejectInput, conflictFailure } from './helpers.js';
 import { GitRevertDataSchema } from './schemas.js';
 import type { GitRevertData } from './schemas.js';
@@ -18,7 +19,7 @@ export type GitRevertOp = 'start' | 'continue' | 'abort' | 'skip';
 
 export type { GitRevertData } from './schemas.js';
 
-export const gitRevertTool: Tool = {
+export const gitRevertTool = {
   id: 'git_revert',
   description: 'Create a new commit that undoes the specified commit(s).',
   inputSchema: Type.Object({
@@ -89,7 +90,7 @@ export const gitRevertTool: Tool = {
     }
     return okResult('start', refs, cwd);
   },
-};
+} satisfies TypedTool;
 
 async function okResult(op: GitRevertOp, refs: string[], cwd: string): Promise<ToolResult> {
   // The operation has happened: the branch only labels the answer, so a read that fails is a warning.

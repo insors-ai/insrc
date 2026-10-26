@@ -2,14 +2,15 @@
  * git_rev_list -- list the commits reachable from a revision, or count them (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { parseOutput, parseRevList } from './parsers.js';
 import { GitRevListDataSchema } from './schemas.js';
 import type { GitRevListData } from './schemas.js';
 
-export const gitRevListTool: Tool = {
+export const gitRevListTool = {
   id: 'git_rev_list',
   description: 'List the commits reachable from a revision or range (newest first), or count them. Optionally only merges-free, first-parent or root commits.',
   inputSchema: Type.Object({
@@ -48,4 +49,4 @@ export const gitRevListTool: Tool = {
     const data: GitRevListData = { commits: parsed.value };
     return { output: parsed.value.join('\n') || '(no commits)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

@@ -5,14 +5,15 @@
  * branch), delete removes it (destructive).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, ranToExit, rejectInput, spawnFail, str } from './helpers.js';
 import { GitSymbolicRefDataSchema } from './schemas.js';
 import type { GitSymbolicRefData } from './schemas.js';
 
-export const gitSymbolicRefTool: Tool = {
+export const gitSymbolicRefTool = {
   id: 'git_symbolic_ref',
   description: 'Read (get), repoint (set) or remove (delete) a symbolic ref such as HEAD or refs/remotes/origin/HEAD.',
   inputSchema: Type.Object({
@@ -63,4 +64,4 @@ export const gitSymbolicRefTool: Tool = {
     const text = op === 'get' ? `${ref} -> ${target}` : op === 'set' ? `${ref} now points at ${target}` : `Deleted ${ref}`;
     return { output: text, format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

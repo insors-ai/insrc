@@ -7,16 +7,17 @@
  * other git tools.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail } from './helpers.js';
 import { GitFetchDataSchema } from './schemas.js';
 import type { GitFetchData } from './schemas.js';
 
 export type { GitFetchData } from './schemas.js';
 
-export const gitFetchTool: Tool = {
+export const gitFetchTool = {
   id: 'git_fetch',
   description: 'Fetch refs from a remote. No working-tree changes; no approval required.',
   inputSchema: Type.Object({
@@ -71,4 +72,4 @@ export const gitFetchTool: Tool = {
     ].join('\n');
     return { output: body, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;

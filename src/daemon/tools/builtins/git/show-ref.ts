@@ -2,15 +2,16 @@
  * git_show_ref -- list refs with their object names, check that one exists or is valid (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, ranToExit, spawnFail, str } from './helpers.js';
 import { parseOutput, parseShowRef } from './parsers.js';
 import { GitShowRefDataSchema } from './schemas.js';
 import type { GitShowRefData } from './schemas.js';
 
-export const gitShowRefTool: Tool = {
+export const gitShowRefTool = {
   id: 'git_show_ref',
   description: 'List refs and their object names (all, or those matching a pattern); with verify, require the exact ref; with exists, report whether it exists without failing when it does not.',
   inputSchema: Type.Object({
@@ -54,4 +55,4 @@ export const gitShowRefTool: Tool = {
     const data: GitShowRefData = { refs: parsed.value };
     return { output: parsed.value.map(x => `${x.sha} ${x.name}`).join('\n') || '(no refs)', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

@@ -6,9 +6,10 @@
  * when the commit touches many files.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, cancelledFail, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
 import type { GitDiffFileStat, GitShowData } from './schemas.js';
 import { GitShowDataSchema } from './schemas.js';
@@ -21,7 +22,7 @@ const MAX_MAX_BYTES = 2 * 1024 * 1024;
 const FS = '\x1f';
 const HEADER_PRETTY = `%H${FS}%h${FS}%P${FS}%an${FS}%ae${FS}%aI${FS}%s${FS}%b`;
 
-export const gitShowTool: Tool = {
+export const gitShowTool = {
   id: 'git_show',
   description: 'Show a single commit: metadata + full diff.',
   inputSchema: Type.Object({
@@ -116,7 +117,7 @@ export const gitShowTool: Tool = {
       data,
     };
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // Helpers

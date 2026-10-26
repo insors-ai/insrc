@@ -2,10 +2,11 @@
  * git:cherry-pick -- apply a commit (or range) onto the current branch.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { runShell } from '../../shell-helper.js';
 import { Type } from '@sinclair/typebox';
 import type { ShellResult } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, branchForReport, fail, ranToExit, readBranch, readFailure, spawnFail, rejectInput, conflictFailure } from './helpers.js';
 import { GitCherryPickDataSchema } from './schemas.js';
 import type { GitCherryPickData } from './schemas.js';
@@ -14,7 +15,7 @@ export type GitCherryPickOp = 'start' | 'continue' | 'abort' | 'skip';
 
 export type { GitCherryPickData } from './schemas.js';
 
-export const gitCherryPickTool: Tool = {
+export const gitCherryPickTool = {
   id: 'git:cherry-pick',
   description: 'Apply commit(s) from another ref onto the current branch.',
   inputSchema: Type.Object({
@@ -92,7 +93,7 @@ export const gitCherryPickTool: Tool = {
     }
     return okResult('start', refs, cwd);
   },
-};
+} satisfies TypedTool;
 
 async function okResult(op: GitCherryPickOp, refs: string[], cwd: string): Promise<ToolResult> {
   // The operation has happened: the branch only labels the answer, so a read that fails is a warning.

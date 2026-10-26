@@ -6,16 +6,17 @@
  * what's about to move between worktree and index.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
 import { GitStageDataSchema } from './schemas.js';
 import type { GitStageData, GitStageOp } from './schemas.js';
 
 export type { GitStageData, GitStageOp } from './schemas.js';
 
-export const gitStageTool: Tool = {
+export const gitStageTool = {
   id: 'git_stage',
   description: 'Stage (git add) or unstage (git restore --staged) paths.',
   inputSchema: Type.Object({
@@ -101,7 +102,7 @@ export const gitStageTool: Tool = {
 
     return { output, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];

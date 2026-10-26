@@ -8,16 +8,17 @@
  * captures them for programmatic follow-up.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, spawnFail, conflictFailure, currentBranch, rejectInput } from './helpers.js';
 import { GitMergeDataSchema } from './schemas.js';
 import type { GitMergeData } from './schemas.js';
 
 export type { GitMergeData } from './schemas.js';
 
-export const gitMergeTool: Tool = {
+export const gitMergeTool = {
   id: 'git_merge',
   description: 'Merge a ref into the current branch. Gates with commit count + strategy.',
   inputSchema: Type.Object({
@@ -138,7 +139,7 @@ export const gitMergeTool: Tool = {
       data,
     };
   },
-};
+} satisfies TypedTool;
 
 /** The conflicted paths; `problem` names a read that did not run to an exit (the merge outcome is then not known to be a conflict). */
 async function listConflicts(cwd: string): Promise<{ files: string[]; problem?: string }> {

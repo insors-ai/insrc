@@ -145,7 +145,13 @@ test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are regis
 	for (const rec of added) {
 		const tool = live.get(rec.id);
 		assert.ok(tool, `${rec.id} is registered`);
-		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), rec.inputSchema, `${rec.id} input schema`);
+		const schema = JSON.parse(JSON.stringify(tool.inputSchema)) as { properties: Record<string, unknown> };
+		// Story s7 adds one optional input to git_cat_file (a lowerable time limit); the snapshot is not edited, so it is set aside here
+		if (rec.id === 'git_cat_file') {
+			assert.ok(schema.properties['timeoutMs'] !== undefined, 'git_cat_file has the s7 timeoutMs input');
+			delete schema.properties['timeoutMs'];
+		}
+		assert.deepEqual(schema, rec.inputSchema, `${rec.id} input schema`);
 		assert.equal(typeof tool.approval === 'function' ? 'per-input' : tool.approval ?? 'none', rec.approval, `${rec.id} approval`);
 	}
 	assert.deepEqual(added.map(a => a.id).sort(), [...reads, 'git_symbolic_ref', 'git_fetch_refs'].sort());
@@ -195,7 +201,13 @@ test('approval-class-mapping.test.ts: the 228-row snapshot is not edited and add
 		const tool = live.get(rec.id);
 		assert.ok(tool, `${rec.id} is registered`);
 		assert.equal(ids.has(rec.id), false, `${rec.id} is new: it is not in the snapshot of the 228`);
-		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), rec.inputSchema, `${rec.id} input schema`);
+		const schema = JSON.parse(JSON.stringify(tool.inputSchema)) as { properties: Record<string, unknown> };
+		// Story s7 adds one optional input to git_cat_file (a lowerable time limit); the snapshot is not edited, so it is set aside here
+		if (rec.id === 'git_cat_file') {
+			assert.ok(schema.properties['timeoutMs'] !== undefined, 'git_cat_file has the s7 timeoutMs input');
+			delete schema.properties['timeoutMs'];
+		}
+		assert.deepEqual(schema, rec.inputSchema, `${rec.id} input schema`);
 		assert.equal(typeof tool.approval === 'function' ? 'per-input' : tool.approval ?? 'none', rec.approval, `${rec.id} approval`);
 	}
 });

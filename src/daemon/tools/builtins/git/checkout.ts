@@ -10,9 +10,10 @@
  *                   paths unconditionally; the gate must be explicit.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, readBranch, readFailure, spawnFail, rejectInput } from './helpers.js';
 import { GitCheckoutDataSchema } from './schemas.js';
 import type { GitCheckoutData } from './schemas.js';
@@ -21,7 +22,7 @@ export type GitCheckoutMode = 'ref' | 'path';
 
 export type { GitCheckoutData } from './schemas.js';
 
-export const gitCheckoutTool: Tool = {
+export const gitCheckoutTool = {
   id: 'git_checkout',
   description: 'Switch HEAD to a ref, or restore specific paths to a ref\'s state. Destructive; gates with a warning.',
   inputSchema: Type.Object({
@@ -115,4 +116,4 @@ export const gitCheckoutTool: Tool = {
       format: 'markdown', success: true, data,
     };
   },
-};
+} satisfies TypedTool;

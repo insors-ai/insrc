@@ -7,9 +7,10 @@
  * ref is destructive; an unforced one into another ref is common.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, rejectInput, spawnFail, str } from './helpers.js';
 import { parseFetchPorcelain, parseOutput } from './parsers.js';
 import { GitFetchRefsDataSchema } from './schemas.js';
@@ -25,7 +26,7 @@ function destination(refspec: unknown): { forced: boolean; dst: string } | undef
   return { forced, dst: body.slice(colon + 1) };
 }
 
-export const gitFetchRefsTool: Tool = {
+export const gitFetchRefsTool = {
   id: 'git_fetch_refs',
   description: 'Fetch explicit src:dst refspecs from a remote, optionally without tags, FETCH_HEAD, submodules or pruning; returns the refs it updated.',
   inputSchema: Type.Object({
@@ -83,4 +84,4 @@ export const gitFetchRefsTool: Tool = {
     const data: GitFetchRefsData = { updated: parsed.value.updated };
     return { output: parsed.value.updated.map(u => `${u.old.slice(0, 7)}..${u.new.slice(0, 7)}  ${u.ref}`).join('\n') || 'Nothing to update.', format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

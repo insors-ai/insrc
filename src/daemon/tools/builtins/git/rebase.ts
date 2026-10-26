@@ -12,10 +12,11 @@
  *   - continue / abort / skip operations are exposed via `op`
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, readBranch, readFailure, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
 import { GitRebaseDataSchema } from './schemas.js';
 import type { GitRebaseData } from './schemas.js';
@@ -24,7 +25,7 @@ export type GitRebaseOp = 'start' | 'continue' | 'abort' | 'skip';
 
 export type { GitRebaseData } from './schemas.js';
 
-export const gitRebaseTool: Tool = {
+export const gitRebaseTool = {
   id: 'git_rebase',
   description: 'Rebase the current branch onto a ref (or continue / abort / skip an in-progress rebase). Interactive mode unsupported.',
   inputSchema: Type.Object({
@@ -120,7 +121,7 @@ export const gitRebaseTool: Tool = {
     }
     return okResult('start', cwd, onto);
   },
-};
+} satisfies TypedTool;
 
 async function okResult(op: GitRebaseOp, cwd: string, onto?: string): Promise<ToolResult> {
   // The rebase has happened: reads that only add detail keep their placeholders and are named in data.warnings.

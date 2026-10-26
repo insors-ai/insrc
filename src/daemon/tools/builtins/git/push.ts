@@ -10,9 +10,10 @@
  *     name (main / master / release/*)
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, failureKind, spawnFail, readBranch, readFailure, readShortSha, rejectInput } from './helpers.js';
 import { GitPushDataSchema } from './schemas.js';
 import type { GitPushData } from './schemas.js';
@@ -21,7 +22,7 @@ export type { GitPushData } from './schemas.js';
 
 const PROTECTED_REFS = /^(main|master|release\/|trunk)/i;
 
-export const gitPushTool: Tool = {
+export const gitPushTool = {
   id: 'git_push',
   description: 'Push a branch or tag to a remote. Gates with target preview; refuses force-push to protected refs.',
   inputSchema: Type.Object({
@@ -150,4 +151,4 @@ export const gitPushTool: Tool = {
     ].join('\n');
     return { output: body, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;

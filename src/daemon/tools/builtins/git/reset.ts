@@ -11,9 +11,10 @@
  * that state so the caller sees it before approving.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, rejectInput } from './helpers.js';
 import { GitResetDataSchema } from './schemas.js';
 import type { GitResetData } from './schemas.js';
@@ -23,7 +24,7 @@ export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
 export type { GitResetData } from './schemas.js';
 
-export const gitResetTool: Tool = {
+export const gitResetTool = {
   id: 'git_reset',
   description: 'Move HEAD to a ref. mode=hard also discards the worktree.',
   inputSchema: Type.Object({
@@ -115,7 +116,7 @@ export const gitResetTool: Tool = {
     ].filter(Boolean).join('\n');
     return { output: body, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 type ForceRead = { ok: true; value: boolean } | { ok: false; failed: ShellResult };
 

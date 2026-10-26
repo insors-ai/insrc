@@ -17,6 +17,7 @@
  * payload was truncated.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import { assertSafeArg, fail, failureKind, spawnFail, withFailure } from './helpers.js';
@@ -28,7 +29,7 @@ let shell: typeof runShell = runShell;
 export function setGitDiffShellForTests(fn?: typeof runShell): void {
   shell = fn ?? runShell;
 }
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { GitDiffDataSchema } from './schemas.js';
 import type { GitDiffData, GitDiffFileStat } from './schemas.js';
 
@@ -45,7 +46,7 @@ export type { GitDiffData, GitDiffFileStat } from './schemas.js';
 const DEFAULT_MAX_BYTES = 256 * 1024;  // 256 KB
 const MAX_MAX_BYTES = 2 * 1024 * 1024; // 2 MB hard cap
 
-export const gitDiffTool: Tool = {
+export const gitDiffTool = {
   id: 'git_diff',
   description: 'Show a unified diff. Supports unstaged (default), staged, arbitrary commit ranges, or a specific path.',
   inputSchema: Type.Object({
@@ -71,7 +72,7 @@ export const gitDiffTool: Tool = {
   }, { additionalProperties: false }),
   outputSchema: GitDiffDataSchema,
 
-  async execute(input: ToolInput): Promise<ToolResult> {
+  async execute(input: ToolInput, _deps?: ToolDeps): Promise<ToolResult> {
     const cwd = strInput(input, 'cwd') ?? process.cwd();
     const staged = boolInput(input, 'staged');
     const from = strInput(input, 'from');
@@ -187,7 +188,7 @@ export const gitDiffTool: Tool = {
       data,
     };
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // argv builders

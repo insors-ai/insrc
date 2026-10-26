@@ -5,9 +5,10 @@
  * callers that want a merge or rebase pull opt in explicitly.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail, readBranch, readFailure, currentBranch } from './helpers.js';
 import { GitPullDataSchema } from './schemas.js';
 import type { GitPullData } from './schemas.js';
@@ -16,7 +17,7 @@ export type GitPullMode = 'ff-only' | 'merge' | 'rebase';
 
 export type { GitPullData } from './schemas.js';
 
-export const gitPullTool: Tool = {
+export const gitPullTool = {
   id: 'git_pull',
   description: 'Pull from the current branch\'s upstream. Default --ff-only; merge / rebase modes opt-in.',
   inputSchema: Type.Object({
@@ -106,7 +107,7 @@ export const gitPullTool: Tool = {
       data,
     };
   },
-};
+} satisfies TypedTool;
 
 function mergeStreams(res: { stdout: string; stderr: string }): string {
   const parts: string[] = [];

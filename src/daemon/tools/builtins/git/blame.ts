@@ -7,16 +7,17 @@
  * how many lines each commit contributed.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { runShell } from '../../shell-helper.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, spawnFail, withFailure } from './helpers.js';
 import { GitBlameDataSchema } from './schemas.js';
 import type { GitBlameData, GitBlameLine } from './schemas.js';
 
 export type { GitBlameData, GitBlameLine } from './schemas.js';
 
-export const gitBlameTool: Tool = {
+export const gitBlameTool = {
   id: 'git_blame',
   description: 'Show line-level authorship for a file (optionally a range).',
   inputSchema: Type.Object({
@@ -60,7 +61,7 @@ export const gitBlameTool: Tool = {
 
     return { output: renderReport(data, cwd), format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // Porcelain parser

@@ -2,9 +2,10 @@
  * git:worktree -- list / add / remove / move worktrees.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
 import { GitWorktreeDataSchema } from './schemas.js';
 import type { GitWorktreeData, GitWorktreeEntry } from './schemas.js';
@@ -13,7 +14,7 @@ export type GitWorktreeOp = 'list' | 'add' | 'remove' | 'move' | 'prune';
 
 export type { GitWorktreeData, GitWorktreeEntry } from './schemas.js';
 
-export const gitWorktreeTool: Tool = {
+export const gitWorktreeTool = {
   id: 'git_worktree',
   description: 'Manage git worktrees. list is read-only; add / remove / move / prune gate.',
   inputSchema: Type.Object({
@@ -134,7 +135,7 @@ export const gitWorktreeTool: Tool = {
       data: { op } satisfies GitWorktreeData,
     };
   },
-};
+} satisfies TypedTool;
 
 // Parse `git worktree list --porcelain`: stanzas separated by blank lines
 // with key-value prefixes (worktree <path>, HEAD <sha>, branch <ref>,

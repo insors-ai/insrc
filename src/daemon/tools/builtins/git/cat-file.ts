@@ -11,9 +11,10 @@
  * fetch cannot change or widen what is read. A cancelled signal kills the process.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShellBytes } from '../../shell-helper.js';
-import type { ToolDeps, ToolInput, ToolResult, Tool } from '../../types.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, ranToExit, rejectInput, spawnFail, str, withFailure } from './helpers.js';
 import { GitCatFileDataSchema } from './schemas.js';
 import type { GitCatFileData } from './schemas.js';
@@ -23,7 +24,7 @@ const DEFAULT_STDOUT_LIMIT = 32 * 1024 * 1024;  // for the whole call
 const DEFAULT_STDERR_LIMIT = 64 * 1024;
 const MAX_TIMEOUT_MS = 30_000;                  // the fixed limit; timeoutMs can only lower it
 
-export const gitCatFileTool: Tool = {
+export const gitCatFileTool = {
   id: 'git_cat_file',
   description: 'Read git objects: whether a rev exists, its type and size, or the bytes of one or many revs (utf8 or lossless base64). Runs isolated from the environment by default.',
   inputSchema: Type.Object({
@@ -94,7 +95,7 @@ export const gitCatFileTool: Tool = {
     }
     return { output: summary(data), format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 class CatFileError extends Error {}
 

@@ -2,13 +2,14 @@
  * git_hash_object -- the object name git would give a file's content (read-only: nothing is written, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
 import { GitHashObjectDataSchema } from './schemas.js';
 import type { GitHashObjectData } from './schemas.js';
 
-export const gitHashObjectTool: Tool = {
+export const gitHashObjectTool = {
   id: 'git_hash_object',
   description: 'Compute the object name git gives a file\'s content, without storing the object.',
   inputSchema: Type.Object({
@@ -29,4 +30,4 @@ export const gitHashObjectTool: Tool = {
     const data: GitHashObjectData = { sha };
     return { output: sha, format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

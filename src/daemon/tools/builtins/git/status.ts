@@ -7,9 +7,10 @@
  * spaces / unicode / \n in filenames don't confuse the parser.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { fail, spawnFail } from './helpers.js';
 import { parseOutput, parseStatusV2 } from './parsers.js';
 import { GitStatusDataSchema } from './schemas.js';
@@ -25,7 +26,7 @@ export type { GitStatusData, GitStatusEntry } from './schemas.js';
 // Tool
 // ---------------------------------------------------------------------------
 
-export const gitStatusTool: Tool = {
+export const gitStatusTool = {
   id: 'git_status',
   description: 'Show working tree status -- staged, unstaged, untracked, and conflicted paths.',
   inputSchema: Type.Object({
@@ -67,7 +68,7 @@ export const gitStatusTool: Tool = {
       data: parsed,
     };
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // Report rendering

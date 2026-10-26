@@ -3,15 +3,16 @@
  * (read-only, no approval).
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolInput, ToolResult } from '../../types.js';
+import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, ranToExit, rejectInput, spawnFail, str } from './helpers.js';
 import { parseOutput, parseRevList } from './parsers.js';
 import { GitMergeBaseDataSchema } from './schemas.js';
 import type { GitMergeBaseData } from './schemas.js';
 
-export const gitMergeBaseTool: Tool = {
+export const gitMergeBaseTool = {
   id: 'git_merge_base',
   description: 'Find the common ancestor of two revisions (bases; all lists every best common ancestor), or ask whether a is an ancestor of b (isAncestor).',
   inputSchema: Type.Object({
@@ -57,4 +58,4 @@ export const gitMergeBaseTool: Tool = {
     const data: GitMergeBaseData = { bases: parsed.value };
     return { output: parsed.value.join('\n'), format: 'text', success: true, data };
   },
-};
+} satisfies TypedTool;

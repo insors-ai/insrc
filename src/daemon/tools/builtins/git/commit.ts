@@ -11,16 +11,17 @@
  * separate tool (git:amend) so each surface stays focused.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { str, fail, failureKind, ranToExit, spawnFail, readBranch, readFailure, readStagedCount, stagedSummary, rejectInput } from './helpers.js';
 import { GitCommitDataSchema } from './schemas.js';
 import type { GitCommitData } from './schemas.js';
 
 export type { GitCommitData } from './schemas.js';
 
-export const gitCommitTool: Tool = {
+export const gitCommitTool = {
   id: 'git_commit',
   description: 'Create a commit from the staged changes. Gates with diff + message preview.',
   inputSchema: Type.Object({
@@ -126,7 +127,7 @@ export const gitCommitTool: Tool = {
     ].join('\n');
     return { output: body, format: 'markdown', success: true, data };
   },
-};
+} satisfies TypedTool;
 
 /**
  * The details of the commit just made. The commit has happened, so a read that fails does not fail the call: it keeps its

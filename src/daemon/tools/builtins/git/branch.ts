@@ -10,9 +10,10 @@
  * the destruction explicit.
  */
 
+import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import type { ApprovalClass, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, rejectInput } from './helpers.js';
 import { GitBranchDataSchema } from './schemas.js';
 import type { GitBranchData, GitBranchEntry } from './schemas.js';
@@ -21,7 +22,7 @@ export type GitBranchOp = 'list' | 'create' | 'switch' | 'delete';
 
 export type { GitBranchData, GitBranchEntry } from './schemas.js';
 
-export const gitBranchTool: Tool = {
+export const gitBranchTool = {
   id: 'git_branch',
   description: 'List / create / switch / delete branches. op=list is read-only; others gate.',
   inputSchema: Type.Object({
@@ -86,7 +87,7 @@ export const gitBranchTool: Tool = {
       case 'delete': return deleteBranch(cwd, input);
     }
   },
-};
+} satisfies TypedTool;
 
 // ---------------------------------------------------------------------------
 // list

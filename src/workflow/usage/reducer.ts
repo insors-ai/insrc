@@ -2,6 +2,7 @@
 import { canonicalData, canonicalSource, UsageInputError } from './canonical.js';
 import { validateAttribution } from './attribution.js';
 import { resolveObservationBasis } from './basis.js';
+import { cumulativeInterval } from './cumulative.js';
 import { eventSetDigest, validateRecord, validateScope } from './validation.js';
 import { USAGE_LIMITS } from './types.js';
 import type { AccountingScope, EffectiveAccounting, LedgerRecord, NormalizedCounters, RequestStarted, UsageDomainError, UsageQuality } from './types.js';
@@ -103,7 +104,7 @@ const empty = (notices: readonly string[], quality: readonly UsageQuality[]): Ef
 
 /**
  * Internal t6 composition, intentionally absent from the public barrel while
- * cumulative/ownership stages are built in t8-t9.
+ * ownership composition is built in t9.
  * Unhandled accounting controls are refused explicitly, never approximated.
  */
 export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, input: unknown, options: { readonly signal?: AbortSignal | undefined } = {}): Promise<EffectiveAccounting> {
@@ -166,14 +167,20 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
     const observation = end.observation, capability = capabilities.get(observation.sourceCapabilityId);
     if (!capability || capability.provider !== context.source.provider || capability.transport !== context.source.transport || (capability.version !== null && context.source.version !== capability.version) || (capability.granularity !== 'unknown' && capability.granularity !== context.granularity)) { notices.add(`source-unavailable:${end.eventId}`); quality.add('unavailable'); continue; }
     if (context.reportedModel !== null && observation.reportedModel !== null && context.reportedModel !== observation.reportedModel) { notices.add(`model-conflict:${end.eventId}`); quality.add('conflict'); continue; }
-    if (context.granularity === 'cumulative-snapshot' || observation.cumulative !== null) { notices.add(`baseline-unavailable:${end.eventId}`); quality.add('unavailable'); continue; }
     if (observation.quality === 'unavailable') { notices.add(`usage-unavailable:${end.eventId}`); quality.add('unavailable'); continue; }
+    let effectiveCounters = observation.counters, isEstimate = observation.quality === 'estimated';
+    if (context.granularity === 'cumulative-snapshot' || observation.cumulative !== null) {
+      const interval = cumulativeInterval(end, start, collected.records, starts, badCalls, scope);
+      for (const notice of interval.notices) notices.add(notice);
+      if (!interval.counters) { quality.add('unavailable'); continue; }
+      effectiveCounters = interval.counters; isEstimate = interval.estimated;
+    }
     const selected = scope.metric === 'processed' ? counters : [scope.metric];
-    if (selected.some(bucket => observation.counters[bucket] !== null && !capability.supportedCounterBuckets.includes(bucket))) { notices.add(`counter-unsupported:${end.eventId}`); quality.add('unsupported'); quality.add('unavailable'); continue; }
-    const amount = metricValue(observation.counters, scope.metric);
+    if (selected.some(bucket => effectiveCounters[bucket] !== null && !capability.supportedCounterBuckets.includes(bucket))) { notices.add(`counter-unsupported:${end.eventId}`); quality.add('unsupported'); quality.add('unavailable'); continue; }
+    const amount = metricValue(effectiveCounters, scope.metric);
     if (amount.unknown) { notices.add(`counter-unavailable:${end.eventId}`); quality.add('unavailable'); }
-    if (selected.some(bucket => observation.counters[bucket] !== null)) {
-      if (observation.quality === 'estimated') { estimated += amount.known; quality.add('estimated'); }
+    if (selected.some(bucket => effectiveCounters[bucket] !== null)) {
+      if (isEstimate) { estimated += amount.known; quality.add('estimated'); }
       else { known += amount.known; quality.add('reported'); }
       basis.push(end.eventId);
     }

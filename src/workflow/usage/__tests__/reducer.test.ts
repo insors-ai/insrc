@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { collectGroup, reduceGroupCore } from '../reducer.js';
 import { finish, start, signed, scoped, stream } from './fixtures/domain-fixtures.js';
-import type { RequestFinished, RequestStarted } from '../types.js';
+import type { AccountingScope, LedgerRecord, RequestFinished, RequestStarted } from '../types.js';
 const zero = { inputUncachedTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, outputTokens: 0, reasoningTokens: 0 };
 function call(number: number): [RequestStarted, RequestFinished] {
   return [signed({ ...start(), eventId: `start-${number}`, callId: `call-${number}` }), signed({ ...finish({ counters: zero }), eventId: `finish-${number}`, callId: `call-${number}` })];
@@ -73,4 +73,76 @@ test('event and call identity conflicts cannot produce a trusted contribution or
   await reduceGroupCore(stream([f, s]), scoped([s, f]));
   assert.equal(JSON.stringify([s, f]), before);
   assert.equal('effectiveOwners' in identity, false, 'unpublished t6 core does not claim completed ownership composition');
+});
+
+function cumulativeFrame(name: string, input: number, output: number, invocationId = 'invocation'): [RequestStarted, RequestFinished] {
+  const [s, f] = call(100);
+  return [signed({ ...s, eventId: `${name}-start`, callId: name, context: { ...s.context, invocationId, granularity: 'cumulative-snapshot', nativeSessionId: 'native-session' } }),
+    signed({ ...f, eventId: `${name}-end`, callId: name, observation: { ...f.observation,
+      sourceCapabilityId: 'cumulative-cap', counters: { ...zero, inputUncachedTokens: input, outputTokens: output, reasoningTokens: Math.floor(output / 2) },
+      cumulative: { nativeSessionId: 'native-session', baselineEventId: name === 'baseline' ? 'origin-frame' : 'baseline-end', frameId: `frame-${name}` } } })];
+}
+function intervalScope(rows: readonly LedgerRecord[], referenceOnlyEventIds: string[] = ['baseline-start', 'baseline-end']): AccountingScope {
+  const value = scoped(rows), original = value.evidence.sourceCapabilities[0]!;
+  return { ...value, evidence: { ...value.evidence, referenceOnlyEventIds,
+    selectedCurrentEventId: 'current-end', baselineEventId: 'baseline-end',
+    sourceCapabilities: [{ ...original, capabilityId: 'cumulative-cap', granularity: 'cumulative-snapshot', physicalCallCoverage: 'unknown', baselineRequired: true }],
+  } };
+}
+
+test('cumulative selected intervals exclude baselines and intermediate frames including prior-invocation references', async () => {
+  const baseline = cumulativeFrame('baseline', 10, 5, 'prior-invocation'), middle = cumulativeFrame('middle', 20, 7), current = cumulativeFrame('current', 30, 10);
+  const rows = [...baseline, ...middle, ...current], evidence = intervalScope(rows, ['baseline-start', 'baseline-end', 'middle-start', 'middle-end']);
+  const result = await reduceGroupCore(stream(rows), evidence);
+  assert.equal(result.knownTokens, '25'); assert.deepEqual(result.basisEventIds, ['current-end']); assert.deepEqual(result.quality, ['reported']);
+  assert.deepEqual(await reduceGroupCore(stream([...rows].reverse()), evidence), result);
+  assert.equal((await reduceGroupCore(stream(rows), { ...evidence, metric: 'reasoningTokens' })).knownTokens, '3');
+  const noBaseline = await reduceGroupCore(stream([...middle, ...current]), evidence);
+  assert.equal(noBaseline.knownTokens, '0'); assert.ok(noBaseline.quality.includes('unavailable'));
+  assert.equal((await reduceGroupCore(stream([...baseline, ...current]), evidence)).knownTokens, '0', 'a missing declared intermediate cannot hide reset or correction evidence');
+  const undeclared = intervalScope(rows, ['baseline-end', 'middle-start', 'middle-end']);
+  assert.equal((await reduceGroupCore(stream(rows), undeclared)).knownTokens, '0', 'cross-invocation start must be explicitly reference-only too');
+});
+
+test('cumulative common-baseline endpoints require reconciliation and never add overlapping deltas', async () => {
+  const baseline = cumulativeFrame('baseline', 10, 5, 'prior-invocation'), middle = cumulativeFrame('middle', 20, 7), current = cumulativeFrame('current', 30, 10);
+  const rows = [...baseline, ...middle, ...current], evidence = intervalScope(rows);
+  const overlapping = await reduceGroupCore(stream(rows), evidence);
+  assert.equal(overlapping.knownTokens, '0'); assert.ok(overlapping.notices.includes('overlap-unresolved:/'));
+  const reconciliation = signed({ ...finish(), recordKind: 'usage.reconciled' as const, eventId: 'cumulative-basis', callId: null, observation: null,
+    control: { group: evidence.group, candidateEventIds: ['middle-end', 'current-end'], selectedEventIds: ['current-end'], excludedEventIds: ['middle-end'], previousReconciliationEventId: null, coverage: 'aggregate-fallback' as const, sourceCapabilityId: 'cumulative-cap', evidenceEventIds: ['baseline-end'], reason: 'fixture:select-one-interval' },
+  });
+  const selected = [...rows, reconciliation], scopedInterval = intervalScope(selected);
+  assert.equal((await reduceGroupCore(stream(selected), scopedInterval)).knownTokens, '25');
+  const oldEndpoint = signed({ ...reconciliation, control: { ...reconciliation.control, selectedEventIds: ['middle-end'], excludedEventIds: ['current-end'] } });
+  const older = [...rows, oldEndpoint], olderScope = intervalScope(older);
+  const oldResult = await reduceGroupCore(stream(older), { ...olderScope, evidence: { ...olderScope.evidence, selectedCurrentEventId: 'middle-end' } });
+  assert.equal(oldResult.knownTokens, '12', 'explicit basis, not latest timestamp, selects the interval');
+});
+
+test('cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas', async () => {
+  const baseline = cumulativeFrame('baseline', 10, 5, 'prior-invocation'), current = cumulativeFrame('current', 30, 10);
+  const rows = [...baseline, ...current];
+  const changedSession = signed({ ...baseline[0], context: { ...baseline[0].context, nativeSessionId: 'different-session' } });
+  const changedModel = signed({ ...baseline[0], context: { ...baseline[0].context, modelSliceId: 'different-model' } });
+  const reset = signed({ ...current[1], observation: { ...current[1].observation, counters: { ...zero, inputUncachedTokens: 3, outputTokens: 10 } } });
+  const differentNativeSession = signed({ ...baseline[1], observation: { ...baseline[1].observation, cumulative: { ...baseline[1].observation.cumulative!, nativeSessionId: 'different-session' } } });
+  for (const invalidRows of [[changedSession, baseline[1], ...current], [changedModel, baseline[1], ...current], [baseline[0], differentNativeSession, ...current], [...baseline, current[0], reset]]) {
+    const result = await reduceGroupCore(stream(invalidRows), intervalScope(invalidRows));
+    assert.equal(result.knownTokens, '0'); assert.ok(result.quality.includes('unavailable'));
+  }
+  const unknownBaseline = signed({ ...baseline[1], observation: { ...baseline[1].observation, counters: { ...baseline[1].observation.counters, cacheReadTokens: null } } });
+  const unknownRows = [baseline[0], unknownBaseline, ...current], unknownScope = intervalScope(unknownRows);
+  const partial = await reduceGroupCore(stream(unknownRows), unknownScope);
+  assert.equal(partial.knownTokens, '25'); assert.deepEqual(partial.quality, ['reported', 'unavailable']);
+  const unknownMetric = await reduceGroupCore(stream(unknownRows), { ...unknownScope, metric: 'cacheReadTokens' });
+  assert.equal(unknownMetric.knownTokens, '0'); assert.deepEqual(unknownMetric.quality, ['unavailable']);
+  const unqualified = intervalScope(rows);
+  assert.equal((await reduceGroupCore(stream(rows), { ...unqualified, evidence: { ...unqualified.evidence, sourceCapabilities: unqualified.evidence.sourceCapabilities.map(item => ({ ...item, qualification: 'unqualified', version: null, sourceRevision: null, evidenceRefs: [] })) } })).knownTokens, '0');
+  const estimatedBaseline = signed({ ...baseline[1], observation: { ...baseline[1].observation, quality: 'estimated' as const, reason: 'fixture:estimated-baseline' } });
+  const estimatedRows = [baseline[0], estimatedBaseline, ...current];
+  const estimate = await reduceGroupCore(stream(estimatedRows), intervalScope(estimatedRows));
+  assert.equal(estimate.knownTokens, '0'); assert.equal(estimate.estimatedTokens, '25'); assert.deepEqual(estimate.quality, ['estimated']);
+  const middle = cumulativeFrame('middle', 90, 7), interrupted = [...baseline, ...middle, ...current];
+  assert.equal((await reduceGroupCore(stream(interrupted), intervalScope(interrupted, ['baseline-start', 'baseline-end', 'middle-start', 'middle-end']))).knownTokens, '0', 'intermediate counter reset evidence invalidates the selected interval');
 });

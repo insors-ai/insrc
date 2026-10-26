@@ -54,6 +54,10 @@ export function resolveObservationBasis(rows: readonly LedgerRecord[], starts: R
     }
   }
   const heads = new Map<string, ObservationRecord>();
+  // Reference-only roles cannot hide ambiguous terminal histories for a call.
+  const headCounts = new Map<string, number>();
+  for (const row of observations) if (!successors.has(row.eventId)) headCounts.set(row.callId, (headCounts.get(row.callId) ?? 0) + 1);
+  for (const row of observations) if ((headCounts.get(row.callId) ?? 0) > 1) fail(row, 'terminal-conflict');
   for (const row of observations) {
     if (references.has(row.eventId) || successors.has(row.eventId) || blockedCalls.has(row.callId)) continue;
     const start = starts.get(row.callId);

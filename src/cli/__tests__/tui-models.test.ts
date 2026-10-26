@@ -128,3 +128,113 @@ test('tui-models.test.ts: daemon down shows the not-running message in the Model
 	assert.deepEqual(applied, [], 'apply is not offered without a recommendation');
 	unmount();
 });
+
+type CheckParams = { family: string; modelId: string; claimedEfforts: readonly string[] };
+const disconnectedError = (method: string): Error => Object.assign(new Error(`the daemon closed the connection before answering ${method}`), { code: 'disconnected' });
+
+/** Fake services for the check screen: scripted check / approve / restart / save answers, all recorded. */
+function checkServices(script: {
+	check?: Array<() => Promise<unknown>>; approve?: Array<() => Promise<unknown>>; restart?: Array<{ ok: boolean; error?: string }>;
+	write?: ConfigWriteResult[]; definitions?: ModelDefinitionsResult;
+}) {
+	const tiers: Record<string, unknown> = { core: { runner: 'cli-codex', model: 'x-a', effort: 'lo' } };
+	const { svc, writes } = tiersServices(tiers, script.write ?? []);
+	const checks: CheckParams[] = [];
+	const approves: unknown[] = [];
+	const rejects: unknown[] = [];
+	const restarts: number[] = [];
+	const okResult = { checkId: 'c1', family: 'cli-codex', modelId: 'x-new', runs: true, inputLimit: { unit: 'tokens', max: 64000 },
+		efforts: [{ effort: 'lo', verdict: 'accepted', evidence: 'ev-lo listed' }, { effort: 'turbo', verdict: 'rejected', evidence: 'ev-turbo not listed' }] };
+	svc.models.check = (async (p: CheckParams) => { checks.push(p); const next = script.check?.shift(); return next !== undefined ? next() : okResult; }) as never;
+	svc.models.approve = (async (p: unknown) => { approves.push(p); const next = script.approve?.shift(); return next !== undefined ? next() : { ok: true, restartRequired: true }; }) as never;
+	svc.models.reject = (async (p: unknown) => { rejects.push(p); return { ok: true, restartRequired: true }; }) as never;
+	svc.daemon.restart = async () => { restarts.push(1); const r = script.restart?.shift() ?? { ok: true }; return { ok: r.ok, steps: [], ...(r.error !== undefined ? { error: r.error } : {}) }; };
+	if (script.definitions !== undefined) { const d = script.definitions; let first = true; svc.models.definitions = async () => { if (first) { first = false; return DEFS; } return d; }; }
+	return { svc, writes, checks, approves, rejects, restarts };
+}
+
+/** Open the Model Tiers pane, type an unserved id for core and accept the default claimed efforts. */
+async function openCheck(svc: ReturnType<typeof fakeServices>, modelId = 'x-new') {
+	const r = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5', 'n');
+	r.stdin.write(modelId); await settle();
+	r.stdin.write('\r'); await settle();
+	r.stdin.write('\r'); await settle(); await settle();   // the claimed-efforts prompt: accept the default
+	return r;
+}
+
+test('tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false', async () => {
+	// Approve: nothing is saved; a failed restart saves nothing and does not re-approve; R again restarts then saves.
+	const a = checkServices({ restart: [{ ok: false, error: 'boom' }, { ok: true }] });
+	let r = await openCheck(a.svc);
+	assert.deepEqual(a.checks, [{ family: 'cli-codex', modelId: 'x-new', claimedEfforts: ['lo', 'turbo'] }], "the family's effort names are claimed");
+	let frame = r.lastFrame() ?? '';
+	assert.match(frame, /\[x\] lo — accepted: ev-lo listed/);
+	assert.match(frame, /\[ \] turbo — rejected: ev-turbo not listed/);
+	assert.match(frame, /runs: yes · input limit: 64000 tokens/);
+	const before = a.writes.length;
+	await press(r.stdin, 'a');
+	assert.deepEqual(a.approves, [{ checkId: 'c1', efforts: ['lo'] }]);
+	assert.equal(a.writes.length, before, 'approving saves nothing');
+	assert.match(r.lastFrame() ?? '', /Approved x-new \(levels: lo\) — restart the daemon to use it/);
+	await press(r.stdin, 'R'); await settle();
+	assert.match(r.lastFrame() ?? '', /approval recorded; restart failed: boom — the tier was not saved \(R retries\)/);
+	assert.equal(a.writes.length, before, 'no save after a failed restart');
+	await press(r.stdin, 'R'); await settle();
+	assert.equal(a.restarts.length, 2);
+	assert.equal(a.approves.length, 1, 'the approval is never sent again');
+	assert.deepEqual(a.writes.at(-1), ['models.tiers.core', { runner: 'cli-codex', model: 'x-new', effort: 'lo' }]);
+	assert.match(r.lastFrame() ?? '', /Tiers \(family/, 'back on the pane after the save');
+	r.unmount();
+
+	// A save refused after the restart shows its reason.
+	const b = checkServices({ write: [{ ok: false, reason: 'rejected-model', detail: "model 'x-new' is rejected in cli-codex" }] });
+	r = await openCheck(b.svc);
+	await press(r.stdin, 'a', 'R'); await settle();
+	assert.match(r.lastFrame() ?? '', /approval recorded; the tier was not saved: rejected-model — model 'x-new' is rejected in/);
+	r.unmount();
+
+	// Reject records the rejection and saves nothing.
+	const c = checkServices({});
+	r = await openCheck(c.svc);
+	const n = c.writes.length;
+	await press(r.stdin, 'x');
+	assert.deepEqual(c.rejects, [{ checkId: 'c1' }]);
+	assert.equal(c.writes.length, n);
+	r.unmount();
+
+	// runs:false offers no approve; 'a' does nothing.
+	const d = checkServices({ check: [async () => ({ checkId: 'c2', family: 'cli-codex', modelId: 'x-new', runs: false, efforts: [{ effort: 'lo', verdict: 'accepted', evidence: 'listed' }], error: 'the codex CLI refused the model: nope' })] });
+	r = await openCheck(d.svc);
+	frame = r.lastFrame() ?? '';
+	assert.match(frame, /the codex CLI refused the model: nope/);
+	assert.match(frame, /\[x\] lo — accepted: listed/, 'a runs:false result still shows its verdicts');
+	assert.match(frame, /runs: no/);
+	assert.doesNotMatch(frame, /a approve/);
+	await press(r.stdin, 'a');
+	assert.deepEqual(d.approves, []);
+	r.unmount();
+});
+
+test('tui-models.test.ts: interrupted check and outcome-unknown decision', async () => {
+	// A lost connection on the check: interrupted, and c checks again.
+	const a = checkServices({ check: [async () => { throw disconnectedError('models.check'); }] });
+	let r = await openCheck(a.svc);
+	assert.match(r.lastFrame() ?? '', /the check was interrupted: the daemon closed the connection — check again \(c\)/);
+	await press(r.stdin, 'c'); await settle();
+	assert.equal(a.checks.length, 2);
+	assert.match(r.lastFrame() ?? '', /lo — accepted/);
+	r.unmount();
+
+	// A lost connection on approve: outcome unknown; reload reads the definitions and reports, without approving again.
+	const recorded: ModelDefinitionsResult = { ...DEFS, families: DEFS.families.map(f => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
+	const b = checkServices({ approve: [async () => { throw disconnectedError('models.approve'); }], definitions: recorded });
+	r = await openCheck(b.svc);
+	await press(r.stdin, 'a');
+	assert.match(r.lastFrame() ?? '', /outcome unknown: the daemon disconnected before answering — reload \(l\)/);
+	await press(r.stdin, 'l'); await settle();
+	assert.match(r.lastFrame() ?? '', /recorded: approved — restart the daemon to use it/);
+	assert.equal(b.approves.length, 1, 'not approved again');
+	r.unmount();
+});

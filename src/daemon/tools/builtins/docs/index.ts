@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -96,6 +97,7 @@ export const docsRetrieveTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
 		const query = str(input, 'query');
 		if (query === undefined) return fail('docs_retrieve', 'query required');
 		const repo = firstClosureRepo(deps);
@@ -112,6 +114,7 @@ export const docsRetrieveTool: Tool = {
 
 		const db = await getDb();
 		const results = await retrieveDocSections({
+			connectionExecution: deps.connectionExecution,
 			db,
 			query,
 			closureRepos: [repo],
@@ -177,6 +180,7 @@ export const docsProjectContextTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
 		const repo = firstClosureRepo(deps);
 		if (repo === undefined) return fail('docs_project_context', 'session has no closure repo initialised');
 
@@ -237,7 +241,8 @@ export const docsSummaryGetTool: Tool = {
 	},
 	requiresApproval: false,
 
-	async execute(input: ToolInput): Promise<ToolResult> {
+	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
 		const entityId = str(input, 'entityId');
 		if (entityId === undefined) return fail('docs_summary_get', 'entityId required');
 
@@ -301,6 +306,7 @@ export const docsFamilyListTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
 		const family = str(input, 'family') as DocFamily | undefined;
 		if (family === undefined) return fail('docs_family_list', 'family required');
 		const repo = firstClosureRepo(deps);

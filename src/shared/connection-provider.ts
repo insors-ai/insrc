@@ -125,6 +125,17 @@ function assertProviderAttempt(execution?: ConnectionExecutionContext, candidate
 	}
 }
 
+/** Embedding/retrieval has no admitted Session backend, including local proof.
+ * Validate explicit policy before input/backend access; ambient context denies
+ * loss only and never supplies authority. Legacy Saved calls remain compatible.
+ */
+export function assertNoSessionEmbedding(execution?: ConnectionExecutionContext): void {
+	const bound = currentStepContext()?.connectionExecution;
+	if (execution !== undefined || bound?.mode === 'session-memory') assertExplicitConnectionExecution(execution);
+	else bound?.assertActive();
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
+}
+
 /** Native transport rechecks after awaited reads, before decoding SDK input. */
 export function assertConnectionProviderTransport(candidate: LLMProvider): void {
 	const attempt = attempts.getStore();

@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -28,6 +29,7 @@ export async function executeTool(
 ): Promise<ToolResult> {
 	assertAnalysisConnectionExecution(deps.connectionExecution);
 	const tool = getTool(toolId);
+	if (tool && ['docs_retrieve', 'docs_project_context', 'docs_summary_get', 'docs_family_list', 'graph_search', 'data_lineage'].includes(tool.id)) assertNoSessionEmbedding(deps.connectionExecution);
 	if (!tool) {
 		log.error({ toolId }, 'unknown tool');
 		return {

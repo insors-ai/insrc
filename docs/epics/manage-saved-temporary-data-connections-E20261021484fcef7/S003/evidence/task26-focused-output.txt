@@ -1,0 +1,104 @@
+TAP version 13
+# Subtest: empty query returns []
+ok 1 - empty query returns []
+# Subtest: empty closureRepos returns []
+ok 2 - empty closureRepos returns []
+# Subtest: no doc entities in closure returns []
+ok 3 - no doc entities in closure returns []
+# Subtest: keyword pass finds docs containing query terms
+ok 4 - keyword pass finds docs containing query terms
+# Subtest: keyword pass ignores stopwords + short tokens
+ok 5 - keyword pass ignores stopwords + short tokens
+# Subtest: non-doc entities are excluded from results
+ok 6 - non-doc entities are excluded from results
+# Subtest: results ordered by score desc
+ok 7 - results ordered by score desc
+# Subtest: dedup collapses same (file, heading) preferring section
+ok 8 - dedup collapses same (file, heading) preferring section
+# Subtest: filenameHint boosts matching docs
+ok 9 - filenameHint boosts matching docs
+# Subtest: path-hint boost is MULTIPLICATIVE (proportional lift, not additive)
+ok 10 - path-hint boost is MULTIPLICATIVE (proportional lift, not additive)
+# Subtest: keyword pass counts ALL query terms, not just first 6
+ok 11 - keyword pass counts ALL query terms, not just first 6
+# Subtest: short precise query is not punished by the divisor
+ok 12 - short precise query is not punished by the divisor
+# Subtest: maxResults caps returned length
+ok 13 - maxResults caps returned length
+# Subtest: minScore filter drops low-scoring results
+ok 14 - minScore filter drops low-scoring results
+# Subtest: kinds allowlist restricts to prose-only when configured
+ok 15 - kinds allowlist restricts to prose-only when configured
+# Subtest: previewChars caps the body preview
+ok 16 - previewChars caps the body preview
+# Subtest: previewChars=0 omits preview
+ok 17 - previewChars=0 omits preview
+# Subtest: CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success
+ok 18 - CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success
+# Subtest: nameVariants
+ok 19 - nameVariants
+# Subtest: findFirstVariantMatch
+ok 20 - findFirstVariantMatch
+# Subtest: classifyWindow
+ok 21 - classifyWindow
+# Subtest: docs_retrieve returns matching doc sections + citations
+ok 22 - docs_retrieve returns matching doc sections + citations
+# Subtest: docs_retrieve fails when session has no closure repo
+ok 23 - docs_retrieve fails when session has no closure repo
+# Subtest: docs_retrieve honours filenameHint boost
+ok 24 - docs_retrieve honours filenameHint boost
+# Subtest: docs_project_context returns zero-doc context when nothing is summarised
+ok 25 - docs_project_context returns zero-doc context when nothing is summarised
+# Subtest: docs_project_context rolls up decisions + constraints with citations
+ok 26 - docs_project_context rolls up decisions + constraints with citations
+# Subtest: docs_summary_get returns markdown rendered summary
+ok 27 - docs_summary_get returns markdown rendered summary
+# Subtest: docs_summary_get returns failure when no summary exists
+ok 28 - docs_summary_get returns failure when no summary exists
+# Subtest: docs_family_list returns every summarised doc in a family
+ok 29 - docs_family_list returns every summarised doc in a family
+# Subtest: docs_family_list skips placeholder rows
+ok 30 - docs_family_list skips placeholder rows
+# Subtest: graph_query op=defined_in returns DEFINES out-neighbors
+ok 31 - graph_query op=defined_in returns DEFINES out-neighbors
+# Subtest: graph_query op=defined_in errors without fileEntityId
+ok 32 - graph_query op=defined_in errors without fileEntityId
+# Subtest: graph_query op=imports returns IMPORTS out-neighbors
+ok 33 - graph_query op=imports returns IMPORTS out-neighbors
+# Subtest: graph_query op=closure walks transitive edges with kindFilter
+ok 34 - graph_query op=closure walks transitive edges with kindFilter
+# Subtest: graph_query op=closure respects maxDepth
+ok 35 - graph_query op=closure respects maxDepth
+# Subtest: graph_query op=closure errors without roots
+ok 36 - graph_query op=closure errors without roots
+# Subtest: graph_query op=unreachable yields entities outside the closure
+ok 37 - graph_query op=unreachable yields entities outside the closure
+# Subtest: graph_query op=unreachable errors without candidateKinds
+ok 38 - graph_query op=unreachable errors without candidateKinds
+# Subtest: graph_query op=unreachable empty roots yields every candidate-kind entity
+ok 39 - graph_query op=unreachable empty roots yields every candidate-kind entity
+# Subtest: graph_query op=scc finds a 2-node cycle as one component
+ok 40 - graph_query op=scc finds a 2-node cycle as one component
+# Subtest: graph_query op=scc with two acyclic nodes reports two singletons
+ok 41 - graph_query op=scc with two acyclic nodes reports two singletons
+# Subtest: graph_query rejects unknown op
+ok 42 - graph_query rejects unknown op
+# Subtest: graph_query rejects missing op
+ok 43 - graph_query rejects missing op
+# Subtest: graph_query maxDepth is capped at 20
+ok 44 - graph_query maxDepth is capped at 20
+# Subtest: graph_query limit is capped at 500 and applied to entities array
+ok 45 - graph_query limit is capped at 500 and applied to entities array
+# Subtest: embedder.ts derives its keep_alive from the models.local.embeddingKeepAlive config
+ok 46 - embedder.ts derives its keep_alive from the models.local.embeddingKeepAlive config
+# Subtest: every ollama.embed(...) call in the indexer embedder passes keep_alive
+ok 47 - every ollama.embed(...) call in the indexer embedder passes keep_alive
+1..47
+# tests 66
+# suites 3
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4380.8115

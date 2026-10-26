@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../../../shared/connection-provider.js';
 /**
  * data_lineage -- cross-link a data target (table / collection / file)
  * to the code that reads or writes it.
@@ -144,6 +145,7 @@ export const dataLineageTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
 		// Cross-agent depth check (Phase 4 of docs/plans/analyzers/data-analyzer.md).
 		// `data_lineage` is exposed both internally (data-analyzer's own
 		// runner; depth=0) and cross-agent (sibling analyzers; depth>=1
@@ -182,7 +184,7 @@ export const dataLineageTool: Tool = {
 		// surface when the table name itself doesn't appear verbatim
 		// (e.g. ORM model names).
 		const db = await getDb();
-		const queryVec = await embedQuery(target);
+		const queryVec = await embedQuery(target, deps.connectionExecution);
 		if (queryVec.length === 0) {
 			return fail('failed to embed target name (Ollama unavailable?)');
 		}

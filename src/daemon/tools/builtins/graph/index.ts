@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../../../shared/connection-provider.js';
 /**
  * Graph tools -- entity / search / callers / callees / query.
  *
@@ -145,6 +146,7 @@ export const graphSearchTool: Tool = {
   requiresApproval: false,
 
   async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
     const query = str(input, 'query');
     if (!query) { return fail('graph_search', 'query required'); }
     const limit = num(input, 'limit') ?? 10;
@@ -153,7 +155,7 @@ export const graphSearchTool: Tool = {
       return fail('graph_search', 'session has no closure repos initialized');
     }
     const db = await getDb();
-    const vec = await embedQuery(query);
+		const vec = await embedQuery(query, deps.connectionExecution);
     if (vec.length === 0) {
       return fail('graph_search', 'failed to embed query (Ollama unavailable?)');
     }

@@ -1,5 +1,6 @@
+import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
 import { fileURLToPath } from 'node:url';
-import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { ConnectionExecutionError, connectionExecutionErrorCode } from '../../shared/step-context.js';
 import { assertConnectionProviderAdmission, assertConnectionProviderTransport, recordLocalConnectionProvider, captureConnectionProviderModule } from '../../shared/connection-provider.js';
 import { randomUUID } from 'node:crypto';
 
@@ -615,12 +616,13 @@ export class OllamaProvider implements LLMProvider {
     return responseFormat === 'json' ? 'json' : responseFormat.schema;
   }
 
-  async embed(text: string): Promise<number[]> {
-		assertConnectionProviderAdmission();
+	async embed(text: string, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): Promise<number[]> {
+		assertNoSessionEmbedding(execution);
     try {
       const result = await this.client.embed({ model: this.embeddingModel, input: text, keep_alive: this.embeddingKeepAlive });
       return result.embeddings[0] ?? [];
-    } catch {
+		} catch (error) {
+			const code = connectionExecutionErrorCode(error); if (code) throw new ConnectionExecutionError(code);
       return [];
     }
   }

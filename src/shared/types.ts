@@ -188,7 +188,7 @@ export interface LLMProvider {
   complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
   stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string>;
   /** Embed text into a vector. Returns empty array if not supported. */
-  embed(text: string): Promise<number[]>;
+	embed(text: string, execution?: import('./step-context.js').ConnectionExecutionContext): Promise<number[]>;
   readonly supportsTools: boolean;
   /** The largest prompt, in characters, the provider accepts; undefined when not
    *  known in advance (a size refusal then tells the caller). ISSUE-aef82b03. */

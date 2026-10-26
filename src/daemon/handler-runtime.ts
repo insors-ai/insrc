@@ -1,3 +1,5 @@
+import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
+import { ConnectionExecutionError } from '../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -865,7 +867,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// (k5). deps.attachedClients reads the server, which exists before any request fires.
 		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: deps.attachedClients() }),
 
-		'search.query': async (params) => {
+		'search.query': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { text, limit, filter } = params as { text: string; limit?: number; filter?: string };
 			const searchFilter = (filter === 'code' || filter === 'artifact') ? filter : 'all';
 			log.debug({ query: text.slice(0, 120), limit: limit ?? 10, filter: searchFilter }, 'search.query request');
@@ -989,7 +993,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ...hit, raw };
 		},
 
-		'artifact.search': async (params) => {
+		'artifact.search': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { query, sessionId, limit, intent } = params as {
 				query:     string;
 				sessionId: string;
@@ -1030,7 +1036,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				}));
 		},
 
-		'repo.search_cross_repo': async (params) => {
+		'repo.search_cross_repo': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { query, repoId, limit } = params as {
 				query:  string;
 				repoId: string;
@@ -1116,7 +1124,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return pruneConversations(db);
 		},
 
-		'session.search_turns': async (params) => {
+		'session.search_turns': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { repo, queryVector, limit } = params as {
 				repo: string; queryVector: number[]; limit?: number;
 			};
@@ -1125,7 +1135,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 
 		// ----- Conversation management -----
 
-		'conversation.saveTurn': async (params) => {
+		'conversation.saveTurn': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const turn = params as TurnRecord;
 			// Generate embedding for the turn (user + assistant text)
 			const text = `${turn.user}\n${turn.assistant}`.slice(0, 1000);
@@ -1148,7 +1160,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
-		'conversation.compact': async (params) => {
+		'conversation.compact': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as CompactionOpts;
 			return compactConversations(db, async (text) => embedQuery(text), opts);
 		},
@@ -1299,7 +1313,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
-		'config.search': async (params) => {
+		'config.search': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as ConfigSearchOpts;
 			const queryVec = await embedQuery(opts.query);
 			const results = await searchConfig(configStore, queryVec, opts);
@@ -1313,7 +1329,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return configStore.listEntries({ namespace, category, scope });
 		},
 
-		'config.resolveTemplate': async (params) => {
+		'config.resolveTemplate': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as TemplateQuery;
 			const queryVec = await embedQuery(opts.name);
 			return resolveTemplate(configStore, queryVec, opts);

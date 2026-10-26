@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -521,11 +522,12 @@ export class CliProvider implements LLMProvider {
 
 	// -- embed ----------------------------------------------------------
 
-	async embed(text: string): Promise<number[]> {
+	async embed(text: string, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): Promise<number[]> {
+		assertNoSessionEmbedding(execution);
 		if (this.embedDelegate === undefined) {
 			throw new Error('cli-provider: embed() requires an embedDelegate (typically an Ollama provider); none was supplied at construction');
 		}
-		return this.embedDelegate.embed(text);
+		return this.embedDelegate.embed(text, execution);
 	}
 
 

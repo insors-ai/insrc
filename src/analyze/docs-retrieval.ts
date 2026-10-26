@@ -1,3 +1,6 @@
+import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -28,7 +31,7 @@
  *
  * Returns `DocSectionResult[]` sorted by score desc. Empty when
  * the vector query returns nothing AND no keywords match; never
- * throws (Ollama-down / Lance-empty fallbacks silently).
+ * throws for Saved Ollama-down / Lance-empty fallbacks. Session retrieval refuses explicitly before either pass.
  */
 
 import type { DbClient } from '../db/client.js';
@@ -101,6 +104,7 @@ export function inDocsArea(area: DocsArea, file: string): boolean {
 }
 
 export interface DocsRetrievalArgs {
+	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly db:             DbClient;
 	/** Keep to this part of the closure. The candidates are narrowed to it
 	 *  before either pass, so ranking and the result limit apply within it. */
@@ -164,6 +168,7 @@ const PATH_HINT_MULTIPLIER = 1.15;
 export async function retrieveDocSections(
 	args: DocsRetrievalArgs,
 ): Promise<DocSectionResult[]> {
+	assertNoSessionEmbedding(args.connectionExecution);
 	if (args.query.trim().length === 0) return [];
 	if (args.closureRepos.length === 0) return [];
 
@@ -199,8 +204,9 @@ export async function retrieveDocSections(
 	const vectorScores = new Map<string, number>();
 	let queryVec: number[];
 	try {
-		queryVec = await vectorPass.embedQuery(args.query);
+		queryVec = await vectorPass.embedQuery(args.query, args.connectionExecution);
 	} catch (err) {
+		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
 		log.debug(
 			{ err: (err as Error).message },
 			'retrieveDocSections: query embed failed; vector pass skipped',
@@ -240,6 +246,7 @@ export async function retrieveDocSections(
 				if (sim > prev) vectorScores.set(h.id, sim);
 			}
 		} catch (err) {
+			const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
 			log.debug(
 				{ err: (err as Error).message },
 				'retrieveDocSections: vector ANN failed; falling back to keyword only',
@@ -355,6 +362,7 @@ export async function retrieveDocSectionsInRepo(
 	query: string,
 	opts:  Omit<DocsRetrievalArgs, 'db' | 'closureRepos' | 'query'> = {},
 ): Promise<DocSectionResult[]> {
+	assertNoSessionEmbedding(opts.connectionExecution);
 	return retrieveDocSections({
 		db:           null as unknown as DbClient,
 		query,
@@ -372,7 +380,9 @@ export async function retrieveDocSectionsInRepo(
 export async function hydrateDocSection(
 	db:       DbClient,
 	entityId: string,
+	execution?: ConnectionExecutionContext,
 ): Promise<Entity | null> {
+	assertNoSessionEmbedding(execution);
 	return getEntity(db, entityId);
 }
 

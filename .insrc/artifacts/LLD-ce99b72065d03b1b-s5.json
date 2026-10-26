@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers S005's acceptance criteria and the additional TUI migrations assigned by the HLD.",
-          "evidence": "DEF S005 requires definitions-driven choices, unknown-model approval, and repo role-to-tier editing without repo tier-model fields. HLD §6.5 additionally assigns review resolution, Setup recommendations, restartRequired, and temporary-export removal. LLD §§2–3 and §6 address each responsibility. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "None.",
+          "premise": "The selected scope covers the upstream s5 responsibilities without implementing the other clients or daemon-owned model checking.",
+          "evidence": "DEF §6.5 requires definitions-driven choices, unknown-model approval, and restricted repo settings. HLD assigns review resolution, Setup, command-bar result handling, and stopgap removal to s5. The design addresses these responsibilities and retains s4 ownership of checks and decisions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
+          "action": "Retain these scope boundaries.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -47,10 +47,22 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Every TUI save of an unknown tier model goes through checking and approval.",
+          "evidence": "The design says 'Every change writes the whole tier object' and offers an effort cycle containing '' for an already-configured unserved model. Starting with an unlisted model and effort 'high', pressing e therefore saves that unknown model with effort '' without checking it. applyConfigWrite checks rejection only when runner/model changes: 'const hit = changed ? rejectedIn(registry, after) : undefined'; otherwise it returns ok:true. Unlisted models are also accepted on model changes. Runtime fallback prevents execution of the unknown model, but does not enforce the design's save invariant or ac2. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/daemon/config-write.ts, src/daemon/model-registry.ts, src/config/analyze.ts]",
+          "action": "Guard every tier commit against the definitions. For an unserved current model, route an effort edit through checking/approval or disable that edit until a served model is selected. Add a regression starting with an unknown model already in config.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "coverage-of-intent.3",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The linked UX companion renders consistently with the proposed screens and transitions.",
-          "evidence": "Read the generated HTML, element descriptions, styles, and pan/zoom initialization. Its source depicts tier choices, check evidence, approval followed by restart-and-save, failure messages, and restricted repo editing. Browser inventory was empty; attempting native Chrome access returned 'Computer Use was not approved to use Google Chrome'. Layout, clipping, and script execution were not visually verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
-          "action": "Render and inspect the existing companion; correct or regenerate it if the rendered states disagree with the design.",
+          "premise": "The linked UX companion renders consistently with the proposed screens.",
+          "evidence": "Read ux-mock.html, including its generated screen content, element descriptions, styles, and pan/zoom script. Its source includes tier selection, check evidence, approval/restart outcomes, and repo settings. Attempted to open it for visual inspection, but the browser tool reported 'Browser is not available: iab' and browser inventory was empty. Actual layout, clipping, and rendered readability could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
+          "action": "Render and inspect the existing companion before approval; have the author regenerate it if rendering exposes inconsistencies.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -60,21 +72,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The current tier pane uses the shipped registry, static effort choices, and separate tier-field writes.",
-          "evidence": "computeEffectiveTiers calls 'resolveTier(tiering, t, shippedModelRegistry())'; EFFORT_CYCLE is \"['', ...TIER_EFFORTS]\". ModelTiersPane constructs runner/model/effort field paths and saves the selected field. Runner validation explicitly names the three current families. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/shipped-model-registry.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The described review, Setup, command-bar, and repo-view migration baselines match the implementation.",
-          "evidence": "reviewArtifact constructs a shipped registry and router, then calls loadAnalyzeConfig(registry). Setup's recommender selects DEFAULT_LOCAL_MODEL. runConfig awaits config.write and unconditionally returns 'set' or 'unset'. ReposPane has add, remove, steering, and tracker modals, with no model-settings view. [files: src/cli/services/workflow.ts, src/shared/model-recommender.ts, src/cli/command.ts, src/cli/panes/ReposPane.tsx]",
-          "action": "None.",
+          "premise": "The described current TUI model selection, Setup recommendation, command-bar reporting, and disconnected RPC behavior match the implementation.",
+          "evidence": "computeEffectiveTiers uses DEFAULT_TIERS and shippedModelRegistry; ModelTiersPane writes individual fields and validates literal runners. reviewArtifact constructs a local router. recommendModels selects DEFAULT_LOCAL_MODEL. runConfig awaits config.write and unconditionally prints success. rpc handles connect/data/error but has no end/close handler. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/services/workflow.ts, src/shared/model-recommender.ts, src/cli/command.ts, src/shared/ipc-client.ts]",
+          "action": "Retain this migration baseline.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,21 +84,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The daemon APIs proposed for reuse already provide the necessary definitions, checking, decisions, and write results.",
-          "evidence": "ModelDefinitionsResult exposes defaultFamily and family models, aliases, efforts, defaults, CLI kind, toolLoopModel, and optional installed state. checkModel accepts family/modelId/claimedEfforts and returns evidence or invalid parameters. approveCheck/rejectCheck return DecisionResult. ConfigWriteResult already includes restartRequired and refusal details. [files: src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/daemon/config-write.ts, src/daemon/handler-runtime.ts]",
-          "action": "Reuse these existing contract types in the service wrappers.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The review command can construct its provider directly from the daemon's role-resolution answer.",
-          "evidence": "resolveRoleWire supplies family, model, effort, inputLimit, and either cli.kind or ollama host/numCtx. CliProviderOpts accepts kind/model/effort/inputBudgetChars, and its constructor uses those values directly. OllamaProvider(model, host, numCtx) gives explicit arguments precedence over local defaults. [files: src/daemon/model-definitions.ts, src/agent/providers/cli-provider.ts, src/agent/providers/ollama.ts, src/analyze/context/role-router.ts]",
-          "action": "Use the wire type ResolvedRole, optionally aliased to the sketch's RoleResolution; the router's existing RoleResolution is a different shape.",
+          "premise": "The proposed Services.models facade can reuse existing daemon methods and existing role-map helpers.",
+          "evidence": "handler-runtime registers all five models methods and method-class classifies them. projectDefinitions supplies aliases, efforts, defaults, source, rejected IDs, and optional installed state. checkModel/approveCheck/rejectCheck expose the proposed inputs and decision results. nextRoleTiers already clones the map and deletes a cleared role while preserving other flat keys. [files: src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/cli/panes/model-tiers.ts, src/cli/services/index.ts]",
+          "action": "Reuse these implementations and their exported wire types.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -107,12 +95,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The identified migration sites account for the existing production consumers and review-test dependencies.",
-          "evidence": "Source searches and body reads locate recommendModels callers in setup.ts and handler-runtime.ts, with SetupPane and runSetup calling the setup facade. The shipped registry's production consumers are model-tiers.ts and workflow.ts. The two retained review tests call reviewArtifact without a role-resolution daemon; the design explicitly supplies their seam and removes the separate stopgap test. [files: src/cli/services/index.ts, src/cli/services/config.ts, src/cli/services/setup.ts, src/cli/services/workflow.ts, src/cli/command.ts, src/daemon/handler-runtime.ts, src/cli/services/__tests__/review-source-roots-daemon.test.ts, src/workflow/review/__tests__/same-party-refusal.test.ts, src/cli/__tests__/tui-shipped-registry.test.ts]",
-          "action": "Update both the Services declaration and concrete config/setup wrappers as described, retaining the source-root reader passed into reviewArtifactFile.",
+          "severity": "HIGH",
+          "premise": "The proposed ReposPane signature is compatible with its existing caller and selected-repository contract.",
+          "evidence": "§2.6 specifies 'ReposPane(): ReactElement'. The real function requires daemon, nonce, selectedRepo, and onSelectRepo props. Its body reads 'props.daemon.status?.repos' and calls 'props.onSelectRepo(current.path)'. app.tsx supplies all four props. Implementing the stated zero-argument contract breaks the JSX caller and removes the existing repository-selection inputs; no caller migration is designed. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/panes/ReposPane.tsx, src/cli/app.tsx]",
+          "action": "Preserve and document the existing props signature when adding the models view. If intentionally replacing it, specify the replacement selection/state contract and update app.tsx and its tests.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "data-compatibility.1",
@@ -120,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Whole-tier writes and literal-segment repo writes preserve the existing stored shapes and ownership relationships.",
-          "evidence": "parseTiering reads global tiers and flat tasks maps; repo entries retain tasks/coreFloor only. setConfigAtPath uses array segments verbatim and assigns the complete leaf value. Thus the proposed paths preserve dotted repo names and role IDs. Null coreFloor is ignored by parsing, allowing global inheritance. The design documents global tier ownership and sparse per-repo role assignments without introducing a new stored entity relationship requiring an ERD. [files: src/config/analyze.ts, src/config/write-path.ts, src/daemon/config-write.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "None.",
+          "premise": "Whole-tier writes and segmented repo-task writes preserve the existing stored shapes without a new migration.",
+          "evidence": "parseTiering reads global tiers as runner/model/effort objects and repo entries as tasks/coreFloor. toConfigSegments uses array elements verbatim, so dotted repo paths remain single keys. nextRoleTiers preserves dotted role IDs. Existing reconcile code deletes each repo's tiers subtree while retaining its other settings. [files: src/config/analyze.ts, src/config/write-path.ts, src/config/reconcile.ts, src/cli/panes/model-tiers.ts, src/config/__tests__/write-path.test.ts]",
+          "action": "Retain the array-path and whole-map writes, including sibling-preservation tests.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +120,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed changes consume the shared contracts and remain within S005's assigned scope.",
-          "evidence": "HLD §6.5 assigns the TUI facade/panes, review-provider construction, Setup migration, restart display, and stopgap removal to S005. The LLD leaves catalog validation, registry caching, check execution/store persistence, and daemon-side write enforcement with their existing owners. The existing direct Setup.apply file write remains explicitly excluded. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/services/setup.ts]",
-          "action": "Keep the open daemon-enforcement question with sc5's owner.",
+          "premise": "The design consumes sc3–sc5 and adequately describes the existing repo/role/tier relationships without redesigning their ownership.",
+          "evidence": "HLD assigns definitions projection to s2, settings/role resolution to s3, and checking/persistence to s4. The design leaves those implementations intact. Its paths and prose specify that each repo has a sparse role-to-tier map plus an optional floor, while tiers own global model settings. These agree with RepoTiering and role-router's repo assignment → global assignment → taxonomy precedence. No new persistent relationship requires a separate ERD. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/config/analyze.ts, src/analyze/context/role-router.ts]",
+          "action": "Keep daemon-side refusal changes with the sc5 owner as stated.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +132,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The check screen's refusal handling and approval-before-restart ordering match daemon behavior.",
-          "evidence": "approveCheck refuses runs:false and unclaimed/rejected efforts. decide writes the store before deleting the pending check and returning restartRequired:true. The registry remains cached, while applyConfigWrite can refuse a previously rejected model. The proposed successful-approval state, restart retry without reapproval, and subsequent save refusal handling respect these contracts. [files: src/daemon/model-check.ts, src/daemon/model-registry.ts, src/daemon/config-write.ts, src/config/analyze.ts]",
-          "action": "Honor restartRequired on the post-approval tier save too; saving after the first restart can require another restart to apply that tier.",
+          "premise": "Waiting for approval, then restarting before saving, matches the daemon's decision durability and registry caching.",
+          "evidence": "decide writes the profile before deleting the pending check and returning restartRequired:true. getModelRegistry caches the store-derived registry per thread. approveCheck refuses a check whose model did not run and rejects unclaimed/rejected efforts. The proposed restart-then-save flow and refusal handling match these behaviors. [files: src/daemon/model-check.ts, src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Retain the separate approval, restart, and save states.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,9 +144,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "HIGH",
-          "premise": "Reusing rpc unchanged makes a daemon disconnect during an outstanding model request detectable by the proposed rejection handlers.",
-          "evidence": "rpc registers only 'connect', 'data', and 'error' listeners; it has no 'end'/'close' rejection or request deadline. Executing the actual function with its injected socket seam and emitting end followed by close without a response left the promise pending. A disconnect during models.check can therefore strand the new checking screen indefinitely instead of reaching the stated daemon-down recovery. [files: src/shared/ipc-client.ts, src/cli/client.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Specify premature-disconnect handling at the shared RPC boundary or a bounded service wrapper, and define the screen's recovery. Add a socket-seam test proving end/close before a reply rejects; distinguish an interrupted decision with unknown persistence outcome from an explicit refusal.",
+          "premise": "The proposed disconnect handling covers transport failures while a decision's outcome is uncertain.",
+          "evidence": "The design retains existing error rejection and adds named end/close rejection, while the decision screen recognizes 'the disconnect error'. rpc currently handles non-connect socket errors with 'reject(err)'. If ECONNRESET arrives before close, that raw error settles the promise first; a later close cannot replace it with the named disconnect error. The specified outcome-unknown recovery therefore misses this transport-failure path after a decision may already have been persisted. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/shared/ipc-client.ts, src/shared/__tests__/ipc-client.test.ts, src/daemon/model-check.ts]",
+          "action": "Define a transport-failure classification covering errors after request dispatch, including ECONNRESET/EPIPE, and route uncertain approve/reject outcomes to reload without resubmission. Test error-before-close ordering.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -168,21 +156,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every S005 acceptance criterion maps to an appropriate proposed test using the repository's actual test mechanisms.",
-          "evidence": "ac1 maps to fake-definition overlays, keystroke choices, whole-tier writes, and source scans; ac2 maps to check evidence, approval/restart/save ordering, rejection, and runs:false; ac3 maps to literal-segment repo tasks/coreFloor writes and command guards. Existing tests use node:test, assert/strict, ink-testing-library, and injected Services. The design also accounts for tsconfig excluding test files by proposing a separate test type-check. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts, src/daemon/__tests__/model-literal-scan.test.ts, tsconfig.json]",
-          "action": "Add the premature-disconnect regression identified under error-paths. This assesses the proposed test coverage; the unimplemented tests have not been reported as passing.",
+          "premise": "Each upstream s5 acceptance criterion has a concrete proposed test mapping using existing repository test facilities.",
+          "evidence": "The mapping assigns ac1 to fake-definition choices, atomic writes, and source scans; ac2 to check/evidence/approval/restart flows; and ac3 to restricted repo writes and command guards. Existing tui.test.ts injects Services into App and drives stdin through ink-testing-library; command.test.ts records service writes; ipc-client.test.ts supplies an EventEmitter socket seam. These support the proposed tests. This verifies test design, not execution of future tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts, src/shared/__tests__/ipc-client.test.ts]",
+          "action": "Retain the mapping and add the unknown-current-model and error-before-close regressions identified above.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 1,
+        "high": 3,
         "med": 0,
-        "low": 11,
+        "low": 8,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-26T11:30:20.686Z",
+      "reviewedAt": "2026-10-26T11:47:47.162Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -365,7 +353,7 @@
         },
         {
           "name": "rpc",
-          "signature": "rpc<T = unknown>(method: string, params?: unknown, connect?: () => Socket): Promise<T>  // src/shared/ipc-client.ts (signature unchanged)",
+          "signature": "rpc<T = unknown>(method: string, params?: unknown, connect?: () => Socket): Promise<T>  // src/shared/ipc-client.ts (signature unchanged); export class DaemonDisconnectedError extends Error { readonly code = 'disconnected'; readonly method: string }",
           "parameters": [
             {
               "name": "connect",
@@ -376,12 +364,16 @@
           ],
           "returns": {
             "type": "Promise<T>",
-            "meaning": "As today, plus: the promise settles exactly once, and a socket that ends or closes before a reply line arrives rejects with Error('the daemon closed the connection before answering <method>') instead of staying pending."
+            "meaning": "As today, plus: the promise settles exactly once. Before the request is written, ENOENT / ECONNREFUSED still reject with 'daemon is not running — …' and other connect errors as before. Once the request has been written, any socket error (ECONNRESET, EPIPE, …) or an 'end' / 'close' with no reply yet rejects with DaemonDisconnectedError (name 'DaemonDisconnectedError', code 'disconnected', message 'the daemon closed the connection before answering <method>', cause = the socket error if any): the request may or may not have been carried out."
           },
           "errors": [
             {
-              "type": "Error('the daemon closed the connection before answering <method>')",
-              "condition": "'close' (or 'end') fires before any reply was parsed — the daemon exited, restarted or dropped the connection mid-request."
+              "type": "DaemonDisconnectedError",
+              "condition": "After the request was written: a socket error (e.g. ECONNRESET, EPIPE) or end / close before any reply was parsed, in whichever order they arrive."
+            },
+            {
+              "type": "Error('daemon is not running — start it with: insrc daemon start')",
+              "condition": "ENOENT / ECONNREFUSED before the request was written (unchanged)."
             }
           ],
           "preconditions": [],
@@ -425,7 +417,7 @@
           "parameters": [],
           "returns": {
             "type": "ReactElement",
-            "meaning": "Loads config.show and models.definitions together. Family cycles over defs.families; model cycles over the chosen family's models (id, with aliases shown); effort cycles over '' and the chosen model's efforts. Every change writes the whole tier object { runner, model, effort } with one svc.config.write('models.tiers.<tier>', …); changing family picks, from the definitions, that family's tierDefaults[tier] model and effort when it has tierDefaults, else its toolLoopModel with effort '' (the Ollama family), else its first model with effort '', changing model drops an effort the new model does not accept. 'n' takes a typed model id: an id the family serves is saved like a pick; an unserved id of a CLI family opens the check screen (an Ollama family refuses: only listed Ollama models are selectable)."
+            "meaning": "Loads config.show and models.definitions together. Family cycles over defs.families; model cycles over the chosen family's models (id, with aliases shown); effort cycles over '' and the chosen model's efforts. Every change writes the whole tier object { runner, model, effort } with one svc.config.write('models.tiers.<tier>', …); changing family picks, from the definitions, that family's tierDefaults[tier] model and effort when it has tierDefaults, else its toolLoopModel with effort '' (the Ollama family), else its first model with effort '', changing model drops an effort the new model does not accept. 'n' takes a typed model id: an id the family serves is saved like a pick; an unserved id of a CLI family opens the check screen (an Ollama family refuses: only listed Ollama models are selectable). Commit guard: the pane never writes a tier whose model its family does not serve. A tier currently set to an unserved model offers no effort edit (e is disabled with 'pick a listed model or check this one with n'); f, m and n replace the model, and an unserved model reaches config only through the check screen's approve → restart → save."
           },
           "errors": [
             {
@@ -442,7 +434,8 @@
           ],
           "postconditions": [
             "After a save with restartRequired the pane shows 'restart the daemon to apply' with R, which calls svc.daemon.restart and reloads.",
-            "The pane renders no runner, model or effort literal of its own."
+            "The pane renders no runner, model or effort literal of its own.",
+            "Every tier object the pane writes names a model the definitions serve for that family, except the save that follows an approved check and a successful restart."
           ]
         },
         {
@@ -479,11 +472,11 @@
             },
             {
               "type": "screen text 'the check was interrupted: the daemon closed the connection — check again'",
-              "condition": "models.check rejects with the disconnect error; nothing was decided, so 'check again' re-runs it once the daemon answers."
+              "condition": "models.check rejects with DaemonDisconnectedError; nothing was decided, so 'check again' re-runs it once the daemon answers."
             },
             {
               "type": "screen text 'outcome unknown: the daemon disconnected before answering — reload to see whether the decision was recorded'",
-              "condition": "models.approve / models.reject rejects with the disconnect error; the decision may or may not have been written. Reload calls models.definitions after a restart and shows whether the model is listed user-approved or among the rejected ids; the approval is not re-sent blindly."
+              "condition": "models.approve / models.reject rejects with DaemonDisconnectedError (any transport failure after the request was sent); the decision may or may not have been written. Reload calls models.definitions after a restart and shows whether the model is listed user-approved or among the rejected ids; the decision is not re-sent blindly."
             }
           ],
           "preconditions": [
@@ -495,7 +488,7 @@
         },
         {
           "name": "ReposPane",
-          "signature": "ReposPane(): ReactElement  // src/cli/panes/ReposPane.tsx — 'm' on a selected repo opens its models view",
+          "signature": "ReposPane(props: { daemon: DaemonState; nonce: number; selectedRepo: string; onSelectRepo: (path: string) => void }): ReactElement  // src/cli/panes/ReposPane.tsx — props unchanged; 'm' opens the models view of props.selectedRepo",
           "parameters": [],
           "returns": {
             "type": "ReactElement",
@@ -508,7 +501,7 @@
             }
           ],
           "preconditions": [
-            "A registered repo is selected."
+            "props.selectedRepo names a registered repo (as today, chosen through onSelectRepo); src/cli/app.tsx keeps passing the same four props."
           ],
           "postconditions": [
             "No write from this view targets models.byRepo.<repo>.tiers (k6, ac3)."
@@ -707,7 +700,7 @@
       {
         "entity": "Shared IPC client settlement",
         "change": "invariant-change",
-        "details": "rpc settles once: a reply resolves or rejects as today; a socket 'end' / 'close' with no reply yet rejects with a named disconnect error. Previously such a request stayed pending forever (only connect, data and error were handled).",
+        "details": "rpc settles once. A reply resolves or rejects as today; before the request is written, connect failures behave as today; after it is written, any socket error or an end / close without a reply rejects with DaemonDisconnectedError, whichever arrives first. Previously an end / close left the request pending forever and a mid-request ECONNRESET surfaced as a raw error indistinguishable from a refusal.",
         "callSites": [
           "src/shared/ipc-client.ts",
           "src/cli/client.ts"
@@ -805,8 +798,8 @@
         },
         {
           "scenario": "The daemon drops the connection while a request is outstanding (it exits, is restarted, or crashes mid-check).",
-          "detection": "The shared rpc client's socket emits 'end' / 'close' before a reply line was parsed.",
-          "response": "rpc rejects with 'the daemon closed the connection before answering <method>'. The check screen shows 'interrupted — check again' for models.check and 'outcome unknown — reload' for models.approve / models.reject; other panes show their daemon-down message.",
+          "detection": "After the request was written, the shared rpc client's socket emits an error (ECONNRESET, EPIPE, …) or end / close before a reply line was parsed.",
+          "response": "rpc rejects with DaemonDisconnectedError. The check screen shows 'interrupted — check again' for models.check and 'outcome unknown — reload' for models.approve / models.reject; other panes show their daemon-down message.",
           "userImpact": "No screen hangs on a lost connection, and a possibly-recorded decision is never reported as failed or re-sent blindly.",
           "recoverable": true
         }
@@ -863,6 +856,10 @@
         {
           "input": "config.json has models.tiers.core.model '' with models.tiers.core.effort 'high' (parseTiering drops the tier but keeps the effort).",
           "expected": "The pane shows the default family's core tierDefault model with effort 'high', matching the daemon; with effort '' it shows '' (CLI default), not the tierDefault's effort."
+        },
+        {
+          "input": "config.json already sets a tier to an unlisted model with effort 'high'.",
+          "expected": "The pane shows it as not served and offers no effort edit; pressing e changes nothing and writes nothing; f / m / n replace the model."
         }
       ],
       "invariantsToPreserve": [
@@ -901,7 +898,7 @@
             "src/shared/__tests__/model-recommender.test.ts: recommendModels(info, { model: 'fake-local:1', installed: false }) recommends that model with pull true; installed absent falls back to info.ollama.models; the module names no definitions model",
             "src/cli/services/__tests__/review-resolve-role.test.ts: reviewArtifact with a fake resolveRole — a cli answer builds CliProvider with that kind, model, effort and a chars input budget; an ollama answer builds OllamaProvider whose model, host and numCtx are the answer's even when HOME holds a config.json naming another core model and host; the model label is '<family>:<model>'; a rejecting or { error } resolveRole throws 'cannot review: …' and reviewFile is never called; the review path imports no createRoleRouter / loadAnalyzeConfig / registry; src/cli/services/__tests__/review-source-roots-daemon.test.ts and src/workflow/review/__tests__/same-party-refusal.test.ts pass the resolveRole seam and keep their source-root and same-party assertions",
             "src/__tests__/no-default-tiers.test.ts: no file under src (tests included) imports or exports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts does not exist",
-            "src/shared/__tests__/ipc-client.test.ts: through the connect seam, a fake socket that emits end then close with no reply rejects with the disconnect error naming the method; close after a reply line does not change the resolved value; an error reply still rejects with the daemon's message"
+            "src/shared/__tests__/ipc-client.test.ts: through the connect seam — end then close with no reply rejects with DaemonDisconnectedError naming the method; ECONNRESET after the write and then close rejects with DaemonDisconnectedError (cause ECONNRESET), not the raw error; ECONNREFUSED before connect still rejects 'daemon is not running'; close after a reply line does not change the resolved value; an error reply still rejects with the daemon's message"
           ],
           "fixturesNeeded": [
             "A fake ModelDefinitionsResult whose families, models and efforts differ from the shipped file (so a match can only come from the answer)",
@@ -912,9 +909,9 @@
           "level": "integration",
           "purpose": "The panes rendered as the user sees them, driven by keystrokes against fake services.",
           "subjects": [
-            "src/cli/__tests__/tui-models.test.ts: Model Tiers pane — with a fake definitions answer, pressing f / m / e cycles exactly the fake families, models and efforts, and each change makes one config.write('models.tiers.<tier>', { runner, model, effort }); a restartRequired result shows the restart line and R calls daemon.restart; an ok:false result shows the reason and the pane reloads",
+            "src/cli/__tests__/tui-models.test.ts: Model Tiers pane — with a fake definitions answer, pressing f / m / e cycles exactly the fake families, models and efforts, and each change makes one config.write('models.tiers.<tier>', { runner, model, effort }); a restartRequired result shows the restart line and R calls daemon.restart; an ok:false result shows the reason and the pane reloads; starting from a config whose tier names an unlisted model with effort 'high', pressing e writes nothing and shows the 'pick a listed model or check it' hint",
             "src/cli/__tests__/tui-models.test.ts: unknown model — typing an unserved id with n calls models.check with the family's effort names and renders each effort's verdict and evidence; approve calls models.approve with the toggled levels and saves nothing; the screen then shows 'restart the daemon to use it' and R calls daemon.restart and only then config.write('models.tiers.<tier>', { runner, model, effort }); a fake config.write refusing with rejected-model before the restart is never reached; a failing restart shows 'approval recorded; restart failed' with no save and no second approve; a refused save after the restart shows its reason; reject calls models.reject and saves nothing; a runs:false result offers no approve",
-            "src/cli/__tests__/tui-models.test.ts: repo models view — m on a repo shows roles with the repo's tier or 'global' and coreFloor; editing a role writes the whole map at ['models','byRepo',<repo>,'tasks'] with dotted role ids as flat keys; editing coreFloor writes ['models','byRepo',<repo>,'coreFloor']; the view renders no runner, model or effort field and makes no write under tiers",
+            "src/cli/__tests__/tui-models.test.ts: repo models view — m on a repo shows roles with the repo's tier or 'global' and coreFloor; editing a role writes the whole map at ['models','byRepo',<repo>,'tasks'] with dotted role ids as flat keys; editing coreFloor writes ['models','byRepo',<repo>,'coreFloor']; the view renders no runner, model or effort field and makes no write under tiers; ReposPane keeps its four props and opens the models view of props.selectedRepo, rendered through App as today",
             "src/cli/__tests__/tui-models.test.ts: daemon down — rejecting models.definitions shows the not-running message in the Model Tiers pane and Setup, with no model list and apply / pull disabled; Setup with a fake answer recommends its ollama toolLoopModel",
             "src/daemon/__tests__/model-literal-scan.test.ts: the src/cli and model-recommender exclusions are gone and the scan passes over src/cli and src/shared/model-recommender.ts; no source file exports or imports DEFAULT_TIERS or TIER_EFFORTS, and src/cli/shipped-model-registry.ts no longer exists",
             "src/daemon/__tests__/system-recommend.test.ts: the daemon's system.recommend over a fixture definitions file recommends that file's tool-loop model",
@@ -948,7 +945,8 @@
           "provingTests": [
             "model-tiers.test.ts: an unserved id of a CLI family asks for a check; an Ollama id is refused",
             "tui-models.test.ts: unknown model — check, verdict table, approve then restart then save (and the restart-failure / refused-save paths), reject saves nothing, runs:false offers no approve",
-            "ipc-client.test.ts: a connection closed before a reply rejects instead of hanging; tui-models.test.ts: interrupted check / outcome-unknown approval"
+            "ipc-client.test.ts: a connection closed before a reply rejects instead of hanging; tui-models.test.ts: interrupted check / outcome-unknown approval",
+            "tui-models.test.ts: an unlisted model already in config cannot be re-saved by an effort edit"
           ]
         },
         {
@@ -966,7 +964,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Make the shared rpc client reject when its socket ends or closes before a reply (settle once), with a socket-seam test.",
+          "action": "Make the shared rpc client settle once and reject with DaemonDisconnectedError on any socket error, end or close after the request was written and before a reply, keeping the pre-connect daemon-not-running message; socket-seam tests for each ordering.",
           "rollbackable": true
         },
         {

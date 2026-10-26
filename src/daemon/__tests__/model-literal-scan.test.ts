@@ -62,7 +62,28 @@ function modelNames(): Set<string> {
 	return names;
 }
 
-const stripComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
+/** The source with its comments removed, scanned lexically so a comment marker
+ *  inside a string literal ('/*', '//') neither starts a comment nor hides code. */
+function stripComments(src: string): string {
+	let out = '';
+	let i = 0;
+	while (i < src.length) {
+		const c = src[i]!;
+		const next = src[i + 1];
+		if (c === '/' && next === '*') { const end = src.indexOf('*/', i + 2); i = end < 0 ? src.length : end + 2; continue; }
+		if (c === '/' && next === '/') { const end = src.indexOf('\n', i); i = end < 0 ? src.length : end; continue; }
+		if (c === "'" || c === '"' || c === '`') {
+			let j = i + 1;
+			while (j < src.length && src[j] !== c) j += src[j] === '\\' ? 2 : 1;
+			out += src.slice(i, j + 1);
+			i = j + 1;
+			continue;
+		}
+		out += c;
+		i++;
+	}
+	return out;
+}
 const blankStrings = (code: string): string => code.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''");
 const quoted = (name: string): RegExp => new RegExp(`['"\`]${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`]`);
 const excluded = (list: readonly Exclusion[], file: string): boolean => list.some(e => file === e.file || (e.file.endsWith('/') && file.startsWith(e.file)));
@@ -126,6 +147,12 @@ test('model-literal-scan.test.ts: the scan passes on the tree and fails on an in
 	}
 	// A comment naming them is not code.
 	assert.deepEqual(scan(files, inject("// 'claude-opus-5-5' 'cli-codex' 'ollama' cfg.shaper.ollamaNumCtx")), []);
+	assert.deepEqual(scan(files, inject("/* const m = 'opus'; */")), []);
+	// Comment markers inside strings do not hide a literal between them.
+	const hidden = scan(files, inject("const a = '/*'; const m = 'opus'; const b = '*/';"));
+	assert.equal(hidden.length, 1, hidden.join('; '));
+	assert.match(hidden[0]!, /model-name literal 'opus'/);
+	assert.match(scan(files, inject("const u = 'http://x'; const m = 'opus';"))[0] ?? '', /model-name literal 'opus'/);
 
 	// Every exclusion names its owner and reason, and points at a file that exists.
 	for (const e of [...EXCLUDED_TREES, ...MODEL_NAME_EXCLUSIONS, ...FAMILY_ID_OWNERS, ...OLLAMA_NON_RUNNER]) {

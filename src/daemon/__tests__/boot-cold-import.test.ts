@@ -92,10 +92,12 @@ async function runDaemon(home: string, dir: string): Promise<{ code: number | nu
 	});
 	let stderr = '';
 	child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
-	const exited = new Promise<number | null>(resolve => child.once('exit', code => resolve(code)));
+	// 'close' fires after the process exited AND its stderr was drained, so no diagnostic is missed.
+	let closed = false;
+	const exited = new Promise<number | null>(resolve => child.once('close', code => { closed = true; resolve(code); }));
 	const deadline = Date.now() + 60_000;
 	for (;;) {
-		if (child.exitCode !== null) return { code: child.exitCode, listened: false, stderr };
+		if (closed || child.exitCode !== null) { const code = await exited; return { code, listened: false, stderr }; }
 		if (existsSync(sockOf(home))) {
 			try {
 				await rpc(sockOf(home), 'daemon.status');

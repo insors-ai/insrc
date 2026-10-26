@@ -20,15 +20,25 @@
  * Every CLI call goes through one module-level chain, so at most one CLI child
  * of any check runs daemon-wide. Nothing is written: the result waits in a
  * bounded in-memory table until models.approve / models.reject decide it.
+ *
+ * A decision appends an ApprovedProfile to the approved-model store (the only
+ * writer of PATHS.approvedModels): the whole document is written to
+ * `<store>.tmp` and renamed over the store, and the decision is acknowledged
+ * only after the rename. A store that is not a { version: 1, profiles[] }
+ * document is never overwritten. The registry reads the store per thread, so
+ * a decision applies at the next daemon restart.
  */
 
 import { randomUUID } from 'node:crypto';
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { dirname } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
+import { PATHS } from '../shared/paths.js';
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../shared/process-group.js';
 import type { CliFamilyId, EffortLevel, InputLimit } from './model-catalog.js';
-import { getModelRegistry, type ModelRegistry } from './model-registry.js';
+import { getModelRegistry, profileProblem, type ApprovedProfile, type ModelRegistry } from './model-registry.js';
 
 const log = getLogger('daemon:model-check');
 
@@ -70,6 +80,10 @@ export interface ModelCheckDeps {
 	/** Working directory of every call (default: the OS temp directory). */
 	readonly cwd?:       string | undefined;
 	readonly registry?:  ModelRegistry | undefined;
+	/** The approved-model store (default: PATHS.approvedModels). */
+	readonly storePath?: string | undefined;
+	/** Replaces the store with the written temp file (default: renameSync). */
+	readonly rename?:    ((from: string, to: string) => void) | undefined;
 }
 
 /** The fixed prompt a check's run sends on stdin. */
@@ -312,4 +326,93 @@ export async function checkModel(params: unknown, deps: ModelCheckDeps = {}): Pr
 	remember(result, outcome.cliVersion);
 	log.info({ checkId: result.checkId, family: cliFamily, modelId, runs: result.runs, efforts: result.efforts.map(e => `${e.effort}:${e.verdict}`), error: result.error }, 'model check: verdict');
 	return result;
+}
+
+// ── models.approve / models.reject ──────────────────────────────────────────
+
+/** Append `profile` to the store at `path`, atomically; the reason it failed, or undefined. */
+function appendProfile(path: string, profile: ApprovedProfile, rename: (from: string, to: string) => void): string | undefined {
+	let doc: Record<string, unknown> = { version: 1, profiles: [] };
+	let raw: string | undefined;
+	try {
+		raw = readFileSync(path, 'utf8');
+	} catch (err) {
+		const e = err as NodeJS.ErrnoException;
+		if (e.code !== 'ENOENT') return `the approved-model store could not be read: ${e.message}`;
+	}
+	if (raw !== undefined) {
+		const parsed = parseJson(raw);
+		if (!isRecord(parsed) || !Array.isArray(parsed['profiles'])) return 'the approved-model store is not a { version, profiles[] } document';
+		if (parsed['version'] !== 1) return `the approved-model store has unsupported version ${JSON.stringify(parsed['version'] ?? null)}`;
+		doc = parsed;
+	}
+	const problem = profileProblem(profile);
+	if (problem !== undefined) return `the decision is not a valid profile: ${problem}`;
+	const next = { ...doc, profiles: [...(doc['profiles'] as unknown[]), profile] };
+	const tmp = `${path}.tmp`;
+	try {
+		mkdirSync(dirname(path), { recursive: true });
+		writeFileSync(tmp, `${JSON.stringify(next, null, 2)}\n`);
+		rename(tmp, path);
+	} catch (err) {
+		try { rmSync(tmp, { force: true }); } catch { /* nothing to remove */ }
+		return `the approved-model store could not be written: ${(err as Error).message}`;
+	}
+	return undefined;
+}
+
+function pendingCheck(params: unknown): { readonly id: string; readonly check: PendingCheck } | DecisionResult {
+	const id = isRecord(params) ? params['checkId'] : undefined;
+	const check = typeof id === 'string' ? pending.get(id) : undefined;
+	if (typeof id !== 'string' || check === undefined) {
+		return { ok: false, reason: 'unknown-check', detail: `no pending check ${typeof id === 'string' ? id : '(missing checkId)'}; run models.check again` };
+	}
+	return { id, check };
+}
+
+function decide(id: string, check: PendingCheck, profile: ApprovedProfile, deps: ModelCheckDeps): DecisionResult {
+	const failed = appendProfile(deps.storePath ?? PATHS.approvedModels, profile, deps.rename ?? renameSync);
+	if (failed !== undefined) {
+		log.warn({ checkId: id, family: profile.family, modelId: profile.modelId, status: profile.status, reason: failed }, 'model check: decision not recorded');
+		return { ok: false, reason: 'write-failed', detail: failed };
+	}
+	pending.delete(id);
+	log.info({ checkId: id, family: profile.family, modelId: profile.modelId, status: profile.status, efforts: profile.efforts, cliVersion: check.cliVersion }, 'model check: decision recorded (applies after a daemon restart)');
+	return { ok: true, restartRequired: true };
+}
+
+/** models.approve: record the user's approval of a checked model with the levels they allow. */
+export async function approveCheck(params: unknown, deps: ModelCheckDeps = {}): Promise<DecisionResult> {
+	const found = pendingCheck(params);
+	if ('ok' in found) return found;
+	const { id, check } = found;
+	const { result } = check;
+	if (!result.runs) return { ok: false, reason: 'model-did-not-run', detail: result.error ?? `${result.modelId} did not run in its check` };
+	const requested = isRecord(params) ? params['efforts'] : undefined;
+	if (!Array.isArray(requested) || !requested.every(e => typeof e === 'string')) {
+		return { ok: false, reason: 'invalid-efforts', detail: 'efforts must be an array of effort names' };
+	}
+	const efforts = [...new Set(requested as string[])];
+	const refused = efforts.flatMap(effort => {
+		const verdict = result.efforts.find(e => e.effort === effort);
+		if (verdict === undefined) return [`${effort} was not claimed in check ${id}`];
+		return verdict.verdict === 'rejected' ? [`${effort} was rejected: ${verdict.evidence}`] : [];
+	});
+	if (refused.length > 0) return { ok: false, reason: 'invalid-efforts', detail: refused.join('; ') };
+	return decide(id, check, {
+		family: result.family, modelId: result.modelId, status: 'approved', efforts,
+		...(result.inputLimit !== undefined ? { inputLimit: result.inputLimit } : {}),
+		decidedAt: new Date().toISOString(), cliVersion: check.cliVersion,
+	}, deps);
+}
+
+/** models.reject: record that the user rejected a checked model. */
+export async function rejectCheck(params: unknown, deps: ModelCheckDeps = {}): Promise<DecisionResult> {
+	const found = pendingCheck(params);
+	if ('ok' in found) return found;
+	const { id, check } = found;
+	return decide(id, check, {
+		family: check.result.family, modelId: check.result.modelId, status: 'rejected', efforts: [],
+		decidedAt: new Date().toISOString(), cliVersion: check.cliVersion,
+	}, deps);
 }

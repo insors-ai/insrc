@@ -14,13 +14,13 @@
 
 import { test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { ModelDefinitionsFile } from '../model-catalog.js';
-import { buildModelRegistry, _setApprovedModelsPathForTests } from '../model-registry.js';
-import { checkModel, PROBE_PROMPT, _resetModelChecksForTests, type ModelCheckDeps, type ModelCheckResult } from '../model-check.js';
+import { _setModelCatalogDirForTests, type ModelDefinitionsFile } from '../model-catalog.js';
+import { buildModelRegistry, getModelRegistry, profileProblem, _resetModelRegistryForTests, _setApprovedModelsPathForTests, type ApprovedProfile } from '../model-registry.js';
+import { approveCheck, checkModel, rejectCheck, PROBE_PROMPT, _resetModelChecksForTests, type DecisionResult, type ModelCheckDeps, type ModelCheckResult } from '../model-check.js';
 
 const FIXTURE = {
 	version: 1,
@@ -105,14 +105,24 @@ before(() => {
 	cwd = mkdtempSync(join(tmpdir(), 'model-check-cwd-'));
 	storeFile = join(dir, 'approved-models.json');
 	_setApprovedModelsPathForTests(storeFile);
+	const catalogDir = join(dir, 'definitions');
+	mkdirSync(catalogDir);
+	writeFileSync(join(catalogDir, 'cloud-model-catalog.json'), JSON.stringify(FIXTURE));
+	_setModelCatalogDirForTests(catalogDir);
 });
 after(() => {
 	_setApprovedModelsPathForTests(undefined);
+	_setModelCatalogDirForTests(undefined);
+	_resetModelRegistryForTests();
 	delete process.env['FAKE_CLI_CONFIG'];
 	rmSync(dir, { recursive: true, force: true });
 	rmSync(cwd, { recursive: true, force: true });
 });
-afterEach(() => { _resetModelChecksForTests(); });
+afterEach(() => {
+	_resetModelChecksForTests();
+	rmSync(storeFile, { force: true });
+	rmSync(`${storeFile}.tmp`, { force: true });
+});
 
 let configN = 0;
 /** Point the fake at a fresh config; returns the call-log reader. */
@@ -124,7 +134,7 @@ function fake(cfg: Record<string, unknown>): () => Array<{ args: string[]; stdin
 	return () => (existsSync(logFile) ? readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)) : []);
 }
 
-const deps = (extra: Partial<ModelCheckDeps> = {}): ModelCheckDeps => ({ registry, bins: { codex: bin, claude: claudeBin }, cwd, timeoutMs: 20_000, ...extra });
+const deps = (extra: Partial<ModelCheckDeps> = {}): ModelCheckDeps => ({ registry, bins: { codex: bin, claude: claudeBin }, cwd, timeoutMs: 20_000, storePath: storeFile, ...extra });
 
 async function check(modelId: string, claimedEfforts: unknown, extra: Partial<ModelCheckDeps> = {}, family = 'cli-codex'): Promise<ModelCheckResult> {
 	const r = await checkModel({ family, modelId, claimedEfforts }, deps(extra));
@@ -348,4 +358,182 @@ test('model-check.test.ts: unreadable `claude --help` with a successful run give
 		assert.equal(r.runs, true, JSON.stringify(cfg));
 		assert.deepEqual(r.efforts.map(e => [e.verdict, e.evidence]), [['rejected', "the CLI's --effort values could not be read"], ['rejected', "the CLI's --effort values could not be read"]]);
 	}
+});
+
+// ── decisions ───────────────────────────────────────────────────────────────
+
+const storeDoc = (): { version: number; profiles: ApprovedProfile[] } => JSON.parse(readFileSync(storeFile, 'utf8'));
+
+/** A run stub answering like the fake codex, without spawning. */
+const stubRun: NonNullable<ModelCheckDeps['run']> = async (_c, args) => ({
+	stdout: args[0] === '--version' ? 'codex-cli 9.9.9\n' : args[0] === 'debug' ? JSON.stringify(LIST) : OK_STREAM.lines.map(l => JSON.stringify(l)).join('\n'),
+	stderr: '', exitCode: 0, timedOut: false, durationMs: 0,
+});
+
+test('model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks', async () => {
+	fake({ exec: { 'gpt-gone': { exit: 1, lines: [{ type: 'turn.failed', error: { message: 'model_not_found' } }] } } });
+	assert.deepEqual(await approveCheck({ checkId: 'nope', efforts: [] }, deps()), { ok: false, reason: 'unknown-check', detail: 'no pending check nope; run models.check again' });
+	assert.equal((await rejectCheck({}, deps()) as { reason: string }).reason, 'unknown-check');
+
+	const r = await check('gpt-new', ['high', 'ultra']);
+	const refusedEfforts: Array<[unknown, RegExp]> = [
+		[['ultra'], /ultra was rejected: `codex debug models` lists gpt-new/],
+		[['medium'], /medium was not claimed in check/],
+		['high', /efforts must be an array/],
+		[[1], /efforts must be an array/],
+		[undefined, /efforts must be an array/],
+	];
+	for (const [efforts, detail] of refusedEfforts) {
+		const d = await approveCheck({ checkId: r.checkId, efforts }, deps());
+		assert.equal(d.ok, false);
+		assert.equal((d as { reason: string }).reason, 'invalid-efforts', JSON.stringify(efforts));
+		assert.match((d as { detail: string }).detail, detail);
+	}
+	assert.equal(existsSync(storeFile), false, 'refused decisions write nothing');
+
+	const gone = await check('gpt-gone', ['high']);
+	assert.deepEqual(await approveCheck({ checkId: gone.checkId, efforts: [] }, deps()), { ok: false, reason: 'model-did-not-run', detail: 'the codex CLI refused the model: model_not_found' });
+	assert.equal(existsSync(storeFile), false);
+
+	assert.deepEqual(await approveCheck({ checkId: r.checkId, efforts: ['high', 'high'] }, deps()), { ok: true, restartRequired: true });
+	const approved = storeDoc().profiles[0]!;
+	assert.deepEqual({ ...approved, decidedAt: '' }, { family: 'cli-codex', modelId: 'gpt-new', status: 'approved', efforts: ['high'], decidedAt: '', cliVersion: 'codex-cli 9.9.9' });
+	assert.ok(!Number.isNaN(Date.parse(approved.decidedAt)));
+	assert.equal((await approveCheck({ checkId: r.checkId, efforts: ['high'] }, deps()) as { reason: string }).reason, 'unknown-check', 'a decided check is consumed');
+
+	// A check whose model did not run can still be rejected.
+	assert.deepEqual(await rejectCheck({ checkId: gone.checkId }, deps()), { ok: true, restartRequired: true });
+	assert.deepEqual({ ...storeDoc().profiles[1]!, decidedAt: '' }, { family: 'cli-codex', modelId: 'gpt-gone', status: 'rejected', efforts: [], decidedAt: '', cliVersion: 'codex-cli 9.9.9' });
+	assert.equal((await rejectCheck({ checkId: gone.checkId }, deps()) as { reason: string }).reason, 'unknown-check');
+
+	// A Claude approval carries the check's input limit and CLI version.
+	fake({});
+	const c = await check('claude-new-1', ['xhigh', 'ultra'], {}, 'cli-claude');
+	assert.equal((await approveCheck({ checkId: c.checkId, efforts: ['ultra'] }, deps()) as { reason: string }).reason, 'invalid-efforts');
+	assert.deepEqual(await approveCheck({ checkId: c.checkId, efforts: ['xhigh'] }, deps()), { ok: true, restartRequired: true });
+	assert.deepEqual({ ...storeDoc().profiles[2]!, decidedAt: '' }, { family: 'cli-claude', modelId: 'claude-new-1', status: 'approved', efforts: ['xhigh'], inputLimit: { unit: 'tokens', max: 200000 }, decidedAt: '', cliVersion: '2.1.310 (Claude Code)' });
+
+	// The 33rd check evicts the oldest.
+	const ids: string[] = [];
+	for (let i = 0; i < 33; i++) ids.push((await check(`gpt-n${i}`, [], { run: stubRun })).checkId);
+	assert.equal((await rejectCheck({ checkId: ids[0] }, deps()) as { reason: string }).reason, 'unknown-check');
+	assert.deepEqual(await rejectCheck({ checkId: ids[1] }, deps()), { ok: true, restartRequired: true });
+	assert.deepEqual(await rejectCheck({ checkId: ids[32] }, deps()), { ok: true, restartRequired: true });
+});
+
+test('model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename', async () => {
+	// A missing store and directory are created.
+	const nested = join(dir, 'home', '.insrc', 'approved-models.json');
+	const a = await check('gpt-a1', [], { run: stubRun });
+	assert.deepEqual(await rejectCheck({ checkId: a.checkId }, deps({ storePath: nested })), { ok: true, restartRequired: true });
+	assert.equal(JSON.parse(readFileSync(nested, 'utf8')).profiles.length, 1);
+	assert.equal(existsSync(`${nested}.tmp`), false);
+	rmSync(join(dir, 'home'), { recursive: true, force: true });
+
+	// Existing entries, including ones the reader skips, and other top-level keys are kept.
+	const existing = { version: 1, note: 'kept', profiles: [
+		{ family: 'cli-codex', modelId: 'gpt-old', status: 'approved', efforts: ['low'], decidedAt: '2026-01-01T00:00:00Z', cliVersion: '1' },
+		{ family: 'cli-codex', modelId: '', status: 'bogus' },
+		'not even an object',
+	] };
+	writeFileSync(storeFile, JSON.stringify(existing));
+	const b = await check('gpt-b1', [], { run: stubRun });
+	assert.equal((await approveCheck({ checkId: b.checkId, efforts: [] }, deps())).ok, true);
+	const after = storeDoc() as unknown as typeof existing;
+	assert.equal(after.note, 'kept');
+	assert.deepEqual(after.profiles.slice(0, 3), existing.profiles);
+	assert.equal((after.profiles[3] as unknown as ApprovedProfile).modelId, 'gpt-b1');
+
+	// Stores that are not { version: 1, profiles[] } are never overwritten; the check stays pending.
+	const bad: Array<[string, RegExp]> = [
+		['not json', /is not a \{ version, profiles\[\] \} document/],
+		['{"version":1,"profiles":{}}', /is not a \{ version, profiles\[\] \} document/],
+		['{"profiles":[]}', /unsupported version null/],
+		['{"version":"broken","profiles":[]}', /unsupported version "broken"/],
+		['{"version":2,"profiles":[]}', /unsupported version 2/],
+	];
+	const c = await check('gpt-c1', [], { run: stubRun });
+	for (const [bytes, reason] of bad) {
+		writeFileSync(storeFile, bytes);
+		const d = await approveCheck({ checkId: c.checkId, efforts: [] }, deps());
+		assert.equal((d as { reason: string }).reason, 'write-failed', bytes);
+		assert.match((d as { detail: string }).detail, reason);
+		assert.equal(readFileSync(storeFile, 'utf8'), bytes, 'previous bytes unchanged');
+		assert.equal(existsSync(`${storeFile}.tmp`), false);
+	}
+
+	// A failing rename leaves the previous bytes and no temp file.
+	const before = JSON.stringify({ version: 1, profiles: [] });
+	writeFileSync(storeFile, before);
+	const failRename = (): void => { throw new Error('EXDEV: rename failed'); };
+	const d = await approveCheck({ checkId: c.checkId, efforts: [] }, deps({ rename: failRename }));
+	assert.deepEqual(d, { ok: false, reason: 'write-failed', detail: 'the approved-model store could not be written: EXDEV: rename failed' });
+	assert.equal(readFileSync(storeFile, 'utf8'), before);
+	assert.equal(existsSync(`${storeFile}.tmp`), false);
+
+	// A read-only directory: no store is created and nothing is left behind.
+	const ro = join(dir, 'readonly');
+	mkdirSync(ro);
+	chmodSync(ro, 0o555);
+	try {
+		const roStore = join(ro, 'approved-models.json');
+		assert.equal((await approveCheck({ checkId: c.checkId, efforts: [] }, deps({ storePath: roStore })) as { reason: string }).reason, 'write-failed');
+		assert.equal(existsSync(roStore), false);
+		assert.equal(existsSync(`${roStore}.tmp`), false);
+	} finally { chmodSync(ro, 0o755); }
+
+	// The check survived every failure and is decided once the store is writable.
+	assert.deepEqual(await approveCheck({ checkId: c.checkId, efforts: [] }, deps()), { ok: true, restartRequired: true });
+	assert.equal(storeDoc().profiles.length, 1);
+});
+
+test('model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds', async () => {
+	fake({ models: 'not json' });
+	const r = await check('gpt-new', ['high']);
+	assert.equal(r.runs, true);
+	assert.match((await approveCheck({ checkId: r.checkId, efforts: ['high'] }, deps()) as { detail: string }).detail, /high was rejected: the CLI's model list could not be read/);
+	assert.deepEqual(await approveCheck({ checkId: r.checkId, efforts: [] }, deps()), { ok: true, restartRequired: true });
+	assert.deepEqual(storeDoc().profiles[0]!.efforts, []);
+
+	fake({ help: 'no effort flag here' });
+	const c = await check('claude-new-1', ['max'], {}, 'cli-claude');
+	assert.equal((await approveCheck({ checkId: c.checkId, efforts: ['max'] }, deps()) as { reason: string }).reason, 'invalid-efforts');
+	assert.deepEqual(await approveCheck({ checkId: c.checkId, efforts: [] }, deps()), { ok: true, restartRequired: true });
+});
+
+test('model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry', async () => {
+	fake({ exec: { 'gpt-gone': { exit: 1, lines: [{ type: 'turn.failed', error: { message: 'no' } }] } } });
+	const ok = await check('gpt-new', ['high', 'low']);
+	const gone = await check('gpt-gone', []);
+	const results: DecisionResult[] = [
+		await approveCheck({ checkId: 'missing' }, deps()),
+		await approveCheck({ checkId: gone.checkId, efforts: [] }, deps()),
+		await approveCheck({ checkId: ok.checkId, efforts: ['ultra'] }, deps()),
+		await approveCheck({ checkId: ok.checkId, efforts: ['high'] }, deps()),
+		await rejectCheck({ checkId: gone.checkId }, deps()),
+	];
+	for (const d of results) {
+		if (d.ok) assert.deepEqual(Object.keys(d).sort(), ['ok', 'restartRequired']);
+		else {
+			assert.deepEqual(Object.keys(d).sort(), ['detail', 'ok', 'reason']);
+			assert.ok(['unknown-check', 'model-did-not-run', 'invalid-efforts', 'write-failed'].includes(d.reason));
+			assert.ok(d.detail.length > 0);
+		}
+	}
+	assert.deepEqual(results.map(d => (d.ok ? 'ok' : d.reason)), ['unknown-check', 'model-did-not-run', 'invalid-efforts', 'ok', 'ok']);
+
+	const profiles = storeDoc().profiles;
+	for (const p of profiles) assert.equal(profileProblem(p), undefined, JSON.stringify(p));
+
+	const built = buildModelRegistry(FIXTURE, profiles);
+	const approved = built.models('cli-codex').find(m => m.id === 'gpt-new');
+	assert.equal(approved?.source, 'user-approved');
+	assert.deepEqual(approved?.efforts, ['high']);
+	assert.deepEqual(built.rejected('cli-codex'), ['gpt-gone']);
+
+	_resetModelRegistryForTests();
+	const live = getModelRegistry();
+	assert.equal(live.find('cli-codex', 'gpt-new')?.source, 'user-approved');
+	assert.deepEqual(live.find('cli-codex', 'gpt-new')?.efforts, ['high']);
+	assert.deepEqual(live.rejected('cli-codex'), ['gpt-gone']);
 });

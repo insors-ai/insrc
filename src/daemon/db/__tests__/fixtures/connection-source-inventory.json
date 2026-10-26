@@ -1,6 +1,10 @@
 {
   "purpose": "Current-source classification, not proof of enablement. Typed pool and v2 resolver aliases/members remain in the exact AST site multiset; every source owner has an explicit lease or metadata rationale.",
   "files": {
+    "src/analyze/context/scope.ts": {
+      "classification": "metadata-only",
+      "rationale": "S003 t17: session connection scope/check reads only safe visible entries through the exact-root bound resolver; no driver acquisition or cross-root saved enumeration. Unattached saved enumeration and ambiguity are preserved."
+    },
     "src/analyze/explore/db-connections-list.ts": {
       "classification": "metadata-only",
       "rationale": "t10: safe list through injected resolver; no driver use"
@@ -33,6 +37,22 @@
       "classification": "full-use-lease",
       "rationale": "t10: retain lease through describe"
     },
+    "src/bin/insrc-connection-test.ts": {
+      "classification": "bounded-private-probe",
+      "rationale": "S002 t14: one-shot private IPC child admits exact kinds, uses memory-only file authority, awaits explicit readonly reachability and close, and exits. No pool registration or live store access."
+    },
+    "src/daemon/connection-management-rpc.ts": {
+      "classification": "metadata-only",
+      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "classification": "private-transport-resolver",
+      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits."
+    },
+    "src/daemon/db/driver-log-policy.ts": {
+      "classification": "resource-local-authority",
+      "rationale": "S003 t10: immutable owner/root/revision context and tagged factory identity gate plaintext config before construction; lazy per-resource quiet sink does not evaluate diagnostics. Concrete SDK closure remains t11."
+    },
     "src/daemon/db/drivers/mssql.ts": {
       "classification": "driver-internal-library-pool",
       "rationale": "t12: tedious pool acquire nested within outer Driver lease; not management pool"
@@ -40,6 +60,18 @@
     "src/daemon/db/index.ts": {
       "classification": "resolver-port",
       "rationale": "t9/t23: barrel exports cannot preserve an unaudited bypass"
+    },
+    "src/daemon/db/management-adoption.ts": {
+      "classification": "non-driver-lock",
+      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
+    },
+    "src/daemon/db/management-startup.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
+    },
+    "src/daemon/db/management.ts": {
+      "classification": "management-owner",
+      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
     },
     "src/daemon/db/pool-cache.ts": {
       "classification": "explicit-resolver-binding",
@@ -53,6 +85,14 @@
       "classification": "factory-metadata",
       "rationale": "t19/t23: metadata declaration; getFactory consumers audited independently"
     },
+    "src/daemon/db/session-entries.ts": {
+      "classification": "private-revision-lease",
+      "rationale": "S003 t9: private resolver spans full callback and late work with revision leases, guarded views and authority rechecks before result publication."
+    },
+    "src/daemon/db/session-resources.ts": {
+      "classification": "private-owner-resource",
+      "rationale": "S003 t9/t12: private session/root/revision construction uses branded factory context, retains file engines before driver publication and interrupts/drains them on owner end or late constructor refusal. No saved pool or credential acquisition."
+    },
     "src/daemon/tools/builtins/data/schema-drift.ts": {
       "classification": "full-use-lease",
       "rationale": "t12: metadata list separate; drift collection retains lease"
@@ -65,56 +105,45 @@
       "classification": "unrelated-lock",
       "rationale": "StoreGuard acquire is a storage-lock slot, not DriverPool"
     },
-    "src/shared/locks/lock-manager.ts": {
-      "classification": "unrelated-lock",
-      "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
+    "src/shared/connection-management.ts": {
+      "classification": "protocol-declarations",
+      "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
     },
     "src/shared/db-driver.ts": {
       "classification": "factory-contract",
       "rationale": "t2/t19: shared factory type declaration, no actual construction"
     },
-    "src/daemon/db/management.ts": {
-      "classification": "management-owner",
-      "rationale": "t7: serialized saved service uses metadata reload and mutation barriers; no raw driver acquisition. Driver activation is delegated to a daemon-owned lease-aware port at maintenance installation."
-    },
-    "src/shared/connection-management.ts": {
-      "classification": "protocol-declarations",
-      "rationale": "t10: typed safe resolver declarations and callback lease contract. Type declarations do not acquire live drivers."
-    },
-    "src/daemon/connection-management-rpc.ts": {
-      "classification": "metadata-only",
-      "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
-    },
-    "src/daemon/db/management-adoption.ts": {
-      "classification": "non-driver-lock",
-      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
-    },
-    "src/daemon/db/management-startup.ts": {
-      "classification": "full-use-lease",
-      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
-    },
-    "src/bin/insrc-connection-test.ts": {
-      "classification": "bounded-private-probe",
-      "rationale": "S002 t14: one-shot private IPC child admits exact kinds, uses memory-only file authority, awaits explicit readonly reachability and close, and exits. No pool registration or live store access."
-    },
-    "src/daemon/db/driver-log-policy.ts": {
-      "classification": "resource-local-authority",
-      "rationale": "S003 t10: immutable owner/root/revision context and tagged factory identity gate plaintext config before construction; lazy per-resource quiet sink does not evaluate diagnostics. Concrete SDK closure remains t11."
-    },
-    "src/daemon/db/session-resources.ts": {
-      "classification": "private-owner-resource",
-      "rationale": "S003 t9/t12: private session/root/revision construction uses branded factory context, retains file engines before driver publication and interrupts/drains them on owner end or late constructor refusal. No saved pool or credential acquisition."
-    },
-    "src/daemon/db/session-entries.ts": {
-      "classification": "private-revision-lease",
-      "rationale": "S003 t9: private resolver spans full callback and late work with revision leases, guarded views and authority rechecks before result publication."
-    },
-    "src/daemon/connection-session-rpc.ts": {
-      "classification": "private-transport-resolver",
-      "rationale": "S003 t9/t13: server-owned transport claims mint exact-object resolver access and readonly edit-probe preparation from the matching immutable generation. Root/audience/revision/request checks precede materialization and final spawn. Probe drains are retained by the owner until the actual worker exits."
+    "src/shared/locks/lock-manager.ts": {
+      "classification": "unrelated-lock",
+      "rationale": "LockManager acquire is an indexed lock slot, not DriverPool"
     }
   },
   "sites": [
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
     {
       "file": "src/analyze/explore/db-connections-list.ts",
       "expression": "acquirePool",

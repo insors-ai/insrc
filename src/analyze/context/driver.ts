@@ -80,6 +80,7 @@ import {
 	type CacheKey,
 } from './cache.js';
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -468,7 +469,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// the scope's kind with the kind of source is checked first: a
 	// request can arrive with a ready-made intent that no classifier
 	// validated.
-	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps);
+	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps, opts.connectionExecution ?? args.connectionExecution);
 
 	// (4.5) Before any model call, unless the caller made these checks
 	// already (runAnalyze, before it measured):
@@ -1176,13 +1177,15 @@ export async function prepareScope(
 	invocationMode: ShaperMode,
 	inputs:         RunShaperArgs['inputs'],
 	deps?:          ScopeDeps,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
 	const ref = scopeRefOf(inputs);
-	if (invocationMode === 'run' && 'intent' in inputs) {
+	if ('intent' in inputs && (invocationMode === 'run' || (execution?.mode === 'session-memory' && inputs.intent.target === 'data'))) {
 		const target = (inputs as RunShapeInput).intent.target;
-		return resolveScopeForTarget(ref, target, deps);
+		return resolveScopeForTarget(ref, target, deps, undefined, execution);
 	}
-	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
+	return resolveScope(ref, deps, execution);
 }
 
 /**

@@ -65,7 +65,7 @@ export async function handleStart(
 
 	// Check the pairing and resolve the scope before anything is
 	// minted: a refused pairing throws here, so no state exists for it.
-	const resolvedScope = await stepScope(unsized);
+	const resolvedScope = await stepScope(unsized, undefined, execution);
 
 	// The size the planning prompt is given: counted from the area the scope
 	// names. A size the caller stated is a hint, carried in the state to the

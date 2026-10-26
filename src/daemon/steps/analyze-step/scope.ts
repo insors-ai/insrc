@@ -13,6 +13,8 @@
  * drives the later phases.
  */
 
+import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
+import { assertAnalysisConnectionExecution } from '../../../analyze/connection-access.js';
 import { resolveScopeForTarget } from '../../../analyze/context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../../../analyze/context/scope.js';
 import { ensureScopeQueryable } from '../../../analyze/runtimes/shared/task-scope.js';
@@ -28,8 +30,9 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
  *         in one with no stored entities (the registry was read and holds repositories).
  * @throws RepoIndexingError     the scope's repository is under index.
  */
-export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps): Promise<ResolvedScope> {
-	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, deps);
+export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps, execution?: ConnectionExecutionContext): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
+	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, deps, undefined, execution);
 	// The run's own checks, through the one function the run uses
 	// (ensureScopeQueryable), made before anything is measured, read from the
 	// cache or looked up: every phase makes this call, so a repository that goes
@@ -38,5 +41,6 @@ export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scope
 	// indexed, or whose last index failed, for every source (Epic c2ba6fa6,
 	// Story s5). A generic intent is not checked, as the run does not check it.
 	if (intent.target !== 'generic') await ensureScopeQueryable(scope, intent.target, deps);
+	assertAnalysisConnectionExecution(execution);
 	return scope;
 }

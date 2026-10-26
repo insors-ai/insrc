@@ -345,8 +345,8 @@ export async function measureRequestScope(
 	let scope: ResolvedScope;
 	try {
 		scope = target === 'generic'
-			? await resolveScopeForTarget(scopeRef, 'generic', depsForTest?.scope)
-			: await resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope);
+			? await resolveScopeForTarget(scopeRef, 'generic', depsForTest?.scope, undefined, options?.connectionExecution)
+			: await resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope, undefined, options?.connectionExecution);
 	} catch (err) {
 		const scoped = scopeErrorMapping(err);
 		const note = scoped !== undefined

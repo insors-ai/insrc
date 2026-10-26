@@ -46,7 +46,7 @@ export async function resolveDataScope(
 ): Promise<DataScope> {
 	// Reject a supplied but unadmitted tuple before scope/registry or result access.
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	return dataScopeOf(await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel));
+	return dataScopeOf(await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel, undefined, undefined, args.connectionExecution));
 }
 
 /**

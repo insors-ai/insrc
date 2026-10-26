@@ -23,6 +23,10 @@
  *     registered repo, and lookups run in that repo.
  */
 
+import { analysisConnectionContext, assertAnalysisConnectionExecution } from '../connection-access.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import { savedConnectionResolver } from '../../daemon/db/pool-cache.js';
 import { dirname } from 'node:path';
 
 import { loadConnections } from '../../daemon/db/config.js';
@@ -64,6 +68,7 @@ export interface ResolvedScope {
 	readonly entityName?: string | undefined;
 	/** connection. */
 	readonly connectionId?: string | undefined;
+	readonly connectionRevision?: string | undefined;
 }
 
 /** The readers resolveScope needs. Defaulted to the real stores; tests supply them. */
@@ -82,9 +87,17 @@ const REAL_DEPS: ScopeDeps = {
 };
 
 export async function resolveScope(
-	ref:  AnalyzeScopeRef,
+	ref: AnalyzeScopeRef,
 	deps: ScopeDeps = REAL_DEPS,
+	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
+	const result = await resolveScopeUnchecked(ref, deps, execution);
+	assertAnalysisConnectionExecution(execution);
+	return result;
+}
+
+async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, execution?: ConnectionExecutionContext): Promise<ResolvedScope> {
 	switch (ref.kind) {
 		case 'repo':
 		case 'module':
@@ -109,7 +122,7 @@ export async function resolveScope(
 		case 'symbol':
 			return resolveSymbol(ref.value, deps);
 		case 'connection':
-			return resolveConnection(ref.value, deps);
+			return resolveConnection(ref.value, deps, execution);
 	}
 }
 
@@ -128,11 +141,14 @@ export async function resolveScopeForTarget(
 	/** The table of kinds per kind of source. Always the classifier's; a test
 	 *  passes a stand-in to show that no other list is consulted. */
 	table:  KindsPerTarget = TARGET_TO_KINDS,
+	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory' && target === 'data' && ref.kind !== 'connection' && ref.value !== execution.connectionAccess.lookupRoot) throw new ConnectionExecutionError('session-expired');
 	if (!table[target].includes(ref.kind)) {
 		throw new ScopeKindTargetMismatchError(ref.kind, target, table[target]);
 	}
-	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
+	return resolveScope(ref, deps, execution);
 }
 
 /**
@@ -251,7 +267,14 @@ async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedSc
 export async function connectionIsRegistered(
 	connectionId: string,
 	deps: ScopeDeps = REAL_DEPS,
+	execution?: ConnectionExecutionContext,
 ): Promise<boolean> {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') {
+		const entries = await savedConnectionResolver.list(analysisConnectionContext(execution.connectionAccess.lookupRoot, execution));
+		assertAnalysisConnectionExecution(execution);
+		return entries.some(entry => entry.key.id === connectionId);
+	}
 	const repos = await deps.listRepos();
 	// Serial on purpose: one file read per repo, in registry order.
 	for (const repo of repos) {
@@ -269,7 +292,15 @@ export async function connectionIsRegistered(
 	return false;
 }
 
-async function resolveConnection(connectionId: string, deps: ScopeDeps): Promise<ResolvedScope> {
+async function resolveConnection(connectionId: string, deps: ScopeDeps, execution?: ConnectionExecutionContext): Promise<ResolvedScope> {
+	if (execution?.mode === 'session-memory') {
+		const root = execution.connectionAccess.lookupRoot;
+		const entries = await savedConnectionResolver.list(analysisConnectionContext(root, execution));
+		assertAnalysisConnectionExecution(execution);
+		const entry = entries.find(candidate => candidate.key.id === connectionId);
+		if (!entry) throw new ScopeRefUnresolvedError('Connection is not available at the attached root.');
+		return { kind: 'connection', value: connectionId, repoPath: root, lookupPath: root, connectionId, connectionRevision: entry.revision };
+	}
 	const repos = await deps.listRepos();
 	const declaring: string[] = [];
 	// Serial on purpose: one file read per repo, in registry order.

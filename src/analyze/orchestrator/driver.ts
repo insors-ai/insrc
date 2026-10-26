@@ -31,6 +31,7 @@ import { assertExplicitConnectionExecution } from '../../shared/step-context.js'
 import { getLogger } from '../../shared/logger.js';
 
 import { classify } from '../classifier/index.js';
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
 import { validateIntentSemantics } from '../classifier/validate.js';
 import { connectionIsRegistered } from '../context/scope.js';
 import {
@@ -282,7 +283,7 @@ async function runStages(
 		// Make its two checks here, before any model call: the pairing of
 		// the scope's kind with the hinted kind of source, and that the
 		// scope resolves.
-		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef);
+		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef, undefined, opts.connectionExecution ?? args.connectionExecution);
 		if (!hinted.ok) {
 			record = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });
 			saveRunRecord(record);
@@ -299,6 +300,7 @@ async function runStages(
 			unsized = await classifyImpl({
 				input: { userPrompt, scopeRef: initialScopeRef },
 				opts: { runId },
+				connectionExecution: opts.connectionExecution ?? args.connectionExecution,
 			});
 		} catch (err) {
 			const failure = classifyClassifierError(err);
@@ -319,7 +321,7 @@ async function runStages(
 	const scopeChecked = unsized.target !== 'generic';
 	if (scopeChecked) {
 		try {
-			await resolveTaskScope(unsized.scopeRef, unsized.target as Exclude<typeof unsized.target, 'generic'>, 'the run');
+			await resolveTaskScope(unsized.scopeRef, unsized.target as Exclude<typeof unsized.target, 'generic'>, 'the run', undefined, undefined, opts.connectionExecution ?? args.connectionExecution);
 		} catch (err) {
 			const scoped = scopeErrorMapping(err);
 			// Anything that is not a refused scope goes to runAnalyze's handler.
@@ -664,14 +666,16 @@ export async function hintedIntentBase(
 	userPrompt:  string,
 	scopeRef:    AnalyzeScopeRef,
 	connectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,
+	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
 ): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }> {
+	assertAnalysisConnectionExecution(execution);
 	const focus = userPrompt.trim();
 	const base: HintedIntentBase = focus.length > 0
 		? { target, focused: true, focus, scopeRef }
 		: { target, focused: false, scopeRef };
 	let failure: Awaited<ReturnType<typeof validateIntentSemantics>>;
 	try {
-		failure = await validateIntentSemantics({ ...base, reasoning: '' }, connectionExists);
+		failure = await validateIntentSemantics({ ...base, reasoning: '' }, connectionExists, execution);
 	} catch (err) {
 		// The connection check can throw (an unreadable connections file,
 		// a registry that cannot be read). That is a failure of this

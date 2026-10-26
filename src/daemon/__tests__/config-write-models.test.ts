@@ -191,6 +191,20 @@ test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo
 	// A config that already holds a per-repo tier (pruned at the next boot) still takes unrelated writes, and removing the tier is accepted.
 	const withLegacy = { ...BASE, models: { ...BASE.models, byRepo: { '/w/old': { tasks: {}, tiers: { core: tier } } } } };
 	writeFileSync(PATHS.config, JSON.stringify(withLegacy, null, 2));
+	// Changing an existing per-repo tier — its leaf, the whole tier, or through the byRepo parent — is refused, config.json unchanged.
+	const changes: Array<[string, unknown, unknown]> = [
+		['existing tier leaf', ['models', 'byRepo', '/w/old', 'tiers', 'core', 'model'], 'gpt-y'],
+		['existing whole tier', ['models', 'byRepo', '/w/old', 'tiers', 'core'], { ...tier, effort: 'high' }],
+		['existing via byRepo', ['models', 'byRepo'], { '/w/old': { tasks: {}, tiers: { core: { ...tier, model: 'gpt-y' } } } }],
+	];
+	for (const [label, path, value] of changes) {
+		const before = readFileSync(PATHS.config, 'utf8');
+		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		assert.equal(r.ok, false, label);
+		assert.equal(r.reason, 'per-repo-tier', label);
+		assert.match(r.detail ?? '', /refused: models\.byRepo\.\/w\/old\.tiers$/, label);
+		assert.equal(readFileSync(PATHS.config, 'utf8'), before, `${label}: config.json unchanged`);
+	}
 	assert.equal((await write({ path: 'logLevel', value: 'debug' }) as { ok: boolean }).ok, true);
 	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'coreFloor'], value: 'mid' }) as { ok: boolean }).ok, true);
 	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'tiers'], value: null }) as { ok: boolean }).ok, true);

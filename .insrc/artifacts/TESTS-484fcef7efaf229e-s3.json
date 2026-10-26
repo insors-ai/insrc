@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T10:35:13.787Z",
+    "updatedAt": "2026-10-26T11:02:19.774Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1884,6 +1884,42 @@
               },
               {
                 "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t26",
+        "commit": "1f0151e05",
+        "ranAt": "2026-10-26T11:02:19.774Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/embedding-denial.test.ts",
+                "title": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/embedding-denial.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 922,
+            "titles": [
+              {
+                "title": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
                 "result": "pass"
               }
             ],

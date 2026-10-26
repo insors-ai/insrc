@@ -54,21 +54,30 @@ const LOCK_FAILURE = -30775;   // MDB_LOCK_FAILURE (lmdb-js)
 const EINVAL       = 22;
 const BAD_RSLOT    = /MDB_BAD_RSLOT/;
 
+// What a read of a process that never read gets differs by platform, because the library keeps its
+// locks in different primitives. macOS (System V semaphores, where the failure was found on 2026-10-11):
+// code -30775 with MDB_LOCK_FAILURE in the message. Linux (observed on 2026-10-26 with the installed
+// lmdb-js): code 22 and the bare message "Invalid argument", with no cause named. Both fail the read and
+// go on failing it, which is what the store's detection rests on.
+const RAW_READ = process.platform === 'darwin'
+	? { code: LOCK_FAILURE, message: /MDB_LOCK_FAILURE/ }
+	: { code: EINVAL, message: /^Invalid argument$/ };
+
 function sequence(storePath: string, touchLockFile: boolean, raw = false): Promise<StoreChild> {
 	return runLockLossSequence(storePath, { touchLockFile, raw });
 }
 
 describe('store library after another process removed its locks', { skip: process.platform === 'win32' }, () => {
-	test('reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle', async () => {
+	test('reproduction against the real library: read throws (-30775 on macOS, 22 on Linux), synchronous transaction throws 22, asynchronous transaction does not settle', async () => {
 		// A has never read: it opened the path with the library directly.
 		const a = await sequence(join(base, 'broken.lmdb'), true, true);
 
-		// 1. A read throws the library's lock failure, and goes on doing so.
+		// 1. A read throws the library's failure for this platform (see RAW_READ), and goes on doing so.
 		for (const key of ['a', 'missing']) {
 			const read = await a.send({ op: 'read', key });
 			assert.equal(read.ok, false, 'a read fails');
-			assert.equal(!read.ok && read.code, LOCK_FAILURE);
-			assert.match(read.ok ? '' : read.message, /MDB_LOCK_FAILURE/);
+			assert.equal(!read.ok && read.code, RAW_READ.code);
+			assert.match(read.ok ? '' : read.message, RAW_READ.message);
 		}
 
 		// 2. A synchronous transaction throws a bare "invalid argument".

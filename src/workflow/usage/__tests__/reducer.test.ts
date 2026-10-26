@@ -150,3 +150,31 @@ test('cumulative resets unknown buckets unqualified sessions and model mismatche
   const middle = cumulativeFrame('middle', 90, 7), interrupted = [...baseline, ...middle, ...current];
   assert.equal((await reduceGroupCore(stream(interrupted), intervalScope(interrupted, ['baseline-start', 'baseline-end', 'middle-start', 'middle-end']))).knownTokens, '0', 'intermediate counter reset evidence invalidates the selected interval');
 });
+
+test('cumulative model identity considers starts finishes and intermediate frames without null bridges', async () => {
+  const baseline = cumulativeFrame('baseline', 10, 5, 'prior-invocation'), current = cumulativeFrame('current', 30, 10);
+  // A nullable finish must not erase identity explicitly reported by its start.
+  for (const [baseStartModel, baseEndModel, currentStartModel, currentEndModel] of [
+    ['model-a', null, 'model-b', 'model-b'],
+    ['model-a', null, null, 'model-b'],
+    [null, 'model-a', 'model-b', null],
+    ['model-a', null, 'model-a', null],
+  ]) {
+    const rows = [
+      signed({ ...baseline[0], context: { ...baseline[0].context, reportedModel: baseStartModel! } }),
+      signed({ ...baseline[1], observation: { ...baseline[1].observation, reportedModel: baseEndModel! } }),
+      signed({ ...current[0], context: { ...current[0].context, reportedModel: currentStartModel! } }),
+      signed({ ...current[1], observation: { ...current[1].observation, reportedModel: currentEndModel! } }),
+    ];
+    const result = await reduceGroupCore(stream(rows), intervalScope(rows));
+    assert.equal(result.knownTokens, currentStartModel === 'model-a' ? '25' : '0');
+    if (currentStartModel !== 'model-a') assert.ok(result.quality.includes('unavailable'));
+    assert.deepEqual(await reduceGroupCore(stream([...rows].reverse()), intervalScope(rows)), result);
+  }
+  const middle = cumulativeFrame('middle', 20, 7);
+  const withMiddle = [...baseline,
+    signed({ ...middle[0], context: { ...middle[0].context, reportedModel: 'model-a' } }), middle[1],
+    signed({ ...current[0], context: { ...current[0].context, reportedModel: 'model-b' } }), current[1]];
+  const result = await reduceGroupCore(stream(withMiddle), intervalScope(withMiddle, ['baseline-start', 'baseline-end', 'middle-start', 'middle-end']));
+  assert.equal(result.knownTokens, '0'); assert.ok(result.quality.includes('unavailable'));
+});

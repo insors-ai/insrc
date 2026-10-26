@@ -1,3 +1,4 @@
+import { runWithConnectionExecution } from '../../shared/step-context.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 /**
  * Resolve a request's scope ONCE.
@@ -93,7 +94,7 @@ export async function resolveScope(
 	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
 	assertAnalysisConnectionExecution(execution);
-	const result = await resolveScopeUnchecked(ref, deps, execution);
+	const result = await runWithConnectionExecution(execution, () => resolveScopeUnchecked(ref, deps, execution));
 	assertAnalysisConnectionExecution(execution);
 	return result;
 }

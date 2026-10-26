@@ -1,3 +1,4 @@
+import { runWithConnectionExecution } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -69,6 +70,7 @@ export async function resolveTaskScope(
 	table:         KindsPerTarget = TARGET_TO_KINDS,
 	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
+	return runWithConnectionExecution(execution, async () => {
 	assertAnalysisConnectionExecution(execution);
 	const readers = deps ?? depsForTest;
 	let scope: ResolvedScope;
@@ -82,6 +84,7 @@ export async function resolveTaskScope(
 	await ensureScopeQueryable(scope, family, readers);
 	assertAnalysisConnectionExecution(execution);
 	return scope;
+	});
 }
 
 /**

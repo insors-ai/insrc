@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 96 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 97 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -559,3 +559,19 @@ Run at 2026-10-26T11:16:16.198Z on commit `7b17b4a50`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/adherence-cache.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t28
+
+Run at 2026-10-26T11:26:22.517Z on commit `4fab33e0e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink | `src/daemon/steps/__tests__/analysis-diagnostics.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/analysis-diagnostics.test.ts` | 0 | 1 | 2.5 s |  |

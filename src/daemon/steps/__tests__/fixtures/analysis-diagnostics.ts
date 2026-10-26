@@ -14,6 +14,7 @@ const { PATHS } = await load('shared/paths.js'); await mkdir(directory, { recurs
 const { ConnectionSessionRpc } = await load('daemon/connection-session-rpc.js'); const { RequestLifetime } = await load('daemon/request-context.js'); const { createTemporaryOverlay } = await load('daemon/db/session-entries.js'); await load('daemon/db/drivers/index.js');
 const { closeAll } = await load('daemon/db/pool-cache.js'); const { SqliteDriver } = await load('daemon/db/drivers/sqlite.js'); const { getFactory } = await load('daemon/db/registry.js');
 const { dataSchemaTableRuntime } = await load('analyze/runtimes/data/schema-table.js'); const { dataDiscoveryObjectsRuntime } = await load('analyze/runtimes/data/discovery-objects.js');
+const { resolveScope } = await load('analyze/context/scope.js'); const { resolveTaskScope } = await load('analyze/runtimes/shared/task-scope.js');
 const { runExecutor } = await load('analyze/executor/walker.js'); const { registerTemplateRuntime, _resetRuntimeRegistryForTests } = await load('analyze/executor/registry.js');
 const { executePlan, _overrideRunnerForTest, _getRunnersForTest } = await load('analyze/explore/executor.js');
 const { runDbTableDescribe } = await load('analyze/explore/db-table-describe.js'); const { runDbTablesList } = await load('analyze/explore/db-tables-list.js');
@@ -46,12 +47,22 @@ try {
 	const exp = { id: 'e', type: 'db.table.describe', purpose: 'fixture', params: { connectionId: 'CM_PRIVATE_ENDPOINT', target: 'CM_PRIVATE_TABLE' } };
 	_overrideRunnerForTest('db.table.describe', async () => { throw raw; });
 	const failed = await executePlan({ connectionExecution: execution, runId: 'CM_PRIVATE_RUN', repoPath: root, closureRepos: [root], repoLastIndexedAtMs: 0n, plan: { answerType: 'data-inventory', explorations: [exp], synthesisHint: 'fixture' } }); assert.equal(failed.results[0].output.message, 'Temporary exploration failed.');
+	// Direct entries have no ambient context. Nested registry errors must retain
+	// the immutable quiet policy, including rejection after authority expires.
+	const failingDeps = { listRepos: async () => { throw raw; }, findEntitiesByFile: async () => [], listEntitiesForRepo: async () => [], loadConnections: async () => { throw raw; } };
+	assert.equal((await resolveScope({ kind: 'repo', value: root }, failingDeps, execution)).repoPath, null);
+	await resolveTaskScope({ kind: 'repo', value: root }, 'data', 'fixture', failingDeps, undefined, execution);
+	let rejectRegistry!: () => void, registryEntered!: () => void;
+	const registryStarted = new Promise<void>(r => { registryEntered = r; });
+	const registryHold = new Promise<never>((_r, reject) => { rejectRegistry = () => reject(raw); });
+	const lateScope = resolveScope({ kind: 'repo', value: root }, { ...failingDeps, listRepos: () => { registryEntered(); return registryHold; } }, execution);
+	await registryStarted;
 	const lazy = () => { lazyReads++; throw Error('CM_PRIVATE_FORMATTER'); }; captured.emit('info', lazy);
 	await runWithConnectionExecution(execution, async () => { captureAnalysisDiagnostics(logger).emit('warn', lazy); });
 	const listing = mock.method(SqliteDriver.prototype, 'listTables', async () => { entered(); await held; throw raw; });
 	late = measureDataSource({ poolPath: root, connectionId: 'CM_PRIVATE_ENDPOINT' }, undefined, { connectionExecution: execution, sourceTimeoutMs: 10 }); await started; const measure: any = await late; assert.equal(measure.determined, false);
 	getLogger('analyze:measure').info({ marker: 'SAVED_CONCURRENT_ANALYSIS_MARKER' }, 'Saved diagnostic remains visible');
-	now = 90_001; release(); await delay(50); listing.mock.restore(); captured.emit('error', lazy); assert.equal(rawReads, 0); assert.equal(lazyReads, 0);
+	now = 90_001; rejectRegistry(); await assert.rejects(lateScope, { code: 'session-expired' }); release(); await delay(50); listing.mock.restore(); captured.emit('error', lazy); assert.equal(rawReads, 0); assert.equal(lazyReads, 0);
 	captureAnalysisDiagnostics(logger).emit('info', () => [{ marker: 'SAVED_ANALYSIS_LAZY_CONTROL' }, 'Saved lazy diagnostic remains visible']);
 	let logs = ''; for (let n = 0;n < 100;n++) { await delay(20); logs = Buffer.concat(await bytes(PATHS.logDir)).toString(); if (logs.includes('SAVED_ANALYSIS_LAZY_CONTROL')) break; } assert.ok(logs.includes('SAVED_ANALYSIS_LAZY_CONTROL')); assert.ok(logs.includes('SAVED_CONCURRENT_ANALYSIS_MARKER')); assert.equal(logs.includes('CM_PRIVATE_'), false);
 	process.stdout.write(JSON.stringify({ completed: true, mode, actualDaemonSink: true, rawReads, lazyReads, runtime: true, exploration: true, task: true, lateMeasure: true }) + '\n');

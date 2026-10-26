@@ -1928,7 +1928,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "fde98d1dd02211d8591c461841dece54c2311eb17991a87498a63c2ce3ea8d0b",
-      "sourceDigest": "05fd722e503ec2fefd95d2ce57a48e028367586468ee0246e6044c9e3dd3bf3b",
+      "sourceDigest": "7703f1e05e03066ec61a445205d8d9d73be6aa8df82e2364659928aa60cb4a0b",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",

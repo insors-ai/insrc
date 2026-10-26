@@ -57,10 +57,10 @@ import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } fr
 import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
-import { createRoleRouter } from '../../analyze/context/role-router.js';
-import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
-import { loadAnalyzeConfig } from '../../config/analyze.js';
-import { shippedModelRegistry } from '../shipped-model-registry.js';
+import { CliProvider } from '../../agent/providers/cli-provider.js';
+import { OllamaProvider } from '../../agent/providers/ollama.js';
+import type { LLMProvider } from '../../shared/types.js';
+import { modelsService, type ModelsService, type ResolvedRole } from './models.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { rpc } from '../client.js';
 import type { Entity } from '../../shared/types.js';
@@ -237,35 +237,51 @@ export async function runWorkflowStreaming(
 
 /** Run the grounded review cycle over an artifact: verify its premises
  *  against real source, auto-fix the fixable findings, re-review, and stamp
- *  `meta.review`. Review is a critical (`review`) role → resolves the HIGH
- *  (core) tier via the RoleRouter (default: claude opus; whatever the operator
- *  pinned core to otherwise). The resulting `block` verdict is what `approve`
- *  then enforces. */
+ *  `meta.review`. The model is the daemon's answer for the `review` role in
+ *  this repo (models.resolveRole): the family, model, effort, host and context
+ *  size all come from the daemon — no router, registry or tier config is read
+ *  in this process. The resulting `block` verdict is what `approve` then
+ *  enforces. */
 export async function reviewArtifact(
 	repoPath: string,
 	artifactPath: string,
 	reviewFile: typeof reviewArtifactFile = reviewArtifactFile,
+	resolveRole: ModelsService['resolveRole'] = p => modelsService().resolveRole(p),
 ): Promise<ReviewArtifactResult> {
-	// The TUI resolves from the shipped definitions only (never the user's store) until s5.
-	const registry = shippedModelRegistry();
-	const router = createRoleRouter({ registry });
-	// Establish the sc6 routing seam so the review resolves through the same
-	// choke point as the workflow runner, and any deep reasoning it triggers is
-	// tiered per-role rather than falling through to the legacy provider.
-	return runWithRoutingContext({ router, repoPath }, async () => {
-		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(registry), repoPath);
-		return reviewFile({
-			mdPath:     artifactPath,
-			jsonPath:   jsonPathForMd(artifactPath),
-			repo:       repoPath,
-			provider,
-			model:      `${resolution.runner}:${resolution.model}`,
-			reviewedAt: new Date().toISOString(),
-			// This review runs in the CLI's process, which may not open the
-			// store: the source roots come from the daemon.
-			readEntitiesForRepo: readEntitiesForRepoFromDaemon,
-		});
+	let answer: Awaited<ReturnType<ModelsService['resolveRole']>>;
+	try {
+		answer = await resolveRole({ role: 'review', repoPath });
+	} catch {
+		throw new Error('cannot review: the daemon is not running');
+	}
+	if ('error' in answer) throw new Error(`cannot review: ${answer.error}`);
+	return reviewFile({
+		mdPath:     artifactPath,
+		jsonPath:   jsonPathForMd(artifactPath),
+		repo:       repoPath,
+		provider:   reviewProvider(answer),
+		model:      `${answer.family}:${answer.model}`,
+		reviewedAt: new Date().toISOString(),
+		// This review runs in the CLI's process, which may not open the
+		// store: the source roots come from the daemon.
+		readEntitiesForRepo: readEntitiesForRepoFromDaemon,
 	});
+}
+
+/** The provider the daemon's answer names: a CLI family's binary, or Ollama
+ *  at the daemon's host and context size. */
+function reviewProvider(r: ResolvedRole): LLMProvider {
+	if (r.cli !== undefined) {
+		const inputBudgetChars = r.inputLimit?.unit === 'chars' ? r.inputLimit.max : undefined;
+		return new CliProvider({
+			kind:  r.cli.kind,
+			model: r.model,
+			...(r.effort !== undefined ? { effort: r.effort } : {}),
+			...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}),
+		});
+	}
+	if (r.ollama === undefined) throw new Error(`cannot review: the daemon named no provider settings for ${r.family}:${r.model}`);
+	return new OllamaProvider(r.model, r.ollama.host, r.ollama.numCtx);
 }
 
 /**

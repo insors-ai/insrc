@@ -82,7 +82,8 @@ test('CLI review through the daemon: source roots come through the request and t
 	mkdirSync(planDir, { recursive: true });
 	writeFileSync(join(planDir, 'PLAN.md'), '<!-- insrc:artifact PLAN-0123456789abcdef-s1 -->\n\n# Plan\n');
 	let seen: ReviewArtifactOpts | undefined;
-	await reviewArtifact(repo, join(planDir, 'PLAN.md'), (async (opts: ReviewArtifactOpts) => { seen = opts; return { report: {}, applied: [], skipped: [], pendingUser: [] }; }) as never);
+	await reviewArtifact(repo, join(planDir, 'PLAN.md'), (async (opts: ReviewArtifactOpts) => { seen = opts; return { report: {}, applied: [], skipped: [], pendingUser: [] }; }) as never,
+		async () => ({ tier: 'core', family: 'cli-claude', model: 'opus', cli: { kind: 'claude' } }));
 	assert.equal(seen?.readEntitiesForRepo, readEntitiesForRepoFromDaemon);
 	assert.equal(seen?.repo, repo);
 

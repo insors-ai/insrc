@@ -116,12 +116,15 @@ for (const kind of ['DEF', 'LLD'] as const) {
 	}
 }
 
+/** The daemon's models.resolveRole answer, injected: no daemon runs in this test. */
+const CLI_REVIEW_ROLE = async () => ({ tier: 'core' as const, family: 'cli-claude' as const, model: 'opus', cli: { kind: 'claude' as const } });
+
 test('T15 the TUI review service surfaces the refusal, naming a controller review or an override', async () => {
 	for (const kind of ['DEF', 'LLD'] as const) {
 		const f = fixture(kind, { authoredBy: 'daemon' });
 		try {
 			const before = readFileSync(f.json, 'utf8');
-			await assert.rejects(reviewArtifact(f.repo, f.md), (e: unknown) => {
+			await assert.rejects(reviewArtifact(f.repo, f.md, undefined, CLI_REVIEW_ROLE), (e: unknown) => {
 				assert.ok(e instanceof SamePartyReviewError, `got ${String(e)}`);
 				assert.match(e.message, /controller review \(insrc_review_step/);
 				assert.match(e.message, /override reason at approval/);

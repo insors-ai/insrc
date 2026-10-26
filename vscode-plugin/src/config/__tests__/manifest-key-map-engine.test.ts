@@ -99,6 +99,23 @@ test('manifest-key-map-engine.test.ts: native tier edits over the real merged ke
   assert.deepEqual(h.writes, [[['models', 'tiers', 'core'], { runner: 'cli-claude', model: 'c-big', effort: '' }]]);
   assert.deepEqual([h.native.get(K('model')), h.native.get(K('effort'))], ['c-big', '']);
 
+  // A runner-only change takes the new family's default even when the new family also serves the old model's name.
+  const shared: ModelDefinitions = { ...DEFS, families: DEFS.families.map((f) => f.id !== 'cli-claude' ? f : { ...f, models: [...f.models, { id: 'x-a', aliases: [], efforts: ['deep'], source: 'shipped' as const }] }) };
+  h = harness({ definitions: async () => shared });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'cli-claude' });
+  assert.deepEqual(h.writes, [[['models', 'tiers', 'core'], { runner: 'cli-claude', model: 'c-big', effort: '' }]], 'the family default, not the same-named model');
+
+  // A model-only change that leaves an effort the new model does not take is refused, not silently changed.
+  h = harness();
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('effort')]: 'turbo' });
+  h.writes.length = 0; h.errors.length = 0;
+  await h.edit({ [K('model')]: 'x-b' });
+  assert.deepEqual(h.writes, []);
+  assert.match(h.errors.join('\n'), /effort 'turbo' is not accepted by x-b \(accepted: lo\) — change or clear the effort/);
+  assert.equal(h.native.get(K('model')), 'x-a', 'reverted');
+
   // Two fields of one tier in one batch make one write.
   h = harness();
   await h.engine.pullFromDaemon();

@@ -177,8 +177,9 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
       }
       let chosen: DefinedModel | undefined = model === '' ? undefined : servedModel(family, model);
       let chosenEffort = effort;
-      // An empty model, or a family switch that left the old family's model, takes the family's default for the tier.
-      if (model === '' || (chosen === undefined && changedField('runner') && !changedField('model'))) {
+      // A family switch (the runner changed, the model did not) or an empty model takes the family's default for the tier.
+      const familySwitch = changedField('runner') && !changedField('model');
+      if (model === '' || familySwitch) {
         const fallback = familyDefault(family, tier);
         if (fallback === undefined) return revert(`insrc: ${family.displayName} lists no models — ${tier} tier not changed`);
         chosen = fallback.model;
@@ -189,9 +190,9 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
           : `insrc: '${model}' is not a listed ${family.displayName} model; only listed ${family.displayName} models can be used (${family.models.map((m) => m.id).join(', ')}) — ${tier} tier not changed`);
       }
       if (chosenEffort !== '' && !chosen.efforts.includes(chosenEffort)) {
-        // An effort the user set must be one the model takes; one left from another model is dropped.
-        if (changedField('effort')) {
-          return revert(`insrc: effort '${chosenEffort}' is not accepted by ${chosen.id} (${chosen.efforts.length > 0 ? `accepted: ${chosen.efforts.join(', ')}` : 'it takes none'}) — ${tier} tier not changed`);
+        // Dropped only on a family switch; otherwise the edit leaves an effort the model does not take, and is refused.
+        if (!familySwitch) {
+          return revert(`insrc: effort '${chosenEffort}' is not accepted by ${chosen.id} (${chosen.efforts.length > 0 ? `accepted: ${chosen.efforts.join(', ')}` : 'it takes none'}) — change or clear the effort; ${tier} tier not changed`);
         }
         chosenEffort = '';
       }

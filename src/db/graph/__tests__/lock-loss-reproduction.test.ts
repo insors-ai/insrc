@@ -59,6 +59,20 @@ const BAD_RSLOT    = /MDB_BAD_RSLOT/;
 // code -30775 with MDB_LOCK_FAILURE in the message. Linux (observed on 2026-10-26 with the installed
 // lmdb-js): code 22 and the bare message "Invalid argument", with no cause named. Both fail the read and
 // go on failing it, which is what the store's detection rests on.
+//
+// The run of 2026-10-26 on Linux (lmdb-js as installed in node_modules), made before any assertion of this
+// file was changed, gave for the sequence of this file (reads of 'a' and 'missing', then a synchronous
+// transaction, an asynchronous one waiting 3 s, and a last read):
+//   raw (never read):      read          -> code 22, message "Invalid argument"
+//                          txn-sync      -> code 22, message "Invalid argument"
+//                          txn-async     -> not settled after 3 s
+//                          read, after   -> code 22, message "Invalid argument"
+//   through the store:     read          -> code 22, message "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader
+//                                           locktable slot: The reader lock pid 0, txn -1, doesn't match env pid <pid>"
+//                          txn-sync      -> code 22, message "Invalid argument"
+//                          txn-async     -> not settled after 3 s
+//                          read, after   -> code 22, the same MDB_BAD_RSLOT message
+// Only the raw read differs from what this file first expected.
 const RAW_READ = process.platform === 'darwin'
 	? { code: LOCK_FAILURE, message: /MDB_LOCK_FAILURE/ }
 	: { code: EINVAL, message: /^Invalid argument$/ };

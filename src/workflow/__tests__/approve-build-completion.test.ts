@@ -21,7 +21,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -31,6 +31,7 @@ import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, reviewedMeta } from './lifecycle-fixtures.js';
 import { approveTarget } from './helpers/approve.js';
+import { validCodeReview } from './helpers/valid-code-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -52,7 +53,9 @@ function writeArtifact(
 	if (opts.storyId !== undefined) meta['storyId'] = opts.storyId;
 	if (opts.review !== undefined)  Object.assign(meta, reviewedMeta());   // a passing design review of its own
 	const p = join(dir, name);
-	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
+	// a BUILD names the files it changed, and the review must cover them
+	const body = opts.workflow === 'build' ? { changeLog: [{ target: { file: 'src/a.ts' } }, { target: { file: 'src/b.ts' } }] } : {};
+	writeFileSync(p, JSON.stringify({ meta, body, citations: [] }, null, 2));
 	// A design artifact given no review of its own gets a passing other-party one:
 	// approval requires it, and these tests are about the CODE-review gate.
 	if (opts.review === undefined && /^(DEF|HLD|LLD)-/.test(name)) stampOtherPartyReview(p);
@@ -62,7 +65,10 @@ function writeArtifact(
 /** Write a CR-<epic>-<story>.json record with the given verdict; skip to model absent. */
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'warn' | 'block'): void {
 	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
-	writeFileSync(json, JSON.stringify({ meta: {}, body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
+	// bound to the BUILD of the Story as it is now (an absent one binds to nothing)
+	const buildJson = join(repo, '.insrc', 'artifacts', `BUILD-${HASH}-${storyId}.json`);
+	const build: unknown = existsSync(buildJson) ? JSON.parse(readFileSync(buildJson, 'utf8')) : {};
+	writeFileSync(json, JSON.stringify(validCodeReview(build, verdict), null, 2));
 }
 
 const isApproved = (jsonPath: string): boolean =>

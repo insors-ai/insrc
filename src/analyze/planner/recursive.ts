@@ -53,10 +53,6 @@ import type {
 
 const savedLog = getLogger('analyze:planner:recursive');
 const quietLog = { info: (..._args: unknown[]) => { }, warn: (..._args: unknown[]) => { } };
-let plannerImpl = runPlanner;
-/** Deterministic plan stage seam; production always uses the guarded runPlanner. */
-export function _setRecursivePlannerForTest(planner?: typeof runPlanner): void { plannerImpl = planner ?? runPlanner; }
-
 // ---------------------------------------------------------------------------
 // Tree shape
 // ---------------------------------------------------------------------------
@@ -110,7 +106,7 @@ export async function runRecursivePlanner(args: RecursivePlannerArgs): Promise<P
 	else assertSessionContinuationNow(args.input, execution);
 	assertSessionReuseNow(execution);
 	const input = args.input;
-	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
+	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal && sourceOpts.signal !== execution.lifetime.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
 	const rootScope = input.rootScope ?? input.intent.scope;
 
 	// Force rootScope to flow through every level.
@@ -135,7 +131,7 @@ async function walk(
 	const planArgs: PlanBuilderArgs = provider !== undefined
 		? { input, opts, provider }
 		: { input, opts };
-	const plan = await plannerImpl(planArgs);
+	const plan = await runPlanner(planArgs);
 	assertSessionReuseNow(execution);
 	await rememberSessionContinuation(plan, execution);
 	assertSessionReuseNow(execution);

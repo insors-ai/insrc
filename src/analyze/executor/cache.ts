@@ -27,6 +27,10 @@
  * the task is re-run.
  */
 
+import { assertAnalysisConnectionExecution } from '../connection-access.js';
+import { assertSessionContinuationNow } from '../session-reuse.js';
+import { ConnectionExecutionError } from '../../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import {
 	existsSync,
 	mkdirSync,
@@ -52,15 +56,20 @@ const log = getLogger('analyze:executor:cache');
  * planner task whose child plan the task belongs to; leave it out for a task
  * of the root plan.
  */
-export function taskOutputPathFor(runId: string, taskId: string, parentTaskPath?: string | undefined): string {
+export function taskOutputPathFor(runId: string, taskId: string, parentTaskPath?: string | undefined, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 	if (parentTaskPath === undefined || parentTaskPath.length === 0) {
 		return PATHS.analyzeTaskOutput(runId, taskId);
 	}
-	return join(planDirFor({ runId, parentTaskPath }), 'tasks', `${taskPath(parentTaskPath, taskId)}.json`);
+	return join(planDirFor({ runId, parentTaskPath }, execution), 'tasks', `${taskPath(parentTaskPath, taskId)}.json`);
 }
 
-export function writeTaskOutput(runId: string, record: TaskExecutionRecord, parentTaskPath?: string | undefined): string {
-	const path = taskOutputPathFor(runId, record.taskId, parentTaskPath);
+export function writeTaskOutput(runId: string, record: TaskExecutionRecord, parentTaskPath?: string | undefined, execution?: ConnectionExecutionContext): string {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return '';
+	assertSessionContinuationNow(record, execution);
+	const path = taskOutputPathFor(runId, record.taskId, parentTaskPath, execution);
 	atomicWriteJson(path, record);
 	log.debug(
 		{ runId, taskId: record.taskId, status: record.status, produces: record.produces },

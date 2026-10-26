@@ -43,7 +43,9 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
-import { assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { isCompletenessRecord } from '../completeness.js';
 import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.js';
 import { getLogger } from '../../shared/logger.js';
@@ -82,10 +84,16 @@ interface WalkOpts {
 
 export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult> {
 	assertExplicitConnectionExecution(args.connectionExecution);
-	return executePlan(args.tree, args.intent, args.runId, {
+	const execution = args.connectionExecution;
+	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.tree, execution); }
+	else assertSessionContinuationNow(args.tree, execution);
+	assertSessionReuseNow(execution);
+	const result = await executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
 		connectionExecution: args.connectionExecution,
 	});
+	assertSessionReuseNow(execution);
+	return result;
 }
 
 /**
@@ -112,6 +120,8 @@ async function executePlan(
 	runId:  string,
 	opts:   WalkOpts,
 ): Promise<ExecutorResult> {
+	assertSessionReuseNow(opts.connectionExecution);
+	assertSessionContinuationNow(node, opts.connectionExecution);
 	const outputs     = new Map<string, UpstreamOutput[]>();
 	const failed      = new Set<string>();
 	const perTask     = new Map<string, TaskExecutionRecord>();
@@ -161,7 +171,7 @@ async function executePlan(
 			};
 			// The task is already a failure of the plan; a record that cannot be
 			// written does not change that, and the walk goes on.
-			persistTaskRecord(runId, task, record, parentTaskPath);
+			await persistTaskRecord(runId, task, record, parentTaskPath, opts.connectionExecution);
 			perTask.set(task.taskId, record);
 			failed.add(task.taskId);
 			tasksFailed.push({ taskId: task.taskId, reason: record.error! });
@@ -195,7 +205,8 @@ async function executePlan(
 
 		// Step 4 + 5: persist + accumulate. A record that cannot be written
 		// fails THIS task: its outputs are not handed on, and the walk goes on.
-		result = persistTaskRecord(runId, task, result, parentTaskPath);
+		result = await persistTaskRecord(runId, task, result, parentTaskPath, opts.connectionExecution);
+		assertSessionReuseNow(opts.connectionExecution);
 		perTask.set(task.taskId, result);
 
 		if (result.status === 'ok') {
@@ -264,6 +275,8 @@ async function executeLeafTask(
 			...(absentInputs !== undefined && absentInputs.length > 0 ? { absentInputs } : {}),
 		});
 	} catch (err) {
+		if (err instanceof ConnectionExecutionError) throw err;
+		assertSessionReuseNow(execution);
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
 		// error's code and its own message, with no 'runtime-threw:' in front.
@@ -277,6 +290,7 @@ async function executeLeafTask(
 		return failedRecord(task, `runtime-threw: ${msg}`);
 	}
 
+	assertSessionReuseNow(execution);
 	// Output shape check: every produces name must be present; no extras.
 	const shapeError = checkOutputShape(task, result);
 	if (shapeError !== null) {
@@ -323,6 +337,8 @@ async function executePlannerTask(
 	opts:   WalkOpts,
 ): Promise<PlannerTaskResult> {
 	// Look up the child plan in the tree.
+	assertSessionReuseNow(opts.connectionExecution);
+	assertSessionContinuationNow(parent, opts.connectionExecution);
 	const childNode = parent.children.get(task.taskId);
 	if (childNode === undefined) {
 		const childErr = parent.childErrors.get(task.taskId);
@@ -335,7 +351,10 @@ async function executePlannerTask(
 
 	// Recursively execute the child plan. Threads opts through so the
 	// child's per-task events fire with parentTaskPath populated.
+	await rememberSessionContinuation(childNode, opts.connectionExecution);
+	assertSessionReuseNow(opts.connectionExecution);
 	const childResult = await executePlan(childNode, intent, runId, opts);
+	assertSessionReuseNow(opts.connectionExecution);
 
 	if (childResult.root.finalReport === undefined) {
 		const reason = `child-plan-unavailable: ${childFailureCause(childNode, childResult, opts.parentTaskPath)}`;
@@ -511,15 +530,18 @@ function checkOutputShape(
  * is written too when it can be; when it cannot, the failure is still in the
  * plan's result.
  */
-function persistTaskRecord(
+async function persistTaskRecord(
 	runId:  string,
 	task:   PlannedTask,
 	record: TaskExecutionRecord,
 	/** The path of the planner task whose child plan this task belongs to; none for the root plan. */
 	parentTaskPath: string | undefined,
-): TaskExecutionRecord {
+	execution?: ConnectionExecutionContext,
+): Promise<TaskExecutionRecord> {
+	assertSessionReuseNow(execution);
+	if (execution?.mode === 'session-memory') return rememberSessionContinuation(record, execution);
 	try {
-		writeTaskOutput(runId, record, parentTaskPath);
+		writeTaskOutput(runId, record, parentTaskPath, execution);
 		return record;
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
@@ -527,7 +549,7 @@ function persistTaskRecord(
 		// A task that had already failed or been skipped keeps its own reason.
 		if (record.status !== 'ok') return record;
 		const failed = failedRecord(task, `task-record-unwritable: ${msg}`);
-		try { writeTaskOutput(runId, failed, parentTaskPath); }
+		try { writeTaskOutput(runId, failed, parentTaskPath, execution); }
 		catch (again) {
 			log.warn({ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result");
 		}

@@ -146,20 +146,33 @@ export interface RunPlannerArgs {
 	readonly provider?: LLMProvider | undefined;
 }
 
+interface PlannerStructuredTestArgs {
+	readonly input: PlanBuilderInput;
+	readonly opts: PlanBuilderOpts;
+	readonly wire: PlannerWireSchema;
+	readonly attempt: number;
+	readonly failures: readonly PlanValidationFailure[];
+}
+let structuredStageForTest: ((args: PlannerStructuredTestArgs) => Promise<PlanTask>) | undefined;
+/** Replace only model I/O for deterministic tests of the production retry loop.
+ * This never supplies provider proof or calls a provider in fixture mode. */
+export function _setPlannerStructuredForTest(stage?: typeof structuredStageForTest): void { structuredStageForTest = stage; }
+
 export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
+	const structuredStage = structuredStageForTest;
 	const sourceOpts = args.opts;
 	const execution = sourceOpts.connectionExecution;
 	assertAnalysisConnectionExecution(execution);
 	// Provider proof is installed by t24. Unsupported execution must never reach
 	// a data-bearing message, injected provider, schema file or subprocess.
-	if (execution?.mode === 'session-memory' && execution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
+	if (execution?.mode === 'session-memory' && execution.provider.mode !== 'verified-local' && structuredStage === undefined) throw new ConnectionExecutionError('unsupported-temporary');
 	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.input, execution); }
 	else assertSessionContinuationNow(args.input, execution);
 	assertSessionReuseNow(execution);
 	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
 	const cfg = loadAnalyzeConfig();
 	const input = args.input;
-	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
+	const opts = execution?.mode === 'session-memory' ? Object.freeze({ ...sourceOpts, connectionExecution: execution, signal: sourceOpts.signal && sourceOpts.signal !== execution.lifetime.signal ? AbortSignal.any([sourceOpts.signal, execution.lifetime.signal]) : execution.lifetime.signal }) : sourceOpts;
 	const { intent, contextBundle, parentTaskPath, catalog: catalogArg } = input;
 
 	// (0) Depth cap. The Plan Builder refuses to invoke when
@@ -183,21 +196,21 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 	const wire = plannerWireSchema(catalog);
 
 	// (2) Prompt load.
-	const promptContent = loadPromptFile();
+	const promptContent = structuredStage === undefined ? loadPromptFile() : '';
 
 	// (3) Provider.
-	const provider = args.provider ?? resolveRoleProvider('analyze.plan', cfg);
+	const provider = structuredStage === undefined ? args.provider ?? resolveRoleProvider('analyze.plan', cfg) : undefined;
 
 	// (4) Initial messages.
 	const bundleMd = assembleMarkdown(contextBundle);
-	let messages = buildInitialMessages({
+	let messages = structuredStage === undefined ? buildInitialMessages({
 		promptContent,
 		bundleMd,
 		intent,
 		catalog,
 		wire,
 		parentTaskPath,
-	});
+	}) : [];
 
 	const attempts: PlanTask[] = [];
 	const failures: PlanValidationFailure[] = [];
@@ -230,7 +243,9 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		acc = ''; lastEmit = 0; lastEmitLen = 0;  // reset preview per attempt
 		let raw: PlanTask;
 		try {
-			raw = await provider.completeStructured<PlanTask>(
+			raw = structuredStage !== undefined
+				? await structuredStage({ input, opts, wire, attempt, failures: Object.freeze([...failures]) })
+				: await provider!.completeStructured<PlanTask>(
 				messages,
 				wire.schema as Record<string, unknown>,
 				{

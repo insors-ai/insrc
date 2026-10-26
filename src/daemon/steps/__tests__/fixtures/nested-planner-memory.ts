@@ -40,8 +40,8 @@ async function fixture() {
 
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
-import { runRecursivePlanner, _setRecursivePlannerForTest } from '../../../../analyze/planner/recursive.js';
-import { runPlanner } from '../../../../analyze/planner/driver.js';
+import { runRecursivePlanner } from '../../../../analyze/planner/recursive.js';
+import { runPlanner, _setPlannerStructuredForTest } from '../../../../analyze/planner/driver.js';
 import { writeAttempt, writeFeedback, writePlanFinal, readPlanFinal, purgePlan, planFinalPathFor } from '../../../../analyze/planner/cache.js';
 import type { PersistArgs } from '../../../../analyze/planner/cache.js';
 import type { PlanBuilderInput, PlanTask, PlannedTask } from '../../../../analyze/planner/types.js';
@@ -55,52 +55,80 @@ import { permissiveIgnoreFilter } from '../../../../analyze/context/repo-ignore-
 import { buildCompleteness } from '../../../../analyze/completeness.js';
 import { beginSessionReuse, rememberSessionContinuation, assertSessionContinuation, assertSessionContinuationNow } from '../../../../analyze/session-reuse.js';
 import { savedAnalysisExecution } from '../../../../analyze/connection-access.js';
-const intent: ClassifiedIntent = { target: 'generic', scope: 'L', focused: true, focus: 'private', scopeRef: { kind: 'connection', value: 'same' }, reasoning: 'test' };
-const aggregate: PlannedTask = { taskId: 'agg', template: 'fixture.aggregate', kind: 'leaf', params: {}, produces: ['report'], consumes: ['report'], rationale: 'aggregate' };
-function plan(depth: number): PlanTask {
-	const first: PlannedTask = depth < 2 ? { taskId: 'child', template: 'generic.subrun.deep-dive', kind: 'planner', params: { childIntent: intent }, produces: ['report'], rationale: 'child' } : { taskId: 'list', template: 'fixture.list', kind: 'leaf', params: {}, produces: ['report'], rationale: 'list' };
-	return { planId: 'depth' + depth, goal: 'private', target: 'generic', scope: 'L', reasoning: 'test', tasks: [first, aggregate] };
+const intent: ClassifiedIntent = { target: 'generic', scope: 'S', focused: true, focus: 'private', scopeRef: { kind: 'connection', value: 'same' }, reasoning: 'test' };
+import { registerTemplate, getTemplateCatalog } from '../../../../analyze/planner/templates/registry.js';
+import { encodePlanParams } from '../../../../analyze/planner/wire-schema.js';
+import { encodeState, decodeState } from '../../analyze-step/state.js';
+import type { StepStatePayload } from '../../analyze-step/state.js';
+const templates = [
+	{ id: 'fixture.list', target: 'generic' as const, family: 'discovery', kind: 'leaf' as const, revision: 'r1', description: 'Private deterministic data listing', produces: ['child-report'], inputSchema: { type: 'object', properties: { index: { type: 'number' } }, additionalProperties: false } },
+	{ id: 'fixture.child', target: 'generic' as const, family: 'subrun', kind: 'planner' as const, revision: 'r1', description: 'Private child planning fixture', produces: ['child-report'], inputSchema: { type: 'object', properties: { childIntent: { type: 'object' } }, required: ['childIntent'], additionalProperties: false } },
+	{ id: 'fixture.aggregate', target: 'generic' as const, family: 'aggregate', kind: 'leaf' as const, revision: 'r1', description: 'Private deterministic terminal aggregation', produces: ['report'], inputSchema: { type: 'object', properties: {}, additionalProperties: false }, isAggregator: true },
+];
+function ensureTemplates() { for (const value of templates) if (!getTemplateCatalog().some(t => t.id === value.id)) registerTemplate(value); }
+function plan(depth: number, scope: ClassifiedIntent['scope'] = 'S'): PlanTask {
+	const tasks: PlannedTask[] = [];
+	tasks.push(depth < 2 ? { taskId: 't01', template: 'fixture.child', kind: 'planner', params: { childIntent: intent }, produces: ['child-report'], rationale: 'Plan the private child with the same owner authority.' } : { taskId: 't01', template: 'fixture.list', kind: 'leaf', params: {}, produces: ['child-report'], rationale: 'List the private owner data source for aggregation.' });
+	for (let index = 2;index < ({ XS: 2, S: 5, M: 10, L: 15, XL: 20 }[scope]);index++)tasks.push({ taskId: 't0' + index, template: 'fixture.list', kind: 'leaf', params: { index }, produces: ['child-report'], rationale: 'Count the same owner data source as an independent sibling.' });
+	tasks.push({ taskId: 't0' + (tasks.length + 1), template: 'fixture.aggregate', kind: 'leaf', params: {}, produces: ['report'], consumes: ['child-report'], rationale: 'Aggregate the private child reports without model I/O.' });
+	return { planId: 'depth' + depth, goal: 'private', target: 'generic', scope, reasoning: 'Use the private owner data source and keep every child report within the same authenticated invocation.', tasks };
 }
-const input = (): PlanBuilderInput => ({ intent, contextBundle: { summary: 'PRIVATE_SOURCE' } as AnalyzeContextBundle, catalog: [] });
+const input = (): PlanBuilderInput => ({ intent, contextBundle: { system: '', focus: '', summary: 'PRIVATE_SOURCE', structure: '', surface: '', artefacts: '', upstream: '' } as AnalyzeContextBundle, catalog: templates });
 
 test('actual nested walk, child measurement and task aggregation avoid persistent planner stores', async () => {
 	const f = await fixture(), [a, b] = f.owners as [typeof f.owners[number], typeof f.owners[number]];
+	ensureTemplates();
 	const persist = { runId: 'same-run' }, saved = plan(0); writePlanFinal(persist, saved); const savedPath = planFinalPathFor(persist), before = fs.readFileSync(savedPath, 'utf8'); let gets = 0, puts = 0, expected = a.execution, calls = 0;
 	const originalRead = fs.readFileSync, originalWrite = fs.writeFileSync;
-	const isPlan = (path: unknown) => typeof path === 'string' && (/[/\\]plan\.json$/.test(path) || path.includes('plan.attempts'));
+	const runRoot = PATHS.analyzeRun('same-run');
+	const isPlan = (path: unknown) => typeof path === 'string' && path.startsWith(runRoot + '/');
 	mock.method(fs, 'readFileSync', function(...args: Parameters<typeof originalRead>) { if (isPlan(args[0])) gets++; return originalRead.apply(fs, args); });
 	mock.method(fs, 'writeFileSync', function(...args: Parameters<typeof originalWrite>) { if (isPlan(args[0])) puts++; return originalWrite.apply(fs, args); }); syncBuiltinESMExports();
-	_setRecursivePlannerForTest(async args => { calls++; assert.equal(args.opts.connectionExecution, expected); assert.equal(args.opts.signal, expected.lifetime.signal); assert.ok(Object.isFrozen(args.opts)); return plan(args.input.currentDepth ?? 0); });
-	registerTemplateRuntime({ templateId: 'fixture.list', execute: async args => { assert.equal(args.connectionExecution, expected); const listed = await runDbTablesList({ id: 'tables', type: 'db.tables.list', purpose: 'private', params: { connectionId: 'same' } }, { connectionExecution: expected, runId: args.runId, repoPath: f.root, closureRepos: [f.root], readDep: () => undefined, ignoreFilter: permissiveIgnoreFilter(f.root) }); return { outputs: new Map([['report', { summary: String(listed.tables.length) }]]), completeness: buildCompleteness({ returned: listed.tables.length, basis: 'data-source' }) }; } });
-	registerTemplateRuntime({ templateId: 'fixture.aggregate', execute: async args => { assert.equal(args.connectionExecution, expected); const values = args.upstreamOutputs.get('report') ?? []; return { outputs: new Map([['report', values[0]!.value]]), completeness: buildCompleteness({ returned: values.length, basis: 'model-directed' }) }; } });
+	const validations: unknown[] = [];
+	_setPlannerStructuredForTest(async args => { validations.push({ depth: args.input.currentDepth, attempt: args.attempt, scope: args.input.intent.scope, failures: args.failures }); calls++; assert.equal(args.opts.connectionExecution, expected); assert.equal(args.opts.signal, expected.lifetime.signal); assert.ok(Object.isFrozen(args.opts)); const result = plan(args.input.currentDepth ?? 0, args.input.intent.scope); if (args.attempt === 0) return encodePlanParams({ ...result, tasks: result.tasks.slice(0, 1) }, args.wire); assert.equal(args.failures[0]!.invariantId, 'INV-12'); return encodePlanParams(result, args.wire); });
+	registerTemplateRuntime({ templateId: 'fixture.list', execute: async args => { assert.equal(args.connectionExecution, expected); const listed = await runDbTablesList({ id: 'tables', type: 'db.tables.list', purpose: 'private', params: { connectionId: 'same' } }, { connectionExecution: expected, runId: args.runId, repoPath: f.root, closureRepos: [f.root], readDep: () => undefined, ignoreFilter: permissiveIgnoreFilter(f.root) }); return { outputs: new Map([['child-report', { summary: String(listed.tables.length) }]]), completeness: buildCompleteness({ returned: listed.tables.length, basis: 'data-source' }) }; } });
+	registerTemplateRuntime({ templateId: 'fixture.aggregate', execute: async args => { assert.equal(args.connectionExecution, expected); const values = args.upstreamOutputs.get('child-report') ?? []; return { outputs: new Map([['report', values[0]!.value]]), completeness: buildCompleteness({ returned: values.length, basis: 'model-directed' }) }; } });
 	try {
 		for (const owner of [a, b, a]) {
 			expected = owner.execution; const tree = await runRecursivePlanner({ input: input(), opts: { runId: 'same-run', connectionExecution: expected } });
-			const child = tree.children.get('child')!, grandchild = child.children.get('child')!; assert.equal(child.measure!.items, owner.count); assert.equal(grandchild.measure!.items, owner.count);
+			assert.ok(tree.children.has('t01'), JSON.stringify(validations));
+			const child = tree.children.get('t01')!; assert.ok(child.children.has('t01'), JSON.stringify(validations)); const grandchild = child.children.get('t01')!; assert.equal(child.measure!.items, owner.count); assert.equal(grandchild.measure!.items, owner.count);
 			await assertSessionContinuation(tree, expected); const result = await runExecutor({ tree, intent, runId: 'same-run', connectionExecution: expected }); assert.deepEqual(result.root.finalReport, { summary: String(owner.count) });
 			await assert.rejects(assertSessionContinuation(tree, owner === a ? b.execution : a.execution), { code: 'session-expired' }); assert.throws(() => assertSessionContinuationNow(tree, savedAnalysisExecution(f.root)), { code: 'session-expired' });
 			const fresh = await f.fresh(owner); await beginSessionReuse(fresh.execution); await assertSessionContinuation(tree, fresh.execution);
+			const state = { version: 2, runId: 'same-run', repoPath: f.root, repoIndexedAt: null, intent, synthesizerKey: 'generic', stage: 'awaiting_narrow', narrow: { explorationId: 'resume', explorationType: 'capability.reuse-check', preparedBlob: tree, resumeState: { results: [], outputs: [], totalCached: 0, totalMsSoFar: 0 } } } as StepStatePayload;
+			const token = await encodeState(state, expected);
+			await assert.rejects(decodeState(token, owner === a ? b.execution : a.execution), { code: 'session-expired' });
+			const restored = await decodeState(token, fresh.execution); const resumedTree = restored.narrow!.preparedBlob as typeof tree;
+			await assert.rejects(runExecutor({ tree: resumedTree, intent, runId: 'same-run', connectionExecution: owner === a ? b.execution : a.execution }), { code: 'session-expired' });
+			await assert.rejects(runExecutor({ tree: resumedTree, intent, runId: 'same-run', connectionExecution: savedAnalysisExecution(f.root) }), { code: 'session-expired' });
+			expected = fresh.execution; const resumed = await runExecutor({ tree: resumedTree, intent, runId: 'same-run', connectionExecution: fresh.execution }); assert.deepEqual(resumed.root.finalReport, { summary: String(owner.count) });
 		}
-		assert.equal(calls, 9); assert.equal(gets, 0); assert.equal(puts, 0);
+		assert.equal(calls, 18); assert.equal(gets, 0); assert.equal(puts, 0);
 		let reads = 0; const poison = new Proxy({}, { get() { reads++; throw Error('PERSISTENT_SOURCE_READ'); } });
 		assert.equal(readPlanFinal(poison as PersistArgs, a.execution), null); writeAttempt(poison as PersistArgs, 1, poison as PlanTask, a.execution); writeFeedback(poison as PersistArgs, 1, poison as PlanValidationFailure, a.execution); writePlanFinal(poison as PersistArgs, poison as PlanTask, a.execution); purgePlan(poison as PersistArgs, a.execution); assert.equal(reads, 0);
 		const tagged = await rememberSessionContinuation(plan(2), a.execution); assert.throws(() => writePlanFinal(persist, tagged), { code: 'session-expired' }); await assert.rejects(rememberSessionContinuation(tagged, b.execution), { code: 'session-expired' });
 		assert.equal(gets, 0); assert.equal(puts, 0);
-	} finally { _setRecursivePlannerForTest(); _resetRuntimeRegistryForTests(); mock.restoreAll(); syncBuiltinESMExports(); assert.equal(fs.readFileSync(savedPath, 'utf8'), before); await f.close(); }
+	} finally { _setPlannerStructuredForTest(); _resetRuntimeRegistryForTests(); mock.restoreAll(); syncBuiltinESMExports(); assert.equal(fs.readFileSync(savedPath, 'utf8'), before); await f.close(); }
 });
 
 test('owner loss and unsupported provider reject before child plan/input payload reuse', async () => {
 	const f = await fixture(), a = f.owners[0]!, entered = deferred(), held = deferred(); let reads = 0, calls = 0;
 	const poison = new Proxy({}, { get(_target, key) { if (key === 'then') return undefined; reads++; throw Error('PRIVATE_CHILD_PAYLOAD'); } });
 	try {
+		ensureTemplates();
 		await beginSessionReuse(a.execution);
+		await beginSessionReuse(f.owners[1]!.execution);
+		const otherTree = await rememberSessionContinuation(new Proxy({}, { get(_target, key) { if (key === 'then') return undefined; reads++; throw Error('WRONG_OWNER_CHILD'); } }), f.owners[1]!.execution);
+		await assert.rejects(runExecutor({ tree: { plan: plan(0), children: new Map([['t01', otherTree as never]]), childErrors: new Map() }, intent, runId: 'child-owner', connectionExecution: a.execution }), { code: 'session-expired' }); assert.equal(reads, 0);
 		await assert.rejects(runPlanner({ opts: { runId: 'private', connectionExecution: a.execution }, get input() { reads++; throw Error('PRIVATE_INPUT'); }, get provider() { reads++; throw Error('PRIVATE_PROVIDER'); } }), { code: 'unsupported-temporary' }); assert.equal(reads, 0);
 		const taggedInput = await rememberSessionContinuation(poison as PlanBuilderInput, a.execution); await assert.rejects(runPlanner({ input: taggedInput, opts: { runId: 'private' } }), { code: 'session-expired' }); assert.equal(reads, 0);
-		_setRecursivePlannerForTest(async args => { calls++; if ((args.input.currentDepth ?? 0) === 1) { entered.resolve(); await held.promise; return poison as PlanTask; } return plan(0); });
+		_setPlannerStructuredForTest(async args => { calls++; if ((args.input.currentDepth ?? 0) === 1) { entered.resolve(); await held.promise; return poison as PlanTask; } return encodePlanParams(plan(0), args.wire); });
 		const opts = { runId: 'held', connectionExecution: a.execution }; const work = runRecursivePlanner({ input: input(), opts }); await entered.promise;
 		// A later mutation of the supplied options cannot replace the captured carrier.
 		opts.connectionExecution = f.owners[1]!.execution;
 		const revision = a.overlay.read('same').revision; a.overlay.commit(await a.overlay.prepare({ key: { repoRoot: f.root, scope: 'temporary', id: 'same' }, mode: 'update', expectedRevision: revision, publicPatch: { label: 'changed' } })); held.resolve(); await assert.rejects(work, { code: 'session-expired' }); assert.equal(reads, 0); assert.equal(calls, 2);
-		const fresh = await f.fresh(a); await beginSessionReuse(fresh.execution); await assert.rejects(rememberSessionContinuation(taggedInput, fresh.execution), { code: 'session-expired' }); assert.equal(reads, 0);
-	} finally { held.resolve(); _setRecursivePlannerForTest(); await f.close(); }
+		const fresh = await f.fresh(a); await beginSessionReuse(fresh.execution); await assert.rejects(rememberSessionContinuation(taggedInput, fresh.execution), { code: 'session-expired' });
+		await assert.rejects(runExecutor({ tree: taggedInput as never, intent, runId: 'stale-child', connectionExecution: fresh.execution }), { code: 'session-expired' }); assert.equal(reads, 0);
+	} finally { held.resolve(); _setPlannerStructuredForTest(); await f.close(); }
 });

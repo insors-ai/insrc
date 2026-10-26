@@ -100,7 +100,7 @@ async function start(home: string, env: Record<string, string>): Promise<Running
 	};
 }
 
-type Defs = { families: Array<{ id: string; rejectedModels?: string[]; models: Array<{ id: string; efforts: string[]; source: string }> }> };
+type Defs = { families: Array<{ id: string; rejectedModels?: string[] | undefined; models: Array<{ id: string; efforts: string[]; source: string }> }> };
 const codexOf = (d: Defs) => d.families.find(f => f.id === 'cli-codex')!;
 const resolve = (sock: string, repo: string) => rpc(sock, 'models.resolveRole', { role: ROLE, repoPath: repo }) as Promise<Record<string, unknown>>;
 

@@ -32,7 +32,7 @@ const skip = LIVE ? false : 'set INSRC_LIVE_TESTS=1 to run against the installed
 let dir: string;
 let registry: ModelRegistry;
 
-type Family = { id: string; models: Array<{ id: string; aliases?: string[] }>; tierDefaults?: Record<string, { model: string }>; summariserModel?: string };
+type Family = { id: string; models: Array<{ id: string; aliases?: string[] | undefined }>; tierDefaults?: Record<string, { model: string }> | undefined; summariserModel?: string | undefined };
 
 before(() => {
 	if (!LIVE) return;

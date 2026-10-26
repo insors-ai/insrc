@@ -6358,6 +6358,18 @@
       "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
       "sites": [
         [
+          "provider-adapter",
+          "CliProvider"
+        ],
+        [
+          "provider-factory",
+          "CliProvider"
+        ],
+        [
+          "provider-use",
+          "CliProvider"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -6382,6 +6394,18 @@
           "log.info"
         ],
         [
+          "provider-adapter",
+          "OllamaProvider"
+        ],
+        [
+          "provider-factory",
+          "OllamaProvider"
+        ],
+        [
+          "provider-use",
+          "OllamaProvider"
+        ],
+        [
           "filesystem-read",
           "readdirSync"
         ],
@@ -6396,14 +6420,21 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "provider-factory",
+          "reviewProvider"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "cd009fea0fc4351cd95c4775916fcefbf968e9986cbed2b6d899b40f052a43ea",
-      "sourceDigest": "a1d74c9aef8a1f0dd9c7b51b6c8da90409c6a67dad0e9d950cc18c0ee29401b8",
+      "siteCount": 17,
+      "sitesDigest": "1bc33f09158cd04616279138d68425568e82c3410eeaa9b3f5e96ada8c1ac514",
+      "sourceDigest": "f1bf086eaf3f67620c7616389970bb9208ecc94c42b199ac4f71cef8f4a47343",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
+        "provider-adapter",
+        "provider-factory",
+        "provider-use",
         "serialization"
       ]
     },

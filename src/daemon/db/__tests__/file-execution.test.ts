@@ -240,11 +240,12 @@ test('CM-S1-H: query admission rejects writes multi-statements and unapproved so
 		try {
 			for (const sql of ['COPY (SELECT 1) TO \'/tmp/forbidden\'', 'ATTACH \'/tmp/forbidden\'', 'INSTALL httpfs', 'SET memory_limit=\'1TB\'', 'SELECT 1; SELECT 2'])
 				await assert.rejects(resource.withConnection(c => c.runAndReadAll(sql)));
-			let release!: () => void, started!: () => void;
+			let release!: () => void, started!: () => void, settled = false;
 			const gate = new Promise<void>(r => release = r), ready = new Promise<void>(r => started = r);
 			const work = resource.withConnection(async () => {
 				started();
 				await gate;
+				settled = true;
 				return 7;
 			});
 			await ready;
@@ -256,7 +257,8 @@ test('CM-S1-H: query admission rejects writes multi-statements and unapproved so
 			assert.equal(closed, false);
 			assert.equal(resource.diagnostics.operations, 1);
 			release();
-			assert.equal(await work, 7);
+			await assert.rejects(work, /File execution closed/);
+			assert.equal(settled, true, 'actual callback work settled; its result stayed revoked');
 			await closing;
 			assert.equal(resource.diagnostics.connections, 0);
 		}

@@ -121,16 +121,9 @@ test('CM-S3-ISOLATION: private factory receives only the matching owner root and
 });
 
 test('CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions', async () => {
- const f = await fixture();
- try {
-  for (const [root, name, marker] of [[f.a, 'a.sqlite', 'owner-A'], [f.a, 'b.sqlite', 'owner-B'], [f.b, 'c.sqlite', 'root-B'], [f.a, 'next.sqlite', 'next-revision']] as const) { const db = new DatabaseSync(join(root, name)); db.exec(`CREATE TABLE data(marker TEXT); INSERT INTO data VALUES ('${marker}');`); db.close(); }
-  const a = await f.client(), b = await f.client(); await a.call('db.connections.v2.session.open', { repoRoot: f.a }); await b.call('db.connections.v2.session.open', { repoRoot: f.a });
-  const requests: MutationRequest[] = [];
-  for (const [client, root, path] of [[a, f.a, 'a.sqlite'], [b, f.a, 'b.sqlite'], [a, f.b, 'c.sqlite']] as const) { const input = await request(client, root, { kind: 'sqlite', path }); requests.push(input); committed(await client.call<MutationOutcome>('db.connections.v2.mutate', input)); }
-  const ha = await f.hold(a), hb = await f.hold(b), aa = await f.runtime.accessFor(ha.context, f.a), ab = await f.runtime.accessFor(hb.context, f.a), ac = await f.runtime.accessFor(ha.context, f.b);
-  const rows = (access: ConnectionAccessContext) => f.resolver.withConnection(access, 'same', async driver => { assert.equal(driver.family, 'rdbms'); if (driver.family !== 'rdbms') throw new Error('Expected SQLite'); return driver.sample('data', { limit: 1 }); });
-  for (const [access, marker] of [[aa, 'owner-A'], [ab, 'owner-B'], [ac, 'root-B']] as const) assert.ok(JSON.stringify(await rows(access)).includes(marker));
-  const initial = await a.call<{ revision: string }>('db.connections.v2.read', { key: requests[0]!.key }), edit = await request(a, f.a, { path: 'next.sqlite' }, {}, initial.revision); committed(await a.call<MutationOutcome>('db.connections.v2.mutate', edit));
-  assert.ok(JSON.stringify(await rows(aa)).includes('next-revision')); assert.ok(JSON.stringify(await rows(ab)).includes('owner-B')); assert.ok(JSON.stringify(await rows(ac)).includes('root-B'));
- } finally { await f.close(); }
+	const { spawn } = await import('node:child_process'); const { fileURLToPath } = await import('node:url');
+	const baseline = Object.fromEntries(['DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'].map(key => [key, '']));
+	const child = spawn(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./fixtures/native-sqlite-isolation-child.ts', import.meta.url))], { env: { ...process.env, ...baseline, INSRC_MODE: 'probe-worker', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
+	let output = ''; child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; }); const timer = setTimeout(() => child.kill('SIGKILL'), 15000);
+	try { const code = await new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('close', resolve); }); assert.equal(code, 0, output); assert.match(output, /native-sqlite-isolation-ok/); } finally { clearTimeout(timer); child.kill('SIGKILL'); }
 });

@@ -170,7 +170,9 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 			this.#connections.add(connection);
 			try {
 				this.#live();
-				return await use(connection);
+				const result = await use(connection);
+				this.#live();
+				return result;
 			}
 			finally {
 				connection.closeSync();
@@ -314,10 +316,12 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 						if (!/^\s*(SELECT|WITH|DESCRIBE)\b/i.test(sql))
 							throw new Error('Unsupported file query');
 						const statements = await connection.extractStatements(sql);
+						this.#live();
 						if (statements.count !== 1)
 							throw new Error('Unsupported file query');
 						const prepared = await statements.prepare(0);
 						try {
+							this.#live();
 							if (prepared.statementType !== StatementType.SELECT)
 								throw new Error('Unsupported file query');
 							if (values)
@@ -348,9 +352,15 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 	async close(): Promise<void> {
 		if (this.#closing) return this.#closing;
 		this.#closed = true; this.#controller.abort();
-		for (const connection of this.#connections) { try { connection.interrupt(); } catch { /* Still drain and close this owned handle. */ } }
+		const interrupt = () => { for (const connection of this.#connections) { try { connection.interrupt(); } catch { /* Still drain and close this owned handle. */ } } };
+		interrupt();
 		this.#closing = (async () => {
-			while (this.#pending.size) await Promise.allSettled([...this.#pending]);
+			// The native SDK can queue a query just after the initial interrupt.
+			// Retry cancellation only on this closed resource's owned connections
+			// until actual work settles; no new query or shared instance is touched.
+			const cancellation = setInterval(interrupt, 5); cancellation.unref();
+			try { while (this.#pending.size) await Promise.allSettled([...this.#pending]); }
+			finally { clearInterval(cancellation); }
 			let failed = false;
 			const sources = await Promise.allSettled([...this.#sources].map(source => this.#closeSource(source)));
 			for (const connection of this.#connections) {

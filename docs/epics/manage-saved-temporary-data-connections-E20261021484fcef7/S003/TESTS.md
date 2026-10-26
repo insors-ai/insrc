@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 106 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -591,3 +591,39 @@ Run at 2026-10-26T12:28:35.972Z on commit `54e4f7be4`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` | 0 | 1 | 2.9 s |  |
+
+## t30
+
+Run at 2026-10-26T13:32:19.816Z on commit `e40c8c9f6`. Tests check: **failed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+| pass | CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits | `src/daemon/db/__tests__/session-probe.test.ts` |
+| pass | CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases | `src/daemon/db/__tests__/session-file-resources.test.ts` |
+
+**integration: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+| pass | CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 4.2 s |  |
+| `src/daemon/db/__tests__/session-file-resources.test.ts` | 0 | 1 | 1.5 s |  |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 11 | 0.5 s |  |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 1 | 3.3 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 1 | 7 | 1 s |  |
+
+**Failures outside the named cases**
+
+- `src/daemon/db/__tests__/session-resources.test.ts`: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions

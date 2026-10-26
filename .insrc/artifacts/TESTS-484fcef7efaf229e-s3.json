@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T12:28:35.972Z",
+    "updatedAt": "2026-10-26T13:32:19.816Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2032,6 +2032,207 @@
               }
             ],
             "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t30",
+        "commit": "e40c8c9f6",
+        "ranAt": "2026-10-26T13:32:19.816Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4157,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1476,
+            "titles": [
+              {
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 474,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3303,
+            "titles": [
+              {
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-resources.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 1032,
+            "titles": [
+              {
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": [
+              "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions"
+            ]
           }
         ]
       }

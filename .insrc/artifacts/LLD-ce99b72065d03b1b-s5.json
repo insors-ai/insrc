@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "warn",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The selected scope covers the upstream s5 responsibilities without implementing the other clients or daemon-owned model checking.",
-          "evidence": "DEF §6.5 requires definitions-driven choices, unknown-model approval, and restricted repo settings. HLD assigns review resolution, Setup, command-bar result handling, and stopgap removal to s5. The design addresses these responsibilities and retains s4 ownership of checks and decisions. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md]",
-          "action": "Retain these scope boundaries.",
+          "premise": "The design covers S005's upstream acceptance criteria and assigned client surfaces.",
+          "evidence": "DEF §6.5 requires definitions-driven choices, unknown-model approval and restricted repo settings. HLD §6.5 additionally assigns review-role resolution, Setup and temporary-export removal. The LLD designs each surface. Its service contracts and write-path descriptions adequately document ownership and relationships without requiring another ERD. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -47,22 +47,10 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Every TUI save of an unknown tier model goes through checking and approval.",
-          "evidence": "The design says 'Every change writes the whole tier object' and offers an effort cycle containing '' for an already-configured unserved model. Starting with an unlisted model and effort 'high', pressing e therefore saves that unknown model with effort '' without checking it. applyConfigWrite checks rejection only when runner/model changes: 'const hit = changed ? rejectedIn(registry, after) : undefined'; otherwise it returns ok:true. Unlisted models are also accepted on model changes. Runtime fallback prevents execution of the unknown model, but does not enforce the design's save invariant or ac2. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/daemon/config-write.ts, src/daemon/model-registry.ts, src/config/analyze.ts]",
-          "action": "Guard every tier commit against the definitions. For an unserved current model, route an effort edit through checking/approval or disable that edit until a served model is selected. Add a regression starting with an unknown model already in config.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "coverage-of-intent.3",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The linked UX companion renders consistently with the proposed screens.",
-          "evidence": "Read ux-mock.html, including its generated screen content, element descriptions, styles, and pan/zoom script. Its source includes tier selection, check evidence, approval/restart outcomes, and repo settings. Attempted to open it for visual inspection, but the browser tool reported 'Browser is not available: iab' and browser inventory was empty. Actual layout, clipping, and rendered readability could not be verified. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
-          "action": "Render and inspect the existing companion before approval; have the author regenerate it if rendering exposes inconsistencies.",
+          "premise": "The linked UX companion renders consistently with the proposed interaction.",
+          "evidence": "Read the generated HTML, including its screen content and element descriptions. It contains tier selection, check results, approval-before-restart, restart/save failures and repo settings. Browser rendering could not be checked: opening the in-app browser returned 'Browser is not available: iab', and browser inventory was empty. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html]",
+          "action": "Render the existing companion and verify layout, readability and consistency before accepting visual verification.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -72,9 +60,21 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The described current TUI model selection, Setup recommendation, command-bar reporting, and disconnected RPC behavior match the implementation.",
-          "evidence": "computeEffectiveTiers uses DEFAULT_TIERS and shippedModelRegistry; ModelTiersPane writes individual fields and validates literal runners. reviewArtifact constructs a local router. recommendModels selects DEFAULT_LOCAL_MODEL. runConfig awaits config.write and unconditionally prints success. rpc handles connect/data/error but has no end/close handler. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/services/workflow.ts, src/shared/model-recommender.ts, src/cli/command.ts, src/shared/ipc-client.ts]",
-          "action": "Retain this migration baseline.",
+          "premise": "The stated migration baseline accurately describes current TUI model selection, review, Setup and command writes.",
+          "evidence": "computeEffectiveTiers calls 'resolveTier(tiering, t, shippedModelRegistry())'; ModelTiersPane writes individual fields and validates three runner literals. reviewArtifact uses shippedModelRegistry, createRoleRouter and loadAnalyzeConfig. recommendModels selects DEFAULT_LOCAL_MODEL. runConfig awaits config.write but ignores its result. ReposPane has no models modal. [files: src/cli/panes/model-tiers.ts, src/cli/panes/ModelTiersPane.tsx, src/cli/panes/ReposPane.tsx, src/cli/services/workflow.ts, src/shared/model-recommender.ts, src/cli/command.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current shared RPC client can remain pending after a connection closes without a reply.",
+          "evidence": "Read the complete rpc implementation: it registers connect, data and error handlers, but no end or close handler. Non-ENOENT/ECONNREFUSED errors use 'reject(err)', confirming that ECONNRESET currently surfaces without an outcome-unknown classification. [files: src/shared/ipc-client.ts, src/cli/client.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,9 +84,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed Services.models facade can reuse existing daemon methods and existing role-map helpers.",
-          "evidence": "handler-runtime registers all five models methods and method-class classifies them. projectDefinitions supplies aliases, efforts, defaults, source, rejected IDs, and optional installed state. checkModel/approveCheck/rejectCheck expose the proposed inputs and decision results. nextRoleTiers already clones the map and deletes a cleared role while preserving other flat keys. [files: src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts, src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/cli/panes/model-tiers.ts, src/cli/services/index.ts]",
-          "action": "Reuse these implementations and their exported wire types.",
+          "premise": "The daemon APIs and provider constructors proposed for reuse support the required data and operations.",
+          "evidence": "ModelDefinitionsResult includes families, aliases, efforts, defaults, installed state and rejected ids. resolveRoleWire returns family/model/effort plus cli.kind or ollama.host/numCtx. All five models methods are registered. CliProvider accepts kind, model, effort and inputBudgetChars; OllamaProvider accepts explicit model, host and numCtx. [files: src/daemon/model-definitions.ts, src/daemon/model-check.ts, src/daemon/handler-runtime.ts, src/agent/providers/cli-provider.ts, src/agent/providers/ollama.ts]",
+          "action": "Use the existing wire type exported as ResolvedRole, optionally aliased locally to the design's RoleResolution name.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -95,12 +95,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The proposed ReposPane signature is compatible with its existing caller and selected-repository contract.",
-          "evidence": "§2.6 specifies 'ReposPane(): ReactElement'. The real function requires daemon, nonce, selectedRepo, and onSelectRepo props. Its body reads 'props.daemon.status?.repos' and calls 'props.onSelectRepo(current.path)'. app.tsx supplies all four props. Implementing the stated zero-argument contract breaks the JSX caller and removes the existing repository-selection inputs; no caller migration is designed. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/panes/ReposPane.tsx, src/cli/app.tsx]",
-          "action": "Preserve and document the existing props signature when adding the models view. If intentionally replacing it, specify the replacement selection/state contract and update app.tsx and its tests.",
+          "severity": "LOW",
+          "premise": "The principal signature changes, callers and temporary-export consumers are accounted for.",
+          "evidence": "Repository searches confirmed the two setup.recommend callers and the daemon/system wrapper around recommendModels. The retained reviewArtifact test callers are named; the additional caller is in tui-shipped-registry.test.ts, which the design removes. DEFAULT_TIERS/TIER_EFFORTS consumers match the listed pane and test migrations. App passes ReposPane exactly the four preserved props. [files: src/cli/services/index.ts, src/cli/services/setup.ts, src/cli/services/config.ts, src/cli/services/workflow.ts, src/cli/app.tsx, src/cli/__tests__/tui-shipped-registry.test.ts, src/config/analyze.ts, src/daemon/handler-runtime.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -108,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Whole-tier writes and segmented repo-task writes preserve the existing stored shapes without a new migration.",
-          "evidence": "parseTiering reads global tiers as runner/model/effort objects and repo entries as tasks/coreFloor. toConfigSegments uses array elements verbatim, so dotted repo paths remain single keys. nextRoleTiers preserves dotted role IDs. Existing reconcile code deletes each repo's tiers subtree while retaining its other settings. [files: src/config/analyze.ts, src/config/write-path.ts, src/config/reconcile.ts, src/cli/panes/model-tiers.ts, src/config/__tests__/write-path.test.ts]",
-          "action": "Retain the array-path and whole-map writes, including sibling-preservation tests.",
+          "premise": "Whole-tier writes and literal-segment repo writes preserve the existing stored shapes and inheritance semantics.",
+          "evidence": "setConfigAtPath accepts arrays verbatim and replaces only the targeted leaf. parseTiering reads flat tasks keys and repo tasks/coreFloor while ignoring repo tiers. nextRoleTiers clones the map and deletes only the cleared role. A null coreFloor is ignored by parsing, restoring inheritance. tierSetting uses 'effort ?? def.effort', preserving the explicitly empty effort behavior described for unset tiers. [files: src/config/write-path.ts, src/config/analyze.ts, src/cli/panes/model-tiers.ts, src/daemon/config-write.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,9 +120,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design consumes sc3–sc5 and adequately describes the existing repo/role/tier relationships without redesigning their ownership.",
-          "evidence": "HLD assigns definitions projection to s2, settings/role resolution to s3, and checking/persistence to s4. The design leaves those implementations intact. Its paths and prose specify that each repo has a sparse role-to-tier map plus an optional floor, while tiers own global model settings. These agree with RepoTiering and role-router's repo assignment → global assignment → taxonomy precedence. No new persistent relationship requires a separate ERD. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/config/analyze.ts, src/analyze/context/role-router.ts]",
-          "action": "Keep daemon-side refusal changes with the sc5 owner as stated.",
+          "premise": "The design consumes the owner stories' contracts without redesigning their responsibilities.",
+          "evidence": "HLD §6.5 assigns the TUI, review consumer, Setup and stopgap removal to S005. Registry construction, probing, store persistence and daemon write policy remain with their existing owners. The LLD accurately notes that applyConfigWrite refuses rejected models but does not forbid repo tier writes; it leaves changing that daemon policy to S003. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/HLD.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/daemon/config-write.ts, src/daemon/model-check.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +132,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Waiting for approval, then restarting before saving, matches the daemon's decision durability and registry caching.",
-          "evidence": "decide writes the profile before deleting the pending check and returning restartRequired:true. getModelRegistry caches the store-derived registry per thread. approveCheck refuses a check whose model did not run and rejects unclaimed/rejected efforts. The proposed restart-then-save flow and refusal handling match these behaviors. [files: src/daemon/model-check.ts, src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
-          "action": "Retain the separate approval, restart, and save states.",
+          "premise": "The approval and refusal flow matches the daemon's actual decision semantics.",
+          "evidence": "approveCheck rejects checks with runs:false and levels absent from the check or marked rejected. decide returns write-failed without deleting the pending check, and deletes it only after persistence succeeds. Successful decisions return '{ ok: true, restartRequired: true }'. The LLD's no-save-on-failure and approve→restart→save sequence respects these rules. [files: src/daemon/model-check.ts, src/daemon/model-registry.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -143,12 +143,12 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The proposed disconnect handling covers transport failures while a decision's outcome is uncertain.",
-          "evidence": "The design retains existing error rejection and adds named end/close rejection, while the decision screen recognizes 'the disconnect error'. rpc currently handles non-connect socket errors with 'reject(err)'. If ECONNRESET arrives before close, that raw error settles the promise first; a later close cannot replace it with the named disconnect error. The specified outcome-unknown recovery therefore misses this transport-failure path after a decision may already have been persisted. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/shared/ipc-client.ts, src/shared/__tests__/ipc-client.test.ts, src/daemon/model-check.ts]",
-          "action": "Define a transport-failure classification covering errors after request dispatch, including ECONNRESET/EPIPE, and route uncertain approve/reject outcomes to reload without resubmission. Test error-before-close ordering.",
+          "severity": "LOW",
+          "premise": "The proposed disconnect classification and restart failure handling distinguish failed requests from uncertain decisions.",
+          "evidence": "The existing RPC client exposes socket errors without identifying whether a request was written. The proposed sent-request classification supplies the information needed to avoid blindly repeating approvals. maintenance.restart already returns MaintenanceResult and detects stop/start failures; the design handles both unsuccessful results and rejected promises. [files: src/shared/ipc-client.ts, src/cli/services/maintenance.ts, src/daemon/config-write.ts, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md]",
+          "action": "Clarify in the check-screen test that a tier saved after restarting can itself return restartRequired; retain the general restart-to-apply indication for that save.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "tests.1",
@@ -156,21 +156,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each upstream s5 acceptance criterion has a concrete proposed test mapping using existing repository test facilities.",
-          "evidence": "The mapping assigns ac1 to fake-definition choices, atomic writes, and source scans; ac2 to check/evidence/approval/restart flows; and ac3 to restricted repo writes and command guards. Existing tui.test.ts injects Services into App and drives stdin through ink-testing-library; command.test.ts records service writes; ipc-client.test.ts supplies an EventEmitter socket seam. These support the proposed tests. This verifies test design, not execution of future tests. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts, src/shared/__tests__/ipc-client.test.ts]",
-          "action": "Retain the mapping and add the unknown-current-model and error-before-close regressions identified above.",
+          "premise": "Each S005 acceptance criterion maps to executable tests using available seams.",
+          "evidence": "AC1 maps to differing fake definitions, picker keystrokes, whole-tier write assertions and source scans. AC2 maps to check evidence, approval/rejection, restart ordering and interrupted requests. AC3 maps to repo path/map assertions and command guards. Existing tests demonstrate Services injection, Ink rendering, the RPC connect seam and reviewFile injection. The proposed tests are a plan; no implementation pass is claimed. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/LLD.md, src/cli/__tests__/tui.test.ts, src/cli/__tests__/command.test.ts, src/cli/__tests__/model-tiers.test.ts, src/shared/__tests__/ipc-client.test.ts, src/daemon/__tests__/model-literal-scan.test.ts, src/cli/services/__tests__/review-source-roots-daemon.test.ts]",
+          "action": "Optionally add an injected static-effort-list case: the existing literal scanner checks model/family literals and retired imports, but does not independently detect arbitrary hardcoded effort arrays.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 3,
+        "high": 0,
         "med": 0,
-        "low": 8,
+        "low": 11,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-26T11:47:47.162Z",
+      "reviewedAt": "2026-10-26T11:53:50.143Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }

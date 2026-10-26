@@ -494,3 +494,23 @@ A TUI adapter turns ModelDefinitionsResult back into a ModelDefinitionsFile + ap
 - Checklist ep3 (partial): the k5 invariant (an unknown model is saved only after approval) is a DEF constraint carried by the HLD (c1); its code evidence is the s4 check result shape (src/daemon/model-check.ts), not an s1 analyze bundle.
 - sc5 (owner s3): config.write still accepts models.byRepo.<repo>.tiers (and partial tier fields) from any client; only the next boot's reconcile prunes per-repo tiers. The TUI no longer sends either (the command bar refuses model keys); should config.write refuse them so VS Code (s6), JetBrains (s7) and hand-written requests are held to k6 too?
 - recommendModels keeps a generic VRAM estimate for the local model to size the context shape; the definitions carry no memory figure for an Ollama model. Should the definitions gain one, or is the estimate acceptable?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-26T11:53:50.143Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | The linked UX companion renders consistently with the proposed interaction. | Read the generated HTML, including its screen content and element descriptions. It contains tier selection, check results, approval-before-restart, restart/save failures and repo settings. Browser rendering could not be checked: opening the in-app browser returned 'Browser is not available: iab', and browser inventory was empty. [files: docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/ux-mock.html] | Render the existing companion and verify layout, readability and consistency before accepting visual verification. |

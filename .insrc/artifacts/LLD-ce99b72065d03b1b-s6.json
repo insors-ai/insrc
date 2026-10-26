@@ -182,6 +182,13 @@
         "choice": "Shared invariant assessment",
         "rationale": "User choice: one assessment covering k1, k3, k4 and k7 for all alternatives — none changes the daemon or the definitions file, so they do not differentiate the alternatives.",
         "resolvedAt": "2026-10-26T19:12:55.055Z"
+      },
+      "q7459caf6": {
+        "question": "Tier settings leave the VS Code Settings UI (the manifest stops contributing insrc.models.tiers.*): tiers are then edited only through 'insrc: Set model tier', whole. Keeping the native keys would mean a static runner / effort list in the extension and single-leaf tier writes. Confirm removing them?",
+        "status": "resolved",
+        "choice": "Keep native tier settings",
+        "rationale": "User choice: s6 is only about which tier values are valid; the insrc.models.tiers.* settings stay in VS Code Settings. They carry no static enum or model-name default; the sync engine validates a tier edit against models.definitions (family, model of that family, effort that model accepts) and writes the whole tier (runner, model, effort from the current native values), reverting an invalid value with a message (an unlisted model points to 'insrc: Set model tier' for the check). No new review cycle (user).",
+        "resolvedAt": "2026-10-26T19:16:08.660Z"
       }
     }
   },

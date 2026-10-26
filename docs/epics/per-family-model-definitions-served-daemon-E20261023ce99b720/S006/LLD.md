@@ -398,6 +398,8 @@ The picker and panel change as in a1 and the gateway keeps the daemon's reason a
 
 - `q6b52f29d` — Checklist alt2 (partial): Each alternative is scored against ac1-ac3 and sc3-sc5; the Epic constraints are covered through those scores (k2 via ac1, k5 via ac2, k6 via ac3) but k1, k3, k4 and k7 have no explicit score entries. k1/k3/k4/k7 concern the daemon and the definitions file, which none of the alternatives touch, so no alternative differs on them.
   - **resolved**: Shared invariant assessment — User choice: one assessment covering k1, k3, k4 and k7 for all alternatives — none changes the daemon or the definitions file, so they do not differentiate the alternatives. _(2026-10-26T19:12:55.055Z)_
+- `q7459caf6` — Tier settings leave the VS Code Settings UI (the manifest stops contributing insrc.models.tiers.*): tiers are then edited only through 'insrc: Set model tier', whole. Keeping the native keys would mean a static runner / effort list in the extension and single-leaf tier writes. Confirm removing them?
+  - **resolved**: Keep native tier settings — User choice: s6 is only about which tier values are valid; the insrc.models.tiers.* settings stay in VS Code Settings. They carry no static enum or model-name default; the sync engine validates a tier edit against models.definitions (family, model of that family, effort that model accepts) and writes the whole tier (runner, model, effort from the current native values), reverting an invalid value with a message (an unlisted model points to 'insrc: Set model tier' for the check). No new review cycle (user). _(2026-10-26T19:16:08.660Z)_
 
 ## Citations
 

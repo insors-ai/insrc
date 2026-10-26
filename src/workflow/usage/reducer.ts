@@ -153,10 +153,15 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
   const capabilities = new Map(scope.evidence.sourceCapabilities.map(capability => [capability.capabilityId, capability]));
   for (const [callId, start] of starts) {
     if (referenceOnly.has(start.eventId)) continue;
-    if (badCalls.has(callId)) continue;
+    const unresolvedOwner = (state: 'conflict' | 'unavailable'): void => {
+      owners.push({ callId, captureRootArtifactId: start.rootArtifactId, captureArtifactId: start.artifactId,
+        basisEventIds: [], provenanceEventIds: rows.filter(row => row.callId === callId).map(row => row.eventId),
+        state, rootArtifactId: null, artifactId: null, ownerVersion: null });
+    };
+    if (badCalls.has(callId)) { unresolvedOwner('conflict'); continue; }
     const context = start.context;
     const inGroup = context.modelSliceId === scope.group.modelSliceId && (scope.group.invocationId !== null ? context.invocationId === scope.group.invocationId : context.invocationId === null && callId === scope.group.isolatedCallId);
-    if (!inGroup) { notices.add(`scope-conflict:${callId}`); quality.add('conflict'); continue; }
+    if (!inGroup) { notices.add(`scope-conflict:${callId}`); quality.add('conflict'); unresolvedOwner('conflict'); continue; }
     const expectedBinding = bindings.get(bindingKey(start.rootArtifactId, start.artifactId));
     const attribution = validateAttribution({ activity: context.activity, chargedArtifactId: start.artifactId, subjectArtifactId: context.binding.artifactId,
       ...(['definition-review', 'epic-design-review', 'design-review'].includes(context.activity) ? { reviewedArtifactId: context.binding.artifactId } : {}),
@@ -164,13 +169,13 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
       ...(['shared-validate', 'code-review'].includes(context.activity) ? { storyBuildId: context.binding.artifactId } : {}),
       ...(context.activity === 'workflow-context' ? { parentBinding: context.binding } : {}),
     });
-    if (!expectedBinding || canonicalData(expectedBinding) !== canonicalData(context.binding) || attribution.length) { notices.add(`binding-unresolved:${callId}`); quality.add('conflict'); continue; }
+    if (!expectedBinding || canonicalData(expectedBinding) !== canonicalData(context.binding) || attribution.length) { notices.add(`binding-unresolved:${callId}`); quality.add('conflict'); unresolvedOwner('conflict'); continue; }
     const end = resolved.heads.get(callId);
     if (!end) {
       if (!resolved.observedCalls.has(callId)) { quality.add('pending'); notices.add(`pending:${callId}`); }
       continue;
     }
-    if (end.rootArtifactId !== start.rootArtifactId || end.artifactId !== start.artifactId) { notices.add(`identity-conflict:${callId}`); quality.add('conflict'); continue; }
+    if (end.rootArtifactId !== start.rootArtifactId || end.artifactId !== start.artifactId) { notices.add(`identity-conflict:${callId}`); quality.add('conflict'); unresolvedOwner('conflict'); continue; }
     const observation = end.observation, capability = capabilities.get(observation.sourceCapabilityId);
     if (!capability || capability.provider !== context.source.provider || capability.transport !== context.source.transport || (capability.version !== null && context.source.version !== capability.version) || (capability.granularity !== 'unknown' && capability.granularity !== context.granularity)) { notices.add(`source-unavailable:${end.eventId}`); quality.add('unavailable'); continue; }
     if (context.reportedModel !== null && observation.reportedModel !== null && context.reportedModel !== observation.reportedModel) { notices.add(`model-conflict:${end.eventId}`); quality.add('conflict'); continue; }
@@ -197,7 +202,10 @@ export async function reduceGroupCore(records: AsyncIterable<LedgerRecord>, inpu
     }
     if (observation.outcome !== 'success') notices.add(`${observation.outcome}:${end.eventId}`);
   }
-  if (!starts.size) { quality.add('unavailable'); notices.add('usage-missing:/'); }
+  if (!starts.size) {
+    if (rows.length === 0 && closureComplete) quality.add('reported');
+    else { quality.add('unavailable'); notices.add('usage-missing:/'); }
+  }
   if (collected.conflicts.size) quality.add('conflict');
   checkAbort(options.signal);
   return { knownTokens: known.toString(), estimatedTokens: estimated.toString(), quality: [...quality].sort(), basisEventIds: basis.sort(), notices: orderedNotices(notices), effectiveOwners: owners.sort((a, b) => a.callId < b.callId ? -1 : a.callId > b.callId ? 1 : 0) };

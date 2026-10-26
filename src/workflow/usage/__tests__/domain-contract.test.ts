@@ -125,3 +125,34 @@ test('public reducer composes correction reconciliation cumulative and transfer 
   assert.equal(cumulative.knownTokens, '25'); assert.deepEqual(cumulative.basisEventIds, ['current-end']);
   assert.deepEqual(api.requireEffectiveOwners(cumulative)[0]!.basisEventIds, ['current-end']);
 });
+
+test('verified empty groups differ from missing usage and conflicted calls retain explicit unresolved ownership', async () => {
+  const reducer = new DefaultUsageReducer(), emptyScope = scoped([]);
+  const empty = await reducer.reduce(stream([]), emptyScope);
+  assert.equal(empty.knownTokens, '0'); assert.deepEqual(empty.quality, ['reported']); assert.deepEqual(empty.effectiveOwners, []);
+  assert.equal(empty.notices.includes('usage-missing:/'), false);
+  const missing = await reducer.reduce(stream([]), { ...emptyScope, closure: 'partial', evidence: { ...emptyScope.evidence, coverageState: 'missing' } });
+  assert.ok(missing.quality.includes('missing')); assert.ok(missing.quality.includes('unavailable')); assert.equal(missing.quality.includes('reported'), false);
+  const s = start(), f = finish();
+  const fork = signed({ ...f, eventId: 'fork', recordKind: 'usage.corrected' as const, control: { supersedesEventId: 'finish', reason: 'fixture:fork', provenanceEventIds: [] } });
+  const other = signed({ ...fork, eventId: 'other-fork' });
+  const changed = signed({ ...f, observation: { ...f.observation, counters: { ...f.observation.counters, outputTokens: 99 } } });
+  for (const rows of [[s, f, changed], [s, f, fork, other]]) {
+    const result = await reducer.reduce(stream(rows), scoped(rows)), owner = requireEffectiveOwners(result)[0]!;
+    assert.equal(owner.callId, s.callId); assert.equal(owner.state, 'conflict');
+    assert.equal(owner.artifactId, null); assert.equal(owner.rootArtifactId, null); assert.equal(owner.ownerVersion, null);
+    assert.deepEqual(owner.basisEventIds, []); assert.equal(result.knownTokens, '0');
+    assert.deepEqual(await reducer.reduce(stream([...rows].reverse()), scoped(rows)), result);
+  }
+  const rows = [s, f], scope = scoped(rows);
+  const unbound = await reducer.reduce(stream(rows), { ...scope, expectedBindings: [{ ...binding, version: 'new-version' }], evidence: { ...scope.evidence, expectedBindingVersions: [{ rootArtifactId: binding.rootArtifactId, artifactId: binding.artifactId, version: 'new-version' }] } });
+  assert.equal(requireEffectiveOwners(unbound)[0]!.state, 'conflict'); assert.equal(requireEffectiveOwners(unbound)[0]!.artifactId, null);
+});
+
+test('public eventSetDigest directly verifies canonical set identity and bounded input rejection', async () => {
+  const { eventSetDigest } = await import('../index.js');
+  assert.equal(eventSetDigest(['b', 'a']), eventSetDigest(['a', 'b']));
+  assert.throws(() => eventSetDigest(['a', 'a']));
+  assert.notEqual(eventSetDigest([]), eventSetDigest(['a']));
+  assert.throws(() => eventSetDigest(Array.from({ length: 1025 }, (_, n) => `event-${n}`)));
+});

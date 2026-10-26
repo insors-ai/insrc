@@ -74,7 +74,9 @@ test('event and call identity conflicts cannot produce a trusted contribution or
   freeze(s); freeze(f);
   await reduceGroupCore(stream([f, s]), scoped([s, f]));
   assert.equal(JSON.stringify([s, f]), before);
-  assert.deepEqual(identity.effectiveOwners, [], 'new results explicitly expose no selected contribution under a conflicting identity');
+  assert.equal(identity.effectiveOwners![0]!.state, 'conflict');
+  assert.equal(identity.effectiveOwners![0]!.artifactId, null);
+  assert.deepEqual(identity.effectiveOwners![0]!.basisEventIds, []);
 });
 
 function cumulativeFrame(name: string, input: number, output: number, invocationId = 'invocation'): [RequestStarted, RequestFinished] {

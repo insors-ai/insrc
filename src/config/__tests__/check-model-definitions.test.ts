@@ -56,5 +56,5 @@ test('check-model-definitions.test.ts: the build gate exits non-zero naming the 
 
 	// The gate runs after tsc and before copy-assets in the build.
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
-	assert.equal(pkg.scripts['build'], 'tsc && node scripts/check-model-definitions.mjs && node copy-assets.mjs');
+	assert.equal(pkg.scripts['build'], 'tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs');
 });

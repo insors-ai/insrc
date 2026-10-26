@@ -307,7 +307,11 @@ test('model-check.test.ts: Claude check — recognised-unconfirmed / rejected, n
 	assert.equal(ambiguous.runs, true);
 	assert.equal(ambiguous.inputLimit, undefined);
 
-	for (const modelUsage of [undefined, {}, { 'claude-new-1': {} }, { 'claude-new-1': { contextWindow: 0 } }]) {
+	// A stray non-object entry still makes an alias's usage ambiguous.
+	fake({ run: { haiku: { exit: 0, stdout: envelope({ modelUsage: { 'claude-haiku-5-5': { contextWindow: 1000000 }, 'claude-helper': null } }) } } });
+	assert.equal((await claude('haiku', [])).inputLimit, undefined);
+
+	for (const modelUsage of [undefined, {}, { 'claude-new-1': {} }, { 'claude-new-1': { contextWindow: 0 } }, { 'claude-new-1': null }]) {
 		fake({ run: { 'claude-new-1': { exit: 0, stdout: envelope({ modelUsage }) } } });
 		const r2 = await claude('claude-new-1', []);
 		assert.equal(r2.runs, true, JSON.stringify(modelUsage));

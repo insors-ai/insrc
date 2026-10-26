@@ -256,9 +256,10 @@ function claudeEnvelopes(stdout: string): Record<string, unknown>[] {
  *  requested id. */
 function claudeUsage(ctx: Context, envelope: Record<string, unknown>): { readonly inputLimit?: InputLimit | undefined; readonly ranAs?: string | undefined } {
 	const usage = envelope['modelUsage'];
-	const entries = isRecord(usage) ? Object.entries(usage).filter(([, v]) => isRecord(v)) as Array<[string, Record<string, unknown>]> : [];
+	// Every key counts toward "one entry": a stray non-object entry makes the output ambiguous too.
+	const entries = isRecord(usage) ? Object.entries(usage) : [];
 	const chosen = entries.length === 1 ? entries[0] : entries.find(([k]) => k === ctx.modelId);
-	const max = chosen?.[1]['contextWindow'];
+	const max = chosen !== undefined && isRecord(chosen[1]) ? chosen[1]['contextWindow'] : undefined;
 	const ranAs = chosen?.[0];
 	if (typeof max === 'number' && Number.isInteger(max) && max > 0) return { inputLimit: { unit: 'tokens', max }, ranAs };
 	log.warn({ family: ctx.family, modelId: ctx.modelId, usageKeys: entries.map(([k]) => k) }, 'model check: no input limit in the CLI output');

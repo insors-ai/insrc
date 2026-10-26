@@ -182,6 +182,13 @@
         "choice": "Correct the evidence attribution",
         "rationale": "User choice: the serial-call invariant rests on CLAUDE.md (c4) and the s1 usage.example bundle (c12), not on probe evidence.",
         "resolvedAt": "2026-10-26T08:07:49.670Z"
+      },
+      "qdc73cdf3": {
+        "question": "Checklist alt2 (partial): s3 scored the alternatives against ac1-ac5 and sc1-sc4 but not lc1-lc3 explicitly; all three alternatives share the same CLI procedures, so lc1 (installed CLIs only), lc2 (the codex model list decides efforts) and lc3 (Claude levels recognised-unconfirmed) hold equally for each and do not change the ranking.",
+        "status": "resolved",
+        "choice": "Explicit per-alternative assessment",
+        "rationale": "User choice: score lc1-lc3 for each alternative; identical outcomes (shared CLI procedures), ranking unchanged.",
+        "resolvedAt": "2026-10-26T08:08:57.935Z"
       }
     }
   },

@@ -358,6 +358,8 @@ Same procedures, lock, table and approve/reject RPCs as a1; models.check registe
 
 - `q5ad36570` — Checklist ep3 (partial): the serial-CLI-call invariant rests on the s1 usage.example bundle (no shared serial-queue helper; daemon code serialises provider work with sequential awaits, c12) and CLAUDE.md (c4), not on the probe evidence its s5 source id names.
   - **resolved**: Correct the evidence attribution — User choice: the serial-call invariant rests on CLAUDE.md (c4) and the s1 usage.example bundle (c12), not on probe evidence. _(2026-10-26T08:07:49.670Z)_
+- `qdc73cdf3` — Checklist alt2 (partial): s3 scored the alternatives against ac1-ac5 and sc1-sc4 but not lc1-lc3 explicitly; all three alternatives share the same CLI procedures, so lc1 (installed CLIs only), lc2 (the codex model list decides efforts) and lc3 (Claude levels recognised-unconfirmed) hold equally for each and do not change the ranking.
+  - **resolved**: Explicit per-alternative assessment — User choice: score lc1-lc3 for each alternative; identical outcomes (shared CLI procedures), ranking unchanged. _(2026-10-26T08:08:57.935Z)_
 
 ## Citations
 

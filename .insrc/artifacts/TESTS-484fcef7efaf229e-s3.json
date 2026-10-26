@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T06:13:01.345Z",
+    "updatedAt": "2026-10-26T06:30:28.548Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1571,6 +1571,42 @@
             "titles": [
               {
                 "title": "CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "6b25e6cbf",
+        "ranAt": "2026-10-26T06:30:28.548Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/root-run-memory.test.ts",
+                "title": "CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/root-run-memory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2057,
+            "titles": [
+              {
+                "title": "CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 81 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -428,3 +428,19 @@ Run at 2026-10-26T06:13:01.345Z on commit `de770ef58`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/private-cache.test.ts` | 0 | 1 | 2.4 s |  |
+
+## t21
+
+Run at 2026-10-26T06:30:28.548Z on commit `6b25e6cbf`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-RECURSION: root runStages/completeRun/repair success and failures, same runId two owners, no run record IO | `src/daemon/steps/__tests__/root-run-memory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/root-run-memory.test.ts` | 0 | 1 | 2.1 s |  |

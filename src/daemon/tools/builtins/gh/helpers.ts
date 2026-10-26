@@ -8,7 +8,8 @@
 
 import { runShellBytes, type ShellResult } from '../../shell-helper.js';
 import type { TypedTool } from '../../call-tool.js';
-import type { ApprovalClass, ToolDeps, ToolFailure, ToolInput, ToolResult } from '../../types.js';
+import { markDefinition } from '../../provenance.js';
+import type { ApprovalClass, Tool, ToolDeps, ToolFailure, ToolInput, ToolResult } from '../../types.js';
 
 export function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];
@@ -228,6 +229,7 @@ export function withGhFailureNet<T extends TypedTool>(tool: T): T {
       return { ...r, failure: { kind: 'rejected', message: r.error ?? r.output } };
     },
   };
+  markDefinition(wrapped as unknown as Tool, tool);
   return wrapped as T;
 }
 

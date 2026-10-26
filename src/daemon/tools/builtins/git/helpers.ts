@@ -4,6 +4,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
+import { markDefinition } from '../../provenance.js';
 import type { Tool, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from '../../types.js';
 
 export function str(input: ToolInput, key: string): string | undefined {
@@ -133,7 +134,7 @@ export function assertSafeArg(value: string, position: 'ref' | 'path'): void {
  */
 export function withFailureNet(tool: Tool): Tool {
   const execute = tool.execute.bind(tool);
-  return {
+  const wrapped: Tool = {
     ...tool,
     async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
       let r: ToolResult;
@@ -146,6 +147,8 @@ export function withFailureNet(tool: Tool): Tool {
       return withFailure(r, 'rejected');
     },
   };
+  markDefinition(wrapped, tool);
+  return wrapped;
 }
 
 /**

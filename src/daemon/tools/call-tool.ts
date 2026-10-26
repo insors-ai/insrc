@@ -14,6 +14,8 @@
 
 import type { Static, TSchema } from '@sinclair/typebox';
 import { executeTool } from './executor.js';
+import { isDefinitionOf } from './provenance.js';
+import { getTool } from './registry.js';
 import type { HookFailure, Tool, ToolDeps, ToolFailure, ToolInput } from './types.js';
 
 /** A tool whose input and result shapes are both typebox schemas. */
@@ -28,6 +30,15 @@ export async function callTool<T extends TypedTool>(
 	input: Static<T['inputSchema']>,
 	deps:  ToolDeps,
 ): Promise<TypedToolResult<Static<T['outputSchema']>>> {
+	// The data is typed from the definition passed, so the tool that runs must be that definition (or a
+	// failure-net copy of it): a different tool registered over the same id is refused and nothing runs.
+	const registered = getTool(tool.id);
+	if (registered === undefined || !isDefinitionOf(registered, tool)) {
+		const message = registered === undefined
+			? `No tool registered for '${tool.id}'`
+			: `the tool registered as '${tool.id}' is not the definition that was passed; nothing was run`;
+		return { success: false, error: { kind: 'rejected', message }, output: `[${tool.id}] ${message}` };
+	}
 	const result = await executeTool(tool.id, input as ToolInput, deps);
 	if (result.success && result.data !== undefined) {
 		return {

@@ -26,97 +26,7 @@ import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { ModelRecommendation } from '../../shared/model-recommender.js';
 
-const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
-
-function status(overrides: Partial<DaemonStatus> = {}): DaemonStatus {
-	return { uptime: 3661, repos: [], queueDepth: 2, embeddingsPending: 0, installedCommit: '', ...overrides };
-}
-
-function repo(path: string, s: RegisteredRepo['status'] = 'ready'): RegisteredRepo {
-	return { path, name: path.split('/').pop() ?? path, addedAt: '', status: s };
-}
-
-const CHAIN: ChainReport = {
-	epicHash: 'a3f4b8c9d1e2f3a4',
-	epicSlug: 'add-tag-filter',
-	define: { exists: true, approved: true, rejected: false, path: '/r/docs/defines/DEF-add-tag-filter.md' },
-	hld:    { exists: true, approved: false, rejected: false, path: '/r/docs/designs/HLD-add-tag-filter.md' },
-	stories: [{ id: 's1', title: 'Story one', hasLld: false, approved: false, stale: false }],
-	amendments: { pending: 0, approved: 0, rejected: 0 },
-	tracker: { pushed: false },
-	nextAction: { kind: 'approve-hld', command: 'insrc workflow approve …' },
-};
-
-function fakeServices(): Services {
-	return {
-		daemon: {
-			isRunning:   () => true,
-			getStatus:   async () => status(),
-			startDaemon: async () => ({ started: true, logPath: '/tmp/.insrc/daemon.log', alreadyRunning: false }),
-			stopDaemon:  async () => ({ stopped: true as const, forced: false }),
-			restart:     async () => ({ ok: true, steps: ['stop', 'start'] }),
-			update:      async () => ({ ok: true, steps: ['sync', 'build'] }),
-			backup:      async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),
-			compact:     async () => ({ beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }),
-		},
-		repo: {
-			list:    async () => [],
-			add:     async p => ({ path: p }),
-			remove:  async p => p,
-			reindex: async p => p,
-		},
-		workflow: {
-			listEpics:        () => [],
-			chain:            () => CHAIN,
-			chainText:        () => '',
-			approve:          () => ({ approval: { workflow: 'define', path: '', approvedAt: '' } }),
-			reject:           () => ({ workflow: 'define', path: '', rejectedAt: '', rejectReason: '' }),
-			ackStale:         () => ({ path: '', ackedAt: '', reason: '' }),
-			amendments:       () => [],
-			approveAmendment: () => ({} as AmendmentRecord),
-			rejectAmendment:  () => ({} as AmendmentRecord),
-			staleness:        () => [],
-			trackerSetup:     () => ({ steps: [], manualRemaining: 0 }),
-		},
-		setup: {
-			detect:       () => ({} as SystemInfo),
-			recommend:    () => ({} as ModelRecommendation),
-			apply:        () => '/cfg',
-			modelsToPull: () => [],
-			pullModels:   async () => [],
-		},
-		models: {
-			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:1', models: [{ id: 'fake-local:1', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 9000 }] }] }),
-			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
-			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
-			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
-			resolveRole: async () => ({ error: 'fake', recoverable: false as const }),
-		},
-		config: {
-			show:   async () => ({}),
-			write:  async () => ({ ok: true }),
-			reload: async () => ({ ok: true }),
-		},
-		team: {
-			teamInit:    async () => '',
-			teamRefresh: async () => '',
-		},
-		debug: {
-			sections: [
-				{ id: 'daemon', title: 'Daemon' },
-				{ id: 'mcp', title: 'MCP' },
-				{ id: 'logs', title: 'Logs' },
-			],
-			daemonStatus: async () => ({ reachable: false }),
-			scanOrphans: () => ({ supported: false }),
-			killOrphans: async () => [],
-			attachedClients: async () => ({ reachable: false }),
-			mcpStatus: async () => [],
-			logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
-			tailLog: () => () => {},
-		},
-	};
-}
+import { settle, status, repo, CHAIN, fakeServices } from './helpers/fake-services.js';
 
 test('Daemon pane shows running status + uptime', async () => {
 	const { lastFrame, unmount } = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
@@ -485,46 +395,6 @@ test('the TUI tests run with fakeServices carrying the team entry', () => {
 	assert.equal(typeof svc.team.teamRefresh, 'function');
 });
 
-test("TUI ModelTiersPane shows an effort row per tier, cycles the model's efforts from the definitions and writes models.tiers.<tier>.effort", async () => {
-	const svc = fakeServices();
-	svc.models.definitions = async () => PANE_DEFS;
-	const writes: Array<[string, unknown]> = [];
-	let tiers: Record<string, unknown> = {
-		core: { runner: 'cli-codex', model: 'fx-core', effort: 'turbo' },
-		mid:  { runner: 'cli-codex', model: 'fx-mid', effort: 'max' },
-	};
-	svc.config.show = async () => ({ models: { tiers } });
-	svc.config.write = async (path: string, value: unknown) => {
-		writes.push([path, value]);
-		const [, , tier, field] = path.split('.');
-		tiers = { ...tiers, [tier!]: { ...(tiers[tier!] as object), [field!]: value } };
-		return { ok: true };
-	};
-	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
-	await settle();
-	stdin.write('5');          // → Model Tiers pane
-	await settle();
-	const frame = lastFrame() ?? '';
-	assert.match(frame, /runner \/ model \/ effort/);
-	assert.match(frame, /core\s+.*cli-codex.*fx-core.*turbo/);
-	assert.match(frame, /mid\s+.*max/);
-	assert.match(frame, /cheap\s+.*\(cli default effort\)/);
-
-	stdin.write('j'); await settle(); stdin.write('j'); await settle();   // core.runner → core.model → core.effort
-	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'max']);
-	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], "the model's last level wraps to the CLI default");
-	stdin.write('e'); await settle();
-	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'lo'], "the cycle offers only the model's efforts from the definitions");
-
-	// The rows below still edit their own keys: the coreFloor is now row 10.
-	for (let i = 0; i < 7; i++) { stdin.write('j'); await settle(); }
-	stdin.write('e'); await settle();
-	assert.match(lastFrame() ?? '', /coreFloor \(core\/mid\/cheap\):/);
-	unmount();
-});
-
 test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset config", async () => {
 	const svc = fakeServices();
 	svc.models.definitions = async () => PANE_DEFS;
@@ -534,8 +404,8 @@ test("TUI ModelTiersPane shows the model definitions' tier defaults for an unset
 	stdin.write('5');          // → Model Tiers pane
 	await settle();
 	const frame = lastFrame() ?? '';
-	assert.match(frame, /core\s+.*cli-codex.*fx-core/);
-	assert.match(frame, /mid\s+.*cli-codex.*fx-mid/);
-	assert.match(frame, /cheap\s+.*cli-codex.*fx-cheap/);
+	assert.match(frame, /core\s+X \/ fx-core/);
+	assert.match(frame, /mid\s+X \/ fx-mid/);
+	assert.match(frame, /cheap\s+X \/ fx-cheap/);
 	unmount();
 });

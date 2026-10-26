@@ -4,52 +4,49 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Model Tiers pane — view + edit the per-role model tiering
- * (`models.analyze.tiers` / `coreFloor` / `roleTiers`). Renders the EFFECTIVE
- * tier for each role by overlaying config onto the built-in DEFAULT_TIERS + the
- * role taxonomy (see `computeEffectiveTiers`), then lets you edit a tier's
- * runner/model, the coreFloor, or a role's override. All reads/writes go
- * through the daemon-owned config service (`show`/`write`/`reload`); each edit
- * persists one dot-path (a sparse delta), so config.json stays minimal.
+ * Model Tiers pane — view + edit the global model tiers, the coreFloor and the
+ * per-role tier map (Epic ce99b72065d03b1b, Story s5). Every family, model and
+ * effort it offers comes from the daemon's model definitions (models.definitions);
+ * the TUI holds no list of its own (k2). A tier is always written whole —
+ * { runner, model, effort } with one config.write — so a runner is never saved
+ * with another family's model. A model its family does not serve is typed with
+ * `n` and goes through the unknown-model check screen; the pane never saves it
+ * directly. All config I/O goes through the daemon (config.show / config.write).
  */
 
 import { Box, Text, useInput } from 'ink';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 
-import { parseTiering, type TierName } from '../../config/analyze.js';
+import { parseTiering, type TierModel, type TierName } from '../../config/analyze.js';
+import type { ConfigWriteResult } from '../services/config.js';
 import type { ModelDefinitionsResult } from '../services/models.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import {
-	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
-	ROLE_TIERS_PATH, nextRoleTiers, effortChoices, nextInCycle,
+	computeEffectiveTiers, CORE_FLOOR_PATH, isTierName, ROLE_TIERS_PATH, nextRoleTiers, TIER_NAMES,
+	tierPath, switchFamily, switchModel, effortChoices, nextInCycle, resolveTypedModel, familyOf,
 	type EffectiveTiers, type EffectiveRole,
 } from './model-tiers.js';
+import { ModelCheckScreen, type ModelCheckTarget } from './ModelCheckScreen.js';
 
 function isObj(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** A flat, navigable editable row over the effective tiers. */
+/** A flat, navigable row: one per tier, the coreFloor, then one per role. */
 type Row =
-	| { kind: 'tier'; tier: TierName; field: 'runner' | 'model' | 'effort'; label: string; value: string; path: string }
-	| { kind: 'floor'; label: string; value: string; path: string }
-	| { kind: 'role'; role: EffectiveRole; label: string; value: string; path: string };
+	| { kind: 'tier'; tier: TierName }
+	| { kind: 'floor' }
+	| { kind: 'role'; role: EffectiveRole };
 
-function buildRows(eff: EffectiveTiers): Row[] {
-	const rows: Row[] = [];
-	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		rows.push({ kind: 'tier', tier, field: 'runner', label: `${tier}.runner`, value: eff.tiers[tier].runner, path: tierFieldPath(tier, 'runner') });
-		rows.push({ kind: 'tier', tier, field: 'model',  label: `${tier}.model`,  value: eff.tiers[tier].model  || '(cli default)', path: tierFieldPath(tier, 'model') });
-		rows.push({ kind: 'tier', tier, field: 'effort', label: `${tier}.effort`, value: eff.tiers[tier].effort ?? '', path: tierFieldPath(tier, 'effort') });
-	}
-	rows.push({ kind: 'floor', label: 'coreFloor', value: eff.coreFloor, path: CORE_FLOOR_PATH });
-	for (const r of eff.roles) {
-		rows.push({ kind: 'role', role: r, label: r.id, value: r.effectiveTier, path: roleTierPath(r.id) });
-	}
-	return rows;
-}
+type Prompt =
+	| { kind: 'model'; tier: TierName }
+	| { kind: 'floor' }
+	| { kind: 'role'; role: EffectiveRole };
+
+/** The message shown when the daemon cannot answer. */
+export const MODEL_TIERS_DOWN = 'the daemon is not running — start it to edit model tiers';
 
 const ROLE_WINDOW = 10;
 
@@ -64,17 +61,26 @@ export function ModelTiersPane(): ReactElement {
 	const [error, setError] = useState<string | undefined>(undefined);
 	const [malformed, setMalformed] = useState(false);
 	const [sel, setSel] = useState(0);
-	const [editing, setEditing] = useState<Row | undefined>(undefined);
+	const [prompt, setPrompt] = useState<Prompt | undefined>(undefined);
+	const [checking, setChecking] = useState<ModelCheckTarget | undefined>(undefined);
+	const [restartPending, setRestartPending] = useState(false);
 	const [nonce, setNonce] = useState(0);
 
-	// Load the config snapshot (daemon owns config I/O — never open config.json here).
+	// Load the config snapshot and the definitions (the daemon owns both).
 	useEffect(() => {
 		let live = true;
 		setLoading(true); setError(undefined);
-		Promise.all([svc.config.show(), svc.models.definitions()])
-			.then(([cfg, d]) => { if (live) { setRaw(cfg); setDefs(d); } })
-			.catch((err: unknown) => { if (live) setError(err instanceof Error ? err.message : String(err)); })
-			.finally(() => { if (live) setLoading(false); });
+		void (async () => {
+			try {
+				const cfg = await svc.config.show();
+				const d = await svc.models.definitions();
+				if (live) { setRaw(cfg); setDefs(d); }
+			} catch (err) {
+				if (live) setError(err instanceof Error ? err.message : String(err));
+			} finally {
+				if (live) setLoading(false);
+			}
+		})();
 		return () => { live = false; };
 	}, [svc, nonce]);
 
@@ -86,97 +92,136 @@ export function ModelTiersPane(): ReactElement {
 		return computeEffectiveTiers(parseTiering(isObj(models) ? models : {}), defs);
 	}, [raw, defs]);
 
-	const rows = useMemo<Row[]>(() => (eff !== undefined ? buildRows(eff) : []), [eff]);
+	const rows = useMemo<Row[]>(() => (eff === undefined ? [] : [
+		...TIER_NAMES.map((tier): Row => ({ kind: 'tier', tier })),
+		{ kind: 'floor' },
+		...eff.roles.map((role): Row => ({ kind: 'role', role })),
+	]), [eff]);
 	const cur = rows[Math.min(sel, Math.max(0, rows.length - 1))];
 
-	const commit = (row: Row, input: string): void => {
-		const v = input.trim();
-		// Empty submit is a no-op cancel.
-		if (v.length === 0) { setEditing(undefined); ui.capture(false); return; }
-		let path = row.path;
-		let value: unknown = v;
-		if (row.kind === 'tier' && row.field === 'runner') {
-			if (v !== 'ollama' && v !== 'cli-claude' && v !== 'cli-codex') { ui.toast(`✗ runner must be ollama | cli-claude | cli-codex`); setEditing(undefined); ui.capture(false); return; }
-		} else if (row.kind === 'floor') {
-			if (!isTierName(v)) { ui.toast(`✗ coreFloor must be core | mid | cheap`); setEditing(undefined); ui.capture(false); return; }
-		} else if (row.kind === 'role') {
-			if (!isTierName(v)) { ui.toast(`✗ tier must be core | mid | cheap`); setEditing(undefined); ui.capture(false); return; }
-			// Role ids contain dots (e.g. "context.assemble", "design.contract.detail").
-			// The daemon's config.write splits the path on every '.', so a per-role
-			// dotted path (models.tasks.context.assemble) would MIS-NEST as
-			// tasks.context.assemble — unreadable by parseTiering (which reads the
-			// flat key tasks["context.assemble"]). Instead write the WHOLE tasks
-			// map at the dotless path so the flat dotted key is preserved.
-			const models  = isObj(raw?.['models'])    ? raw!['models']    as Record<string, unknown> : {};
-			const analyze = isObj(models['analyze'])  ? models['analyze']  as Record<string, unknown> : {};
-			const current = isObj(analyze['roleTiers'])
-				? (analyze['roleTiers'] as Record<string, TierName>) : undefined;
-			// Reverting to the taxonomy default clears the override (sparse — no redundant key).
-			const taxDefault = row.role.assignedTier === row.role.effectiveTier && row.role.source === 'taxonomy';
-			const clear = v === (taxDefault ? row.role.assignedTier : undefined);
-			// Critical role below floor: the coreFloor guard clamps it up; note it rather than block.
-			if (row.role.criticality === 'critical' && eff !== undefined) {
-				const rank = { cheap: 0, mid: 1, core: 2 } as const;
-				if (rank[v] < rank[eff.coreFloor]) ui.toast(`note: ${row.role.id} is critical — coreFloor raises it to ${eff.coreFloor}`);
-			}
-			path = ROLE_TIERS_PATH;
-			value = nextRoleTiers(current, row.role.id, clear ? null : v);
+	const report = (path: string, res: ConfigWriteResult): void => {
+		if (!res.ok) {
+			ui.toast(`✗ not saved: ${res.reason ?? 'refused'}${res.detail !== undefined ? ` — ${res.detail}` : ''}`);
+		} else {
+			if (res.restartRequired === true) setRestartPending(true);
+			ui.toast(`saved ${path}${res.restartRequired === true ? ' — restart the daemon to apply (R)' : ''}`);
 		}
-		setEditing(undefined); ui.capture(false);
-		save(path, value);
+		setNonce(n => n + 1);
 	};
 
 	const save = (path: string, value: unknown): void => {
 		void svc.config.write(path, value)
-			.then(res => res.ok ? svc.config.reload() : Promise.reject(new Error('write rejected')))
-			.then(() => { ui.toast(`saved ${path}`); setNonce(n => n + 1); })
+			.then(res => report(path, res))
 			.catch((err: unknown) => ui.toast(`✗ save failed: ${err instanceof Error ? err.message : String(err)}`));
 	};
 
+	const saveTier = (tier: TierName, next: TierModel | undefined): void => {
+		if (next === undefined) return;
+		save(tierPath(tier), { runner: next.runner, model: next.model, effort: next.effort ?? '' });
+	};
+
+	const restart = (): void => {
+		const task = ui.task('restarting the daemon…');
+		void svc.daemon.restart(line => task.push(line))
+			.then(res => {
+				if (res.ok) { task.done('daemon restarted'); setRestartPending(false); setNonce(n => n + 1); }
+				else task.fail(`restart failed: ${res.error ?? 'unknown error'}`);
+			})
+			.catch((err: unknown) => task.fail(`restart failed: ${err instanceof Error ? err.message : String(err)}`));
+	};
+
+	const closePrompt = (): void => { setPrompt(undefined); ui.capture(false); };
+
+	const commit = (p: Prompt, input: string): void => {
+		const v = input.trim();
+		closePrompt();
+		if (v.length === 0 || eff === undefined || defs === undefined) return;
+		if (p.kind === 'model') {
+			const tier = eff.tiers[p.tier];
+			const typed = resolveTypedModel(defs, tier.runner, v);
+			if (typed.kind === 'served') saveTier(p.tier, switchModel(defs, tier, typed.model));
+			else if (typed.kind === 'refused') ui.toast(`✗ ${typed.reason}`);
+			else setChecking({ tier: p.tier, family: tier.runner, modelId: v });
+			return;
+		}
+		if (!isTierName(v)) { ui.toast('✗ tier must be core | mid | cheap'); return; }
+		if (p.kind === 'floor') { save(CORE_FLOOR_PATH, v); return; }
+		// Role ids contain dots: the whole tasks map is written at the dotless path so they stay flat keys.
+		const models = isObj(raw?.['models']) ? raw!['models'] as Record<string, unknown> : {};
+		const current = isObj(models['tasks']) ? models['tasks'] as Record<string, TierName> : undefined;
+		const taxDefault = p.role.source === 'taxonomy' && p.role.assignedTier === v;
+		if (p.role.criticality === 'critical') {
+			const rank = { cheap: 0, mid: 1, core: 2 } as const;
+			if (rank[v] < rank[eff.coreFloor]) ui.toast(`note: ${p.role.id} is critical — coreFloor raises it to ${eff.coreFloor}`);
+		}
+		save(ROLE_TIERS_PATH, nextRoleTiers(current, p.role.id, taxDefault ? null : v));
+	};
+
 	useInput((input, key) => {
-		if (rows.length === 0) return;
+		if (rows.length === 0 || eff === undefined || defs === undefined || cur === undefined) return;
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
-		// The effort row cycles CLI default → low → … → max and saves each step.
-		if (input === 'e' && cur?.kind === 'tier' && cur.field === 'effort' && eff !== undefined && defs !== undefined) {
-			const next = nextInCycle(effortChoices(defs, eff.tiers[cur.tier]), eff.tiers[cur.tier].effort);
-			if (next !== undefined) save(cur.path, next);
-			return;
-		}
-		if (input === 'e' && cur !== undefined) {
-			const initial = cur.kind === 'role' ? cur.role.assignedTier : (cur.kind === 'tier' && cur.field === 'model' ? '' : cur.value);
-			setEditing({ ...cur, value: initial });
-			ui.capture(true);
-			return;
-		}
 		if (input === 'r') { setNonce(n => n + 1); return; }
-	}, { isActive: editing === undefined && !captured && !loading && error === undefined });
+		if (input === 'R' && restartPending) { restart(); return; }
+		if (cur.kind === 'tier') {
+			const tier = eff.tiers[cur.tier];
+			if (input === 'f') {
+				const family = nextInCycle(defs.families.map(f => f.id), tier.runner);
+				if (family !== undefined) saveTier(cur.tier, switchFamily(defs, cur.tier, family));
+				return;
+			}
+			if (input === 'm') {
+				const models = familyOf(defs, tier.runner)?.models.map(m => m.id) ?? [];
+				const next = nextInCycle(models, tier.model);
+				if (next !== undefined) saveTier(cur.tier, switchModel(defs, tier, next));
+				return;
+			}
+			if (input === 'e') {
+				if (!tier.served) { ui.toast(`${tier.model} is not a listed model: pick one with m, or check it with n`); return; }
+				const next = nextInCycle(effortChoices(defs, tier), tier.effort ?? '');
+				if (next !== undefined) saveTier(cur.tier, { ...tier, effort: next });
+				return;
+			}
+			if (input === 'n') { setPrompt({ kind: 'model', tier: cur.tier }); ui.capture(true); return; }
+			return;
+		}
+		if (input === 'e') {
+			setPrompt(cur.kind === 'floor' ? { kind: 'floor' } : { kind: 'role', role: cur.role });
+			ui.capture(true);
+		}
+	}, { isActive: prompt === undefined && checking === undefined && !captured && !loading && error === undefined });
 
-	if (loading) return <Panel title="Model Tiers" active><Text dimColor>loading config…</Text></Panel>;
+	if (loading) return <Panel title="Model Tiers" active><Text dimColor>loading config and model definitions…</Text></Panel>;
 	if (error !== undefined) {
 		return (
 			<Panel title="Model Tiers" active>
-				<Text color="red">could not load tiering config — {error}</Text>
+				<Text color="red">{MODEL_TIERS_DOWN}</Text>
+				<Text dimColor>{error}</Text>
 				<Box marginTop={1}><KeyHints hints={[['r', 'retry']]} /></Box>
 			</Panel>
 		);
 	}
-	if (eff === undefined || cur === undefined) return <Panel title="Model Tiers" active><Text dimColor>no config</Text></Panel>;
+	if (eff === undefined || defs === undefined || cur === undefined) return <Panel title="Model Tiers" active><Text dimColor>no config</Text></Panel>;
 
-	if (editing !== undefined) {
-		const label = editing.kind === 'role'
-			? `${editing.label} tier (core/mid/cheap, or the default to clear):`
-			: editing.kind === 'floor' ? 'coreFloor (core/mid/cheap):'
-			: `${editing.label} (${editing.field === 'runner' ? 'ollama/cli-claude/cli-codex' : 'model id'}):`;
+	if (checking !== undefined) {
+		return <ModelCheckScreen target={checking} defs={defs} onClose={saved => { setChecking(undefined); if (saved) setNonce(n => n + 1); }} />;
+	}
+
+	if (prompt !== undefined) {
+		const label = prompt.kind === 'model'
+			? `${prompt.tier} model id for ${familyOf(defs, eff.tiers[prompt.tier].runner)?.displayName ?? eff.tiers[prompt.tier].runner} (a listed id or alias, or a new one to check):`
+			: prompt.kind === 'floor' ? 'coreFloor (core/mid/cheap):'
+			: `${prompt.role.id} tier (core/mid/cheap, or the default to clear):`;
+		const initial = prompt.kind === 'role' ? prompt.role.assignedTier : prompt.kind === 'floor' ? eff.coreFloor : '';
 		return (
 			<Panel title="Model Tiers" active>
-				<TextPrompt label={label} initial={editing.value} onSubmit={v => commit(editing, v)} onCancel={() => { setEditing(undefined); ui.capture(false); }} />
+				<TextPrompt label={label} initial={initial} onSubmit={v => commit(prompt, v)} onCancel={closePrompt} />
 			</Panel>
 		);
 	}
 
 	// Window the role rows around the selection so the list fits the terminal.
-	const CONFIG_ROWS = 10; // 9 tier fields + coreFloor
+	const CONFIG_ROWS = TIER_NAMES.length + 1;
 	const roleSel = Math.max(0, sel - CONFIG_ROWS);
 	const start = Math.max(0, Math.min(roleSel - Math.floor(ROLE_WINDOW / 2), Math.max(0, eff.roles.length - ROLE_WINDOW)));
 	const shown = eff.roles.slice(start, start + ROLE_WINDOW);
@@ -187,30 +232,24 @@ export function ModelTiersPane(): ReactElement {
 
 	return (
 		<Panel title="Model Tiers" active>
-			{malformed && <Text color="yellow">⚠ models.analyze is malformed — showing built-in defaults; editing writes fresh keys</Text>}
+			{malformed && <Text color="yellow">⚠ models is malformed — showing the definitions' defaults; editing writes fresh keys</Text>}
 			<Box flexDirection="column">
-				<Text bold>Tiers <Text dimColor>(runner / model / effort)</Text></Text>
-				{(['core', 'mid', 'cheap'] as const).map(t => {
-					const iR = rows.findIndex(r => r.kind === 'tier' && r.tier === t && r.field === 'runner');
-					const iM = iR + 1;
-					const iE = iR + 2;
-					const src = eff.tierSource[t];
+				<Text bold>Tiers <Text dimColor>(family / model / effort — from the daemon's definitions)</Text></Text>
+				{TIER_NAMES.map((t, i) => {
+					const tier = eff.tiers[t];
+					const family = familyOf(defs, tier.runner)?.displayName ?? tier.runner;
 					return (
-						<Text key={t}>
-							{`  ${t.padEnd(5)} `}
-							<Text {...hi(sel === iR)}>{rowMark(iR)}{eff.tiers[t].runner}</Text>
-							{' / '}
-							<Text {...hi(sel === iM)}>{rowMark(iM)}{eff.tiers[t].model || '(cli default)'}</Text>
-							{' / '}
-							<Text {...hi(sel === iE)}>{rowMark(iE)}{eff.tiers[t].effort ?? '(cli default effort)'}</Text>
-							<Text dimColor> {src === 'default' ? '(default)' : '(set)'}</Text>
+						<Text key={t} {...hi(sel === i)}>
+							{`${rowMark(i)}${t.padEnd(5)} ${family} / ${tier.model || '(cli default)'} / ${tier.effort ? tier.effort : '(cli default effort)'}`}
+							<Text dimColor> {eff.tierSource[t] === 'default' ? '(default)' : '(set)'}</Text>
+							{!tier.served && <Text color="yellow"> not served: runs the default until approved and the daemon restarted</Text>}
 						</Text>
 					);
 				})}
 			</Box>
+			{restartPending && <Text color="yellow">restart the daemon to apply (R)</Text>}
 			<Box marginTop={1}>
-				<Text>coreFloor  </Text>
-				<Text {...hi(sel === CONFIG_ROWS - 1)}>{rowMark(CONFIG_ROWS - 1)}{eff.coreFloor}</Text>
+				<Text {...hi(sel === CONFIG_ROWS - 1)}>{rowMark(CONFIG_ROWS - 1)}coreFloor  {eff.coreFloor}</Text>
 				<Text dimColor> {eff.coreFloorSource === 'default' ? '(default)' : '(set)'} · critical roles never resolve below this</Text>
 			</Box>
 			<Box flexDirection="column" marginTop={1}>
@@ -235,7 +274,9 @@ export function ModelTiersPane(): ReactElement {
 				</Box>
 			)}
 			<Box marginTop={1}>
-				<KeyHints hints={[['↑/↓', 'select'], ['e', 'edit'], ['r', 'reload']]} />
+				<KeyHints hints={cur.kind === 'tier'
+					? [['↑/↓', 'select'], ['f', 'family'], ['m', 'model'], ['n', 'new model id'], ['e', 'effort'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]
+					: [['↑/↓', 'select'], ['e', 'edit'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]} />
 			</Box>
 		</Panel>
 	);

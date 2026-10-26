@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { parseTiering, type AnalyzeTiering } from '../../config/analyze.js';
 import type { ModelDefinitionsResult } from '../services/models.js';
 import {
-	computeEffectiveTiers as compute, tierFieldPath, tierPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
+	computeEffectiveTiers as compute, tierPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
 	ROLE_TIERS_PATH, nextRoleTiers, switchFamily, switchModel, effortChoices, nextInCycle, resolveTypedModel,
 } from '../panes/model-tiers.js';
 
@@ -120,8 +120,8 @@ test('a roleTiers key that is not a current taxonomy role is surfaced as a stale
 // ── path helpers ────────────────────────────────────────────────────────────
 
 test('config dot-path helpers target the right keys', () => {
-	assert.equal(tierFieldPath('core', 'runner'), 'models.tiers.core.runner');
-	assert.equal(tierFieldPath('cheap', 'model'), 'models.tiers.cheap.model');
+	assert.equal(tierPath('core'), 'models.tiers.core');
+	assert.equal(tierPath('cheap'), 'models.tiers.cheap');
 	assert.equal(roleTierPath('synthesize'), 'models.tasks.synthesize');
 	assert.equal(CORE_FLOOR_PATH, 'models.coreFloor');
 });

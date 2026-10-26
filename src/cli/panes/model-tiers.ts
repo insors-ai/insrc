@@ -136,11 +136,6 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering, defs: ModelDefini
 
 // ── tier edits (each yields the whole tier object the pane writes) ─────────
 
-/** The config dot-path for one tier field (the pane's per-field edits until it writes whole tiers). */
-export function tierFieldPath(tier: TierName, field: 'runner' | 'model' | 'effort'): string {
-	return `models.tiers.${tier}.${field}`;
-}
-
 /** The config path a whole tier object is written at (one config.write per edit). */
 export function tierPath(tier: TierName): string {
 	return `models.tiers.${tier}`;

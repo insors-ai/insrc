@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793015370875-jwuy47",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T11:50:31.274Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 60384,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s9",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `one-tool-registry-git-gh-jira` by splitting Story s7: s9 moves the workflow library's and the daemon's direct git and gh calls onto the registry, building on DEF/HLD-b7a68147dcf72034 (s7's cutover boundary), the LLD drafts and two daemon review rounds of s7, and the git, gh and tracker code in src/workflow, src/daemon and src/understanding.",
+    "addedStory": {
+      "id": "s9",
+      "title": "Move the workflow library's and the daemon's direct git and gh calls onto the registry",
+      "userValue": "The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "each place in the workflow library, the daemon, the analyze path, the understanding identity lookup and the design corpus reader that runs git or gh itself today, or calls a git or gh tool's execute directly, and is listed in the Story's replacement table",
+          "when": "the change is complete",
+          "then": "it performs the operation by calling a registry tool through callTool and the executor, with the caller, the abort signal and the approval mode set by the site",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a workflow stage that builds, gates, converts, hands over or signs off through a moved site",
+          "when": "it runs after the change",
+          "then": "it produces the same artifacts, commits and records as before",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "the team policy refresh and its total deadline of 10 seconds",
+          "when": "the deadline passes or the refresh's signal is aborted",
+          "then": "the refresh stops at its first aborted call, starts no call after it, and the lock-lifetime reasoning that depends on the 10 second deadline still holds",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "the identity lookup and the design corpus reader",
+          "when": "they run through the registry",
+          "then": "their multi-host and multi-account semantics, their public options, their validation results and their error codes are unchanged, except the recorded identity behaviour on gh versions without `gh auth status --json`",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "a moved site whose call needs approval under the effective approval mode and finds no client, or whose approval expires",
+          "when": "the call is denied",
+          "then": "the calling stage fails with the denial reported and does not continue",
+          "operationalizes": []
+        },
+        {
+          "id": "ac6",
+          "given": "the list of sites taken from a complete search of the source, including direct calls of a tool's execute",
+          "when": "the change is complete",
+          "then": "every site has an entry in the replacement table, a test that runs through the registry with a recorded executor, and an entry in the migration record",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-b7a68147dcf72034-11",
+    "evidence": [
+      {
+        "kind": "doc",
+        "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+        "quote": "Story s7: Move every direct git and gh call onto the registry and remove the old paths"
+      },
+      {
+        "kind": "doc",
+        "ref": "docs/plans/tool-registry.md",
+        "quote": "s7 LLD: round 1 review and the user's decisions (2026-10-26)"
+      },
+      {
+        "kind": "code",
+        "ref": "src/workflow/team/git.ts",
+        "quote": "export function runGit(cwd: string, args: readonly string[], timeoutMs"
+      },
+      {
+        "kind": "code",
+        "ref": "src/workflow/code-review/grounding.ts",
+        "quote": "await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps)"
+      },
+      {
+        "kind": "code",
+        "ref": "src/understanding/identity.ts",
+        "quote": "run(['gh', 'auth', 'status', '--json', 'hosts']"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"b7a68147dcf72034\",\"storyId\":\"s9\"}",
+      "description": "Approve the HLD amendment (`AMD-b7a68147dcf72034-11`) and the updated Epic, then run `design.story` for the new Story `s9` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+      "quotedText": "Story s7: Move every direct git and gh call onto the registry and remove the old paths"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md",
+      "quotedText": "s7 LLD: round 1 review and the user's decisions (2026-10-26)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/team/git.ts",
+      "quotedText": "export function runGit(cwd: string, args: readonly string[], timeoutMs"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts",
+      "quotedText": "await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/understanding/identity.ts",
+      "quotedText": "run(['gh', 'auth', 'status', '--json', 'hosts']"
+    }
+  ]
+}

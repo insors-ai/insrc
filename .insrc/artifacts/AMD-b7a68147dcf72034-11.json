@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-c0ac68e7-7731-42b0-8019-c8f54fc08aaf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T11:50:31.273Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "30fc22b07869ed580f9cafac521009f203ae5ede336eeafbf18c6da740250730",
+        "at": "2026-10-26T11:50:31.274Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T13:27:16.284Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-11",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s9",
+      "internal": "Private implementation of s9: Move the workflow library's and the daemon's direct git and gh calls onto the registry"
+    },
+    "rationale": "Extends Epic `one-tool-registry-git-gh-jira` by splitting Story s7: s9 moves the workflow library's and the daemon's direct git and gh calls onto the registry, building on DEF/HLD-b7a68147dcf72034 (s7's cutover boundary), the LLD drafts and two daemon review rounds of s7, and the git, gh and tracker code in src/workflow, src/daemon and src/understanding.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1793015370875-jwuy47",
+      "storyId": "s9",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-26T11:50:31.272Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md",
+      "quotedText": "Story s7: Move every direct git and gh call onto the registry and remove the old paths"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md",
+      "quotedText": "s7 LLD: round 1 review and the user's decisions (2026-10-26)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/team/git.ts",
+      "quotedText": "export function runGit(cwd: string, args: readonly string[], timeoutMs"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts",
+      "quotedText": "await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/understanding/identity.ts",
+      "quotedText": "run(['gh', 'auth', 'status', '--json', 'hosts']"
+    }
+  ]
+}

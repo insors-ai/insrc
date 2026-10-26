@@ -432,3 +432,20 @@ The user decided the four open questions, one at a time:
 4. **Corpus reader.** `src/design/corpus/sources/git-reader.ts` moves onto `git_cat_file`, which gains an optional timeout that can only be lowered from 30 s; the reader keeps its decoding, object-identity check and error translation and tells a cancellation by its own abort signal; nothing outside `src/design` calls the reader in production today. Its fake-runner tests move to the recorded executor.
 
 Assumed, not asked: s7 registers no production hook (the first rules belong to s9 of the team-signoff epic).
+
+## s7 split into s7, s9 and s10 (decided 2026-10-26)
+
+Round 2 of the s7 LLD (revision 2) was `block` again with 8 findings, and the user decided on "option A": split s7. The two new Stories were appended through the define extend path: **s9** (EXT-b7a68147dcf72034-s9, DEF revision 3, amendment AMD-b7a68147dcf72034-11) and **s10** (EXT-b7a68147dcf72034-s10, DEF revision 4, amendment AMD-b7a68147dcf72034-12). Both DEF revisions were approved with an override (the daemon review of revision 3 timed out after 90 minutes; only the new section changed). The extend run left the DEF change log behind its head each time; the revision 3 and 4 entries were appended by hand. s9 and s10 depend on s7 (and s10 on s9); that is not recordable in the extend path, so this note is the record.
+
+**s7 is read as the foundations only** (the amendment tool is HLD-only, so this note is the record; DEF section 6.7 keeps its old text). Size L. Its acceptance criteria are read as:
+- ac1 (was ac4): a rule registered on a tool runs when a workflow call to it succeeds, as for an agent call (`k4`).
+- ac2 (was ac5): a workflow call to a destructive tool with no client fails the stage when the approval request expires (`k5`).
+- ac3 (new): the executor rechecks the abort signal immediately before `execute`; the git tools the refresh uses carry `deps.signal` and the remaining time; `git_cat_file` takes an optional `timeoutMs` that can only be lowered (1 to 30000).
+- ac4 (new): the gh tracker family is complete and typed (raw `gh api` stays excluded) and `git config`, `ls-remote`, `update-ref` and `rm` exist as tools; git and gh tools are `TypedTool`.
+- ac5 (new): `tools.call` carries a validated `caller` (agent, daemon or workflow); the forbidden-spawn scan runs in report mode and also detects direct builtin `execute` calls.
+
+Where the old s7 criteria went: old ac1 (sites move) to s9 ac1 and s10 ac1 and ac2; old ac2 (old paths deleted, failing check) to s10 ac5; old ac3 (same artifacts, commits, records) to s9 ac2 and s10 ac3; old ac6 (complete site list) to s9 ac6 and s10 ac1 and ac6.
+
+**Terminal client approval service.** The old ac1 named it. `src/cli/services/approval.ts` runs no git or gh (checked 2026-10-26: the only literal `git` calls in `src/cli/services` are `maintenance.ts`, the exempt self-update, and `workflow.ts`, s10). It has no site; the s10 replacement table lists it as "no site", and the s9 and s10 LLDs confirm the rest of `src/cli/services` (`setup.ts`, `daemon.ts`, `debug.ts`, `connection-maintenance.ts`) by a complete search.
+
+The s7 LLD (revision 2, blocked) is superseded by a new LLD for the narrowed s7.

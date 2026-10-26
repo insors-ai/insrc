@@ -21,7 +21,7 @@
     "epicHash": "b7a68147dcf72034",
     "epicSlug": "one-tool-registry-git-gh-jira",
     "authoredBy": "controller",
-    "revision": 2,
+    "revision": 4,
     "envelope": {
       "description": "",
       "references": [],
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "826a92e486565d98aebedd3c2ff916b7c3e8e222322b1e65770c983f8c9ee153",
-        "at": "2026-10-24T15:33:06.097Z",
+        "number": 4,
+        "contentHash": "f9164a0af413d2c1bacacc51e0381b5b72a53505e31c6f5d361004d5419ae88c",
+        "at": "2026-10-26T13:27:18.211Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -63,15 +63,15 @@
         }
       },
       "approval": {
-        "revision": 2,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-24T16:02:39.291Z",
+        "at": "2026-10-26T13:30:33.652Z",
         "override": {
-          "reason": "Daemon review of DEF revision 2 blocked with 0 HIGH and 36 MED, all evidence gaps (\"unverifiable from the supplied evidence\": the reviewer's greps were truncated at 50 matches), none a wrong claim; 8 LOW findings are verified sound. The premises are unchanged from the first approval (override, 11 MED grounding gaps), which were checked by hand against the code on 2026-10-23 and recorded in docs/plans/tool-registry.md. The only content change in revision 2 is the new section 6.8 for Story s8 (the long tail of git operations, split out of s4 on the user's decision on 2026-10-24). Approved by the user."
+          "reason": "Daemon review of DEF revision 4 not run: the revision 3 review timed out after 90 minutes with no result. The only content change in revision 4 is the new section 6.10 for Story s10, split out of s7 on the user's decision on 2026-10-26; its premises (src/workflow/tracker/github.ts and its callers, src/cli/services/workflow.ts, src/workflow/team/signoff.ts) were checked by hand against the code. Approved by the user."
         }
       }
     },
@@ -721,6 +721,104 @@
             "given": "the git commands covered by Stories s4 and s4b together",
             "when": "the coverage table is read",
             "then": "every command of the recorded git command list is covered or excluded with a reason that a reviewer can check, and the only exclusions are those the user accepted",
+            "operationalizes": []
+          }
+        ]
+      },
+      {
+        "id": "s9",
+        "title": "Move the workflow library's and the daemon's direct git and gh calls onto the registry",
+        "userValue": "The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "each place in the workflow library, the daemon, the analyze path, the understanding identity lookup and the design corpus reader that runs git or gh itself today, or calls a git or gh tool's execute directly, and is listed in the Story's replacement table",
+            "when": "the change is complete",
+            "then": "it performs the operation by calling a registry tool through callTool and the executor, with the caller, the abort signal and the approval mode set by the site",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a workflow stage that builds, gates, converts, hands over or signs off through a moved site",
+            "when": "it runs after the change",
+            "then": "it produces the same artifacts, commits and records as before",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "the team policy refresh and its total deadline of 10 seconds",
+            "when": "the deadline passes or the refresh's signal is aborted",
+            "then": "the refresh stops at its first aborted call, starts no call after it, and the lock-lifetime reasoning that depends on the 10 second deadline still holds",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "the identity lookup and the design corpus reader",
+            "when": "they run through the registry",
+            "then": "their multi-host and multi-account semantics, their public options, their validation results and their error codes are unchanged, except the recorded identity behaviour on gh versions without `gh auth status --json`",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "a moved site whose call needs approval under the effective approval mode and finds no client, or whose approval expires",
+            "when": "the call is denied",
+            "then": "the calling stage fails with the denial reported and does not continue",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the list of sites taken from a complete search of the source, including direct calls of a tool's execute",
+            "when": "the change is complete",
+            "then": "every site has an entry in the replacement table, a test that runs through the registry with a recorded executor, and an entry in the migration record",
+            "operationalizes": []
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "title": "Move the tracker and the terminal client onto the registry and remove the old paths",
+        "userValue": "Every tracker, commit-and-push and terminal-client git or gh call follows the registry's approval, hook and result-check rules, and the old wrappers and seams are gone so no code can run git or gh around the registry.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "each caller of the functions in src/workflow/tracker/github.ts (questions, resolve-comment, bugfix/tracker, config/github, tracker-auto, github-adapter, setup, sync) and each of the five callers of commitAndPushArtifacts",
+            "when": "the change is complete",
+            "then": "it performs the operation by calling a registry tool through callTool and the executor, using the replacement table that maps every github.ts wrapper to a registry tool, and commit-and-push becomes a sequence of git tool calls that returns the same result and the same reasons as before",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "the terminal client's workflow service in src/cli/services/workflow.ts",
+            "when": "it runs git or gh",
+            "then": "it does so through the daemon's tools.call request with the caller set, and no longer spawns git or gh itself",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a tracker push, sync, setup, question or comment-resolution run",
+            "when": "it runs after the change",
+            "then": "it creates and updates the same issues, sub-issues, milestones, comments and labels as before and records the same results",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "a moved call that needs approval under the effective approval mode and finds no client, or whose approval expires",
+            "when": "the call is denied",
+            "then": "the calling stage fails with the denial reported and does not continue",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam",
+            "when": "the change is complete",
+            "then": "they no longer exist, the forbidden-spawn scan runs in failing mode in the build chain and finds nothing outside the exemptions (the daemon self-update and src/indexer/index.ts), and the 25 test files that used the seams run through the recorded executor",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the migration record and the origin/main session source inventory baseline",
+            "when": "the change is complete",
+            "then": "both are regenerated, every site has an entry, and the full sweep passes with no new skipped tests",
             "operationalizes": []
           }
         ]

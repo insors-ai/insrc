@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-25T21:50:21.240Z",
+    "updatedAt": "2026-10-26T04:44:23.461Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1119,8 +1119,8 @@
       },
       {
         "taskId": "t16",
-        "commit": "6b098a090",
-        "ranAt": "2026-10-25T21:50:21.240Z",
+        "commit": "f0e7fae2b",
+        "ranAt": "2026-10-26T04:44:23.461Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1152,7 +1152,7 @@
             "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 831,
+            "durationMs": 854,
             "titles": [
               {
                 "title": "a data task with a connection scope works on that connection only",
@@ -1237,7 +1237,7 @@
             "file": "src/daemon/steps/__tests__/tool-owner-context.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 20976,
+            "durationMs": 1764,
             "titles": [
               {
                 "title": "CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority",
@@ -1250,7 +1250,7 @@
             "file": "src/daemon/tools/builtins/db/__tests__/leased-tools.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3171,
+            "durationMs": 1512,
             "titles": [
               {
                 "title": "CM-S1-V: ordinary DB tool async iteration retains full-use ownership through completion cancellation failure and nested library cleanup",

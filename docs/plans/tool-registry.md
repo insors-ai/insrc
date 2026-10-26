@@ -420,3 +420,15 @@ All were found by running the real acli on the user's site, or by the build and 
 - **Not recorded:** the success text of `attachment delete` (acli cannot add an attachment here); it is read by the success mark only.
 - **Jira trash:** the live probe made and deleted projects `ZZPROBE` to `ZZPROBE5`; Jira keeps their keys and names reserved in its trash until it is emptied. The user accepted the key substitution in chat ("1. OK"); the log is `docs/plans/acli-recorded/jira-live-run-2026-10-26.txt`.
 - **Why t11 failed the gate** (and was overridden): the judge wanted the user's confirmation of the substituted probe keys to come before the runs, and counted the `clone` and project reader fixes, found by t11's own live runs, as outside t11's files.
+
+## s7 LLD: round 1 review and the user's decisions (2026-10-26)
+
+LLD-b7a68147dcf72034-s7 (revision 1) reviewed by the daemon: `block`, 6 HIGH and 2 MED, all valid. Errors of the draft that revision 2 corrects: it called the refresh budget 120 s (`REFRESH_DEADLINE_MS` in `src/workflow/team/sighting-store.ts` is 10 s, and the lock-lifetime reasoning beside it depends on that); it said common workflow and daemon calls never ask (`src/daemon/tools/approval-policy.ts` asks when the effective mode, the call's `approvalMode` or else `tools.commonApproval`, is `manual` or `edit-auto`, whatever the caller); it missed `src/understanding/identity.ts` (`gh auth status`, `gh api --hostname ... users/<login>`, `git config`, through `runShell`); its inventory check would fail on a successful migration; passing `deps.signal` does not stop `git_fetch` and `git_fetch_refs` (fixed `runShell` timeout, signal not used) and `executeTool` does not refuse an already-aborted call; the IPC and worker payloads were not specified.
+
+The user decided the four open questions, one at a time:
+1. **Indexer exemption.** `src/indexer/index.ts` (read-only `git ls-files` in the indexing and summary workers, which have no tool registry) is a named exemption of the build check beside the self-update, with the reason. No worker request is built. `repo-ignore-filter.ts`, `validation-checks.ts` and the corpus reader are not exempted.
+2. **Tracker family.** s7 builds the narrow typed tracker family for the `gh api` operations of `src/workflow/tracker/github.ts` (raw `gh api` stays excluded); the s5 coverage table records it as s7's amendment.
+3. **Four git commands.** s7 builds `config`, `ls-remote`, `update-ref` and `rm` (the s8 coverage table marks them as built by s7); s8 is not added to s7's `dependsOn`.
+4. **Corpus reader.** `src/design/corpus/sources/git-reader.ts` moves onto `git_cat_file`, which gains an optional timeout that can only be lowered from 30 s; the reader keeps its decoding, object-identity check and error translation and tells a cancellation by its own abort signal; nothing outside `src/design` calls the reader in production today. Its fake-runner tests move to the recorded executor.
+
+Assumed, not asked: s7 registers no production hook (the first rules belong to s9 of the team-signoff epic).

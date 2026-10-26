@@ -310,7 +310,7 @@ const OPS: readonly OpDef[] = [
     required: ['owner', 'title'],
     args: [val('--title', 'title'), val('--owner', 'owner'), lit('--format', 'json')],
     out: {
-      kind: 'custom', shape: shapeOf({ number: Type.Number(), url: Type.String() }),
+      kind: 'custom', shape: shapeOf({ number: Type.Integer(), url: Type.String() }),
       build: async ctx => {
         const j = jsonObject(ctx, 'new project'); if (isFailure(j)) { return j; }
         if (!posInt(j['number'])) { return bad('gh project create returned no numeric project number'); }

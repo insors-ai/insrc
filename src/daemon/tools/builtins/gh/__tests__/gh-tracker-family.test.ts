@@ -11,6 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { Value } from '@sinclair/typebox/value';
 
 import { validateAgainstSchema } from '../../../../../agent/providers/structured-output.js';
@@ -24,6 +25,7 @@ import type { ApprovalClass, ToolDeps, ToolResult } from '../../../types.js';
 import { installFakeGh } from './_fakegh.js';
 
 const deps: ToolDeps = { sessionId: 't', repoPath: '/tmp', send: () => {}, requestId: 0, approvalMode: 'auto' };
+const GQL_SEARCH = 'query($q:String!,$first:Int!,$after:String){search(query:$q,type:ISSUE,first:$first,after:$after){issueCount pageInfo{hasNextPage endCursor} nodes{... on Issue{number title state url author{login} assignees(first:20){nodes{login}} labels(first:50){nodes{name}} milestone{title}}}}}';
 const GQL_ISSUE_TYPES = 'query($owner:String!){organization(login:$owner){issueTypes(first:25){nodes{name}}}}';
 
 /** Run one op against a fake gh that prints `stdout`; returns the result and the argv gh was called with. */
@@ -50,6 +52,7 @@ const ROWS: Row[] = [
 	{ input: { op: 'org_issue_type_create', org: 'my-org', name: 'Epic', color: 'blue', description: 'd' }, argv: 'api -X POST orgs/my-org/issue-types -f name=Epic -F is_enabled=true -f color=blue -f description=d', stdout: '{}', data: { op: 'org_issue_type_create', created: true }, cls: 'common', limit: 30 },
 	{ input: { op: 'current_login' }, argv: 'api user', stdout: '{"login":"me","id":1}', data: { op: 'current_login', login: 'me' }, cls: 'none', limit: 30 },
 	{ input: { op: 'user_by_host', host: 'github.example.com:8443', login: 'octo' }, argv: 'api --hostname github.example.com:8443 users/octo', stdout: '{"login":"octo","node_id":"U_1"}', data: { op: 'user_by_host', login: 'octo', node_id: 'U_1' }, cls: 'none', limit: 30 },
+	{ input: { op: 'tasks_query', q: 'repo:o/r is:issue is:open', first: 30 }, argv: `api graphql -f query=${GQL_SEARCH} -f q=repo:o/r is:issue is:open -F first=30`, stdout: '{"data":{"search":{"issueCount":1,"pageInfo":{"hasNextPage":true,"endCursor":"C1"},"nodes":[{"number":1}]}}}', data: { op: 'tasks_query', issueCount: 1, pageInfo: { hasNextPage: true, endCursor: 'C1' }, nodes: [{ number: 1 }] }, cls: 'none', limit: 60 },
 	{ input: { op: 'project_create', owner: 'my-org', title: 'Roadmap' }, argv: 'project create --title Roadmap --owner my-org --format json', stdout: '{"number":7,"url":"https://github.com/orgs/my-org/projects/7"}', data: { op: 'project_create', number: 7, url: 'https://github.com/orgs/my-org/projects/7' }, cls: 'common', limit: 60 },
 ];
 
@@ -67,8 +70,6 @@ test('gh-tracker-family.test.ts: each of the 15 ops builds its exact argv, accep
 		assert.deepEqual(r.data, row.data, label);
 		assert.ok(Value.Check(ghTrackerTool.outputSchema, r.data), `${label}: the data fits the output union`);
 	}
-	// tasks_query has its own test below; every op of the family is in this table or that one
-	seen.add('tasks_query');
 	assert.deepEqual([...seen].sort(), ghTrackerTool.ops.map(o => o.name).sort());
 	assert.equal(ghTrackerTool.ops.length, 15);
 });
@@ -115,6 +116,27 @@ test('gh-tracker-family.test.ts: the three paginated ops return every page in AP
 		assert.equal(r.success, false, String(input.op));
 		assert.equal(r.failure?.kind, 'rejected');
 		assert.match(r.failure?.message ?? '', /line 2/, String(input.op));
+	}
+	// more than 100 numbers and titles across two pages come back whole and in API order too
+	const nineteen = Array.from({ length: 150 }, (_, i) => String(1000 - i));
+	const bigNums = await run({ op: 'issues_by_labels', owner: 'o', repo: 'r', labels: ['a'] }, nineteen.join('\n'));
+	assert.deepEqual((bigNums.r.data as { numbers: number[] }).numbers, nineteen.map(Number));
+	const bigTitles = Array.from({ length: 150 }, (_, i) => JSON.stringify({ number: i + 1, title: `t${i + 1}` }));
+	const gotTitles = (await run({ op: 'issues_titles', owner: 'o', repo: 'r' }, bigTitles.join('\n'))).r.data as { issues: Array<{ number: number }> };
+	assert.deepEqual(gotTitles.issues.map(i => i.number), Array.from({ length: 150 }, (_, i) => i + 1));
+	// pull requests are removed by the fixed jq filter in the argv, before gh prints a line: run that very filter over two
+	// pages that contain pull requests and feed what it prints to the ops
+	const pages = [
+		[{ number: 1, title: 'issue one' }, { number: 2, title: 'a pull request', pull_request: { url: 'u' } }],
+		[{ number: 3, title: 'issue three' }, { number: 4, title: 'another pull request', pull_request: { url: 'v' } }],
+	];
+	const filtered = (filter: string): string | undefined => {
+		try { return pages.map(pg => execFileSync('jq', ['-c', filter], { input: JSON.stringify(pg), encoding: 'utf8' })).join(''); } catch { return undefined; }
+	};
+	const numLines = filtered(ISSUE_NUMBERS_FILTER); const titleLines = filtered(ISSUE_TITLES_FILTER);
+	if (numLines !== undefined && titleLines !== undefined) {
+		assert.deepEqual(((await run({ op: 'issues_by_labels', owner: 'o', repo: 'r', labels: ['a'] }, numLines)).r.data as { numbers: number[] }).numbers, [1, 3], 'no pull request number');
+		assert.deepEqual(((await run({ op: 'issues_titles', owner: 'o', repo: 'r' }, titleLines)).r.data as { issues: Array<{ number: number }> }).issues.map(i => i.number), [1, 3], 'no pull request title');
 	}
 	// a row of the wrong shape is rejected too
 	assert.equal((await run({ op: 'issues_by_labels', owner: 'o', repo: 'r', labels: ['a'] }, '1\nabc\n')).r.success, false);
@@ -177,7 +199,7 @@ test('gh-tracker-family.test.ts: project_create returns {number, url} for the JS
 	const input = { op: 'project_create', owner: 'my-org', title: 'Roadmap' };
 	assert.deepEqual((await run(input, '{"number":7,"url":"https://x/7"}')).r.data, { op: 'project_create', number: 7, url: 'https://x/7' });
 	assert.deepEqual((await run(input, '{"number":7}')).r.data, { op: 'project_create', number: 7, url: '' }, 'a missing url is empty, as the wrapper has it');
-	for (const stdout of ['{"url":"https://x/7"}', '{"number":"7"}', '{"number":0}', 'created!', '[]', '']) {
+	for (const stdout of ['{"url":"https://x/7"}', '{"number":"7"}', '{"number":0}', '{"number":7.5}', 'created!', '[]', '']) {
 		const r = (await run(input, stdout)).r;
 		assert.equal(r.success, false, stdout);
 		assert.equal(r.failure?.kind, 'rejected', stdout);

@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "07dfdf71974a7c45",
+    "storyId": "S001",
+    "createdAt": "2026-10-27T06:52:23.695Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix (small): one function in the VS Code picker plus its tests; routed issue -> build with no LLD.",
+    "epicCreatedAt": "2026-10-27T05:10:36.251Z",
+    "epicSlug": "make-vs-code-tier-picker-show",
+    "updatedAt": "2026-10-27T06:55:46.827Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-07dfdf71974a7c45 (docs/standalone/make-vs-code-tier-picker-show-E2026102707dfdf71/ISSUE.md): the VS Code model-tier picker's starting tier (currentTier, vscode-plugin/src/models/model-tier-picker.ts:145-158) must be the tier the daemon resolves, under the daemon's rules (src/config/analyze.ts:216 tierSetting, parseTiering :395-407, src/daemon/model-registry.ts:274 droppedEffort): a configured runner (a family the definitions serve) AND non-empty model run with the configured effort or none; any other tier (unset, model '', a runner or model alone) is the default family's tier default, at the configured effort leaf, else the default's effort; an effort the resolved model does not accept is shown as none. Parity tests cover each rule.",
+    "producesLld": false,
+    "commit": "e4352d82d",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "The VS Code tier picker now marks as current the tier the daemon actually runs; parity tests cover each of the daemon's rules and fail on the old code.",
+    "testRecord": {
+      "md": "docs/standalone/make-vs-code-tier-picker-show-E2026102707dfdf71/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T06:55:46.827Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/model-tier-picker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T06:55:46.827Z"
+      }
+    ]
+  }
+}

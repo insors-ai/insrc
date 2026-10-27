@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793082621624-9fyvzw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T06:30:21.624Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 19782,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b268706068c7a342",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T06:28:52.033Z",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b268706068c7a342",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/assets/models/cloud-model-catalog.json",
+        "src/daemon/__tests__/model-catalog-asset.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

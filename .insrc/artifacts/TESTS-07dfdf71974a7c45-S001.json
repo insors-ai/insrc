@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "07dfdf71974a7c45",
+    "storyId": "S001",
+    "createdAt": "2026-10-27T06:53:41.100Z",
+    "updatedAt": "2026-10-27T06:55:46.827Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-27T05:10:36.251Z",
+    "epicSlug": "make-vs-code-tier-picker-show"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "e4352d82d",
+        "ranAt": "2026-10-27T06:55:46.827Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 380,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

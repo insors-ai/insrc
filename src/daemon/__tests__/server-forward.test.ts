@@ -199,3 +199,35 @@ test('a request line of valid JSON that is not an object (null, a number, an arr
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+test('a request whose method is not a string (an object with no toString, a number) is answered invalid, and the server keeps serving', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-server-method-'));
+	const sock = join(dir, 's.sock');
+	const server = new IpcServer(directDispatch({ 'x.ok': async () => 'ok' }), Date.now, sock);
+	await server.listen();
+	try {
+		const socket = connect(sock);
+		const lines: { id: number; error?: string; result?: unknown }[] = [];
+		let pending = '';
+		socket.on('data', d => {
+			pending += d.toString();
+			let end: number;
+			while ((end = pending.indexOf('\n')) >= 0) { lines.push(JSON.parse(pending.slice(0, end))); pending = pending.slice(end + 1); }
+		});
+		await new Promise(r => socket.once('connect', r));
+		socket.write(JSON.stringify({ id: 1, method: { toString: null, valueOf: null }, params: {} }) + '\n'
+			+ JSON.stringify({ id: 2, method: 5, params: {} }) + '\n'
+			+ JSON.stringify({ id: 3, method: 'x.ok', params: {} }) + '\n');
+		const deadline = Date.now() + 5_000;
+		while (lines.length < 3 && Date.now() < deadline) await new Promise(r => setTimeout(r, 10));
+		assert.deepEqual(lines, [
+			{ id: 1, error: 'invalid request: method must be a string' },
+			{ id: 2, error: 'invalid request: method must be a string' },
+			{ id: 3, result: 'ok' },
+		]);
+		socket.destroy();
+	} finally {
+		await server.close();
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

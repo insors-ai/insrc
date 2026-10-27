@@ -350,6 +350,12 @@ export class IpcServer {
       this.send(socket, { id: -1, error: 'invalid request' });
       return Promise.resolve();
     }
+    // A method that is not a string is no request either: the handler lookup would convert it
+    // to a key, which can throw (an object with no toString) out of the data callback.
+    if (typeof request.method !== 'string') {
+      this.send(socket, { id: typeof request.id === 'number' ? request.id : -1, error: 'invalid request: method must be a string' });
+      return Promise.resolve();
+    }
 
     // Update the connection registry from the (validated) client identity +
     // the method just invoked (Story s4). Untrusted wire input is validated

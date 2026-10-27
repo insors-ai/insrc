@@ -13989,6 +13989,10 @@
         ],
         [
           "serialization",
+          "this.send"
+        ],
+        [
+          "serialization",
           "this.writeLine"
         ],
         [
@@ -13996,9 +14000,9 @@
           "this.writeLine"
         ]
       ],
-      "siteCount": 17,
-      "sitesDigest": "d683bf7c565c3a8ec1590e1377fc79733231650b2a178411e5fdca9983564394",
-      "sourceDigest": "e6d5e883e5f88ba4bca517e4b5bb44f43adc44ed560a7d6ddc3872b88eae281e",
+      "siteCount": 18,
+      "sitesDigest": "b75cff2867636947a83319ad9bd3f35e49215ebe37ce487242020cdc7131d670",
+      "sourceDigest": "a397466ffcc610635164b270cfd1ca67e6737eef96715a4ec67bfaca8cd5f26f",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

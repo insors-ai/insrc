@@ -95,3 +95,10 @@ test('the runtime function builds the handler tables with stub indexing dependen
 		rmSync(HOME, { recursive: true, force: true });
 	}
 });
+
+test('src/daemon/__tests__/handler-runtime.test.ts: the recorded handler key sets are unchanged because no method is added', () => {
+	// codeReview.freshness queues file jobs from its existing handler: no method was added for it
+	assert.ok(RECORDED_RPC.includes('codeReview.freshness'));
+	assert.ok(!ADDED_RPC.some(m => m.startsWith('codeReview.')) && !ADDED_STREAM.some(m => m.startsWith('codeReview.')));
+	assert.equal(new Set([...RECORDED_RPC, ...ADDED_RPC]).size, RECORDED_RPC.length + ADDED_RPC.length, 'no duplicate or renamed method');
+});

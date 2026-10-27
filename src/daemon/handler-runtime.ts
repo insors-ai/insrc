@@ -71,6 +71,7 @@ import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
 import { basename } from 'node:path';
+import { requestedAtFor, requestUnindexedFiles, type FreshnessRequests } from './freshness-request.js';
 import type { ConfigStore } from '../config/store.js';
 import { applyConfigWrite } from './config-write.js';
 import { getModelRegistry } from './model-registry.js';
@@ -159,6 +160,8 @@ export interface HandlerRuntime {
 /** Build the request handler tables, the understanding routes merged in. */
 export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	const { db, configStore, queue, indexer, startedAt } = deps;
+	/** When codeReview.freshness last asked the queue to index each file (absolute path); read back as requestedAt. */
+	const freshnessRequests: FreshnessRequests = new Map();
 	// Shared session-purge pipeline. Used by `agent.discard`,
 	// `session.delete`, and `session.deleteBulk` so they don't drift.
 	// plans/session-delete.md Phase B.
@@ -593,10 +596,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		},
 
 		// Code-review s9 — the indexing-readiness freshness check. Read-only:
-		// returns { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles } for the
+		// returns { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles, unindexedFiles } for the
 		// changed set, from the repo's code-index work in the queue (ISSUE-1102dc71)
-		// + the per-file graph watermark (never a reindex, never
-		// a store mutation). The controller-side gate (insrc_code_review_step) polls
+		// + the per-file graph watermark. It queues one file job for each stale file the
+		// index holds, once per mtime (no reindex of the repo, no store write). The controller-side gate (insrc_code_review_step) polls
 		// this before assembling grounding so a stale graph cannot yield a hollow
 		// PASS. Additive sibling of codeReview.grounding.
 		'codeReview.freshness': async (params) => {
@@ -610,7 +613,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const graphDeps = await realFreshnessGraphDeps();
 			const repos = await listRepos(db);
 			const repoRow = repos.find(r => r.path === repoPath);
-			const result = await computeCodeReviewFreshness(repoPath, changedFiles, {
+			const computed = await computeCodeReviewFreshness(repoPath, changedFiles, {
 				codeIndexWork: (r: string) => queue.codeIndexWorkFor(r),
 				repoLastIndexed: async () => {
 					const li = repoRow?.lastIndexed;
@@ -618,11 +621,11 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					const ms = typeof li === 'number' ? li : Date.parse(String(li));
 					return Number.isFinite(ms) ? ms : 0;
 				},
-				requestedAt: () => undefined,   // replaced by the request map in the next task
+				requestedAt: (r: string, f: string) => requestedAtFor(freshnessRequests, r, f),
 				...graphDeps,
 			});
-			// The FreshnessResult is the reply: { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }.
-			return result;
+			// The reply: the FreshnessResult, after the unindexed files were queued and the queue state re-read.
+			return await requestUnindexedFiles(queue, freshnessRequests, repoPath, computed);
 		},
 
 		'repo.reindex': async (params) => {

@@ -736,3 +736,21 @@ test('on the controller-reviewed path, a timed-out wait saves the reason in the 
 		assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, expected);
 	}
 });
+
+// ---- Story fa396bdf197b8e8b/s1: a stale file the index never takes ends in the degraded review ----
+
+test('src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:true and a freshness that keeps reporting one stale file with an idle queue while other changed files have symbols, the wait ends at the freshness time-out in the degraded diff review (fallback reason freshness-timeout naming that file) and no full review runs', async () => {
+	await reset();
+	let groundingFetches = 0;
+	const asked: unknown[] = [];
+	const t = await timedOutFallback({ inFlight: false, pendingCodeIndexJobs: 0 }, {
+		// idle queue, the same stale file on every poll, requested once and never indexed
+		fetchFreshness: async () => { asked.push(1); return { ok: true, isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'], unindexedFiles: [] } as never; },
+		fetchGrounding: async () => { groundingFetches++; return { ok: true, grounding }; },   // the other files have symbols
+	});
+	assert.ok(asked.length > 2, 'the wait kept polling until the time-out');
+	assert.equal(groundingFetches, 0, 'no full review grounding was assembled');
+	const r = await finish(t.deps, t.writes, t.out);
+	assert.equal(r.body.groundingMode, 'degraded');
+	assert.deepEqual(r.body.fallbackReason, { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] });
+});

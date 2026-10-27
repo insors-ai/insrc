@@ -1,0 +1,2746 @@
+TAP version 13
+# Subtest: DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context
+ok 1 - DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context
+  ---
+  duration_ms: 543.247584
+  type: 'test'
+  ...
+# Subtest: DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls
+ok 2 - DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls
+  ---
+  duration_ms: 400.389875
+  type: 'test'
+  ...
+# Subtest: DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap
+ok 3 - DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap
+  ---
+  duration_ms: 6.663166
+  type: 'test'
+  ...
+# Subtest: a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged
+ok 4 - a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged
+  ---
+  duration_ms: 528.0745
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged
+ok 5 - a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged
+  ---
+  duration_ms: 110.641917
+  type: 'test'
+  ...
+# Subtest: the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged
+ok 6 - the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged
+  ---
+  duration_ms: 0.522292
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword
+ok 7 - the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword
+  ---
+  duration_ms: 94.379792
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them
+ok 8 - a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them
+  ---
+  duration_ms: 351.52525
+  type: 'test'
+  ...
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons
+ok 9 - a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons
+  ---
+  duration_ms: 85.915584
+  type: 'test'
+  ...
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them
+ok 10 - a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them
+  ---
+  duration_ms: 345.631041
+  type: 'test'
+  ...
+# Subtest: a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not
+ok 11 - a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not
+  ---
+  duration_ms: 0.979917
+  type: 'test'
+  ...
+# Subtest: a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent
+ok 12 - a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent
+  ---
+  duration_ms: 0.847
+  type: 'test'
+  ...
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: claude reviewer-session arguments allow reading and insrc analyze only
+ok 13 - claude reviewer-session arguments allow reading and insrc analyze only
+  ---
+  duration_ms: 1.304792
+  type: 'test'
+  ...
+# Subtest: codex reviewer-session arguments use a read-only sandbox
+ok 14 - codex reviewer-session arguments use a read-only sandbox
+  ---
+  duration_ms: 0.106125
+  type: 'test'
+  ...
+# Subtest: a claude reviewer session runs in the repo with the session arguments and returns the checked answer
+ok 15 - a claude reviewer session runs in the repo with the session arguments and returns the checked answer
+  ---
+  duration_ms: 494.5835
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: a codex reviewer session takes the LAST message as the answer
+ok 16 - a codex reviewer session takes the LAST message as the answer
+  ---
+  duration_ms: 125.855666
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 2
+#     [35mhasAgentMessage[39m: true
+# Subtest: a session with no checked answer fails
+ok 17 - a session with no checked answer fails
+  ---
+  duration_ms: 96.354417
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:33] [33mWARN[39m: [36m[cli-provider] runReviewSession: transient CLI error; retrying once inside the remaining time[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "claude"
+#     err: "claude exited with 1. stderr=API Error: overloaded stdout="
+# Subtest: a transient CLI error is retried once
+ok 18 - a transient CLI error is retried once
+  ---
+  duration_ms: 138.09325
+  type: 'test'
+  ...
+# [07:39:33] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:34] [33mWARN[39m: [36m[cli-provider] runReviewSession: transient CLI error; retrying once inside the remaining time[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "claude"
+#     err: "claude exited with 1. stderr=rate limit exceeded stdout="
+# Subtest: a transient CLI error is never retried more than once
+ok 19 - a transient CLI error is never retried more than once
+  ---
+  duration_ms: 127.329584
+  type: 'test'
+  ...
+# Subtest: an error that is not transient is not retried
+ok 20 - an error that is not transient is not retried
+  ---
+  duration_ms: 85.234875
+  type: 'test'
+  ...
+# Subtest: a session is stopped at its deadline and that is not retried
+ok 21 - a session is stopped at its deadline and that is not retried
+  ---
+  duration_ms: 1506.7365
+  type: 'test'
+  ...
+# [07:39:36] [33mWARN[39m: [36m[cli-provider] runReviewSession: transient CLI error; retrying once inside the remaining time[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "claude"
+#     err: "claude exited with 1. stderr=service unavailable stdout="
+# Subtest: the retry gets only the time that remains
+ok 22 - the retry gets only the time that remains
+  ---
+  duration_ms: 2509.068583
+  type: 'test'
+  ...
+# Subtest: no attempt starts once the deadline has passed
+ok 23 - no attempt starts once the deadline has passed
+  ---
+  duration_ms: 4.682208
+  type: 'test'
+  ...
+# [07:39:38] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:38] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: one-shot calls and the edit session build the same arguments as before
+ok 24 - one-shot calls and the edit session build the same arguments as before
+  ---
+  duration_ms: 218.963542
+  type: 'test'
+  ...
+# [07:39:38] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:39] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI produced no model output; retrying once inside the remaining time[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 1
+#     [35mcodexSession[39m: "t-silent"
+#     err: "codex stalled: no model output in 1 s (session t-silent); the run was killed"
+# Subtest: a codex reviewer session that produces no model output is killed early and retried once as a fresh run
+ok 25 - a codex reviewer session that produces no model output is killed early and retried once as a fresh run
+  ---
+  duration_ms: 1078.357875
+  type: 'test'
+  ...
+# [07:39:39] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:40] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI produced no model output; retrying once inside the remaining time[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 1
+#     [35mcodexSession[39m: "t-again"
+#     err: "codex stalled: no model output in 1 s (session t-again); the run was killed"
+# [07:39:41] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI produced no model output; giving up[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 2
+#     [35mcodexSession[39m: "t-again"
+#     err: "codex stalled: no model output in 1 s (session t-again); the run was killed"
+# Subtest: a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit
+ok 26 - a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit
+  ---
+  duration_ms: 4649.822959
+  type: 'test'
+  ...
+# [07:39:44] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 4
+#     [35mhasAgentMessage[39m: true
+# Subtest: only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit
+ok 27 - only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit
+  ---
+  duration_ms: 2624.276458
+  type: 'test'
+  ...
+# [07:39:46] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 3
+#     [35mhasAgentMessage[39m: true
+# Subtest: a structured codex call with stallMs kills a run that prints no output and throws CliStallError
+ok 28 - a structured codex call with stallMs kills a run that prints no output and throws CliStallError
+  ---
+  duration_ms: 1008.332042
+  type: 'test'
+  ...
+# Subtest: a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output
+ok 29 - a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output
+  ---
+  duration_ms: 1726.799959
+  type: 'test'
+  ...
+# [07:39:52] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 7
+#     [35mhasAgentMessage[39m: true
+# Subtest: a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed
+ok 30 - a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed
+  ---
+  duration_ms: 5154.517958
+  type: 'test'
+  ...
+# [07:39:54] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 3
+#     [35mhasAgentMessage[39m: true
+# [07:39:57] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: claude ignores stallMs and reviewer sessions keep the first-output watchdog
+ok 31 - claude ignores stallMs and reviewer sessions keep the first-output watchdog
+  ---
+  duration_ms: 5247.699833
+  type: 'test'
+  ...
+# [07:39:59] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 4
+#     [35mhasAgentMessage[39m: true
+# [07:40:00] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI printed nothing new within its silence limit; giving up[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 1
+#     err: "codex stalled: no model output in 1 s; the run was killed"
+# [07:40:02] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI printed nothing new within its silence limit; giving up[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 1
+#     [35mcodexSession[39m: "t-session-late"
+#     err: "codex stalled: no model output in 1 s (session t-session-late); the run was killed"
+# Subtest: a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError
+ok 32 - a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError
+  ---
+  duration_ms: 5249.527917
+  type: 'test'
+  ...
+# [07:40:05] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 7
+#     [35mhasAgentMessage[39m: true
+# [07:40:07] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 4
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall
+ok 33 - a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall
+  ---
+  duration_ms: 3619.675708
+  type: 'test'
+  ...
+# [07:40:08] [33mWARN[39m: [36m[cli-provider] runReviewSession: the CLI produced no model output; giving up[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "codex"
+#     [35mattempt[39m: 1
+#     [35mcodexSession[39m: "t-first-silent"
+#     err: "codex stalled: no model output in 1 s (session t-first-silent); the run was killed"
+# [07:40:08] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is
+ok 34 - a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is
+  ---
+  duration_ms: 223.551083
+  type: 'test'
+  ...
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions
+ok 35 - with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions
+  ---
+  duration_ms: 453.158959
+  type: 'test'
+  ...
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: without effort every argv is byte-identical to today's
+ok 36 - without effort every argv is byte-identical to today's
+  ---
+  duration_ms: 226.191667
+  type: 'test'
+  ...
+# [07:40:09] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: a timed-out CLI child is killed with its process group, so a grandchild it started is gone
+ok 37 - a timed-out CLI child is killed with its process group, so a grandchild it started is gone
+  ---
+  duration_ms: 1506.730125
+  type: 'test'
+  ...
+# Subtest: a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone
+ok 38 - a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone
+  ---
+  duration_ms: 83.129916
+  type: 'test'
+  ...
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: completeStructured and complete run the CLI in opts.cwd when it is given
+ok 39 - completeStructured and complete run the CLI in opts.cwd when it is given
+  ---
+  duration_ms: 542.128584
+  type: 'test'
+  ...
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: completeStructured without opts.cwd runs the CLI in the inherited working directory
+ok 40 - completeStructured without opts.cwd runs the CLI in the inherited working directory
+  ---
+  duration_ms: 203.13625
+  type: 'test'
+  ...
+# [07:39:35] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 1
+#     [35mhasAgentMessage[39m: true
+# Subtest: a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default
+ok 41 - a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default
+  ---
+  duration_ms: 1507.57975
+  type: 'test'
+  ...
+# [07:39:37] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 2
+#     [35mhasAgentMessage[39m: true
+# Subtest: a codex run that narrates before answering yields its last agent message to completeStructured and complete
+ok 42 - a codex run that narrates before answering yields its last agent message to completeStructured and complete
+  ---
+  duration_ms: 502.28975
+  type: 'test'
+  ...
+# [07:39:37] [34mDEBUG[39m: [36m[cli-provider] codex completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mexitCode[39m: 0
+#     [35meventCount[39m: 2
+#     [35mhasAgentMessage[39m: true
+# [07:39:34] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: a fake codex emitting an input_too_large error event, or exiting non-zero with it on stderr, and a fake claude returning an is_error Prompt is too long envelope each surface an InputTooLargeError from completeStructured after one run
+ok 43 - a fake codex emitting an input_too_large error event, or exiting non-zero with it on stderr, and a fake claude returning an is_error Prompt is too long envelope each surface an InputTooLargeError from completeStructured after one run
+  ---
+  duration_ms: 1907.834209
+  type: 'test'
+  ...
+# Subtest: a size refusal whose text also matches the transient classifier (API Error: Prompt is too long) runs the CLI once
+ok 44 - a size refusal whose text also matches the transient classifier (API Error: Prompt is too long) runs the CLI once
+  ---
+  duration_ms: 353.434209
+  type: 'test'
+  ...
+# Subtest: over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+ok 45 - over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+  ---
+  duration_ms: 28.389958
+  type: 'test'
+  ...
+# Subtest: a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+ok 46 - a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+  ---
+  duration_ms: 4.438291
+  type: 'test'
+  ...
+# Subtest: every changed symbol is whole in exactly one chunk and every chunk fits the limit
+ok 47 - every changed symbol is whole in exactly one chunk and every chunk fits the limit
+  ---
+  duration_ms: 19.980875
+  type: 'test'
+  ...
+# Subtest: a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+ok 48 - a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+  ---
+  duration_ms: 0.710208
+  type: 'test'
+  ...
+# Subtest: under the limit the plan is one chunk and the dimension prompt is unchanged
+ok 49 - under the limit the plan is one chunk and the dimension prompt is unchanged
+  ---
+  duration_ms: 0.329083
+  type: 'test'
+  ...
+# Subtest: every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+ok 50 - every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+  ---
+  duration_ms: 2.163208
+  type: 'test'
+  ...
+# Subtest: a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+ok 51 - a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+  ---
+  duration_ms: 1.633
+  type: 'test'
+  ...
+# Subtest: an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+ok 52 - an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+  ---
+  duration_ms: 5.223917
+  type: 'test'
+  ...
+# Subtest: a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+ok 53 - a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+  ---
+  duration_ms: 6.095667
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:prepare] review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit[39m
+#     [35mmodule[39m: "review-pipeline:prepare"
+#     [35mchunk[39m: "c1"
+#     [35matoms[39m: [
+#       "hub"
+#     ]
+#     [35msummaries[39m: 25
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# Subtest: a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways
+ok 54 - a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways
+  ---
+  duration_ms: 122.57825
+  type: 'test'
+  ...
+# Subtest: a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller
+ok 55 - a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller
+  ---
+  duration_ms: 34.545583
+  type: 'test'
+  ...
+# Subtest: two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef
+ok 56 - two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef
+  ---
+  duration_ms: 38.053333
+  type: 'test'
+  ...
+# Subtest: a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence
+ok 57 - a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence
+  ---
+  duration_ms: 20.502959
+  type: 'test'
+  ...
+# Subtest: a gather call failing twice fails the review and records nothing
+ok 58 - a gather call failing twice fails the review and records nothing
+  ---
+  duration_ms: 4.643084
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 3,
+#       "low": 0
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 3,
+#       "low": 0
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 4,
+#       "med": 3,
+#       "low": 0
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 3,
+#       "low": 0
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 3,
+#       "low": 0
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "fdb74fdd-0bc1-4ca4-8175-6b533d015832"
+# [07:39:33] [33mWARN[39m: [36m[code-review:runner] code review failed; no record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "r1"
+#     [35mstoryId[39m: "s1"
+#     err: "review stage : the call failed twice (invalid-answer): 1 findings are not located at `file:line` in the code (first: findings[0].location); locate each at a file and line of a symbol the notes name, never at an evidence note id. No review was recorded."
+# Subtest: each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+ok 59 - each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+  ---
+  duration_ms: 90.783584
+  type: 'test'
+  ...
+# Subtest: a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+ok 60 - a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+  ---
+  duration_ms: 2.469
+  type: 'test'
+  ...
+# Subtest: adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+ok 61 - adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+  ---
+  duration_ms: 33.53125
+  type: 'test'
+  ...
+# Subtest: a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+ok 62 - a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+  ---
+  duration_ms: 15.08275
+  type: 'test'
+  ...
+# Subtest: a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+ok 63 - a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+  ---
+  duration_ms: 12.235916
+  type: 'test'
+  ...
+# Subtest: a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+ok 64 - a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 5.110583
+  type: 'test'
+  ...
+# Subtest: a key with no notes is adjudicated on the no-evidence statement
+ok 65 - a key with no notes is adjudicated on the no-evidence statement
+  ---
+  duration_ms: 9.074667
+  type: 'test'
+  ...
+# Subtest: a conventions candidate rejected by the module judgement is absent from the merged result
+ok 66 - a conventions candidate rejected by the module judgement is absent from the merged result
+  ---
+  duration_ms: 3.448542
+  type: 'test'
+  ...
+# Subtest: a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+ok 67 - a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+  ---
+  duration_ms: 13.145625
+  type: 'test'
+  ...
+# Subtest: a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+ok 68 - a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+  ---
+  duration_ms: 4.673583
+  type: 'test'
+  ...
+# Subtest: a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+ok 69 - a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+  ---
+  duration_ms: 17.343667
+  type: 'test'
+  ...
+# Subtest: a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+ok 70 - a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 14.2515
+  type: 'test'
+  ...
+# Subtest: a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+ok 71 - a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+  ---
+  duration_ms: 10.19625
+  type: 'test'
+  ...
+# Subtest: every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+ok 72 - every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+  ---
+  duration_ms: 6.474792
+  type: 'test'
+  ...
+# Subtest: a pair answer naming a counterpart outside its two symbols is rejected
+ok 73 - a pair answer naming a counterpart outside its two symbols is rejected
+  ---
+  duration_ms: 13.473292
+  type: 'test'
+  ...
+# Subtest: compare and pair calls are counted under pipelineCalls.relation, not chunk
+ok 74 - compare and pair calls are counted under pipelineCalls.relation, not chunk
+  ---
+  duration_ms: 6.819208
+  type: 'test'
+  ...
+# Subtest: out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+ok 75 - out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+  ---
+  duration_ms: 15.46525
+  type: 'test'
+  ...
+# Subtest: a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+ok 76 - a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+  ---
+  duration_ms: 4.396416
+  type: 'test'
+  ...
+# Subtest: pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+ok 77 - pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+  ---
+  duration_ms: 14.753416
+  type: 'test'
+  ...
+# Subtest: merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+ok 78 - merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+  ---
+  duration_ms: 65.08525
+  type: 'test'
+  ...
+# Subtest: a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+ok 79 - a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+  ---
+  duration_ms: 8.557625
+  type: 'test'
+  ...
+# Subtest: a mutual call cut between chunks is checked in both directions, each at its own caller
+ok 80 - a mutual call cut between chunks is checked in both directions, each at its own caller
+  ---
+  duration_ms: 5.126708
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "0737804d-371e-466d-96f8-0399b9d52f92"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "9d774471-f4f9-440f-a2ff-df214f7a500c"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "09b58e78-474b-4fa6-acf6-901762cd96f0"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "e41b717d-bca3-4136-8168-b09d21b7a586"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "e41b717d-bca3-4136-8168-b09d21b7a586"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "c2f2ac1b-e200-462e-800b-4195479ebd0c"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "c2f2ac1b-e200-462e-800b-4195479ebd0c"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "1401533c-c409-45ea-8ae8-663e93fc20e7"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "1401533c-c409-45ea-8ae8-663e93fc20e7"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "c1fb7eb0-16bb-4d27-a291-cb4fc6aa02e4"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "22093a27-4b67-4b2a-8a2a-8d5d51deb022"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "22093a27-4b67-4b2a-8a2a-8d5d51deb022"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "22093a27-4b67-4b2a-8a2a-8d5d51deb022"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "dc4696d0-8e3f-43de-9376-a63f23f92571"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mkey[39m: "fr:FR1"
+#     [35mcontextAtoms[39m: 1
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "b74bbe59-aff3-4ce3-ae80-26c6a405cb94"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "07472da7-206a-4131-a6fe-6cc28de5b5f2"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "1da91e97-6586-4718-bf1e-8ba4ef906e67"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "1a733b8d-deed-4908-8a0f-922fb17891b0"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "compare"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "e6e6ef34-5217-4331-ad44-fce35b046d48"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "9b1abf86-3571-49cc-a7f6-4a0f23cce2ff"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "compare"
+#     [35mchars[39m: 11188
+#     [35mbudget[39m: 6712
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 7239
+#     [35mbudget[39m: 6839
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 6395
+#     [35mbudget[39m: 6381
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 6391
+#     [35mbudget[39m: 6381
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 7239
+#     [35mbudget[39m: 6381
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# Subtest: each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+ok 81 - each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+  ---
+  duration_ms: 2.177625
+  type: 'test'
+  ...
+# Subtest: a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+ok 82 - a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+  ---
+  duration_ms: 0.480875
+  type: 'test'
+  ...
+# Subtest: same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+ok 83 - same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+  ---
+  duration_ms: 0.1925
+  type: 'test'
+  ...
+# Subtest: a duplicate entityId throws an error naming it
+ok 84 - a duplicate entityId throws an error naming it
+  ---
+  duration_ms: 0.185708
+  type: 'test'
+  ...
+# Subtest: the same grounding gives identical material and identical neighbour summaries every time
+ok 85 - the same grounding gives identical material and identical neighbour summaries every time
+  ---
+  duration_ms: 0.525583
+  type: 'test'
+  ...
+# Subtest: a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+ok 86 - a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+  ---
+  duration_ms: 0.120583
+  type: 'test'
+  ...
+# Subtest: coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+ok 87 - coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+  ---
+  duration_ms: 0.918084
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+ok 88 - ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+  ---
+  duration_ms: 231.468917
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+ok 89 - ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+  ---
+  duration_ms: 816.160875
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+ok 90 - ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+  ---
+  duration_ms: 68.330917
+  type: 'test'
+  ...
+# Subtest: ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+ok 91 - ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+  ---
+  duration_ms: 0.7795
+  type: 'test'
+  ...
+# Subtest: DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget
+ok 92 - DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget
+  ---
+  duration_ms: 32.81825
+  type: 'test'
+  ...
+# Subtest: DIFF-BUDGET: irreducible schema and explicit history are never omitted to fit
+ok 93 - DIFF-BUDGET: irreducible schema and explicit history are never omitted to fit
+  ---
+  duration_ms: 75.858084
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 4
+# Subtest: claude and codex accept the envelope around every review answer schema and echo the callId
+ok 94 - claude and codex accept the envelope around every review answer schema and echo the callId # SKIP INSRC_LIVE_TESTS is not 1
+  ---
+  duration_ms: 1.503917
+  type: 'test'
+  ...
+# Subtest: a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline
+ok 95 - a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline # SKIP INSRC_LIVE_TESTS is not 1
+  ---
+  duration_ms: 0.170584
+  type: 'test'
+  ...
+# Subtest: every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it
+ok 96 - every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it
+  ---
+  duration_ms: 2.249333
+  type: 'test'
+  ...
+# Subtest: the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens
+ok 97 - the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens
+  ---
+  duration_ms: 2.710625
+  type: 'test'
+  ...
+# Subtest: a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope
+ok 98 - a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope
+  ---
+  duration_ms: 39.840333
+  type: 'test'
+  ...
+# Subtest: a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats
+ok 99 - a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats
+  ---
+  duration_ms: 1.584666
+  type: 'test'
+  ...
+# Subtest: a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies
+ok 100 - a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies
+  ---
+  duration_ms: 1.084375
+  type: 'test'
+  ...
+# Subtest: a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt
+ok 101 - a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt
+  ---
+  duration_ms: 26.175959
+  type: 'test'
+  ...
+# Subtest: refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material
+ok 102 - refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material
+  ---
+  duration_ms: 0.504791
+  type: 'test'
+  ...
+# Subtest: runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them
+ok 103 - runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them
+  ---
+  duration_ms: 17.58025
+  type: 'test'
+  ...
+# Subtest: a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message
+ok 104 - a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message
+  ---
+  duration_ms: 1.39
+  type: 'test'
+  ...
+# Subtest: a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)
+ok 105 - a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)
+  ---
+  duration_ms: 0.705625
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 4
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:prepare] review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit[39m
+#     [35mmodule[39m: "review-pipeline:prepare"
+#     [35mchunk[39m: "c1"
+#     [35matoms[39m: [
+#       "a50"
+#     ]
+#     [35msummaries[39m: 8
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "identifier-mismatch"
+#     [35mcallId[39m: "b39c08de-6ccd-4c0b-a375-0d495e27eec8"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "identifier-mismatch"
+#     [35mcallId[39m: "c10986e4-e42c-438f-b246-46b23aa51289"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "identifier-mismatch"
+#     [35mcallId[39m: "e30364d5-44d0-46af-8326-508c0405aaae"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "identifier-mismatch"
+#     [35mcallId[39m: "8bcc7490-662a-44cf-bfd2-0ae247cbeb3e"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "adecd54d-d002-4933-8bdf-95846afb9327"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "db2ce433-8350-4b85-b76e-70ccf4d91bc3"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed twice; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "823e8691-0b52-4734-b7b5-5cfa3576b7ae"
+#     [35mcause[39m: "transient"
+#     [35mattempts[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "c8aaa95d-2135-4d35-9d7b-83c3ed209f87"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed twice; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "8e0073b6-4d68-4b7d-aa44-6051581006ad"
+#     [35mcause[39m: "transient"
+#     [35mattempts[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "cab79813-e4b2-4a4b-a10c-d6d216f51261"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "713bc95c-7b5f-41e1-881f-267d66ff468f"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5097
+#     [35msoft[39m: 2188
+#     [35mhard[39m: 2500
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5097
+#     [35msoft[39m: 2548
+#     [35mhard[39m: 5096
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5117
+#     [35msoft[39m: 2558
+#     [35mhard[39m: 5116
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a note call was refused for its size; reducing its notes in smaller batches[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mrole[39m: "obligation"
+#     [35mkey[39m: "k1"
+#     [35mnotes[39m: 6
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a note call was refused for its size; reducing its notes in smaller batches[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mrole[39m: "reduce"
+#     [35mkey[39m: "k2"
+#     [35mnotes[39m: 1
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a note call was refused for its size; reducing its notes in smaller batches[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mrole[39m: "obligation"
+#     [35mkey[39m: "k1"
+#     [35mnotes[39m: 4
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "7f06853b-3ef3-4839-83f5-9f374cc68a00"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5573
+#     [35msoft[39m: 4614
+#     [35mhard[39m: 5273
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:prepare] review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit[39m
+#     [35mmodule[39m: "review-pipeline:prepare"
+#     [35mchunk[39m: "c3"
+#     [35matoms[39m: [
+#       "a50"
+#     ]
+#     [35msummaries[39m: 8
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5573
+#     [35msoft[39m: 4365
+#     [35mhard[39m: 4988
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 4862
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 4862
+#     [35msoft[39m: 2888
+#     [35mhard[39m: 3300
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 2046
+#     [35msoft[39m: 1790
+#     [35mhard[39m: 2045
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 3788
+#     [35msoft[39m: 875
+#     [35mhard[39m: 1000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5911
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 1665
+#     [35msoft[39m: 875
+#     [35mhard[39m: 1000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "0fd5a73a-8b8d-46f2-93b4-b9d602b844a0"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed twice; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mkey[39m: "p1"
+#     [35mcause[39m: "transient"
+#     [35mattempts[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mchars[39m: 4511
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "14fec922-6e84-4677-8793-c8228991efc7"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 5097
+#     [35msoft[39m: 1750
+#     [35mhard[39m: 2000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "stall"
+#     [35mdetail[39m: "codex stalled: no model output in 200 s; the run was killed"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "87017a95-6fd5-4cf4-8600-58a294ef88ed"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# Subtest: a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded
+ok 106 - a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded
+  ---
+  duration_ms: 146.182291
+  type: 'test'
+  ...
+# Subtest: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept
+ok 107 - an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept
+  ---
+  duration_ms: 3.945167
+  type: 'test'
+  ...
+# Subtest: a relation judged by two calls is complete only when both are answered
+ok 108 - a relation judged by two calls is complete only when both are answered
+  ---
+  duration_ms: 3.897667
+  type: 'test'
+  ...
+# Subtest: usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged
+ok 109 - usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged
+  ---
+  duration_ms: 6.742917
+  type: 'test'
+  ...
+# Subtest: an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named
+ok 110 - an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named
+  ---
+  duration_ms: 4.065875
+  type: 'test'
+  ...
+# Subtest: the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit
+ok 111 - the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit
+  ---
+  duration_ms: 2.669583
+  type: 'test'
+  ...
+# Subtest: a divided review whose result is an array keeps it an array, and its calls per role are read from the job
+ok 112 - a divided review whose result is an array keeps it an array, and its calls per role are read from the job
+  ---
+  duration_ms: 0.95175
+  type: 'test'
+  ...
+# Subtest: a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review
+ok 113 - a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review
+  ---
+  duration_ms: 0.92125
+  type: 'test'
+  ...
+# Subtest: a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions
+ok 114 - a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions
+  ---
+  duration_ms: 0.5015
+  type: 'test'
+  ...
+# Subtest: DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted
+ok 115 - DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted
+  ---
+  duration_ms: 0.200125
+  type: 'test'
+  ...
+# Subtest: a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'
+ok 116 - a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'
+  ---
+  duration_ms: 1.191125
+  type: 'test'
+  ...
+# Subtest: a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size
+ok 117 - a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size
+  ---
+  duration_ms: 1.656333
+  type: 'test'
+  ...
+# Subtest: a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)
+ok 118 - a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)
+  ---
+  duration_ms: 0.23975
+  type: 'test'
+  ...
+# Subtest: a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons
+ok 119 - a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons
+  ---
+  duration_ms: 0.174041
+  type: 'test'
+  ...
+# Subtest: a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once
+ok 120 - a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once
+  ---
+  duration_ms: 0.184042
+  type: 'test'
+  ...
+# Subtest: a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts
+ok 121 - a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts
+  ---
+  duration_ms: 0.281458
+  type: 'test'
+  ...
+# Subtest: ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders
+ok 122 - ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders
+  ---
+  duration_ms: 0.210042
+  type: 'test'
+  ...
+# Subtest: the pipeline driver forwards a structured call's stallMs to completeStructured
+ok 123 - the pipeline driver forwards a structured call's stallMs to completeStructured
+  ---
+  duration_ms: 0.113458
+  type: 'test'
+  ...
+# Subtest: the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession
+ok 124 - the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession
+  ---
+  duration_ms: 0.19325
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a relation call was refused for its size; asked again within the reported size[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mkey[39m: "relation:references:a1->a12"
+#     [35mrefused[39m: 1410
+#     [35mbudget[39m: 1100
+#     [35mcalls[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "2804bd17-bd1d-4268-9400-50d06f04d635"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:prepare] review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit[39m
+#     [35mmodule[39m: "review-pipeline:prepare"
+#     [35mchunk[39m: "c1"
+#     [35matoms[39m: [
+#       "a20"
+#     ]
+#     [35msummaries[39m: 12
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mkey[39m: "promised-1"
+#     [35mcontextAtoms[39m: 12
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mkey[39m: "promised-3"
+#     [35mcontextAtoms[39m: 1
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "8cbc3541-e9af-41f2-91d8-de83bf97316f"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mkey[39m: "k1"
+#     [35mcontextAtoms[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a note call was refused for its size; reducing its notes in smaller batches[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mrole[39m: "obligation"
+#     [35mkey[39m: "k1"
+#     [35mnotes[39m: 2
+#     [35msoft[39m: 1488
+#     [35mhard[39m: 1700
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mkey[39m: "k1"
+#     [35mcontextAtoms[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a note call was refused for its size; reducing its notes in smaller batches[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mrole[39m: "obligation"
+#     [35mkey[39m: "k1"
+#     [35mnotes[39m: 3
+#     [35msoft[39m: 1488
+#     [35mhard[39m: 1700
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "cross"
+#     [35mcause[39m: "identifier-mismatch"
+#     [35mcallId[39m: "b63405b1-cf20-4e07-8c02-699ebdaadd91"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "cross"
+#     [35mchars[39m: 5107
+#     [35msoft[39m: 4468
+#     [35mhard[39m: 5106
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "cross"
+#     [35mchars[39m: 1619
+#     [35mbudget[39m: 1569
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "cross"
+#     [35mchars[39m: 1619
+#     [35mbudget[39m: 1569
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "codex agent_message.text was not parseable JSON: Unexpected token"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "95ce5e2e-3709-4c8d-b4a6-8afe5dea8fbd"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "invalid-answer"
+#     [35mdetail[39m: "codex answer does not satisfy the caller's schema: /answer/seen: must be array"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "37c8a943-957c-43e2-b9ec-33f48ae7e59a"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "3e1c5ba3-ee6f-4da3-ba41-0752d39caa58"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "18150631-50cb-4473-8aa1-128b5114a77b"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed 3 times; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "004e0216-fbfe-49a5-bc01-627771855ad1"
+#     [35mcause[39m: "stall"
+#     [35mattempts[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "073f5420-437b-425f-9f9c-f06a43863d45"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed twice; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "9a043926-6976-4998-8e9b-2edf10fdd277"
+#     [35mcause[39m: "invalid-answer"
+#     [35mattempts[39m: 2
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "7b21f229-65ea-427b-8861-1cca75579ecc"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "10b18695-c701-4ede-96b7-1c5f8ba5c4cd"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed 3 times; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "9f139ede-14d9-409f-b6a9-8ca24d7961ae"
+#     [35mcause[39m: "stall"
+#     [35mattempts[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "04ebb978-7d15-4874-b96c-4cab7da05424"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "ab5cbc84-1ca4-43c7-b67b-776d47d42325"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed 3 times; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mkey[39m: "45e0545a-8a45-4ebc-92b1-6352bc03325f"
+#     [35mcause[39m: "transient"
+#     [35mattempts[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "fbd6d1cb-2939-4a7d-b7ee-bf5c1ceaac77"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "stall"
+#     [35mcallId[39m: "d1f32bc5-b003-499f-b367-eb67b548e233"
+# Subtest: a fitting review is one call with today's prompt and schema
+ok 125 - a fitting review is one call with today's prompt and schema
+  ---
+  duration_ms: 18.315625
+  type: 'test'
+  ...
+# Subtest: every call the job issues fits the limit, for material many times the limit, and every atom is read whole
+ok 126 - every call the job issues fits the limit, for material many times the limit, and every atom is read whole
+  ---
+  duration_ms: 30.593833
+  type: 'test'
+  ...
+# Subtest: a refused call is re-planned and the job completes, sending no prompt twice
+ok 127 - a refused call is re-planned and the job completes, sending no prompt twice
+  ---
+  duration_ms: 36.560625
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 14
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 87139
+#     [35msoft[39m: 17500
+#     [35mhard[39m: 20000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 87139
+#     [35msoft[39m: 43569
+#     [35mhard[39m: 87138
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 43456
+#     [35msoft[39m: 21728
+#     [35mhard[39m: 43455
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 43239
+#     [35msoft[39m: 21619
+#     [35mhard[39m: 43238
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 21475
+#     [35msoft[39m: 10737
+#     [35mhard[39m: 21474
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 21495
+#     [35msoft[39m: 10747
+#     [35mhard[39m: 21494
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 21589
+#     [35msoft[39m: 10794
+#     [35mhard[39m: 21588
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 21591
+#     [35msoft[39m: 10795
+#     [35mhard[39m: 21590
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 37012
+#     [35msoft[39m: 17500
+#     [35mhard[39m: 20000
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; re-dividing what it carried[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchars[39m: 43012
+#     [35msoft[39m: 17500
+#     [35mhard[39m: 20000
+# Subtest: an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included
+ok 128 - an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included
+  ---
+  duration_ms: 41.973208
+  type: 'test'
+  ...
+# Subtest: adherence makes no call without an approved LLD or plan
+ok 129 - adherence makes no call without an approved LLD or plan
+  ---
+  duration_ms: 3.432959
+  type: 'test'
+  ...
+# Subtest: a mock added or removed after prepare does not change the ux result
+ok 130 - a mock added or removed after prepare does not change the ux result
+  ---
+  duration_ms: 8.392916
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"513e3c26-39f3-4aa3-92ca-c6bf88998583","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"513e3c26-39f3-4aa3-92ca-c6bf88998583","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"ac6c0177-31b4-4ea9-bbcc-fb8449f71446","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"ac6c0177-31b4-4ea9-bbcc-fb8449f71446","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"61882b47-f9b5-42a1-a043-dab9dba1f97c","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"61882b47-f9b5-42a1-a043-dab9dba1f97c","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"b85370c5-bb97-4ad0-9040-12ba32b39c5c","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"b85370c5-bb97-4ad0-9040-12ba32b39c5c","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"398efafc-9c08-4ee0-9317-cd51dbecb218","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"398efafc-9c08-4ee0-9317-cd51dbecb218","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"05e75235-8b12-4770-9cb0-1d806a6cc3a7","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"05e75235-8b12-4770-9cb0-1d806a6cc3a7","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"c30f9b22-8303-43ad-ab16-df5da8df7750","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"c30f9b22-8303-43ad-ab16-df5da8df7750","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 2,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"03b7deaa-d8ae-4f31-a85c-2885c772aaaa","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "b448f44b-c020-477d-b5db-7930be4e9bf6"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"03b7deaa-d8ae-4f31-a85c-2885c772aaaa","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"3581f344-4535-4de2-bbdd-6c3568f79fe7","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"3581f344-4535-4de2-bbdd-6c3568f79fe7","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"cf8bc324-cfec-40db-8a04-8d6d21c9b7e7","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"cf8bc324-cfec-40db-8a04-8d6d21c9b7e7","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"830b24f5-deba-4964-9f63-125b907242da","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"830b24f5-deba-4964-9f63-125b907242da","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"bd18be84-0d86-4710-94b7-87d09d0a1e8a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"bd18be84-0d86-4710-94b7-87d09d0a1e8a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"793811e5-cb13-4e12-b311-b21a409a5298","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"793811e5-cb13-4e12-b311-b21a409a5298","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"10360dcd-b618-4284-b18b-8a261fbf71b5","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"10360dcd-b618-4284-b18b-8a261fbf71b5","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 2,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"942c202a-790f-41df-a173-2e72db4f210c","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"942c202a-790f-41df-a173-2e72db4f210c","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"879e3f1f-35a3-48c0-abbe-b9c91b5b7b34","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"879e3f1f-35a3-48c0-abbe-b9c91b5b7b34","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"7c75a3d9-749c-4394-8b03-d982e397784a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"7c75a3d9-749c-4394-8b03-d982e397784a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"550f0b4e-0e77-4b48-86ea-948d390043c1","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "model unavailable"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "8468dbd6-dfdc-471f-bae6-da9b05df3cee"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 2
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "model unavailable"
+# [07:39:33] [33mWARN[39m: [36m[code-review:runner] code review failed; no record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     err: "review stage judge: the call failed twice (transient): model unavailable. No review was recorded."
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c7a43cc7-f708-4923-8eb7-77deef8569bd","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c7a43cc7-f708-4923-8eb7-77deef8569bd","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"2dbfc566-10db-4333-a80e-d1518591e393","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"2dbfc566-10db-4333-a80e-d1518591e393","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"7b4438b4-280c-42d6-909f-162c5c52f11b","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"7b4438b4-280c-42d6-909f-162c5c52f11b","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"ae80dafa-3b4a-4b10-bfad-5f2aee5353b6","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"ae80dafa-3b4a-4b10-bfad-5f2aee5353b6","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"07711d10-828f-4754-b769-6ff9618f9628","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"07711d10-828f-4754-b769-6ff9618f9628","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "pass"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 2
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"29257113-e79f-4179-b427-a62c127e221f","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"29257113-e79f-4179-b427-a62c127e221f","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"0898ec5e-a7f7-43b8-9a2b-16b2cc2fa11f","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"0898ec5e-a7f7-43b8-9a2b-16b2cc2fa11f","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"f5d43afd-27b5-4acc-ae02-83de499a434a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"f5d43afd-27b5-4acc-ae02-83de499a434a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"31f84db2-8f25-46fb-8de0-07953f49de95","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"31f84db2-8f25-46fb-8de0-07953f49de95","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"260ac152-d47d-42c0-a195-1a334ee8d060","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"260ac152-d47d-42c0-a195-1a334ee8d060","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"9813034c-aa6c-4f44-b684-2b01007af055","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"9813034c-aa6c-4f44-b684-2b01007af055","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"a62a8693-8470-4754-abc6-5c9266e56837","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"a62a8693-8470-4754-abc6-5c9266e56837","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 2,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"a0151075-bcaf-457b-b855-277a724da843","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"a0151075-bcaf-457b-b855-277a724da843","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"35b5f2e3-91a1-40f4-b40c-32481a7a0705","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"35b5f2e3-91a1-40f4-b40c-32481a7a0705","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"c95a1bc7-f1e0-46e3-8ad4-731302876abe","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"c95a1bc7-f1e0-46e3-8ad4-731302876abe","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"bdbe9595-8674-4bad-bd9e-58a59071b290","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"bdbe9595-8674-4bad-bd9e-58a59071b290","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"0a8922b4-607f-4211-aeaa-36835a17ab0a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"0a8922b4-607f-4211-aeaa-36835a17ab0a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"5d199795-40e1-41b0-802e-a1b8181e1597","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"5d199795-40e1-41b0-802e-a1b8181e1597","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"dc7a2609-78f8-4f80-b245-0ab6f55b0471","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"dc7a2609-78f8-4f80-b245-0ab6f55b0471","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c0a35b74-cb63-4cf4-8f05-3569d9975a8a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c0a35b74-cb63-4cf4-8f05-3569d9975a8a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"3acfc978-5d5a-45aa-82ca-6275b03f0cf8","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"3acfc978-5d5a-45aa-82ca-6275b03f0cf8","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"c2080349-05c6-4373-9b44-169b70ad5ea2","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"c2080349-05c6-4373-9b44-169b70ad5ea2","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"1d517410-47bb-47cd-8bd2-8c8444b5316f","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"1d517410-47bb-47cd-8bd2-8c8444b5316f","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"03f0905d-265b-4c5f-b3af-f4d58a7a2b98","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"03f0905d-265b-4c5f-b3af-f4d58a7a2b98","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"2ea8cbb4-207d-4450-87c3-0895014129fa","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"2ea8cbb4-207d-4450-87c3-0895014129fa","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"a28a44d7-ab3d-406c-8386-238868ca1f40","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"a28a44d7-ab3d-406c-8386-238868ca1f40","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 3,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c6183053-2628-4eaa-afe7-0013fa7f9927","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"adherence","reviewId":"c6183053-2628-4eaa-afe7-0013fa7f9927","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"96ca2851-5bb2-4413-96ab-f057906a6bc4","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"conventions","reviewId":"96ca2851-5bb2-4413-96ab-f057906a6bc4","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"81adc32f-4d7c-46b3-95e4-0f1031473138","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"coverage","reviewId":"81adc32f-4d7c-46b3-95e4-0f1031473138","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"4de3ded5-9923-4983-b9bc-9783fbe961d3","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"quality","reviewId":"4de3ded5-9923-4983-b9bc-9783fbe961d3","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"a96f5876-27c9-4391-a875-34d2d5c3d17e","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"functional-coverage","reviewId":"a96f5876-27c9-4391-a875-34d2d5c3d17e","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"cd0443b5-ee97-4f2e-bee8-1a135ed0a776","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"diagram","reviewId":"cd0443b5-ee97-4f2e-bee8-1a135ed0a776","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"e764b65f-6624-4470-8730-1c90d6e9025b","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"s1","dimension":"ux","reviewId":"e764b65f-6624-4470-8730-1c90d6e9025b","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [07:39:33] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "parity"
+#     [35mstoryId[39m: "s1"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 1,
+#       "med": 1,
+#       "low": 7
+#     }
+# [07:39:33] [33mWARN[39m: [36m[review] review:probe: source-root graph read empty/failed; grepping repo root (degraded run)[39m
+#     [35mmodule[39m: "review"
+#     [35mrepoPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-parity-def-o66jSL"
+#     [35mreason[39m: "the index holds no file for this repository"
+# [07:39:33] [32mINFO[39m: [36m[review] review:probe: gathered deterministic evidence[39m
+#     [35mmodule[39m: "review"
+#     [35mclaims[39m: 2
+#     [35mroots[39m: 1
+#     [35mfallbackUsed[39m: true
+# [07:39:33] [32mINFO[39m: [36m[review] review: completed grounded review[39m
+#     [35mmodule[39m: "review"
+#     [35mstage[39m: "define"
+#     [35mverdict[39m: "pass"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 2
+#     }
+# [07:39:33] [33mWARN[39m: [36m[review] review:probe: source-root graph read empty/failed; grepping repo root (degraded run)[39m
+#     [35mmodule[39m: "review"
+#     [35mrepoPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-parity-def-o66jSL"
+#     [35mreason[39m: "the index holds no file for this repository"
+# [07:39:33] [32mINFO[39m: [36m[review] review:probe: gathered deterministic evidence[39m
+#     [35mmodule[39m: "review"
+#     [35mclaims[39m: 2
+#     [35mroots[39m: 1
+#     [35mfallbackUsed[39m: true
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "extract"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "extraction unavailable"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "extract"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "40c02bf0-b2bd-44bc-b090-98185e8343c3"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "extract"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 2
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "extraction unavailable"
+# [07:39:33] [33mWARN[39m: [36m[review] review:probe: source-root graph read empty/failed; grepping repo root (degraded run)[39m
+#     [35mmodule[39m: "review"
+#     [35mrepoPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-parity-def-o66jSL"
+#     [35mreason[39m: "the index holds no file for this repository"
+# Subtest: an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged
+ok 131 - an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged
+  ---
+  duration_ms: 52.3195
+  type: 'test'
+  ...
+# Subtest: an under-limit HLD review makes one reviewer-session call and gives today's report
+ok 132 - an under-limit HLD review makes one reviewer-session call and gives today's report
+  ---
+  duration_ms: 3.07925
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review] review:probe: gathered deterministic evidence[39m
+#     [35mmodule[39m: "review"
+#     [35mclaims[39m: 2
+#     [35mroots[39m: 1
+#     [35mfallbackUsed[39m: true
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 1
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "stalled judging TOKEN_ALPHA exists"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mcause[39m: "transient"
+#     [35mcallId[39m: "dc8a927c-7c8b-451c-b603-0f3aed40d663"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:driver] review pipeline: a call did not complete[39m
+#     [35mmodule[39m: "review-pipeline:driver"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mrole[39m: "single"
+#     [35mattempt[39m: 2
+#     [35mcause[39m: "transient"
+#     [35mdetail[39m: "stalled judging TOKEN_ALPHA exists"
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call failed twice; recorded and the review goes on[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "premise"
+#     [35mstage[39m: "verify"
+#     [35mkey[39m: "p1"
+#     [35mcause[39m: "transient"
+#     [35mattempts[39m: 2
+# [07:39:33] [32mINFO[39m: [36m[review] review: completed grounded review[39m
+#     [35mmodule[39m: "review"
+#     [35mstage[39m: "define"
+#     [35mverdict[39m: "block"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 1,
+#       "low": 1
+#     }
+# [07:39:33] [32mINFO[39m: [36m[review] review:template: completed design review[39m
+#     [35mmodule[39m: "review"
+#     [35mstage[39m: "design.epic"
+#     [35mtemplate[39m: "design-spec"
+#     [35mverdict[39m: "pass"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 8,
+#       "unverified": 0
+#     }
+#     [35mtookMs[39m: 0
+# [07:39:33] [33mWARN[39m: [36m[review] review:probe: source-root graph read empty/failed; grepping repo root (degraded run)[39m
+#     [35mmodule[39m: "review"
+#     [35mrepoPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-parity-def-E15sqk"
+#     [35mreason[39m: "the index holds no file for this repository"
+# [07:39:33] [32mINFO[39m: [36m[review] review:probe: gathered deterministic evidence[39m
+#     [35mmodule[39m: "review"
+#     [35mclaims[39m: 2
+#     [35mroots[39m: 1
+#     [35mfallbackUsed[39m: true
+# [07:39:33] [33mWARN[39m: [36m[review] review:probe: source-root graph read empty/failed; grepping repo root (degraded run)[39m
+#     [35mmodule[39m: "review"
+#     [35mrepoPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-parity-def-E15sqk"
+#     [35mreason[39m: "the index holds no file for this repository"
+# Subtest: the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema
+ok 133 - the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema
+  ---
+  duration_ms: 29.302292
+  type: 'test'
+  ...
+# Subtest: an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks
+ok 134 - an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks
+  ---
+  duration_ms: 1.260417
+  type: 'test'
+  ...
+# [07:39:33] [32mINFO[39m: [36m[review] review:probe: gathered deterministic evidence[39m
+#     [35mmodule[39m: "review"
+#     [35mclaims[39m: 2
+#     [35mroots[39m: 1
+#     [35mfallbackUsed[39m: true
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "template"
+#     [35mstage[39m: "template"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "5334445f-6186-48fa-9ba0-ea5368345ebb"
+# [07:39:33] [32mINFO[39m: [36m[review] review:template: completed design review[39m
+#     [35mmodule[39m: "review"
+#     [35mstage[39m: "design.epic"
+#     [35mtemplate[39m: "design-spec"
+#     [35mverdict[39m: "pass"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 8,
+#       "unverified": 0
+#     }
+#     [35mtookMs[39m: 0
+# [07:39:33] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "template"
+#     [35mstage[39m: "template"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "410a2fae-92d8-455c-8120-4fca2874d64c"
+# [07:39:33] [33mWARN[39m: [36m[review] review:template: the answer failed the checklist (2 of 2 attempts)[39m
+#     [35mmodule[39m: "review"
+#     [35mstage[39m: "design.epic"
+#     [35mtemplate[39m: "design-spec"
+#     [35mattempts[39m: 2
+#     [35minvalidAnswers[39m: 2
+# Subtest: Epic c2ba6fa6 Story s1's code review completes on the installed daemon, records a verdict, and writes the chunk plan and calls per stage to the smoke record
+ok 135 - Epic c2ba6fa6 Story s1's code review completes on the installed daemon, records a verdict, and writes the chunk plan and calls per stage to the smoke record # SKIP INSRC_LIVE_TESTS is not 1
+  ---
+  duration_ms: 0.7855
+  type: 'test'
+  ...
+1..135
+# tests 135
+# suites 0
+# pass 132
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 37138.596958

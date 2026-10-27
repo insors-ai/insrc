@@ -58,6 +58,8 @@ import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
+import { completeInputChars } from '../../shared/structured-input.js';
+import { boundedClaudeArgs, boundedClaudeEnv, BOUNDED_SYSTEM_PROMPT, UnsupportedBoundedInputError, verifyBoundedCli } from './bounded-input.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 
 const log = getLogger('cli-provider');
@@ -219,6 +221,7 @@ export class CliProvider implements LLMProvider {
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,
+			boundedStructuredInput: true,
 			toolCalling: false,
 			vision: false,
 			webSearch: false,
@@ -321,7 +324,40 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
+		if (opts?.boundedInput !== undefined) return this.completeBoundedStructured<T>(messages, schema, opts);
 		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3, opts?.connectionExecution);
+	}
+
+	/** A fresh tool-free call. Admission is outside every retry wrapper. */
+	private async completeBoundedStructured<T>(messages: LLMMessage[], schema: StructuredSchema, opts: StructuredCompletionOpts): Promise<T> {
+		const bounded = opts.boundedInput!;
+		if (bounded.contextMode !== 'isolated-structured' || !Number.isSafeInteger(bounded.maxInputChars) || bounded.maxInputChars <= 0) {
+			throw new UnsupportedBoundedInputError('Invalid bounded structured input contract');
+		}
+		const wireSchema = this.kind === 'codex' ? codexStrictSchema(schema) : schema;
+		// Reserve framing for the explicit replacement system prompt and protocol headings.
+		const chars = completeInputChars(messages, wireSchema) + BOUNDED_SYSTEM_PROMPT.length + 1_024;
+		const cap = Math.min(bounded.maxInputChars, this.inputBudgetChars ?? bounded.maxInputChars);
+		if (chars > cap) throw new InputTooLargeError(`Complete normalized input ${chars} exceeds ${cap} characters`, '', { actualChars: chars, maxChars: cap });
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-isolated-'));
+		try {
+			verifyBoundedCli(this.kind, this.binPath, dir);
+			if (this.kind !== 'claude') throw new UnsupportedBoundedInputError('No verified tool-free Codex invocation is available');
+			const args = boundedClaudeArgs(wireSchema, this.modelArgs(opts));
+			const out = await runInProcessGroup(this.binPath, args, {
+				cwd: dir, stdin: serialiseMessages(messages), env: boundedClaudeEnv(),
+				timeoutMs: opts.timeoutMs ?? this.timeoutMs,
+				...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+			});
+			if (out.aborted) { const err = new Error('Bounded CLI call aborted'); err.name = 'AbortError'; throw err; }
+			if (out.timedOut) throw new ReviewSessionTimeoutError(opts.timeoutMs ?? this.timeoutMs);
+			if (out.exitCode !== 0) throw cliExitError('claude', out.exitCode, out.stdout, out.stderr);
+			const envelope = JSON.parse(out.stdout) as ClaudeEnvelope;
+			if (envelope.is_error || envelope.structured_output === undefined) throw new Error('Bounded CLI returned no structured result');
+			const checked = validateCodexReply<T>(schema, envelope.structured_output);
+			if (!checked.ok) throw new ModelResponseShapeError('Bounded CLI result failed schema validation', checked.errors);
+			return checked.value;
+		} finally { rmSync(dir, { recursive: true, force: true }); }
 	}
 
 	private async completeStructuredOnce<T>(

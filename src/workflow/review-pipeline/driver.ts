@@ -17,6 +17,7 @@
  */
 
 import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-provider.js';
+import { UnsupportedBoundedInputError } from '../../agent/providers/bounded-input.js';
 import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
@@ -58,10 +59,10 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		try {
 			const chars = promptChars(call.messages, call.schema);
 			if (chars > job.plan.limitChars) throw new InputTooLargeError(`Review input ${chars} exceeds ${job.plan.limitChars} characters`, '', { actualChars: chars, maxChars: job.plan.limitChars });
-			raw = await untilAborted(send(provider, call, signal), signal);
+			raw = await untilAborted(send(provider, call, signal, job.plan.limitChars), signal);
 		} catch (err) {
 			throwIfAborted(signal);
-			if (isAbortError(err)) throw err;
+			if (isAbortError(err) || err instanceof UnsupportedBoundedInputError || (err instanceof Error && 'code' in err && err.code === 'unsupported-bounded-input')) throw err;
 			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);
@@ -78,7 +79,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 }
 
 /** Make one call with its execution mode; the provider makes exactly one attempt. */
-async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal | undefined): Promise<unknown> {
+async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal | undefined, maxInputChars: number): Promise<unknown> {
 	const exec = call.execution;
 	if (exec.mode === 'reviewer-session') {
 		if (provider.runReviewSession === undefined) {
@@ -90,7 +91,9 @@ async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal
 			...(signal !== undefined ? { signal } : {}),
 		});
 	}
+	if (exec.inputContext === 'isolated' && provider.capabilities?.boundedStructuredInput !== true) throw new UnsupportedBoundedInputError('Provider does not enforce bounded structured input');
 	return provider.completeStructured<unknown>([...call.messages], call.schema, {
+		...(exec.inputContext === 'isolated' ? { boundedInput: { maxInputChars, contextMode: 'isolated-structured' as const } } : {}),
 		internalRetry: false,
 		...(exec.cwd !== undefined ? { cwd: exec.cwd } : {}),
 		...(exec.timeoutMs !== undefined ? { timeoutMs: exec.timeoutMs } : {}),

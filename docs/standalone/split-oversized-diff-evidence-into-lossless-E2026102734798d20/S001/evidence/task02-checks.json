@@ -1,0 +1,32 @@
+{
+  "task": "t2",
+  "typecheck": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "exitCode": 0
+  },
+  "relevantSuite": {
+    "total": 135,
+    "passed": 132,
+    "failed": 0,
+    "skipped": 3
+  },
+  "finalBoundedTests": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  },
+  "installedCli": {
+    "codex": "0.164.0",
+    "claude": "2.1.310"
+  },
+  "isolationAdmission": {
+    "claude": "Requires verified safe-mode, replacement system prompt, no tools/MCP/commands/session persistence and fresh temp cwd. CLI-owned OAuth retained.",
+    "codex": "Unsupported bounded mode explicitly refused before any model call; no verified zero-tool switch for this version. Ordinary calls unchanged."
+  },
+  "sourceVerification": [
+    "https://raw.githubusercontent.com/openai/codex/rust-v0.164.0/codex-rs/core/src/tools/spec_plan.rs",
+    "https://raw.githubusercontent.com/openai/codex/rust-v0.164.0/codex-rs/config/src/config_toml.rs"
+  ],
+  "fullSweep": "Deferred until all implementation tasks finish",
+  "pending": "Daemon task validation; actual live bounded CLI request not run"
+}

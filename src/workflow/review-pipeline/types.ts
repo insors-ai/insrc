@@ -54,7 +54,7 @@ export interface ReviewMaterial {
 
 /** How a call is run. */
 export type ExecutionMode =
-	| { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined }
+	| { readonly mode: 'structured'; readonly inputContext?: 'isolated' | undefined; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined }
 	/** `deadlineMs` is the per-session limit; the job hands each session only what remains of its deadline. */
 	| { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only'; readonly stallMs?: number | undefined };
 

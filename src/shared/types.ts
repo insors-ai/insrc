@@ -264,6 +264,8 @@ export interface ReviewSessionOpts {
  * response surfaced downstream.
  */
 export interface ProviderCapabilities {
+  /** Enforces boundedInput or refuses it before any model call. Omitted means unsupported. */
+  readonly boundedStructuredInput?: boolean | undefined;
   /** `completeStructured` honours its `schema` argument at the wire layer. */
   readonly structuredOutput: boolean;
   /** Tool/function calling in chat completions. */
@@ -291,6 +293,7 @@ export interface ProviderCapabilities {
 export type StructuredSchema = Readonly<Record<string, unknown>>;
 
 export interface StructuredCompletionOpts {
+  readonly boundedInput?: { readonly maxInputChars: number; readonly contextMode: 'isolated-structured' } | undefined;
 	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   readonly temperature?: number | undefined;
   readonly maxTokens?:   number | undefined;

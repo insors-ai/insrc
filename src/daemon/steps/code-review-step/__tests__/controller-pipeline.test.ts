@@ -4,6 +4,9 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
+import { MessageChannel, Worker } from 'node:worker_threads';
+import { serveHub } from '../../../threads/channel.js';
+import { stepStateHubHandlers } from '../../../threads/step-state.js';
 import type { ChangedSymbolSummary } from '../../../../workflow/code-review/types.js';
 import { DEFAULT_DEPS, handleCodeReviewStep } from '../handler.js';
 import type { CodeReviewStepDeps } from '../handler.js';
@@ -210,4 +213,43 @@ test('DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes 
    const cr = JSON.parse(readFileSync(f.path('CR'), 'utf8')); assert.deepEqual(cr.body.fallbackReason, expected); assert.equal(cr.body.verdict, 'warn');
   } finally { await f.cleanup(); }
  }
+});
+
+
+test('DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation', async () => {
+ const f = fixture();
+ const workers: Worker[] = [];
+ try {
+  let frame = await f.start();
+  while (frame.next === 'emit_review_call' && frame.call.dimension !== 'quality') frame = await f.call({ phase: 'judgements', state: frame.state, callResult: answer(frame) });
+  assert.ok(frame.next === 'emit_review_call' && frame.call.role === 'single');
+  const events: { event: string; result?: { content: { text: string }[] }; message?: string }[] = [];
+  const waits: (() => void)[] = [];
+  const waitFor = async (predicate: () => boolean): Promise<void> => {
+   while (!predicate()) await new Promise<void>(resolve => {
+    const timer = setTimeout(() => { const i = waits.indexOf(wake); if (i >= 0) waits.splice(i, 1); resolve(); }, 50);
+    const wake = () => { clearTimeout(timer); resolve(); }; waits.push(wake);
+   });
+  };
+  for (let i = 0; i < 2; i++) {
+   const { port1, port2 } = new MessageChannel(); serveHub(port1, stepStateHubHandlers(getStepStateStore()));
+   const worker = new Worker(new URL('./helpers/controller-final-worker.ts', import.meta.url), { workerData: { port: port2 }, transferList: [port2] });
+   worker.on('message', event => { events.push(event); for (const wake of waits.splice(0)) wake(); });
+   worker.on('error', err => { events.push({ event: 'error', message: String(err) }); for (const wake of waits.splice(0)) wake(); });
+   workers.push(worker);
+  }
+  await waitFor(() => events.filter(e => e.event === 'ready').length === 2 || events.some(e => e.event === 'error'));
+  assert.equal(events.some(e => e.event === 'error'), false, JSON.stringify(events));
+  for (const worker of workers) worker.postMessage({ operation: 'answer', input: { phase: 'judgements', state: frame.state, callResult: answer(frame) } });
+  await waitFor(() => events.some(e => e.event === 'fold-entered') || events.some(e => e.event === 'error'));
+  await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal(events.filter(e => e.event === 'fold-entered').length, 1, 'shared ownership is acquired before either worker may publish');
+  for (const worker of workers) worker.postMessage({ operation: 'release' });
+  await waitFor(() => events.filter(e => e.event === 'result').length === 2 || events.some(e => e.event === 'error'));
+  assert.equal(events.some(e => e.event === 'error'), false, JSON.stringify(events));
+  const results = events.filter(e => e.event === 'result').map(e => JSON.parse(e.result!.content[0]!.text));
+  assert.equal(results[0].next, 'done', JSON.stringify(results)); assert.deepEqual(results[0], results[1]);
+  assert.equal(events.filter(e => e.event === 'write').length, 2, 'one JSON/Markdown CR publication, never two folds');
+  assert.equal(events.filter(e => e.event === 'fold-entered').length, 1);
+ } finally { for (const worker of workers) await worker.terminate(); await f.cleanup(); }
 });

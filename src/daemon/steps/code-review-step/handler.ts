@@ -70,7 +70,7 @@ import type {
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
 import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
-import { StateTokenNotFound, loadState, releaseState, saveState, savePendingState, saveControllerState, replaceControllerState, withControllerStateLock } from './state-store.js';
+import { StateTransitionBusyError, StateTokenNotFound, loadState, releaseState, saveState, savePendingState, saveControllerState, replaceControllerState, withControllerStateLock } from './state-store.js';
 import type {
 	CodeReviewPendingState,
 	CodeReviewStepError,
@@ -245,6 +245,7 @@ async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeR
 				);
 		}
 	} catch (err) {
+		if (err instanceof StateTransitionBusyError) return errorResult('review-busy', err.message, true);
 		if (err instanceof StateTokenNotFound) {
 			return errorResult('state-not-found', err.message, false);
 		}

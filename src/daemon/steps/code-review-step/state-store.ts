@@ -12,6 +12,7 @@
  * outer LLM; only the token travels in the response `state` field (ac2).
  */
 
+import { randomUUID } from 'node:crypto';
 import { getStepStateStore } from '../../threads/step-state.js';
 import { codeReviewOperations } from '../../code-review-operations.js';
 import type { CodeReviewOperationRegistry } from '../../code-review-operations.js';
@@ -76,14 +77,13 @@ export async function replaceControllerState(token: string, revision: number, pa
  if (!await getStepStateStore().compareReplace('code-review', token, revision, payload)) throw new Error('Controller state changed concurrently or expired');
  if (payload.terminal !== undefined) await getStepStateStore().pin('code-review', token, Date.now() + 600_000);
 }
-const controllerLocks = new Map<string, Promise<void>>();
-/** Serializes deterministic transitions and final publication; CAS remains authoritative in the shared store. */
+export class StateTransitionBusyError extends Error {
+ constructor() { super('Controller review transition is busy or expired; retry with the same state to read its cached continuation.'); this.name = 'StateTransitionBusyError'; }
+}
+/** Acquired centrally BEFORE reading or publishing. Workers share ownership and replay. */
 export async function withControllerStateLock<T>(token: string, run: () => Promise<T>): Promise<T> {
- const prior = controllerLocks.get(token) ?? Promise.resolve();
- let release!: () => void;
- const current = new Promise<void>(resolve => { release = resolve; });
- controllerLocks.set(token, current);
- await prior;
+ const store = getStepStateStore(), owner = randomUUID();
+ if (!await store.acquireTransition('code-review', token, owner)) throw new StateTransitionBusyError();
  try { return await run(); }
- finally { release(); if (controllerLocks.get(token) === current) controllerLocks.delete(token); }
+ finally { await store.releaseTransition('code-review', token, owner); }
 }

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 88 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -512,3 +512,44 @@ Run at 2026-10-27T10:59:04.235Z on commit `bd62205c3`. Tests check: **passed**. 
 | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` | 0 | 6 | 0.5 s |  |
 | `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 4 | 0.8 s |  |
 | `src/shared/__tests__/code-review-control.test.ts` | 0 | 5 | 0.6 s |  |
+
+## t18
+
+Run at 2026-10-27T11:20:34.865Z on commit `83f4eba30`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-CONTROLLER-LARGE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+
+**integration: DIFF-CONTROLLER-VALIDATE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-VALIDATE: aggregate, mixed, foreign and conflicting replay results cannot advance; accepted replay is atomic and cached | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-VALIDATE: unverified flags fail before diff evidence and legacy degraded states require restart | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token | `src/daemon/threads/__tests__/step-state.test.ts` |
+
+**integration: DIFF-CONTROLLER-TIME**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-TIME: status and delayed answers cannot renew per-call/root deadlines; cancellation revokes calls | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+| pass | DIFF-CONTROLLER-TIME: serial child clocks and final fold preserve a total budget beyond ten minutes | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+
+**integration: DIFF-IDENTITY-TESTS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-IDENTITY-TESTS: TESTS-only/source/author changes at controller continuation invalidate the exact admitted snapshot | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` | 0 | 9 | 34.8 s |  |
+| `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 5 | 0.9 s |  |

@@ -54,6 +54,8 @@ export interface SharedStepStateStore {
 	 * token must exist), a new one otherwise (the old one, if any, is released).
 	 */
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string>;
+	acquireTransition(kind: StepKind, token: string, owner: string): Promise<boolean>;
+	releaseTransition(kind: StepKind, token: string, owner: string): Promise<void>;
 	compareReplace<P>(kind: StepKind, token: string, revision: number, payload: P): Promise<boolean>;
 	pin(kind: StepKind, token: string, until: number): Promise<void>;
 	release(kind: StepKind, token: string): Promise<void>;
@@ -77,6 +79,7 @@ export class StepStateNotFound extends Error {
 	}
 }
 
+interface TransitionLock { readonly owner: string; readonly token: string; readonly until: number; readonly done: Promise<void>; readonly release: () => void; timer?: ReturnType<typeof setTimeout> | undefined; }
 interface Entry { payload: unknown; readonly createdAt: number; touchedAt: number; pinnedUntil?: number | undefined; }
 
 function mintToken(): string {
@@ -86,6 +89,49 @@ function mintToken(): string {
 /** The store itself; lives on the main thread. */
 export class LocalStepStateStore implements SharedStepStateStore {
 	private readonly stores = new Map<StepKind, Map<string, Entry>>(STEP_KINDS.map(k => [k, new Map()]));
+ private readonly transitions = new Map<string, TransitionLock>();
+ private transitionKey(kind: StepKind, token: string): string {
+  const payload = this.map(kind).get(token)?.payload as { kind?: unknown; fingerprint?: { repoPath?: unknown; epicHash?: unknown; storyId?: unknown } } | undefined;
+  if (kind === 'code-review' && payload?.kind === 'controller-pipeline' && payload.fingerprint !== undefined) return JSON.stringify([kind, payload.fingerprint.repoPath, payload.fingerprint.epicHash, String(payload.fingerprint.storyId).toLowerCase().replace(/^s0+/, 's')]);
+  return JSON.stringify([kind, token]);
+ }
+ private unlock(key: string, lock: TransitionLock): void {
+  if (this.transitions.get(key) !== lock) return;
+  if (lock.timer !== undefined) clearTimeout(lock.timer);
+  this.transitions.delete(key); lock.release();
+ }
+ private expireTransition(kind: StepKind, token: string): void {
+  const key = this.transitionKey(kind, token), lock = this.transitions.get(key);
+  if (lock?.token === token) this.unlock(key, lock);
+ }
+ async acquireTransition(kind: StepKind, token: string, owner: string): Promise<boolean> {
+  assertNoSessionPersistence();
+  const waitUntil = this.now() + 180_000;
+  for (;;) {
+   const entry = this.map(kind).get(token);
+   if (entry === undefined || (entry.pinnedUntil !== undefined && this.now() >= entry.pinnedUntil)) return false;
+   const key = this.transitionKey(kind, token), prior = this.transitions.get(key);
+   if (prior === undefined || this.now() >= prior.until) {
+    if (prior !== undefined) this.unlock(key, prior);
+    let release!: () => void;
+    const lock: TransitionLock = { owner, token, until: entry.pinnedUntil ?? (entry.touchedAt + LIFECYCLES[kind].ttlMs), done: new Promise<void>(resolve => { release = resolve; }), release: () => release() };
+    this.transitions.set(key, lock);
+    const arm = (): void => { const left = lock.until - this.now(); if (left <= 0) { this.unlock(key, lock); return; } lock.timer = setTimeout(arm, Math.min(left, 2_147_483_647)); lock.timer.unref(); };
+    arm(); return true;
+   }
+   if (prior.owner === owner && prior.token === token) return true;
+   const remaining = waitUntil - this.now(); if (remaining <= 0) return false;
+   let timer: ReturnType<typeof setTimeout> | undefined;
+   const released = await Promise.race([prior.done.then(() => true), new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), remaining); timer.unref(); })]);
+   if (timer !== undefined) clearTimeout(timer);
+   if (!released) return false;
+  }
+ }
+ async releaseTransition(kind: StepKind, token: string, owner: string): Promise<void> {
+  assertNoSessionPersistence();
+  const key = this.transitionKey(kind, token), lock = this.transitions.get(key);
+  if (lock?.owner === owner && lock.token === token) this.unlock(key, lock);
+ }
 
 	constructor(private readonly now: () => number = Date.now) {}
 
@@ -99,7 +145,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		assertNoSessionPersistence();
 		const entry = this.map(kind).get(token);
 		if (entry === undefined) return undefined;
-		if (entry.pinnedUntil !== undefined && this.now() >= entry.pinnedUntil) { this.map(kind).delete(token); return undefined; }
+		if (entry.pinnedUntil !== undefined && this.now() >= entry.pinnedUntil) { this.expireTransition(kind, token); this.map(kind).delete(token); return undefined; }
 		entry.touchedAt = this.now();
 		return { token, kind, payload: entry.payload as P, touchedAt: entry.touchedAt };
 	}
@@ -132,10 +178,10 @@ export class LocalStepStateStore implements SharedStepStateStore {
   entry.pinnedUntil = until;
  }
 	async release(kind: StepKind, token: string): Promise<void> {
-		assertNoSessionPersistence(); this.map(kind).delete(token);
+		assertNoSessionPersistence(); this.expireTransition(kind, token); this.map(kind).delete(token);
 	}
 	async clearForTests(kind: StepKind): Promise<void> {
-		assertNoSessionPersistence(); this.map(kind).clear();
+		assertNoSessionPersistence(); for (const token of this.map(kind).keys()) this.expireTransition(kind, token); this.map(kind).clear();
 	}
 	async sizeForTests(kind: StepKind): Promise<number> {
 		assertNoSessionPersistence(); return this.map(kind).size;
@@ -152,10 +198,10 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		const store = this.map(kind);
 		const { maxEntries, ttlMs } = LIFECYCLES[kind];
 		const now = this.now();
-		for (const [k, v] of store) if (v.pinnedUntil !== undefined ? now >= v.pinnedUntil : now - v.touchedAt > ttlMs) store.delete(k);
+		for (const [k, v] of store) if (v.pinnedUntil !== undefined ? now >= v.pinnedUntil : now - v.touchedAt > ttlMs) { this.expireTransition(kind, k); store.delete(k); }
 		if (store.size >= maxEntries) {
 			const oldest = [...store.entries()].filter(([, entry]) => entry.pinnedUntil === undefined).sort((a, b) => a[1].touchedAt - b[1].touchedAt);
-			while (store.size >= maxEntries && oldest.length > 0) store.delete(oldest.shift()![0]);
+			while (store.size >= maxEntries && oldest.length > 0) { const key = oldest.shift()![0]; this.expireTransition(kind, key); store.delete(key); }
 		}
 		const token = mintToken();
 		store.set(token, { payload: structuredClone(payload), createdAt: now, touchedAt: now, ...(pinnedUntil !== undefined ? { pinnedUntil } : {}) });
@@ -170,11 +216,13 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 /** The main thread's hub services for the step-state store. */
 export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
-	type A = { kind: StepKind; token?: string; payload?: unknown; until?: number; revision?: number };
+	type A = { kind: StepKind; token?: string; payload?: unknown; until?: number; revision?: number; owner?: string };
 	return {
 		'step.mint':    a => store.mint((a as A).kind, (a as A).payload, (a as A).until),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
+		'step.acquireTransition': a => store.acquireTransition((a as A).kind, (a as A).token!, (a as A).owner!),
+		'step.releaseTransition': a => store.releaseTransition((a as A).kind, (a as A).token!, (a as A).owner!),
 		'step.compareReplace': a => store.compareReplace((a as A).kind, (a as A).token!, (a as A).revision!, (a as A).payload),
 		'step.pin': a => store.pin((a as A).kind, (a as A).token!, (a as A).until!),
 		'step.release': a => store.release((a as A).kind, (a as A).token!),
@@ -196,6 +244,12 @@ export class HubStepStateStore implements SharedStepStateStore {
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
 		assertNoSessionPersistence(); return this.hub.request('step.update', { kind, token, payload });
 	}
+	acquireTransition(kind: StepKind, token: string, owner: string): Promise<boolean> {
+  assertNoSessionPersistence(); return this.hub.request('step.acquireTransition', { kind, token, owner });
+ }
+ releaseTransition(kind: StepKind, token: string, owner: string): Promise<void> {
+  assertNoSessionPersistence(); return this.hub.request('step.releaseTransition', { kind, token, owner });
+ }
 	compareReplace<P>(kind: StepKind, token: string, revision: number, payload: P): Promise<boolean> {
   assertNoSessionPersistence(); return this.hub.request('step.compareReplace', { kind, token, revision, payload });
  }

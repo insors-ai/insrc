@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T10:59:04.235Z",
+    "updatedAt": "2026-10-27T11:20:34.865Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2157,6 +2157,172 @@
               },
               {
                 "title": "DIFF-WAIT-TRANSPORT: repository checks accept physical aliases and reject a different repository with otherwise matching identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "83f4eba30",
+        "ranAt": "2026-10-27T11:20:34.865Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-CONTROLLER-LARGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-CONTROLLER-VALIDATE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: aggregate, mixed, foreign and conflicting replay results cannot advance; accepted replay is atomic and cached",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: unverified flags fail before diff evidence and legacy degraded states require restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/step-state.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-CONTROLLER-TIME",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: status and delayed answers cannot renew per-call/root deadlines; cancellation revokes calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: serial child clocks and final fold preserve a total budget beyond ten minutes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-IDENTITY-TESTS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-IDENTITY-TESTS: TESTS-only/source/author changes at controller continuation invalidate the exact admitted snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 34842,
+            "titles": [
+              {
+                "title": "DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: aggregate, mixed, foreign and conflicting replay results cannot advance; accepted replay is atomic and cached",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: status and delayed answers cannot renew per-call/root deadlines; cancellation revokes calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-IDENTITY-TESTS: TESTS-only/source/author changes at controller continuation invalidate the exact admitted snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: unverified flags fail before diff evidence and legacy degraded states require restart",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: serial child clocks and final fold preserve a total budget beyond ten minutes",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 902,
+            "titles": [
+              {
+                "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
+                "result": "pass"
+              },
+              {
+                "title": "a real payload of each step kind survives a structured clone through the hub",
+                "result": "pass"
+              },
+              {
+                "title": "step state minted in one worker is read in another after the first exits",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token",
                 "result": "pass"
               }
             ],

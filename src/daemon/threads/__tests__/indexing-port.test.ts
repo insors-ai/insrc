@@ -89,10 +89,21 @@ before(async () => {
 	}
 });
 after(async () => {
-	const drained = new Promise<void>(resolve => worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-	pushToWorker(channel, INDEXING_STOP_OP, null);
-	await drained;
-	await worker.terminate();
+	// The worker reports its queue drained; an exit first, or no report within the deadline, fails the teardown.
+	let deadline: NodeJS.Timeout | undefined;
+	const drained = new Promise<void>((resolve, reject) => {
+		worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); });
+		worker.once('exit', code => reject(new Error(`the code-indexing worker exited (code ${code}) before reporting its queue drained`)));
+		worker.once('error', reject);
+		deadline = setTimeout(() => reject(new Error('the code-indexing worker did not report its queue drained within 30 s')), 30_000);
+	});
+	try {
+		pushToWorker(channel, INDEXING_STOP_OP, null);
+		await drained;
+	} finally {
+		clearTimeout(deadline);
+		await worker.terminate();
+	}
 	await closeLanceConn();
 	await closeGraphStore();
 	for (const d of [HOME, REPO]) rmSync(d, { recursive: true, force: true });

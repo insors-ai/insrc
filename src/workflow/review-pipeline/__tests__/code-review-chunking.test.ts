@@ -114,7 +114,7 @@ test('every changed symbol is whole in exactly one chunk and every chunk fits th
 
 test('a summary larger than the limit on its own raises AtomTooLargeError naming its file#name', () => {
 	const g = grounding(row('small', 'src/a/a.ts', 300), row('huge', 'src/big/huge.ts', 9_000), row('other', 'src/a/b.ts', 300));
-	assert.throws(() => plan(g, LIMIT), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/big/huge.ts#huge'));
+	assert.throws(() => plan(g, LIMIT), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 });
 
 test('under the limit the plan is one chunk and the dimension prompt is unchanged', () => {
@@ -147,7 +147,7 @@ test('a row whose JSON fits the limit but whose rendered singleton call does not
 	const big = row('wide', 'src/w/wide.ts', 6_300);
 	assert.ok(JSON.stringify(big).length < LIMIT, 'the row alone fits');
 	// A large context makes the call holding it alone too large. No provider exists here: the error comes at prepare.
-	assert.throws(() => plan(grounding(row('a', 'src/a/a.ts', 300), big), LIMIT, 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/w/wide.ts#wide'));
+	assert.throws(() => plan(grounding(row('a', 'src/a/a.ts', 300), big), LIMIT, 2_000), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 });
 
 test('an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large', () => {

@@ -61,7 +61,7 @@ export interface CodeReviewStepInputJudgements {
 	readonly phase:      'judgements';
 	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
 	readonly reply?: ControllerReviewReply | undefined;
-	readonly judgements?: { readonly judgements?: readonly DimensionResult[] | undefined };
+	readonly judgements?: { readonly judgements?: readonly DimensionResult[] | undefined } | undefined;
 	readonly state:      string;
 }
 
@@ -193,6 +193,6 @@ export interface CodeReviewStepStatePayload {
 
 export interface CodeReviewStepMcpEnvelope {
 	readonly content:  { readonly type: 'text'; readonly text: string }[];
-	readonly isError?: boolean;
+	readonly isError?: boolean | undefined;
 	readonly [key: string]: unknown;
 }

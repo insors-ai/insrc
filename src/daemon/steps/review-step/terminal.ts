@@ -33,6 +33,7 @@ export class ReviewTerminalError extends Error {
 }
 export interface ReviewTerminalGuard {
 	assertActive(): void;
+ assertSource?(): void;
 	/** inspect can repair a staged write, so even that await starts the uncertain-write boundary. */
 	beginSideEffects(): void;
 	admitCompletion?(frame: ReviewStepOutput): void;

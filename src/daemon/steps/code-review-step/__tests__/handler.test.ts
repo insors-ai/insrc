@@ -156,7 +156,7 @@ test('the opaque token resumes to next:done and persists a CR- record via runCod
 	const body = (JSON.parse(json!.content) as { body: { kind: string } }).body;
 	assert.equal(body.kind, 'code-review');
 	// T4 (LLD-1716f77ba9ba017b-S001): this tool's judgements are the controller's review.
-	assert.equal((JSON.parse(json!.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, 'controller');
+	assert.equal((JSON.parse(json!.content) as { meta: { reviewedBy?: string | undefined } }).meta.reviewedBy, 'controller');
 });
 
 // ---- ac3 parity: out-of-changedFiles finding is dropped ----
@@ -482,7 +482,7 @@ test('s10: the degraded judgements turn drives runReview with groundingMode:degr
 	assert.equal(body.verdict, 'warn');
 	// T4 (LLD-1716f77ba9ba017b-S001): the degraded route is the controller's review too.
 	assert.equal(opts[0]!.reviewedBy, 'controller');
-	assert.equal((JSON.parse(json.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, 'controller');
+	assert.equal((JSON.parse(json.content) as { meta: { reviewedBy?: string | undefined } }).meta.reviewedBy, 'controller');
 });
 
 // ISSUE-5f7a7cb9 S001/t7 (T48): the degraded path hands the assembler the Story's
@@ -670,7 +670,7 @@ async function finish(deps: CodeReviewStepDeps, writes: { path: string; content:
 	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: out.state }, deps));
 	assert.ok(done.next === 'done', JSON.stringify(done));
 	const json = writes.find(w => w.path.endsWith('.json'))!;
-	return { done, body: (JSON.parse(json.content) as { body: { groundingMode: string; fallbackReason?: unknown } }).body };
+	return { done, body: (JSON.parse(json.content) as { body: { groundingMode: string; fallbackReason?: unknown | undefined } }).body };
 }
 
 test('a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason', async () => {
@@ -681,7 +681,7 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	const timedOut = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] };
 	assert.deepEqual(r.body.fallbackReason, timedOut);
 	assert.equal(r.body.groundingMode, 'degraded');
-	assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, timedOut);
+	assert.deepEqual((r.done as { fallbackReason?: unknown | undefined }).fallbackReason, timedOut);
 	assert.match(t.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff:\*\* the wait for a fresh index timed out after 3 s .*queued: 4; stale files: src\/a\.ts/);
 
 	// proceed:false: declined.
@@ -719,8 +719,8 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	});
 	assert.ok(t.out.next === 'done', JSON.stringify(t.out));
 	const sent = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] };
-	assert.deepEqual((asked[0] as { fallbackReason?: unknown }).fallbackReason, sent);
-	assert.deepEqual((t.out as { fallbackReason?: unknown }).fallbackReason, sent);
+	assert.deepEqual((asked[0] as { fallbackReason?: unknown | undefined }).fallbackReason, sent);
+	assert.deepEqual((t.out as { fallbackReason?: unknown | undefined }).fallbackReason, sent);
 });
 
 test('on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work', async () => {
@@ -733,7 +733,7 @@ test('on the controller-reviewed path, a timed-out wait saves the reason in the 
 		const r = await finish(t.deps, t.writes, t.out);
 		const expected = { kind: 'freshness-timeout', waitedMs: 3000, ...fresh, staleFiles: ['src/a.ts'] };
 		assert.deepEqual(r.body.fallbackReason, expected, JSON.stringify(fresh));
-		assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, expected);
+		assert.deepEqual((r.done as { fallbackReason?: unknown | undefined }).fallbackReason, expected);
 	}
 });
 
@@ -860,7 +860,7 @@ test('full degraded and confirm-wait controller continuations use complete-frame
 	assert.equal(chunked.writes.length, 0);
 });
 
-test('controller dimensions retain one original epoch and reject expired attempts and overflowing final reserves before writes', async () => {
+test('controller dimensions retain independent epochs and reject expired attempts and overflowing final reserves before writes', async () => {
 	await reset(); let clock = 0;
 	const { deps, writes } = makeDeps({ now: () => clock });
 	const start = { phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo', reviewBudget: CONTROLLER_DECLARATION };
@@ -869,12 +869,12 @@ test('controller dimensions retain one original epoch and reject expired attempt
 	let frame: any = parse(await rawControllerCall(start, deps));
 	clock = 500000;
 	frame = parse(await rawControllerCall(request(frame), deps));
-	assert.equal(frame.timing.deadlineAt, 1200000, 'the second dimension extends the original epoch rather than starting a fresh clock');
-	assert.equal(frame.timing.logicalWorkUnits, 2); assert.equal(frame.timing.elapsedMs, 500000); assert.equal(frame.timing.remainingMs, 700000);
+	assert.equal(frame.timing.deadlineAt, 1100000, 'each dimension owns an independent ten-minute allocation');
+	assert.equal(frame.timing.logicalWorkUnits, 1); assert.equal(frame.timing.elapsedMs, 0); assert.equal(frame.timing.remainingMs, 600000);
 	clock = 500000 + frame.timing.attemptLimitMs;
-	assert.ok(clock < frame.timing.deadlineAt);
+	assert.equal(clock, frame.timing.deadlineAt);
 	const late: any = parse(await rawControllerCall(request(frame), deps));
-	assert.equal(late.error.code, 'review-attempt-timeout'); assert.equal(late.error.retryable, false); assert.equal(writes.length, 0);
+	assert.equal(late.error.code, 'review-job-timeout'); assert.equal(late.error.retryable, false); assert.equal(writes.length, 0);
 	await reset(); clock = 0;
 	frame = parse(await rawControllerCall(start, deps));
 	for (let i = 0; i < 3; i++) frame = parse(await rawControllerCall(request(frame), deps));

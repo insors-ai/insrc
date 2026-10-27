@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { requestBudget } from '../measurement.js';
+import { envelopeMessages, envelopeSchema } from '../envelope.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -70,7 +73,7 @@ const order = (chunkId: string): number => Number.parseInt(chunkId.replace(/\D/g
 function descriptionsOf(prior: StageOutputs, stage: string, material: ReviewMaterial): Map<string, { readonly owner: string; readonly d: Described }> {
 	const out = new Map<string, { owner: string; d: Described }>();
 	for (const a of (prior[stage] ?? []) as readonly StageAnswer[]) {
-		for (const d of (a.answer as { descriptions?: readonly { atomId: string; description: string }[] }).descriptions ?? []) {
+		for (const d of (a.answer as { descriptions?: readonly { atomId: string; description: string }[] | undefined }).descriptions ?? []) {
 			const atom = material.atoms.find(x => x.id === d.atomId);
 			if (atom !== undefined && a.chunkId !== undefined) out.set(d.atomId, { owner: a.chunkId, d: { atomId: d.atomId, symbol: atom.label, description: d.description } });
 		}
@@ -78,7 +81,7 @@ function descriptionsOf(prior: StageOutputs, stage: string, material: ReviewMate
 	return out;
 }
 
-const nameOf = (a: ReviewAtom): string => (JSON.parse(a.text) as { name?: string }).name ?? a.id;
+const nameOf = (a: ReviewAtom): string => (JSON.parse(a.text) as { name?: string | undefined }).name ?? a.id;
 const fileOf = (location: string): string => { const i = location.indexOf(':'); return i >= 0 ? location.slice(0, i) : location; };
 const fenced = (value: unknown): string => ['```json', JSON.stringify(value, null, 2), '```'].join('\n');
 
@@ -114,7 +117,10 @@ function compareCalls(first: readonly Described[], second: readonly Described[],
 		const mid = Math.ceil(second.length / 2);
 		return [...compareCalls(first, second.slice(0, mid), budget, execution, policy), ...compareCalls(first, second.slice(mid), budget, execution, policy)];
 	}
-	throw new ReviewBudgetError('required-context-over-budget');
+	const id = '00000000-0000-0000-0000-000000000000';
+ if (!policy) throw new ReviewBudgetError('native-budget-unqualified');
+ const b = requestBudget(policy, envelopeMessages(id, call.messages), envelopeSchema(id, call.schema), 'dispatch');
+ throw new ReviewBudgetError('required-context-over-budget', b, { stage: 'compare', unitId: createHash('sha256').update(JSON.stringify([first.map(d=>d.atomId),second.map(d=>d.atomId)])).digest('hex').slice(0,24), shortfallTokens: Math.max(0,-b.remainingTokens) });
 }
 
 /** The two lists a compare call carried, read back from its own prompt. */
@@ -154,7 +160,7 @@ export function compareStage(args: DuplicateStagesArgs): AdapterStage {
 		validate: (answer: unknown, call: ReviewCall) => {
 			if (call.role !== 'chunk') return [];
 			const { first, second } = compareLists(call);
-			const bad = ((answer as { candidates?: readonly { a: string; b: string }[] }).candidates ?? [])
+			const bad = ((answer as { candidates?: readonly { a: string; b: string }[] | undefined }).candidates ?? [])
 				.flatMap((c, i) => first.has(c.a) && second.has(c.b) ? [] : [`candidates[${i}]`]);
 			return bad.length > 0 ? [`${bad.length} candidates do not take \`a\` from the first list and \`b\` from the second (first: ${bad[0]})`] : [];
 		},
@@ -208,7 +214,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 			const seen = new Set<string>();
 			const calls: ChunkPrompt[] = [];
 			for (const answer of (prior['compare'] ?? []) as readonly StageAnswer[]) {
-				for (const c of (answer.answer as { candidates?: readonly { a: string; b: string }[] }).candidates ?? []) {
+				for (const c of (answer.answer as { candidates?: readonly { a: string; b: string }[] | undefined }).candidates ?? []) {
 					if (!chunk.atomIds.includes(c.a) || seen.has(`${c.a}|${c.b}`)) continue;
 					seen.add(`${c.a}|${c.b}`);
 					const a = byId.get(c.a), b = byId.get(c.b);
@@ -241,7 +247,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 			const pair = (ids ?? []).map(id => material.atoms.find(x => x.id === id)).filter((x): x is ReviewAtom => x !== undefined);
 			const names = new Set(pair.flatMap(x => [x.id, x.label, nameOf(x)]));
 			const files = new Set(pair.flatMap(x => x.file !== undefined ? [x.file] : []));
-			const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
+			const findings = (answer as { findings?: readonly { location?: string | undefined; counterpartRef?: string | undefined }[] | undefined }).findings ?? [];
 			// Every pair finding is a duplication, so it names the other symbol of the pair.
 			const badCounterparts = findings.flatMap((f, i) => f.counterpartRef !== undefined && names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
 			const badLocations = findings.flatMap((f, i) => files.has(fileOf(f.location ?? '')) ? [] : [`findings[${i}].location`]);

@@ -220,6 +220,7 @@ export type CodeReviewSubjectResult =
  *  second interpretation is needed. */
 export interface CodeReviewBody {
 	readonly kind:       'code-review';
+ readonly callEvents?: readonly import('../review-pipeline/call-events.js').ReviewCallEvent[] | undefined;
 	readonly epicHash:   string;
 	readonly storyId:    string;
 	/** How the review was grounded: `'full'` = the graph-grounded path (the four

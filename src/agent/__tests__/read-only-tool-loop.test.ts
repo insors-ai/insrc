@@ -72,7 +72,7 @@ test('review-only admission rechecks accumulated tools and history before every 
 	let finals = 0;
 	const provider = {
 		getReviewBudgetProfile: () => profile,
-		async complete(_messages: unknown, opts?: { maxTokens?: number }) {
+		async complete(_messages: unknown, opts?: { maxTokens?: number | undefined }) {
 			turns++; if (opts?.maxTokens !== undefined) assert.equal(opts.maxTokens, 64);
 			return turns === 1 ? { text: '', stopReason: 'tool_use', toolCalls: [{ id: 'read1', name: 'budget_read', input: {} }] } : { text: 'done', stopReason: 'end_turn' };
 		},
@@ -93,8 +93,10 @@ test('review-only admission rechecks accumulated tools and history before every 
 		turns = 0;
 		await assert.rejects(() => runReadOnlyToolLoop({ ...args, tools: [{ ...tool, description: 'changed manifest' }], reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
 		assert.equal(turns, 0, 'changed tools are not sent under an old profile');
+		await assert.rejects(() => runReadOnlyToolLoop({ ...args, reviewBudget: budget, closingSchema: { type: 'object', description: 'schema'.repeat(10000) } }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
+		assert.equal(turns, 0, 'every inspection turn reserves the full closing schema before dispatch');
 		const history = [{ role: 'user' as const, content: huge }];
-		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
+		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 		assert.equal(finals, 0, 'the final answer has no budget exemption');
 		assert.equal(history[0]!.content, huge);
 		await assert.rejects(() => emitStructuredAnswer({ provider, messages: initial, instruction: 'Answer.', schema: { type: 'object' }, reviewBudget: budget, maxTokens: 65 }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');

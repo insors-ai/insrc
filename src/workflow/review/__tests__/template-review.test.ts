@@ -73,7 +73,7 @@ function answer(template: ReviewTemplate, extra: Record<string, Record<string, u
  * a value is returned, an Error is thrown. `takesMs` advances the fake clock.
  * The one-shot calls throw: a design review must never reach them.
  */
-function fakeProvider(script: readonly unknown[], opts: { takesMs?: number; withSession?: boolean } = {}) {
+function fakeProvider(script: readonly unknown[], opts: { takesMs?: number | undefined; withSession?: boolean | undefined } = {}) {
 	const sessions: SessionCall[] = [];
 	const oneShot: string[] = [];
 	let clock = 1_000_000;
@@ -122,7 +122,7 @@ test('T9 a design stage runs ONE reviewer session and no extract, probe or per-p
 
 	assert.equal(f.sessions.length, 1);
 	assert.deepEqual(f.oneShot, [], 'no extraction call and no per-premise judge call');
-	assert.deepEqual(phases, ['template', 'done']);
+	assert.deepEqual(phases, ['call-event', 'template', 'call-event', 'done']);
 	assert.equal(f.sessions[0]!.cwd, '/the/repo');
 
 	assert.equal(report.template, 'design-spec');
@@ -207,7 +207,7 @@ test('T11 a session failure fails the review', async () => {
 test('T11 a timeout fails the review with a message naming the limit that applied', async () => {
 	for (const deadlineMs of [4 * MIN, 6 * MIN, 8 * MIN]) {
 		const f = fakeProvider([timeoutError()]);
-		await assert.rejects(run(f, { deadlineMs }), (error: unknown) => error instanceof Error && (error as Error & { timeoutKind?: string }).timeoutKind === 'review-attempt' && error.message.includes(`${deadlineMs / 1000}s`));
+		await assert.rejects(run(f, { deadlineMs }), (error: unknown) => error instanceof Error && (error as Error & { timeoutKind?: string | undefined }).timeoutKind === 'review-attempt' && error.message.includes(`${deadlineMs / 1000}s`));
 		assert.equal(f.sessions.length, 1);
 	}
 });
@@ -323,7 +323,7 @@ test('T16 a review whose deadline has passed fails before a repeat is started', 
 	bad.items.pop();
 	const f = fakeProvider([bad, answer(SPEC)], { takesMs: 5 * MIN });
 	// Today's error, exactly: a plain Error with today's message, not ReviewSessionTimeoutError (s1 LLD 2.20).
-	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), (e: unknown) => e instanceof Error && (e as Error & { timeoutKind?: string }).timeoutKind === 'review-attempt' && /240s/.test(e.message));
+	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), (e: unknown) => e instanceof Error && (e as Error & { timeoutKind?: string | undefined }).timeoutKind === 'review-attempt' && /240s/.test(e.message));
 	assert.equal(f.sessions.length, 1, 'the repeat was never started');
 });
 
@@ -331,7 +331,7 @@ test('T16 a review whose deadline has passed fails before a repeat is started', 
 
 const HASH = 'abcd1234ef567890';
 
-function designRepo(opts: { issue?: boolean; def?: boolean } = {}): { repo: string; md: string; json: string; cleanup: () => void } {
+function designRepo(opts: { issue?: boolean | undefined; def?: boolean | undefined } = {}): { repo: string; md: string; json: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-design-review-'));
 	const json = artifactJsonPath(repo, `LLD-${HASH}-s1`);
 	mkdirSync(dirname(json), { recursive: true });

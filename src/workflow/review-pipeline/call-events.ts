@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { createHash } from 'node:crypto';
 import type { ReviewBudgetBreakdown } from '../../shared/review-budget.js';
 import type { ReviewCall, ReviewPipelineJob } from './types.js';
 
@@ -24,7 +24,7 @@ export interface ReviewCallEvent {
 	readonly qualification: ReviewBudgetBreakdown['qualification'];
 	readonly budget: ReviewBudgetBreakdown;
 	readonly durationMs: number;
-	readonly timing: { readonly kind: 'review-execution'; readonly logicalWorkUnits: number; readonly jobBudgetMs: number; readonly deadlineAt?: number | undefined; readonly attemptLimitMs: number; readonly timeBudgetUnitMs: number; readonly elapsedMs: number; readonly remainingMs: number };
+	readonly timing: { readonly kind: 'review-execution'; readonly logicalWorkUnits: number; readonly jobBudgetMs: number; readonly totalBudgetMs: number; readonly currentBudgetChunkCount: number; readonly deadlineAt?: number | undefined; readonly attemptLimitMs: number; readonly timeBudgetUnitMs: number; readonly elapsedMs: number; readonly remainingMs: number };
 	readonly errorCode?: ReviewCallErrorCode | undefined;
 }
 
@@ -50,14 +50,14 @@ export function reviewCallEvent(job: ReviewPipelineJob, call: ReviewCall, budget
 }
 
 export function reviewTiming(job: ReviewPipelineJob, now: number = Date.now()) {
-	return { kind: 'review-execution' as const, timeBudgetUnitMs: 600000, logicalWorkUnits: job.workUnits.filter(unit => !unit.replaced).length + (job.priorWorkBudgetMs ?? 0) / 600000,
+	return { currentBudgetChunkCount: job.workUnits.filter(unit => !unit.replaced).length, totalBudgetMs: job.deadlineBudgetMs ?? 0, kind: 'review-execution' as const, timeBudgetUnitMs: 600000, logicalWorkUnits: job.workUnits.filter(unit => !unit.replaced).length + (job.priorWorkBudgetMs ?? 0) / 600000,
 		jobBudgetMs: job.deadlineBudgetMs ?? 0, deadlineAt: job.deadlineAt,
 		elapsedMs: job.executionStartedAt === undefined ? 0 : Math.max(0, now - job.executionStartedAt),
 		remainingMs: job.deadlineAt === undefined ? 0 : Math.max(0, job.deadlineAt - now) };
 }
 
 export function reviewFailureCode(error: unknown): ReviewCallErrorCode {
-	const value = error as { timeoutKind?: unknown; code?: unknown; name?: unknown } | null;
+	const value = error as { timeoutKind?: unknown | undefined; code?: unknown | undefined; name?: unknown | undefined } | null;
 	if (value?.timeoutKind === 'review-job' || value?.code === 'review-job-timeout') return 'job-timeout';
 	if (value?.timeoutKind === 'review-attempt' || value?.code === 'review-attempt-timeout') return 'attempt-timeout';
 	if (value?.name === 'AbortError' || value?.name === 'ReviewStateRefused') return 'cancelled';

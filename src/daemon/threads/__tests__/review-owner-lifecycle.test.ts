@@ -36,8 +36,8 @@ test('real worker connection request and exit cancellation hooks bind and invali
 		return { frames, cancel, lifetime };
 	};
 	const claimed = async (request: ReturnType<typeof send>) => {
-		await until(() => request.frames.some(f => (f.data as { event?: string } | undefined)?.event === 'claimed'));
-		return request.frames.find(f => (f.data as { event?: string } | undefined)?.event === 'claimed')!.data as { token: string; owner: string; claim: ReviewStateClaim };
+		await until(() => request.frames.some(f => (f.data as { event?: string | undefined } | undefined)?.event === 'claimed'));
+		return request.frames.find(f => (f.data as { event?: string | undefined } | undefined)?.event === 'claimed')!.data as { token: string; owner: string; claim: ReviewStateClaim };
 	};
 	try {
 		const base = { kind: 'request' as const, requestId: 'wire-test', method: 'step.call', params: {}, stream: true };

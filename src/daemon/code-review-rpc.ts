@@ -50,12 +50,12 @@ type CodeReviewSubjectResolution = Awaited<ReturnType<typeof resolveCodeReviewSu
 const CODE_REVIEW_CLI_TIMEOUT_MS = 2_700_000;
 
 interface CodeReviewRunParams {
-	readonly repo?:     string;
+	readonly repo?:     string | undefined;
 	readonly epicHash:  string;
 	readonly storyId:   string;
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
 	 *  back to that CLI (claude/codex) instead of Ollama. */
-	readonly client?:   'claude' | 'codex';
+	readonly client?:   'claude' | 'codex' | undefined;
 	/** How to ground the review. `degraded` grounds on the diff, stamps the
 	 *  record `degraded` and caps the verdict at warn; omitted or `full` grounds
 	 *  on the graph, as this request always has. */
@@ -143,7 +143,7 @@ async function codeReviewRunStartInner(
 			reviewedBy: 'daemon' as const,
 			onProgress: (f: CodeReviewProgress) => send({
 				id: 0, stream: 'progress',
-				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null },
+				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null, ...(f.callEvent ? { callEvent: f.callEvent } : {}) },
 			}),
 		};
 		let outcome: Awaited<ReturnType<typeof RunCodeReview>>;

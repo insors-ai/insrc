@@ -24,7 +24,7 @@ test('assembled code design provider and controller boundaries enforce the same 
 			const adapter = toyAdapter(snapshot, { execution: mode === 'structured' ? { mode, cwd: '/tmp', timeoutMs: 600000 } : { mode, cwd: '/tmp', deadlineMs: 600000 } }) as ReviewAdapter<unknown>;
 			const job = createReviewJob(adapter, 'daemon', snapshot, 384000, { budgetPolicy: policy });
 			const events: ReviewCallEvent[] = []; let active = 0, calls = 0;
-			const answer = async (text: string, schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget }) => {
+			const answer = async (text: string, schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget | undefined }) => {
 				assert.equal(active++, 0, 'all dispatches remain serial'); calls++;
 				try {
 					const fields = schema as { properties: { callId: { const: string } } };
@@ -37,8 +37,8 @@ test('assembled code design provider and controller boundaries enforce the same 
 				} finally { active--; }
 			};
 			const provider = { getReviewBudgetProfile: () => profile,
-				completeStructured: async (messages: readonly LLMMessage[], schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget }) => answer(asSent(messages), schema, opts),
-				runReviewSession: async (text: string, schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget }) => answer(text, schema, opts),
+				completeStructured: async (messages: readonly LLMMessage[], schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget | undefined }) => answer(asSent(messages), schema, opts),
+				runReviewSession: async (text: string, schema: StructuredSchema, opts: { reviewBudget?: ReviewExecutionBudget | undefined }) => answer(text, schema, opts),
 			} as unknown as LLMProvider;
 			const result = await runReviewJob(job, adapter, provider, { onCallEvent: event => events.push(event) }) as { seen: string[] };
 			assert.deepEqual(new Set(result.seen), new Set(atoms.map(value => value.id)), 'all original source atoms survive');
@@ -88,7 +88,7 @@ test('original-size production code and design adapters retain full schemas and 
    const held = new Set(job.plan.chunks.flatMap(c=>c.atomIds));
    if(!job.plan.single) assert.equal(held.size,12);
    const seen = new Set<string>(); let calls=0;
-   const answer = async (text:string,schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget}) => {
+   const answer = async (text:string,schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget | undefined}) => {
     calls++; assert.ok(opts.reviewBudget);
     const measured=preflightProviderReviewBudget(opts.reviewBudget,profile,mode==='structured'?reviewPromptChars(profile,[{role:'user',content:text}]):text.length,reviewWireSchemaJson(profile,schema));
     assert.ok(measured.schemaTokens>0 && measured.estimatedTotalTokens<=128000);
@@ -101,7 +101,7 @@ test('original-size production code and design adapters retain full schemas and 
     if(props['descriptions']) result['descriptions']=[...new Set(ids)].map(atomId=>({atomId,description:'A distinct fixture operation.'}));
     return {callId:s.properties.callId.const,answer:result};
    };
-   const provider={getReviewBudgetProfile:()=>profile,completeStructured:async(messages:readonly LLMMessage[],schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget})=>answer(asSent(messages),schema,opts),runReviewSession:answer} as unknown as LLMProvider;
+   const provider={getReviewBudgetProfile:()=>profile,completeStructured:async(messages:readonly LLMMessage[],schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget | undefined})=>answer(asSent(messages),schema,opts),runReviewSession:answer} as unknown as LLMProvider;
    await runReviewJob(job,adapter,provider);
    assert.ok(calls>=1); if(!job.plan.single) assert.ok(calls>1); assert.equal(seen.size,12,`${spec.dimension} dispatched every original symbol`);
    const declaration=CONTROLLER_DECLARATION;
@@ -126,7 +126,7 @@ test('original-size production code and design adapters retain full schemas and 
    catch(error) { assert.ok(error instanceof ReviewBudgetError); continue; }
    let calls=0;
    const profile=policy.profile;
-   const dispatch=async(text:string,schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget})=>{
+   const dispatch=async(text:string,schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget | undefined})=>{
     calls++; assert.ok(text.includes(snapshot.documentText!),'complete original document survives'); assert.ok(opts.reviewBudget);
     const b=preflightProviderReviewBudget(opts.reviewBudget,profile,mode==='structured'?reviewPromptChars(profile,[{role:'user',content:text}]):text.length,reviewWireSchemaJson(profile,schema));
     assert.ok(b.schemaTokens>0 && b.estimatedTotalTokens<=128000);
@@ -134,7 +134,7 @@ test('original-size production code and design adapters retain full schemas and 
     const answer=mode==='structured'?{claims:[]}:{items:reviewTemplateFor('spec').items.map(item=>({item:item.id,premises:[{premise:'fixture premise',outcome:'holds',evidence:'fixture evidence',action:''}]}))};
     return {callId,answer};
    };
-   await runReviewJob(job,adapter,{getReviewBudgetProfile:()=>profile,completeStructured:async(messages:readonly LLMMessage[],schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget})=>dispatch(asSent(messages),schema,opts),runReviewSession:dispatch} as unknown as LLMProvider);
+   await runReviewJob(job,adapter,{getReviewBudgetProfile:()=>profile,completeStructured:async(messages:readonly LLMMessage[],schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget | undefined})=>dispatch(asSent(messages),schema,opts),runReviewSession:dispatch} as unknown as LLMProvider);
    assert.equal(calls,1);
   }
  }

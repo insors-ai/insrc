@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
-import { ReviewBudgetError } from './budget.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { createHash } from 'node:crypto';
+import { ReviewBudgetError } from './budget.js';
 /**
  * ISSUE-aef82b03 (moved under the review pipeline, Epic 8315a11f s1) — pack indivisible review atoms (symbols, clauses, notes,
  * test-record entries, descriptions) into batches whose built prompt fits the
@@ -20,9 +20,9 @@ export class AtomTooLargeError extends ReviewBudgetError {
 
 	constructor(atom: string, size: number, budget: number) {
 		super('required-context-over-budget', undefined, { unitId: createHash('sha256').update(atom).digest('hex').slice(0, 24), shortfallTokens: Math.max(0, Math.ceil((size - budget) / 3)) });
-		this.message = `review: ${atom} needs a ${size}-character prompt, more than one review call may hold (${budget} characters); it cannot be read whole by any call, and nothing is cut to fit`;
+
 		this.name = 'AtomTooLargeError';
-		this.atom = atom;
+		this.atom = createHash('sha256').update(atom).digest('hex').slice(0, 24);
 		this.size = size;
 		this.budget = budget;
 	}

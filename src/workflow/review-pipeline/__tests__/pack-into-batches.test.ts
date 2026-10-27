@@ -42,10 +42,10 @@ test('every item in exactly one batch, every batch fits, and an item that alone 
 	assert.throws(
 		() => packIntoBatches([items[0]!, huge, items[1]!], b => prompt(b).length, budget, it => it.id),
 		(e: unknown) => e instanceof AtomTooLargeError
-			&& e.atom === 'src/big.ts#hugeFn'
+			&& /^[a-f0-9]{24}$/.test(e.atom)
 			&& e.size === prompt([huge]).length
 			&& e.budget === budget
-			&& e.message.includes('src/big.ts#hugeFn')
-			&& e.message.includes(String(budget)),
+			&& !JSON.stringify(e).includes('src/big.ts#hugeFn')
+			&& e.message === 'required-context-over-budget',
 	);
 });

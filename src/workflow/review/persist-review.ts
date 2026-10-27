@@ -57,6 +57,7 @@ export class ReviewPersistError extends Error {
 }
 
 export interface PersistReviewInput {
+ readonly assertSource?: (() => void) | undefined;
 	/** Review-only trusted owner/deadline guard; existing callers retain their contract. */
 	readonly assertActive?: (() => void) | undefined;
 	readonly artifactId: string;
@@ -106,11 +107,12 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 		input.assertActive?.();
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 
-		const meta = (JSON.parse(readFileSync(input.jsonPath, 'utf8')) as { meta?: unknown }).meta;
+		const meta = (JSON.parse(readFileSync(input.jsonPath, 'utf8')) as { meta?: unknown | undefined }).meta;
 		if (authorPartyOf(meta) === input.party) throw new SamePartyReviewError(input.party, `the artifact ${artifactId}`);
 
 		step = 'fix';
 		let fixStored = false;
+  input.assertSource?.();
 		if (input.fix !== undefined) {
 			// an automated fix is not an answer to a person's feedback: it addresses none
 			input.assertActive?.();
@@ -124,6 +126,7 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 		input.assertActive?.();
 		await store.exclusive(artifactId, async () => {
 			input.assertActive?.();
+   if (!fixStored) input.assertSource?.();
 			const entries = await history.log(artifactId);
 			input.assertActive?.();
 			if (entries.some(e => e.id === entryId)) return;

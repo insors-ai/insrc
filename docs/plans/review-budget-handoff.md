@@ -71,8 +71,7 @@ Both controller flows and the protected design terminal share the same
 owner-bound claim transaction. A fresh positive host reserve is admitted on
 all turns, including the exact completion frame before persistence. Stored
 frames carry attempt deadlines; state from the earlier incomplete protocol
-without that deadline refuses explicitly. Code-review dimensions accumulate
-logical work against one original execution epoch.
+without that deadline refuses explicitly. Each code-review dimension retains its own original execution epoch; Story reporting sums the completed dimension allocations.
 
 | Reference | Direction and cardinality | Ownership and compatibility |
 | --- | --- | --- |
@@ -108,3 +107,25 @@ previous failed TU1 review is diagnostic evidence, not a fresh passing review.
 ## Post-review validation
 
 Production build and compiled smoke passed (`/tmp/review-budget-cr-fixes-final-build.log`, `/tmp/review-budget-cr-fixes-packaged-smoke.log`). Final targeted checks passed 51/51 (`/tmp/review-budget-cr-fixes-final-checks.log`); the broader review matrix passed 630 with 18 optional skips. The full suite remains non-green: baseline failures persist; two diagnostic expectation changes were corrected and rechecked, and a concurrent git_ls_files maxBytes change has an unrelated approval-class assertion failure. Comparison: `/tmp/review-budget-cr-fixes-full-comparison.json`.
+
+
+## Review cycle 2 corrections
+
+The production runtime forwards the trusted fourth request argument into the
+step host. Both controllers share frame admission, observed duration and attempt
+expiry helpers. Dimension jobs remain independent, as the approved LLD explicitly
+requires; the earlier request to pool daemon dimensions conflicts with that
+clause and is not applied. Corrections have their dedicated refusal code.
+
+| Evidence | Ownership and lifetime | Compatibility |
+| --- | --- | --- |
+| CR body callEvents | successful CR → ordered safe call outcomes, zero or many | Optional additive field for older records. |
+| .insrc/review-runs/<run-id>.jsonl | repository → per-run append-only diagnostic stream; contains start and terminal events even when no CR completes | Diagnostic evidence only; never a review pass or approval. Generated JSONL remains excluded from review source. |
+
+Source digests are checked after awaited inspection and immediately before the
+first review write. Authorized review fixes can then persist normally. The
+completion receipt uses the persisted run ID. Every managed inspection turn
+includes the full closing schema, and unsupported original blocks refuse before
+flattening. Call observers cannot replace the review result or original error.
+
+Cycle-2 validation: production build `/tmp/review-budget-cycle2-build.log` and packaged smoke `/tmp/review-budget-cycle2-smoke.log` passed. The affected matrix `/tmp/review-budget-cycle2-final-tests.log` reports 543 tests: 538 pass, five optional skips, zero failures. Existing full-backend baseline limitations remain documented above.

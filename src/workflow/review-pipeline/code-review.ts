@@ -1,9 +1,9 @@
-import { reviewTiming } from './call-events.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { reviewTiming } from './call-events.js';
 /**
  * The code review's single-chunk adapters (Epic 8315a11f s1, plan task t10).
  * Each code-review dimension is one pipeline job: a model dimension is one stage
@@ -268,7 +268,7 @@ export async function runDimensionJob(
 	// The core is written over ReviewAdapter<unknown>; merge's parameter makes R invariant.
 	const budgetPolicy = resolveReviewBudgetPolicy(provider, executionKind, readReviewChunkTokens());
 	const adapter = build(snapshot, budgetPolicy) as unknown as ReviewAdapter<unknown>;
-	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy });
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy, onCallEvent: ctx?.onCallEvent });
 	// The plan, as one JSON object in the message (the daemon log is pretty-printed): once as
 	// prepared, so a job that fails still leaves its plan, and once as finished, after any
 	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).

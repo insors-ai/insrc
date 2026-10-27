@@ -116,9 +116,9 @@ async function workflowReviewStartInner(
 		stopHeartbeat = () => clearInterval(heartbeat);
 
 		let stageIndex = 0;
-		const progress = (label: string): void => send({
+		const progress = (label: string, callEvent?: import('../workflow/review-pipeline/call-events.js').ReviewCallEvent | undefined): void => send({
 			id: 0, stream: 'progress',
-			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null },
+			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null, ...(callEvent ? { callEvent } : {}) },
 		});
 
 		const lifecycle = (deps.lifecycleFor ?? (r => lifecycleFor(r).service))(repoPath);

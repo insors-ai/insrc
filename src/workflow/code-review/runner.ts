@@ -1,3 +1,4 @@
+import { appendReviewRunEvent } from './run-events.js';
 import { ReviewBudgetError } from '../review-pipeline/budget.js';
 import { safeReviewFailure } from '../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
@@ -95,6 +96,7 @@ export interface CodeReviewRunnerDeps {
 	readonly assembleGrounding: (repoPath: string, changedFiles: readonly string[]) => Promise<CodeReviewGrounding>;
 	/** Persist a file atomically (tmp-then-rename). */
 	readonly write: (absPath: string, content: string) => void;
+ readonly recordCallEvent?: ((repo: string, runId: string, event: import('../review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	/**
 	 * When set, the record's body is stored through the lifecycle service first (staged, logged with the review's outcome,
 	 * revisioned; the first round is created through the store) and `write` then only refreshes the json and the markdown.
@@ -185,6 +187,7 @@ export const DEFAULT_DEPS: CodeReviewRunnerDeps = {
 	assembleGrounding: async (repoPath, changedFiles) =>
 		assembleCodeReviewGrounding(repoPath, changedFiles, await realGroundingDeps()),
 	write: writeRecordFile,
+ recordCallEvent: appendReviewRunEvent,
 };
 
 // ---------------------------------------------------------------------------
@@ -205,7 +208,11 @@ export async function runCodeReview(
 	deps:     CodeReviewRunnerDeps = DEFAULT_DEPS,
 ): Promise<CodeReviewOutcome> {
 	const startedAtMs = Date.now();
-	const emit = (f: CodeReviewProgress): void => opts.onProgress?.(f);
+	const callEvents: import('../review-pipeline/call-events.js').ReviewCallEvent[] = [];
+ const emit = (f: CodeReviewProgress): void => {
+  if (f.callEvent) { callEvents.push(f.callEvent); deps.recordCallEvent?.(subject.repoPath, opts.runId, f.callEvent); }
+  try { opts.onProgress?.(f); } catch { log.warn({ errorCode: 'observer-failed' }, 'code review observer failed'); }
+ };
 
 	try {
 		// 1. Grounding — assembled once, shared by every judge. An abort or a
@@ -247,7 +254,7 @@ export async function runCodeReview(
 		// The record stores the folder identity it is filed under, so its meta and
 		// its md location agree (ISSUE-764b88ed).
 		const pa = codeReviewSubjectPathArgs(subject);
-		const artifact: CodeReviewArtifact = { ...built, meta: { ...built.meta, ...folderIdentityMeta(pa) } };
+		const artifact: CodeReviewArtifact = { ...built, body: { ...built.body, callEvents }, meta: { ...built.meta, ...folderIdentityMeta(pa) } };
 
 		// 5. VALIDATE in memory — the last gate before the irreversible write.
 		const invalid = validateArtifact(artifact, judges.map(j => j.dimension));

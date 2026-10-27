@@ -47,7 +47,7 @@ export interface ReviewArtifactOpts {
 	readonly reReview?: boolean | undefined;
 	/** Injected clock for the stamped `reviewedAt` (tests pass a fixed one). */
 	readonly reviewedAt?: string | undefined;
-	readonly onProgress?: ((msg: string) => void) | undefined;
+	readonly onProgress?: ((msg: string, event?: import('../review-pipeline/call-events.js').ReviewCallEvent | undefined) => void) | undefined;
 	readonly signal?:   AbortSignal | undefined;
 	/** Reads a repository's indexed entities for the source roots. Passed by a
 	 *  caller outside the daemon (the CLI), which may not open the store. */
@@ -127,7 +127,7 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	// review that names it) and the markdown, in that order. This function is the DAEMON's review, on both of its paths (the
 	// pipeline for a DEF and the one-session template review for a design).
 	const stamped: ReviewReport = { ...report, reviewedBy: 'daemon' };
-	const stored = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { citations?: unknown };
+	const stored = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { citations?: unknown | undefined };
 	const citations = Array.isArray(stored.citations) ? stored.citations : [];
 	await persistReview({
 		artifactId, jsonPath: opts.jsonPath, mdPath: opts.mdPath, lifecycle,

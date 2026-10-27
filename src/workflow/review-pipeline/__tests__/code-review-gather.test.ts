@@ -453,7 +453,7 @@ test('a promised test passed only by a reported smoke run, with no test file or 
 
 	// With zero atoms (a diff review whose single call is over the limit): divided with no chunk, every promised
 	// test judged on its full record evidence, and a symbol-coverage finding is never accepted.
-	const bloated = structuredClone(TESTS_RECORD) as { body: { tasks: { files?: unknown[] }[] } };
+	const bloated = structuredClone(TESTS_RECORD) as { body: { tasks: { files?: unknown[] | undefined }[] } };
 	bloated.body.tasks[0]!.files!.push(...Array.from({ length: 60 }, (_, i) => ({ file: `src/other/__tests__/o${i}.test.ts`, titles: [{ title: `other ${i} ${'t'.repeat(150)}`, result: 'pass' }], exitCode: 0, timedOut: false })));
 	const diff = subject({ testRecord: bloated as unknown as CodeReviewSubject['testRecord'] });
 	const snap = codeReviewSnapshot(diff, DIVIDING, 'degraded');
@@ -541,7 +541,7 @@ test('a relation call carries both full summaries when they fit, else full again
 		assert.ok(fromCallee!.includes(sig('id-fill')) && !fromCallee!.includes(sig('id-placeOrder')) && fromCallee!.includes(`- ${adapter.neighbourSummary!(caller, material)}`));
 		for (const c of two) assert.ok(promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', c.messages)) <= maxChars, 'each within the reported size, envelope included');
 		// A size no row fits even against the other's summary: named as too large, never cut.
-		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/order/order.ts#placeOrder'));
+		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 		// When both do not fit the limit, the same two calls.
 		const tight = modelDimensionAdapter(spec(s), s, snap, spec === adherenceSpec ? 11_000 : 9_000) as unknown as ReviewAdapter<unknown>;
 		assert.equal(tight.gather!.relationCall!([caller, callee]).length, 2);
@@ -636,7 +636,7 @@ test('a caller and callee in different chunks whose contract disagrees: the job 
 	const relation = answered.find(a => a.call.role === 'relation')!;
 	assert.deepEqual(relation.call.carries.atomIds, ['id-placeOrder', 'id-fill']);
 	assert.deepEqual(adapter.gather!.validate!(relation.answer, relation.call), [], 'accepted: at the caller');
-	const part = adapter.gather!.partOf({ role: 'relation', key: relation.call.carries.key!, atomIds: relation.call.carries.atomIds, answer: relation.answer }) as { findings: { location: string; message: string; counterpartRef?: string; dimension: string }[] };
+	const part = adapter.gather!.partOf({ role: 'relation', key: relation.call.carries.key!, atomIds: relation.call.carries.atomIds, answer: relation.answer }) as { findings: { location: string; message: string; counterpartRef?: string | undefined; dimension: string }[] };
 	assert.equal(part.findings.length, 1);
 	assert.equal(part.findings[0]!.location, 'src/order/order.ts:1');
 	assert.match(part.findings[0]!.message, /^placeOrder /);
@@ -716,7 +716,7 @@ test('a pair answer naming a counterpart outside its two symbols is rejected', (
 	assert.equal(pairStage.validate!({ findings: [dup] }, pair).length, 1, 'a duplication names its counterpart');
 	// The duplicate, reported by pair with its counterpart, is recorded as the pair stage's answer.
 	const reported = applyOutput(j, adapter, pair.callId, echo(pair, { findings: [{ ...dup, counterpartRef: 'discount' }] }));
-	const recorded = [...reported.stageAnswers, ...((reported.outputs['pair'] ?? []) as { answer: unknown }[])].map(a => a.answer as { findings: { counterpartRef?: string; location: string }[] });
+	const recorded = [...reported.stageAnswers, ...((reported.outputs['pair'] ?? []) as { answer: unknown }[])].map(a => a.answer as { findings: { counterpartRef?: string | undefined; location: string }[] });
 	assert.deepEqual(recorded.flatMap(a => a.findings).map(f => [f.location, f.counterpartRef]), [['src/order/cancel.ts:1', 'discount']]);
 });
 
@@ -741,15 +741,15 @@ test('compare and pair calls are counted under pipelineCalls.relation, not chunk
 // -- merge and finish (t7) ------------------------------------------------------
 
 /** A controller-path result as the controller step records it today: through the handler's own split. */
-function throughHandler(result: { dimension: string }, s: CodeReviewSubject = subject()): { findings: { location: string }[]; outOfScope?: { location: string }[] } {
+function throughHandler(result: { dimension: string }, s: CodeReviewSubject = subject()): { findings: { location: string }[]; outOfScope?: { location: string }[] | undefined } {
 	const all = expectedDimensions(s).map(d => d === result.dimension ? result : { dimension: d, findings: [] });
-	const v = validateJudgements(all as never, s) as { ok: boolean; message?: string; byDimension?: Map<string, { findings: { location: string }[]; outOfScope?: { location: string }[] }> };
+	const v = validateJudgements(all as never, s) as { ok: boolean; message?: string | undefined; byDimension?: Map<string, { findings: { location: string }[]; outOfScope?: { location: string }[] | undefined }> | undefined };
 	assert.ok(v.ok, v.message);
 	return v.byDimension!.get(result.dimension)!;
 }
 
 /** Drive a divided job on `path` to its result. */
-function divided<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, path: 'daemon' | 'controller', answer: (call: ReviewCall) => unknown, s: CodeReviewSubject = subject(), g: CodeReviewGrounding = DIVIDING): { result: { findings: { location: string; severity: string; message: string; expectationRef?: string; dimension: string }[]; outOfScope?: { location: string }[]; lowered?: { location: string; reason: string }[]; pipelineCalls?: Record<string, number> }; calls: ReviewCall[] } {
+function divided<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, path: 'daemon' | 'controller', answer: (call: ReviewCall) => unknown, s: CodeReviewSubject = subject(), g: CodeReviewGrounding = DIVIDING): { result: { findings: { location: string; severity: string; message: string; expectationRef?: string | undefined; dimension: string }[]; outOfScope?: { location: string }[] | undefined; lowered?: { location: string; reason: string }[] | undefined; pipelineCalls?: Record<string, number> | undefined }; calls: ReviewCall[] } {
 	const snap = codeReviewSnapshot(s, g);
 	const adapter = modelDimensionAdapter(spec(s), s, snap, SMALL, path) as unknown as ReviewAdapter<unknown>;
 	const { job, calls } = drive(createReviewJob(adapter, path, snap, SMALL), adapter, answer);
@@ -801,7 +801,7 @@ test('pipelineCalls counts chunk, obligation, relation and merge calls and is ab
 	const snap = codeReviewSnapshot(s, DIVIDING);
 	const adapter = modelDimensionAdapter(qualitySpec(s), s, snap, 384_000) as unknown as ReviewAdapter<unknown>;
 	const { job } = drive(createReviewJob(adapter, 'daemon', snap, 384_000), adapter, () => ({ findings: [] }));
-	assert.equal((result(job) as { pipelineCalls?: unknown }).pipelineCalls, undefined);
+	assert.equal((result(job) as { pipelineCalls?: unknown | undefined }).pipelineCalls, undefined);
 });
 
 test('merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once', () => {
@@ -852,7 +852,7 @@ test('merge keeps identical findings once, accepts only file:line locations (a n
 	// Quality: a duplicate reported by pair reaches the result with its counterpart, after the chunk findings.
 	const dup = { severity: 'MED', location: 'src/order/cancel.ts:1', message: 'cancelOrder duplicates fill', counterpartRef: 'fill', confidence: 'breach' };
 	const quality = divided(qualitySpec, 'daemon', qualityReviewer(c => { const [f, sec] = listsOf(c); return f.includes('id-cancelOrder') && sec.includes('id-fill') ? [{ a: 'id-cancelOrder', b: 'id-fill', why: 'same' }] : f.includes('id-fill') && sec.includes('id-cancelOrder') ? [{ a: 'id-fill', b: 'id-cancelOrder', why: 'same' }] : []; }, () => ({ findings: [dup] }))).result;
-	assert.deepEqual(quality.findings.map(f => [f.location, (f as { counterpartRef?: string }).counterpartRef]), [['src/order/cancel.ts:1', 'fill']]);
+	assert.deepEqual(quality.findings.map(f => [f.location, (f as { counterpartRef?: string | undefined }).counterpartRef]), [['src/order/cancel.ts:1', 'fill']]);
 });
 
 test('a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair\'s two halves; a refused half names its row', () => {
@@ -903,11 +903,11 @@ test('a size-refused compare or pair call is re-divided by its stage within the 
 				const label = full === 'id-cancelOrder' ? 'src/order/cancel.ts#cancelOrder' : 'src/price/discount.ts#discount';
 				const other = full === 'id-cancelOrder' ? 'src/price/discount.ts#discount (in' : 'src/order/cancel.ts#cancelOrder (in';
 				assert.throws(() => applyFailure(next, adapter, half.callId, 'size-refusal', smallest),
-					(e: unknown) => e instanceof AtomTooLargeError && e.message.includes(`${label} (in the duplicate check`) && !e.message.startsWith(`review: ${other}`), label);
+					(e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom) && !JSON.stringify(e).includes(other), label);
 			}
 			// Refused below even a half's size: the row that cannot fit is named by the stage, not the call.
 			assert.throws(() => applyFailure(j, adapter, call.callId, 'size-refusal', smallest),
-				(e: unknown) => e instanceof AtomTooLargeError && /#(cancelOrder|discount) \(in the duplicate check/.test(e.message));
+				(e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 			return;
 		}
 		j = applyOutput(j, adapter, call.callId, echo(call, review(call)));

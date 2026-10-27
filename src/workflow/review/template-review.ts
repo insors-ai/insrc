@@ -38,7 +38,7 @@ export interface ReviewSessionProvider {
 }
 
 function sessionProviderOf(provider: unknown): ReviewSessionProvider | undefined {
-	return typeof (provider as { runReviewSession?: unknown } | null)?.runReviewSession === 'function'
+	return typeof (provider as { runReviewSession?: unknown | undefined } | null)?.runReviewSession === 'function'
 		? (provider as ReviewSessionProvider)
 		: undefined;
 }
@@ -80,12 +80,12 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	const snapshot = designReviewSnapshot(artifactMarkdown);
 	const adapter = templateAdapter(snapshot, { template, stage, repo, limitMs, timedOut }) as unknown as ReviewAdapter<unknown>;
 	const budgetPolicy = resolveReviewBudgetPolicy(opts.provider as LLMProvider, 'reviewer-session', readReviewChunkTokens());
-	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { now: startedAt, budgetPolicy });
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { now: startedAt, budgetPolicy, onCallEvent: event => emit('call-event', event) });
 	let findings: readonly Finding[];
 	let pipelineCalls: PipelineCalls | undefined;
 	try {
 		findings = await runReviewJob(job, adapter, session as LLMProvider, {
-			signal: opts.signal, now: nowMs, onCall: () => emit('template'), onDone: done => { pipelineCalls = pipelineCallsOf(done); },
+			signal: opts.signal, now: nowMs, onCallEvent: event => emit('call-event', event), onCall: () => emit('template'), onDone: done => { pipelineCalls = pipelineCallsOf(done); },
 		}) as readonly Finding[];
 	} catch (err) {
 		// A cancel of this review keeps today's message; a provider's own abort propagates as it was.

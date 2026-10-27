@@ -113,7 +113,7 @@ test('grounded and degraded design evidence retain all claims and enforce origin
 			assert.equal(frame.next, 'emit_verdicts', JSON.stringify(frame));
 			const snapshot = (await getStepStateStore().read<ReviewStepStatePayload>('review', frame.state))!.payload;
 			assert.equal(snapshot.claims!.length, 2); assert.equal(snapshot.evidence!.length, 2);
-			assert.equal(events.some(e => (e as { mode?: string }).mode === 'degraded'), !grounded);
+			assert.equal(events.some(e => (e as { mode?: string | undefined }).mode === 'degraded'), !grounded);
 			assert.equal(frame.timing.deadlineAt, 1000 + 1800000, 'new work extends budget from original epoch');
 			now = frame.timing.deadlineAt;
 			const input = resume(frame, { verdicts: [verdict('a')] });
@@ -162,4 +162,24 @@ test('final controller reserve overflow precedes every persistence effect and la
 		assert.equal(replay.error.code, 'review-state-uncertain');
 		assert.equal(replay.error.evidence.artifactId, idOfWorkflow('define'));
 	} finally { for (const fx of [template, premise]) rmSync(fx.repo, { recursive: true, force: true }); }
+});
+
+
+test('an artifact edited during awaited inspection cannot receive stale controller findings', async()=>{
+ await _clearReviewStateStoreForTests();
+ const f=fixture('design.story');
+ const service=createRepoLifecycle(f.repo).service;
+ let mutate=false, writes=0;
+ const original=service.inspect.bind(service);
+ const deps:ReviewStepDeps={lifecycleFor:()=>new Proxy(service,{get(target,key){
+  if(key==='inspect')return async(...args:Parameters<typeof original>)=>{const seen=await original(...args);if(mutate){mutate=false;const a=JSON.parse(readFileSync(f.jsonPath,'utf8'));a.body.summary='concurrent edit';writeFileSync(f.jsonPath,JSON.stringify(a));}return seen;};
+  if(key==='apply'||key==='updateContent')return ()=>{writes++;throw new Error('unexpected stale write');};
+  const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;
+ }})};
+ try {
+  const frame=await call({phase:'start',artifact:f.mdPath,repo:f.repo,reviewBudget:declaration},deps);
+  mutate=true;
+  const done=await call(resume(frame,templateAnswer()),deps);
+  assert.equal(done.next,'error');assert.equal(done.error.code,'review-source-changed');assert.equal(writes,0);
+ } finally {rmSync(f.repo,{recursive:true,force:true});}
 });

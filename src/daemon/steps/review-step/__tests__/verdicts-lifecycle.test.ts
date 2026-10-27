@@ -69,8 +69,8 @@ async function fixture(): Promise<{ repo: string; md: string }> {
 	return { repo, md };
 }
 
-async function verdicts(fx: { repo: string; md: string }): Promise<{ next: string; applied?: number; error?: { message: string } }> {
-	const parse = (env: Awaited<ReturnType<typeof handleReviewStep>>) => JSON.parse(env.content[0]!.text) as { state: string; next: string; applied?: number; error?: { message: string } };
+async function verdicts(fx: { repo: string; md: string }): Promise<{ next: string; applied?: number | undefined; error?: { message: string } | undefined }> {
+	const parse = (env: Awaited<ReturnType<typeof handleReviewStep>>) => JSON.parse(env.content[0]!.text) as { state: string; next: string; applied?: number | undefined; error?: { message: string } | undefined };
 	const start = parse(await handleReviewStep({ phase: 'start', artifact: fx.md, repo: fx.repo }));
 	await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: start.state });
 	return parse(await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never));
@@ -119,7 +119,7 @@ test('handleVerdicts with a service stores an applied fix through the service an
 test('exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes', async () => {
 	const { getStepStateStore } = await import('../../../threads/step-state.js');
 	const { loadState } = await import('../state-store.js');
-	const parse = (env: Awaited<ReturnType<typeof rawReviewCall>>) => JSON.parse(env.content[0]!.text) as { next: string; error?: { code: string } };
+	const parse = (env: Awaited<ReturnType<typeof rawReviewCall>>) => JSON.parse(env.content[0]!.text) as { next: string; error?: { code: string } | undefined };
 	const fx = await fixture();
 	const start = JSON.parse((await rawReviewCall({ phase: 'start', artifact: fx.md, repo: fx.repo, reviewBudget: CONTROLLER_DECLARATION })).content[0]!.text) as { state: string };
 	const payload = await loadState(start.state);

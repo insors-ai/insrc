@@ -1,9 +1,9 @@
-import { reviewTiming } from './call-events.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { reviewTiming } from './call-events.js';
 /**
  * The review pipeline's job (Epic 8315a11f s1, sc5): one review unit (a
  * code-review dimension, or a design review) run as pre-processor -> review ->
@@ -76,6 +76,7 @@ export class MaterialChangedError extends Error {
 }
 
 export interface CreateJobOpts {
+	readonly onCallEvent?: ((event: import('./call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly budgetPolicy: ReviewBudgetPolicy;
 	/** Epoch ms at prepare. Default: now. */
 	readonly now?:      number | undefined;
@@ -109,7 +110,18 @@ export function createReviewJob(
 		materialHash: materialHash(adapter.material()), seq: 0, workSeq: 0, workUnits: [],
 		...(stages.some(stage => stage.kind === 'model') ? { executionStartedAt: opts.now ?? Date.now() } : {}),
 	};
-	return enterStage(job, adapter, 0, opts.now ?? Date.now());
+	try { return enterStage(job, adapter, 0, opts.now ?? Date.now()); }
+ catch (error) {
+  if (error instanceof ReviewBudgetError && error.breakdown) {
+   const id = randomUUID();
+   const refusal: import('./call-events.js').ReviewCallEvent = { event: 'start', reviewId: job.reviewId, callId: id, dimension: job.dimension, stage: 'prepare', role: 'single', attempt: 0, transport: job.budgetPolicy.profile.transport, policyVersion: job.budgetPolicy.policyVersion, qualification: error.breakdown.qualification, budget: error.breakdown, durationMs: 0, timing: { ...reviewTiming(job, opts.now ?? Date.now()), attemptLimitMs: 0 } };
+   for (const event of [refusal, { ...refusal, event: 'refused' as const, errorCode: 'budget-refused' as const }]) {
+    log.info(event, 'review pipeline: preparation refusal');
+    try { opts.onCallEvent?.(event); } catch { log.warn({ errorCode: 'observer-failed' }, 'review preparation observer failed'); }
+   }
+  }
+  throw error;
+ }
 }
 
 /** Enter stage `index`: issue a model stage's calls (single, or one per chunk); a deterministic stage waits for runStage. */
@@ -348,12 +360,14 @@ export function applyFailure(
 	if (cause === 'size-refusal') {
 		// Rebuilding from material cannot preserve a mandatory correction. Refuse
 		// this indivisible retry instead of silently returning to an uncorrected prompt.
-		if ((call.invalidAnswers ?? 0) > 0) throw new ReviewBudgetError('dispatch-budget-exceeded', call.budget, { stage: call.stage, callId: call.callId });
+		if ((call.invalidAnswers ?? 0) > 0) throw new ReviewBudgetError('correction-budget-exceeded', call.budget, { stage: call.stage, callId: call.callId });
 		const replaced = { ...rest, workUnits: rest.workUnits.map(unit => unit.id === call.workId ? { ...unit, replaced: true } : unit) };
 		const divided = subdivide(replaced);
 		const existing = new Set(job.workUnits.map(unit => unit.id));
 		if (!divided.workUnits.some(unit => !existing.has(unit.id))) throw new ReviewBudgetError('required-context-over-budget');
-		return { ...divided, workUnits: divided.workUnits.map(unit => existing.has(unit.id) ? unit : { ...unit, parentId: call.workId }) };
+		const replanned = withDeadline({ ...divided, workUnits: divided.workUnits.map(unit => existing.has(unit.id) ? unit : { ...unit, parentId: call.workId }) }, now);
+  log.info({ reviewId: replanned.reviewId, dimension: replanned.dimension, ...reviewTiming(replanned, now) }, 'review pipeline: replanned execution allocation');
+  return replanned;
 	}
 	function subdivide(rest: ReviewPipelineJob): ReviewPipelineJob {
 		if (call.role === 'relation') return redivideRelation(rest, adapter, call, maxChars);
@@ -370,7 +384,7 @@ export function applyFailure(
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
 			if (candidateChars(job.budgetPolicy, corrected, job.plan.limitChars, 'dispatch') > job.plan.limitChars) {
-				throw new ReviewBudgetError('dispatch-budget-exceeded', requestBudget(job.budgetPolicy, envelopeMessages(call.callId, corrected.messages), envelopeSchema(call.callId, corrected.schema), 'dispatch'), { stage: call.stage, callId: call.callId });
+				throw new ReviewBudgetError('correction-budget-exceeded', requestBudget(job.budgetPolicy, envelopeMessages(call.callId, corrected.messages), envelopeSchema(call.callId, corrected.schema), 'dispatch'), { stage: call.stage, callId: call.callId });
 			}
 			prompt = corrected;
 		}
@@ -632,7 +646,11 @@ function reduceBatches(job: ReviewPipelineJob, gather: GatherPlan<unknown>, key:
 	const size = (batch: readonly EvidenceNote[]): number => candidateChars(job.budgetPolicy, gather.reduceCall(key, batch), soft);
 	for (const n of notes) {
 		const alone = size([n]);
-		if (alone > hard) throw new AtomTooLargeError(`${labels.get(n.noteId) ?? `evidence note ${n.noteId}`} (${key})`, alone, hard);
+		if (alone > hard) {
+   const prompt = gather.reduceCall(key, [n]);
+   const b = requestBudget(job.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema), 'dispatch');
+   throw new ReviewBudgetError('required-context-over-budget', b, { unitId: createHash('sha256').update(n.noteId).digest('hex').slice(0,24), shortfallTokens: Math.max(0, -b.remainingTokens) });
+  }
 	}
 	const batches = packIntoBatches(notes, x => (x.length === 1 ? Math.min(size(x), soft) : size(x)), soft, n => n.noteId);
 	return batches.map(batch => ({ prompt: gather.reduceCall(key, batch), role: 'reduce' as const, carries: noteCarries(key, batch) }));
@@ -643,7 +661,7 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 	const checked = validateAgainstSchema<unknown>(call.prompt.schema, answer);
 	let reasons = checked.ok ? [] : checked.errors;
 	const gather = gatherOf(job, adapter);
-	const text = (answer as { text?: unknown } | null)?.text;
+	const text = (answer as { text?: unknown | undefined } | null)?.text;
 	if (reasons.length === 0 && call.role === 'reduce') {
 		if (typeof text !== 'string') reasons = ['a reduction answers with one note: { "text": "..." }'];
 		else if (text.length > gather.noteCapChars) reasons = [`the note is ${text.length} characters; it must be at most ${gather.noteCapChars}`];

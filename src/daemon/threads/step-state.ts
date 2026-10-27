@@ -269,7 +269,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 /** The main thread's hub services for the step-state store. */
 export function stepStateHubHandlers(store: SharedStepStateStore, assertOwner: (owner: string) => void = assertReviewOwnerActive): HubHandlers {
-	type A = { kind: StepKind; token?: string; payload?: unknown };
+	type A = { kind: StepKind; token?: string | undefined; payload?: unknown | undefined };
 	return {
 		'step.review.mint': a => { const v = a as { kind: ReviewStateKind; payload: unknown; expected: ReviewStateExpected }; return store.mintReviewState(v.kind, v.payload, v.expected); },
 		'step.review.claim': a => { const access = a as ReviewStateAccess; assertOwner(access.owner); return store.claimReviewState(access); },

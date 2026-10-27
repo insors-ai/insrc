@@ -100,8 +100,8 @@ async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'h
 
 interface OllamaBody {
 	messages: Array<{ role: string; content: string }>;
-	tools?: Array<{ function: { name: string } }>;
-	format?: unknown;
+	tools?: Array<{ function: { name: string } }> | undefined;
+	format?: unknown | undefined;
 }
 
 const asksTool = (name: string, args: Record<string, unknown>): object[] =>
@@ -225,7 +225,7 @@ test('a tool input is anchored at the session repo: relative paths resolve there
 test('every read-only tool argument that looks like a path is classified as a filesystem location or not', () => {
 	const PATHY = /^(path|paths|file_?path|cwd|dir|directory|root|repoPath|repo)$/i;
 	for (const id of READ_ONLY_TOOL_IDS) {
-		const props = Object.keys((getTool(id)?.inputSchema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {});
+		const props = Object.keys((getTool(id)?.inputSchema as { properties?: Record<string, unknown> | undefined } | undefined)?.properties ?? {});
 		for (const key of props.filter(k => PATHY.test(k))) {
 			const fs = (FILESYSTEM_ARGS[id] ?? []).some(a => a.key === key);
 			const not = (NOT_FILESYSTEM_ARGS[id] ?? []).includes(key);
@@ -517,7 +517,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const schema = { ...ANSWER_SCHEMA, description: 'r'.repeat(Math.min(150000, Math.floor(allowance * 3 * 0.75))) };
 			const before = JSON.stringify(schema);
 			const budget = budgetFor(closing.provider, schema);
-			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
+			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 			assert.equal(closing.bodies.length, 1, 'final closing instruction plus native schema is refused before its model call');
 			assert.equal(JSON.stringify(schema), before, 'the schema is not shortened to fit');
 		} finally { await closing.close(); }

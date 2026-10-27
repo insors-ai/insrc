@@ -41,7 +41,7 @@ test('dispatch refusals bypass retry and partial-result policies and emit paired
 			await assert.rejects(() => runReviewJob(input, adapter, provider, { onCallEvent: e => events.push(e), onDone: () => { completions++; } }), e => e instanceof ReviewBudgetError);
 			assert.equal(completions, 0, `${failurePolicy}/${scenario} never completes a partial review`);
 			assert.equal(calls, scenario === 'provider-refusal' ? 1 : 0, 'budget refusal is never retried');
-			assert.deepEqual(events.map(e => e.event), scenario === 'provider-refusal' ? ['start', 'failure'] : ['refused']);
+			assert.deepEqual(events.map(e => e.event), scenario === 'provider-refusal' ? ['start', 'failure'] : ['start', 'refused']);
 			assert.equal(events.at(-1)!.errorCode, 'budget-refused');
 			assert.ok(!JSON.stringify(events).includes('PRIVATE_SOURCE_CREDENTIAL'));
 			assert.deepEqual(job.notJudged, [], 'no observation/not-judged result is substituted for a refusal');
@@ -57,7 +57,7 @@ test('successful failed and cancelled calls have exactly one content-free termin
 		let calls = 0;
 		const provider = {
 			getReviewBudgetProfile: () => profile,
-			completeStructured: async (_messages: unknown, schema: StructuredSchema, opts: { reviewBudget?: unknown; internalRetry?: boolean }) => {
+			completeStructured: async (_messages: unknown, schema: StructuredSchema, opts: { reviewBudget?: unknown | undefined; internalRetry?: boolean | undefined }) => {
 				calls++; assert.ok(opts.reviewBudget); assert.equal(opts.internalRetry, false);
 				if (outcome === 'failure') throw new Error('PRIVATE_SOURCE_CREDENTIAL backend details');
 				if (outcome === 'cancel') { queueMicrotask(() => controller.abort()); return new Promise(() => {}); }

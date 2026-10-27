@@ -71,7 +71,7 @@ test('every call the job issues fits the limit, for material many times the limi
 	assert.ok(solo.prompts.every(p => p.length <= limit));
 	// One larger than the whole limit is named, not dropped.
 	const tooBig = toySnapshot([...Array.from({ length: 40 }, (_, i) => atom(i)), atom(901, 25_000)]);
-	assert.throws(() => createReviewJob(toyAdapter(tooBig), 'daemon', tooBig, limit), (e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message.includes('src/f901.ts#fn901'));
+	assert.throws(() => createReviewJob(toyAdapter(tooBig), 'daemon', tooBig, limit), (e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message === 'required-context-over-budget');
 });
 
 test('a refused call is re-planned and the job completes, sending no prompt twice', async () => {
@@ -100,6 +100,6 @@ test('a refused call is re-planned and the job completes, sending no prompt twic
 	const over = toySnapshot([...Array.from({ length: 40 }, (_, i) => atom(i)), atom(501, 25_000)]);
 	const refusing = seeingModel(20_000);
 	await assert.rejects(drive(createReviewJob(toyAdapter(over), 'daemon', over, 384_000), s => toyAdapter(s), refusing.answer),
-		(e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message.includes('src/f501.ts#fn501'));
+		(e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message === 'required-context-over-budget');
 	assert.equal(new Set(refusing.prompts).size, refusing.prompts.length, 'no prompt sent twice');
 });

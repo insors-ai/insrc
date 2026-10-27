@@ -81,7 +81,7 @@ export async function persistTemplateFindings(state: ReviewStepStatePayload, ans
 		};
 	}
 
-	const items = Array.isArray(answer?.items) ? answer.items as { item?: unknown }[] : [];
+	const items = Array.isArray(answer?.items) ? answer.items as { item?: unknown | undefined }[] : [];
 	assertExactReviewIds(expected, items.map(item => item?.item), 'review-template-set-mismatch');
 
 	const findings = result.findings;
@@ -120,7 +120,7 @@ export async function persistTemplateFindings(state: ReviewStepStatePayload, ans
 	const lifecycle = lifecycleFor(state.repo);
 	guard.beginSideEffects();
 	const seen = await lifecycle.inspect(artifactId);
-	guard.assertActive();
+	guard.assertActive(); guard.assertSource?.();
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	// A design is not edited by its review: the report becomes the review entry of its log and the lifecycle review names it; the
 	// body is untouched.
@@ -134,7 +134,7 @@ export async function persistTemplateFindings(state: ReviewStepStatePayload, ans
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	await persistReview({
 		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle,
-		assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
+		assertActive: guard.assertActive, assertSource: guard.assertSource, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
 	});
 
 	log.info(

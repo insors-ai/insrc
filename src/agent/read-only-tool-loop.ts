@@ -44,6 +44,7 @@ export interface GatheredToolOutput {
 }
 
 export interface ReadOnlyToolLoopArgs {
+ readonly closingSchema?: StructuredSchema | undefined;
 	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider: LLMProvider;
@@ -118,7 +119,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		// The signal goes into the call AND bounds the wait for it, so a provider
 		// that is between attempts (a retry backoff) cannot hold the loop past it.
 		const reviewBudget = args.reviewBudget === undefined ? undefined
-			: managedReviewBudget(args.provider, args.reviewBudget, convo, args.tools, undefined, undefined, turn);
+			: managedReviewBudget(args.provider, args.reviewBudget, convo, args.tools, args.closingSchema, undefined, turn);
 		const work = args.provider.complete(convo, {
 			...(reviewBudget !== undefined ? { reviewBudget, maxTokens: reviewBudget.outputAllowanceTokens } : {}),
 			tools:           [...args.tools],
@@ -224,7 +225,7 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
  * path-like argument must be listed here or in {@link NOT_FILESYSTEM_ARGS}
  * (pinned by a test).
  */
-export const FILESYSTEM_ARGS: Readonly<Record<string, readonly { readonly key: string; readonly defaultsToRoot: boolean; readonly unlessPresent?: string }[]>> = {
+export const FILESYSTEM_ARGS: Readonly<Record<string, readonly { readonly key: string; readonly defaultsToRoot: boolean; readonly unlessPresent?: string | undefined }[]>> = {
 	'file_read':          [{ key: 'path', defaultsToRoot: false }],
 	'file_stat':          [{ key: 'path', defaultsToRoot: false }],
 	'search_list-dir':    [{ key: 'path', defaultsToRoot: false }],
@@ -324,7 +325,7 @@ function managedReviewBudget(provider: LLMProvider, budget: ReviewExecutionBudge
 		preflightProviderReviewBudget(current, profile, promptChars, wireSchemaJson, maxTokens ?? budget.outputAllowanceTokens, declaredToolsJson);
 	} catch (err) {
 		if (err instanceof ReviewBudgetError) {
-			const refusal = err.code === 'dispatch-budget-exceeded' ? new ReviewBudgetError('inspection-budget-exceeded', err.breakdown) : err;
+			const refusal = err.code === 'dispatch-budget-exceeded' && turn !== undefined ? new ReviewBudgetError('inspection-budget-exceeded', err.breakdown) : err;
 			log.info({ ...metadata, errorCode: refusal.code }, 'review managed request refused'); throw refusal;
 		}
 		throw err;

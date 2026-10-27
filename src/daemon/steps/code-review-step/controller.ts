@@ -1,7 +1,8 @@
+import { admitControllerTurn, assertControllerAttempt, controllerObservedEvent } from '../../../workflow/review-pipeline/controller.js';
 import { claimReviewTransaction } from '../review-transaction.js';
 import { validateFinding } from '../../../workflow/code-review/controller-validation.js';
 import { getLogger } from '../../../shared/logger.js';
-import { reviewCallEvent, reviewTiming, reviewFailureCode } from '../../../workflow/review-pipeline/call-events.js';
+import { reviewTiming, reviewFailureCode } from '../../../workflow/review-pipeline/call-events.js';
 import { randomUUID } from 'node:crypto';
 import type { ReviewBudgetPolicy, ReviewControllerBudgetDeclaration, ReviewBudgetBreakdown } from '../../../shared/review-budget.js';
 import { currentStepContext } from '../../../shared/step-context.js';
@@ -75,15 +76,12 @@ async function advance(payload: Payload, deps: CodeReviewStepDeps): Promise<Payl
 		const c = state.controller;
 		const dimension = c.dimensions[c.results.length]!;
 		const adapter = adapterFor(state, dimension);
-		let job = c.job ?? createReviewJob(adapter, 'controller', codeReviewSnapshot(state.subject, state.grounding!, state.groundingMode ?? 'full'), c.policy.totalTokens * 3, { budgetPolicy: c.policy, now: c.executionStartedAt ?? deps.now() });
-		const epoch = c.executionStartedAt ?? job.executionStartedAt;
-		const timeline = (value: ReviewPipelineJob): ReviewPipelineJob => epoch === undefined ? value : { ...value, executionStartedAt: epoch, priorWorkBudgetMs: c.completedBudgetMs, deadlineBudgetMs: c.completedBudgetMs + value.workUnits.filter(unit => !unit.replaced).length * 600000, deadlineAt: epoch + c.completedBudgetMs + value.workUnits.filter(unit => !unit.replaced).length * 600000 };
-		job = timeline(job);
-		while (job.phase !== 'done' && nextCalls(job, adapter, deps.now()).length === 0) job = timeline(await runStage(job, adapter, { signal: deps.signal, now: deps.now }));
-		if (job.phase !== 'done') return { ...state, controller: { ...c, executionStartedAt: epoch, job, callId: job.pending[0]!.callId } };
+		let job = c.job ?? createReviewJob(adapter, 'controller', codeReviewSnapshot(state.subject, state.grounding!, state.groundingMode ?? 'full'), c.policy.totalTokens * 3, { budgetPolicy: c.policy, now: deps.now() });
+		while (job.phase !== 'done' && nextCalls(job, adapter, deps.now()).length === 0) job = await runStage(job, adapter, { signal: deps.signal, now: deps.now });
+		if (job.phase !== 'done') return { ...state, controller: { ...c, job, callId: job.pending[0]!.callId } };
 		const answer = result<DimensionResult>(job);
 		const counts = pipelineCallsOf(job);
-		state = { ...state, controller: { ...c, job: c.results.length + 1 === c.dimensions.length ? job : undefined, results: [...c.results, { ...answer, ...(counts ? { pipelineCalls: counts } : {}) }], executionStartedAt: epoch, completedBudgetMs: job.deadlineBudgetMs ?? c.completedBudgetMs } };
+		state = { ...state, controller: { ...c, job: c.results.length + 1 === c.dimensions.length ? job : undefined, results: [...c.results, { ...answer, ...(counts ? { pipelineCalls: counts } : {}) }], completedBudgetMs: c.completedBudgetMs + (job.deadlineBudgetMs ?? 0) } };
 	}
 	return state;
 }
@@ -101,7 +99,7 @@ function emitted(payload: Payload, now: number, stale?: { staleFiles: readonly s
 		next: 'emit_judgements', guidance: "Execute this one assigned review request. Emit JSON matching schema, then call phase='judgements' with reply=<that JSON>, state, and a fresh reviewBudget declaration. Host history is caller-declared/reserved; it is not measured by the daemon.",
 		prompts: [[...call.messages]], schema: controllerReplySchema(call, c.generation), state: CONTROLLER_STATE_PLACEHOLDER,
 		call: { ...protocol, dimension: c.dimensions[c.results.length]!, stage: call.stage, role: call.role },
-		timing: { ...reviewTiming(c.job!, now), attemptLimitMs: call.execution.mode === 'reviewer-session' ? call.execution.deadlineMs : call.execution.timeoutMs!, jobBudgetMs: c.job!.deadlineBudgetMs ?? 0, deadlineAt: c.job!.deadlineAt!, storyBudgetMs: c.job!.deadlineBudgetMs ?? 0 },
+		timing: { ...reviewTiming(c.job!, now), attemptLimitMs: call.execution.mode === 'reviewer-session' ? call.execution.deadlineMs : call.execution.timeoutMs!, jobBudgetMs: c.job!.deadlineBudgetMs ?? 0, deadlineAt: c.job!.deadlineAt!, storyBudgetMs: c.completedBudgetMs + (c.job!.deadlineBudgetMs ?? 0) },
 	};
 }
 
@@ -112,41 +110,28 @@ async function admitted(payload: Payload, declaration: ReviewControllerBudgetDec
 	for (;;) {
 		const frame = emitted(state, deps.now());
 		try {
-			const frameBudget = admitControllerFrame(frame, state.controller.policy, declaration);
-			return { payload: { ...state, controller: { ...state.controller, frameBudget, frameAttemptMs: frame.next === 'emit_judgements' && typeof frame.timing?.['attemptLimitMs'] === 'number' ? frame.timing['attemptLimitMs'] : undefined, frameStartedAt: deps.now(), frameDeadlineAt: frame.next === 'emit_judgements' && typeof frame.timing?.['attemptLimitMs'] === 'number' ? deps.now() + frame.timing['attemptLimitMs'] : undefined } }, frame };
+			const lifetime = admitControllerTurn(frame, state.controller.policy, declaration, frame.next === 'emit_judgements' && typeof frame.timing?.['attemptLimitMs'] === 'number' ? frame.timing['attemptLimitMs'] : undefined, deps.now());
+			return { payload: { ...state, controller: { ...state.controller, ...lifetime } }, frame };
 		}
 		catch (error) {
 			if (!(error instanceof ReviewBudgetError) || error.code !== 'controller-frame-over-budget') throw error;
 			const c = state.controller;
 			const adapter = adapterFor(state, c.dimensions[c.results.length]!);
 			const call = nextCalls(c.job!, adapter, deps.now())[0]!;
-			const job = applyFailure(c.job!, adapter, call.callId, 'size-refusal', Math.max(1, Math.floor(call.chars * 0.75)), { now: deps.now() });
+			let job: ReviewPipelineJob;
+			try { job = applyFailure(c.job!, adapter, call.callId, 'size-refusal', Math.max(1, Math.floor(call.chars * 0.75)), { now: deps.now() }); }
+			catch (failure) { if (failure instanceof ReviewBudgetError) throw error; throw failure; }
 			state = await advance({ ...state, controller: { ...c, job } }, deps);
 		}
 	}
 }
 
-function logReady(payload: Payload): void {
-	const c = payload.controller;
-	if (!c.job || !c.frameBudget) return;
-	const pending = c.job.pending.find(value => value.callId === c.callId);
-	const call = pending && c.frameAttemptMs !== undefined ? { ...pending, execution: pending.execution.mode === 'reviewer-session' ? { ...pending.execution, deadlineMs: c.frameAttemptMs } : { ...pending.execution, timeoutMs: c.frameAttemptMs } } : pending;
-	if (!call) return;
-	log.info({ ...reviewCallEvent(c.job, call, c.frameBudget, 'start', 0), event: 'controller-frame-ready' }, 'controller review: admitted response ready; external execution is unobserved');
-}
-function logCommitted(payload: Payload, reply: ControllerReviewReply): void {
-	const c = payload.controller;
-	const pending = c.job?.pending.find(value => value.callId === reply.callId);
-	const call = pending && c.frameAttemptMs !== undefined ? { ...pending, execution: pending.execution.mode === 'reviewer-session' ? { ...pending.execution, deadlineMs: c.frameAttemptMs } : { ...pending.execution, timeoutMs: c.frameAttemptMs } } : pending;
-	if (!c.job || !call || !c.frameBudget) return;
-	log.info({ ...reviewCallEvent(c.job, call, c.frameBudget, 'success', 0), event: 'controller-answer-committed' }, 'controller review: matching answer committed');
-}
-
-function logFailed(payload: Payload, error: unknown): void {
-	const c = payload.controller, job = c.job;
-	const call = job?.pending.find(value => value.callId === c.callId);
-	if (!job || !call || !c.frameBudget) return;
-	log.info({ ...reviewCallEvent(job, call, c.frameBudget, reviewFailureCode(error) === 'cancelled' ? 'cancel' : 'failure', 0, reviewFailureCode(error)), event: 'controller-call-failed' }, 'controller review: terminal protocol failure; external execution is unobserved');
+function logTransition(payload: Payload, event: 'start' | 'success' | 'failure', now: number, error?: unknown): void {
+ const c = payload.controller, job = c.job;
+ const call = job?.pending.find(value => value.callId === c.callId);
+ if (!job || !call || !c.frameBudget) return;
+ const code = event === 'failure' ? reviewFailureCode(error) : undefined;
+ log.info(controllerObservedEvent(job, call, c, code === 'cancelled' ? 'cancel' : event, now, code), 'controller review: observed protocol transition');
 }
 
 async function ground(payload: Payload, deps: CodeReviewStepDeps, degraded: boolean, reason?: CodeReviewStepStatePayload['fallbackReason']): Promise<Payload> {
@@ -171,7 +156,7 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 		const next = await admitted(await ground(payload, deps, true, route.reason), d, deps);
 		owner().assertActive();
 		const token = await getStepStateStore().mintReviewState('code-review', next.payload, next.payload.controller);
-		logReady(next.payload);
+		logTransition(next.payload, 'start', deps.now());
 		return { ...next.frame, state: token } as CodeReviewStepOutput;
 	}
 	const fresh = await deps.fetchFreshness({ repo: payload.repo, epicHash: payload.epicHash, storyId: payload.storyId, changedFiles: subject.changedFiles });
@@ -181,7 +166,7 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 	else { const next = await admitted(await ground(payload, deps, false), d, deps); payload = next.payload; frame = next.frame; }
 	owner().assertActive();
 	const token = await getStepStateStore().mintReviewState('code-review', payload, payload.controller);
-	logReady(payload);
+	logTransition(payload, 'start', deps.now());
 	return { ...frame, state: token } as CodeReviewStepOutput;
 }
 
@@ -195,11 +180,11 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 	let effects = false;
 	try {
 		let payload = claimed.payload;
-		if (payload.controller?.version !== 1 || (payload.controller.phase === 'review' && payload.controller.frameDeadlineAt === undefined)) throw new ReviewBudgetError('review-budget-state-stale');
+		if (payload.controller?.version !== 1 || (payload.controller.job?.priorWorkBudgetMs ?? 0) > 0 || (payload.controller.phase === 'review' && payload.controller.frameDeadlineAt === undefined)) throw new ReviewBudgetError('review-budget-state-stale');
 		controllerPolicy(declaration, payload.controller.policy);
 		admitControllerFrame({}, payload.controller.policy, declaration);
 		if (payload.controller.phase === 'confirm_wait') {
-			if (step.phase !== 'start' || !reply.answer || typeof reply.answer !== 'object' || typeof (reply.answer as { proceed?: unknown }).proceed !== 'boolean') throw new ReviewBudgetError('controller-budget-incompatible');
+			if (step.phase !== 'start' || !reply.answer || typeof reply.answer !== 'object' || typeof (reply.answer as { proceed?: unknown | undefined }).proceed !== 'boolean') throw new ReviewBudgetError('controller-budget-incompatible');
 			const proceed = (reply.answer as { proceed: boolean }).proceed;
 			let reason: CodeReviewStepStatePayload['fallbackReason'] = { kind: 'declined' };
 			let degraded = !proceed;
@@ -217,13 +202,10 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 			if (step.phase !== 'judgements') throw new ReviewBudgetError('controller-budget-incompatible');
 			const c = payload.controller;
 			const adapter = adapterFor(payload, c.dimensions[c.results.length]!);
-			if (c.frameDeadlineAt !== undefined && deps.now() >= c.frameDeadlineAt) {
-				if (c.job!.deadlineAt !== undefined && deps.now() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapter);
-				throw Object.assign(new ControllerCodeReviewError('review-attempt-timeout'), { timeoutKind: 'review-attempt' });
-			}
+			assertControllerAttempt(c, deps.now(), () => { if (c.job!.deadlineAt !== undefined && deps.now() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapter); }, () => Object.assign(new ControllerCodeReviewError('review-attempt-timeout'), { timeoutKind: 'review-attempt' }));
 			const call = nextCalls(c.job!, adapter, deps.now()).find(call => call.callId === reply.callId);
 			if (!call || !validateAgainstSchema(controllerReplySchema(call, c.generation), reply).ok) throw new ReviewBudgetError('controller-budget-incompatible');
-			const findings = (reply.answer as { findings?: unknown[] } | null)?.findings;
+			const findings = (reply.answer as { findings?: unknown[] | undefined } | null)?.findings;
 			if (Array.isArray(findings) && findings.some(finding => validateFinding(finding, c.dimensions[c.results.length]!) !== null)) throw new ReviewBudgetError('controller-budget-incompatible');
 			const job = applyOutput(c.job!, adapter, reply.callId, { callId: reply.callId, answer: reply.answer }, deps.now());
 			payload = { ...payload, controller: { ...c, job } };
@@ -261,19 +243,18 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 			if (done.next !== 'done') throw new ControllerCodeReviewError('review-state-uncertain');
 			authority.assertActive();
 			await claimed.complete({ status: 'completed', callId: reply.callId, artifactId: `CR-${payload.epicHash}-${payload.storyId}`, runId: payload.runId });
-			logCommitted(claimed.payload, reply);
+			logTransition(claimed.payload, 'success', deps.now());
 			return done;
 		}
 		payload = { ...payload, controller: { ...payload.controller, generation: claim.generation + 1 } };
 		const next = await admitted(payload, declaration, deps);
 		authority.assertActive(); effects = true;
 		const committed = await claimed.advance(next.payload, next.payload.controller.callId);
-		logCommitted(claimed.payload, reply); logReady(next.payload);
+		logTransition(claimed.payload, 'success', deps.now()); logTransition(next.payload, 'start', deps.now());
 		return { ...next.frame, state: committed.token } as CodeReviewStepOutput;
 	} catch (error) {
-		if (error instanceof ReviewBudgetError && !error.context) error = new ReviewBudgetError(error.code, error.breakdown, { stage: claimed.payload.controller.job?.stage, callId: reply.callId });
-		const terminal = ['review-job', 'review-attempt'].includes(String((error as { timeoutKind?: unknown } | null)?.timeoutKind));
-		if (effects || terminal) logFailed(claimed.payload, error);
+		const terminal = ['review-job', 'review-attempt'].includes(String((error as { timeoutKind?: unknown | undefined } | null)?.timeoutKind));
+		if (effects || terminal) logTransition(claimed.payload, 'failure', deps.now(), error);
 		await claimed.fail(error, effects, terminal);
 		throw error;
 	}

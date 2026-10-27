@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { safeReviewId } from './call-events.js';
 import type {
 	ReviewBudgetBreakdown, ReviewBudgetErrorCode, ReviewBudgetPolicy, ReviewExecutionKind,
 	ReviewProviderBudgetProfile, ReviewControllerBudgetDeclaration,
@@ -21,7 +22,7 @@ export class ReviewBudgetError extends Error {
 		this.name = 'ReviewBudgetError';
 		if (context) this.context = Object.freeze({
 			...(context.stage !== undefined && ['judge','compare','pair','extract','probe','verify','template','run','skip','gather','reduce'].includes(context.stage) ? { stage: context.stage } : {}),
-			...(context.callId !== undefined && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(context.callId) ? { callId: context.callId } : {}),
+			...(context.callId !== undefined && safeReviewId(context.callId) !== undefined ? { callId: context.callId } : {}),
 			...(context.unitId !== undefined && /^[a-f0-9]{24}$/.test(context.unitId) ? { unitId: context.unitId } : {}),
 			...(Number.isSafeInteger(context.shortfallTokens) && context.shortfallTokens! >= 0 ? { shortfallTokens: context.shortfallTokens } : {}),
 		});

@@ -36,7 +36,7 @@ const log = getLogger('review');
 
 /** Phases surfaced through `onProgress`. `template` is the one reviewer
  *  session of a design review; the other three are the pipeline's stages. */
-export type ReviewPhase = 'extract' | 'probe' | `verify:${string}` | 'template' | 'done';
+export type ReviewPhase = 'extract' | 'probe' | `verify:${string}` | 'template' | 'done' | 'call-event';
 
 export interface RunReviewOpts {
 	readonly repo: string;
@@ -51,7 +51,7 @@ export interface RunReviewOpts {
 	readonly reviewedAt?: string | undefined;
 	/** Injected clock. Used when `reviewedAt` is absent. Default epoch-0 ISO. */
 	readonly now?: (() => string) | undefined;
-	readonly onProgress?: ((phase: ReviewPhase) => void) | undefined;
+	readonly onProgress?: ((phase: ReviewPhase, event?: import('../review-pipeline/call-events.js').ReviewCallEvent | undefined) => void) | undefined;
 	readonly signal?: AbortSignal | undefined;
 	/** Design stages only: which template applies. `reviewArtifactFile` resolves
 	 *  it from the artifact store; default `spec`. */
@@ -95,13 +95,14 @@ export async function runReview(
 		onSourceRootFallback: reason => { sourceRootFallback = reason; },
 	}) as unknown as ReviewAdapter<unknown>;
 	const budgetPolicy = resolveReviewBudgetPolicy(opts.provider as LLMProvider, 'structured', readReviewChunkTokens());
-	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy });
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy, onCallEvent: event => emit('call-event', event) });
 	let findings: Finding[];
 	let pipelineCalls: PipelineCalls | undefined;
 	try {
 		findings = [...await runReviewJob(job, adapter, provider, {
 			signal,
 			onDone: done => { pipelineCalls = pipelineCallsOf(done); },
+			onCallEvent: event => emit('call-event', event),
 			onStage: s => { if (s === 'probe') emit('probe'); },
 			onCall: c => emit(c.stage === 'extract' ? 'extract' : `verify:${c.carries.key ?? ''}`),
 		}) as readonly Finding[]];

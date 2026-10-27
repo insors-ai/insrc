@@ -72,7 +72,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		const emit = (event: ReviewCallOutcome, durationMs: number, errorCode?: ReviewCallErrorCode): void => {
 			const metadata = reviewCallEvent(job, call, admitted, event, durationMs, errorCode, now());
 			log.info(metadata, 'review pipeline: call lifecycle');
-			opts.onCallEvent?.(metadata);
+			try { opts.onCallEvent?.(metadata); } catch { log.warn({ errorCode: 'observer-failed' }, 'review progress observer failed'); }
 		};
 		let budget: ReviewExecutionBudget;
 		try {
@@ -86,8 +86,9 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			preflightProviderReviewBudget(budget, profile, admitted.promptChars, reviewWireSchemaJson(profile, call.schema));
 		} catch (err) {
 			if (err instanceof ReviewBudgetError && err.breakdown) admitted = err.breakdown;
+			emit('start', 0);
 			emit('refused', 0, 'budget-refused');
-			throw err instanceof ReviewBudgetError ? new ReviewBudgetError(err.code, err.breakdown ?? admitted, { ...err.context, stage: call.stage, callId: call.callId }) : new ReviewBudgetError('native-budget-unqualified', admitted, { stage: call.stage, callId: call.callId });
+			throw err instanceof ReviewBudgetError ? err : new ReviewBudgetError('native-budget-unqualified', admitted, { stage: call.stage, callId: call.callId });
 		}
 		const startedAt = performance.now();
 		const attemptStartedAt = now();
@@ -127,8 +128,8 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			errorCode = accepted ? undefined : 'invalid-answer';
 		} catch (err) {
 			if (signal?.aborted === true || isAbortError(err)) { outcome = 'cancel'; errorCode = 'cancelled'; }
-			if (err instanceof ReviewBudgetError) { errorCode = 'budget-refused'; if (!err.context) err = new ReviewBudgetError(err.code, err.breakdown ?? admitted, { stage: call.stage, callId: call.callId }); }
-			const timeoutKind = (err as { timeoutKind?: unknown } | null)?.timeoutKind;
+			if (err instanceof ReviewBudgetError) errorCode = 'budget-refused';
+			const timeoutKind = (err as { timeoutKind?: unknown | undefined } | null)?.timeoutKind;
 			if (timeoutKind === 'review-attempt') errorCode = 'attempt-timeout';
 			if (timeoutKind === 'review-job') errorCode = 'job-timeout';
 			throw err;

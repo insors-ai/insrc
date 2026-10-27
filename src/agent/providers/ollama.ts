@@ -47,7 +47,7 @@ const OLLAMA_LIST_TIMEOUT_MS = 4_000;
  *  (kept local so this agent-layer file does not import from the daemon layer). */
 export interface LocalModelInfo {
   readonly id:           string;
-  readonly displayName?: string;
+  readonly displayName?: string | undefined;
 }
 
 /** Wait `ms`; a fired `signal` ends the wait at once with AbortError. */
@@ -283,7 +283,7 @@ export class OllamaProvider implements LLMProvider {
    * timeout without a live ollama. Read-only: no model pull/mutation.
    */
   async listLocalModels(
-    opts: { timeoutMs?: number | undefined; listFn?: (() => Promise<{ models?: unknown }>) | undefined } = {},
+    opts: { timeoutMs?: number | undefined; listFn?: (() => Promise<{ models?: unknown | undefined }>) | undefined } = {},
   ): Promise<readonly LocalModelInfo[]> {
     const timeoutMs = opts.timeoutMs ?? OLLAMA_LIST_TIMEOUT_MS;
     const listFn    = opts.listFn ?? (() => this.client.list());
@@ -298,13 +298,13 @@ export class OllamaProvider implements LLMProvider {
 
     try {
       const res    = await Promise.race([listFn(), timeout]);
-      const models = (res as { models?: unknown }).models;
+      const models = (res as { models?: unknown | undefined }).models;
       if (!Array.isArray(models)) {
         throw new Error('ollama model list returned a malformed response (no models array)');
       }
       const out: LocalModelInfo[] = [];
       for (const m of models) {
-        const name = (m as { name?: unknown }).name;
+        const name = (m as { name?: unknown | undefined }).name;
         if (typeof name !== 'string' || name.length === 0) {
           throw new Error('ollama model list returned an entry without a valid name');
         }
@@ -657,7 +657,7 @@ export class OllamaProvider implements LLMProvider {
               // once the server has flushed the final ` \"done\": true `
               // frame. Values: 'stop' (normal), 'length' (num_predict
               // exhausted), 'load' (model warm-up preamble -- ignore).
-              const rawReason = (chunk as unknown as { done_reason?: string }).done_reason;
+              const rawReason = (chunk as unknown as { done_reason?: string | undefined }).done_reason;
               if (typeof rawReason === 'string' && rawReason !== 'load') {
                 doneReason = rawReason;
               }
@@ -722,6 +722,7 @@ export class OllamaProvider implements LLMProvider {
     const timedOut = (): boolean => timer.signal.aborted && opts.signal?.aborted !== true;
     try {
       const loop = await runReadOnlyToolLoop({
+        closingSchema: schema,
         ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider: this,
         messages: [{ role: 'user', content: prompt }],
@@ -827,7 +828,7 @@ function isAbortError(err: unknown): boolean {
 const NOT_A_REQUEST_REJECTION: ReadonlySet<number> = new Set([404, 408, 429]);
 function isRequestRejection(err: unknown): boolean {
   if (!(err instanceof Error) || err.name !== 'ResponseError') return false;
-  const status = (err as { status_code?: unknown }).status_code;
+  const status = (err as { status_code?: unknown | undefined }).status_code;
   return typeof status === 'number' && status >= 400 && status < 500 && !NOT_A_REQUEST_REJECTION.has(status);
 }
 

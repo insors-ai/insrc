@@ -136,6 +136,7 @@ export interface RuntimeIndexer {
 }
 
 export interface HandlerRuntimeDeps {
+ readonly stepCallHandler?: StreamHandler | undefined;
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
 	readonly queue: RuntimeQueue;
@@ -1696,9 +1697,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
 		// tools for an MCP forwarder, in the caller's context, with this
 		// stream's signal; the 'done' frame carries the tool's reply unchanged.
-		'step.call': async (params, send, signal) => {
+		'step.call': async (params, send, signal, trusted) => {
 			const mod = await import('./steps/host.js');
-			return getStepCallHandler(mod)(params, send, signal);
+			return (deps.stepCallHandler ?? getStepCallHandler(mod))(params, send, signal, trusted);
 		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };

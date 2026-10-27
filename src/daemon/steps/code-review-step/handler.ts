@@ -127,7 +127,7 @@ const POLL_INTERVAL_MS = 1500;
 function readFreshnessTimeoutMs(): number {
 	try {
 		if (!existsSync(PATHS.config)) return 120000;
-		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { codeReview?: { freshnessTimeoutMs?: unknown } };
+		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { codeReview?: { freshnessTimeoutMs?: unknown | undefined } | undefined };
 		const v = raw.codeReview?.freshnessTimeoutMs;
 		return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 120000;
 	} catch {
@@ -235,10 +235,10 @@ async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeR
 		}
 	} catch (err) {
 		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
-		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
-		if (err instanceof ControllerCodeReviewError) return errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false);
+		if ((err as { timeoutKind?: unknown | undefined } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
+		if (err instanceof ControllerCodeReviewError) return errorResult(err.code, err.code, (err as { retryable?: boolean | undefined }).retryable !== false);
 		if (err instanceof ReviewBudgetError) {
-			const refused = errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false);
+			const refused = errorResult(err.code, err.code, (err as { retryable?: boolean | undefined }).retryable !== false);
 			return { ...refused, error: { ...refused.error, ...(err.breakdown ? { budget: err.breakdown } : {}), ...(err.context ? { context: err.context } : {}) } };
 		}
 		if (err instanceof ReviewStateRefused) { const result = errorResult(err.reason, err.reason, false); return { ...result, error: { ...result.error, ...(err.evidence ? { evidence: err.evidence } : {}) } }; }
@@ -512,7 +512,7 @@ async function finalizeControllerJudgements(payload: CodeReviewStepStatePayload,
 	// marked degraded and a clean fold can never register a pass. The graph path
 	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
 
-	return await driveRunner(undefined, payload.subject, injected, deps, degraded, payload.fallbackReason);
+	return await driveRunner(undefined, payload.subject, injected, deps, degraded, payload.fallbackReason, payload.runId);
 }
 
 async function driveRunner(
@@ -522,8 +522,9 @@ async function driveRunner(
 	deps:     CodeReviewStepDeps,
 	degraded: boolean,
 	fallbackReason?: CodeReviewFallbackReason | undefined,
+ existingRunId?: string | undefined,
 ): Promise<CodeReviewStepOutput> {
-	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const runId = existingRunId ?? `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const completionFrame = (artifact: import('../../../workflow/code-review/types.js').CodeReviewArtifact): CodeReviewStepOutput => {
 		const cra = codeReviewSubjectPathArgs(subject);
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
@@ -681,7 +682,7 @@ export function codeReviewWaitLimits(config?: unknown): CodeReviewWaitLimits {
 			raw = {};
 		}
 	}
-	const section = (raw as { codeReview?: { daemonReviewCeilingMs?: unknown; daemonReviewIdleMs?: unknown } } | null)?.codeReview;
+	const section = (raw as { codeReview?: { daemonReviewCeilingMs?: unknown | undefined; daemonReviewIdleMs?: unknown | undefined } | undefined } | null)?.codeReview;
 	const valid = (v: unknown, dflt: number): number => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : dflt);
 	const ceilingMs = valid(section?.daemonReviewCeilingMs, DEFAULT_CEILING_MS);
 	return { ceilingMs, idleMs: Math.min(valid(section?.daemonReviewIdleMs, DEFAULT_IDLE_MS), ceilingMs) };

@@ -57,10 +57,10 @@ export async function handleVerdicts(
 	deps: ReviewStepDeps = {},
 ): Promise<ReviewStepOutput> {
 	if (await hasControllerDesignJob(input.state)) return resumeControllerDesignReview(input, { ...deps, lifecycleFor });
-	return withReviewTerminal(input, (state, answer, guard) => persistPremiseVerdicts(state, answer as { verdicts?: readonly RawVerdict[] }, lifecycleFor, guard));
+	return withReviewTerminal(input, (state, answer, guard) => persistPremiseVerdicts(state, answer as { verdicts?: readonly RawVerdict[] | undefined }, lifecycleFor, guard));
 }
 
-export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answer: { verdicts?: readonly RawVerdict[] }, lifecycleFor: (repoPath: string) => LifecycleService, guard: ReviewTerminalGuard): Promise<ReviewStepDone> {
+export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answer: { verdicts?: readonly RawVerdict[] | undefined }, lifecycleFor: (repoPath: string) => LifecycleService, guard: ReviewTerminalGuard): Promise<ReviewStepDone> {
 	if (state.claims === undefined) {
 		throw new Error(`insrc_review_step[verdicts]: no claims in run state — call phase='claims' before phase='verdicts'.`);
 	}
@@ -108,9 +108,9 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 	guard.admitCompletion?.({ next: 'done', verdict: report.verdict, counts: report.counts, report: renderReviewReport(report), applied: Number.MAX_SAFE_INTEGER, pending: pendingUserFindings(report).length, path: state.mdPath, jsonPath: state.jsonPath });
 	guard.beginSideEffects();
 	const seen = await lifecycle.inspect(artifactId);
-	guard.assertActive();
+	guard.assertActive(); guard.assertSource?.();
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
-	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown; citations?: unknown };
+	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown; citations?: unknown | undefined };
 	// This phase records the CONTROLLER's review, so it does not record one on work
 	// the controller authored. `start` already sends such work to the daemon; this
 	// holds the rule at the point of the record, whatever led here.
@@ -140,7 +140,7 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 	// The one persist path: the auto-fix goes through the store (it answers no feedback), the report becomes the review entry of the
 	// log and the lifecycle review names it, and the markdown is written last.
 	await persistReview({
-		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, assertActive: guard.assertActive, assertSource: guard.assertSource, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
 		...(fixed.applied.length > 0 ? { fix: { body: fixed.body as Record<string, unknown>, citations: Array.isArray(artifact.citations) ? artifact.citations : [] } } : {}),
 		markdown: fixed.markdown,
 	});

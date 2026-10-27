@@ -3,7 +3,7 @@ const CATEGORIES = new Set(['review-job', 'review-attempt', 'review-stage', 'ext
 const FAILURES = new Set(['unknown-method', 'unreachable', 'closed', 'timeout', 'protocol', 'aborted', 'daemon-error']);
 export function safeReviewFailure(error: unknown): string {
 	if (!error || typeof error !== 'object') return 'review-failed';
-	const value = error as { timeoutKind?: unknown; failure?: unknown; name?: unknown };
+	const value = error as { timeoutKind?: unknown | undefined; failure?: unknown | undefined; name?: unknown | undefined };
 	if (typeof value.timeoutKind === 'string' && CATEGORIES.has(value.timeoutKind)) return value.timeoutKind;
 	if (typeof value.failure === 'string' && FAILURES.has(value.failure)) return value.failure;
 	if (value.name === 'SamePartyReviewError') return 'same-party-review';
@@ -11,9 +11,9 @@ export function safeReviewFailure(error: unknown): string {
 	return 'review-failed';
 }
 export function reviewTimeoutMessage(error: unknown): string {
-	const value = error as { timeoutKind?: unknown; timing?: { logicalWorkUnits?: unknown; jobBudgetMs?: unknown } };
+	const value = error as { timeoutKind?: unknown | undefined; timing?: { logicalWorkUnits?: unknown | undefined; jobBudgetMs?: unknown | undefined } | undefined };
 	const units = value?.timing?.logicalWorkUnits, budget = value?.timing?.jobBudgetMs;
-	return Number.isSafeInteger(units) && Number.isSafeInteger(budget)
+	return value?.timeoutKind === 'review-job' && Number.isSafeInteger(units) && Number.isSafeInteger(budget)
 		? `review-job-timeout: ${units} work chunks × 10 minutes = ${budget}ms total execution budget`
 		: safeReviewFailure(error);
 }

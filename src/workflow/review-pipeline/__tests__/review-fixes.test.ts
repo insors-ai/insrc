@@ -37,7 +37,7 @@ test('deterministic-only work obeys a shorter outer deadline without waiting for
 	const snapshot = toySnapshot([]), base = toyAdapter(snapshot);
 	const adapter: ReviewAdapter<unknown> = { ...base, stagesFor: () => [{ id: 'probe', kind: 'deterministic', after: [], onCallFailure: 'record-observation', run: async () => new Promise(() => {}) }] };
 	const job = createReviewJob(adapter, 'daemon', snapshot, 384000, { budgetPolicy: policy });
-	await assert.rejects(runReviewJob(job, adapter, {} as LLMProvider, { outerCeilingMs: 20 }), error => (error as { timeoutKind?: string }).timeoutKind === 'external-review-transport');
+	await assert.rejects(runReviewJob(job, adapter, {} as LLMProvider, { outerCeilingMs: 20 }), error => (error as { timeoutKind?: string | undefined }).timeoutKind === 'external-review-transport');
 });
 
 test('size refusal of a corrected retry never rebuilds an uncorrected request', () => {
@@ -48,7 +48,7 @@ test('size refusal of a corrected retry never rebuilds an uncorrected request', 
 	const retry = nextCalls(corrected, adapter, 1001)[0]!;
 	assert.ok(JSON.stringify(retry.messages).includes('required correction'));
 	assert.throws(() => applyFailure(corrected, adapter, retry.callId, 'size-refusal', 100, { now: 1002 }), error => {
-		assert.ok(error instanceof ReviewBudgetError); assert.equal(error.code, 'dispatch-budget-exceeded');
+		assert.ok(error instanceof ReviewBudgetError); assert.equal(error.code, 'correction-budget-exceeded');
 		assert.ok(error.breakdown); assert.equal(error.context?.callId, retry.callId); return true;
 	});
 });

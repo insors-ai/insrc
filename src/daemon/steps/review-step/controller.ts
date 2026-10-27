@@ -1,3 +1,4 @@
+import { admitControllerTurn, assertControllerAttempt, controllerObservedEvent } from '../../../workflow/review-pipeline/controller.js';
 import { claimReviewTransaction } from '../review-transaction.js';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -18,7 +19,7 @@ import { ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
 import { admitControllerFrame, controllerPolicy, controllerPolicyId, controllerReplySchema, CONTROLLER_STATE_PLACEHOLDER, requireControllerReply } from '../../../workflow/review-pipeline/controller.js';
 import { createReviewJob, nextCalls, applyOutput, runStage, deadlineError } from '../../../workflow/review-pipeline/job.js';
 import { designReviewSnapshot, premiseAdapter, templateAdapter } from '../../../workflow/review-pipeline/design-review.js';
-import { reviewCallEvent, reviewTiming, reviewFailureCode } from '../../../workflow/review-pipeline/call-events.js';
+import { reviewTiming, reviewFailureCode } from '../../../workflow/review-pipeline/call-events.js';
 import type { ReviewAdapter, ReviewCall, StageAnswer } from '../../../workflow/review-pipeline/types.js';
 import type { ReviewControllerBudgetDeclaration } from '../../../shared/review-budget.js';
 import { getStepStateStore } from '../../threads/step-state.js';
@@ -36,7 +37,7 @@ const clock = (deps: ReviewStepDeps) => deps.nowMs ?? Date.now;
 const owner = () => requireReviewOwnerContext(currentStepContext()?.reviewOwner);
 
 function sourceDigest(state: ReviewStepStatePayload, enforceAuthor = false): string {
-	const head = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta?: Record<string, unknown>; body: unknown; citations?: unknown };
+	const head = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta?: Record<string, unknown> | undefined; body: unknown; citations?: unknown | undefined };
 	if (enforceAuthor && authorPartyOf(head.meta) === 'controller') throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	return contentHash('controller-review-source', { body: { body: head.body, workflow: head.meta?.['workflow'], markdown: stripReviewSection(readFileSync(state.mdPath, 'utf8')) }, citations: head.citations ?? [] });
 }
@@ -63,7 +64,7 @@ function syncProtocol(state: Payload): Payload {
 		deadlineAt: job.deadlineAt ?? c.deadlineAt, budgetMs: job.deadlineBudgetMs ?? c.budgetMs,
 		...(state.templateIntent !== undefined ? { expectedItemIds: reviewTemplateFor(state.templateIntent).items.map(item => item.id) } : {}),
 		...(claims !== undefined ? { expectedClaimIds: claims.map(claim => claim.id), assignedClaimIds: call?.carries.key !== undefined ? [call.carries.key] : [], extractionComplete: job.outputs['extract'] !== undefined,
-			completedVerdicts: job.stageAnswers.flatMap(answer => (answer.answer as { verdicts?: readonly RawVerdict[] }).verdicts ?? []) } : {}),
+			completedVerdicts: job.stageAnswers.flatMap(answer => (answer.answer as { verdicts?: readonly RawVerdict[] | undefined }).verdicts ?? []) } : {}),
 	} };
 }
 async function advance(state: Payload, deps: ReviewStepDeps): Promise<Payload> {
@@ -98,20 +99,20 @@ async function admit(state: Payload, declaration: ReviewControllerBudgetDeclarat
 	if (!call) throw new ReviewTerminalError('review-terminal-incompatible');
 	const frame = frameFor(advanced, call, clock(deps)());
 	try {
-		const frameBudget = admitControllerFrame(frame, advanced.controller.policy, declaration);
-		return { state: { ...advanced, controller: { ...advanced.controller, frameBudget, frameAttemptMs: frame.timing?.['attemptLimitMs'] as number, frameStartedAt: clock(deps)(), frameDeadlineAt: clock(deps)() + (frame.timing?.['attemptLimitMs'] as number) } }, frame };
+		const lifetime = admitControllerTurn(frame, advanced.controller.policy, declaration, frame.timing?.['attemptLimitMs'] as number, clock(deps)());
+		return { state: { ...advanced, controller: { ...advanced.controller, ...lifetime } }, frame };
 	} catch (error) {
 		// Current design partitions are whole templates/extractions/claims. Never drop source or evidence to fit.
 		if (error instanceof ReviewBudgetError && error.code === 'controller-frame-over-budget') throw error;
 		throw error;
 	}
 }
-function logFrame(state: Payload, event: 'controller-frame-ready' | 'controller-answer-committed' | 'controller-call-failed', call?: ReviewCall, error?: unknown): void {
-	const c = state.controller, job = c.job;
-	const raw = call ?? job?.pending.find(value => value.callId === c.callId);
-	const pending = raw && c.frameAttemptMs !== undefined ? { ...raw, execution: raw.execution.mode === 'reviewer-session' ? { ...raw.execution, deadlineMs: c.frameAttemptMs } : { ...raw.execution, timeoutMs: c.frameAttemptMs } } : raw;
-	if (!job || !pending || !c.frameBudget) return;
-	log.info({ ...reviewCallEvent(job, pending, c.frameBudget, event === 'controller-call-failed' ? (reviewFailureCode(error) === 'cancelled' ? 'cancel' : 'failure') : event === 'controller-answer-committed' ? 'success' : 'start', 0, event === 'controller-call-failed' ? reviewFailureCode(error) : undefined), event }, 'design controller: observed protocol transition; external execution is unobserved');
+function logFrame(state: Payload, event: 'controller-frame-ready' | 'controller-answer-committed' | 'controller-call-failed', now: number, call?: ReviewCall, error?: unknown): void {
+ const c = state.controller, job = c.job;
+ const pending = call ?? job?.pending.find(value => value.callId === c.callId);
+ if (!job || !pending || !c.frameBudget) return;
+ const code = event === 'controller-call-failed' ? reviewFailureCode(error) : undefined;
+ log.info(controllerObservedEvent(job, pending, c, code === 'cancelled' ? 'cancel' : event === 'controller-call-failed' ? 'failure' : event === 'controller-answer-committed' ? 'success' : 'start', now, code), 'design controller: observed protocol transition');
 }
 
 export async function startControllerDesignReview(state: ReviewStepStatePayload, declaration: ReviewControllerBudgetDeclaration | undefined, deps: ReviewStepDeps, templateLimitMs?: number): Promise<ReviewStepOutput> {
@@ -126,7 +127,7 @@ export async function startControllerDesignReview(state: ReviewStepStatePayload,
 	const ready = await admit({ ...payload, controller: { ...payload.controller, job } }, prepared.declaration, deps);
 	owner().assertActive(); assertSource(ready.state);
 	const token = await getStepStateStore().mintReviewState('review', ready.state, ready.state.controller);
-	logFrame(ready.state, 'controller-frame-ready');
+	logFrame(ready.state, 'controller-frame-ready', clock(deps)());
 	return { ...ready.frame, state: token } as ReviewStepOutput;
 }
 
@@ -146,15 +147,12 @@ export async function resumeControllerDesignReview(input: ReviewStepInputClaims 
 		if (!c || c.version !== 1 || !c.job || c.frameDeadlineAt === undefined || c.callId !== reply.callId || c.generation !== reply.generation) throw new ReviewBudgetError('review-budget-state-stale');
 		controllerPolicy(declaration, c.policy);
 		admitControllerFrame({}, c.policy, declaration);
-		if (c.frameDeadlineAt !== undefined && clock(deps)() >= c.frameDeadlineAt) {
-			if (c.job.deadlineAt !== undefined && clock(deps)() >= c.job.deadlineAt) throw deadlineError(c.job, adapterFor(state, deps));
-			throw new ReviewTerminalError('review-attempt-timeout');
-		}
+		assertControllerAttempt(c, clock(deps)(), () => { if (c.job!.deadlineAt !== undefined && clock(deps)() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapterFor(state, deps)); }, () => new ReviewTerminalError('review-attempt-timeout'));
 		if (c.phase !== input.phase) throw new ReviewTerminalError('review-terminal-incompatible');
 		assertSource(state);
 		const adapter = adapterFor(state, deps), now = clock(deps);
 		const call = nextCalls(c.job, adapter, now()).find(call => call.callId === reply.callId);
-		if (c.phase === 'verdicts') validateVerdictCoverage({ expected: c.expectedClaimIds ?? [], assigned: c.assignedClaimIds ?? [], completed: c.completedVerdicts ?? [], received: (reply.answer as { verdicts?: readonly RawVerdict[] } | null)?.verdicts, extractionComplete: c.extractionComplete === true, requireComplete: false });
+		if (c.phase === 'verdicts') validateVerdictCoverage({ expected: c.expectedClaimIds ?? [], assigned: c.assignedClaimIds ?? [], completed: c.completedVerdicts ?? [], received: (reply.answer as { verdicts?: readonly RawVerdict[] | undefined } | null)?.verdicts, extractionComplete: c.extractionComplete === true, requireComplete: false });
 		if (!call || !validateAgainstSchema(controllerReplySchema(call, c.generation), reply).ok) throw new ReviewTerminalError('review-terminal-incompatible');
 		if (c.phase === 'findings') {
 			const template = reviewTemplateFor(state.templateIntent!);
@@ -166,9 +164,6 @@ export async function resumeControllerDesignReview(input: ReviewStepInputClaims 
 		} else if (c.phase === 'claims') {
 			const claims = (reply.answer as { claims: Claim[] }).claims;
 			assertExactReviewIds(claims.map(claim => claim.id), claims.map(claim => claim.id), 'verdict-coverage-invalid');
-		} else {
-			validateVerdictCoverage({ expected: c.expectedClaimIds ?? [], assigned: c.assignedClaimIds ?? [], completed: c.completedVerdicts ?? [], received: (reply.answer as { verdicts?: readonly RawVerdict[] }).verdicts,
-				extractionComplete: c.extractionComplete === true, requireComplete: false });
 		}
 		let job = applyOutput(c.job, adapter, reply.callId, { callId: reply.callId, answer: reply.answer }, now());
 		state = await advance({ ...state, controller: { ...c, job } }, deps);
@@ -178,11 +173,11 @@ export async function resumeControllerDesignReview(input: ReviewStepInputClaims 
 			const ready = await admit(state, declaration, deps);
 			authority.assertActive(); assertSource(ready.state); effects = true;
 			const committed = await held.advance(ready.state, ready.state.controller.callId);
-			logFrame(held.payload, 'controller-answer-committed', call); logFrame(ready.state, 'controller-frame-ready');
+			logFrame(held.payload, 'controller-answer-committed', clock(deps)(), call); logFrame(ready.state, 'controller-frame-ready', clock(deps)());
 			return { ...ready.frame, state: committed.token } as ReviewStepOutput;
 		}
 		const assertActive = (): void => { authority.assertActive(); if (deps.signal?.aborted) throw new ReviewStateRefused('review-state-owner-mismatch'); if (job.deadlineAt !== undefined && now() >= job.deadlineAt) throw deadlineError(job, adapterFor(state, deps)); };
-		const guard: ReviewTerminalGuard = { assertActive, beginSideEffects: () => { assertActive(); assertSource(state); effects = true; }, admitCompletion: frame => { admitControllerFrame(frame, c.policy, declaration); } };
+		const guard: ReviewTerminalGuard = { assertActive, assertSource: () => assertSource(state), beginSideEffects: () => { assertActive(); assertSource(state); effects = true; }, admitCompletion: frame => { admitControllerFrame(frame, c.policy, declaration); } };
 		assertActive(); assertSource(state);
 		let done: ReviewStepOutput;
 		const lifecycle = deps.lifecycleFor ?? (repo => lifecycleFor(repo).service);
@@ -199,12 +194,11 @@ export async function resumeControllerDesignReview(input: ReviewStepInputClaims 
 		if (done.next !== 'done') { if (!effects) { await held.release(); return done; } throw new ReviewTerminalError('review-terminal-incompatible'); }
 		assertActive(); effects = true;
 		await held.complete({ status: 'completed', callId: reply.callId, artifactId: basename(state.jsonPath, '.json'), runId: state.runId });
-		logFrame(held.payload, 'controller-answer-committed', call);
+		logFrame(held.payload, 'controller-answer-committed', clock(deps)(), call);
 		return done;
 	} catch (error) {
-		if (error instanceof ReviewBudgetError && !error.context) error = new ReviewBudgetError(error.code, error.breakdown, { stage: held.payload.controller.job?.stage, callId: reply.callId });
-		const terminal = error instanceof SamePartyReviewError || (error as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job' || (error instanceof ReviewTerminalError && ['review-job-timeout', 'review-source-changed', 'review-attempt-timeout'].includes(error.code));
-		if (effects || terminal) logFrame(held.payload, 'controller-call-failed', undefined, error);
+		const terminal = error instanceof SamePartyReviewError || (error as { timeoutKind?: unknown | undefined } | null)?.timeoutKind === 'review-job' || (error instanceof ReviewTerminalError && ['review-job-timeout', 'review-source-changed', 'review-attempt-timeout'].includes(error.code));
+		if (effects || terminal) logFrame(held.payload, 'controller-call-failed', clock(deps)(), undefined, error);
 		await held.fail(error, effects, terminal);
 		throw error;
 	}

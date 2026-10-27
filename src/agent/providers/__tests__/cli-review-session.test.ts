@@ -552,6 +552,21 @@ test('review-scoped provider and driver logs redact sentinel content on all fail
 				assert.ok(!existsSync(join(f.dir, 'insrc-cli-failures')), 'review output is not persisted in raw CLI failure files');
 			} finally { f.cleanup(); }
 		}
+
+  for (const mode of ['cancel', 'refuse'] as const) {
+   if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
+   const f = fakeCli([{sleepMs:1000,out:codexOk('{}')}]);
+   try {
+    const provider = new CliProvider({kind:'codex',binPath:f.bin,model:'fixture'});
+    const policy=createReviewBudgetPolicy(provider.getReviewBudgetProfile('structured'),'structured');
+    const snapshot=toySnapshot([{...atom(1),text:sentinel}]);
+    const adapter=toyAdapter(snapshot);
+    const job=createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:policy});
+    const controller=new AbortController();
+    const input=mode==='refuse'?{...job,pending:job.pending.map(call=>({...call,messages:[{role:'user' as const,content:sentinel.repeat(20000)}]}))}:job;
+    await assert.rejects(()=>runReviewJob(input,adapter,provider,{signal:controller.signal,onCall:()=>{if(mode==='cancel')controller.abort();}}));
+   } finally {f.cleanup();}
+  }
 		assert.ok(captured.length > 0);
 		assert.ok(!JSON.stringify(captured).includes(sentinel), 'provider/driver/structured retry logs contain no source, output, credentials or native session IDs');
 		// Non-review error reporting keeps its established full-output behavior.

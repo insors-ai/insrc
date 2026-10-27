@@ -54,10 +54,13 @@ export function resolveReviewBudgetPolicy(
 /** Provider-final conversation representation, shared by planning and dispatch. */
 export function reviewPromptChars(profile: ReviewProviderBudgetProfile, messages: readonly import('../../shared/types.js').LLMMessage[]): number {
 	freezeReviewBudgetProfile(profile);
+	try {
 	for (const message of messages) {
 		if (typeof message.content === 'string') continue;
+		if (!Array.isArray(message.content)) throw new ReviewBudgetError('native-budget-unqualified');
 		for (const block of message.content) {
-			const supported = block.type === 'text' || (profile.promptDialect === 'ollama-chat-v1' && ((block.type === 'tool_use' && message.role === 'assistant') || block.type === 'tool_result'));
+			if (!block || typeof block !== 'object' || (block.type === 'text' && typeof block.text !== 'string')) throw new ReviewBudgetError('native-budget-unqualified');
+			const supported = block.type === 'text' || (profile.promptDialect === 'ollama-chat-v1' && ((block.type === 'tool_use' && message.role === 'assistant') || (block.type === 'tool_result' && message.role === 'user')));
 			if (!supported) throw new ReviewBudgetError('native-budget-unqualified');
 		}
 		if (profile.promptDialect === 'ollama-chat-v1' && message.content.some(block => block.type === 'tool_result') && message.content.some(block => block.type !== 'tool_result')) throw new ReviewBudgetError('native-budget-unqualified');
@@ -67,6 +70,7 @@ export function reviewPromptChars(profile: ReviewProviderBudgetProfile, messages
 		case 'ollama-chat-v1': return JSON.stringify(toOllamaMessages(messages)).length;
 		case 'controller-frame-v1': throw new ReviewBudgetError('controller-budget-incompatible');
 	}
+	} catch (error) { throw error instanceof ReviewBudgetError ? error : new ReviewBudgetError('native-budget-unqualified'); }
 }
 
 /** Declared native tools, serialized by the same helper used at the managed provider wire. */

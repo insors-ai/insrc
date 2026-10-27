@@ -32,7 +32,7 @@ const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 const ISSUE = reviewTemplateFor('issue', DEFAULT_DESIGN_REVIEW_SETTINGS);
 const DESIGN_MD = '# LLD\n\nThe design body.\n';
 
-function fixture(opts: { workflow?: string; issue?: boolean; priorReview?: boolean } = {}) {
+function fixture(opts: { workflow?: string | undefined; issue?: boolean | undefined; priorReview?: boolean | undefined } = {}) {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-findings-'));
 	if (opts.issue === true) { mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true }); writeFileSync(join(repo, '.insrc', 'artifacts', `ISSUE-${FIXTURE_HASH}.json`), '{}'); }
 	const workflow = opts.workflow ?? 'design.story';
@@ -74,7 +74,7 @@ test('T13 start on a design returns the review template with next emit_findings'
 		assert.ok(prompt.user.includes('checklist `design-spec`') && prompt.user.includes('`boundaries`'));
 		assert.ok(prompt.user.includes('The design body.'));
 		assert.ok(!prompt.user.includes('OLD REVIEW TEXT'), 'an earlier review is not shown to the reviewer');
-		const schema = (out['schema'] as { properties: { answer: { required?: string[] } } }).properties.answer;
+		const schema = (out['schema'] as { properties: { answer: { required?: string[] | undefined } } }).properties.answer;
 		assert.deepEqual(schema.required, ['items']);
 		assert.ok(typeof out['state'] === 'string' && (out['state'] as string).length > 0);
 		assert.ok((out['guidance'] as string).includes("phase='findings'"));
@@ -214,7 +214,7 @@ test('T13 the registered tool accepts phase `findings` and its phase list names 
 	assert.deepEqual(record.phases, ['start', 'claims', 'verdicts', 'findings']);
 	const r = handleInsrcSchema({ tool: 'insrc_review_step', phase: 'findings' }, schemaRegistry);
 	assert.ok(!('error' in r), JSON.stringify(r));
-	const schema = (r as InsrcSchemaOk).schema as { properties?: Record<string, { enum?: string[] }> };
+	const schema = (r as InsrcSchemaOk).schema as { properties?: Record<string, { enum?: string[] | undefined }> | undefined };
 	assert.ok(schema.properties?.['phase']?.enum?.includes('findings'), 'the input validation admits the phase');
 	assert.ok(schema.properties?.['findings'] !== undefined, 'the findings argument is declared');
 	// An unknown phase is still refused.

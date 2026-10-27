@@ -306,12 +306,12 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 		const tooLong: EvidenceNote = { noteId: 'big', key: 'k2', text: 'q'.repeat(2_500), atomIds: [] };
 		let lj = requestNoteCall({ ...base, notes: [tooLong] }, ga, 'reduce', 'k2', ['big']);
 		const lone = lj.pending.find(c => c.role === 'reduce')!;
-		assert.throws(() => applyFailure(lj, ga, lone.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('evidence note big'));
+		assert.throws(() => applyFailure(lj, ga, lone.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 		// Among others, a note larger than the reported size is named too.
 		const mixedNotes = [...notes.slice(0, 3), tooLong];
 		const mj2 = requestNoteCall({ ...base, notes: mixedNotes }, ga, 'obligation', 'k1', mixedNotes.map(x => x.noteId));
 		const mo = mj2.pending.find(c => c.role === 'obligation')!;
-		assert.throws(() => applyFailure(mj2, ga, mo.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('evidence note big'));
+		assert.throws(() => applyFailure(mj2, ga, mo.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof ReviewBudgetError && e.breakdown !== undefined && e.context?.unitId !== undefined);
 		// A note over the cap is an invalid answer: re-issued once with the reason.
 		lj = applyOutput(lj, ga, lone.callId, { callId: lone.callId, answer: { text: 'w'.repeat(LIMIT) } });
 		const again = lj.pending.find(c => c.role === 'reduce')!;
@@ -348,7 +348,7 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 	const mj = createReviewJob(ma, 'daemon', mixed, LIMIT);
 	const holding = mj.pending.find(c => c.carries.atomIds.includes('a40'))!;
 	assert.ok(holding.carries.atomIds.length > 1);
-	assert.throws(() => applyFailure(mj, ma, holding.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/f40.ts#fn40'));
+	assert.throws(() => applyFailure(mj, ma, holding.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 	// Within the reported size it is read in a call of its own, over the packing budget but within the size.
 	const within = applyFailure(mj, ma, holding.callId, 'size-refusal', 2_900);
 	const alone = within.pending.find(c => c.carries.atomIds.includes('a40'))!;
@@ -368,7 +368,7 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 	const la = toyAdapter(lone);
 	const lj = createReviewJob(la, 'daemon', lone, 384_000);
 	const lc = nextCalls(lj, la)[0]!;
-	assert.throws(() => applyFailure(lj, la, lc.callId, 'size-refusal', 1_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/f7.ts#fn7'));
+	assert.throws(() => applyFailure(lj, la, lc.callId, 'size-refusal', 1_000), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 });
 
 test('refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material', () => {
@@ -379,7 +379,7 @@ test('refusal re-planning reads only the job snapshot, so a changed source betwe
 	source.atoms = source.atoms.map(a => ({ ...a, text: 'CHANGED' }));
 	// The snapshot is frozen: nothing can change it in place.
 	assert.ok(Object.isFrozen(job.snapshot));
-	assert.throws(() => { (job.snapshot as { documentText?: string }).documentText = 'x'; }, TypeError);
+	assert.throws(() => { (job.snapshot as { documentText?: string | undefined }).documentText = 'x'; }, TypeError);
 	// The adapter rebuilt from the job's snapshot re-plans the original material.
 	const rebuilt = toyAdapter(job.snapshot);
 	const refused = nextCalls(job, rebuilt)[0]!;
@@ -865,7 +865,7 @@ test('a relation judged by two calls is complete only when both are answered', (
 		re = applyOutput(re, rebuild(re.snapshot), fresh[1]!.callId, model.answer(fresh[1]!));
 		assert.equal(relationJudged(re, key), true);
 		// Calls that still do not fit name the relation.
-		assert.throws(() => applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 200), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('relation'));
+		assert.throws(() => applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 200), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 		// Answered once, failed twice otherwise: the review fails rather than finishing on one answer.
 		let one = applyOutput(rj, rebuild(rj.snapshot), r2!.callId, model.answer(r2!));
 		one = applyFailure(one, rebuild(one.snapshot), r1!.callId, 'transient');
@@ -881,7 +881,7 @@ test('a relation judged by two calls is complete only when both are answered', (
 	const first = wj.pending[0]!;
 	wj = applyOutput(wj, wa, first.callId, model.answer(first));
 	const second = wj.pending[0]!;
-	assert.throws(() => applyOutput(wj, wa, second.callId, model.answer(second)), (e: unknown) => e instanceof AtomTooLargeError && /relation a1 references a2/.test(e.message));
+	assert.throws(() => applyOutput(wj, wa, second.callId, model.answer(second)), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 });
 
 test('usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and required overflow refuses', () => {
@@ -956,7 +956,7 @@ test("an obligation whose own context does not fit its call is reduced with its 
 	const huge = [{ id: 'xh', label: 'test-record#huge', text: 'h'.repeat(LIMIT + 100) }];
 	const hs = toySnapshot([], [], [{ key: 'promised-3', atomIds: ['xh'] }], huge);
 	await assert.rejects(async () => drive(createReviewJob(rebuild(hs), 'daemon', hs, LIMIT), rebuild, gatherModel(10, 10).answer),
-		(e: unknown) => e instanceof AtomTooLargeError && e.message.includes('context atom test-record#huge'));
+		(e: unknown) => e instanceof ReviewBudgetError && e.breakdown !== undefined && e.context?.unitId !== undefined);
 });
 
 test("the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit", async () => {
@@ -1031,7 +1031,7 @@ test("a gather answer that passes its schema but fails the gather's validate is 
 	for (let i = 0; i < 20; i++) for (let j = i + 1; j < 20; j++) if (atoms[i]!.file === atoms[j]!.file) rel.push({ from: atoms[i]!.id, to: atoms[j]!.id, kind: 'same-file' });
 	const snap = toySnapshot(atoms, rel);
 	const seenCalls: string[] = [];
-	const validate = (answer: unknown, call: ReviewCall): readonly string[] => { seenCalls.push(call.role); return (answer as { holds?: unknown }).holds === true ? ['a relation answer must explain itself'] : []; };
+	const validate = (answer: unknown, call: ReviewCall): readonly string[] => { seenCalls.push(call.role); return (answer as { holds?: unknown | undefined }).holds === true ? ['a relation answer must explain itself'] : []; };
 	const adapter = toyAdapter(snap, { gatherLimit: LIMIT, relationCalls: 1, gatherValidate: validate });
 	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
 	const model = gatherModel(10, 10);
@@ -1085,7 +1085,7 @@ test('inclusive single chunk retry admission and required-neighbour correction o
 	const corrected = retry.pending.find(c => c.attempt === 2)!;
 	assert.equal(corrected.budget.retryHeadroomTokens, 0);
 	assert.ok(JSON.stringify(corrected.messages).includes('Answer every assigned atom exactly once.'));
-	assert.throws(() => applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['x'.repeat(400000)] }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
+	assert.throws(() => applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['x'.repeat(400000)] }), e => e instanceof ReviewBudgetError && e.code === 'correction-budget-exceeded');
 	assert.equal(job.pending[0]!.callId, first.callId, 'refusal does not consume/mutate the original state');
 	const atoms = Array.from({ length: 5 }, (_, i) => atom(i, 100000));
 	const related = toySnapshot(atoms, atoms.slice(1).map(a => ({ from: 'a0', to: a.id, kind: 'calls' as const })));
@@ -1191,7 +1191,7 @@ test("a stage's prompt may declare the atoms it carries, and a stage's redivide 
 		assert.ok(guard < 1_000);
 		const call = nextCalls(j2, big)[0]!;
 		if (call.stage === 'cross') {
-			assert.throws(() => applyFailure(j2, big, call.callId, 'size-refusal', call.chars - 50), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('the cross call cross:'));
+			assert.throws(() => applyFailure(j2, big, call.callId, 'size-refusal', call.chars - 50), (e: unknown) => e instanceof AtomTooLargeError && /^[a-f0-9]{24}$/.test(e.atom));
 			break;
 		}
 		j2 = applyOutput(j2, big, call.callId, answer(call));

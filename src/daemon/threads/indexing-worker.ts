@@ -96,11 +96,13 @@ let publishing: Promise<void> = Promise.resolve();
 function publishStore(): Promise<void> {
 	publishing = publishing.then(async () => {
 		try {
-			board.publishStore({
+			// Its reads run under a shared maintenance hold of their own: a publication after a job
+			// runs once the job's hold is released, and maintenance must not close the store under it.
+			const slot = await withBackgroundHold(async () => ({
 				repos: await withCompleteness(await listRepos(db), r => r.path),
 				unattributedUnwritable: await unattributedUnwritable(),
-				publishedAt: Date.now(),
-			});
+			}));
+			board.publishStore({ ...slot, publishedAt: Date.now() });
 		} catch (err) {
 			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'indexing worker: the store slot could not be published');
 		}

@@ -296,6 +296,8 @@ After a 'file' job completes, the daemon sets the registered repo's lastIndexed 
   - **resolved**: Confirm LLD as baseline — User chose option 2: ac1 to ac6 in the approved LLD govern acceptance; derived from the approved issue's fix intent and the review rounds; the Story record stays without criteria. _(2026-10-27T06:42:17.229Z)_
 - `qc02cc01e` — That an entity-less changed file is left out of a full review's grounding rests on review round 1; only the symbol list of grounding.ts was read here.
   - **resolved**: Verify before proceeding — Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed. _(2026-10-27T06:43:15.519Z)_
+- `q3d42c913` — Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent.
+  - **resolved**: Explicitly adopt issue intent — User chose option 1: the approved issue's fix intent is the scoring basis for the three constraints; the audit stays graded partial because the Story has no acceptance criteria, Epic constraints or HLD contracts. _(2026-10-27T06:48:16.439Z)_
 
 ## Citations
 

@@ -92,6 +92,13 @@
         "choice": "Verify before proceeding",
         "rationale": "Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed.",
         "resolvedAt": "2026-10-27T06:43:15.519Z"
+      },
+      "q3d42c913": {
+        "question": "Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent.",
+        "status": "resolved",
+        "choice": "Explicitly adopt issue intent",
+        "rationale": "User chose option 1: the approved issue's fix intent is the scoring basis for the three constraints; the audit stays graded partial because the Story has no acceptance criteria, Epic constraints or HLD contracts.",
+        "resolvedAt": "2026-10-27T06:48:16.439Z"
       }
     }
   },

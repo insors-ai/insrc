@@ -77,3 +77,15 @@ test("ModelCheckFlowTest: approve disabled when not run, reject with the check's
 test('InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise', LONG, () => {
 	junitCase('settings.InsrcSettingsConfigurableRestartTest', 'one prompt when any write needed a restart, also with a failure, none otherwise');
 });
+
+test('PerRepoOverridesModelTest: only coreFloor and tasks state and writes', LONG, () => {
+	junitCase('settings.PerRepoOverridesModelTest', 'only coreFloor and tasks state and writes');
+});
+
+test('InsrcSettingsConfigurableTest: per-repo editor has no tier runner or model field', LONG, () => {
+	junitCase('settings.InsrcSettingsConfigurableTest', 'per-repo editor has no tier runner or model field');
+});
+
+test('PerRepoOverridesGatewayTest: a tiers leaf is ignored', LONG, () => {
+	junitCase('daemon.PerRepoOverridesGatewayTest', 'a tiers leaf is ignored');
+});

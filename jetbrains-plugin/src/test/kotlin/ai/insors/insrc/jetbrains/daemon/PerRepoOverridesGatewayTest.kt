@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 /**
  * S005 tests for DaemonGatewayImpl.perRepoOverrides() + registeredRepos() (Epic
  * expose-daemon-settings). config.show returns the raw config object directly, so
- * data.models.byRepo is the { repoPath -> {coreFloor, tasks, tiers{runner,model}} }
- * override map; repo.list returns data.repos. A present map -> Loaded; missing/non-map
+ * data.models.byRepo is the { repoPath -> {coreFloor, tasks} } override map (a
+ * `tiers` leaf is ignored: tiers are global, Epic ce99b72065d03b1b s7); repo.list returns data.repos. A present map -> Loaded; missing/non-map
  * -> Loaded empty / entry skipped; a non-string leaf -> null; DaemonUnavailable ->
  * Unavailable (never a throw). Plus the REAL UnixSocketDaemonRpc.parse boundary the
  * fake never crosses.
@@ -55,9 +55,20 @@ class PerRepoOverridesGatewayTest {
         val afm = loaded.overrides.getValue("/work/afm")
         assertEquals("core", afm.coreFloor)
         assertEquals(mapOf("review" to "core"), afm.tasks)
-        assertEquals(TierSpecDto("cli-claude", "opus"), afm.tiers["core"])
-        assertEquals(TierSpecDto("ollama", null), afm.tiers["cheap"])
-        assertNull(afm.tiers["junk"])
+        // The tiers leaf is ignored: the DTO has nowhere to put it.
+        assertEquals(RepoOverrideDto(coreFloor = "core", tasks = mapOf("review" to "core")), afm)
+    }
+
+    @Test
+    fun `a tiers leaf is ignored`() {
+        val result = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf("models" to mapOf("byRepo" to mapOf(
+                "/only-tiers" to mapOf("tiers" to mapOf("core" to mapOf("runner" to "fam-x", "model" to "m-1")))),
+            )))
+        }).perRepoOverrides()
+        val entry = assertInstanceOf(PerRepoOverridesResult.Loaded::class.java, result).overrides.getValue("/only-tiers")
+        assertEquals(RepoOverrideDto(coreFloor = null, tasks = emptyMap()), entry)
+        assertEquals(listOf("coreFloor", "tasks"), RepoOverrideDto::class.java.declaredFields.map { it.name })
     }
 
     @Test
@@ -114,7 +125,6 @@ class PerRepoOverridesGatewayTest {
         val entry = loaded.overrides.getValue("/p/a.b") // a dotted/slashed repoPath survives as one key
         assertEquals("core", entry.coreFloor)
         assertEquals(mapOf("review" to "core"), entry.tasks)
-        assertEquals(TierSpecDto("cli-claude", "opus"), entry.tiers["core"])
     }
 
     @Test

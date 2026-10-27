@@ -14,9 +14,6 @@ import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTextField
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 /**
  * The per-repo overrides sub-section (Story S005), plugged into the sc3
@@ -24,8 +21,9 @@ import javax.swing.event.DocumentListener
  * Swing shell over the pure [PerRepoOverridesModel]: an add-repo picker of
  * addableRepos() plus one nested panel per overridden repo — a coreFloor chooser,
  * a per-role tier combo grid (mirroring [PerRoleSection], '(use default)' = clear
- * the task), and a per-tier runner+model text-field pair — plus a remove-override
- * control. All load-bearing logic (which repos are overridden, the leaf-granular
+ * the task) — plus a remove-override control. There is no per-tier runner or model
+ * field: tiers are global and set in the Model tiers section (Epic ce99b72065d03b1b
+ * s7). All load-bearing logic (which repos are overridden, the leaf-granular
  * nested-key mapping, dirty) lives in the model; this shell only renders + pushes
  * edits + applies via sc2.
  *
@@ -137,7 +135,7 @@ class PerRepoSection(
         return row
     }
 
-    /** One overridden repo's nested editor panel: coreFloor + tasks + tiers + remove. */
+    /** One overridden repo's nested editor panel: coreFloor + tasks + remove. */
     private fun repoPanel(row: PerRepoRow): JComponent {
         val repoPath = row.repoPath
         val panel = JPanel()
@@ -168,13 +166,6 @@ class PerRepoSection(
             })
         }
 
-        // Per-tier runner + model free-text fields (daemon-validated; k5).
-        for (tierName in model.tierNames()) {
-            val spec = row.tiers[tierName]
-            panel.add(tierFieldRow(repoPath, tierName, TierField.Runner, spec?.runner))
-            panel.add(tierFieldRow(repoPath, tierName, TierField.Model, spec?.model))
-        }
-
         panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
         return panel
     }
@@ -196,25 +187,6 @@ class PerRepoSection(
             onSelect(if (sel == null || sel == useDefault) null else sel)
         }
         rowPanel.add(combo, BorderLayout.EAST)
-        rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
-        return rowPanel
-    }
-
-    /** A labeled free-text field for one tier leaf (runner|model); empty = clear. */
-    private fun tierFieldRow(repoPath: String, tierName: String, field: TierField, current: String?): JComponent {
-        val rowPanel = JPanel(BorderLayout())
-        rowPanel.alignmentX = Component.LEFT_ALIGNMENT
-        rowPanel.add(JLabel("tiers: $tierName.${field.segment}"), BorderLayout.WEST)
-        val text = JTextField(current ?: "", 16)
-        text.document.addDocumentListener(object : DocumentListener {
-            private fun changed() {
-                if (!suppressEdits) model.setTierField(repoPath, tierName, field, text.text)
-            }
-            override fun insertUpdate(e: DocumentEvent) = changed()
-            override fun removeUpdate(e: DocumentEvent) = changed()
-            override fun changedUpdate(e: DocumentEvent) = changed()
-        })
-        rowPanel.add(text, BorderLayout.EAST)
         rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
         return rowPanel
     }

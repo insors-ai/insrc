@@ -288,28 +288,16 @@ sealed interface PerRoleOverridesResult {
 }
 
 /**
- * One per-repo tier spec (Story S005): the two leaves under
- * models.byRepo.<repoPath>.tiers.<tierName> — a `runner` and a `model`. Both are
- * free-string daemon values (no sc1 enum domain), and either may be absent
- * (null) when the config only stores one leaf; the plugin invents no default for
- * an unset sibling (k5).
- */
-data class TierSpecDto(
-    val runner: String?,
-    val model: String?,
-)
-
-/**
  * The plugin mirror of ONE models.byRepo.<repoPath> entry (Story S005): the full
- * per-repo TieringOverride — a scalar [coreFloor] tier, a per-role [tasks]
- * (roleId -> tier) map, and a per-tier [tiers] (tierName -> {runner,model}) map.
- * Parsed verbatim from config.show; the shape the per-repo editor consumes as its
- * current state. Absent nested pieces degrade to null/empty, never a throw.
+ * per-repo TieringOverride — a scalar [coreFloor] tier and a per-role [tasks]
+ * (roleId -> tier) map. Parsed from config.show; the shape the per-repo editor
+ * consumes as its current state. Absent nested pieces degrade to null/empty, never a
+ * throw. A repo never sets the model behind a tier (Epic ce99b72065d03b1b s7), so a
+ * `tiers` leaf is ignored.
  */
 data class RepoOverrideDto(
     val coreFloor: String?,
     val tasks: Map<String, String>,
-    val tiers: Map<String, TierSpecDto>,
 )
 
 /**
@@ -684,7 +672,7 @@ interface DaemonGateway {
 
     /**
      * Read the current per-repo overrides (Story S005) — the daemon's
-     * `models.byRepo` { repoPath -> {coreFloor, tasks, tiers} } map — over the
+     * `models.byRepo` { repoPath -> {coreFloor, tasks} } map — over the
      * EXISTING `config.show` IPC. These dynamic keys are not in the sc1 catalog
      * `values`, so this is a separate read (mirrors [perRoleOverrides]). Returns
      * [PerRepoOverridesResult.Loaded] (empty when none configured; a malformed
@@ -1124,7 +1112,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         try {
             // config.show returns the RAW config object directly (no {ok} envelope),
             // so DaemonResult.data IS the config; models.byRepo is the
-            // { repoPath -> {coreFloor, tasks, tiers} } override map. Each level
+            // { repoPath -> {coreFloor, tasks} } override map. Each level
             // degrades independently: a missing/non-map models|byRepo -> empty Loaded;
             // a non-map repo entry is skipped; a non-string leaf -> null/omitted.
             // Never Unavailable for a shape mismatch (that is reserved for an
@@ -1474,10 +1462,8 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         /**
          * Parse ONE models.byRepo.<repoPath> entry into a [RepoOverrideDto] (Story
          * S005), verbatim (k1). coreFloor is a scalar tier (non-string -> null);
-         * tasks is a { roleId -> tier } map (string tiers only, others skipped);
-         * tiers is a { tierName -> {runner, model} } map where each spec's runner
-         * and model are pulled as String? (non-string/absent -> null), and a
-         * non-map tier spec is skipped. Never throws on a shape mismatch.
+         * tasks is a { roleId -> tier } map (string tiers only, others skipped); a
+         * `tiers` leaf is ignored (tiers are global). Never throws on a shape mismatch.
          */
         private fun parseRepoOverride(entry: Map<*, *>): RepoOverrideDto {
             val coreFloor = entry["coreFloor"] as? String
@@ -1489,15 +1475,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                     put(roleId, tier)
                 }
             }
-            val tiers = buildMap<String, TierSpecDto> {
-                val raw = entry["tiers"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
-                for ((k, v) in raw) {
-                    val tierName = k as? String ?: continue
-                    val spec = v as? Map<*, *> ?: continue // skip a non-map tier spec
-                    put(tierName, TierSpecDto(runner = spec["runner"] as? String, model = spec["model"] as? String))
-                }
-            }
-            return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks, tiers = tiers)
+            return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks)
         }
 
         /**

@@ -2,6 +2,7 @@ package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
@@ -90,15 +91,13 @@ class InsrcSettingsConfigurable : Configurable {
             val overrides = gateway.perRoleOverrides()
             val perRepo = gateway.perRepoOverrides()
             val registered = gateway.registeredRepos()
-            // S004: pre-fetch each provider's model list off the EDT (a socket round-trip
-            // must never run on the EDT). All three providers are fetched up front so an
-            // in-session runner switch immediately shows the new provider's list; Refresh
-            // re-queries them. The plugin is a dumb consumer of these results (k2).
-            val modelLists = ModelTiersModel.PROVIDERS.associateWith { gateway.listModels(it) }
+            // Epic ce99b72065d03b1b s7: the daemon's model definitions — the only source of the
+            // tiers' runner, model and effort choices — read off the EDT with the rest.
+            val definitions = gateway.modelDefinitions()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === scroll) {
-                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, modelLists, gateway))
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, definitions, gateway))
                     scroll.revalidate()
                     scroll.repaint()
                 }
@@ -191,7 +190,7 @@ class InsrcSettingsConfigurable : Configurable {
         overrides: PerRoleOverridesResult,
         perRepo: PerRepoOverridesResult,
         registered: RegisteredReposResult,
-        modelLists: Map<String, ai.insors.insrc.jetbrains.daemon.ModelListResult>,
+        definitions: ModelDefinitionsResult,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -218,12 +217,16 @@ class InsrcSettingsConfigurable : Configurable {
 
             // S004: the dedicated Model-tiers section over the pure ModelTiersModel + the
             // pre-fetched per-provider lists. Registered first so it heads the sub-sections.
-            sections.add(ModelTiersSection(ModelTiersModel(fullCatalog, modelLists), gateway))
-
             // Build the override sub-sections (unchanged S004/S005 wiring); a section
             // is registered only when its read is Loaded. Unavailable reads become a
             // placeholder note under the tree rather than a node.
             val placeholders = mutableListOf<String>()
+            when (definitions) {
+                is ModelDefinitionsResult.Loaded ->
+                    sections.add(ModelTiersSection(ModelTiersModel(fullCatalog, definitions.definitions), gateway))
+                is ModelDefinitionsResult.Failed ->
+                    placeholders.add("Model tiers are unavailable — ${definitions.failure.text}")
+            }
             when (overrides) {
                 is PerRoleOverridesResult.Loaded -> sections.add(
                     PerRoleSection(PerRoleOverridesModel(catalog.roles, catalog.tierNames, overrides.overrides), gateway),

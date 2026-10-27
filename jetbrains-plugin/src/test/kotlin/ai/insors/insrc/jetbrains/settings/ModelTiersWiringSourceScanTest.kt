@@ -46,10 +46,7 @@ class ModelTiersWiringSourceScanTest {
         )
         // the model-list pre-fetch runs on the createComponent off-EDT pooled thread.
         assertTrue(src.contains("executeOnPooledThread"), "off-EDT read preserved")
-        assertTrue(
-            Regex("ModelTiersModel\\.PROVIDERS\\.associateWith \\{ gateway\\.listModels").containsMatchIn(src),
-            "the pre-fetch calls listModels per provider off the EDT",
-        )
+        assertTrue(src.contains("val definitions = gateway.modelDefinitions()"), "the definitions are read off the EDT with the catalog")
     }
 
     @Test
@@ -58,7 +55,7 @@ class ModelTiersWiringSourceScanTest {
         assertTrue(section.contains("modelCombo.isEditable = false"), "the model combo is non-editable (k4)")
         assertFalse(Regex("isEditable\\s*=\\s*true").containsMatchIn(section), "no editable combo anywhere (no free-text)")
         assertTrue(section.contains("runProcessWithProgressSynchronously"), "Refresh re-queries off the EDT")
-        assertTrue(section.contains("gateway.listModels"), "Refresh goes through the injected gateway")
+        assertTrue(section.contains("gateway.modelDefinitions()"), "Refresh re-reads the definitions through the injected gateway")
     }
 
     @Test

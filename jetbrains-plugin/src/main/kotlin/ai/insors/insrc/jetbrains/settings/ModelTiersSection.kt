@@ -1,7 +1,7 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
-import ai.insors.insrc.jetbrains.daemon.ModelListResult
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
@@ -188,13 +188,13 @@ class ModelTiersSection(
         return row
     }
 
-    /** Re-query every provider off the EDT, update the model's lists, and re-seed the combos. */
+    /** Re-read the daemon's model definitions off the EDT, update the model, and re-seed the combos. */
     private fun refreshLists() {
-        val fresh = HashMap<String, ModelListResult>()
+        var fresh: ModelDefinitionsResult? = null
         ProgressManager.getInstance().runProcessWithProgressSynchronously({
-            for (provider in ModelTiersModel.PROVIDERS) fresh[provider] = gateway.listModels(provider)
-        }, "Refreshing model lists…", false, null)
-        model.updateLists(fresh)
+            fresh = gateway.modelDefinitions()
+        }, "Refreshing the model definitions…", false, null)
+        (fresh as? ModelDefinitionsResult.Loaded)?.let { model.updateDefinitions(it.definitions) }
         reseedUnderGuard()
     }
 

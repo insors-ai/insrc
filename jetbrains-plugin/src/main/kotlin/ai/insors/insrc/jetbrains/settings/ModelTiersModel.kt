@@ -1,141 +1,188 @@
 package ai.insors.insrc.jetbrains.settings
 
-import ai.insors.insrc.jetbrains.daemon.ModelListResult
+import ai.insors.insrc.jetbrains.daemon.DefinedFamilyDto
+import ai.insors.insrc.jetbrains.daemon.DefinedModelDto
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsDto
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
 
 /**
  * The pure, headless state machine for the three global model tiers (Epic
- * ba132c185fe45860 / S004). It is the JetBrains twin of S003's VS-Code-free
- * picker: a DUMB consumer of the daemon's per-provider model lists (k2/k4) that
- * turns the free-text `models.tiers.<tier>.model` field into a provider-filtered
- * dropdown. All the k7 behaviour lives here (dropdown / empty+Refresh /
- * '(current, not in catalog)' for a stale OVERRIDE only / clear-on-provider-switch
- * / idempotent no-op) so it is unit-testable without Swing — the Swing shell
- * [ModelTiersSection] is source-scan-only (the InsrcSettingsConfigurable review idiom).
+ * ba132c185fe45860 / S004; reshaped by Epic ce99b72065d03b1b, Story s7). Every runner,
+ * model and effort it offers comes from the daemon's model definitions
+ * (`models.definitions`); the plugin keeps no list of its own. The Swing shell
+ * [ModelTiersSection] only renders it.
  *
- * The tier's effective runner+model are read from the settingsCatalog snapshot's
- * options (each [ai.insors.insrc.jetbrains.daemon.ConfigOptionDto] carries its
- * `default`, `currentValue` and `isSet`), so a defaulted tier resolves its provider
- * without any hardcoded fallback. The write path is the EXISTING config.write
- * literal-segments key ['models','tiers',tier,'model'] (+ 'runner' only on a switch);
- * an empty/Unavailable list is never written (the saved value is left untouched).
- * Each tier's reasoning effort (Story a27df028 S001) is offered only when the daemon's
- * catalog declares `models.tiers.<tier>.effort`, and written at that key when changed.
+ * The configured tier leaves come from the settings catalog snapshot (each option's
+ * `currentValue` / `isSet`). The tier shown as current is the one the daemon runs, by
+ * the daemon's own rules (tierSetting and parseTiering in src/config/analyze.ts, then
+ * the registry's resolveTier):
+ *  - a configured effort leaf ('' included) always wins;
+ *  - a configured runner (a family the definitions serve) AND a non-empty model make the
+ *    tier: that runner and model, with the configured effort or none ('' = CLI default);
+ *  - any other tier (unset, model '', a runner or model alone) is the default family's
+ *    default for the tier, at the configured effort, else the default's effort;
+ *  - an effort the resolved model does not accept is dropped by the daemon, so it is
+ *    shown as '' with a note, and the tier is not dirty for it.
  */
 class ModelTiersModel(
-    catalog: SettingsCatalogDto,
-    listsByProvider: Map<String, ModelListResult>,
+    private val catalog: SettingsCatalogDto,
+    definitions: ModelDefinitionsDto,
 ) {
     companion object {
         /** The three global tiers, in canonical order. */
         val TIERS: List<String> = listOf("core", "mid", "cheap")
-
-        /** The reused runner/provider enum (k3) — the model combo is filtered by the tier's runner. */
-        val PROVIDERS: List<String> = listOf("ollama", "cli-claude", "cli-codex")
     }
+
+    /** What the daemon runs for one tier, plus what the user should know about it. */
+    private data class Resolved(
+        val runner: String,
+        val model: String,
+        val effort: String,
+        /** False when the configured model is not one the definitions list. */
+        val listed: Boolean,
+        val note: String?,
+    )
 
     /** One tier's saved baseline + pending edits. `model` uses "" to mean "none". */
-    private class TierState(
-        val runnerDefault: String,
-        val modelDefault: String,
-        var savedRunner: String,
-        var savedModel: String,
-        /** Whether the saved model is an explicit OVERRIDE (not a built-in default). */
-        var savedModelIsOverride: Boolean,
-        /** The catalog's effort values ("" = the CLI default), or null when the daemon declares no effort row. */
-        val effortValues: List<String>?,
-        var savedEffort: String,
-    ) {
-        var pendingRunner: String = savedRunner
-        var pendingModel: String = savedModel
-        var pendingEffort: String = savedEffort
+    private class TierState(var saved: Resolved) {
+        var pendingRunner: String = saved.runner
+        var pendingModel: String = saved.model
+        var pendingEffort: String = saved.effort
     }
 
-    private var lists: Map<String, ModelListResult> = listsByProvider
+    private var defs: ModelDefinitionsDto = definitions
 
-    private val states: Map<String, TierState> = TIERS.associateWith { tier ->
-        val runnerOpt = catalog.options.firstOrNull { it.path == "models.tiers.$tier.runner" }
-        val modelOpt = catalog.options.firstOrNull { it.path == "models.tiers.$tier.model" }
-        val runnerDefault = (runnerOpt?.default as? String) ?: "cli-claude"
-        val effRunner = ((runnerOpt?.currentValue as? String)?.takeIf { runnerOpt.isSet }) ?: runnerDefault
-        val modelDefault = (modelOpt?.default as? String) ?: ""
-        val modelOverride = (modelOpt?.currentValue as? String)?.takeIf { modelOpt.isSet && it.isNotBlank() }
-        val effortOpt = catalog.options.firstOrNull { it.path == "models.tiers.$tier.effort" }
-        val effortValue = ((effortOpt?.currentValue as? String)?.takeIf { effortOpt.isSet }) ?: (effortOpt?.default as? String) ?: ""
-        TierState(
-            runnerDefault = runnerDefault,
-            modelDefault = modelDefault,
-            savedRunner = effRunner,
-            savedModel = modelOverride ?: modelDefault,
-            savedModelIsOverride = modelOverride != null,
-            effortValues = effortOpt?.enumValues?.takeIf { it.isNotEmpty() },
-            savedEffort = effortValue,
-        )
-    }
+    private val states: Map<String, TierState> = TIERS.associateWith { TierState(resolve(it)) }
 
     private fun state(tier: String): TierState =
         states[tier] ?: throw IllegalArgumentException("unknown tier: $tier")
 
-    /** The provider (runner) options for a tier's runner combo (reused enum, k3). */
-    fun runnerOptions(): List<String> = PROVIDERS
+    private fun family(id: String): DefinedFamilyDto? = defs.families.firstOrNull { it.id == id }
 
-    /** The tier's pending runner (provider). */
+    private fun served(family: DefinedFamilyDto, idOrAlias: String): DefinedModelDto? =
+        family.models.firstOrNull { it.id == idOrAlias || idOrAlias in it.aliases }
+
+    /** A configured tier leaf: the string value when the leaf is set, else null. */
+    private fun leaf(tier: String, field: String): String? {
+        val opt = catalog.options.firstOrNull { it.path == "models.tiers.$tier.$field" } ?: return null
+        return (opt.currentValue as? String)?.takeIf { opt.isSet }
+    }
+
+    /** The family's default model and effort for a tier: tierDefaults, else the tool-loop model, else the first model. */
+    private fun familyDefault(family: DefinedFamilyDto, tier: String): Pair<DefinedModelDto, String>? {
+        val named = family.tierDefaults[tier]
+        val model = when {
+            named != null -> served(family, named.model)
+            family.toolLoopModel != null -> served(family, family.toolLoopModel)
+            else -> family.models.firstOrNull()
+        } ?: return null
+        val effort = named?.effort?.takeIf { it in model.efforts } ?: ""
+        return model to effort
+    }
+
+    private fun resolve(tier: String): Resolved {
+        val runner = leaf(tier, "runner")
+        val model = leaf(tier, "model")
+        val effortLeaf = leaf(tier, "effort")
+        val configuredFamily = runner?.let { family(it) }
+        val notes = mutableListOf<String>()
+
+        val result: Resolved = if (configuredFamily != null && !model.isNullOrEmpty()) {
+            val found = served(configuredFamily, model)
+            if (found == null) {
+                notes += "$model is not listed for ${configuredFamily.displayName} — the daemon runs its default for the tier instead"
+                Resolved(configuredFamily.id, model, effortLeaf ?: "", listed = false, note = null)
+            } else {
+                Resolved(configuredFamily.id, found.id, effortLeaf ?: "", listed = true, note = null)
+            }
+        } else {
+            if (runner != null || model != null) {
+                notes += "the configured $tier tier is incomplete (it needs a runner the daemon serves and a model) — the daemon ignores it and runs the default"
+            }
+            val fam = family(defs.defaultFamily) ?: defs.families.first()
+            val def = familyDefault(fam, tier)
+            Resolved(fam.id, def?.first?.id ?: "", effortLeaf ?: def?.second ?: "", listed = def != null, note = null)
+        }
+
+        // The registry drops an effort the resolved model does not accept.
+        val resolvedModel = family(result.runner)?.let { served(it, result.model) }
+        val effort = if (result.effort.isNotEmpty() && resolvedModel != null && result.effort !in resolvedModel.efforts) {
+            notes += "stored effort '${result.effort}' is not accepted by ${resolvedModel.id} — the daemon drops it"
+            ""
+        } else {
+            result.effort
+        }
+        return result.copy(effort = effort, note = notes.joinToString("; ").ifEmpty { null })
+    }
+
+    /** The runner (family) ids the definitions serve, in their order. */
+    fun runnerOptions(): List<String> = defs.families.map { it.id }
+
+    /** A family's display name, for the runner combo. */
+    fun runnerLabel(runner: String): String = family(runner)?.let { "${it.displayName} ($runner)" } ?: runner
+
+    /** The tier's pending runner (family). */
     fun currentRunner(tier: String): String = state(tier).pendingRunner
 
     /** The tier's pending model id ("" = none selected). */
     fun currentModel(tier: String): String = state(tier).pendingModel
 
-    /** The effort choices for a tier ("" = the CLI default); empty when the daemon declares no effort row. */
-    fun effortOptions(tier: String): List<String> = state(tier).effortValues ?: emptyList()
+    /** What the user should know about the tier as configured (incomplete, not listed, dropped effort), or null. */
+    fun note(tier: String): String? = state(tier).saved.note
+
+    /** The model of the tier's pending runner named by its pending model, if the definitions list it. */
+    private fun pendingModelDef(s: TierState): DefinedModelDto? =
+        family(s.pendingRunner)?.let { served(it, s.pendingModel) }
+
+    /**
+     * The effort choices for a tier: '' (the CLI default) plus the pending model's efforts.
+     * Only a configured model the definitions do not list (still pending unchanged) also
+     * shows its stored effort, so the combo can display what is configured.
+     */
+    fun effortOptions(tier: String): List<String> {
+        val s = state(tier)
+        val efforts = listOf("") + (pendingModelDef(s)?.efforts ?: emptyList())
+        val unlistedAsConfigured = !s.saved.listed && s.pendingRunner == s.saved.runner && s.pendingModel == s.saved.model
+        return if (unlistedAsConfigured && s.pendingEffort !in efforts) efforts + s.pendingEffort else efforts
+    }
+
+    /** Clear a pending effort the pending model does not accept. */
+    private fun dropUnacceptedEffort(s: TierState) {
+        if (s.pendingEffort.isNotEmpty() && pendingModelDef(s)?.efforts?.contains(s.pendingEffort) != true) s.pendingEffort = ""
+    }
 
     /** The tier's pending reasoning effort ("" = the CLI default). */
     fun currentEffort(tier: String): String = state(tier).pendingEffort
 
-    /** Pick a tier's reasoning effort (a value outside the catalog's list is ignored). */
+    /** Pick a tier's reasoning effort ('' or one the pending model accepts; anything else is ignored). */
     fun selectEffort(tier: String, effort: String) {
         val s = state(tier)
-        if (s.effortValues?.contains(effort) == true) s.pendingEffort = effort
+        if (effort == "" || pendingModelDef(s)?.efforts?.contains(effort) == true) s.pendingEffort = effort
     }
 
-    /** True iff the tier's runner was switched away from its saved value (model cleared). */
-    private fun providerSwitched(s: TierState): Boolean = s.pendingRunner != s.savedRunner
+    private fun label(m: DefinedModelDto): String = buildString {
+        append(m.displayName?.takeIf { it.isNotBlank() && it != m.id }?.let { "$it (${m.id})" } ?: m.id)
+        if (m.aliases.isNotEmpty()) append(" · ").append(m.aliases.joinToString(", "))
+        if (m.installed == false) append(" — not installed")
+        if (m.source == "user-approved") append(" — approved")
+    }
 
     /**
-     * The model dropdown choices for a tier over its pending provider's daemon list.
-     * Unavailable / empty -> a single [ModelChoice.NoModels] sentinel. Otherwise the
-     * provider's models (dropdown-only, k4), prefixed with a non-selectable
-     * [ModelChoice.CurrentNotInCatalog] ONLY when the tier's saved OVERRIDE is absent
-     * from a successful list and the provider was not switched (ac3; a built-in default
-     * that isn't listed is never flagged).
+     * The model dropdown choices for a tier: the pending runner's models from the
+     * definitions, prefixed with a non-selectable [ModelChoice.CurrentNotInCatalog] for a
+     * configured model the definitions do not list (until the user changes away from it),
+     * or a [ModelChoice.SelectPrompt] when no model is chosen. A family with no models is
+     * the single [ModelChoice.NoModels] sentinel.
      */
     fun modelOptions(tier: String): List<ModelChoice> {
         val s = state(tier)
-        val result = lists[s.pendingRunner]
-        if (result !is ModelListResult.Loaded || !result.available || result.models.isEmpty()) {
-            return listOf(ModelChoice.NoModels)
-        }
-        val ids = result.models.map { it.id }
-        val choices = result.models.map { m ->
-            ModelChoice.Model(
-                id = m.id,
-                label = m.displayName?.takeIf { it.isNotBlank() } ?: m.id,
-                current = m.id == s.pendingModel,
-            )
-        }
-        val hasCurrent = s.pendingModel.isNotEmpty() && s.pendingModel in ids
-        val showMarker = !providerSwitched(s) &&
-            s.savedModelIsOverride &&
-            s.pendingModel == s.savedModel &&
-            s.pendingModel.isNotEmpty() &&
-            s.pendingModel !in ids
-        // The prefix reflects what the tier's model currently IS: a non-selectable
-        // '(current, not in catalog)' marker for a stale override, else a
-        // '— select a model —' prompt whenever the pending model is not one of the
-        // listed ids (a cleared switch, or an unset/defaulted-but-unlisted value) so
-        // the combo never falsely shows a concrete model as chosen (k4/k7).
+        val fam = family(s.pendingRunner)
+        if (fam == null || fam.models.isEmpty()) return listOf(ModelChoice.NoModels)
+        val choices = fam.models.map { ModelChoice.Model(id = it.id, label = label(it), current = it.id == s.pendingModel) }
         val prefix = when {
-            showMarker -> listOf(ModelChoice.CurrentNotInCatalog(s.pendingModel))
-            !hasCurrent -> listOf(ModelChoice.SelectPrompt)
+            !s.saved.listed && s.pendingRunner == s.saved.runner && s.pendingModel == s.saved.model && s.pendingModel.isNotEmpty() ->
+                listOf(ModelChoice.CurrentNotInCatalog(s.pendingModel))
+            choices.none { it.current } -> listOf(ModelChoice.SelectPrompt)
             else -> emptyList()
         }
         return prefix + choices
@@ -152,87 +199,69 @@ class ModelTiersModel(
 
     /** Pick a model id for a tier (only real ids reach here; a sentinel is a no-op in the UI). */
     fun selectModel(tier: String, id: String) {
-        state(tier).pendingModel = id
-    }
-
-    /** Switch a tier's provider (runner): clears the pending model, forcing an explicit re-pick (ac4). */
-    fun selectRunner(tier: String, provider: String) {
         val s = state(tier)
-        if (s.pendingRunner == provider) return
-        s.pendingRunner = provider
-        s.pendingModel = ""
+        s.pendingModel = id
+        dropUnacceptedEffort(s)
     }
 
-    /** True iff any tier has a pending runner/model edit different from its saved baseline. */
-    fun isModified(): Boolean = states.values.any { dirtyRunner(it) || dirtyModel(it) || dirtyEffort(it) }
+    /** Switch a tier's runner: clears the pending model, forcing an explicit re-pick. */
+    fun selectRunner(tier: String, runner: String) {
+        val s = state(tier)
+        if (s.pendingRunner == runner) return
+        s.pendingRunner = runner
+        s.pendingModel = ""
+        dropUnacceptedEffort(s)
+    }
 
-    private fun dirtyEffort(s: TierState): Boolean = s.effortValues != null && s.pendingEffort != s.savedEffort
+    /** True iff any tier has a pending edit different from its saved baseline. */
+    fun isModified(): Boolean = states.values.any { dirty(it) }
 
-    private fun dirtyRunner(s: TierState): Boolean = s.pendingRunner != s.savedRunner
+    private fun dirty(s: TierState): Boolean =
+        s.pendingRunner != s.saved.runner || s.pendingModel != s.saved.model || s.pendingEffort != s.saved.effort
 
-    /**
-     * A tier's model is dirty when the user picked a different non-empty model, OR
-     * when a provider switch cleared a saved OVERRIDE (the stale override must be
-     * removed so it can't outlive its provider — k7 "switching clears the model
-     * field"; leaving it would persist an inconsistent runner/model pair). A cleared
-     * DEFAULT (no override) has nothing to remove.
-     */
-    private fun dirtyModel(s: TierState): Boolean =
-        if (s.pendingModel.isNotEmpty()) s.pendingModel != s.savedModel
-        else providerSwitched(s) && s.savedModelIsOverride
-
-    /** Drop all pending edits, restoring every tier to its last-saved runner+model. */
+    /** Drop all pending edits, restoring every tier to its saved baseline. */
     fun revert() {
         for (s in states.values) {
-            s.pendingRunner = s.savedRunner
-            s.pendingModel = s.savedModel
-            s.pendingEffort = s.savedEffort
+            s.pendingRunner = s.saved.runner
+            s.pendingModel = s.saved.model
+            s.pendingEffort = s.saved.effort
         }
     }
 
-    /**
-     * The dirty tiers as [PendingWrite]s: a switched runner -> Set at
-     * ['models','tiers',tier,'runner']; a chosen (non-empty, changed) model -> Set at
-     * ['models','tiers',tier,'model']; a switch that dropped a saved OVERRIDE without a
-     * re-pick -> Clear that model key (revert to the new runner's default, k7). Only
-     * changed leaves appear (ac2). Runner precedes model for a given tier.
-     */
+    /** The dirty tiers' changed leaves as [PendingWrite]s at ['models','tiers',tier,leaf]. */
     fun collectWrites(): List<PendingWrite> = TIERS.flatMap { tier ->
         val s = states.getValue(tier)
         buildList {
-            if (dirtyRunner(s)) add(PendingWrite(listOf("models", "tiers", tier, "runner"), WriteOp.Set(s.pendingRunner)))
-            if (dirtyModel(s)) {
+            if (s.pendingRunner != s.saved.runner) add(PendingWrite(listOf("models", "tiers", tier, "runner"), WriteOp.Set(s.pendingRunner)))
+            if (s.pendingModel != s.saved.model) {
                 val segments = listOf("models", "tiers", tier, "model")
                 add(PendingWrite(segments, if (s.pendingModel.isNotEmpty()) WriteOp.Set(s.pendingModel) else WriteOp.Clear))
             }
-            if (dirtyEffort(s)) add(PendingWrite(listOf("models", "tiers", tier, "effort"), WriteOp.Set(s.pendingEffort)))
+            if (s.pendingEffort != s.saved.effort) add(PendingWrite(listOf("models", "tiers", tier, "effort"), WriteOp.Set(s.pendingEffort)))
         }
     }
 
-    /** Advance a tier's last-saved baseline after ALL its writes persisted (per-tier isolation). */
+    /** Advance a tier's saved baseline after its writes persisted. */
     fun onSaved(tier: String) {
         val s = state(tier)
-        val switched = providerSwitched(s)
-        s.savedRunner = s.pendingRunner
-        s.savedEffort = s.pendingEffort
-        when {
-            s.pendingModel.isNotEmpty() -> {
-                s.savedModel = s.pendingModel
-                s.savedModelIsOverride = true
-            }
-            // A switch that cleared an override persisted a Clear -> the effective model
-            // is now the (new runner's) default; drop the override baseline.
-            switched && s.savedModelIsOverride -> {
-                s.savedModel = s.modelDefault
-                s.pendingModel = s.modelDefault
-                s.savedModelIsOverride = false
-            }
-        }
+        s.saved = Resolved(s.pendingRunner, s.pendingModel, s.pendingEffort, listed = pendingModelDef(s) != null, note = null)
     }
 
-    /** Replace the pre-fetched per-provider lists (a Refresh) without dropping pending edits. */
-    fun updateLists(newLists: Map<String, ModelListResult>) {
-        lists = newLists
+    /**
+     * Replace the definitions (a Refresh, or after an approval and restart) without
+     * dropping pending edits: a clean tier is re-resolved; a dirty one keeps its edit.
+     */
+    fun updateDefinitions(definitions: ModelDefinitionsDto) {
+        defs = definitions
+        for ((tier, s) in states) {
+            val wasDirty = dirty(s)
+            s.saved = resolve(tier)
+            if (!wasDirty) {
+                s.pendingRunner = s.saved.runner
+                s.pendingModel = s.saved.model
+                s.pendingEffort = s.saved.effort
+            }
+        }
     }
 }
 
@@ -240,21 +269,20 @@ class ModelTiersModel(
 sealed interface ModelChoice {
     val label: String
 
-    /** A selectable model from the daemon's list; [current] marks the tier's saved/selected one. */
+    /** A selectable model from the definitions; [current] marks the tier's selected one. */
     data class Model(val id: String, override val label: String, val current: Boolean) : ModelChoice
 
-    /** A non-selectable marker showing a saved OVERRIDE that isn't in the current list (ac3). */
+    /** A non-selectable marker showing a configured model the definitions do not list. */
     data class CurrentNotInCatalog(val id: String) : ModelChoice {
-        override val label: String = "(current, not in catalog): $id"
+        override val label: String = "(current, not listed): $id"
     }
 
-    /** A non-selectable prompt shown when no concrete model is chosen (a cleared switch,
-     *  or an unset/defaulted-but-unlisted model) so the combo never falsely pre-selects one. */
+    /** A non-selectable prompt shown when no concrete model is chosen, so the combo never falsely pre-selects one. */
     data object SelectPrompt : ModelChoice {
         override val label: String = "— select a model —"
     }
 
-    /** The disabled sentinel shown when the provider's list is empty/unavailable (ac2). */
+    /** The disabled sentinel shown when the family lists no models. */
     data object NoModels : ModelChoice {
         override val label: String = "no models available"
     }

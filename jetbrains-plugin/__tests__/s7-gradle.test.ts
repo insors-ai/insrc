@@ -54,3 +54,8 @@ test('ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel 
 	junitCase('daemon.ModelDefinitionsGatewayTest', 'modelDefinitions, checkModel and decideModel parse their answers and classify failures');
 	junitCase('daemon.ModelDefinitionsGatewayTest', 'DaemonGatewayService forwards modelDefinitions, checkModel and decideModel to its delegate');
 });
+
+test("ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty", LONG, () => {
+	junitCase('settings.ModelTiersModelTest', "choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty");
+	junitCase('settings.ModelTiersModelTest', "updateDefinitions re-resolves clean tiers and keeps a dirty tier's edit");
+});

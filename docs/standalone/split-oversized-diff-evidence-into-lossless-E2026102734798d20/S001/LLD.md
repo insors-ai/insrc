@@ -73,7 +73,7 @@ codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial
 
 **Postconditions:**
 - Fragment siblings retain parent identity and ordered adjacency; avoid a quadratic all-pairs relation expansion between fragments of one file.
-- Gather considers every fragment's findings/notes under the existing obligations; a file-level finding is not dismissed merely because its evidence spans several chunks.
+- For quality reviews containing diff fragments, append one check-item obligation per parent file, keyed diff-file-quality:<parentId>, covering exactly that parent's fragment IDs. Existing graph-only quality reviews retain no such obligations. Parent adjudication is explicit, not inferred from same-file relations.
 - No source fragment is shortened or replaced by a summary before at least one chunk reviews its complete captured text.
 
 ### 2.3 `promptChars`
@@ -122,6 +122,7 @@ modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject
 **Postconditions:**
 - Diff-review limit is min(configured limit,384000); budget is never raised automatically.
 - Every fragment is reviewed; gather retains provenance and existing degraded result cap, scope filtering and independent reviewer stamp.
+- Quality fragment calls return evidence notes for their parent-file obligations as well as existing findings/descriptions. A parent-file gather call judges all completed fragment notes and can emit a correctness finding that no individual chunk could establish. Local findings and parent findings are merged and filtered once.
 
 ### 2.5 `runReviewJob`
 
@@ -143,11 +144,126 @@ runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, provider: 
 
 **Preconditions:**
 - Each code-review model call is a fresh structured request with explicit supplied context; no CLI resume, ambient conversation history, tool-driven context growth or unmeasured project-instruction injection is allowed in the bounded diff path.
+- Before dispatch of a bounded structured call, require provider.capabilities.boundedStructuredInput === true; absence/false is unsupported. The provider advertises enforcement support, not merely acceptance of an unknown options field.
 
 **Postconditions:**
 - Recheck complete size immediately before every provider submission; no LLM calls run in parallel.
 - A retry includes only explicitly rendered bounded repair/history content; if it cannot fit, redivide/reduce or fail without stamping a completed review.
 - Provider/system protocol overhead is conservatively accounted at the existing application input-estimation boundary; do not claim exact native-token counting. Any extra application-controlled CLI instructions/schema are included or disabled.
+- The driver receives the same effective job.plan.limitChars chosen at job creation and sends boundedInput:{maxInputChars:job.plan.limitChars,contextMode:isolated-structured} for every bounded chunk/gather/reduction/repair call. Unsupported-bounded-input is terminal, not a transient retry.
+
+### 2.6 `runDimensionJob`
+
+```typescript
+runDimensionJob(build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>, subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined): Promise<DimensionResult>
+```
+
+**Parameters:**
+- `build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>` — Existing adapter factory.
+- `subject: CodeReviewSubject` — Story scope.
+- `grounding: CodeReviewGrounding` — Graph or attributed diff evidence.
+- `provider: LLMProvider` — Configured independent-review provider.
+- `ctx: JudgeContext | undefined` — Existing mode/snapshot context.
+
+**Returns:** `Promise<DimensionResult>` — A dimension result after all required bounded calls and parent adjudications complete.
+
+**Errors:**
+- `Error` when Missing, foreign or incomplete parent evidence, or unsupported bounded execution, prevents a completed review.
+
+**Preconditions:**
+- Use the immutable snapshot and existing provenance/budget contracts.
+
+**Postconditions:**
+- For degraded diff mode compute effectiveLimitChars=min(reviewLimitChars(),384000,provider.inputBudgetChars when defined). Pass this identical value into adapter creation and createJob, so job.plan.limitChars is the authoritative cap.
+- All model/gather calls in a degraded diff job use structured execution with optional inputContext:isolated. The driver maps that execution marker and job.plan.limitChars to the shared boundedInput option. Other execution modes preserve defaults.
+
+### 2.7 `chunkSchema`
+
+```typescript
+chunkSchema(spec: ChunkSpec): StructuredSchema
+```
+
+**Parameters:**
+- `spec: ChunkSpec` — Dimension kind and optional parent-file obligations.
+
+**Returns:** `StructuredSchema` — The existing shape, with required evidence notes for quality chunks that carry fragment-parent obligations.
+
+**Errors:**
+- `Error` when Missing, foreign or incomplete parent evidence, or unsupported bounded execution, prevents a completed review.
+
+**Preconditions:**
+- Use the immutable snapshot and existing provenance/budget contracts.
+
+**Postconditions:**
+- Add an optional diff-parent descriptor list to ChunkSpec. With no fragment parents, existing quality schema and behavior remain unchanged.
+- For quality with diff parents, notes name a real parent obligation key and carried fragment atomIds, and state local facts/assumptions that parent adjudication needs; an empty findings array does not excuse missing parent notes.
+
+### 2.8 `validateChunk`
+
+```typescript
+validateChunk(spec: ChunkSpec, answer: unknown, call: ReviewCall, material: ReviewMaterial): string[]
+```
+
+**Parameters:**
+- `spec: ChunkSpec` — Existing dimension and parent-note requirements.
+- `answer: unknown` — Untrusted schema-checked model answer; runtime validation is required.
+- `call: ReviewCall` — Actual carried fragment IDs.
+- `material: ReviewMaterial` — Parent obligations and ownership.
+
+**Returns:** `string[]` — Concrete semantic validation reasons; only valid evidence enters gather.
+
+**Errors:**
+- `Error` when Missing, foreign or incomplete parent evidence, or unsupported bounded execution, prevents a completed review.
+
+**Preconditions:**
+- Use the immutable snapshot and existing provenance/budget contracts.
+
+**Postconditions:**
+- Preserve existing findings/description validation. Require exactly one parent evidence note per carried fragment, with a matching parent key; reject foreign, duplicate, missing or mismatched fragments.
+- A chunk may mention contextual neighbours but may not claim to have reviewed fragments it did not carry.
+
+### 2.9 `chunkNotesFrom`
+
+```typescript
+chunkNotesFrom(answer: StageAnswer): readonly { key: string; text: string; atomIds: readonly string[] }[]
+```
+
+**Parameters:**
+- `answer: StageAnswer` — Validated chunk result and carried IDs.
+
+**Returns:** `readonly { key: string; text: string; atomIds: readonly string[] }[]` — Validated keyed parent evidence notes for the existing gather/reduction pipeline.
+
+**Errors:**
+- `Error` when Missing, foreign or incomplete parent evidence, or unsupported bounded execution, prevents a completed review.
+
+**Preconditions:**
+- Use the immutable snapshot and existing provenance/budget contracts.
+
+**Postconditions:**
+- Quality fragment notes use the existing notes extraction path after semantic validation; no note is fabricated for missing output.
+
+### 2.10 `codeReviewGather`
+
+```typescript
+codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<DimensionResult>
+```
+
+**Parameters:**
+- `args: CodeReviewGatherArgs` — Dimension, material, scope, schema, execution and effective limit.
+
+**Returns:** `GatherPlan<DimensionResult>` — Existing bounded gather plan extended with explicit parent-file quality adjudication.
+
+**Errors:**
+- `Error` when Missing, foreign or incomplete parent evidence, or unsupported bounded execution, prevents a completed review.
+
+**Preconditions:**
+- Use the immutable snapshot and existing provenance/budget contracts.
+
+**Postconditions:**
+- For each quality parent check-item, collect every expected fragment note. Validate completed evidence coverage before judging; missing provenance is a failure, never the ordinary NO_EVIDENCE empty-finding success path.
+- The parent context contains bounded file/change/coordinate metadata and the parent obligation; it does not reinsert the full file. Judge the file's correctness across notes, including contradictions and dependencies between fragments.
+- If notes/context exceed the same cap, use existing reduction stages retaining all departure facts and deterministic source provenance, then judge the parent once. Oversized irreducible required context fails explicitly.
+- This path does not depend on calls edges or on non-calls relationCall, which currently returns no checks for diff sibling relations. Sparse sibling links are grouping/context only.
 
 ## 3. Data model changes
 
@@ -173,11 +289,29 @@ The same128000-token default estimate covers all supplied messages plus actual s
 
 ### 3.3 `Bounded structured review transport` — field-add
 
-An additive internal structured-completion option carries the complete-call limit and isolation requirement from the review driver into the provider. Existing non-review completions retain defaults. The bounded diff path must not accumulate unmeasured CLI session/project/tool context; unsupported isolation is an explicit refusal. Cloud access remains solely via locally installed claude/codex CLI OAuth, with no REST provider or global config mutation.
+In src/shared/types.ts add StructuredCompletionOpts.boundedInput?: { readonly maxInputChars:number; readonly contextMode:isolated-structured } | undefined and ProviderCapabilities.boundedStructuredInput?: boolean | undefined. Omitted capability means false; omitted option preserves existing behavior. The code-review driver requires advertised support before dispatch. CliProvider may advertise true only for its enforcing implementation, then verifies installed-CLI isolation support before any model call; unknown/unsupported versions refuse with Error.code=unsupported-bounded-input. ExecutionMode structured calls gain optional inputContext:isolated for persisted intent. Normalize/measure the actual supplied schema/instructions before spawn and reject over-budget input with InputTooLargeError. No resumes, unmeasured project/hooks/tools/history or implicit context growth are admitted. OAuth remains owned by the CLI; no REST provider or global config mutation. Unsupported admission is terminal, not silently ignored or transiently retried.
+
+```
+StructuredCompletionOpts + boundedInput?: { maxInputChars:number; contextMode:"isolated-structured" } | undefined; ProviderCapabilities + boundedStructuredInput?:boolean | undefined; ExecutionMode.structured + inputContext?:"isolated" | undefined.
+```
 
 **Call sites:**
+- `src/shared/types.ts:266`
+- `src/shared/types.ts:293`
+- `src/workflow/review-pipeline/types.ts`
+- `src/workflow/review-pipeline/code-review.ts:251`
 - `src/workflow/review-pipeline/driver.ts:42`
 - `src/agent/providers/cli-provider.ts:187`
+
+### 3.4 `Quality fragment evidence and parent-file check-item obligations` — invariant-change
+
+Current quality review has no obligations and returns findings/descriptions only. For fragmented diff parents only, add one check-item obligation owning all its fragment IDs and require one keyed evidence note per carried fragment. Parent-to-fragments and parent-to-obligation are1:N and1:1; every fragment note belongs to exactly one parent. Complete validated notes flow through bounded reduction and one parent adjudication; local and parent findings retain original file/line scope. Graph-only quality behavior remains compatible. Same-file adjacency is not correctness adjudication. [c8] [c9]
+
+**Call sites:**
+- `src/workflow/review-pipeline/code-review.ts:154`
+- `src/workflow/review-pipeline/adapters/code-review-chunk.ts:76`
+- `src/workflow/review-pipeline/adapters/code-review-chunk.ts:183`
+- `src/workflow/review-pipeline/adapters/code-review-gather.ts:155`
 
 ## 4. Diagrams
 
@@ -204,8 +338,8 @@ An additive internal structured-completion option carries the complete-call limi
   - Response: Refuse that bounded execution mode before the model call; do not claim the128K invariant was enforced.
   - User impact: Select/update a supported CLI adapter; ordinary completions outside this mode retain existing behavior.
 - **Cancellation, missing chunk answer or gather validation failure.** (recoverable)
-  - Detection: Existing signal/deadline checks or provenance validation notice unfinished required calls/notes.
-  - Response: Preserve existing stop/fail semantics; no fabricated complete verdict and no parallel retry.
+  - Detection: Existing signal/deadline checks or provenance validation notice unfinished required calls/notes. Parent-file gather also compares validated note provenance with the expected fragment set.
+  - Response: Preserve existing stop/fail semantics; no fabricated complete verdict and no parallel retry. Missing parent evidence never uses the generic no-evidence-success branch.
   - User impact: Review stays pending with its actual failure cause.
 
 **Edge cases**
@@ -237,10 +371,10 @@ An additive internal structured-completion option carries the complete-call limi
   - Subjects: `DIFF-SPANS: added/modified/deleted/renamed text and binary/small-file compatibility; reassembly equals original diff exactly`, `DIFF-COORDS: CRLF, emoji, Unicode and giant-line continuations preserve offsets/old-new source locations and unique changedFiles`, `DIFF-INTEGRITY: duplicate/missing/reordered span and digest mismatches reject before calls`
   - Fixtures: `Deterministic multi-megabyte pretty/minified inventory-style JSON and mixed unified diffs; do not rewrite the real S003 audit data.`
 - **contract** — Prove the128K limit covers the entire sent call and all accumulated supplied context/history.
-  - Subjects: `DIFF-BUDGET: at/below/above128000×3 with message role separators, call envelope, actual schema, examples, neighbour context and assistant/history content`, `DIFF-REPAIR: added correction/history causes smaller redivision/reduction or an explicit refusal; no oversized call is sent`, `DIFF-TRANSPORT: provider normalization/schema expansion and isolated fresh-call mode are measured; unmeasured project/tool/session additions are disabled or refused`
+  - Subjects: `DIFF-BUDGET: at/below/above128000×3 with message role separators, call envelope, actual schema, examples, neighbour context and assistant/history content`, `DIFF-REPAIR: added correction/history causes smaller redivision/reduction or an explicit refusal; no oversized call is sent`, `DIFF-TRANSPORT: provider normalization/schema expansion and isolated fresh-call mode are measured; unmeasured project/tool/session additions are disabled or refused`, `DIFF-ADMISSION: absent/false boundedStructuredInput support yields zero completion calls; declared support receives the exact shared boundedInput shape and authoritative job.plan.limitChars for all chunk/gather/repair requests.`
   - Fixtures: `Independent captured stdin/schema and invocation-argument assertions for configured CLI adapters; include sentinel project/history inputs and a no-child-spawn oversized control.`
 - **integration** — Exercise existing prepare/review/gather across every fragment and final bounded call.
-  - Subjects: `DIFF-LARGE: S003-sized inventory evidence produces multiple serial review calls under384000 complete-input characters; every source span is carried by a completed chunk`, `DIFF-GATHER: gather combines findings and provenance across parent-file fragments; no fragment omitted, out-of-scope finding promoted, or graph coverage invented`, `DIFF-SCALE: many fragments retain sparse sibling connectivity and avoid new quadratic material construction`, `DIFF-COMPAT: source-symbol and small-file review parity, cancellation, retries, gather/reduction, duplicate comparisons, and lower configured budgets remain supported`
+  - Subjects: `DIFF-LARGE: S003-sized inventory evidence produces multiple serial review calls under384000 complete-input characters; every source span is carried by a completed chunk`, `DIFF-GATHER: gather combines findings and provenance across parent-file fragments; no fragment omitted, out-of-scope finding promoted, or graph coverage invented`, `DIFF-SCALE: many fragments retain sparse sibling connectivity and avoid new quadratic material construction`, `DIFF-COMPAT: source-symbol and small-file review parity, cancellation, retries, gather/reduction, duplicate comparisons, and lower configured budgets remain supported`, `DIFF-PARENT-QUALITY: no chunk emits a local finding; a parent correctness finding is produced only when gather receives facts from two separate fragments. Reject missing/foreign/duplicate parent notes and prove reduction preserves both facts and provenance.`, `DIFF-READER: through DiffGroundingDeps/git-diff reader, recover truncated per-file input completely or refuse unrecoverable truncation/missing hunks before any model call or completed artifact. Replace the legacy tests that explicitly allow truncated bounded-slice reviews.`
   - Fixtures: `Scripted structured model records actual complete calls and emits bounded valid chunk/gather answers; no fake PASS from missing evidence.`
 - **smoke** — Demonstrate the filed reproduction is unblocked at the original default budget on the approved built runtime.
   - Subjects: `DIFF-S003-RETRY: rebuild under Node22 then run the actual independent daemon diff review for484fcef7efaf229e/s3 with128000-token setting; record actual verdict/degraded mode and any remaining errors`
@@ -250,9 +384,9 @@ An additive internal structured-completion option carries the complete-call limi
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `DIFF-SPANS`, `DIFF-COORDS`, `DIFF-INTEGRITY` |
-| `ac2` | `DIFF-BUDGET`, `DIFF-REPAIR`, `DIFF-TRANSPORT` |
-| `ac3` | `DIFF-LARGE`, `DIFF-GATHER`, `DIFF-SCALE` |
+| `ac1` | `DIFF-SPANS`, `DIFF-COORDS`, `DIFF-INTEGRITY`, `DIFF-READER` |
+| `ac2` | `DIFF-BUDGET`, `DIFF-REPAIR`, `DIFF-TRANSPORT`, `DIFF-ADMISSION` |
+| `ac3` | `DIFF-LARGE`, `DIFF-GATHER`, `DIFF-SCALE`, `DIFF-PARENT-QUALITY` |
 | `ac4` | `DIFF-COMPAT` |
 | `ac5` | `DIFF-S003-RETRY` |
 
@@ -299,3 +433,9 @@ Model JSON parent containers and entry identities explicitly, with source coordi
 - **[[c5]]** `prior-artifact` `docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md`
 - **[[c6]]** `stakeholder` `User instruction 2026-10-27` — "128K chunk limit including any added context/history; use the already filed bug."
 - **[[c7]]** `doc` `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md:27` — "Prepare uses review.chunkTokens with the default128000-token limit and fixed3characters/token estimate."
+- **[[c8]]** `code` `src/workflow/review-pipeline/adapters/code-review-chunk.ts:76-218` — "Quality currently has findings/descriptions; chunkNotesFrom extracts only an optional notes array."
+- **[[c9]]** `code` `src/workflow/review-pipeline/adapters/code-review-gather.ts:155-254` — "Existing obligation/reduction calls can be reused; non-calls sibling relations are not currently adjudicated."
+- **[[c10]]** `code` `src/shared/types.ts:266-345` — "ProviderCapabilities and StructuredCompletionOpts are the existing shared support/option declaration sites."
+- **[[c11]]** `prior-artifact` `docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-round1.json`
+- **[[c12]]** `code` `src/workflow/code-review/__tests__/diff-grounding.test.ts` — "Legacy tests currently allow a truncated diff to proceed; this intentional behavior change requires explicit recovery/refusal regressions."
+- **[[c13]]** `prior-artifact` `docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round2.json` — "Actual headless-browser render and inspected screenshot for the generated companion; control interactions not claimed."

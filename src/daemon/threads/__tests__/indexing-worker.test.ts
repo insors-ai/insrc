@@ -123,10 +123,21 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			['repo.add', { path: SECOND }],
 			['repo.remove', { path: SECOND }],
 		];
+		// What each call must answer: its handler really ran (not just "not an unknown method").
+		const ok = (r: ReplyEnvelope): void => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true }); };
+		const expect: Record<string, (r: ReplyEnvelope) => void> = {
+			'repo.stats': r => { assert.equal(r.error, undefined); assert.ok(Array.isArray(r.result) && (r.result as { repoPath: string }[]).some(x => x.repoPath === REPO)); },
+			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
+			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
+			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
+			// Work was just queued by the calls above: today's busy refusal, from the worker's real queue.
+			'daemon.compact': r => assert.match(r.error ?? '', /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\./),
+		};
 		sent.length = 0;
 		for (const [method, params] of calls) {
 			const reply = await ask(method, params);
-			assert.notEqual(reply.error, `unknown method: ${method}`, `${method} did not run on the main thread`);
+			assert.ok(expect[method] !== undefined, `an expected outcome for ${method}`);
+			expect[method]!(reply);
 		}
 		assert.deepEqual(sent, calls.map(([m]) => m), 'every indexing method went to the code-indexing worker');
 		const indexingMethods = methodClasses.entries().filter(e => e.cls === 'indexing').map(e => e.method).sort();

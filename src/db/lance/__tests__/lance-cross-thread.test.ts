@@ -31,23 +31,27 @@ test('a worker adding vectors while another thread searches the same table: both
 	const path = join(dir, 'lance');
 	const dim = loadLocalProviderConfig().embeddingDim;
 	setLanceConnPath(path);
+	let writing = true;
+	let searching: Promise<void> = Promise.resolve();
+	let worker: Worker | undefined;
 	try {
 		await addEntityEmbeddings([{ id: 'seed'.padEnd(32, 'x'), embedding: Array.from({ length: dim }, () => 0.1), repo: '/r', kind: 'function', artifact: false }]);
 		let searches = 0;
-		let writing = true;
-		const searching = (async () => {
+		searching = (async () => {
 			while (writing) {
 				await searchEntityVecs(Array.from({ length: dim }, (_, k) => Math.cos(k + searches)), ['/r'], 20);
 				searches++;
 			}
 		})();
 		for (let round = 0; round < 2; round++) {
-			const worker = new Worker(new URL('./helpers/cross-thread-writer.ts', import.meta.url), {
+			worker = new Worker(new URL('./helpers/cross-thread-writer.ts', import.meta.url), {
 				workerData: { path, dim, batches: 300 }, execArgv: ['--import', 'tsx/esm'],
 			});
-			const done = await new Promise<unknown>((resolve, reject) => { worker.once('message', resolve); worker.once('error', reject); });
+			const w = worker;
+			const done = await new Promise<unknown>((resolve, reject) => { w.once('message', resolve); w.once('error', reject); });
 			assert.equal(done, 'done');
-			await new Promise(r => worker.once('exit', r));
+			await new Promise(r => w.once('exit', r));
+			worker = undefined;
 		}
 		writing = false;
 		await searching;
@@ -55,6 +59,10 @@ test('a worker adding vectors while another thread searches the same table: both
 		const hits = await searchEntityVecs(Array.from({ length: dim }, (_, k) => Math.sin(k)), ['/r'], 5);
 		assert.equal(hits.length, 5, 'every write is readable afterwards');
 	} finally {
+		// Whatever failed: stop the search loop and any writer before the store goes away.
+		writing = false;
+		await searching.catch(() => {});
+		if (worker !== undefined) await worker.terminate();
 		await closeLanceConn();
 		rmSync(dir, { recursive: true, force: true });
 	}

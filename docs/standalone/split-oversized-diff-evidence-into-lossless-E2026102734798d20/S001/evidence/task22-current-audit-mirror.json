@@ -1,0 +1,22 @@
+{
+  "files": [
+    "src/daemon/handler-runtime.ts",
+    "src/daemon/queue.ts",
+    "src/daemon/repo-stats.ts",
+    "src/daemon/server.ts",
+    "src/daemon/threads/indexing-port.ts",
+    "src/daemon/threads/indexing-worker.ts",
+    "src/daemon/threads/indexing-workers.ts",
+    "src/daemon/threads/maintenance.ts",
+    "src/daemon/threads/router.ts",
+    "src/daemon/threads/summary-link.ts",
+    "src/daemon/threads/summary-worker.ts",
+    "src/daemon/threads/supervisor.ts",
+    "src/daemon/threads/worker-requests.ts",
+    "src/daemon/understanding-rpc.ts",
+    "src/db/graph/store.ts",
+    "src/indexer/index.ts",
+    "src/shared/locks/lock-manager.ts"
+  ],
+  "basis": "Existing reviewed baseline rows match exact current source bytes; synchronize deployed inventory metadata only."
+}

@@ -1,3 +1,4 @@
+import { BOUNDED_CLI_ADAPTERS } from '../../../agent/providers/cli-provider.js';
 /** Deterministic, resumable controller driver. No provider call is made here. */
 import { canonicalIdentityJson, identityDigest } from '../../../shared/review-input-identity.js';
 import type { LLMProvider } from '../../../shared/types.js';
@@ -81,7 +82,7 @@ function prepare(dimension: ReviewDimension, subject: CodeReviewSubject, snapsho
  return prepareDimensionJob(build, subject, groundingOf(snapshot), provider, ctx, limit, 'controller');
 }
 export function prepareControllerPipeline(subject: CodeReviewSubject, grounding: CodeReviewGrounding, fingerprint: ReviewInputFingerprint, reason: CodeReviewFallbackReason, capability: ControllerExecutionCapability, startedAt: number, now: () => number): ControllerPipelineState {
- if (!['cli-claude', 'cli-codex'].includes(capability.adapterId) || !Number.isSafeInteger(capability.maxInputChars) || capability.maxInputChars <= 0) throw new Error('Unsupported bounded controller capability');
+ if (!Object.values(BOUNDED_CLI_ADAPTERS).includes(capability.adapterId) || !Number.isSafeInteger(capability.maxInputChars) || capability.maxInputChars <= 0) throw new Error('Unsupported bounded controller capability');
  const limitChars = Math.min(384_000, reviewLimitChars(), capability.maxInputChars), inner = controllerMaterialLimit(limitChars);
  const snapshot = codeReviewSnapshot(subject, grounding, 'degraded');
  const prepared: PreparedDimensionReview[] = [];

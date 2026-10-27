@@ -1,0 +1,72 @@
+{
+  "changes": [
+    {
+      "file": "src/agent/providers/cli-provider.ts",
+      "classification": "provider-admission",
+      "siteCount": 154,
+      "sourceDigest": "f24c4576c6bac3d281aedff252bbde93f32687e9f61f9197e2e1d2776a7f2279"
+    },
+    {
+      "file": "src/agent/providers/structured-output.ts",
+      "classification": "provider-admission",
+      "siteCount": 11,
+      "sourceDigest": "5ced73c060c63c12e2bba00ba00e885d1921b253e78f3c2ada7eee5e7b23984d"
+    },
+    {
+      "file": "src/agent/providers/structured-schema.ts",
+      "classification": "provider-admission",
+      "siteCount": 31,
+      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578"
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/controller-pipeline.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1,
+      "sourceDigest": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566"
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/types.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0,
+      "sourceDigest": "d146f3d0bc9e857514c96799774d6e82799065f7010b2c07b3d7c12a8e372f9f"
+    },
+    {
+      "file": "src/mcp/controller-review.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 39,
+      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013"
+    },
+    {
+      "file": "src/mcp/daemon-stream.ts",
+      "classification": "mcp-client-boundary",
+      "siteCount": 15,
+      "sourceDigest": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39"
+    },
+    {
+      "file": "src/mcp/server.ts",
+      "classification": "mcp-client-boundary",
+      "siteCount": 9,
+      "sourceDigest": "e20136fee665e84372fc739806d4b384baba24f3ada0c4b1a98974698678ac03"
+    },
+    {
+      "file": "src/shared/connection-provider.ts",
+      "classification": "provider-admission",
+      "siteCount": 16,
+      "sourceDigest": "b6ea16547ce84c5208ec7dba9c73d1f1ba744e91f398ea50362abb0a641e7857"
+    },
+    {
+      "file": "src/shared/connection-provider-denial.ts",
+      "classification": "provider-admission",
+      "siteCount": 0,
+      "sourceDigest": "3a5b585f245ccec585312fcdd275737239a2d72f92f17a83e1047c3e579b8316"
+    },
+    {
+      "file": "src/shared/controller-review.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0,
+      "sourceDigest": "47a32aa00d8a3f2bce9eda6b8fd1831b81db56653366e54ecf0b78e5cefc4c8c"
+    }
+  ],
+  "historicalEvidence": "unchanged",
+  "releaseGate": "unchanged ready:false/scopes:[]"
+}

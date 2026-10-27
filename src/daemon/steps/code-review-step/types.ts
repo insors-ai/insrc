@@ -21,6 +21,7 @@
  * Daemon-owned work: start → review_pending → start/status → done.
  */
 
+import type { ControllerInputRequest, ControllerCallResult, CodeReviewStepEmitCall } from '../../../shared/controller-review.js';
 import type { ControllerPipelineState } from './controller-pipeline.js';
 import type { LLMMessage } from '../../../shared/types.js';
 import type { ReviewVerdict } from '../../../workflow/review/types.js';
@@ -215,14 +216,4 @@ export interface CodeReviewPendingState {
 }
 export type CodeReviewStepStatePayload = CodeReviewJudgementsState | CodeReviewPendingState | ControllerPipelineState;
 
-export interface ControllerInputRequest { readonly mode: 'isolated-structured'; readonly maxInputChars: number; readonly adapterId: 'cli-claude' | 'cli-codex' }
-export type ControllerCallResult = { readonly callId: string } & (
- | { readonly answer: unknown; readonly failure?: never }
- | { readonly failure: { readonly cause: 'size-refusal' | 'invalid-answer' | 'transient' | 'stall'; readonly detail: string; readonly maxChars?: number | undefined }; readonly answer?: never });
-export interface CodeReviewStepEmitCall {
- readonly next: 'emit_review_call';
- readonly state: string;
- readonly guidance: string;
- readonly call: { readonly callId: string; readonly dimension: import('../../../workflow/code-review/types.js').ReviewDimension; readonly stage: string; readonly role: import('../../../workflow/review-pipeline/types.js').CallRole; readonly messages: readonly LLMMessage[]; readonly schema: import('../../../shared/types.js').StructuredSchema; readonly limitChars: number; readonly expiresAt: number };
- readonly timing: Pick<import('../../../workflow/code-review/types.js').ReviewTimingPlan, 'startedAt' | 'chunkCount' | 'budgetMs' | 'deadlineAt'>;
-}
+export type { ControllerInputRequest, ControllerCallResult, CodeReviewStepEmitCall } from '../../../shared/controller-review.js';

@@ -497,3 +497,8 @@ export async function codeReviewStream(
 export async function codeReviewControl(params: CodeReviewControlParams, opts: ReviewStreamOpts, deps: ReviewStreamDeps = {}): Promise<CodeReviewControlResult> {
  return codeReviewControlResult(await reviewStreamRequest<unknown>('codeReview.run', codeReviewControlRequestParams(params), codeReviewControlWaitOpts(opts), deps), params);
 }
+
+/** Resolve the critical review role through the daemon's model policy; clients never open its registry. */
+export function resolveControllerReviewRole(repoPath: string, deps: UnaryRpcDeps = {}): Promise<unknown> {
+ return unaryRpc('models.resolveRole', { role: 'review', repoPath }, deps);
+}

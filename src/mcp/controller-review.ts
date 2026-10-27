@@ -3,15 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CliProvider, InputTooLargeError } from '../agent/providers/cli-provider.js';
+import { BOUNDED_CLI_ADAPTERS, CliProvider, InputTooLargeError } from '../agent/providers/cli-provider.js';
 import { verifyBoundedCli, UnsupportedBoundedInputError } from '../agent/providers/bounded-input.js';
 import { ModelResponseShapeError } from '../agent/providers/model-call-error.js';
-import { createRoleRouter } from '../analyze/context/role-router.js';
-import { loadAnalyzeConfig } from '../config/analyze.js';
-import { familyForClient, getModelRegistry } from '../daemon/model-registry.js';
+import { assertNoSessionProvider as assertConnectionProviderAdmission } from '../shared/connection-provider-denial.js';
+import { resolveControllerReviewRole } from './daemon-stream.js';
 import type { ControllerExecutionCapability } from '../shared/controller-review.js';
 import type { StepClient } from '../shared/step-context.js';
-import type { CodeReviewStepEmitCall, ControllerCallResult } from '../daemon/steps/code-review-step/types.js';
+import type { CodeReviewStepEmitCall, ControllerCallResult } from '../shared/controller-review.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { privateSessionBootstrap } from './session-bootstrap.js';
 import type { ForwardStepExtra, StepMcpEnvelope } from './forward-step.js';
@@ -25,19 +24,29 @@ export function isVerifiedControllerAdmission(value: unknown): value is Controll
 export interface ControllerReviewExecution { readonly provider: CliProvider; readonly bin: string; readonly client: StepClient; readonly modelLabel: string }
 export interface ControllerReviewHelperDeps {
  readonly resolveRepo?: ((explicit: string | undefined) => Promise<string | undefined>) | undefined;
- readonly resolveExecution?: ((client: StepClient, repo: string | undefined) => ControllerReviewExecution) | undefined;
+ readonly resolveExecution?: ((client: StepClient, repo: string | undefined) => ControllerReviewExecution | Promise<ControllerReviewExecution>) | undefined;
  readonly waitMs?: number | undefined;
  readonly now?: (() => number) | undefined;
  readonly privateSession?: (() => boolean) | undefined;
 }
 export type ControllerReviewForward = (args: unknown, extra: ForwardStepExtra) => Promise<StepMcpEnvelope>;
-function resolveExecution(client: StepClient, repo: string | undefined): ControllerReviewExecution {
- const registry = getModelRegistry(), family = familyForClient(client, registry);
- if (family === undefined) throw new UnsupportedBoundedInputError('Invoking controller client has no registered CLI family');
- const { provider, resolution } = createRoleRouter({ clientDefault: family, registry }).resolveProviderForRole('review', loadAnalyzeConfig(registry), repo);
- if (!(provider instanceof CliProvider) || registry.cliKind(resolution.runner) !== client) throw new UnsupportedBoundedInputError('The review role policy does not select the invoking controller CLI family');
- return { provider, bin: client, client, modelLabel: `cli-${client}:${resolution.model}` };
+export async function resolveControllerReviewExecution(client: StepClient, repo: string | undefined, fetchRole: (repoPath: string) => Promise<unknown> = resolveControllerReviewRole): Promise<ControllerReviewExecution> {
+ if (repo === undefined) throw new UnsupportedBoundedInputError('A repository is required to resolve the review role policy');
+ assertConnectionProviderAdmission();
+ const raw = await fetchRole(repo);
+ if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new UnsupportedBoundedInputError('The daemon returned no review role policy');
+ const role = raw as Record<string, unknown>, cli = role['cli'] as { kind?: unknown } | undefined;
+ if (cli?.kind !== client || typeof role['model'] !== 'string' || role['model'].length === 0 || !['core', 'mid', 'cheap'].includes(String(role['tier']))) throw new UnsupportedBoundedInputError('The daemon review role policy does not select the invoking controller CLI');
+ const effort = role['effort'];
+ if (effort !== undefined && (typeof effort !== 'string' || effort.length === 0)) throw new UnsupportedBoundedInputError('Invalid review role effort');
+ const limit = role['inputLimit'] as { unit?: unknown; max?: unknown } | undefined;
+ if (limit !== undefined && (limit === null || !['chars', 'tokens'].includes(String(limit.unit)) || !Number.isSafeInteger(limit.max) || (limit.max as number) <= 0)) throw new UnsupportedBoundedInputError('Invalid review role input allowance');
+ const inputBudgetChars = limit === undefined ? undefined : (limit.max as number) * (limit.unit === 'tokens' ? 3 : 1);
+ if (inputBudgetChars !== undefined && !Number.isSafeInteger(inputBudgetChars)) throw new UnsupportedBoundedInputError('Invalid review role input allowance');
+ const provider = new CliProvider({ kind: client, model: role['model'], ...(typeof effort === 'string' ? { effort } : {}), ...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}) });
+ return { provider, bin: client, client, modelLabel: `cli-${client}:${role['model']}` };
 }
+
 interface Owner {
  readonly state: string;
  readonly callId: string;
@@ -80,14 +89,14 @@ export class ControllerReviewHelper {
  private closed = false;
  private readonly now: () => number;
  constructor(private readonly deps: ControllerReviewHelperDeps = {}) { this.now = deps.now ?? Date.now; }
- private admit(client: StepClient, repo: string | undefined): { admission: ControllerReviewAdmission; execution: ControllerReviewExecution } {
-  const execution = (this.deps.resolveExecution ?? resolveExecution)(client, repo);
+ private async admit(client: StepClient, repo: string | undefined): Promise<{ admission: ControllerReviewAdmission; execution: ControllerReviewExecution }> {
+  const execution = await (this.deps.resolveExecution ?? resolveControllerReviewExecution)(client, repo);
   if (execution.client !== client || !(execution.provider instanceof CliProvider)) throw new UnsupportedBoundedInputError('Controller execution must use its own local CLI provider');
   const dir = mkdtempSync(join(tmpdir(), 'insrc-controller-admit-'));
   try { verifyBoundedCli(client, execution.bin, dir); } finally { rmSync(dir, { recursive: true, force: true }); }
   const maxInputChars = Math.min(384_000, execution.provider.inputBudgetChars ?? 384_000);
   if (!Number.isSafeInteger(maxInputChars) || maxInputChars <= 0) throw new UnsupportedBoundedInputError('Invalid verified controller input allowance');
-  const capability: ControllerExecutionCapability = Object.freeze({ adapterId: client === 'claude' ? 'cli-claude' : 'cli-codex', maxInputChars, helperEpoch: this.epoch, modelLabel: execution.modelLabel });
+  const capability: ControllerExecutionCapability = Object.freeze({ adapterId: BOUNDED_CLI_ADAPTERS[client], maxInputChars, helperEpoch: this.epoch, modelLabel: execution.modelLabel });
   const admission = Object.freeze({ capability, client }); verifiedAdmissions.add(admission);
   return { admission, execution };
  }
@@ -172,7 +181,7 @@ export class ControllerReviewHelper {
    try {
     const repo = await (this.deps.resolveRepo ?? resolveRepoPath)(typeof args['repo'] === 'string' ? args['repo'] : undefined);
     if (repo === undefined) throw new UnsupportedBoundedInputError('Cannot resolve the controller repository for role policy');
-    admitted = { ...this.admit(extra.client, repo), expiresAt: Number.MAX_SAFE_INTEGER };
+    admitted = { ...await this.admit(extra.client, repo), expiresAt: Number.MAX_SAFE_INTEGER };
    }
    catch (err) { unavailable = err instanceof Error ? err.message : String(err); }
   }

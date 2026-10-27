@@ -94,7 +94,7 @@ function spyAssembler(seen: (DiffGroundingOptions | undefined)[]): typeof assemb
 	return async (repoPath, deps, opts) => { seen.push(opts); return assembleDiffCodeReviewGrounding(repoPath, deps, opts); };
 }
 
-test("without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject", async () => {
+test("without a story key the diff is today's; the daemon records attribution and raw controller fallback requires isolation", async () => {
 	const r = repo();
 	try {
 		// Without a key: today's diff — the net range over every first-parent commit.
@@ -124,6 +124,7 @@ test("without a story key the diff is today's, and both diff callers record the 
 		const rpcWrites: { path: string; content: string }[] = [];
 		const judges = DEFAULT_DEPS.judges.slice(0, 4).map(slot => ({ dimension: slot.dimension, judge: async (): Promise<DimensionResult> => ({ dimension: slot.dimension, findings: [] }) }));
 		const rpcDeps: CodeReviewRunDeps = {
+   captureInput: () => undefined, // Legacy injected subject tests attribution, not production publication identity.
 			resolveSubject: async (repoPath) => ({ ok: true, subject: subjectFor(repoPath) }),
 			resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-codex:gpt' }),
 			assembleDiffGrounding: spyAssembler(rpcSeen),
@@ -154,12 +155,9 @@ test("without a story key the diff is today's, and both diff callers record the 
 		};
 		const parse = (env: { content: readonly { text: string }[] }): CodeReviewStepOutput => JSON.parse(env.content[0]!.text) as CodeReviewStepOutput;
 		const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: r.repo }, stepDeps));
-		assert.ok(start.next === 'emit_judgements', JSON.stringify(start));
-		assert.equal(stepSeen[0]?.storyKey, KEY);
-		const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: NO_FINDINGS(['adherence', 'conventions', 'coverage', 'quality']), state: start.state }, stepDeps));
-		assert.ok(done.next === 'done', JSON.stringify(done));
-		const stepBody = (JSON.parse(stepWrites.find(w => w.path.endsWith('.json'))!.content) as { body: { subject: Record<string, unknown> } }).body;
-		assert.deepEqual(stepBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'], excludedFromScope: ['src/theirs.ts'] });
+		assert.ok(start.next === 'error' && start.error.code === 'unsupported-bounded-controller', JSON.stringify(start));
+		assert.equal(stepSeen.length, 0, 'raw inherited context cannot prepare degraded controller evidence');
+		assert.equal(stepWrites.length, 0);
 	} finally { r.cleanup(); }
 });
 

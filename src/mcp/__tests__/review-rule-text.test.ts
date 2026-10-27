@@ -124,7 +124,8 @@ test('T13 the insrc_workflow_approve description says what approval requires', (
 	const d = description('insrc_workflow_approve');
 	assert.match(d, /a DEF, HLD or LLD needs a review, and a BUILD record needs a code review of its Story, each done by the party that did NOT author the work/);
 	assert.match(d, /An ISSUE, SPEC or PLAN needs no review/);
-	assert.match(d, /missing, same-party or blocking review/);
+	assert.match(d, /missing, same-party or blocking legacy review/);
+	assert.match(d, /stale-review.*withholds approval even with overrides or enforcement off/);
 });
 
 test('T13 the plugin copy of the steering source is identical to the source', () => {

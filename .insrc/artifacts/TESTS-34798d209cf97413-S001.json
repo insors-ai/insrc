@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T13:55:42.003Z",
+    "updatedAt": "2026-10-27T14:03:49.041Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2621,6 +2621,473 @@
               },
               {
                 "title": "DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "87a1d6675",
+        "ranAt": "2026-10-27T14:03:49.041Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-COMPAT",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/workflow-approve-dispatch.test.ts",
+                "title": "DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+                "title": "sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+                "title": "every judge slot receives the run's groundingMode and the non-coverage judges see every symbol",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a gather call failing twice fails the review and records nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11051,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/controller-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12970,
+            "titles": [
+              {
+                "title": "DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 966,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/workflow-approve-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "handleWorkflowApprove: NEITHER artifactPath nor epicHash → InvalidTarget error, no IPC",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: BOTH artifactPath and epicHash → InvalidTarget error, no IPC",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: empty-string target fields count as absent (neither) → error",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed verbatim in the JSON response",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 560,
+            "titles": [
+              {
+                "title": "sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are",
+                "result": "pass"
+              },
+              {
+                "title": "every judge slot receives the run's groundingMode and the non-coverage judges see every symbol",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 575,
+            "titles": [
+              {
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              },
+              {
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a gather call failing twice fails the review and records nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 819,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              },
+              {
+                "title": "out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today",
+                "result": "pass"
+              },
+              {
+                "title": "a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today",
+                "result": "pass"
+              },
+              {
+                "title": "pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review",
+                "result": "pass"
+              },
+              {
+                "title": "merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once",
+                "result": "pass"
+              },
+              {
+                "title": "a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row",
+                "result": "pass"
+              },
+              {
+                "title": "a mutual call cut between chunks is checked in both directions, each at its own caller",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1064,
+            "titles": [
+              {
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 575,
+            "titles": [
+              {
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              },
+              {
+                "title": "adherence makes no call without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a mock added or removed after prepare does not change the ux result",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit HLD review makes one reviewer-session call and gives today's report",
+                "result": "pass"
+              },
+              {
+                "title": "the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema",
+                "result": "pass"
+              },
+              {
+                "title": "an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 763,
+            "titles": [
+              {
+                "title": "DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write",
                 "result": "pass"
               }
             ],

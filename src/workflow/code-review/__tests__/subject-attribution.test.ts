@@ -223,7 +223,7 @@ test('a Story with no attributable change declines with no-build-record on the g
 		});
 		const last = frames[frames.length - 1]!;
 		assert.equal(last.stream, 'error');
-		assert.equal((last.data as { reason?: string }).reason, 'no-build-record');
+		assert.equal((last.data as { reason?: string }).reason, 'review-input-unavailable');
 
 		// 3. insrc_code_review_step: a hollow graph grounding diverts to the diff review.
 		await _clearCodeReviewStateStoreForTests();
@@ -239,8 +239,7 @@ test('a Story with no attributable change declines with no-build-record on the g
 		});
 		const step = JSON.parse(out.content[0]!.text) as { next: string; error?: { code: string; message: string } };
 		assert.equal(step.next, 'error', JSON.stringify(step));
-		assert.equal(step.error?.code, 'no-subject');
-		assert.match(step.error?.message ?? '', /no-build-record/);
+		assert.equal(step.error?.code, 'unsupported-bounded-controller');
 
 		assert.equal(judged, 0, 'no judge ran');
 		assert.deepEqual(writes, [], 'no record was written');

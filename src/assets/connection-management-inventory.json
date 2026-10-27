@@ -628,7 +628,7 @@
       ],
       "siteCount": 154,
       "sitesDigest": "930f0fbe7631ff968c19ad91f4b2d4e5db03ff644f75cee8a1163df4ab0b9001",
-      "sourceDigest": "0b4d572eabe305796057618bbfdde4dc5ccfbeac6704e1e50645039991e00fe7",
+      "sourceDigest": "f24c4576c6bac3d281aedff252bbde93f32687e9f61f9197e2e1d2776a7f2279",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -1097,88 +1097,8 @@
           "call"
         ],
         [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "serialization",
-          "decodeURIComponent"
-        ],
-        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
         ],
         [
           "diagnostic",
@@ -1198,60 +1118,15 @@
         ],
         [
           "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processSchemaForOpenAIStrict"
-        ],
-        [
-          "provider-adapter",
-          "resolvesIn"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
           "validate"
         ]
       ],
-      "siteCount": 42,
-      "sitesDigest": "cd6f3d7dcf9d24c1419ded6f229e79f1159e794ea5d1c8b14d9eb9139759abc0",
-      "sourceDigest": "e497326e8c98e99344dae3f5183246019fe414bac900552e4c7d6121e89a5c75",
+      "siteCount": 11,
+      "sitesDigest": "118e2c6b1ee09964e18e3eccd5372215105722c3f231afd43e874d6ac9f39ef3",
+      "sourceDigest": "5ced73c060c63c12e2bba00ba00e885d1921b253e78f3c2ada7eee5e7b23984d",
       "boundaries": [
         "diagnostic",
-        "provider-adapter",
-        "serialization"
+        "provider-adapter"
       ]
     },
     "src/agent/read-only-tool-loop.ts": {
@@ -13035,6 +12910,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "provider-backend",
           "ollama.list"
         ],
@@ -13175,9 +13054,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 184,
-      "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "4348700af965b3e1aade2e76d43761ba65737737b19cea2f41528f149b5c6f26",
+      "siteCount": 185,
+      "sitesDigest": "17e10c1df726588eb5127e903f794144f145325fdfd8e37af76c8af2709e1a08",
+      "sourceDigest": "55ea08d82de8eae018f4c0d653c47d45260d5ae1700500ab51cdf9cd83f244b7",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13913,7 +13792,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
-      "sourceDigest": "0548f16d495f3d057e6f8a319c6baa8b6bab8bdb91726d4f5aa6106e1f2fb565",
+      "sourceDigest": "53193c5e4ee85e75da1477975c2903afca274205fdb1c723fa9e11f4b3168d44",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -14000,7 +13879,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "e3b9683b14abdbf5b6dcc945afe0549bc4e5f4b3c26b616a268ccf22710b64f5",
-      "sourceDigest": "cf29a28a4c5dadcb6c67bd93a6e6af91866023020df7ebbce43c14486904b625",
+      "sourceDigest": "63aa3d30d0ae55f3028cdf5933eb0710e36b19add0a48c023a61d52b8797ba94",
       "boundaries": [
         "filesystem-read",
         "serialization",
@@ -14110,6 +13989,10 @@
         ],
         [
           "serialization",
+          "this.send"
+        ],
+        [
+          "serialization",
           "this.writeLine"
         ],
         [
@@ -14117,9 +14000,9 @@
           "this.writeLine"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "4411de781d6ca0a9bdb4400e1e6ca6a12c7d5ebf2440af1aa21243ecc156149a",
-      "sourceDigest": "2233b38b92046f935c9c2bfb27b801d500044369b2240cd438e6a44d98a35a5c",
+      "siteCount": 17,
+      "sitesDigest": "d683bf7c565c3a8ec1590e1377fc79733231650b2a178411e5fdca9983564394",
+      "sourceDigest": "e6d5e883e5f88ba4bca517e4b5bb44f43adc44ed560a7d6ddc3872b88eae281e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15549,7 +15432,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "52a18589fd8b753ed54b3bf6842565fb2c0b1e7f6dab43464e0106a7ecce1eb7",
-      "sourceDigest": "dbe5db314cb562ac1611b6619b5f503d02afec03e432afc287fd547e4980c93e",
+      "sourceDigest": "e6a91550dd0873ad44e84073549682aaa0db976ee845da0590d255973286c2e3",
       "boundaries": [
         "diagnostic"
       ]
@@ -15597,7 +15480,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "4a7c3bf8701abefbb1ccfcb3f0b522b13122f18c8551c415d02af22be429cce0",
-      "sourceDigest": "4533308624848b117c34e2e9e4cfc9cb94fb19692e554d6beb4f3840bd82605e",
+      "sourceDigest": "b46257987ae2e55c073bced914c028f4475352bf0626e078ebaedcaf995ce698",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -15615,10 +15498,6 @@
         ],
         [
           "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
           "log.info"
         ],
         [
@@ -15630,9 +15509,9 @@
           "MessageChannel"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "1fda37371216555374ad771942c9b9e3cd5de8982c45eef8431265c664c6abf0",
-      "sourceDigest": "bfaaf82a4e46a6787cab5e26179469220b1a9bd8a4e2427f3a3afe72ead8c866",
+      "siteCount": 4,
+      "sitesDigest": "afc450d4b5c44c553465ed8155e73ad0b68a683308f554b599a0253f5c2e53c8",
+      "sourceDigest": "c899608e2c122a6c61ecabaa1989be5c814f1ad88462d14c5aa030d6079a2e73",
       "boundaries": [
         "diagnostic",
         "unresolved-call"
@@ -15743,6 +15622,14 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "unresolved-call",
           "MessageChannel"
         ],
@@ -15751,9 +15638,9 @@
           "worthCompacting"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "c8b5c5debc5c6938d9592728982c909cf36945234a210ecd58e92e9c4ab42311",
-      "sourceDigest": "3a7bd0484c57a13d72bf312ab99b41435b21b94b40eaf4686e840aff63a561a4",
+      "siteCount": 14,
+      "sitesDigest": "7b30c9ebca0497eeb929dd61b2062c0223fbfc1d30adcfb6c0de1445fc658c57",
+      "sourceDigest": "dffcf6c3aea9ceff46e9d80bbed8e6a935e81e7255dede5bc17bebb7ceb42e7b",
       "boundaries": [
         "diagnostic",
         "storage-call",
@@ -15795,7 +15682,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "c57bfe4ffa1690615a2b8913fd3ad828599d44584d353948c1ce3fe982e3e4ec",
-      "sourceDigest": "ab2fc5e751260b58afeaef859448576e9196d7596bd916fffb024e64f3fe5b4d",
+      "sourceDigest": "2eacaa15be15138c1b1c6fc0f00485fac339c987af51517bb96ecea5bf4e083b",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16035,7 +15922,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "a09a02d223680bed3842352163e65f5c1ddc24f6e3c65428d6b85b80c3aa6a5c",
-      "sourceDigest": "7f4021c9e8ce2e8ff1637f85e6938611ac0f4627df129165c688443f9b1bf922",
+      "sourceDigest": "f168e90c13aa15bb7faeb44bbf02366fa423e0739567df530b3c9e766d54bf54",
       "boundaries": [
         "serialization"
       ]
@@ -16044,6 +15931,10 @@
       "classification": "routing-background-boundary",
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
+        [
+          "serialization",
+          "Buffer.from"
+        ],
         [
           "storage-call",
           "getDb"
@@ -16057,17 +15948,25 @@
           "parentPort!.postMessage"
         ],
         [
+          "storage-call",
+          "s.meta.put"
+        ],
+        [
           "unresolved-call",
           "Watcher"
         ],
         [
           "unresolved-call",
           "Watcher"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "7e1396ebca6b6dad66a012b93fc680b5d3f938ea67be286001cab0e1cb4e4df1",
-      "sourceDigest": "f81d1ecedfd67b3db39210cf1b2599165baa8643d047b8c311f392eded438b34",
+      "siteCount": 8,
+      "sitesDigest": "773bf96c1dde296c7d5fc4c0f840e9dae9109dec99c582ff65e528010ebf5b9d",
+      "sourceDigest": "2d1634c56edcac391e51cb5dc2da85e7fce701024de74eb05662fe25ad3ae516",
       "boundaries": [
         "serialization",
         "storage-call",
@@ -16096,6 +15995,10 @@
         ],
         [
           "diagnostic",
+          "log.error"
+        ],
+        [
+          "diagnostic",
           "log.fatal"
         ],
         [
@@ -16103,9 +16006,9 @@
           "log.info"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "7c63c9b58bb03aed6cb2ec32b444dc3cc8e491778547d6441cb9d58e374f4597",
-      "sourceDigest": "871b3503d95bd1b852d2d166fbc74495fe46ab101eb9fd5713f88b4013362a44",
+      "siteCount": 7,
+      "sitesDigest": "45045ace5111bbb10be495d0e0ed950d66d4763a4f5eed7e68704f8469ddde2d",
+      "sourceDigest": "22c1a2136e33cae86993013f2599cb52f8afecdcbaa2a36291042271080ac766",
       "boundaries": [
         "diagnostic"
       ]
@@ -16175,7 +16078,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "2a8ac5652daacda2c12bd121c6c9bb2e85c94646cf07989d97b09feb534be8fc",
-      "sourceDigest": "f7e8012089dce55dfa6699d3c9cafc36c940a55386aad03c43132c1f09f36151",
+      "sourceDigest": "745e8951329eb83143297bfc06de051390f2558ab67d035b1606074f65195fd0",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -18639,11 +18542,15 @@
         [
           "serialization",
           "send"
+        ],
+        [
+          "serialization",
+          "send"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "46e969e4a5b104c3cb0c320e6465d7c9666a475a06f0d23bc218b8206ca254b7",
-      "sourceDigest": "ef2838168e670e40e833a5b1b6dee354c96d21682c3212aa197c62ec31645f45",
+      "siteCount": 8,
+      "sitesDigest": "4877cf1ef936e1efde2a6d9ca103ac4723ccd9bd026450f278e746e75b524514",
+      "sourceDigest": "2b99e6c961a42b87cc1e277b012491e0713edde48436c38a91d15e72cbca8ffd",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -23999,6 +23906,14 @@
         ],
         [
           "storage-call",
+          "errMessage"
+        ],
+        [
+          "storage-call",
+          "errMessage"
+        ],
+        [
+          "storage-call",
           "finishVerifiedCompaction"
         ],
         [
@@ -24028,6 +23943,14 @@
         [
           "storage-call",
           "fsyncFile"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
         ],
         [
           "storage-call",
@@ -24152,6 +24075,14 @@
         [
           "storage-call",
           "LmdbStoreCorrupted"
+        ],
+        [
+          "storage-call",
+          "LmdbStoreError"
+        ],
+        [
+          "storage-call",
+          "LmdbStoreError"
         ],
         [
           "storage-call",
@@ -24574,6 +24505,10 @@
           "rmSync"
         ],
         [
+          "filesystem-write",
+          "rmSync"
+        ],
+        [
           "storage-call",
           "root.childTransaction"
         ],
@@ -24766,9 +24701,9 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 242,
-      "sitesDigest": "11c89522d5868993372615132c9bce57a80c0267b0835bd8bc40574e9cf73cc6",
-      "sourceDigest": "029dff3bc1d1460e935f6c408a915536d8874332ce839e2ba78b4400e1a12fcf",
+      "siteCount": 249,
+      "sitesDigest": "d553925472efe0c228196e70bf9414e1c960e47fb933cca3f23244ac6970d466",
+      "sourceDigest": "32080f729d88e3ea77c675d809ab2321d5d7ae4f8f2f000a4f410dd372f7e412",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -30499,7 +30434,7 @@
       ],
       "siteCount": 138,
       "sitesDigest": "e3aa3dff0a1afff74766eadf8b0b5b877047124b0cdaf53912c5e5377316e689",
-      "sourceDigest": "aebedec73fba4ba100a11b6894fc70362b8311363941cfd0bf12e160b23eabf8",
+      "sourceDigest": "26a68f37234f2dfbc55254b7608a12f74fae34b7f1cb53b0891d637abd0278c7",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -30988,7 +30923,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "ec3321264249fb3f9c9d11d564422c5a5cfed11d58080aac59c184c8135e27a7",
-      "sourceDigest": "3e8d7bff04c978326e03addc3316a4ab1609eee9066396d9991a45d3fc84bdde",
+      "sourceDigest": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31148,7 +31083,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "50c85fff94eca5a94d318cea3ac5f8646684201a1b3c01bb62fece79156272af",
+      "sourceDigest": "e20136fee665e84372fc739806d4b384baba24f3ada0c4b1a98974698678ac03",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31261,11 +31196,19 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "21a9db16bb8681e02caf77463d28a2f4d9fc8905ae1cbd020d41b5f7afba1b7d",
-      "sourceDigest": "9ccb09d35c11f380591c3984469ec05c9cf25a958e0ba51a019daa2907fa91e3",
+      "siteCount": 16,
+      "sitesDigest": "2d1c5086d8373eec03a875ad6f73169d17c313b6469a4fde020576d3b0767a42",
+      "sourceDigest": "b6ea16547ce84c5208ec7dba9c73d1f1ba744e91f398ea50362abb0a641e7857",
       "boundaries": [
         "filesystem-read",
         "provider-adapter",
@@ -31381,7 +31324,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "a80d633cf7a954238d74819c5eeaaff080cf813d226f8196065b8bf542d96f4f",
-      "sourceDigest": "27ac16318e38eef4e074c7bf92fa1548b3274f45ed449ea1ea627993bceeb7fd",
+      "sourceDigest": "ffc4dffe4e7a99306194054648fbe6b7b6dad11502bf50dae378ba70b2b1a0f9",
       "boundaries": [
         "acquisition:acquire-call",
         "diagnostic",
@@ -37074,7 +37017,7 @@
     "src/daemon/steps/code-review-step/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "d8146f66c4f30bda37f75dd70511bf68bdab1a8cb7f24f869cb75b13883b802d",
+      "sourceDigest": "d146f3d0bc9e857514c96799774d6e82799065f7010b2c07b3d7c12a8e372f9f",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -37162,7 +37105,7 @@
     "src/daemon/threads/maintenance-entry.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "a92576b2a1ed5452080e3a8b05a2a596de03aa251edd463f67e6681841d7aa8c",
+      "sourceDigest": "cbdf7470e8411b5d405b896cbe29186e2cf4c1d7d0c61377af721bcb5435b899",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38058,7 +38001,7 @@
     "src/shared/locks/maintenance-lock.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "0fc77e1b3b1ce6bcf93d877c2248b87b8fa62894899eaea5cb5cbf9dba34f5b6",
+      "sourceDigest": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -39040,7 +38983,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "c1e5b2b07a437320253c91bd120194e6e168d3bf6d9f580123117c7c5a9c51b4",
-      "sourceDigest": "656fdf95764568d8aaf270113e6daa94beedb1884a72fcc1d8db6f7c5c1729aa",
+      "sourceDigest": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566",
       "boundaries": [
         "serialization"
       ]
@@ -39056,6 +38999,18 @@
         [
           "provider-use",
           "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "provider-adapter",
+          "CliProvider"
+        ],
+        [
+          "provider-factory",
+          "CliProvider"
+        ],
+        [
+          "provider-use",
+          "CliProvider"
         ],
         [
           "diagnostic",
@@ -39175,17 +39130,34 @@
         ],
         [
           "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
           "verifyBoundedCli"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "d5b45e8558de7e22ee1af15f72ec667fa80ea337f4078b04744eec08810cffd5",
-      "sourceDigest": "582efa54416aa7926ed9bdf3de5c22dfe55a3e3d41101820889931b13bf4d760",
+      "siteCount": 39,
+      "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
+      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
         "filesystem-write",
         "provider-adapter",
+        "provider-factory",
         "provider-use",
         "serialization"
       ]
@@ -39193,7 +39165,7 @@
     "src/shared/controller-review.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "362fe5df629f3a5f054d38803aa5f384701673fc71876611927dbd21e291bd17",
+      "sourceDigest": "47a32aa00d8a3f2bce9eda6b8fd1831b81db56653366e54ecf0b78e5cefc4c8c",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -39432,14 +39404,159 @@
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "src/agent/providers/structured-schema.ts": {
+      "classification": "provider-admission",
+      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory.",
+      "sites": [
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "serialization",
+          "decodeURIComponent"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processSchemaForOpenAIStrict"
+        ],
+        [
+          "provider-adapter",
+          "resolvesIn"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ]
+      ],
+      "siteCount": 31,
+      "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
+      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578",
+      "boundaries": [
+        "provider-adapter",
+        "serialization"
+      ]
+    },
+    "src/shared/connection-provider-denial.ts": {
+      "classification": "provider-admission",
+      "rationale": "Denial-only admission for CLI and embedding backends without Session support, extracted from the existing embedding guard. Explicit owner/expiry validation precedes refusal; no proof or provider is loaded, and no temporary access is granted.",
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sourceDigest": "3a5b585f245ccec585312fcdd275737239a2d72f92f17a83e1047c3e579b8316"
     }
   },
   "productionFiles": {
-    "agent/providers/cli-provider.ts": "0b4d572eabe305796057618bbfdde4dc5ccfbeac6704e1e50645039991e00fe7",
+    "agent/providers/cli-provider.ts": "f24c4576c6bac3d281aedff252bbde93f32687e9f61f9197e2e1d2776a7f2279",
     "agent/providers/model-call-error.ts": "5eb92f16c47602f910503b66df7aa6c8bcb1f7ca978efe46b7768413bf8a95fe",
     "agent/providers/ollama.ts": "0f9f6a3391a2f2ef46a3a8cb9a8ea30a22153e9c87dac5f84ccd8c7c9b5b01d8",
     "agent/providers/onnx-embedder.ts": "2bf7d15fad38b5d66e9ce53c186f70989ff5a1a638d8dbca5bb46208e64ab521",
-    "agent/providers/structured-output.ts": "e497326e8c98e99344dae3f5183246019fe414bac900552e4c7d6121e89a5c75",
+    "agent/providers/structured-output.ts": "5ced73c060c63c12e2bba00ba00e885d1921b253e78f3c2ada7eee5e7b23984d",
     "agent/read-only-tool-loop.ts": "345e55eaff0efcdc9c0e89b67e76c03be308c97ac3b2ca2e7872ce2ecf61c58b",
     "analyze/classifier/driver.ts": "b1ccc3bd565b8eb1221371dbe5cc43ae9ed338447f416c1e95f71530633729bf",
     "analyze/classifier/index.ts": "20d0c0e650dfdcd906a4ec289ba6b174ae268a84f905fb1b36882f542d8b2d8f",
@@ -39723,7 +39840,7 @@
     "daemon/db-rpc.ts": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",
     "daemon/fatal.ts": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8",
     "daemon/guide-sections.ts": "733ad3b1b6c36fa7b9776a613fde72daa7b1562f21656fe83becf0dab5cf604f",
-    "daemon/handler-runtime.ts": "4348700af965b3e1aade2e76d43761ba65737737b19cea2f41528f149b5c6f26",
+    "daemon/handler-runtime.ts": "55ea08d82de8eae018f4c0d653c47d45260d5ae1700500ab51cdf9cd83f244b7",
     "daemon/index.ts": "d85bd789e81b3688cbf1d8ed48e95b16b0735f162650c4571cd49528d3683800",
     "daemon/installed-commit.ts": "23da21de4ba77f7071db157509001d521982c250d5dc221b5bd214a8f30c3adb",
     "daemon/lifecycle.ts": "6cd4c5950151af2d1f8a07942e0df4f47f25599ef27410f93a5b2e9f97f498b6",
@@ -39734,12 +39851,12 @@
     "daemon/model-definitions.ts": "ce093c894637e6ed7f63606b6bfb55f05273232b48f145932352e77ef85450b2",
     "daemon/model-registry.ts": "c96cd49d81bbae096f9073965c9daeb6271bab02e9352c178bc1c808c9b04311",
     "daemon/prune-timer.ts": "e4624cd21f4197d4d8b8f723073f478297f8e76d58423121f4ed3f0c98338388",
-    "daemon/queue.ts": "0548f16d495f3d057e6f8a319c6baa8b6bab8bdb91726d4f5aa6106e1f2fb565",
+    "daemon/queue.ts": "53193c5e4ee85e75da1477975c2903afca274205fdb1c723fa9e11f4b3168d44",
     "daemon/repo-completeness.ts": "c55dfc0c77b0b1d401daad88e422ddec4403dfbdab24d982100f36a0c2583939",
-    "daemon/repo-stats.ts": "cf29a28a4c5dadcb6c67bd93a6e6af91866023020df7ebbce43c14486904b625",
+    "daemon/repo-stats.ts": "63aa3d30d0ae55f3028cdf5933eb0710e36b19add0a48c023a61d52b8797ba94",
     "daemon/request-context.ts": "e920c2be90314e3d9d6b97005cffbd392470fb63fc2d0f3a173ad709007312a6",
     "daemon/search-guard.ts": "d53d583688bb407c9a487ac122a909522a810963ca38ceeb3525f2d99a85baee",
-    "daemon/server.ts": "2233b38b92046f935c9c2bfb27b801d500044369b2240cd438e6a44d98a35a5c",
+    "daemon/server.ts": "e6d5e883e5f88ba4bca517e4b5bb44f43adc44ed560a7d6ddc3872b88eae281e",
     "daemon/session.ts": "40e91a4b2455585c1558e891bbf431e52677587743077c5fcbf1680e0ca2cd26",
     "daemon/shutdown.ts": "fead7e9bd4cd8170d0082ead8e3b881566b7b0b968caacd8f366320b0728ffdc",
     "daemon/source-roots-rpc.ts": "60e4c84985280a42fe229b5af8cb176474e4e92eb2ea396ab5f8ab1aadf6ab0c",
@@ -39770,7 +39887,7 @@
     "daemon/steps/bundle-md.ts": "82c191a1a043b6c9f2fc67d92dd4f01129d3776b3dfcc5dc0be74b9e52073fbc",
     "daemon/steps/code-review-step/handler.ts": "8d6590eb9738a713eba2d0ec8eee5393ad79cd2ae115b63d4eb1973d23039be2",
     "daemon/steps/code-review-step/state-store.ts": "37cc88d1db7c74692ac04b8ba57087b0461272a5091754b9454ebe339212eca2",
-    "daemon/steps/code-review-step/types.ts": "d8146f66c4f30bda37f75dd70511bf68bdab1a8cb7f24f869cb75b13883b802d",
+    "daemon/steps/code-review-step/types.ts": "d146f3d0bc9e857514c96799774d6e82799065f7010b2c07b3d7c12a8e372f9f",
     "daemon/steps/daemon-client.ts": "b33786dca598bae576dc9181ad1f47739e359c55a9b34ac8419efb7c3df2291d",
     "daemon/steps/host.ts": "621e43773d1f746d8826ebba8d83e5dff2a5be781344ec5a7c0d70c534507e35",
     "daemon/steps/resolve-repo.ts": "7d811baffdd1ad40c68b7fade4d31165e98bab3f7f77c0ed5028f0b68412bcad",
@@ -39803,23 +39920,23 @@
     "daemon/threads/admin-worker.ts": "8f66fdacc7be4c3de14431347eece4242286a7efcc2cff09d49fb40921990b67",
     "daemon/threads/channel.ts": "dbdf815f07c24b3f2427efd26618b4bc7334960a2aa3a89945d59def0dfb25c5",
     "daemon/threads/indexing-block.ts": "abf1cdb023feb2833de0c0de219721e02eee69a7c6b69be1987880ad6cd6b34b",
-    "daemon/threads/indexing-port.ts": "dbe5db314cb562ac1611b6619b5f503d02afec03e432afc287fd547e4980c93e",
-    "daemon/threads/indexing-worker.ts": "4533308624848b117c34e2e9e4cfc9cb94fb19692e554d6beb4f3840bd82605e",
-    "daemon/threads/indexing-workers.ts": "bfaaf82a4e46a6787cab5e26179469220b1a9bd8a4e2427f3a3afe72ead8c866",
+    "daemon/threads/indexing-port.ts": "e6a91550dd0873ad44e84073549682aaa0db976ee845da0590d255973286c2e3",
+    "daemon/threads/indexing-worker.ts": "b46257987ae2e55c073bced914c028f4475352bf0626e078ebaedcaf995ce698",
+    "daemon/threads/indexing-workers.ts": "c899608e2c122a6c61ecabaa1989be5c814f1ad88462d14c5aa030d6079a2e73",
     "daemon/threads/main-services.ts": "cbf5cf8b27f771c94d08de9130070cc98c6a1a41c0cf8ab147caf921d843ff03",
-    "daemon/threads/maintenance-entry.ts": "a92576b2a1ed5452080e3a8b05a2a596de03aa251edd463f67e6681841d7aa8c",
-    "daemon/threads/maintenance.ts": "3a7bd0484c57a13d72bf312ab99b41435b21b94b40eaf4686e840aff63a561a4",
+    "daemon/threads/maintenance-entry.ts": "cbdf7470e8411b5d405b896cbe29186e2cf4c1d7d0c61377af721bcb5435b899",
+    "daemon/threads/maintenance.ts": "dffcf6c3aea9ceff46e9d80bbed8e6a935e81e7255dede5bc17bebb7ceb42e7b",
     "daemon/threads/method-class.ts": "01ebaf462e9e215381b614d14f3a77d048429a065922492325d67d8651c5446c",
     "daemon/threads/registry.ts": "f430f000242b2036a29709daecf80b80b0ab64cc5563ff860780d2cdf79a5191",
-    "daemon/threads/router.ts": "ab2fc5e751260b58afeaef859448576e9196d7596bd916fffb024e64f3fe5b4d",
+    "daemon/threads/router.ts": "2eacaa15be15138c1b1c6fc0f00485fac339c987af51517bb96ecea5bf4e083b",
     "daemon/threads/status-board.ts": "6ed43d08d6a94bd99c357af24ab03d0bcc12dd74d96f978ae1e3921a0a4f8a5f",
     "daemon/threads/step-state.ts": "d3a974286875261ab5d8f1d032cc24faa462f9777a22401eabab0175b33bf891",
     "daemon/threads/store-health-hub.ts": "a099cefdf8fb03cfb6de0d8e37c90587919341119949e396f947033d82165256",
-    "daemon/threads/summary-link.ts": "7f4021c9e8ce2e8ff1637f85e6938611ac0f4627df129165c688443f9b1bf922",
-    "daemon/threads/summary-worker.ts": "f81d1ecedfd67b3db39210cf1b2599165baa8643d047b8c311f392eded438b34",
-    "daemon/threads/supervisor.ts": "871b3503d95bd1b852d2d166fbc74495fe46ab101eb9fd5713f88b4013362a44",
+    "daemon/threads/summary-link.ts": "f168e90c13aa15bb7faeb44bbf02366fa423e0739567df530b3c9e766d54bf54",
+    "daemon/threads/summary-worker.ts": "2d1634c56edcac391e51cb5dc2da85e7fce701024de74eb05662fe25ad3ae516",
+    "daemon/threads/supervisor.ts": "22c1a2136e33cae86993013f2599cb52f8afecdcbaa2a36291042271080ac766",
     "daemon/threads/worker-entry.ts": "66cbe422009f0c0179a527f08815b80308b7c7f1cfbea7c09396fe29d9fb0218",
-    "daemon/threads/worker-requests.ts": "f7e8012089dce55dfa6699d3c9cafc36c940a55386aad03c43132c1f09f36151",
+    "daemon/threads/worker-requests.ts": "745e8951329eb83143297bfc06de051390f2558ab67d035b1606074f65195fd0",
     "daemon/threads/workers.ts": "70d9e4e1f8b775fd0db9166d7558e6800d948ddef496c278b21bc2f645d81d8a",
     "daemon/todos-rpc.ts": "4fe90b578efac0d1300d78d3ba800e5a91686ab023e262ce640662ffdeaf7a99",
     "daemon/tools/builtins/cloud/aws/cloudformation.ts": "af33fb3c9ea612f78a426fc740e2a3d6f6f5ba2c52ce0515f5642fb6d3f4b6d7",
@@ -39946,7 +40063,7 @@
     "daemon/tools/registry.ts": "6d421fff53b4f76fe0cd3783866b13cfe030f687ef6901fe900874df4cab5e80",
     "daemon/tools/shell-helper.ts": "c7ce1339f97148b39e08782cf8e109bc53f2f1bd224f35c8c532f84a1e00283c",
     "daemon/tools/types.ts": "b3a8c63f0451964f6ca59d58092789086eca57235f74a0ae64e6b8cccfe94610",
-    "daemon/understanding-rpc.ts": "ef2838168e670e40e833a5b1b6dee354c96d21682c3212aa197c62ec31645f45",
+    "daemon/understanding-rpc.ts": "2b99e6c961a42b87cc1e277b012491e0713edde48436c38a91d15e72cbca8ffd",
     "daemon/update-runner.ts": "e9d0b99c6eb5c1b0a9b08cccc2d2584938c18c273640d90dbf668437dc72e249",
     "daemon/workflow-review-rpc.ts": "4b36e3fa22752618ad768c36cec12b596c942b53f2d5eda94fe9c87f00fe829a",
     "daemon/workflow-rpc.ts": "ea6d8f8d5fca6c9dc79f4a9a1480262693f47e953be4c756b40fdffc19ab9e2e",
@@ -39966,7 +40083,7 @@
     "db/graph/keys.ts": "1b2616f1ec202dad4c9cd57343b6955965337fd987bc6ef9f81b95ad62edf53a",
     "db/graph/migrations.ts": "ac0be14738c470562743155d6992658466bab2ebf2ce8112bb9dd9037b66b00e",
     "db/graph/pending-class.ts": "7cca41c2677404a14c5c34f44e174b285b20ff7ac94fabbd37584e0b8f385cc4",
-    "db/graph/store.ts": "029dff3bc1d1460e935f6c408a915536d8874332ce839e2ba78b4400e1a12fcf",
+    "db/graph/store.ts": "32080f729d88e3ea77c675d809ab2321d5d7ae4f8f2f000a4f410dd372f7e412",
     "db/graph/traversal.ts": "b8bb0f58aafe2e4cd74b2d9e25bd59e7e063da34d3574226e0f6a44d156990c8",
     "db/index-state.ts": "737c33611a604edb0d476d06173ee072d3d8283857dfca4ef18f75fbc1449d6c",
     "db/lance/artifact-vec.ts": "dd35356c75acafe57f66c81fe413a260d74798171f9e19042a6e423c790a1414",
@@ -40021,7 +40138,7 @@
     "indexer/embedder.ts": "0c7dd0b07e970e410ec24850fa159e3c9232dbf44308b97983566818eea15997",
     "indexer/external-endpoints.ts": "babbc9677ce1a0014a20875a2673867a818cdff1794db3bd355c187b597afbe7",
     "indexer/file-selection.ts": "fbd887f95853a4ab67cc92078fee29f77ad75d6e8a0745db9482a2ddfcfcd74e",
-    "indexer/index.ts": "aebedec73fba4ba100a11b6894fc70362b8311363941cfd0bf12e160b23eabf8",
+    "indexer/index.ts": "26a68f37234f2dfbc55254b7608a12f74fae34b7f1cb53b0891d637abd0278c7",
     "indexer/manifest.ts": "2f3128f775442e03e5f101e1ad9aee698d0a3ff03fb312a51add9bc29eea7c2a",
     "indexer/messaging-endpoints.ts": "7e66bfe808024dbe76d62f1722ab431f1bbdc5ef6a74ad50ce6438e9ceb11d14",
     "indexer/parser/artifact.ts": "113550f6c38731e304127c649f61657f7c4c6434008da2e27518620c40dfcb9f",
@@ -40045,7 +40162,7 @@
     "indexer/target-resolution/resolver.ts": "97a0707d2aad71f60ce81427c1e7127f513cefd686a99c9c73bf80f49c01a275",
     "indexer/target-resolution/types.ts": "5c9930fabd98977f7ac9444bca0e643c1f6668b5dca447d85d5b244c216f9dfb",
     "indexer/watcher.ts": "9ba97fbd8e67b5c074863871716a165e50174da76e870d29cb08a65dc9e0b81a",
-    "mcp/daemon-stream.ts": "3e8d7bff04c978326e03addc3316a4ab1609eee9066396d9991a45d3fc84bdde",
+    "mcp/daemon-stream.ts": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39",
     "mcp/deploy-step/types.ts": "c3b379dc07afd980f0bf93d66a907f8dcc09f94bd45e9f434555e6feb30f6a69",
     "mcp/docgen/handler.ts": "0648eedb29149f81cd8bac24da2896c79f7539b1adc9c00a8c57e6e245737224",
     "mcp/forward-step.ts": "88d89db8028c47e86039c2c6de52b4206ef4ddf11358e081cfd322d8ad34e5b0",
@@ -40055,7 +40172,7 @@
     "mcp/resolve-repo.ts": "669a0119a34022c189c88d061eb698fa4d8cbe119ff8c8ed086fb0cb41e2e906",
     "mcp/schema/handler.ts": "889e5dea76ec5930373793d35658e08b488cac2f6aa1356eb63f57e9099d2656",
     "mcp/schema/schema.ts": "b212da027d93444b3038abb680e104bd78fb12b092a55e5a226e9f7c55c6b02f",
-    "mcp/server.ts": "50c85fff94eca5a94d318cea3ac5f8646684201a1b3c01bb62fece79156272af",
+    "mcp/server.ts": "e20136fee665e84372fc739806d4b384baba24f3ada0c4b1a98974698678ac03",
     "mcp/session-bootstrap.ts": "62e536b3749dfd41753d2323e98c36d15ebf2897373281ff303c4290ad56bd34",
     "shared/access.ts": "7780385b64a768a5eb48bbc9888c6bff60281a3909248e74bcfcbb987de70959",
     "shared/agent-registry.ts": "7ab045dc9021cd4624aa8d8fbbf77705be8e4ee96d6d1e72e3d9b83e507e5102",
@@ -40067,15 +40184,15 @@
     "shared/connection-management-wire.ts": "0a749f3a4225960f4eec6b84298162a58508ce0e4ee8f5dcbe43520ee1e5d745",
     "shared/connection-management.ts": "653ad7a212910f5b353771fe7ac693c2adda920b0d688ca831640ae6644e0acf",
     "shared/connection-persistence.ts": "1c70e748b0e0b3beab9cb3080a7fb597aa16ad0f015d99b46b74285512b4c750",
-    "shared/connection-provider.ts": "9ccb09d35c11f380591c3984469ec05c9cf25a958e0ba51a019daa2907fa91e3",
+    "shared/connection-provider.ts": "b6ea16547ce84c5208ec7dba9c73d1f1ba744e91f398ea50362abb0a641e7857",
     "shared/cross-agent.ts": "1f69d31bec5b15ebc88d5cd481c4efbb4bf4aa3d781ba9935b6405fcba16275e",
     "shared/db-driver.ts": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e",
     "shared/intent-classes.ts": "7da75eceed2f86b058e15c7b55c2c5b6485a5b6d953bb226491ff38bcf3569e2",
     "shared/ipc-client.ts": "6136c30776d61af4dfbde8ca440aada23b9fb54709a6e94561fbf0cb8d2643c0",
     "shared/json-fences.ts": "ad422a5636e8f9d38afc4cdc4a5685d76ccb73885f069d2b8c260482374ebdb0",
     "shared/keystore.ts": "1ca4c50b835b9553c8b84fd7b175b1fa557b10e7f1b4f4fce165ae8839871889",
-    "shared/locks/lock-manager.ts": "27ac16318e38eef4e074c7bf92fa1548b3274f45ed449ea1ea627993bceeb7fd",
-    "shared/locks/maintenance-lock.ts": "0fc77e1b3b1ce6bcf93d877c2248b87b8fa62894899eaea5cb5cbf9dba34f5b6",
+    "shared/locks/lock-manager.ts": "ffc4dffe4e7a99306194054648fbe6b7b6dad11502bf50dae378ba70b2b1a0f9",
+    "shared/locks/maintenance-lock.ts": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
     "shared/logger.ts": "4d37ca182c80dbec718286e3eb32c500997697df566d9fff1936a854ca8ce5e5",
     "shared/model-recommender.ts": "230e90a6819496ba10ab60d928649f398d1b1266b4dec4693c42524eaf928ad1",
     "shared/paths.ts": "cf20f4f5bef4fc77b480a18a9e3031010c9753b7aaedbeeb8c23d17e7b258360",
@@ -40296,9 +40413,9 @@
     "workflow/types.ts": "aa457e5e82bd7f13ecdfbafcd3a66add8608a667a598f9d8856614c9f3a67eb1",
     "agent/providers/bounded-input.ts": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
     "daemon/code-review-operations.ts": "7b95692e103fc674d9da96137b0912f1a7da127ff20e77223b8849125c29f71b",
-    "daemon/steps/code-review-step/controller-pipeline.ts": "656fdf95764568d8aaf270113e6daa94beedb1884a72fcc1d8db6f7c5c1729aa",
-    "mcp/controller-review.ts": "582efa54416aa7926ed9bdf3de5c22dfe55a3e3d41101820889931b13bf4d760",
-    "shared/controller-review.ts": "362fe5df629f3a5f054d38803aa5f384701673fc71876611927dbd21e291bd17",
+    "daemon/steps/code-review-step/controller-pipeline.ts": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566",
+    "mcp/controller-review.ts": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
+    "shared/controller-review.ts": "47a32aa00d8a3f2bce9eda6b8fd1831b81db56653366e54ecf0b78e5cefc4c8c",
     "shared/review-input-identity.ts": "88f67b21cd5d57e20b960aba840f8d4e8b7628a435a1a8c7c0e6ecd925cb381f",
     "shared/structured-input.ts": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
     "workflow/approval-owner.ts": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
@@ -40307,6 +40424,8 @@
     "workflow/code-review/publication.ts": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
     "workflow/review-pipeline/adapters/diff-fragments.ts": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
     "workflow/review-pipeline/adapters/diff-parent-evidence.ts": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
-    "workflow/review-pipeline/timing.ts": "dad8f8e806b9c7cab46dd10de3efa7a25adc917a99cf1b6b30c0e76539099d94"
+    "workflow/review-pipeline/timing.ts": "dad8f8e806b9c7cab46dd10de3efa7a25adc917a99cf1b6b30c0e76539099d94",
+    "agent/providers/structured-schema.ts": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578",
+    "shared/connection-provider-denial.ts": "3a5b585f245ccec585312fcdd275737239a2d72f92f17a83e1047c3e579b8316"
   }
 }

@@ -1,5 +1,5 @@
-import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
-import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+// CLI adapters never have a supported Session backend; denial needs no local-provider proof loader.
+import { assertNoSessionProvider as assertNoSessionEmbedding, assertNoSessionProvider as assertConnectionProviderAdmission } from '../../shared/connection-provider-denial.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -57,7 +57,7 @@ import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
-import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
+import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-schema.js';
 import { completeInputChars } from '../../shared/structured-input.js';
 import { boundedClaudeArgs, boundedClaudeEnv, BOUNDED_SYSTEM_PROMPT, UnsupportedBoundedInputError, verifyBoundedCli } from './bounded-input.js';
 import { ModelResponseShapeError } from './model-call-error.js';
@@ -185,6 +185,9 @@ export class CliStallError extends Error {
 		this.sessionId = sessionId;
 	}
 }
+
+export const BOUNDED_CLI_ADAPTERS = { claude: 'cli-claude', codex: 'cli-codex' } as const;
+export type BoundedCliAdapterId = typeof BOUNDED_CLI_ADAPTERS[keyof typeof BOUNDED_CLI_ADAPTERS];
 
 export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;

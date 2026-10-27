@@ -30,7 +30,7 @@ const verificationCounts = new WeakMap<LLMProvider, number>();
 interface Attempt { readonly execution: ConnectionExecutionContext; readonly proof: Proof }
 const attempts = new AsyncLocalStorage<Attempt>();
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
-const adapterFingerprint = (source: string) => digest(Buffer.concat([readFileSync(source), readFileSync(new URL(import.meta.url)), readFileSync(new URL('../../node_modules/ollama/package.json', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/index.mjs', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/browser.mjs', import.meta.url)), readFileSync(new URL('../agent/providers/structured-output.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url))]));
+const adapterFingerprint = (source: string) => digest(Buffer.concat([readFileSync(source), readFileSync(new URL(import.meta.url)), readFileSync(new URL('../../node_modules/ollama/package.json', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/index.mjs', import.meta.url)), readFileSync(new URL('../../node_modules/ollama/dist/browser.mjs', import.meta.url)), readFileSync(new URL('../agent/providers/structured-output.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url)), readFileSync(new URL('../agent/providers/structured-schema.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url)), readFileSync(new URL('./connection-provider-denial.' + (import.meta.url.endsWith('.ts') ? 'ts' : 'js'), import.meta.url))]));
 
 interface LoadedModule { readonly source: string; readonly digest: string; active: boolean }
 const loadedModules = new WeakMap<object, LoadedModule>();
@@ -130,12 +130,7 @@ function assertProviderAttempt(execution?: ConnectionExecutionContext, candidate
  * Validate explicit policy before input/backend access; ambient context denies
  * loss only and never supplies authority. Legacy Saved calls remain compatible.
  */
-export function assertNoSessionEmbedding(execution?: ConnectionExecutionContext): void {
-	const bound = currentStepContext()?.connectionExecution;
-	if (execution !== undefined || bound?.mode === 'session-memory') assertExplicitConnectionExecution(execution);
-	else bound?.assertActive();
-	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
-}
+export { assertNoSessionProvider as assertNoSessionEmbedding } from './connection-provider-denial.js';
 
 /** Native transport rechecks after awaited reads, before decoding SDK input. */
 export function assertConnectionProviderTransport(candidate: LLMProvider): void {

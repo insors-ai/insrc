@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 118 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 133 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -643,3 +643,42 @@ Run at 2026-10-27T13:55:42.003Z on commit `e777060ff`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/build-review-freshness.test.ts` | 0 | 9 | 17 s |  |
+
+## t21
+
+Run at 2026-10-27T14:03:49.041Z on commit `87a1d6675`. Tests check: **passed**. 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-COMPAT**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals | `src/mcp/__tests__/workflow-approve-dispatch.test.ts` |
+| pass | sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are | `src/workflow/code-review/__tests__/grounding-eligibility.test.ts` |
+| pass | every judge slot receives the run's groundingMode and the non-coverage judges see every symbol | `src/workflow/code-review/__tests__/grounding-eligibility.test.ts` |
+| pass | an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included | `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts` |
+| pass | a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+| pass | a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+| pass | two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+| pass | a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+| pass | a gather call failing twice fails the review and records nothing | `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` |
+| pass | DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+| pass | DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+| pass | a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 11.1 s |  |
+| `src/mcp/__tests__/controller-review.test.ts` | 0 | 11 | 13 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 6 | 1 s |  |
+| `src/mcp/__tests__/workflow-approve-dispatch.test.ts` | 0 | 5 | 0.6 s |  |
+| `src/workflow/code-review/__tests__/grounding-eligibility.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-divided.test.ts` | 0 | 5 | 0.6 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 22 | 0.8 s |  |
+| `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1.1 s |  |
+| `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` | 0 | 5 | 0.8 s |  |

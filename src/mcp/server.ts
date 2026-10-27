@@ -1,3 +1,4 @@
+import { BOUNDED_CLI_ADAPTERS } from '../agent/providers/cli-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -764,7 +765,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
-				controllerInput: z.object({ mode: z.literal('isolated-structured'), maxInputChars: z.number().int().positive(), adapterId: z.enum(['cli-claude', 'cli-codex']) }).strict().describe('Optional bounded controller request. A raw flag does not establish verified isolated helper capability.').optional(),
+				controllerInput: z.object({ mode: z.literal('isolated-structured'), maxInputChars: z.number().int().positive(), adapterId: z.enum([BOUNDED_CLI_ADAPTERS.claude, BOUNDED_CLI_ADAPTERS.codex]) }).strict().describe('Optional bounded controller request. A raw flag does not establish verified isolated helper capability.').optional(),
                 callResult: z.object({ callId: z.string(), answer: z.unknown().optional(), failure: z.object({ cause: z.enum(['size-refusal', 'invalid-answer', 'transient', 'stall']), detail: z.string(), maxChars: z.number().int().positive().optional() }).strict().optional() }).strict().describe('Internal isolated helper result for emit_review_call states: exact callId and one enveloped answer or failure; raw chat callResult is refused. Never combine with legacy judgements.').optional(),
 				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()

@@ -1,3 +1,4 @@
+import { resolveControllerReviewRole } from '../daemon-stream.js';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -11,7 +12,7 @@ import { createStepCallHandler } from '../../daemon/steps/host.js';
 import { currentStepContext } from '../../shared/step-context.js';
 import { verifyBoundedCli } from '../../agent/providers/bounded-input.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
-import { ControllerReviewHelper, isVerifiedControllerAdmission } from '../controller-review.js';
+import { ControllerReviewHelper, isVerifiedControllerAdmission, resolveControllerReviewExecution } from '../controller-review.js';
 import type { ControllerReviewForward } from '../controller-review.js';
 import { forwardStep } from '../forward-step.js';
 import type { StepMcpEnvelope } from '../forward-step.js';
@@ -274,4 +275,22 @@ test('DIFF-COMPAT: rejected continuation requests preserve the active isolated c
   const done = parse(await f.helper.forward({ phase: 'start', state: task.state }, { client: 'claude' }, forward)); assert.equal(done.next, 'done');
   assert.equal(submissions, 2); assert.equal(f.captures().length, 1, 'retry forwards the same settled answer instead of executing another CLI call');
  } finally { await f.cleanup(); }
+});
+
+
+test('DIFF-COMPAT: controller execution resolves the critical review role over daemon IPC and refuses mismatched or malformed policy', async () => {
+ const dir = mkdtempSync('/tmp/cm-role-wire-'), socket = join(dir, 'd.sock');
+ const requests: { method: string; params: unknown }[] = [];
+ const role = { tier: 'core', family: 'daemon-owned-family', model: 'served-review-model', effort: 'high', cli: { kind: 'claude' }, inputLimit: { unit: 'chars', max: 123456 } };
+ const server = createServer(client => { let text = ''; client.on('data', chunk => { text += chunk.toString(); if (!text.includes('\n')) return; const request = JSON.parse(text.split('\n')[0]!); requests.push(request); client.write(JSON.stringify({ id: request.id, result: role }) + '\n'); }); });
+ await new Promise<void>(resolve => server.listen(socket, resolve));
+ try {
+  const execution = await resolveControllerReviewExecution('claude', dir, repo => resolveControllerReviewRole(repo, { connect: () => createConnection(socket) }));
+  assert.equal(requests.length, 1); assert.equal(requests[0]!.method, 'models.resolveRole'); assert.deepEqual(requests[0]!.params, { role: 'review', repoPath: dir });
+  assert.equal(execution.client, 'claude'); assert.equal(execution.modelLabel, 'cli-claude:served-review-model'); assert.equal(execution.provider.inputBudgetChars, 123456);
+  for (const invalid of [null, { error: 'older daemon' }, { ...role, cli: { kind: 'codex' } }, { ...role, model: '' }, { ...role, effort: 7 }, { ...role, inputLimit: { unit: 'chars', max: 0 } }]) {
+   await assert.rejects(resolveControllerReviewExecution('claude', dir, async () => invalid), (error: unknown) => (error as { code?: unknown }).code === 'unsupported-bounded-input');
+  }
+  const tokens = await resolveControllerReviewExecution('claude', dir, async () => ({ ...role, inputLimit: { unit: 'tokens', max: 1000 } })); assert.equal(tokens.provider.inputBudgetChars, 3000);
+ } finally { await new Promise<void>(resolve => server.close(() => resolve())); rmSync(dir, { recursive: true, force: true }); }
 });

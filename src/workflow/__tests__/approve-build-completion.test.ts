@@ -196,15 +196,15 @@ test('ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is 
 	});
 });
 
-test('ac6: a story-scoped artifact whose basename is NOT BUILD- is not withheld even under enforce (basename predicate)', async () => {
+test('ac6: a non-BUILD filename cannot hide BUILD workflow metadata from the common freshness boundary', async () => {
 	await withRepo(async (repo, dir) => {
-		// A PLAN artifact whose meta.workflow happens to read 'build' must NOT be withheld —
-		// the predicate keys on the BUILD- filename prefix, not meta.workflow.
+		// A mismatched BUILD ledger cannot evade the common boundary by wearing a PLAN filename.
 		const p = writeArtifact(dir, `PLAN-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
-		assert.equal(out.approved.length, 1, 'non-BUILD basename => no withhold, regardless of meta.workflow');
-		assert.equal(out.skipped.length, 0);
-		assert.ok(isApproved(p));
+		assert.equal(out.approved.length, 0);
+		assert.equal(out.skipped.length, 1);
+		assert.equal(out.skipped[0]!.reason, 'stale-review');
+		assert.equal(isApproved(p), false);
 	});
 });
 

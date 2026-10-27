@@ -306,7 +306,10 @@ the code-review-gated completion act. A Story with NO code review, or one
 reviewed by the party that wrote the code, is always withheld into `skipped[]`.
 A code review whose verdict is `block` withholds completion under
 `codeReview.enforce` (config, off / advisory by default). Either is passed only
-with an explicit `overrideReview`.
+with an explicit `overrideReview`. A fingerprinted BUILD review additionally
+requires unchanged source, contracts, BUILD and TESTS. A `stale-review` outcome
+in `codeReview[]` withholds approval even with an override or enforcement off;
+run a new independent review.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.
@@ -380,21 +383,44 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
 
 - **You wrote the code (a build you drove with `insrc_build_step`), or the
   author is not recorded:** the tool asks the daemon to review and returns
-  `done` with its verdict. If the index is stale it first returns
+  `done` with its verdict, or `review_pending` with an opaque `state`, handle,
+  daemon epoch and progress. Each turn waits at most200 seconds. Resume with
+  `phase:'start'` and that SAME state; do not relaunch, poll the host or reset
+  deadlines. The daemon owns the review across disconnected turns. Its fixed
+  total budget is10 minutes per initial primary chunk; status polls grant no
+  additional time. With a `review_pending` state, `proceed:false` explicitly
+  cancels owned work; failed/cancelled/lost operations claim no completed CR.
+  Active tokens survive the normal1h TTL and LRU pressure, then expire after
+  terminal grace. Daemon restart loses handles: start a new review only when
+  the tool reports loss. If the index is stale it first returns
   `confirm_wait`: ask the user, then call `start` again with that `state` and
   `proceed` (true = wait for a fresh index, false = review the diff instead). A
   review of the diff is recorded as `degraded` and can be `warn` at best. If the
   daemon review does not complete the tool returns an error naming the cause;
   it does NOT fall back to a review by you.
-- **The daemon wrote the code:** `start` returns `emit_judgements` with the
-  dimension prompts + grounding; emit the `{ judgements }` JSON → `done`.
+- **The daemon wrote the code:** a legacy full-graph review returns
+  `emit_judgements`; emit the `{ judgements }` JSON. A degraded diff review
+  instead requires the verified fresh isolated local CLI helper. The bundled
+  MCP helper consumes `emit_review_call` internally, executes its complete
+  bounded task through CliProvider and forwards the identified enveloped result.
+  It returns `controller_call_pending` with `state`, callId and expiry while
+  owning work. Continue with `phase:'start'` and that SAME state to rejoin;
+  never execute the task in inherited chat or submit raw callResult. Calls run
+  serially and retain the original root/child clocks. `proceed:false` cancels
+  both helper work and server state; a freshness `confirm_wait` decline still
+  chooses a diff review. Raw controllerInput flags cannot register capability.
+  The installed CLI must pass the enforcing isolation probe; unsupported hosts
+  return `unsupported-bounded-controller` before receiving evidence. A lost
+  helper epoch requires cancellation/restart; the daemon never substitutes its
+  own judgement. Legacy degraded tokens require a restart through the helper.
+
 
 Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.
 
-When you are the reviewer and the graph grounding comes back hollow on
-just-created files (no symbol/test edges), judge coverage by RUNNING the suite
-and flag the caveat honestly — never fabricate a HIGH from empty grounding.
+Coverage judgements require actual recorded test evidence. Hollow graph
+grounding routes through the bounded diff protocol; never fabricate a HIGH
+from missing graph edges or replace the isolated helper with chat reasoning.
 PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
 (see the `build` guide — BUILD approval is the code-review-gated completion act,
 and a Story with no code review is always withheld).

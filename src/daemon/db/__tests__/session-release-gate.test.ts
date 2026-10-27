@@ -118,6 +118,7 @@ test('CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recor
 	assert.equal(historical.proofs['CM-S3-SWEEP'].status, 'pending-t34');
 	for (const tree of ['src', 'out']) {
 		const gate = JSON.parse(await readFile(new URL(tree + '/assets/connection-management-gates.json', root), 'utf8'));
-		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, digest(await readFile(new URL(report.inventory.deployedPath, root))));
+		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, report.inventory.deployedSha256, 'disabled gate retains the historical deployment identity; current source audits are separate');
+		assert.equal((await connectionManagementEnablement(new URL(tree + '/assets/connection-management-gates.json', root), ['sc5'])).ready, false, 'current audit changes never enable the historical pending gate');
 	}
 });

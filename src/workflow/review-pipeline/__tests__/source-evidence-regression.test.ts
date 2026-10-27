@@ -16,7 +16,7 @@ import { functionalCoverageSpec } from '../../code-review/dimensions/functional-
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
 import { codeReviewSnapshot } from '../code-review.js';
 
-import { runReviewJob } from '../driver.js';
+import { runTestReviewJob as runReviewJob } from './test-budget.js';
 import { enveloped } from './enveloped.js';
 
 for (const dimension of ['adherence', 'functional-coverage'] as const) {

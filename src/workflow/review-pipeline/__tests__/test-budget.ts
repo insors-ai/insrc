@@ -3,6 +3,8 @@
  * own production-sized tests. This helper is never used by production code. */
 import type { ReviewBudgetPolicy, ReviewExecutionKind } from '../../../shared/review-budget.js';
 import { createReviewBudgetPolicy } from '../budget.js';
+import { runReviewJob, type RunReviewJobOpts } from '../driver.js';
+import type { LLMProvider } from '../../../shared/types.js';
 import { createReviewJob, type CreateJobOpts } from '../job.js';
 import { modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
 import type { CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
@@ -16,9 +18,19 @@ export function syntheticReviewBudget(kind: Exclude<ReviewExecutionKind, 'contro
 }
 
 export function createTestReviewJob(adapter: ReviewAdapter<unknown>, path: ReviewPath, snapshot: ReviewMaterialSnapshot, limitChars: number, opts: Partial<CreateJobOpts> = {}) {
-	return createReviewJob(adapter, path, snapshot, limitChars, { ...opts, budgetPolicy: opts.budgetPolicy ?? syntheticReviewBudget() });
+	const first = adapter.stagesFor(path).find(stage => stage.kind === 'model')?.singleCalls({}, snapshot)[0];
+	const kind = first?.execution.mode === 'reviewer-session' ? 'reviewer-session' : 'structured';
+	return createReviewJob(adapter, path, snapshot, limitChars, { ...opts, budgetPolicy: opts.budgetPolicy ?? syntheticReviewBudget(kind) });
 }
 
 export function testModelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars?: number, path?: ReviewPath, policy: ReviewBudgetPolicy = syntheticReviewBudget()): ReviewAdapter<DimensionResult> {
 	return modelDimensionAdapter(spec, subject, snapshot, limitChars, path, policy);
+}
+
+/** Explicitly qualify legacy scripted providers against their fixture job's selected profile. */
+export function runTestReviewJob(job: import('../types.js').ReviewPipelineJob, adapter: ReviewAdapter<unknown>, provider: LLMProvider, opts?: RunReviewJobOpts) {
+	const qualified = Object.assign(Object.create(provider) as LLMProvider, {
+		getReviewBudgetProfile: () => job.budgetPolicy.profile,
+	});
+	return runReviewJob(job, adapter, qualified, opts);
 }

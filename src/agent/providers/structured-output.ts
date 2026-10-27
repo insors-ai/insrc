@@ -34,7 +34,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
 import { formatNames } from 'ajv-formats/dist/formats.js';
 import { getLogger } from '../../shared/logger.js';
-import { ModelCallFailedError } from './model-call-error.js';
+import { ModelCallFailedError, ModelResponseShapeError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
 const log = getLogger('providers:structured-output');
@@ -189,6 +189,7 @@ export async function withStructuredRetry<T>(
 	call:         StructuredCall,
 	validate:     StructuredValidator<T>,
 	maxAttempts:  number,
+	reviewScoped = false,
 ): Promise<T> {
 	if (maxAttempts < 1) {
 		throw new Error(`structured-output: maxAttempts must be >= 1; got ${maxAttempts}`);
@@ -228,7 +229,7 @@ export async function withStructuredRetry<T>(
 			lastErrors = [msg];
 			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
 			lastThrown = err;
-			log.warn({ attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
+			log.warn(reviewScoped ? { attempt, maxAttempts, errorCode: 'invalid-answer' } : { attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
 			continue;
 		}
 
@@ -242,12 +243,13 @@ export async function withStructuredRetry<T>(
 		lastErrors = result.errors;
 		lastCallFailure = undefined;
 		lastThrown = undefined;
-		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
+		log.warn(reviewScoped ? { attempt, maxAttempts, errorCode: 'invalid-answer' } : { attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
 	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
 	if (lastCallFailure !== undefined) {
 		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });
 	}
+	if (reviewScoped) throw new ModelResponseShapeError('review-answer-invalid', lastErrors);
 	throw new Error(`${prefix}${lastErrors.join('; ')}`, lastThrown !== undefined ? { cause: lastThrown } : undefined);
 }
 

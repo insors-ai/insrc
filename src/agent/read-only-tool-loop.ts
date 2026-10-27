@@ -101,7 +101,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		assertExplicitConnectionExecution(execution);
 		const tool = getTool(name);
 		if (tool === undefined) return unknownTool(name);
-		if (!args.allow.has(tool.id)) return refused(name, tool.id);
+		if (!args.allow.has(tool.id)) return refused(name, tool.id, args.reviewBudget !== undefined);
 		return execute(name, args.root !== undefined ? rootedInput(tool.id, input, args.root) : input, deps);
 	};
 
@@ -266,8 +266,8 @@ function unknownTool(name: string): ToolResult {
 	return { output: `Unknown tool: ${name}`, format: 'text', success: false, error: `No tool registered for '${name}'` };
 }
 
-function refused(name: string, id: string): ToolResult {
-	log.warn({ tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed');
+function refused(name: string, id: string, reviewScoped = false): ToolResult {
+	log.warn(reviewScoped ? { errorCode: 'tool-refused' } : { tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed');
 	return {
 		output:  `Tool '${name}' is not available in this session. Only the read-only tools offered to you can be used.`,
 		format:  'text',

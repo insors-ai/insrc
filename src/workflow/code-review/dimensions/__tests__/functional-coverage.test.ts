@@ -10,6 +10,7 @@
  * Run: npx tsx --test src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts
  */
 
+import { syntheticReviewBudget } from '../../../review-pipeline/__tests__/test-budget.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -50,7 +51,7 @@ const grounding = (symbols: readonly Partial<ChangedSymbolSummary>[] = [{ file: 
 
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
-	const provider = { runReviewSession: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); } } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, runReviewSession: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); } } as unknown as LLMProvider;
 	return { provider, calls: () => n };
 }
 

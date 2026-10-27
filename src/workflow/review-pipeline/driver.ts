@@ -16,16 +16,24 @@
  * nothing: the job is not returned.
  */
 
+import type { ReviewExecutionBudget } from '../../shared/review-budget.js';
+import { preflightProviderReviewBudget, reviewWireSchemaJson } from '../../agent/providers/review-budget.js';
+import { ReviewBudgetError } from './budget.js';
+import { requestBudget } from './measurement.js';
+import { reviewCallEvent, type ReviewCallEvent, type ReviewCallOutcome, type ReviewCallErrorCode } from './call-events.js';
+import { serialiseMessages as sessionPrompt } from '../../agent/providers/cli-wire.js';
 import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-provider.js';
-import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
+import { ModelCallFailedError, ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
-import type { LLMMessage, LLMProvider } from '../../shared/types.js';
+import type { LLMProvider } from '../../shared/types.js';
 import { applyFailure, applyOutput, deadlineError, nextCalls, result, runStage } from './job.js';
 import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from './types.js';
 
 const log = getLogger('review-pipeline:driver');
 
 export interface RunReviewJobOpts {
+	/** Content-free per-call lifecycle progress; existing onCall remains start-only. */
+	readonly onCallEvent?: ((event: ReviewCallEvent) => void) | undefined;
 	/** Cancels the review at once, including the call in flight. */
 	readonly signal?: AbortSignal | undefined;
 	/** The clock the deadline is read against. Default: Date.now. */
@@ -52,43 +60,80 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		}
 		// Serial: one call at a time, never more than one in flight.
 		const call = calls[0]!;
-		opts.onCall?.(call);
-		let raw: unknown;
+		let admitted = call.budget;
+		const emit = (event: ReviewCallOutcome, durationMs: number, errorCode?: ReviewCallErrorCode): void => {
+			const metadata = reviewCallEvent(job, call, admitted, event, durationMs, errorCode);
+			log.info(metadata, 'review pipeline: call lifecycle');
+			opts.onCallEvent?.(metadata);
+		};
+		let budget: ReviewExecutionBudget;
 		try {
-			raw = await untilAborted(send(provider, call, signal), signal);
+			if (!provider.getReviewBudgetProfile) throw new ReviewBudgetError('native-budget-unqualified');
+			const kind = call.execution.mode === 'reviewer-session' ? 'reviewer-session' : 'structured';
+			if (job.budgetPolicy.executionKind !== kind) throw new ReviewBudgetError('budget-profile-mismatch');
+			const profile = provider.getReviewBudgetProfile(kind);
+			admitted = requestBudget(job.budgetPolicy, call.messages, call.schema, 'dispatch');
+			budget = { policy: job.budgetPolicy, admitted, outputAllowanceTokens: job.budgetPolicy.profile.completionReserveTokens,
+				reviewId: job.reviewId, callId: call.callId, stage: call.stage, role: call.role, attempt: call.attempt };
+			preflightProviderReviewBudget(budget, profile, admitted.promptChars, reviewWireSchemaJson(profile, call.schema));
 		} catch (err) {
-			throwIfAborted(signal);
-			if (isAbortError(err)) throw err;
-			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
-			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
-			const failure = classify(err);
-			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause, detail: failure.detail }, 'review pipeline: a call did not complete');
-			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now(), ...(failure.reasons !== undefined ? { reasons: failure.reasons } : {}) });
-			continue;
+			if (err instanceof ReviewBudgetError && err.breakdown) admitted = err.breakdown;
+			emit('refused', 0, 'budget-refused');
+			throw err instanceof ReviewBudgetError ? err : new ReviewBudgetError('native-budget-unqualified');
 		}
-		// An answer that arrives after a cancel is not applied.
-		throwIfAborted(signal);
-		job = applyOutput(job, adapter, call.callId, raw, now());
+		const startedAt = performance.now();
+		let outcome: ReviewCallOutcome = 'failure';
+		let errorCode: ReviewCallErrorCode | undefined = 'call-failed';
+		try {
+			emit('start', 0);
+			opts.onCall?.(call);
+			throwIfAborted(signal);
+			let raw: unknown;
+			try {
+				raw = await untilAborted(send(provider, call, budget, signal), signal);
+			} catch (err) {
+				throwIfAborted(signal);
+				if (err instanceof ReviewBudgetError) { errorCode = 'budget-refused'; throw err; }
+				if (isAbortError(err)) throw err;
+				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw deadlineError(job, adapter); }
+				const failure = classify(err);
+				errorCode = failure.cause === 'identifier-mismatch' ? 'invalid-answer' : failure.cause;
+				// Only stable categories persist. Detailed semantic corrections remain ephemeral prompt input.
+				job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.cause, now: now(), ...(failure.reasons !== undefined ? { reasons: failure.reasons } : {}) });
+				continue;
+			}
+			throwIfAborted(signal);
+			job = applyOutput(job, adapter, call.callId, raw, now());
+			const accepted = job.answered.some(answer => answer.callId === call.callId);
+			outcome = accepted ? 'success' : 'failure';
+			errorCode = accepted ? undefined : 'invalid-answer';
+		} catch (err) {
+			if (signal?.aborted === true || isAbortError(err)) { outcome = 'cancel'; errorCode = 'cancelled'; }
+			if (err instanceof ReviewBudgetError) errorCode = 'budget-refused';
+			throw err;
+		} finally {
+			emit(outcome, performance.now() - startedAt, errorCode);
+		}
 	}
 	opts.onDone?.(job);
 	return result(job);
 }
 
 /** Make one call with its execution mode; the provider makes exactly one attempt. */
-async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal | undefined): Promise<unknown> {
+async function send(provider: LLMProvider, call: ReviewCall, reviewBudget: ReviewExecutionBudget, signal: AbortSignal | undefined): Promise<unknown> {
 	const exec = call.execution;
 	if (exec.mode === 'reviewer-session') {
 		if (provider.runReviewSession === undefined) {
 			throw new Error('This review needs a reviewer session (a claude, codex or Ollama provider); the configured review provider has none.');
 		}
 		return provider.runReviewSession<unknown>(sessionPrompt(call.messages), call.schema, {
-			cwd: exec.cwd, deadlineMs: exec.deadlineMs, internalRetry: false,
+			reviewBudget, cwd: exec.cwd, deadlineMs: exec.deadlineMs, internalRetry: false,
 			...(exec.stallMs !== undefined ? { stallMs: exec.stallMs } : {}),
 			...(signal !== undefined ? { signal } : {}),
 		});
 	}
 	return provider.completeStructured<unknown>([...call.messages], call.schema, {
-		internalRetry: false,
+		reviewBudget, internalRetry: false,
 		...(exec.cwd !== undefined ? { cwd: exec.cwd } : {}),
 		...(exec.timeoutMs !== undefined ? { timeoutMs: exec.timeoutMs } : {}),
 		...(exec.stallMs !== undefined ? { stallMs: exec.stallMs } : {}),
@@ -96,22 +141,15 @@ async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal
 	});
 }
 
-/** A reviewer session takes one prompt: the messages as the CLI would serialise them. */
-function sessionPrompt(messages: readonly LLMMessage[]): string {
-	return messages.map(m => {
-		const content = typeof m.content === 'string' ? m.content : m.content.map(b => 'text' in b ? b.text : '').join('');
-		return m.role === 'system' ? `## System\n${content}` : m.role === 'assistant' ? `## Assistant\n${content}` : content;
-	}).join('\n\n');
-}
-
 /** Why a call did not complete. Anything not recognised is treated as transient: re-issued once, as today's retries would. */
-function classify(err: unknown): { cause: FailureCause; maxChars?: number | undefined; detail: string; reasons?: readonly string[] | undefined } {
+function classify(err: unknown): { cause: FailureCause; maxChars?: number | undefined; reasons?: readonly string[] | undefined } {
 	const detail = err instanceof Error ? err.message : String(err);
-	if (err instanceof InputTooLargeError) return { cause: 'size-refusal', maxChars: err.maxChars, detail };
-	if (err instanceof CliStallError) return { cause: 'stall', detail };
-	if (err instanceof ModelResponseShapeError) return { cause: 'invalid-answer', detail, ...(err.reasons.length > 0 ? { reasons: err.reasons } : {}) };
-	if (/^structured-output: validation failed/.test(detail)) return { cause: 'invalid-answer', detail };
-	return { cause: 'transient', detail };
+	if (err instanceof ModelCallFailedError) return { cause: 'transient' };
+	if (err instanceof InputTooLargeError) return { cause: 'size-refusal', maxChars: err.maxChars };
+	if (err instanceof CliStallError) return { cause: 'stall' };
+	if (err instanceof ModelResponseShapeError) return { cause: 'invalid-answer', ...(err.reasons.length > 0 ? { reasons: err.reasons } : {}) };
+	if (/^structured-output: validation failed/.test(detail)) return { cause: 'invalid-answer' };
+	return { cause: 'transient' };
 }
 
 /** `work`, or AbortError as soon as `signal` fires (a provider that ignores it cannot hold the review). */

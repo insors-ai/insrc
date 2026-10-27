@@ -11,7 +11,7 @@ import type { LLMProvider } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult } from '../../code-review/types.js';
 import { codeReviewSnapshot, type ModelDimensionSpec } from '../code-review.js';
 
-import { runReviewJob } from '../driver.js';
+import { runTestReviewJob as runReviewJob } from './test-budget.js';
 import { REVIEW_CALL_LIMITS } from '../../review/call-limits.js';
 import { enveloped } from './enveloped.js';
 

@@ -12,6 +12,7 @@
  * Run: npx tsx --test src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts
  */
 
+import { syntheticReviewBudget } from '../../../../workflow/review-pipeline/__tests__/test-budget.js';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -90,7 +91,7 @@ test('on both the controller and daemon paths a lowered graph-gap finding is LOW
 
 	// Daemon path: the real coverage judge over the same grounding, same model answer.
 	let daemonPrompt: readonly LLMMessage[] = [];
-	const provider = { completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { daemonPrompt = unenveloped(msgs); const { dimension: _d, ...answer } = GRAPH_GAP; return enveloped(schema, { findings: [answer] }); } } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { daemonPrompt = unenveloped(msgs); const { dimension: _d, ...answer } = GRAPH_GAP; return enveloped(schema, { findings: [answer] }); } } as unknown as LLMProvider;
 	const judges: JudgeSlot[] = BASE_DIMS.map(dimension => dimension === 'coverage'
 		? { dimension, judge: judgeCoverage }
 		: { dimension, judge: async (): Promise<DimensionResult> => ({ dimension, findings: [] }) });
@@ -113,7 +114,7 @@ test('on both the controller and daemon paths a lowered graph-gap finding is LOW
 
 test('the daemon diff path reaches the coverage judge as degraded, also with an empty grounding', async () => {
 	const calls: (readonly LLMMessage[])[] = [];
-	const provider = { runReviewSession: async (prompt: string, schema: unknown) => { calls.push(sessionMessages(prompt)); return enveloped(schema, { findings: [] }); }, completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { calls.push(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, runReviewSession: async (prompt: string, schema: unknown) => { calls.push(sessionMessages(prompt)); return enveloped(schema, { findings: [] }); }, completeStructured: async (msgs: readonly LLMMessage[], schema: unknown) => { calls.push(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
 	const writes: string[] = [];
 	const rpcDeps: CodeReviewRunDeps = {
 		resolveSubject: async () => ({ ok: true, subject: subject() }),

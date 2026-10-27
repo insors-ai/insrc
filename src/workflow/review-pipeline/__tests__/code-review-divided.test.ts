@@ -33,7 +33,7 @@ import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import { runCodeReview, type CodeReviewRunnerDeps, type JudgeSlot } from '../../code-review/runner.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
 import { codeReviewSnapshot, type ModelDimensionSpec } from '../code-review.js';
-import { runReviewJob } from '../driver.js';
+import { runTestReviewJob as runReviewJob } from './test-budget.js';
 import { promptChars } from '../envelope.js';
 
 import type { ReviewAdapter } from '../types.js';
@@ -317,5 +317,5 @@ test('a gather call failing twice fails the review and records nothing', async (
 	assert.match((outcome as { error: string }).error, /invalid-answer/);
 	assert.deepEqual(written, [], 'nothing recorded');
 	assert.ok(sent.filter(c => c.kind === 'obligation').length >= 2);
-	assert.match((outcome as { error: string }).error, /not located at `file:line`/, 'failed on the location rule, after its one re-issue');
+	assert.match((outcome as { error: string }).error, /invalid-answer/, 'failed on the location rule, after its one re-issue');
 });

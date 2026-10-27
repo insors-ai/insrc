@@ -505,3 +505,66 @@ test('provider profile and normalized enveloped wire schema agree before plannin
 		}
 	}
 });
+
+test('review-scoped provider and driver logs redact sentinel content on all failure paths', async () => {
+	const { getLogger } = await import('../../../shared/logger.js');
+	const { createReviewJob } = await import('../../../workflow/review-pipeline/job.js');
+	const { runReviewJob } = await import('../../../workflow/review-pipeline/driver.js');
+	const { toyAdapter, toySnapshot, atom } = await import('../../../workflow/review-pipeline/__tests__/toy-adapter.js');
+	const sentinel = 'PRIVATE_SOURCE_SCHEMA_CREDENTIAL_UNKNOWN_ID';
+	const cases = [
+		{ kind: 'codex' as const, mode: 'structured' as const, step: { fail: `API Error: overloaded ${sentinel.repeat(100)}` } },
+		{ kind: 'codex' as const, mode: 'structured' as const, step: { out: JSON.stringify({ type: 'turn.failed', error: { message: sentinel.repeat(100) } }) + '\n' } },
+		{ kind: 'codex' as const, mode: 'structured' as const, step: { out: codexOk(sentinel.repeat(100)) } },
+		{ kind: 'codex' as const, mode: 'reviewer-session' as const, step: { pre: JSON.stringify({ type: 'thread.started', thread_id: sentinel }) + '\n', sleepMs: 400, out: codexOk('{}') } },
+		{ kind: 'claude' as const, mode: 'structured' as const, step: { out: JSON.stringify({ is_error: true, result: sentinel.repeat(100), modelUsage: { [sentinel]: {} } }) } },
+		{ kind: 'claude' as const, mode: 'reviewer-session' as const, step: { out: JSON.stringify({ is_error: true, result: sentinel.repeat(100) }) } },
+	];
+	const captured: unknown[] = [];
+	const restore: (() => void)[] = [];
+	for (const name of ['cli-provider', 'review-pipeline:driver', 'review-pipeline:job', 'providers:structured-output']) {
+		const logger = getLogger(name) as unknown as Record<string, (...args: unknown[]) => void>;
+		for (const level of ['info', 'warn', 'debug']) {
+			const original = logger[level]!;
+			logger[level] = (...args) => { captured.push(args); };
+			restore.push(() => { logger[level] = original; });
+		}
+	}
+	const oldTmp = process.env['TMPDIR'];
+	try {
+		for (const c of cases) {
+			if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
+			const f = fakeCli([c.step]);
+			try {
+				process.env['TMPDIR'] = f.dir;
+				const provider = new CliProvider({ kind: c.kind, binPath: f.bin, model: 'fixture' });
+				const policy = createReviewBudgetPolicy(provider.getReviewBudgetProfile(c.mode), c.mode);
+				const source = { ...atom(1), text: sentinel.repeat(10) };
+				const snapshot = toySnapshot([source]);
+				const adapter = toyAdapter(snapshot, { execution: c.mode === 'reviewer-session'
+					? { mode: 'reviewer-session', cwd: f.dir, deadlineMs: 5000, stallMs: 100, tools: 'read-only' }
+					: { mode: 'structured', cwd: f.dir } });
+				const job = createReviewJob(adapter, 'daemon', snapshot, 384000, { budgetPolicy: policy });
+				await assert.rejects(() => runReviewJob(job, adapter, provider), e => {
+					assert.ok(e instanceof Error); assert.ok(!e.message.includes(sentinel)); return true;
+				});
+				assert.ok(f.calls().length >= 1);
+				assert.ok(!existsSync(join(f.dir, 'insrc-cli-failures')), 'review output is not persisted in raw CLI failure files');
+			} finally { f.cleanup(); }
+		}
+		assert.ok(captured.length > 0);
+		assert.ok(!JSON.stringify(captured).includes(sentinel), 'provider/driver/structured retry logs contain no source, output, credentials or native session IDs');
+		// Non-review error reporting keeps its established full-output behavior.
+		if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
+		const f = fakeCli([{ fail: sentinel.repeat(100) }]);
+		try {
+			process.env['TMPDIR'] = f.dir;
+			const provider = new CliProvider({ kind: 'codex', binPath: f.bin });
+			await assert.rejects(() => provider.completeStructured([{ role: 'user', content: 'normal call' }], SCHEMA, { internalRetry: false }));
+			assert.ok(existsSync(join(f.dir, 'insrc-cli-failures')));
+		} finally { f.cleanup(); }
+	} finally {
+		if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
+		for (const reset of restore.reverse()) reset();
+	}
+});

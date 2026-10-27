@@ -469,7 +469,12 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 			assert.equal(opts?.reviewBudget, sessionBudget, 'reviewer tool-loop receives the immutable contract');
 			return complete(turns, opts);
 		};
-		assert.deepEqual(await fixture.provider.runReviewSession('review', schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: sessionBudget, internalRetry: false }), { ok: true });
+		const { serialiseMessages } = await import('../cli-wire.js');
+		const { requestBudget } = await import('../../../workflow/review-pipeline/measurement.js');
+		const sessionMessages: LLMMessage[] = [{ role: 'system', content: 'Review the code.' }, { role: 'user', content: 'review' }];
+		const planned = requestBudget(sessionPolicy, sessionMessages, schema, 'dispatch');
+		assert.deepEqual(await fixture.provider.runReviewSession(serialiseMessages(sessionMessages), schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: sessionBudget, internalRetry: false }), { ok: true });
+		assert.equal(planned.promptChars, JSON.stringify((fixture.bodies[1] as unknown as { messages: unknown }).messages).length, 'planning accounts the exact flattened single-user native session prompt');
 		assert.equal(fixture.bodies.length, 3, 'one budgeted inspection turn and one budgeted final answer');
 	} finally { await fixture.close(); }
 });

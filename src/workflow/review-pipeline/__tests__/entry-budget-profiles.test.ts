@@ -42,6 +42,6 @@ test('code grounded and template review resolve the selected profile before job 
 		await run(provider);
 		assert.equal(events[0], entry === 'template' ? 'profile:reviewer-session' : 'profile:structured');
 		assert.ok(events.includes('model'));
-		if (entry === 'code') assert.deepEqual(events.slice(0, 3), ['profile:structured', 'build', 'model']);
+		if (entry === 'code') assert.deepEqual(events.slice(0, 4), ['profile:structured', 'build', 'profile:structured', 'model']);
 	}
 });

@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { syntheticReviewBudget } from '../../../review-pipeline/__tests__/test-budget.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -45,7 +46,7 @@ const groundingTwoFiles = (): CodeReviewGrounding => grounding([
  *  OTHER provider method is absent, so the judge touching one would throw. */
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
-	const provider = {
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		completeStructured: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); },
 	} as unknown as LLMProvider;
 	return { provider, calls: () => n };

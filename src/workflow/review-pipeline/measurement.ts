@@ -5,13 +5,16 @@
 
 import type { ReviewBudgetPolicy } from '../../shared/review-budget.js';
 import type { LLMMessage, StructuredSchema } from '../../shared/types.js';
+import { serialiseMessages } from '../../agent/providers/cli-wire.js';
 import { reviewPromptChars, reviewWireSchemaJson } from '../../agent/providers/review-budget.js';
 import { measureReviewBudget, ReviewBudgetError } from './budget.js';
 import { envelopeMessages, envelopeSchema } from './envelope.js';
 import type { ChunkPrompt } from './types.js';
 
 export function requestBudget(policy: ReviewBudgetPolicy, messages: readonly LLMMessage[], schema: StructuredSchema, phase: 'planning' | 'dispatch') {
-	return measureReviewBudget(policy, { promptChars: reviewPromptChars(policy.profile, messages), wireSchemaJson: reviewWireSchemaJson(policy.profile, schema), phase });
+	const wireMessages = policy.executionKind === 'reviewer-session' && policy.profile.promptDialect === 'ollama-chat-v1'
+		? [{ role: 'user' as const, content: serialiseMessages(messages) }] : messages;
+	return measureReviewBudget(policy, { promptChars: reviewPromptChars(policy.profile, wireMessages), wireSchemaJson: reviewWireSchemaJson(policy.profile, schema), phase });
 }
 
 /** A packing score in the existing character coordinate system. Both independent constraints

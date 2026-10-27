@@ -328,10 +328,10 @@ export function applyFailure(
 		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);
 	}
 
-	const detail = more.detail ?? (more.reasons !== undefined ? more.reasons.join('; ') : undefined);
-	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail, more.reasons ?? [], call.attempt, invalidAnswers);
+	const detail = cause; // Detailed correction text is prompt-only, never a persistent failure detail.
+	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail, more.reasons?.map(() => 'semantic-validation-failed') ?? [], call.attempt, invalidAnswers);
 	const key = call.carries.key ?? call.carries.chunkId ?? call.callId;
-	log.warn({ dimension: job.dimension, stage: stage.id, key, cause, attempts: call.attempt }, `review pipeline: a call failed ${attemptsText(call.attempt)}; recorded and the review goes on`);
+	log.warn({ dimension: job.dimension, stage: stage.id, cause, attempts: call.attempt }, `review pipeline: a call failed ${attemptsText(call.attempt)}; recorded and the review goes on`);
 	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause, ...(detail !== undefined ? { detail } : {}), policy: stage.onCallFailure, attempts: call.attempt }] };
 	return stageDone(next) ? completeStage(next, adapter, now) : next;
 }
@@ -457,7 +457,7 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 	}
 	const level = (next.gatherLevels[key] ?? 0) + 1;
 	if (level > MAX_GATHER_LEVELS) throw new Error(`review ${job.dimension}: the evidence for ${key} did not fit one call after ${MAX_GATHER_LEVELS} reduction levels`);
-	log.info({ dimension: job.dimension, key, level, notes: notes.length, calls: batches.length }, 'review pipeline: an obligation\'s evidence is over the limit; reducing it');
+	log.info({ dimension: job.dimension, level, notes: notes.length, calls: batches.length }, 'review pipeline: an obligation\'s evidence is over the limit; reducing it');
 	return issue({ ...next, gatherLevels: { ...next.gatherLevels, [key]: level } }, batches);
 }
 
@@ -554,7 +554,7 @@ function redivideNotes(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, 
 	}
 	const hard = Math.min(maxChars ?? call.chars - 1, call.chars - 1, job.plan.limitChars);
 	const soft = Math.max(1, Math.min(maxChars !== undefined ? maxChars - reserveFor(maxChars) : Math.floor(call.chars / 2), hard));
-	log.warn({ dimension: job.dimension, role: call.role, key, notes: notes.length, soft, hard }, 'review pipeline: a note call was refused for its size; reducing its notes in smaller batches');
+	log.warn({ dimension: job.dimension, role: call.role, notes: notes.length, soft, hard }, 'review pipeline: a note call was refused for its size; reducing its notes in smaller batches');
 	if (notes.length <= 1 && call.role === 'reduce') throw new AtomTooLargeError(`evidence note ${notes[0]?.noteId ?? '?'} (${key})`, call.chars, hard);
 	if (notes.length === 0) throw new AtomTooLargeError(`the obligation call for ${key}`, call.chars, hard);
 	return issue(job, reduceBatches(job, gather, key, notes, soft, hard, labels));
@@ -619,7 +619,7 @@ function redivideRelation(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown
 		const chars = candidateChars(job.budgetPolicy, prompt, budget);
 		if (chars > budget) throw new AtomTooLargeError(`the relation ${from.id} -> ${to.id} (${key})`, chars, budget);
 	}
-	log.warn({ dimension: job.dimension, key, refused: call.chars, budget, calls: prompts.length }, 'review pipeline: a relation call was refused for its size; asked again within the reported size');
+	log.warn({ dimension: job.dimension, refused: call.chars, budget, calls: prompts.length }, 'review pipeline: a relation call was refused for its size; asked again within the reported size');
 	const relationPlan = { ...job.relationPlan, [key]: (job.relationPlan[key] ?? 1) - 1 + prompts.length };
 	return issue({ ...job, relationPlan }, prompts.map(prompt => ({ prompt, role: 'relation' as const, carries: call.carries })));
 }
@@ -630,7 +630,7 @@ function contextToNotes(job: ReviewPipelineJob, key: string, context: readonly R
 	if (context.length === 0) return { job, notes: [], labels: new Map() };
 	const notes: EvidenceNote[] = context.map((a, i) => ({ noteId: `n${job.seq + i + 1}`, key, text: a.text, atomIds: [a.id] }));
 	const labels = new Map(context.map((a, i) => [notes[i]!.noteId, `context atom ${a.label}`] as const));
-	log.info({ dimension: job.dimension, key, contextAtoms: context.length }, 'review pipeline: an obligation\'s context is over the limit; reducing it with its evidence');
+	log.info({ dimension: job.dimension, contextAtoms: context.length }, 'review pipeline: an obligation\'s context is over the limit; reducing it with its evidence');
 	return { job: { ...job, seq: job.seq + context.length, notes: [...job.notes, ...notes], contextReduced: { ...job.contextReduced, [key]: true } }, notes, labels };
 }
 

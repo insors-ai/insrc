@@ -392,7 +392,8 @@ test('a premise call that fails twice is recorded as not judged, never as a pass
 		assert.equal(cite.severity, 'MED');
 		assert.equal(cite.fixability, 'manual');
 		assert.ok(cite.evidence.startsWith('Not judged'), cite.evidence);
-		assert.ok(cite.evidence.includes('t-stalled'), 'the cause, with its codex session, is kept');
+		assert.ok(cite.evidence.includes('transient'), 'a stable cause is kept');
+		assert.ok(!cite.evidence.includes('t-stalled'), 'native session identifiers are not persisted');
 		assert.equal(report.findings.find(f => f.claimId === 'c-inv')?.severity, 'LOW', 'premises judged before it are kept');
 		assert.equal(report.findings.find(f => f.claimId === 'c-sem')?.severity, 'MED', 'premises after it are still judged');
 		assert.equal(report.verdict, 'block', 'a premise not judged blocks under the default policy');

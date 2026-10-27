@@ -44,6 +44,7 @@ const FAMILY_ID_OWNERS: readonly Exclusion[] = [
 
 /** Where a quoted 'ollama' is not a runner. */
 const OLLAMA_NON_RUNNER: readonly Exclusion[] = [
+	{ file: 'src/workflow/review-pipeline/call-events.ts', owner: 's1', why: 'Review budget a8c4399a90185f7f t5: content-free review telemetry transport allowlist, not model runner selection' },
 	...FAMILY_ID_OWNERS,
 	{ file: 'src/agent/providers/ollama.ts', owner: 's3', why: 'the Ollama family implementation' },
 	{ file: 'src/indexer/embedder.ts', owner: 'Epic override item 3', why: "the embedder backend name and the 'ollama' npm package; embedding models are out of the Epic" },

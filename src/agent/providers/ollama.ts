@@ -339,7 +339,7 @@ export class OllamaProvider implements LLMProvider {
       }
     }
 
-    log.debug({
+    log.debug(opts.reviewBudget ? { numCtx: this.numCtx, messageCount: ollamaMessages.length, toolCount: tools?.length ?? 0 } : {
       model: this.model,
       numCtx: this.numCtx,
       maxTokens: opts.maxTokens ?? 8_192,
@@ -365,7 +365,7 @@ export class OllamaProvider implements LLMProvider {
     // and model-not-found errors are NOT retried (they're config
     // failures; retrying is wasted latency and a noisier failure mode).
     let lastErr: unknown;
-    for (let attempt = 0; attempt < MAX_TRANSIENT_RETRIES + 1; attempt++) {
+    for (let attempt = 0; attempt < (opts.reviewBudget ? 1 : MAX_TRANSIENT_RETRIES + 1); attempt++) {
       try {
         // Always use streaming internally to avoid headers-timeout on slow
         // CPU inference. The non-streaming Ollama API waits for the entire
@@ -377,7 +377,7 @@ export class OllamaProvider implements LLMProvider {
         // with a custom reason rejects with that reason). Never retried.
         if (opts.signal?.aborted === true) throw abortError();
         lastErr = err;
-        if (attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
+        if (!opts.reviewBudget && attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
           log.warn({
             model:    this.model,
@@ -493,7 +493,7 @@ export class OllamaProvider implements LLMProvider {
 
     const toolCalls = parseToolCalls(allToolCalls.length > 0 ? allToolCalls : undefined);
 
-    log.debug({
+    log.debug(opts.reviewBudget ? { textLen: text.length, toolCallCount: toolCalls.length, promptEvalCount, evalCount } : {
       model: this.model,
       textLen: text.length,
       text,
@@ -681,7 +681,8 @@ export class OllamaProvider implements LLMProvider {
       },
       (raw) => validateAgainstSchema<T>(schema, raw),
       // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
-      opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
+      opts?.reviewBudget || opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
+      opts?.reviewBudget !== undefined,
     );
   }
 

@@ -13,6 +13,7 @@
  * Run: npx tsx --test src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts
  */
 
+import { syntheticReviewBudget } from '../../../review-pipeline/__tests__/test-budget.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -111,7 +112,7 @@ test('a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff
 	assert.match(d.lowered![0]!.reason, /diff review cannot grade symbol coverage/);
 
 	// Through the judge and the runner: a review whose only HIGH was lowered does not fold to block.
-	const provider = { completeStructured: async (_m: unknown, schema: unknown) => enveloped(schema, { findings: [{ severity: 'HIGH', location: 'src/a.ts:1', message: 'graph gap', confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'reached' }] }) } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, completeStructured: async (_m: unknown, schema: unknown) => enveloped(schema, { findings: [{ severity: 'HIGH', location: 'src/a.ts:1', message: 'graph gap', confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'reached' }] }) } as unknown as LLMProvider;
 	const judges: JudgeSlot[] = [
 		{ dimension: 'adherence', judge: async () => ({ dimension: 'adherence', findings: [] }) },
 		{ dimension: 'conventions', judge: async () => ({ dimension: 'conventions', findings: [] }) },
@@ -146,7 +147,7 @@ const systemOf = (msgs: ReturnType<typeof buildCoveragePrompt>): string => msgs.
 
 test('the coverage prompt lists only eligible symbols', async () => {
 	let prompt = '';
-	const provider = { completeStructured: async (msgs: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { prompt = userOf(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, completeStructured: async (msgs: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { prompt = userOf(unenveloped(msgs)); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
 	await judgeCoverage(subject(), GROUNDING, provider, { groundingMode: 'full' });
 	const listed = JSON.parse(prompt.split('```json\n')[1]!.split('\n```')[0]!) as ChangedSymbolSummary[];
 	assert.deepEqual(listed.map(s => [s.entityId, s.coverageEvidence]), [
@@ -156,7 +157,7 @@ test('the coverage prompt lists only eligible symbols', async () => {
 
 test('a diff review lists no symbols and grades only the promised tests', async () => {
 	let msgs: ReturnType<typeof buildCoveragePrompt> = [];
-	const provider = { completeStructured: async (m: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { msgs = unenveloped(m); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile, completeStructured: async (m: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { msgs = unenveloped(m); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
 	await judgeCoverage(subject(), GROUNDING, provider, { groundingMode: 'degraded' });
 	// includes + a short message, not assert.match: a failing match on the whole
 	// prompt made node:test spin while formatting it.

@@ -35,6 +35,7 @@
  *   - embeddings:       depends on whether embedDelegate is wired
  */
 
+import { serialiseMessages } from './cli-wire.js';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -56,7 +57,7 @@ import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
-import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS } from '../../workflow/review-pipeline/budget.js';
+import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
@@ -229,6 +230,7 @@ export class CliProvider implements LLMProvider {
 	// -- complete -------------------------------------------------------
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
+		if (opts?.reviewBudget) throw new ReviewBudgetError('native-budget-unqualified');
 		return this.withTransientRetry('complete', async () => {
 			const prompt = serialiseMessages(messages);
 			if (this.kind === 'claude') {
@@ -264,9 +266,9 @@ export class CliProvider implements LLMProvider {
 			} catch (err) {
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
-				if (err instanceof InputTooLargeError) throw err;
+				if (err instanceof ReviewBudgetError || err instanceof InputTooLargeError) throw err;
 				// A cancelled call ends at once; it is never retried (Epic 8315a11f s1).
-				if (isAbortError(err)) throw err;
+				if (err instanceof ReviewBudgetError || isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				const backoffMs = 2000 * attempt;
@@ -328,7 +330,7 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
-		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3);
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.reviewBudget || opts?.internalRetry === false ? 1 : 3);
 	}
 
 	private async completeStructuredOnce<T>(
@@ -350,8 +352,9 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', wireSchema,
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal, opts?.reviewBudget !== undefined));
 			if (envelope.is_error) {
+				if (opts?.reviewBudget) throw reviewCliError(envelope.result ?? '', 'review-cli-failed');
 				const message = `claude --print failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
@@ -366,7 +369,7 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, wireSchema);
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal);
+			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal, opts?.reviewBudget !== undefined);
 			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
 			const { agentText } = await this.runCodex(args, prompt, silence);
 			if (agentText === undefined) {
@@ -376,6 +379,7 @@ export class CliProvider implements LLMProvider {
 			try {
 				parsed = JSON.parse(agentText);
 			} catch (err) {
+				if (opts?.reviewBudget) throw new ModelResponseShapeError('review-answer-invalid', ['Return one valid JSON object matching the supplied schema.']);
 				throw new Error(`codex agent_message.text was not parseable JSON: ${(err as Error).message}. text=${agentText.slice(0, 300)}`);
 			}
 			return codexReply<T>(schema, parsed, 'codex answer');
@@ -452,7 +456,7 @@ export class CliProvider implements LLMProvider {
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
-		const maxAttempts = opts.internalRetry === false ? 1 : 2;
+		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;
 		for (let attempt = 1; ; attempt++) {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
@@ -462,7 +466,7 @@ export class CliProvider implements LLMProvider {
 			}
 			try {
 				return await this.reviewSessionOnce<T>(prompt, schema, {
-					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, reviewScoped: opts.reviewBudget !== undefined,
 					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
 					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 				});
@@ -473,7 +477,7 @@ export class CliProvider implements LLMProvider {
 				// retried once, as a fresh run, inside the time that remains (ISSUE-d4b2cd1c).
 				if (err instanceof CliStallError) {
 					const what = opts.stallMs !== undefined ? 'the CLI printed nothing new within its silence limit' : 'the CLI produced no model output';
-					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
+					log.warn((opts.reviewBudget ? { provider: this.kind, attempt, errorCode: 'stall' } : { provider: this.kind, attempt, codexSession: err.sessionId, err: msg }),
 						`runReviewSession: ${what}; ${attempt < maxAttempts ? 'retrying once inside the remaining time' : 'giving up'}`);
 					if (attempt < maxAttempts) continue;
 					throw err;
@@ -481,17 +485,18 @@ export class CliProvider implements LLMProvider {
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
-				log.warn({ provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
+				log.warn(opts.reviewBudget ? { provider: this.kind, errorCode: 'transient' } : { provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
 			}
 		}
 	}
 
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean; stallMs?: number | undefined; signal?: AbortSignal | undefined }): Promise<T> {
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
 				// A size refusal is classified as completeStructured classifies it, so the
 				// pipeline re-divides the call instead of resending it (Epic 8315a11f s1).
+				if (exec.reviewScoped) throw reviewCliError(envelope.result ?? '', 'review-cli-failed');
 				const message = `claude review session failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
@@ -510,6 +515,7 @@ export class CliProvider implements LLMProvider {
 			try {
 				parsed = JSON.parse(text);
 			} catch (err) {
+				if (exec.reviewScoped) throw new ModelResponseShapeError('review-answer-invalid', ['Return one valid JSON object matching the supplied schema.']);
 				throw new Error(`codex review session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
 			}
 			return codexReply<T>(schema, parsed, 'codex review session answer');
@@ -564,9 +570,9 @@ export class CliProvider implements LLMProvider {
 	 *  caller names one, with the caller's `timeoutMs` when it names one, else
 	 *  no override, so the CLI inherits the daemon's working directory and the
 	 *  provider's timeout exactly as before. */
-	private execIn(cwd: string | undefined, timeoutMs?: number | undefined, signal?: AbortSignal | undefined): ExecOverride | undefined {
-		if (cwd === undefined && timeoutMs === undefined && signal === undefined) return undefined;
-		return { ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
+	private execIn(cwd: string | undefined, timeoutMs?: number | undefined, signal?: AbortSignal | undefined, reviewScoped = false): ExecOverride | undefined {
+		if (cwd === undefined && timeoutMs === undefined && signal === undefined && !reviewScoped) return undefined;
+		return { reviewScoped, ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
 	}
 
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
@@ -574,14 +580,15 @@ export class CliProvider implements LLMProvider {
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal);
 			r.then(out => {
 				if (out.exitCode !== 0) {
-					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr));
+					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped));
 				}
 				let envelope: ClaudeEnvelope;
 				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
 				catch (err) {
+					if (exec?.reviewScoped) return reject(new ModelResponseShapeError('review-envelope-invalid'));
 					return reject(new Error(`claude stdout was not parseable JSON envelope: ${(err as Error).message}. stdout=${out.stdout.slice(0, 500)}`));
 				}
-				log.debug({ duration_ms: envelope.duration_ms, model: Object.keys(envelope.modelUsage ?? {})[0] ?? null }, 'claude completed');
+				log.debug(exec?.reviewScoped ? { duration_ms: typeof envelope.duration_ms === 'number' ? envelope.duration_ms : undefined } : { duration_ms: envelope.duration_ms, model: Object.keys(envelope.modelUsage ?? {})[0] ?? null }, 'claude completed');
 				resolve({ envelope });
 			}, reject);
 		});
@@ -610,10 +617,11 @@ export class CliProvider implements LLMProvider {
 			// Classified on every error event and the error output, not only the first
 			// event: a generic first event must not hide a size refusal behind it.
 			const said = [...errorEvents.map(e => JSON.stringify(e)), out.stderr].join('\n');
+			if (exec?.reviewScoped) throw reviewCliError(said, 'review-cli-failed');
 			throw sizeRefusalOr(message, said, () => new Error(message));
 		}
 		if (out.exitCode !== 0) {
-			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr);
+			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped);
 		}
 		// A tool-using run narrates before it answers: the answer is the LAST message.
 		const agentMsg = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message').at(-1);
@@ -633,22 +641,6 @@ export class CliProvider implements LLMProvider {
  * approximated by simple section headers. System prompts go first
  * separated by a blank line; user turns are concatenated next.
  */
-function serialiseMessages(messages: readonly LLMMessage[]): string {
-	const parts: string[] = [];
-	for (const m of messages) {
-		const content = typeof m.content === 'string'
-			? m.content
-			: m.content.map(b => 'text' in b ? b.text : '').join('');
-		if (m.role === 'system') {
-			parts.push(`## System\n${content}`);
-		} else if (m.role === 'assistant') {
-			parts.push(`## Assistant\n${content}`);
-		} else {
-			parts.push(content);
-		}
-	}
-	return parts.join('\n\n');
-}
 
 
 // ---------------------------------------------------------------------------
@@ -668,6 +660,7 @@ interface SubprocessResult {
  *  working directory (edit sessions run inside the repo) and/or a tighter
  *  timeout. Absent fields fall back to the provider defaults. */
 interface ExecOverride {
+	readonly reviewScoped?: boolean | undefined;
 	readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;
 	/** Kill a codex run that shows no model output within the first-output limit
@@ -814,6 +807,7 @@ export function cliExitError(
 	stdout:   string,
 	stderr:   string,
 	dir:      string = join(tmpdir(), 'insrc-cli-failures'),
+	reviewScoped = false,
 ): CliExitError {
 	const head = `${cli} exited with ${exitCode}.`;
 	let result = '';
@@ -822,6 +816,7 @@ export function cliExitError(
 		if (typeof r === 'string') result = r.trim();
 	} catch { /* not an envelope: the output below is all there is */ }
 	const said = result.length > 0 ? result : stderr.trim();
+	if (reviewScoped) return reviewCliError(`${stdout}\n${stderr}`, head);
 	const lead = result.length > 0 ? ` ${result}` : '';
 
 	const output = `stderr=${stderr} stdout=${stdout}`;
@@ -956,4 +951,11 @@ interface CodexEvent {
 	readonly item?: { readonly type?: string; readonly text?: string };
 	readonly error?: { readonly message?: string };
 	readonly message?: string;
+}
+
+/** Review failures never persist CLI output or quote it into a logged error. */
+function reviewCliError(said: string, message: string): CliExitError {
+	const sizes = classifyInputTooLarge(said);
+	return sizes !== undefined ? new InputTooLargeError('review-input-too-large', 'input_too_large', sizes)
+		: new CliExitError(message, isTransientCliError(said) ? 'transient-cli-failure' : 'cli-failure');
 }

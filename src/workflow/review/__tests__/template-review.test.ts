@@ -171,7 +171,7 @@ test('T10 a second invalid answer fails the review', async () => {
 	const bad = answer(SPEC);
 	bad.items.pop();
 	const f = fakeProvider([bad, bad, answer(SPEC)]);
-	await assert.rejects(run(f), /failed checklist design-spec \(2 of 2 attempts were invalid answers\)[\s\S]*check item `tests` is not answered/);
+	await assert.rejects(run(f), /failed checklist design-spec \(2 of 2 attempts were invalid answers\)[\s\S]*semantic-validation-failed/);
 	assert.equal(f.sessions.length, 2, 'never a third session');
 });
 
@@ -193,7 +193,7 @@ test('a template review that stalls twice and then gets an invalid answer fails 
 
 test('T11 a session failure fails the review', async () => {
 	const f = fakeProvider([new Error('claude review session failed: boom')]);
-	await assert.rejects(run(f), /boom/);
+	await assert.rejects(run(f), /transient/);
 	// The provider makes one attempt (internalRetry false); the review pipeline re-issues
 	// a failed session once, then fails the review (Epic 8315a11f): two sessions in all.
 	assert.equal(f.sessions.length, 2);

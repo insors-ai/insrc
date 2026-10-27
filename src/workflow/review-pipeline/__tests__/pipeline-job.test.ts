@@ -25,7 +25,7 @@ import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
-import { runReviewJob } from '../driver.js';
+import { runTestReviewJob as runReviewJob } from './test-budget.js';
 import { notJudgedFinding } from '../design-review.js';
 import { applyFailure, applyOutput, MAX_CALL_ATTEMPTS, MAX_GATHER_LEVELS, MAX_STALL_ATTEMPTS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
@@ -207,7 +207,7 @@ test('a transient error or an invalid answer is re-issued once under a new callI
 			assert.equal(second.attempt, 2);
 			assert.equal(content(second), content(first), `${cause}: re-issued as planned`);
 			if (policy === 'fail-review') {
-				assert.throws(() => applyFailure(job, adapter, second.callId, cause, undefined, { detail: 'boom' }), (e: unknown) => e instanceof ReviewCallFailedError && e.message.includes(cause) && e.message.includes('boom'));
+				assert.throws(() => applyFailure(job, adapter, second.callId, cause, undefined, { detail: 'boom' }), (e: unknown) => e instanceof ReviewCallFailedError && e.message.includes(cause) && !e.message.includes('boom'));
 				continue;
 			}
 			job = applyFailure(job, adapter, second.callId, cause);
@@ -1184,13 +1184,13 @@ test("a stage's prompt may declare the atoms it carries, and a stage's redivide 
 	}
 });
 
-test('a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)', async () => {
+test('a call that did not complete logs a safe failure category (ISSUE-d3a6b651)', async () => {
 	const snap = toySnapshot([atom(1)]);
 	const adapter = toyAdapter(snap);
 	const warnings: unknown[] = [];
-	const logger = getLogger('review-pipeline:driver') as unknown as { warn: (...a: unknown[]) => void };
-	const original = logger.warn;
-	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
+	const logger = getLogger('review-pipeline:driver') as unknown as { info: (...a: unknown[]) => void };
+	const original = logger.info;
+	logger.info = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
 	let calls = 0;
 	try {
 		await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT), adapter, {
@@ -1199,10 +1199,11 @@ test('a call that did not complete is logged with the failure detail (ISSUE-d3a6
 				return seeingModel().answer({ messages } as unknown as ReviewCall);
 			},
 		} as unknown as LLMProvider);
-	} finally { logger.warn = original; }
-	const warned = warnings.map(w => JSON.stringify(w)).find(w => w.includes('a call did not complete'));
+	} finally { logger.info = original; }
+	const warned = warnings.map(w => JSON.stringify(w)).find(w => w.includes('call lifecycle') && w.includes('failure'));
 	assert.ok(warned !== undefined, 'the failed call is logged');
-	assert.ok(warned.includes('not parseable JSON: Unexpected token'), 'with its detail');
+	assert.ok(warned.includes('transient'), 'with a stable cause');
+	assert.ok(!warnings.some(w => JSON.stringify(w).includes('Unexpected token')), 'raw provider detail is not logged');
 });
 
 test('a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons', async () => {
@@ -1257,7 +1258,7 @@ test('a claim whose three attempts stall, or two stalls then a transient failure
 		assert.equal(job.notJudged.length, 1, causes.join(','));
 		assert.equal(job.notJudged[0]!.attempts, 3, `${causes.join(',')}: three attempts recorded`);
 		const finding = notJudgedFinding({ id: 'p1', kind: 'citation', text: 'x', anchors: [], probe: {} }, job.notJudged[0]!.detail!, job.notJudged[0]!.attempts);
-		assert.match(finding.evidence, /failed 3 times\. Last error: (stall|transient) detail/, causes.join(','));
+		assert.match(finding.evidence, /failed 3 times\. Last error: (stall|transient)/, causes.join(','));
 	}
 });
 
@@ -1269,7 +1270,7 @@ test('ReviewCallFailedError names the real attempt count and an older NotJudged 
 	job = applyFailure(job, adapter, nextCalls(job, adapter)[0]!.callId, 'stall');
 	const third = nextCalls(job, adapter)[0]!;
 	assert.throws(() => applyFailure(job, adapter, third.callId, 'stall', undefined, { detail: 'silent' }),
-		(e: unknown) => e instanceof ReviewCallFailedError && e.attempts === 3 && /the call failed 3 times \(stall\): silent/.test(e.message));
+		(e: unknown) => e instanceof ReviewCallFailedError && e.attempts === 3 && /the call failed 3 times \(stall\): stall/.test(e.message));
 	assert.match(new ReviewCallFailedError('verify', 'transient', 'boom').message, /the call failed twice \(transient\)/, 'the default count is two attempts');
 	const older = notJudgedFinding({ id: 'p1', kind: 'citation', text: 'x', anchors: [], probe: {} }, 'boom');
 	assert.equal(older.evidence, 'Not judged: the reviewing model call failed. Last error: boom', 'no count stated when none was recorded');

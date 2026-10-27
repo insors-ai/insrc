@@ -8,6 +8,7 @@
  * daemon's own checkout (ISSUE-f9ced66a, LLD-f9ced66a-s1, task t2).
  */
 
+import { syntheticReviewBudget } from '../../../review-pipeline/__tests__/test-budget.js';
 import { sessionMessages } from '../../../review-pipeline/__tests__/enveloped.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -37,7 +38,7 @@ const grounding: CodeReviewGrounding = {
 /** Records the opts of every completeStructured call and answers with no findings. */
 function recordingProvider(): { provider: LLMProvider; seen: (StructuredCompletionOpts | undefined)[] } {
 	const seen: (StructuredCompletionOpts | undefined)[] = [];
-	const provider = {
+	const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		runReviewSession: async (prompt: string, schema: StructuredSchema, opts: { cwd: string; deadlineMs: number; stallMs?: number | undefined }) => provider.completeStructured(sessionMessages(prompt), schema, { cwd: opts.cwd, timeoutMs: opts.deadlineMs, ...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}) }),
 		completeStructured: async (_m: unknown, s: unknown, opts?: StructuredCompletionOpts) => { seen.push(opts); return enveloped(s, { findings: [] }); },
 	} as unknown as LLMProvider;

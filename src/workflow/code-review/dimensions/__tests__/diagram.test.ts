@@ -14,6 +14,7 @@
  * Run: npx tsx --test --test-force-exit src/workflow/code-review/dimensions/__tests__/diagram.test.ts
  */
 
+import { syntheticReviewBudget } from '../../../review-pipeline/__tests__/test-budget.js';
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
@@ -35,7 +36,7 @@ import type { ErDefinition } from '../../../artifacts/companion/er.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 
 const grounding: CodeReviewGrounding = { symbols: [] };
-const provider = {} as unknown as LLMProvider;
+const provider = { getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile } as unknown as LLMProvider;
 
 const validEr: ErDefinition = {
 	classes: {

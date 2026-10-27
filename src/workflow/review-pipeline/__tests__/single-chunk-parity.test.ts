@@ -195,7 +195,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		} as unknown as LLMProvider;
 		const failed = await runCodeReview(s, failing, opts, { ...deps, write: (path: string) => { written.push(path); } });
 		assert.equal(failed.ok, false);
-		assert.ok(!failed.ok && /quality|judge/.test(failed.error) && failed.error.includes('model unavailable'), failed.ok ? '' : failed.error);
+		assert.ok(!failed.ok && /quality|judge/.test(failed.error) && failed.error.includes('transient'), failed.ok ? '' : failed.error);
 		assert.equal(qualityAsks, 2, 'two attempts in all');
 		assert.deepEqual(written, [], 'no record');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -316,7 +316,7 @@ test('an under-limit DEF review makes one extract call, a probe and one verify c
 
 		// Extraction failing (both attempts) fails the review.
 		const broken = premiseProvider({ extract: true });
-		await assert.rejects(runReview(DEF, { repo, stage: 'define', provider: broken.provider, model: 'm', readEntitiesForRepo: noEntities }), /extraction unavailable/);
+		await assert.rejects(runReview(DEF, { repo, stage: 'define', provider: broken.provider, model: 'm', readEntitiesForRepo: noEntities }), /extract.*transient/);
 		assert.equal(broken.seen.filter(c => c.schema === EXTRACT_SCHEMA).length, 2);
 		assert.equal(broken.seen.filter(c => c.schema === VERIFY_SCHEMA).length, 0, 'nothing is verified');
 
@@ -326,7 +326,7 @@ test('an under-limit DEF review makes one extract call, a probe and one verify c
 		assert.equal(stalls.seen.filter(c => asText(c.messages).includes('text: TOKEN_ALPHA exists')).length, 2, 'asked twice, not more');
 		const p1 = partial.findings.find(f => f.claimId === 'p1')!;
 		assert.equal(p1.severity, 'MED');
-		assert.ok(p1.evidence.startsWith('Not judged') && p1.evidence.includes('stalled judging TOKEN_ALPHA exists'), p1.evidence);
+		assert.ok(p1.evidence.startsWith('Not judged') && p1.evidence.includes('transient'), p1.evidence);
 		assert.equal(partial.findings.find(f => f.claimId === 'p2')!.severity, 'LOW');
 		assert.equal(partial.verdict, 'block');
 	} finally { rmSync(repo, { recursive: true, force: true }); }

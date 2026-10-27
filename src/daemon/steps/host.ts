@@ -17,6 +17,11 @@
  *     request itself was malformed.
  */
 
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { verifyBoundedCli } from '../../agent/providers/bounded-input.js';
+import type { ControllerExecutionCapability } from '../../shared/controller-review.js';
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
@@ -80,7 +85,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 }
 
 /** The request's context, checked: a forwarder always sends a cwd. */
-function contextOf(raw: unknown): StepCallContext | string {
+function contextOf(raw: unknown, verifyController: (client: StepClient, cwd: string) => void = (client, cwd) => verifyBoundedCli(client, client, cwd)): StepCallContext | string {
 	if (typeof raw !== 'object' || raw === null) return '`context` (object) is required';
 	const c = raw as Record<string, unknown>;
 	if (typeof c['cwd'] !== 'string' || c['cwd'].length === 0) return '`context.cwd` (non-empty string) is required';
@@ -88,7 +93,18 @@ function contextOf(raw: unknown): StepCallContext | string {
 	// The client's identity; the daemon maps it to a model family where a family is
 	// needed (familyForClient), so a client no family runs still reaches its tools.
 	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex') return "`context.client` must be 'claude' or 'codex'";
-	return {
+ let controllerReview: ControllerExecutionCapability | undefined;
+ if (c['controllerReview'] !== undefined) {
+  const descriptor = c['controllerReview'];
+  if (typeof descriptor !== 'object' || descriptor === null || Array.isArray(descriptor)) return 'invalid isolated controller helper descriptor';
+  const d = descriptor as Record<string, unknown>, client = c['client'];
+  if ((client !== 'claude' && client !== 'codex') || d['adapterId'] !== `cli-${client}` || !Number.isSafeInteger(d['maxInputChars']) || (d['maxInputChars'] as number) <= 0 || (d['maxInputChars'] as number) > 384_000 || typeof d['helperEpoch'] !== 'string' || d['helperEpoch'].length === 0 || typeof d['modelLabel'] !== 'string' || !d['modelLabel'].startsWith(`cli-${client}:`) || Object.keys(d).some(k => !['adapterId', 'maxInputChars', 'helperEpoch', 'modelLabel'].includes(k))) return 'unsupported isolated controller helper identity';
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-controller-host-'));
+  try { verifyController(client, dir); } catch { return 'installed CLI cannot verify isolated controller capability'; } finally { rmSync(dir, { recursive: true, force: true }); }
+  controllerReview = { adapterId: d['adapterId'] as ControllerExecutionCapability['adapterId'], maxInputChars: d['maxInputChars'] as number, helperEpoch: d['helperEpoch'], modelLabel: d['modelLabel'] };
+ }
+ return {
+  ...(controllerReview !== undefined ? { controllerReview } : {}),
 		cwd: c['cwd'],
 		...(typeof c['envRepo'] === 'string' ? { envRepo: c['envRepo'] } : {}),
 		...(c['client'] !== undefined ? { client: c['client'] as StepClient } : {}),
@@ -96,7 +112,7 @@ function contextOf(raw: unknown): StepCallContext | string {
 }
 
 /** The `step.call` stream handler over `table`. */
-export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable()): StreamHandler {
+export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable(), deps: { readonly verifyControllerCli?: ((client: StepClient, cwd: string) => void) | undefined } = {}): StreamHandler {
 	return async (params, send, signal, trusted) => {
         const execution = trusted?.connectionExecution;
         const bound = trusted?.connectionSession !== undefined || execution?.mode === 'session-memory';
@@ -113,11 +129,12 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			return;
 		}
         if (bound && !['insrc_analyze', 'insrc_analyze_step'].includes(String(p.tool))) { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
-		const ctx = bound && execution ? { cwd: execution.connectionAccess.lookupRoot, envRepo: execution.connectionAccess.lookupRoot, connectionExecution: execution } : contextOf(p.context);
+		const ctx = bound && execution ? { cwd: execution.connectionAccess.lookupRoot, envRepo: execution.connectionAccess.lookupRoot, connectionExecution: execution } : contextOf(p.context, deps.verifyControllerCli);
 		if (typeof ctx === 'string') {
 			fail('step-failed', `step.call: ${ctx}`);
 			return;
 		}
+  if (ctx.controllerReview !== undefined && p.tool !== 'insrc_code_review_step') { fail('step-failed', 'Isolated controller capability belongs only to code review.'); return; }
 		const run = table[p.tool]!;
 		// Never fails the step: a send that throws (the caller went away) is logged and dropped,
 		// and progress reported after the reply is ignored.

@@ -22,6 +22,8 @@
 
 import { createConnection, type Socket } from 'node:net';
 
+import { isVerifiedControllerAdmission } from './controller-review.js';
+import type { ControllerReviewAdmission } from './controller-review.js';
 import { privateSessionBootstrap } from './session-bootstrap.js';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
@@ -49,6 +51,8 @@ export class DaemonTooOldError extends Error {
 }
 
 export interface ForwardStepExtra {
+ /** Internal verified helper descriptor, distinct from raw tool arguments. */
+ readonly controllerReview?: ControllerReviewAdmission | undefined;
 	/** The calling client, converted from the MCP client's name. */
 	readonly client?: StepClient | undefined;
 	/** Called with each progress frame's data; given only when the client sent a progress token. */
@@ -93,7 +97,9 @@ export function forwardStep(
 	let bootstrap: ReturnType<typeof privateSessionBootstrap>;
 	try { bootstrap = privateSessionBootstrap(); } catch { return Promise.resolve(errorEnvelope('session-expired', 'SessionBootstrapError', 'Connection session is unavailable.', false)); }
 	const envRepo = bootstrap?.token.repoRoot ?? deps.envRepo ?? process.env['INSRC_REPO'];
+	if (extra.controllerReview !== undefined && (!isVerifiedControllerAdmission(extra.controllerReview) || extra.controllerReview.client !== extra.client)) return Promise.resolve(errorEnvelope('unsupported-bounded-controller', 'UnsupportedBoundedController', 'Only a verified matching local controller helper may register isolated capability.', false));
 	const context = {
+  ...(extra.controllerReview !== undefined ? { controllerReview: extra.controllerReview.capability } : {}),
 		cwd: bootstrap?.token.repoRoot ?? deps.cwd ?? process.cwd(),
 		...(envRepo !== undefined && envRepo.length > 0 ? { envRepo } : {}),
 		...(extra.client !== undefined ? { client: extra.client } : {}),

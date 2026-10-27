@@ -125,6 +125,8 @@ export function requireConnectionExecution(value: ConnectionExecutionContext | u
 export type StepClient = 'claude' | 'codex';
 
 export interface StepCallContext {
+ /** Verified helper carrier checked by the step host; never read from raw tool arguments. */
+ readonly controllerReview?: import('./controller-review.js').ControllerExecutionCapability | undefined;
 	readonly cwd:      string;
 	readonly envRepo?: string | undefined;
 	readonly client?:  StepClient | undefined;

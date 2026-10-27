@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 99 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -515,7 +515,7 @@ Run at 2026-10-27T10:59:04.235Z on commit `bd62205c3`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-27T11:20:34.865Z on commit `83f4eba30`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T11:30:05.856Z on commit `91496c91d`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-CONTROLLER-LARGE**
 
@@ -533,6 +533,7 @@ Run at 2026-10-27T11:20:34.865Z on commit `83f4eba30`. Tests check: **passed**. 
 | pass | DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
 | pass | DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
 | pass | DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token | `src/daemon/threads/__tests__/step-state.test.ts` |
+| pass | DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` |
 
 **integration: DIFF-CONTROLLER-TIME**
 
@@ -551,5 +552,5 @@ Run at 2026-10-27T11:20:34.865Z on commit `83f4eba30`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` | 0 | 9 | 34.8 s |  |
+| `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` | 0 | 10 | 39.9 s |  |
 | `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 5 | 0.9 s |  |

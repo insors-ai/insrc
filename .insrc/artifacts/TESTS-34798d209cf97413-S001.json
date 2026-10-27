@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T11:20:34.865Z",
+    "updatedAt": "2026-10-27T11:30:05.856Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2166,8 +2166,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "83f4eba30",
-        "ranAt": "2026-10-27T11:20:34.865Z",
+        "commit": "91496c91d",
+        "ranAt": "2026-10-27T11:30:05.856Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2217,6 +2217,11 @@
                 "file": "src/daemon/threads/__tests__/step-state.test.ts",
                 "title": "DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
+                "title": "DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation",
+                "result": "pass"
               }
             ],
             "files": []
@@ -2258,7 +2263,7 @@
             "file": "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 34842,
+            "durationMs": 39908,
             "titles": [
               {
                 "title": "DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results",
@@ -2295,6 +2300,10 @@
               {
                 "title": "DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task",
                 "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -2303,7 +2312,7 @@
             "file": "src/daemon/threads/__tests__/step-state.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 902,
+            "durationMs": 934,
             "titles": [
               {
                 "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",

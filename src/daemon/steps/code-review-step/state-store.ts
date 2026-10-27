@@ -71,7 +71,7 @@ export class StateTokenNotFound extends Error {
 }
 
 export function saveControllerState(payload: import('./controller-pipeline.js').ControllerPipelineState): Promise<string> {
- return getStepStateStore().mint('code-review', payload, payload.timing.deadlineAt + 600_000);
+ return getStepStateStore().mint('code-review', payload, Math.min(Number.MAX_SAFE_INTEGER, payload.timing.deadlineAt + 600_000));
 }
 export async function replaceControllerState(token: string, revision: number, payload: import('./controller-pipeline.js').ControllerPipelineState): Promise<void> {
  if (!await getStepStateStore().compareReplace('code-review', token, revision, payload)) throw new Error('Controller state changed concurrently or expired');

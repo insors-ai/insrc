@@ -15,7 +15,7 @@
  * review_step, code_review_step, triage) run in the insrc daemon: each call
  * here is forwarded over the daemon's `step.call` request with this process's
  * working directory, INSRC_REPO and the calling client (see forward-step.ts),
- * and the daemon's reply is returned unchanged. This process opens no store
+ * and most daemon replies are returned unchanged. This process opens no store
  * and runs no analysis itself (Epic c2ba6fa6, Story s11). Inner model calls are
  * made by the daemon, through the CLI of the calling client when no provider
  * is configured.
@@ -31,6 +31,7 @@ import { getLogger } from '../shared/logger.js';
 import { handleDocgen } from './docgen/handler.js';
 import type { StepClient } from '../shared/step-context.js';
 import type { StepToolName } from '../shared/step-context.js';
+import { ControllerReviewHelper } from './controller-review.js';
 import { forwardStep } from './forward-step.js';
 import type { StepMcpEnvelope } from './forward-step.js';
 import { mcpProgressSink } from './progress-forward.js';
@@ -205,8 +206,11 @@ export function buildInsrcMcpServerWithRegistry(): {
 
 	// The seven step tools run in the daemon (Story s11): each call is forwarded
 	// over step.call with this process's cwd, INSRC_REPO and the calling client,
-	// and the daemon's reply is returned unchanged. Progress is relayed only when
+	// and most daemon replies are returned unchanged. Progress is relayed only when
 	// the client sent a progress token.
+	const controllerReviews = new ControllerReviewHelper();
+ const previousClose = server.server.onclose;
+ server.server.onclose = () => { previousClose?.(); void controllerReviews.close(); };
 	const forward = (
 		tool:    StepToolName,
 		rawArgs: unknown,
@@ -217,10 +221,10 @@ export function buildInsrcMcpServerWithRegistry(): {
 		const sink   = token !== undefined
 			? mcpProgressSink((n) => extra.sendNotification(n as never), token)
 			: undefined;
-		return forwardStep(tool, rawArgs, {
-			...(client !== undefined ? { client } : {}),
-			...(sink !== undefined ? { onProgress: (data: unknown) => sink(progressEventOf(data)) } : {}),
-		});
+  const forwarded = { ...(client !== undefined ? { client } : {}), ...(sink !== undefined ? { onProgress: (data: unknown) => sink(progressEventOf(data)) } : {}) };
+  return tool === 'insrc_code_review_step'
+   ? controllerReviews.forward(rawArgs, forwarded, (args, extra) => forwardStep(tool, args, extra))
+   : forwardStep(tool, rawArgs, forwarded);
 	};
 
 	registerAndRecord(
@@ -728,7 +732,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'next:\'error\' naming the cause and stamps nothing; it never falls back to a ' +
 				'review by you.\n\n' +
 				'For a degraded review of daemon-written code, only a verified fresh isolated controller CLI helper is accepted. ' +
-                'The tool returns emit_review_call with ONE bounded identified call, schema, expiry and compact timing. Return callResult with its callId and enveloped answer or defined failure through phase=judgements. Never send aggregate dimension judgements, inherited chat context or extra grounding. Resume start/state re-emits the SAME call and deadline; proceed:false cancels. Without the actual verified helper this route returns unsupported-bounded-controller before evidence.\n\n' +
+                'The bundled MCP helper consumes each emit_review_call internally and executes a fresh structured local CLI invocation. It returns controller_call_pending with the SAME opaque state while it owns work. Continue phase=start/state to rejoin; do not judge the task in chat or submit raw callResult. The helper forwards only its identified enveloped output/failure and hands off serially to the next call. proceed:false cancels both helper work and server state. The total initial chunk budget never resets. Unverified flags, unsupported CLI isolation or a lost helper owner return unsupported-bounded-controller before evidence; the daemon does not substitute its own judgement.\n\n' +
                 'Legacy full-graph multi-turn loop (daemon-written code only):\n\n' +
 				'  1. phase=\'start\' with { epicHash, storyId, repo? }. Server resolves the ' +
 				'subject (declines with an error if there is no approved contract / build) ' +
@@ -761,7 +765,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
 				controllerInput: z.object({ mode: z.literal('isolated-structured'), maxInputChars: z.number().int().positive(), adapterId: z.enum(['cli-claude', 'cli-codex']) }).strict().describe('Optional bounded controller request. A raw flag does not establish verified isolated helper capability.').optional(),
-                callResult: z.object({ callId: z.string(), answer: z.unknown().optional(), failure: z.object({ cause: z.enum(['size-refusal', 'invalid-answer', 'transient', 'stall']), detail: z.string(), maxChars: z.number().int().positive().optional() }).strict().optional() }).strict().describe('For emit_review_call states only: exact current callId and exactly one enveloped answer or failure; never combine with judgements.').optional(),
+                callResult: z.object({ callId: z.string(), answer: z.unknown().optional(), failure: z.object({ cause: z.enum(['size-refusal', 'invalid-answer', 'transient', 'stall']), detail: z.string(), maxChars: z.number().int().positive().optional() }).strict().optional() }).strict().describe('Internal isolated helper result for emit_review_call states: exact callId and one enveloped answer or failure; raw chat callResult is refused. Never combine with legacy judgements.').optional(),
 				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()
 					.describe('Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema).')
@@ -770,7 +774,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Opaque continuation token from the prior response. Required after phase=start.')
 					.optional(),
 				proceed: z.boolean()
-					.describe('With confirm_wait state: true waits for fresh indexing, false chooses a degraded diff review. With review_pending state: omit or true resumes/status; false explicitly cancels the owned review. Always preserve the same state.')
+					.describe('With confirm_wait state: true waits for fresh indexing, false chooses a degraded diff review. With review_pending or controller_call_pending state: omit or true rejoins owned work; false explicitly cancels it. Always preserve the same state.')
 					.optional(),
 			},
 		},

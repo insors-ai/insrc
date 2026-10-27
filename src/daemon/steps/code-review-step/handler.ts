@@ -69,7 +69,7 @@ import type {
 	DimensionResult,
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
-import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
+import { currentStepContext, stepClient, stepEnvRepo } from '../../../shared/step-context.js';
 import { StateTransitionBusyError, StateTokenNotFound, loadState, releaseState, saveState, savePendingState, saveControllerState, replaceControllerState, withControllerStateLock } from './state-store.js';
 import type {
 	CodeReviewPendingState,
@@ -162,6 +162,8 @@ export const DEFAULT_DEPS: CodeReviewStepDeps = {
  *  unchanged outside a step call or when the caller's client is unknown. */
 export function withStepClient(deps: CodeReviewStepDeps): CodeReviewStepDeps {
 	const client = stepClient();
+ const controllerExecution = currentStepContext()?.controllerReview;
+ if (controllerExecution !== undefined) deps = { ...deps, controllerExecution };
 	return client !== undefined ? { ...deps, client } : deps;
 }
 
@@ -621,6 +623,7 @@ async function driveRunner(
 	fallbackReason?: CodeReviewFallbackReason | undefined,
  fingerprint?: ReviewInputFingerprint,
  completedTiming?: import('../../../workflow/code-review/types.js').ReviewTimingPlan,
+ controllerModel = 'client',
 ): Promise<CodeReviewStepOutput> {
  if (deps.captureInput !== undefined && fingerprint === undefined) return errorResult('restart-required', 'Review state has no admitted input identity; start a new review.', false);
  const publication = fingerprint === undefined ? undefined : claimReviewPublication(fingerprint, 'controller');
@@ -631,7 +634,7 @@ async function driveRunner(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { ...completedOpts, ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
+			? { ...completedOpts, ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: controllerModel, reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
 			: { ...completedOpts, ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
@@ -675,6 +678,8 @@ async function handleControllerContinuation(token: string, deps: CodeReviewStepD
   if (state.kind !== 'controller-pipeline') return errorResult('bad-state', 'This token is not a bounded controller pipeline.', false);
   try {
    assertReviewFingerprintCurrent(state.fingerprint, 'controller');
+   const admitted = deps.controllerExecution;
+   if (!cancel && state.capability.helperEpoch !== undefined && (admitted?.helperEpoch !== state.capability.helperEpoch || admitted.adapterId !== state.capability.adapterId)) return errorResult('unsupported-bounded-controller', 'The isolated helper owner was lost or changed; cancel/restart this controller review.', false);
    if (cancel) {
     if (state.terminal !== undefined) return state.terminal;
     const terminal = errorResult('review-cancelled', 'The controller review was cancelled; outstanding call IDs are revoked.', false);
@@ -699,7 +704,7 @@ async function handleControllerContinuation(token: string, deps: CodeReviewStepD
     const byDimension = checked.byDimension;
     for (const dimension of next.results) byDimension.set(dimension.dimension, { ...dimension, ...byDimension.get(dimension.dimension)! });
     const injected: CodeReviewRunnerDeps = { judges: expectedDimensions(next.subject).map(dimension => ({ dimension, judge: async () => byDimension.get(dimension)! })), assembleGrounding: async () => (next.snapshot.grounding as { grounding: CodeReviewGrounding }).grounding, write: deps.write };
-    response = await driveRunner(token, next.subject, injected, deps, true, next.fallbackReason, next.fingerprint, next.timing);
+    response = await driveRunner(token, next.subject, injected, deps, true, next.fallbackReason, next.fingerprint, next.timing, next.capability.modelLabel ?? 'client');
     next = { ...next, terminal: response };
    }
    if (input !== undefined) next = { ...next, accepted: [...next.accepted, { callId: input.callId, digest: controllerAnswerDigest(input), response }] };

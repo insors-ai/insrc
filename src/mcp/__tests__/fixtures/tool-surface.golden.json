@@ -321,7 +321,7 @@
 	{
 		"name": "insrc_code_review_step",
 		"title": "insrc code review (by the other party, multi-turn)",
-		"description": "CODE review of a Story's built code across four dimensions (adherence / conventions / coverage / quality), by the party that did NOT write the code. The rule runs in both directions: code the daemon wrote is reviewed by YOU (the controller); code YOU wrote (a build you drove with insrc_build_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it by the Story's BUILD record. Either way the result is a block/warn/pass CodeReviewArtifact at CR-<epic>-<story>, and completing the Story (approving its BUILD record) REQUIRES one, done by the other party.\n\nWhen the daemon is the reviewer, phase='start' asks the daemon, waits (up to 30 minutes) and returns { next: 'done', verdict, counts, path, jsonPath, reviewedBy: 'daemon', groundingMode }. A stale index first returns { next: 'confirm_wait', staleFiles, state }: ask the user, then call phase='start' again with that state and `proceed` (true = wait for a fresh index, false = review the diff). A diff review is recorded `degraded` and is `warn` at best. If the daemon review does not complete, it returns next:'error' naming the cause and stamps nothing; it never falls back to a review by you.\n\nYour multi-turn loop (daemon-written code only):\n\n  1. phase='start' with { epicHash, storyId, repo? }. Server resolves the subject (declines with an error if there is no approved contract / build) and fetches grounding, returning { next: 'emit_judgements', prompts, schema, grounding, state } — `prompts` are the four per-dimension charges, `grounding` is the ground truth you judge against.\n  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per dimension, each finding a `file:line` location), then phase='judgements' with judgements=<your JSON> + state. Server folds + persists and returns { next: 'done', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside the Story's changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings are NOT in `verdict`/`counts`; they are kept on the record as each dimension's `outOfScope`.\n\nPreserve `state` verbatim between calls; a malformed turn returns a next:'error' frame naming the fault (nothing is written).",
+		"description": "CODE review of a Story's built code across four dimensions (adherence / conventions / coverage / quality), by the party that did NOT write the code. The rule runs in both directions: code the daemon wrote is reviewed by YOU (the controller); code YOU wrote (a build you drove with insrc_build_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it by the Story's BUILD record. Either way the result is a block/warn/pass CodeReviewArtifact at CR-<epic>-<story>, and completing the Story (approving its BUILD record) REQUIRES one, done by the other party.\n\nWhen the daemon is the reviewer, each turn waits at most200 seconds. A running review returns { next: 'review_pending', state, reviewHandle, daemonEpoch, progress, timing? }. Resume phase='start' with the SAME state; this polls the same owned review without resetting its deadline. Do not poll the host or relaunch. proceed:false with a review_pending state explicitly cancels that operation. Only a completed review returns { next: 'done', verdict, counts, path, jsonPath, reviewedBy: 'daemon', groundingMode }. A stale index first returns { next: 'confirm_wait', staleFiles, state }: ask the user, then call phase='start' again with that state and `proceed` (true = wait for a fresh index, false = review the diff). A diff review is recorded `degraded` and is `warn` at best. If the daemon review does not complete, it returns next:'error' naming the cause and stamps nothing; it never falls back to a review by you.\n\nFor a degraded review of daemon-written code, only a verified fresh isolated controller CLI helper is accepted. The bundled MCP helper consumes each emit_review_call internally and executes a fresh structured local CLI invocation. It returns controller_call_pending with the SAME opaque state while it owns work. Continue phase=start/state to rejoin; do not judge the task in chat or submit raw callResult. The helper forwards only its identified enveloped output/failure and hands off serially to the next call. proceed:false cancels both helper work and server state. The total initial chunk budget never resets. Unverified flags, unsupported CLI isolation or a lost helper owner return unsupported-bounded-controller before evidence; the daemon does not substitute its own judgement.\n\nLegacy full-graph multi-turn loop (daemon-written code only):\n\n  1. phase='start' with { epicHash, storyId, repo? }. Server resolves the subject (declines with an error if there is no approved contract / build) and fetches grounding, returning { next: 'emit_judgements', prompts, schema, grounding, state } — `prompts` are the four per-dimension charges, `grounding` is the ground truth you judge against.\n  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per dimension, each finding a `file:line` location), then phase='judgements' with judgements=<your JSON> + state. Server folds + persists and returns { next: 'done', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside the Story's changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings are NOT in `verdict`/`counts`; they are kept on the record as each dimension's `outOfScope`.\n\nPreserve `state` verbatim between calls; a malformed turn returns a next:'error' frame naming the fault (nothing is written).",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -344,6 +344,75 @@
 				"repo": {
 					"type": "string",
 					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"controllerInput": {
+					"type": "object",
+					"properties": {
+						"mode": {
+							"type": "string",
+							"const": "isolated-structured"
+						},
+						"maxInputChars": {
+							"type": "integer",
+							"exclusiveMinimum": 0,
+							"maximum": 9007199254740991
+						},
+						"adapterId": {
+							"type": "string",
+							"enum": [
+								"cli-claude",
+								"cli-codex"
+							]
+						}
+					},
+					"required": [
+						"mode",
+						"maxInputChars",
+						"adapterId"
+					],
+					"additionalProperties": false,
+					"description": "Optional bounded controller request. A raw flag does not establish verified isolated helper capability."
+				},
+				"callResult": {
+					"type": "object",
+					"properties": {
+						"callId": {
+							"type": "string"
+						},
+						"answer": {},
+						"failure": {
+							"type": "object",
+							"properties": {
+								"cause": {
+									"type": "string",
+									"enum": [
+										"size-refusal",
+										"invalid-answer",
+										"transient",
+										"stall"
+									]
+								},
+								"detail": {
+									"type": "string"
+								},
+								"maxChars": {
+									"type": "integer",
+									"exclusiveMinimum": 0,
+									"maximum": 9007199254740991
+								}
+							},
+							"required": [
+								"cause",
+								"detail"
+							],
+							"additionalProperties": false
+						}
+					},
+					"required": [
+						"callId"
+					],
+					"additionalProperties": false,
+					"description": "Internal isolated helper result for emit_review_call states: exact callId and one enveloped answer or failure; raw chat callResult is refused. Never combine with legacy judgements."
 				},
 				"judgements": {
 					"type": "object",
@@ -368,7 +437,7 @@
 				},
 				"proceed": {
 					"type": "boolean",
-					"description": "Only when resuming a phase=start `confirm_wait` (the index was stale). true = wait for a fresh index (block-and-poll); false = abort the review (no verdict). Pass together with the `state` from the confirm_wait turn."
+					"description": "With confirm_wait state: true waits for fresh indexing, false chooses a degraded diff review. With review_pending or controller_call_pending state: omit or true rejoins owned work; false explicitly cancels it. Always preserve the same state."
 				}
 			},
 			"required": [

@@ -397,25 +397,27 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
   it does NOT fall back to a review by you.
 - **The daemon wrote the code:** a legacy full-graph review returns
   `emit_judgements`; emit the `{ judgements }` JSON. A degraded diff review
-  instead requires the verified fresh isolated local CLI helper. It returns
-  `emit_review_call` with exactly one bounded task, callId, schema, expiry and
-  compact fixed timing. Use `phase:'judgements'` with `callResult` containing
-  that callId and exactly one enveloped `answer` or defined `failure`. Never
-  inject aggregate dimension judgements, add whole grounding or inherit chat
-  history. `start` with the same state re-emits the same current call/deadline;
-  `proceed:false` cancels. A repeated accepted answer returns its cached
-  continuation; conflicting, foreign, late or out-of-order answers are refused.
-  Raw `controllerInput` flags do not prove isolated execution. Unsupported
-  hosts return `unsupported-bounded-controller` before receiving evidence;
-  the daemon does not substitute its own judgement. Legacy degraded tokens
-  require a restart through the verified helper.
+  instead requires the verified fresh isolated local CLI helper. The bundled
+  MCP helper consumes `emit_review_call` internally, executes its complete
+  bounded task through CliProvider and forwards the identified enveloped result.
+  It returns `controller_call_pending` with `state`, callId and expiry while
+  owning work. Continue with `phase:'start'` and that SAME state to rejoin;
+  never execute the task in inherited chat or submit raw callResult. Calls run
+  serially and retain the original root/child clocks. `proceed:false` cancels
+  both helper work and server state; a freshness `confirm_wait` decline still
+  chooses a diff review. Raw controllerInput flags cannot register capability.
+  The installed CLI must pass the enforcing isolation probe; unsupported hosts
+  return `unsupported-bounded-controller` before receiving evidence. A lost
+  helper epoch requires cancellation/restart; the daemon never substitutes its
+  own judgement. Legacy degraded tokens require a restart through the helper.
+
 
 Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.
 
-When you are the reviewer and the graph grounding comes back hollow on
-just-created files (no symbol/test edges), judge coverage by RUNNING the suite
-and flag the caveat honestly — never fabricate a HIGH from empty grounding.
+Coverage judgements require actual recorded test evidence. Hollow graph
+grounding routes through the bounded diff protocol; never fabricate a HIGH
+from missing graph edges or replace the isolated helper with chat reasoning.
 PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
 (see the `build` guide — BUILD approval is the code-review-gated completion act,
 and a Story with no code review is always withheld).

@@ -20,7 +20,8 @@ import type { ReviewAdapter, ReviewMaterialSnapshot, ReviewPipelineJob } from '.
 import type { CodeReviewStepOutput, CodeReviewStepEmitCall, ControllerCallResult } from './types.js';
 
 /** Internal dependency from the verified MCP execution helper, never a raw tool flag. */
-export interface ControllerExecutionCapability { readonly adapterId: 'cli-claude' | 'cli-codex'; readonly maxInputChars: number }
+export type { ControllerExecutionCapability } from '../../../shared/controller-review.js';
+import type { ControllerExecutionCapability } from '../../../shared/controller-review.js';
 // JSON escaping expands a string by at most six characters per UTF16 unit. Reserve
 // fixed task framing before fitting; the actual entire frame is checked again on emission.
 const TASK_FRAME_RESERVE = 8192;

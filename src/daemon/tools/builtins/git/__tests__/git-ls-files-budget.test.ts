@@ -15,6 +15,7 @@ import type { StructuredSchema } from '../../../../../shared/types.js';
 import { cleanup } from '../../../__tests__/_proc.js';
 import { executeTool } from '../../../executor.js';
 import { gitForEachRefTool } from '../for-each-ref.js';
+import { readGit } from '../helpers.js';
 import { gitLsFilesTool } from '../ls-files.js';
 import { gitLsTreeTool } from '../ls-tree.js';
 import { gitPathHistoryTool } from '../path-history.js';
@@ -54,12 +55,18 @@ test(`${T}: with no maxBytes a listing over 10 MiB is a rejected failure, as bef
 });
 
 test(`${T}: with maxBytes 52428800 a listing between 10 MiB and 50 MiB is returned whole`, async () => {
-	standIn = installStandInGit(printing(11 * MiB));
+	const name = 'file-name-of-some-length.ts';
+	const per = name.length + 1;
+	const names = Math.floor((11 * MiB) / per);          // whole names only, so the listing is exactly names * per bytes
+	const bytes = names * per;
+	assert.ok(bytes > 10 * MiB && bytes < 50 * MiB);
+	standIn = installStandInGit(printing(bytes, name));
 	const r = await run({ maxBytes: 50 * MiB });
 	assert.equal(r.success, true, r.output.slice(0, 200));
 	const files = (r.data as { files: string[] }).files;
-	assert.ok(files.length > 300_000, `${files.length} names`);
-	assert.ok(files.every(f => f.length > 0));
+	assert.equal(files.length, names, 'every name is returned');
+	assert.ok(files.every(f => f === name), 'every name is the one printed');
+	assert.equal(files.reduce((n, f) => n + Buffer.byteLength(f, 'utf8') + 1, 0), bytes, 'the returned names account for every printed byte');
 	assert.equal(standIn.calls().length, 1);
 });
 
@@ -84,21 +91,44 @@ test(`${T}: a listing of exactly maxBytes bytes is returned and one of maxBytes 
 	assert.deepEqual((ok.data as { files: string[] }).files, [euro]);
 });
 
+/** The number of top-level arguments of the first `readGit('` call in `text`. */
+function readGitArgCount(text: string): number {
+	const start = text.indexOf("readGit('") + 'readGit('.length;
+	let depth = 0, args = 1, quote = '';
+	for (let i = start; i < text.length; i++) {
+		const c = text[i]!;
+		if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; continue; }
+		if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+		if ('([{'.includes(c)) depth++;
+		else if (')]}'.includes(c)) { if (depth === 0) return args; depth--; }
+		else if (c === ',' && depth === 0) args++;
+	}
+	throw new Error('unterminated readGit call');
+}
+
 test(`${T}: each of the six other readGit-based tools (git_ls_tree, git_rev_parse, git_for_each_ref, git_path_history, git_rev_list and git_hash_object) still cuts at 10 MiB and passes no maxBytes, and git_ls_files still runs the same argv and refuses a NUL in a path before any command runs`, async () => {
 	const here = dirname(fileURLToPath(import.meta.url));
+	// each of the six calls readGit with at most five arguments (label, argv, cwd, timeout, signal): the sixth is maxBytes
 	const files: Record<string, string> = { git_ls_tree: 'ls-tree.ts', git_rev_parse: 'rev-parse.ts', git_for_each_ref: 'for-each-ref.ts', git_path_history: 'path-history.ts', git_rev_list: 'rev-list.ts', git_hash_object: 'hash-object.ts' };
 	for (const [id, file] of Object.entries(files)) {
 		const text = readFileSync(join(here, '..', file), 'utf8');
-		assert.ok(/readGit\('/.test(text), `${id} calls readGit`);
-		assert.ok(!/maxBytes/.test(text), `${id} passes no maxBytes`);
+		assert.ok(text.includes("readGit('"), `${id} calls readGit`);
+		assert.ok(readGitArgCount(text) <= 5, `${id} passes no sixth argument to readGit`);
+		assert.ok(!/maxBytes/.test(text), `${id} mentions no maxBytes`);
 	}
-	// behaviour: 11 MiB of output under the default is a failure for each tool that parses a listing. git_rev_parse and
-	// git_hash_object read one line of text and do not check for a cut; they are covered by the source check above.
-	const tools: Array<[string, { execute(input: Record<string, unknown>, deps: ReturnType<typeof toolDeps>): Promise<{ success: boolean }> }, Record<string, unknown>]> = [
+	// readGit itself: without maxBytes the capture is cut at 10 MiB; with it, the whole output is kept
+	standIn = installStandInGit(`yes 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' | head -c ${11 * MiB}`);
+	const cut = await readGit('git_probe', ['git', 'probe'], '/tmp', 30_000);
+	assert.ok(cut.ok);
+	assert.equal(cut.ok && cut.r.stdoutTruncated, true, 'the default budget cuts 11 MiB');
+	assert.equal(cut.ok && cut.r.stdout.length <= 10 * MiB, true);
+	const whole = await readGit('git_probe', ['git', 'probe'], '/tmp', 30_000, undefined, 50 * MiB);
+	assert.equal(whole.ok && whole.r.stdoutTruncated, false, 'a larger budget keeps it');
+	// the tools that parse a listing turn the cut into a failure at the default budget
+	const tools: Array<[string, { execute(input: Record<string, unknown>, deps: ReturnType<typeof toolDeps>): Promise<{ success: boolean; error?: string | undefined }> }, Record<string, unknown>]> = [
 		['git_ls_tree', gitLsTreeTool, { rev: 'HEAD' }], ['git_for_each_ref', gitForEachRefTool, {}],
 		['git_path_history', gitPathHistoryTool, {}], ['git_rev_list', gitRevListTool, {}],
 	];
-	standIn = installStandInGit(`yes 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' | head -c ${11 * MiB}`);
 	for (const [id, tool, input] of tools) {
 		const r = await tool.execute({ cwd: '/tmp', ...input }, toolDeps('/tmp'));
 		assert.equal(r.success, false, `${id}: 11 MiB under the default budget is not returned whole`);

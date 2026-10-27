@@ -28,7 +28,7 @@ import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed,
 
 // ---------------------------------------------------------------------------
 
-test('ensureUnitIssue takes a unit and a port and returns a PortResult without a phase', () => {
+test('ensureUnitIssue takes a unit and a port and returns a PortResult without a phase', async () => {
 	const fx = seed();
 	const cfgPath = join(fx.repo, 'github.json');
 	writeFileSync(cfgPath, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
@@ -36,9 +36,9 @@ test('ensureUnitIssue takes a unit and a port and returns a PortResult without a
 	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
 	try {
 		const t = fakeTracker();
-		const ok = ensureUnitIssue(epic(fx.repo), t.port);
+		const ok = await ensureUnitIssue(epic(fx.repo), t.port);
 		assert.deepEqual(ok, { ok: true, value: 'acme/demo#1' });
-		const bad = ensureUnitIssue(story(fx.repo), fakeTracker({ failFind: true }).port);
+		const bad = await ensureUnitIssue(story(fx.repo), fakeTracker({ failFind: true }).port);
 		assert.equal(bad.ok, false);
 		assert.deepEqual(Object.keys(bad).sort(), ['kind', 'ok', 'reason'], 'the failure carries the sc1 fields and no phase');
 	} finally {
@@ -47,7 +47,7 @@ test('ensureUnitIssue takes a unit and a port and returns a PortResult without a
 	}
 });
 
-test('resolveUnitIssueLocal resolves from the bindings and reads no older ref, reconciles nothing and runs no command', () => {
+test('resolveUnitIssueLocal resolves from the bindings and reads no older ref, reconciles nothing and runs no command', async () => {
 	const fx = seed();
 	try {
 		// the older refs a Define, an HLD and an LLD once carried are not read
@@ -55,15 +55,15 @@ test('resolveUnitIssueLocal resolves from the bindings and reads no older ref, r
 		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def));
 		const lld0 = fx.read(lldArtifactId(HASH, 's1')); lld0.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#8' };
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld0));
-		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), null);
-		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), null);
+		assert.equal(await resolveUnitIssueLocal(epic(fx.repo), deps.now), null);
+		assert.equal(await resolveUnitIssueLocal(story(fx.repo), deps.now), null);
 		assert.equal(bound(fx, epicHead), undefined, 'and nothing is bound from them');
 
 		// the binding of the EPIC head and of the STORY head
 		assert.equal(bindArtifact(fx.repo, epicHead, 'acme/demo#7').ok, true);
 		assert.equal(bindArtifact(fx.repo, storyHead, 'acme/demo#8').ok, true);
-		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
-		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
+		assert.equal(await resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
+		assert.equal(await resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
 		assert.equal(fx.read(hldArtifactId(HASH)).meta.tracker, undefined, 'no older ref is written back on the HLD');
 		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.storyRef, 'acme/demo#8', 'and the LLD keeps what it had, unread');
 		assert.equal(fx.read(storyHead).meta.envelope.binding.createdAtRevision, 1, 'the binding notes the head revision');
@@ -71,43 +71,43 @@ test('resolveUnitIssueLocal resolves from the bindings and reads no older ref, r
 		// Task: the binding on its Task artifact; a record the plan once held for it is not read
 		const plan = fx.read(planArtifactId(HASH, 's1')); plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#9' }, units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } };
 		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(plan));
-		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), null, 'a Task record on the plan is not read');
+		assert.equal(await resolveUnitIssueLocal(task(fx.repo), deps.now), null, 'a Task record on the plan is not read');
 		assert.equal(bindArtifact(fx.repo, `TASK-${HASH}-s1-t1`, 'acme/demo#9').ok, true);
-		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
+		assert.equal(await resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
 
 		// a unit with nothing recorded, and an unreadable repo, resolve to null without throwing
 		const bare = seed();
-		try { assert.equal(resolveUnitIssueLocal(story(bare.repo), deps.now), null); } finally { bare.cleanup(); }
-		assert.equal(resolveUnitIssueLocal(story('/no/such/repo'), deps.now), null);
+		try { assert.equal(await resolveUnitIssueLocal(story(bare.repo), deps.now), null); } finally { bare.cleanup(); }
+		assert.equal(await resolveUnitIssueLocal(story('/no/such/repo'), deps.now), null);
 	} finally { fx.cleanup(); }
 });
 
-test('a legacy LLD with only storyRef is no issue: the Story is looked up and bound afresh', () => {
+test('a legacy LLD with only storyRef is no issue: the Story is looked up and bound afresh', async () => {
 	const fx = seed();
 	try {
 		const lld = fx.read(lldArtifactId(HASH, 's1')); lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#5' };
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
 		const t = fakeTracker();
-		ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
-		const r = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.deepEqual(r.ok && [r.value.issue === 'acme/demo#5', r.value.created], [false, true], 'the older ref is not adopted');
 		assert.equal(bound(fx, storyHead), r.ok ? r.value.issue : '');
 	} finally { fx.cleanup(); }
 });
 
-test('team mode creates only when everything misses and reports phase before-create or create on failure', () => {
+test('team mode creates only when everything misses and reports phase before-create or create on failure', async () => {
 	const fx = seed();
 	try {
 		// a failed lookup is a failure, never "not found": nothing is created
 		const lookup = fakeTracker({ failFind: true });
-		const l = ensureUnitIssueDetailed(epic(fx.repo), lookup.port, deps);
+		const l = await ensureUnitIssueDetailed(epic(fx.repo), lookup.port, deps);
 		assert.equal(l.ok, false);
 		assert.deepEqual(l.ok ? null : [l.phase, l.kind], ['before-create', 'unreachable']);
 		assert.equal(lookup.calls.create, 0);
 
 		// a label that cannot be created: nothing is created
 		const label = fakeTracker({ failLabel: unitLabel(epic(fx.repo)) });
-		const lb = ensureUnitIssueDetailed(epic(fx.repo), label.port, deps);
+		const lb = await ensureUnitIssueDetailed(epic(fx.repo), label.port, deps);
 		assert.equal(lb.ok, false);
 		assert.deepEqual(lb.ok ? null : lb.phase, 'before-create');
 		assert.match(lb.ok ? '' : lb.reason, /insrc:unit:a3f4b8c9d1e2f3a4' could not be created/);
@@ -115,41 +115,41 @@ test('team mode creates only when everything misses and reports phase before-cre
 
 		// a failed create call is unconfirmed
 		const bad = fakeTracker({ failCreate: true });
-		const c = ensureUnitIssueDetailed(epic(fx.repo), bad.port, deps);
+		const c = await ensureUnitIssueDetailed(epic(fx.repo), bad.port, deps);
 		assert.deepEqual(c.ok ? null : [c.phase, c.kind], ['create', 'rejected']);
 
 		// a Story or Task whose parent has no issue yet creates nothing (the parent is not created for it)
 		const orphan = fakeTracker();
-		const o = ensureUnitIssueDetailed(story(fx.repo), orphan.port, deps);
+		const o = await ensureUnitIssueDetailed(story(fx.repo), orphan.port, deps);
 		assert.deepEqual(o.ok ? null : o.phase, 'before-create');
 		assert.match(o.ok ? '' : o.reason, /epic issue does not exist yet/);
 		assert.equal(orphan.calls.create, 0, 'no parent was created either');
-		const orphanTask = ensureUnitIssueDetailed(task(fx.repo), orphan.port, deps);
+		const orphanTask = await ensureUnitIssueDetailed(task(fx.repo), orphan.port, deps);
 		assert.match(orphanTask.ok ? '' : orphanTask.reason, /story issue does not exist yet/);
 		assert.equal(orphan.calls.create, 0);
 
 		// the happy path: Epic, then Story under it, then Task under the Story
 		const t = fakeTracker();
-		const e = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const e = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(e, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
 		assert.deepEqual(t.issues[0]!.spec.labels, ['epic', MEMBERSHIP, unitLabel(epic(fx.repo))], 'kind, membership and per-unit labels');
 		assert.equal(t.issues[0]!.spec.issueType, 'Epic');
 		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 
-		const s = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const s = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(s.ok && s.value.issue, 'acme/demo#2');
 		assert.deepEqual(t.calls.link[0], ['acme/demo#1', 1002], 'the Story is linked under its Epic');
 		assert.match(t.issues[1]!.spec.body, /#1/, 'the body names the Epic issue');
 		assert.equal(bound(fx, storyHead), 'acme/demo#2');
 
-		const k = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
+		const k = await ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
 		assert.equal(k.ok && k.value.issue, 'acme/demo#3');
 		assert.deepEqual(t.calls.link[1], ['acme/demo#2', 1003], 'the Task is linked under its Story');
 		assert.equal(t.issues[2]!.spec.issueType, 'Task');
 
 		// a second call anywhere finds the record and touches the tracker not at all
 		const before = { find: t.calls.find, create: t.calls.create };
-		assert.equal(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(task(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual({ find: t.calls.find, create: t.calls.create }, before);
 
 		// a closed issue carrying the unit label is adopted, not duplicated
@@ -157,35 +157,35 @@ test('team mode creates only when everything misses and reports phase before-cre
 		try {
 			const t2 = fakeTracker();
 			t2.issues.push({ number: 40, ref: 'acme/demo#40', state: 'closed', spec: { title: 'old', body: '', labels: ['epic', MEMBERSHIP, unitLabel(epic(other.repo))] } });
-			const a = ensureUnitIssueDetailed(epic(other.repo), t2.port, deps);
+			const a = await ensureUnitIssueDetailed(epic(other.repo), t2.port, deps);
 			assert.deepEqual(a.ok && [a.value.issue, a.value.created], ['acme/demo#40', false]);
 			assert.equal(t2.calls.create, 0);
 			assert.equal(bound(other, epicHead), 'acme/demo#40', 'and recorded');
 		} finally { other.cleanup(); }
 
 		// a unit that is not in its artifact is a failure before create
-		const missing = ensureUnitIssueDetailed({ ...story(fx.repo), storyId: 's9' }, fakeTracker().port, deps);
+		const missing = await ensureUnitIssueDetailed({ ...story(fx.repo), storyId: 's9' }, fakeTracker().port, deps);
 		assert.deepEqual(missing.ok ? null : missing.phase, 'before-create');
 	} finally { fx.cleanup(); }
 });
 
-test('a create that times out after the remote committed is adopted by its label on the next call', () => {
+test('a create that times out after the remote committed is adopted by its label on the next call', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker({ failCreate: true, commitThenFail: true });
-		const first = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const first = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
 		assert.equal(t.issues.length, 1, 'the remote did commit the issue');
 		assert.equal(bound(fx, epicHead), undefined, 'but nothing was recorded');
 
-		const second = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const second = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(second.ok && [second.value.issue, second.value.created], ['acme/demo#1', false], 'found by its per-unit label');
 		assert.equal(t.calls.create, 1, 'no second create');
 		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 	} finally { fx.cleanup(); }
 });
 
-test('unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id', () => {
+test('unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id', async () => {
 	const e: UnitRef = { unit: 'epic', repoPath: '/r', epicHash: 'A3F4B8C9D1E2F3A4' };
 	assert.equal(unitLabel(e), 'insrc:unit:a3f4b8c9d1e2f3a4');
 	assert.equal(unitLabel({ ...e, unit: 'story', storyId: 'S004' }), 'insrc:unit:a3f4b8c9d1e2f3a4:s004');
@@ -203,12 +203,12 @@ test('unitLabel gives the three forms, lower-cases ids, stays within 50 characte
 // The duplicate tie-break (step 5; needs the additive findIssues listing)
 // ---------------------------------------------------------------------------
 
-test('a lower-numbered issue is adopted and the call\'s own is commented on and closed, even when the close fails', () => {
+test('a lower-numbered issue is adopted and the call\'s own is commented on and closed, even when the close fails', async () => {
 	for (const failClose of [false, true]) {
 		const fx = seed();
 		try {
 			const t = fakeTracker({ withListing: true, racer: true, failClose });
-			const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+			const r = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 			assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'adopted-other' } });
 			assert.equal(t.calls.create, 1);
 			assert.deepEqual(t.calls.comments.map(([ref]) => ref), ['acme/demo#2'], 'the call\'s own issue is commented on');
@@ -221,14 +221,14 @@ test('a lower-numbered issue is adopted and the call\'s own is commented on and 
 			const clean = fakeTracker({ withListing: true });
 			const fy = seed();
 			try {
-				assert.deepEqual(ensureUnitIssueDetailed(epic(fy.repo), clean.port, deps), { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
+				assert.deepEqual(await ensureUnitIssueDetailed(epic(fy.repo), clean.port, deps), { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
 				assert.equal(clean.calls.comments.length, 0);
 			} finally { fy.cleanup(); }
 		} finally { fx.cleanup(); }
 	}
 });
 
-test('two simulated daemons that both create converge on the lowest issue', () => {
+test('two simulated daemons that both create converge on the lowest issue', async () => {
 	const a = seed();
 	const b = seed();
 	try {
@@ -237,8 +237,8 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 		// after daemon A's create and before A's listing: both have created before either lists.
 		const second = fakeTracker({ withListing: true, staleFinds: 3, staleTitle: true, shared });
 		let rb: ReturnType<typeof ensureUnitIssueDetailed> | undefined;
-		const first = fakeTracker({ withListing: true, shared, afterCreate: () => { rb = ensureUnitIssueDetailed(epic(b.repo), second.port, deps); } });
-		const ra = ensureUnitIssueDetailed(epic(a.repo), first.port, deps);
+		const first = fakeTracker({ withListing: true, shared, afterCreate: async () => { rb = await ensureUnitIssueDetailed(epic(b.repo), second.port, deps); } });
+		const ra = await ensureUnitIssueDetailed(epic(a.repo), first.port, deps);
 		assert.equal(first.calls.create + second.calls.create, 2, 'both daemons created an issue');
 		assert.equal(ra.ok && rb?.ok, true);
 		assert.deepEqual(shared.issues.filter(i => i.state === 'open').map(i => i.ref), ['acme/demo#1'], 'one open issue: the lowest');
@@ -248,26 +248,26 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 	} finally { a.cleanup(); b.cleanup(); }
 });
 
-test('a failed findIssues listing keeps the recorded issue and a following call makes no tracker call', () => {
+test('a failed findIssues listing keeps the recorded issue and a following call makes no tracker call', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker({ withListing: true, failList: true });
-		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'not-run' } });
 		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 		const before = { ...t.calls };
-		const again = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const again = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(again, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'clean' } });
 		assert.deepEqual([t.calls.find, t.calls.create, t.calls.list], [before.find, before.create, before.list], 'no tracker call');
 	} finally { fx.cleanup(); }
 });
 
-test('a link under the parent that failed at creation is retried on the next ensure and then cleared', () => {
+test('a link under the parent that failed at creation is retried on the next ensure and then cleared', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker({ failLink: 1 });
-		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
-		const first = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, true);
+		const first = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(first.ok, true, 'the Story issue is still returned');
 		const pending = fx.read(storyHead).meta.envelope.binding.pendingLink;
 		assert.deepEqual(pending, { parent: ref('acme/demo#1'), childId: 1002 }, 'the failed link is recorded on the binding');
@@ -276,7 +276,7 @@ test('a link under the parent that failed at creation is retried on the next ens
 		// the next ensure retries the link (no new issue) and clears it
 		const linksBefore = t.calls.link.length;
 		const createsBefore = t.calls.create;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.equal(t.calls.link.length, linksBefore + 1);
 		assert.equal(t.calls.create, createsBefore);
 		assert.equal(fx.read(storyHead).meta.envelope.binding.pendingLink, undefined);
@@ -284,20 +284,20 @@ test('a link under the parent that failed at creation is retried on the next ens
 
 		// settled: a further ensure makes no tracker call at all
 		const settledLinks = t.calls.link.length;
-		ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(t.calls.link.length, settledLinks);
 	} finally { fx.cleanup(); }
 });
 
-test('a malformed plan is a before-create failure, not a throw', () => {
+test('a malformed plan is a before-create failure, not a throw', async () => {
 	const fx = seed();
 	try {
 		const plan = fx.read(planArtifactId(HASH, 's1')); plan.body.tasks = 'not a list';
 		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(plan));
 		const t = fakeTracker();
-		ensureUnitIssueDetailed(epic(fx.repo), t.port, deps); ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps); await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		const creates = t.calls.create;
-		const r = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
 		assert.equal(r.ok, false);
 		assert.equal(r.ok ? '' : r.phase, 'before-create');
 		assert.equal(t.calls.create, creates);
@@ -311,12 +311,12 @@ test('a malformed plan is a before-create failure, not a throw', () => {
 type AdoptOver = Parameters<typeof fakeTracker>[0];
 
 /** An epic and its issue, then a unit whose create times out after the tracker committed it. Returns the tracker, ready to adopt that unit. */
-function timedOutUnit(fx: ReturnType<typeof seed>, unitOf: (repo: string) => UnitRef, over: NonNullable<AdoptOver> = {}) {
+async function timedOutUnit(fx: ReturnType<typeof seed>, unitOf: (repo: string) => UnitRef, over: NonNullable<AdoptOver> = {}) {
 	const t = fakeTracker(over);
-	assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
-	if (unitOf(fx.repo).unit === 'task') assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+	assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, true);
+	if (unitOf(fx.repo).unit === 'task') assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 	over.failCreate = true; over.commitThenFail = true;
-	const first = ensureUnitIssueDetailed(unitOf(fx.repo), t.port, deps);
+	const first = await ensureUnitIssueDetailed(unitOf(fx.repo), t.port, deps);
 	assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
 	return t;
 }
@@ -330,13 +330,13 @@ const recordOf = (fx: ReturnType<typeof seed>, u: UnitRef) => {
 	};
 };
 
-test('a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve', () => {
+test('a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve', async () => {
 	// Story: adopted, resolved, linked, settled; the record keeps its revision mark
 	let fx = seed();
 	try {
-		const t = timedOutUnit(fx, story);
+		const t = await timedOutUnit(fx, story);
 		const linksBefore = t.calls.link.length;
-		const adopted = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const adopted = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.deepEqual(adopted.ok && [adopted.value.issue, adopted.value.created], ['acme/demo#2', false]);
 		assert.deepEqual(t.calls.resolve, ['acme/demo#2']);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]]);
@@ -348,9 +348,9 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	// Task: adopted under its Story's issue
 	fx = seed();
 	try {
-		const t = timedOutUnit(fx, task);
+		const t = await timedOutUnit(fx, task);
 		const linksBefore = t.calls.link.length;
-		assert.equal(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(task(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#2', 1003]]);
 		assert.equal(isUnitSettled(task(fx.repo)), true);
 	} finally { fx.cleanup(); }
@@ -358,8 +358,8 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	// A failed resolve is kept as pendingLink { parent, child } AFTER the adoption record exists, survives it, and the next ensure completes it
 	fx = seed();
 	try {
-		const t = timedOutUnit(fx, story, { failResolve: 1 });
-		const adopted = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const t = await timedOutUnit(fx, story, { failResolve: 1 });
+		const adopted = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(adopted.ok, true, 'a failed lookup never fails the ensure');
 		const rec = recordOf(fx, story(fx.repo));
 		assert.deepEqual(rec.pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
@@ -367,7 +367,7 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		assert.equal(rec.createdAtRevision, 1, 'the record kept its revision mark');
 		assert.equal(isUnitSettled(story(fx.repo)), false);
 		const linksBefore = t.calls.link.length;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]], 'the retry looked the id up, then linked');
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
@@ -376,12 +376,12 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	fx = seed();
 	try {
 		const over: NonNullable<AdoptOver> = {};
-		const t = timedOutUnit(fx, story, over);
+		const t = await timedOutUnit(fx, story, over);
 		over.failLink = 1;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, { parent: 'acme/demo#1', childId: 1002 });
 		const resolvesBefore = t.calls.resolve.length;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.equal(t.calls.resolve.length, resolvesBefore, 'no second lookup');
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
@@ -390,11 +390,11 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as const) {
 		fx = seed();
 		try {
-			const t = timedOutUnit(fx, story, { failResolve: 2, failResolveKind: kind });
-			assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true, kind);
+			const t = await timedOutUnit(fx, story, { failResolve: 2, failResolveKind: kind });
+			assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true, kind);
 			const kept = { parent: 'acme/demo#1', child: 'acme/demo#2' };
 			assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, kept, kind);
-			assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true, kind);
+			assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true, kind);
 			assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, kept, `${kind}: still failing leaves the record as it was`);
 		} finally { fx.cleanup(); }
 	}
@@ -402,8 +402,8 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	// A tracker without the lookup counts as a failed lookup, not a crash
 	fx = seed();
 	try {
-		const t = timedOutUnit(fx, story, { withoutResolve: true });
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		const t = await timedOutUnit(fx, story, { withoutResolve: true });
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
 	} finally { fx.cleanup(); }
 
@@ -411,14 +411,14 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	fx = seed();
 	try {
 		const over: NonNullable<AdoptOver> = {};
-		const t = timedOutUnit(fx, story, over);
+		const t = await timedOutUnit(fx, story, over);
 		over.afterFind = hit => {
 			if (hit !== 'acme/demo#2') return;
 			const def = fx.read(defineArtifactId(HASH)); def.meta = null;
 			writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def));
 		};
 		const linksBefore = t.calls.link.length;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]], 'linked although the Define could not be patched');
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
@@ -427,8 +427,8 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	fx = seed();
 	try {
 		const t = fakeTracker({ failCreate: true, commitThenFail: true });
-		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, false);
-		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, false);
+		assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual([t.calls.resolve.length, t.calls.link.length], [0, 0]);
 	} finally { fx.cleanup(); }
 
@@ -436,29 +436,29 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 	fx = seed();
 	try {
 		const t = fakeTracker();
-		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		const head = fx.read(storyHead);
 		head.meta.envelope.binding.pendingLink = { parent: ref('acme/demo#1'), childId: 77 };
 		writeFileSync(fx.json(storyHead), JSON.stringify(head));
 		const resolvesBefore = t.calls.resolve.length;
 		const linksBefore = t.calls.link.length;
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 77]]);
 		assert.equal(t.calls.resolve.length, resolvesBefore);
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
 });
 
-test('unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record', () => {
+test('unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record', async () => {
 	const fx = seed();
 	try {
 		const taskId = `TASK-${HASH}-s1-t1`;
 		const t = fakeTracker();
 		// ensured for the first time: created under the Story's issue and bound on the Task artifact; the plan gets no record
-		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
-		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
-		const made = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
+		assert.equal((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(story(fx.repo), t.port, deps)).ok, true);
+		const made = await ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
 		assert.deepEqual(made.ok ? [made.value.created, made.value.issue] : made, [true, 'acme/demo#3']);
 		assert.equal(bound(fx, taskId), 'acme/demo#3', 'the Task artifact holds the issue');
 		const plan = fx.read(planArtifactId(HASH, 's1')).meta;
@@ -467,24 +467,24 @@ test('unit-issue.test.ts: the unit issue resolves from the binding with no Plan 
 
 		// a later resolve answers from the binding, with no tracker call
 		const calls = t.calls.find;
-		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#3');
+		assert.equal(await resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#3');
 		assert.equal(isUnitSettled(task(fx.repo)), true);
 		assert.equal(t.calls.find, calls);
-		assert.equal(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok && t.calls.create, 3, 'and a second ensure creates nothing');
+		assert.equal((await ensureUnitIssueDetailed(task(fx.repo), t.port, deps)).ok && t.calls.create, 3, 'and a second ensure creates nothing');
 	} finally { fx.cleanup(); }
 
 	// a Task with no artifact has nowhere to be recorded, so nothing is created and nothing is read from the plan
 	const bare = seed({ taskHead: false });
 	try {
 		const t = fakeTracker();
-		ensureUnitIssueDetailed(epic(bare.repo), t.port, deps);
-		ensureUnitIssueDetailed(story(bare.repo), t.port, deps);
+		await ensureUnitIssueDetailed(epic(bare.repo), t.port, deps);
+		await ensureUnitIssueDetailed(story(bare.repo), t.port, deps);
 		const created = t.calls.create;
-		const refused = ensureUnitIssueDetailed(task(bare.repo), t.port, deps);
+		const refused = await ensureUnitIssueDetailed(task(bare.repo), t.port, deps);
 		assert.equal(refused.ok, false);
 		assert.deepEqual(refused.ok ? null : refused.phase, 'before-create');
 		assert.match(refused.ok ? '' : refused.reason, /no Task artifact yet/);
 		assert.equal(t.calls.create, created);
-		assert.equal(resolveUnitIssueLocal(task(bare.repo), deps.now), null);
+		assert.equal(await resolveUnitIssueLocal(task(bare.repo), deps.now), null);
 	} finally { bare.cleanup(); }
 });

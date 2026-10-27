@@ -193,8 +193,8 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 				: { policy: () => ({ ok: true, value: 'none' }) as ReturnType<PolicyReader> });
 			const before = listing(r.repo);
 			const hldBefore = readFileSync(hldJson, 'utf8');
-			const epic = autoPushEpicOnHld(hldJson);
-			const story = autoPushStoryOnLld(lldJson);
+			const epic = await autoPushEpicOnHld(hldJson);
+			const story = await autoPushStoryOnLld(lldJson);
 			assert.equal(epic.status, 'failed', `${mode} epic push`);
 			assert.match((epic as { reason?: string }).reason ?? '', /no Epic anchor/, mode);
 			assert.equal(story.status, 'failed', `${mode} story push`);

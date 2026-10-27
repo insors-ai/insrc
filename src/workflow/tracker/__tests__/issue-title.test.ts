@@ -90,7 +90,7 @@ const epic = (repo: string): UnitRef => ({ unit: 'epic', repoPath: repo, epicHas
 const story = (repo: string): UnitRef => ({ unit: 'story', repoPath: repo, epicHash: HASH, storyId: 's1' });
 const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHash: HASH, storyId: 's1', taskId: 't1' });
 
-test('unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id', () => {
+test('unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id', async () => {
 	const fx = seed();
 	const cfgPath = join(fx.repo, 'github.json');
 	writeFileSync(cfgPath, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
@@ -103,7 +103,7 @@ test('unit-issue and the conventions bodies write an Epic, Story and Task title 
 			[story(fx.repo), `STORY-${HASH}-s1`, 'Filter by tag'],
 			[task(fx.repo), `TASK-${HASH}-s1-t1`, 'Add the filter'],
 		] as const) {
-			const out = ensureUnitIssueDetailed(unit, t.port, deps);
+			const out = await ensureUnitIssueDetailed(unit, t.port, deps);
 			assert.equal(out.ok, true, JSON.stringify(out));
 			const made = t.issues[t.issues.length - 1]!;
 			assert.equal(made.spec.title, `${id} — ${title}`, 'the title starts with the artifact id');
@@ -124,7 +124,7 @@ test('unit-issue and the conventions bodies write an Epic, Story and Task title 
 				{ ref: 'acme/demo#30', spec: { title: 'E20260717a3f4b8c9 \u2014 Epic', body: 'old', labels: ['epic', `epic:${SLUG}`, unitLabel(epic(fresh.repo))] } as IssueSpec },
 				{ ref: 'acme/demo#40', spec: { title: 'E20260717a3f4b8c9:S001 \u2014 Filter by tag', body: 'old', labels: ['story', `epic:${SLUG}`, unitLabel(story(fresh.repo))] } as IssueSpec },
 			]);
-			const adopted = ensureUnitIssueDetailed(story(fresh.repo), older.port, deps);
+			const adopted = await ensureUnitIssueDetailed(story(fresh.repo), older.port, deps);
 			assert.equal(adopted.ok, true, JSON.stringify(adopted));
 			if (adopted.ok) {
 				assert.equal(adopted.value.issue, 'acme/demo#40');

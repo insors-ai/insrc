@@ -8,11 +8,11 @@ import { lldArtifactId } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { HASH, fakeTracker, seed, via } from './approve-fallback-kit.js';
 
-test('the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice', () => {
+test('the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker();
-		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'created');
+		assert.equal((await via(t)(async () => await autoPushEpicOnHld(fx.hld))).status, 'created');
 
 		// the crash: the comment reaches the issue, then the record of it cannot be written (a store write is staged for the STORY head)
 		const journal = join(fx.repo, '.insrc', 'journal', `STORY-${HASH}-s1.json`);
@@ -24,7 +24,7 @@ test('the approve-time pushes post each comment once: a crash after a successful
 			if (r.ok && !crashed && body.includes('insrc:post:')) { crashed = true; mkdirSync(dirname(journal), { recursive: true }); writeFileSync(journal, '{}'); }
 			return r;
 		};
-		const first = via(t)(() => autoPushStoryOnLld(fx.lld));
+		const first = await via(t)(async () => await autoPushStoryOnLld(fx.lld));
 		assert.equal(first.status, 'created');
 		const storyComments = () => t.log.comments.filter(([ref]) => ref === 'acme/demo#2');
 		assert.equal(storyComments().length, 2, 'the design comment and the review comment were each posted once');
@@ -35,7 +35,7 @@ test('the approve-time pushes post each comment once: a crash after a successful
 		// the next approve finds both posts by their markers, records them, and posts nothing
 		rmSync(journal);
 		const writes = t.log.writeBodies;
-		const second = via(t)(() => autoPushStoryOnLld(fx.lld));
+		const second = await via(t)(async () => await autoPushStoryOnLld(fx.lld));
 		assert.equal(second.status, 'already-exists');
 		assert.equal(second.status === 'already-exists' ? second.extrasFailed : undefined, undefined, 'nothing failed');
 		assert.equal(storyComments().length, 2, 'no comment was posted twice');
@@ -44,7 +44,7 @@ test('the approve-time pushes post each comment once: a crash after a successful
 
 		// and a third approve changes nothing
 		const before = t.log.comments.length;
-		via(t)(() => autoPushStoryOnLld(fx.lld));
+		await via(t)(async () => await autoPushStoryOnLld(fx.lld));
 		assert.equal(t.log.comments.length, before);
 	} finally { fx.cleanup(); }
 });

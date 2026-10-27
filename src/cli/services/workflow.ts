@@ -221,9 +221,9 @@ export async function approve(artifactPath: string, withTracker = true, override
 	const tasks = approval.workflow === 'plan' ? await syncPlanTasks(approval.path) : undefined;
 	if (!withTracker) return { approval, ...(tasks !== undefined ? { tasks } : {}) };
 	let tracker: AutoPushResult | undefined;
-	if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);
-	else if (approval.workflow === 'design.story') tracker = autoPushStoryOnLld(approval.path);
-	else if (approval.workflow === 'plan')         tracker = autoPushTasksOnPlan(approval.path);
+	if (approval.workflow === 'design.epic')       tracker = await autoPushEpicOnHld(approval.path);
+	else if (approval.workflow === 'design.story') tracker = await autoPushStoryOnLld(approval.path);
+	else if (approval.workflow === 'plan')         tracker = await autoPushTasksOnPlan(approval.path);
 	// Commit + push AFTER the tracker push, so the checked-in MD carries the
 	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
 	const commit = commitApprovedArtifacts(approval);

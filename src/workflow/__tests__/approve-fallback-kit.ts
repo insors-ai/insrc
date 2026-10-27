@@ -121,5 +121,5 @@ export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): F
 export const trackerOf = (path: string): Record<string, any> => JSON.parse(readFileSync(path, 'utf8')).meta.tracker ?? {};
 /** Runs one push with the tracker and policy injected (the exported push functions take only the path). */
 export const via = (t: ReturnType<typeof fakeTracker>, policy: PolicyReader = teamPolicy) =>
-	<T>(run: () => T): T => { _setAutoPushDepsForTests({ policy, port: t.port }); try { return run(); } finally { _setAutoPushDepsForTests(); } };
+	async <T>(run: () => T | Promise<T>): Promise<T> => { _setAutoPushDepsForTests({ policy, port: t.port }); try { return await run(); } finally { _setAutoPushDepsForTests(); } };
 

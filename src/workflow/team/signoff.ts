@@ -462,7 +462,7 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 	const port = loaded.value;
 	const who = port.whoAmI();
 	if (!who.ok) return who;
-	const issue = (d.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
+	const issue = await (d.resolveIssue ?? (async (u: UnitRef) => await resolveUnitIssueLocal(u)))(unit);
 	if (issue === null) return rejected(`${unit.storyId ?? unit.epicHash} has no tracker issue to hold the signoff: create its issue first`);
 	const holder = port.readAssignee(issue);
 	if (!holder.ok) return holder;
@@ -681,7 +681,7 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 					}
 				}
 				if (recorded < group.length) unfinished = true;
-				else if (op === 'signed-off') releaseClaim(unit, port, d);
+				else if (op === 'signed-off') await releaseClaim(unit, port, d);
 			}
 		}
 	}
@@ -701,8 +701,8 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 }
 
 /** Clear the assignee of the unit's issue; a failure is logged, since the artifacts stay signed off and the stage proceeds. */
-function releaseClaim(unit: UnitRef, port: TrackerPort, d: SignoffDeps): void {
-	const issue = (d.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
+async function releaseClaim(unit: UnitRef, port: TrackerPort, d: SignoffDeps): Promise<void> {
+	const issue = await (d.resolveIssue ?? (async (u: UnitRef) => await resolveUnitIssueLocal(u)))(unit);
 	if (issue === null) return;
 	const released = port.setAssignee(issue, null);
 	if (!released.ok) log.warn({ issue, kind: released.kind, reason: released.reason }, 'the claim could not be released after signoff; the holder or an administrator can release it');

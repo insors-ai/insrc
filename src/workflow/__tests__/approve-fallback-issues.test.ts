@@ -28,38 +28,38 @@ import { HASH, SLUG, CREATED, OK, TEAM, teamPolicy, offPolicy, nonePolicy, broke
 
 // ---------------------------------------------------------------------------
 
-test('in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once', () => {
+test('in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once', async () => {
 	const fx = seed({ pushTasks: false });
 	try {
 		const t = fakeTracker();
 		// the draft hook already made the Epic and the Story issue
-		const e0 = ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port); assert.equal(e0.ok, true, JSON.stringify(e0));
-		assert.equal(ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port).ok, true);
+		const e0 = await ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port); assert.equal(e0.ok, true, JSON.stringify(e0));
+		assert.equal((await ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port)).ok, true);
 		assert.equal(t.log.creates, 2);
 
 		// Epic approve: adopts, posts the HLD summary and the review once
-		const epic = via(t)(() => autoPushEpicOnHld(fx.hld));
+		const epic = await via(t)(async () => await autoPushEpicOnHld(fx.hld));
 		assert.deepEqual(epic, { status: 'already-exists', epicRef: 'acme/demo#1' });
 		assert.equal(t.log.creates, 2, 'no second Epic issue');
 
 		// Story approve: the task-list splice, the design comment and the review comment run once and are marked
-		const story = via(t)(() => autoPushStoryOnLld(fx.lld));
+		const story = await via(t)(async () => await autoPushStoryOnLld(fx.lld));
 		assert.deepEqual(story, { status: 'already-exists', storyRef: 'acme/demo#2' });
 		const storyPosts = t.log.comments.filter(([ref]) => ref === 'acme/demo#2').length;
 		assert.equal(storyPosts, 2, 'design comment and review comment');
 		assert.equal(t.log.writeBodies, 1, 'the Epic task list was spliced');
 		const before = { comments: t.log.comments.length, writes: t.log.writeBodies };
-		assert.equal(via(t)(() => autoPushStoryOnLld(fx.lld)).status, 'already-exists');
-		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'already-exists');
+		assert.equal((await via(t)(async () => await autoPushStoryOnLld(fx.lld))).status, 'already-exists');
+		assert.equal((await via(t)(async () => await autoPushEpicOnHld(fx.hld))).status, 'already-exists');
 		assert.deepEqual({ comments: t.log.comments.length, writes: t.log.writeBodies }, before, 'a second approve posts nothing');
 		assert.deepEqual((JSON.parse(readFileSync(artifactJsonPath(fx.repo, `STORY-${HASH}-s1`), 'utf8')).meta.envelope.binding.posted as Array<{ kind: string }>).map(p => p.kind).sort(), ['design', 'review', 'task-list'], 'the binding records what was posted');
 
 		// the draft hook also made both Task issues: the plan approve adopts them and creates none
 		for (const taskId of ['t1', 't2']) {
-			assert.equal(ensureUnitIssueDetailed({ unit: 'task', repoPath: fx.repo, epicHash: HASH, storyId: 's1', taskId }, t.port).ok, true);
+			assert.equal((await ensureUnitIssueDetailed({ unit: 'task', repoPath: fx.repo, epicHash: HASH, storyId: 's1', taskId }, t.port)).ok, true);
 		}
 		assert.equal(t.log.creates, 4);
-		assert.deepEqual(via(t)(() => autoPushTasksOnPlan(fx.plan)), { status: 'already-exists', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.deepEqual(await via(t)(async () => await autoPushTasksOnPlan(fx.plan)), { status: 'already-exists', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
 		assert.equal(t.log.creates, 4, 'no second Task issue');
 	} finally { fx.cleanup(); }
 
@@ -67,8 +67,8 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const forced = seed({ pushTasks: false });
 	try {
 		const t = fakeTracker();
-		assert.deepEqual(via(t)(() => autoPushTasksOnPlan(forced.plan)), { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
-		assert.equal(via(t)(() => autoPushTasksOnPlan(forced.plan)).status, 'already-exists');
+		assert.deepEqual(await via(t)(async () => await autoPushTasksOnPlan(forced.plan)), { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.equal((await via(t)(async () => await autoPushTasksOnPlan(forced.plan))).status, 'already-exists');
 		assert.equal(t.log.creates, 4, 'the Epic, the Story and the two Tasks');
 	} finally { forced.cleanup(); }
 
@@ -76,7 +76,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const lost = seed();
 	try {
 		const t = fakeTracker({ failFind: true });
-		const r = via(t)(() => autoPushEpicOnHld(lost.hld));
+		const r = await via(t)(async () => await autoPushEpicOnHld(lost.hld));
 		assert.equal(r.status, 'failed');
 		assert.equal(t.log.creates, 0);
 	} finally { lost.cleanup(); }
@@ -85,7 +85,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const bad = seed();
 	try {
 		const t = fakeTracker();
-		for (const r of [via(t, brokenPolicy)(() => autoPushEpicOnHld(bad.hld)), via(t, brokenPolicy)(() => autoPushStoryOnLld(bad.lld)), via(t, brokenPolicy)(() => autoPushTasksOnPlan(bad.plan))]) {
+		for (const r of [await via(t, brokenPolicy)(async () => await autoPushEpicOnHld(bad.hld)), await via(t, brokenPolicy)(async () => await autoPushStoryOnLld(bad.lld)), await via(t, brokenPolicy)(async () => await autoPushTasksOnPlan(bad.plan))]) {
 			assert.equal(r.status, 'failed');
 			assert.match(r.status === 'failed' ? r.reason : '', /cannot be read/);
 		}
@@ -96,20 +96,20 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const part = seed();
 	try {
 		const t = fakeTracker({ failComment: '## LLD' });
-		via(t)(() => autoPushEpicOnHld(part.hld));
-		const first = via(t)(() => autoPushStoryOnLld(part.lld));
+		await via(t)(async () => await autoPushEpicOnHld(part.hld));
+		const first = await via(t)(async () => await autoPushStoryOnLld(part.lld));
 		assert.deepEqual(first.status === 'created' ? first.extrasFailed?.map(f => f.name) : null, ['designComment']);
 		const healed = fakeTracker();
 		healed.issues.push(...t.issues);
-		const second = via(healed)(() => autoPushStoryOnLld(part.lld));
+		const second = await via(healed)(async () => await autoPushStoryOnLld(part.lld));
 		assert.equal(second.status, 'already-exists');
 		assert.deepEqual(healed.log.comments.map(([, b]) => b.split('\n').slice(0, 2)), [[`<!-- insrc:post:STORY-${HASH}-s1:design -->`, '## LLD — Story s1']], 'the comment carries its post marker first');
 		assert.equal(healed.log.writeBodies, 0, 'the marked task-list splice is not repeated');
 	} finally { part.cleanup(); }
 });
 
-test('with no policy, or teamMode off, the three pushes run the individual-mode path: one gh sequence, no per-unit record for an Epic or a Story, and a Task push skipped when pushTasks is off', () => {
-	const run = (policy: PolicyReader | undefined) => {
+test('with no policy, or teamMode off, the three pushes run the individual-mode path: one gh sequence, no per-unit record for an Epic or a Story, and a Task push skipped when pushTasks is off', async () => {
+	const run = async (policy: PolicyReader | undefined) => {
 		const calls: string[][] = [];
 		let n = 0;
 		const exec: TrackerExec = (cmd, args) => {
@@ -123,14 +123,14 @@ test('with no policy, or teamMode off, the three pushes run the individual-mode 
 		const fx = seed({ pushTasks: false });
 		try {
 			_setAutoPushDepsForTests(policy === undefined ? {} : { policy });
-			const results = [autoPushEpicOnHld(fx.hld), autoPushStoryOnLld(fx.lld), autoPushTasksOnPlan(fx.plan)];
+			const results = [await autoPushEpicOnHld(fx.hld), await autoPushStoryOnLld(fx.lld), await autoPushTasksOnPlan(fx.plan)];
 			const masked = calls.map(c => c.map(a => a.replace(fx.repo, '<repo>')).join(' '));
 			return { results, masked, hld: trackerOf(fx.hld), lld: trackerOf(fx.lld) };
 		} finally { fx.cleanup(); }
 	};
-	const baseline = run(undefined);
+	const baseline = await run(undefined);
 	for (const policy of [nonePolicy, offPolicy]) {
-		const r = run(policy);
+		const r = await run(policy);
 		assert.deepEqual(r.masked, baseline.masked, 'the same gh command sequence');
 		assert.deepEqual(r.results.map(x => x.status), ['created', 'created', 'skipped'], 'pushTasks off still returns skipped');
 		assert.deepEqual(r.results, baseline.results);

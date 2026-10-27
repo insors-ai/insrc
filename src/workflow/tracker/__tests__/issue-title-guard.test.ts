@@ -109,20 +109,20 @@ const story = (repo: string): UnitRef => ({ unit: 'story', repoPath: repo, epicH
 const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHash: HASH, storyId: 's1', taskId: 't1' });
 
 /** Runs the three pushes of the given mode against the tracker. */
-function pushAll(fx: ReturnType<typeof seed>, t: ReturnType<typeof fakeTracker>, mode: 'team' | 'individual') {
+async function pushAll(fx: ReturnType<typeof seed>, t: ReturnType<typeof fakeTracker>, mode: 'team' | 'individual') {
 	_setTrackerExecForTests(() => '');   // gh sign-in check for the push path
 	_setAutoPushDepsForTests(mode === 'team'
 		? { policy: teamPolicy, port: t.port }
 		: { policy: individualPolicy, port: t.port });
-	return [autoPushEpicOnHld(fx.hld), autoPushStoryOnLld(fx.lld), autoPushTasksOnPlan(fx.plan)];
+	return [await autoPushEpicOnHld(fx.hld), await autoPushStoryOnLld(fx.lld), await autoPushTasksOnPlan(fx.plan)];
 }
 
-test('tracker-auto in team mode and individual mode writes artifact-id titles and markers', () => {
+test('tracker-auto in team mode and individual mode writes artifact-id titles and markers', async () => {
 	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
 			const t = fakeTracker();
-			const results = pushAll(fx, t, mode);
+			const results = await pushAll(fx, t, mode);
 			assert.deepEqual(results.map(r => r.status), ['created', 'created', 'created'], `${mode}: ${JSON.stringify(results)}`);
 			const byTitle = (id: string): Issue => {
 				const hit = t.issues.find(i => i.spec.title.startsWith(`${id} — `));
@@ -142,7 +142,7 @@ test('tracker-auto in team mode and individual mode writes artifact-id titles an
 	}
 });
 
-test('an issue created earlier is adopted by its unit label or an exact artifact-id title', () => {
+test('an issue created earlier is adopted by its unit label or an exact artifact-id title', async () => {
 	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
@@ -151,7 +151,7 @@ test('an issue created earlier is adopted by its unit label or an exact artifact
 				{ ref: 'acme/demo#7', spec: { title: `${EPIC_ID} — Users cannot filter todos by tag today.`, body: 'x', labels: [] } as IssueSpec },
 				{ ref: 'acme/demo#8', spec: { title: 'E20260717a3f4b8c9:S001 — Filter by tag', body: 'x', labels: ['insrc:story', `epic:${SLUG}`, unitLabel(story(fx.repo))] } as IssueSpec },
 			]);
-			const results = pushAll(fx, t, mode);
+			const results = await pushAll(fx, t, mode);
 			assert.equal(results[0]!.status, mode === 'team' ? 'already-exists' : 'already-exists', `${mode} epic: ${JSON.stringify(results[0])}`);
 			assert.equal(results[1]!.status, 'already-exists', `${mode} story: ${JSON.stringify(results[1])}`);
 			assert.equal((results[0] as { epicRef?: string }).epicRef, 'acme/demo#7');
@@ -162,11 +162,11 @@ test('an issue created earlier is adopted by its unit label or an exact artifact
 	}
 });
 
-test('a Task issue found by its title alone is adopted, and a Story with two unit-label matches creates nothing', () => {
+test('a Task issue found by its title alone is adopted, and a Story with two unit-label matches creates nothing', async () => {
 	const titleOnly = seed();
 	try {
 		const t = fakeTracker([{ ref: 'acme/demo#8', spec: { title: `${TASK_ID} — Add the input`, body: 'x', labels: [] } as IssueSpec }]);
-		const results = pushAll(titleOnly, t, 'individual');
+		const results = await pushAll(titleOnly, t, 'individual');
 		assert.equal(results[2]!.status, 'already-exists', JSON.stringify(results[2]));
 		assert.equal(t.issues.filter(i => i.spec.title.startsWith(`${TASK_ID} — `)).length, 1, 'no second Task issue');
 	} finally { titleOnly.cleanup(); }
@@ -178,7 +178,7 @@ test('a Task issue found by its title alone is adopted, and a Story with two uni
 				{ ref: 'acme/demo#8', spec: { title: 'an old title', body: 'x', labels } as IssueSpec },
 				{ ref: 'acme/demo#9', spec: { title: 'another old title', body: 'x', labels } as IssueSpec },
 			]);
-			const results = pushAll(twice, t, mode);
+			const results = await pushAll(twice, t, mode);
 			assert.equal(results[1]!.status, 'failed', `${mode}: ${JSON.stringify(results[1])}`);
 			assert.match((results[1] as { reason: string }).reason, /issues carry the label/);
 			assert.ok(!t.issues.some(i => i.spec.title.startsWith(`${STORY_ID} — `)), `${mode}: no Story issue was created`);
@@ -186,7 +186,7 @@ test('a Task issue found by its title alone is adopted, and a Story with two uni
 	}
 });
 
-test('two Epic issues carrying the Epic labels are refused on both paths and nothing is created', () => {
+test('two Epic issues carrying the Epic labels are refused on both paths and nothing is created', async () => {
 	for (const mode of ['team', 'individual'] as const) {
 		const fx = seed();
 		try {
@@ -195,25 +195,25 @@ test('two Epic issues carrying the Epic labels are refused on both paths and not
 				{ ref: 'acme/demo#7', spec: { title: 'an old epic', body: 'x', labels } as IssueSpec },
 				{ ref: 'acme/demo#9', spec: { title: 'another old epic', body: 'x', labels } as IssueSpec },
 			]);
-			const results = pushAll(fx, t, mode);
+			const results = await pushAll(fx, t, mode);
 			assert.equal(results[0]!.status, 'failed', `${mode}: ${JSON.stringify(results[0])}`);
 			assert.equal(t.issues.length, 2, `${mode}: nothing was created`);
 		} finally { fx.cleanup(); }
 	}
 });
 
-test('a failed Epic label lookup in individual mode creates no Epic issue', () => {
+test('a failed Epic label lookup in individual mode creates no Epic issue', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker();
 		(t.port as unknown as { findIssue: () => PortResult<IssueRef | null> }).findIssue = () => ({ ok: false, reason: 'gh timed out', kind: 'unreachable' });
-		const results = pushAll(fx, t, 'individual');
+		const results = await pushAll(fx, t, 'individual');
 		assert.equal(results[0]!.status, 'failed', JSON.stringify(results[0]));
 		assert.equal(t.issues.length, 0, 'nothing was created');
 	} finally { fx.cleanup(); }
 });
 
-test('s10 is never matched for s1 and t10 never for t1, several matches and a failed lookup create nothing', () => {
+test('s10 is never matched for s1 and t10 never for t1, several matches and a failed lookup create nothing', async () => {
 	// a longer id is not the same issue: s10 and t10 issues exist, and s1 / t1 are still created
 	const longer = seed();
 	try {
@@ -222,7 +222,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 			{ ref: 'acme/demo#8', spec: { title: `STORY-${HASH}-s10 — the tenth story`, body: 'x', labels: ['insrc:story'] } as IssueSpec },
 			{ ref: 'acme/demo#9', spec: { title: `TASK-${HASH}-s1-t10 — the tenth task`, body: 'x', labels: ['insrc:task'] } as IssueSpec },
 		]);
-		const results = pushAll(longer, t, 'team');
+		const results = await pushAll(longer, t, 'team');
 		assert.equal(results[1]!.status, 'created', 'the s1 Story issue is its own');
 		assert.equal(results[2]!.status, 'created', 'the t1 Task issue is its own');
 		assert.notEqual((results[1] as { storyRef?: string }).storyRef, 'acme/demo#8');
@@ -239,7 +239,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 				{ ref: 'acme/demo#8', spec: { title: `${STORY_ID} — first`, body: 'x', labels: ['insrc:story'] } as IssueSpec },
 				{ ref: 'acme/demo#9', spec: { title: `${STORY_ID} — second`, body: 'x', labels: ['insrc:story'] } as IssueSpec },
 			]);
-			const results = pushAll(dup, t, mode);
+			const results = await pushAll(dup, t, mode);
 			assert.equal(results[1]!.status, 'failed', `${mode}: ${JSON.stringify(results[1])}`);
 			assert.match((results[1] as { reason: string }).reason, /issues are titled/);
 			assert.equal(t.log.creates, 0, `${mode}: nothing was created`);
@@ -251,7 +251,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 		const lost = seed();
 		try {
 			const t = fakeTracker([], { failTitle: true });
-			const results = pushAll(lost, t, mode);
+			const results = await pushAll(lost, t, mode);
 			assert.equal(results[0]!.status, 'failed', `${mode}: ${JSON.stringify(results[0])}`);
 			assert.equal(t.log.creates, 0, `${mode}: nothing was created`);
 		} finally { lost.cleanup(); }
@@ -259,7 +259,7 @@ test('s10 is never matched for s1 and t10 never for t1, several matches and a fa
 	const direct = seed();
 	try {
 		const t = fakeTracker([], { failTitle: true });
-		const out = ensureUnitIssueDetailed(epic(direct.repo), t.port, { readConfig: () => ({ type: 'github', owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: true, commitArtifacts: false, taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story', source: 'per-repo-config' }) });
+		const out = await ensureUnitIssueDetailed(epic(direct.repo), t.port, { readConfig: () => ({ type: 'github', owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: false, pushTasks: true, commitArtifacts: false, taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story', source: 'per-repo-config' }) });
 		assert.equal(out.ok, false);
 		assert.equal(t.log.creates, 0);
 	} finally { direct.cleanup(); }

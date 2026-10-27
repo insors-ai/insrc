@@ -42,7 +42,7 @@ const define = (withTracker: boolean) => ({
 	citations: [],
 });
 
-test('a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval', () => {
+test('a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-redraft-'));
 	const cfg = join(repo, 'github.json');
 	const prior = process.env['INSRC_GITHUB_CONFIG'];
@@ -95,7 +95,7 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 
 		// the Task approval still finds the Story ref (legacy mode) and creates the Task issue under it
 		_setAutoPushDepsForTests({ policy: () => ({ ok: true, value: 'none' }) });
-		const tasks = autoPushTasksOnPlan(planJson);
+		const tasks = await autoPushTasksOnPlan(planJson);
 		assert.equal(tasks.status, 'created');
 		assert.ok(calls.some(c => c.join(' ').includes('repos/acme/demo/issues/2/sub_issues')), 'the Task is linked under the Story issue #2');
 	} finally {

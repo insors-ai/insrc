@@ -20,12 +20,12 @@ afterEach(() => _setGateDepsForTests());
 
 const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 
-test('two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list', () => {
+test('two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list', async () => {
 	// another daemon's issue is created just before ours, so it has the lower number: it is the one bound, and ours is closed
 	let fx = seed();
 	try {
 		const t = fakeTracker({ racer: true });
-		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.ok(r.ok);
 		assert.deepEqual(r.ok && [r.value.issue, r.value.created, r.value.duplicateCheck], ['acme/demo#1', false, 'adopted-other']);
 		assert.equal(bound(fx, epicHead), 'acme/demo#1', 'the lowest-numbered issue is the binding');
@@ -33,7 +33,7 @@ test('two racing creates for one unit bind the lowest-numbered issue once, close
 		assert.match(t.calls.comments[0]?.[1] ?? '', /Duplicate of acme\/demo#1/);
 		// bound once: a second ensure resolves it with no tracker call
 		const creates = t.calls.create;
-		assert.ok(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok);
+		assert.ok((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok);
 		assert.equal(t.calls.create, creates);
 		assert.equal(readBinding(fx.repo, epicHead)?.reference.entityId, 'acme/demo#1');
 	} finally { fx.cleanup(); }
@@ -42,7 +42,7 @@ test('two racing creates for one unit bind the lowest-numbered issue once, close
 	fx = seed();
 	try {
 		const t = fakeTracker({});
-		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(r.ok && [r.value.issue, r.value.created, r.value.duplicateCheck], ['acme/demo#1', true, 'clean']);
 		assert.deepEqual(t.calls.closed, []);
 	} finally { fx.cleanup(); }
@@ -51,7 +51,7 @@ test('two racing creates for one unit bind the lowest-numbered issue once, close
 	fx = seed();
 	try {
 		const t = fakeTracker({ racer: true, failList: true });
-		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const r = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(r.ok && [r.value.issue, r.value.created, r.value.duplicateCheck], ['acme/demo#2', true, 'not-run']);
 		assert.equal(bound(fx, epicHead), 'acme/demo#2');
 		assert.deepEqual(t.calls.closed, []);
@@ -66,7 +66,7 @@ test('a malformed binding makes ensureUnitIssueDetailed fail before creating any
 		writeFileSync(fx.json(epicHead), JSON.stringify(head));
 
 		const t = fakeTracker();
-		const failed = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const failed = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.equal(failed.ok, false);
 		assert.equal(!failed.ok && failed.phase, 'before-create');
 		assert.match(!failed.ok ? failed.reason : '', /the head of EPIC-[0-9a-f]+ cannot be read.*malformed binding/);
@@ -81,23 +81,23 @@ test('a malformed binding makes ensureUnitIssueDetailed fail before creating any
 		const repaired = fx.read(epicHead);
 		delete repaired.meta.envelope.binding;
 		writeFileSync(fx.json(epicHead), JSON.stringify(repaired));
-		const ok = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		const ok = await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.ok(ok.ok);
 		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 		assert.equal((await store.read(epicHead)).binding?.reference.entityId, 'acme/demo#1');
 	} finally { fx.cleanup(); }
 });
 
-test('a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label', () => {
+test('a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker();
-		assert.ok(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok);
+		assert.ok((await ensureUnitIssueDetailed(epic(fx.repo), t.port, deps)).ok);
 		// a write staged for the STORY head makes the binding patch refuse: the issue is created, the record is not written
 		const journal = join(fx.repo, '.insrc', 'journal', `${storyHead}.json`);
 		mkdirSync(dirname(journal), { recursive: true });
 		writeFileSync(journal, '{}');
-		const first = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const first = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.ok(first.ok, 'never a before-create failure');
 		assert.deepEqual(first.ok && [first.value.issue, first.value.created, first.value.duplicateCheck], ['acme/demo#2', true, 'not-run']);
 		assert.equal(readBinding(fx.repo, storyHead), undefined, 'the binding is absent');
@@ -107,14 +107,14 @@ test('a bind that fails to write after the issue was created returns ok with the
 		const lld = fx.read(lldArtifactId(HASH, 's1'));
 		lld.meta.repoPath = fx.repo;
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
-		const hook = ensureDraftIssues(fx.json(lldArtifactId(HASH, 's1')), { readPolicy: policy, loadTracker: () => ({ ok: true, value: t.port }), ensure: deps });
+		const hook = await ensureDraftIssues(fx.json(lldArtifactId(HASH, 's1')), { readPolicy: policy, loadTracker: () => ({ ok: true, value: t.port }), ensure: deps });
 		assert.equal(hook.status, 'not-ready');
 		assert.match(hook.status === 'not-ready' ? hook.reason : '', /exists but could not be recorded/);
 
 		// the store write completes, and the next ensure binds the issue it already made: no second issue
 		const creates = t.calls.create;
 		rmSync(journal);
-		const next = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const next = await ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.ok(next.ok);
 		assert.equal(t.calls.create, creates, 'no second issue');
 		assert.equal(bound(fx, storyHead), 'acme/demo#2');
@@ -124,13 +124,13 @@ test('a bind that fails to write after the issue was created returns ok with the
 		const fresh = seed();
 		try {
 			const t2 = fakeTracker();
-			assert.ok(ensureUnitIssueDetailed(epic(fresh.repo), t2.port, deps).ok);
+			assert.ok((await ensureUnitIssueDetailed(epic(fresh.repo), t2.port, deps)).ok);
 			const j = join(fresh.repo, '.insrc', 'journal', `${storyHead}.json`);
 			mkdirSync(dirname(j), { recursive: true }); writeFileSync(j, '{}');
-			assert.ok(ensureUnitIssueDetailed(story(fresh.repo), t2.port, deps).ok);
+			assert.ok((await ensureUnitIssueDetailed(story(fresh.repo), t2.port, deps)).ok);
 			rmSync(j);
 			const creates2 = t2.calls.create;
-			const again = ensureUnitIssueDetailed(story(fresh.repo), t2.port, deps);
+			const again = await ensureUnitIssueDetailed(story(fresh.repo), t2.port, deps);
 			assert.deepEqual(again.ok && [again.value.issue, again.value.created], ['acme/demo#2', false], 'found by its label');
 			assert.equal(t2.calls.create, creates2);
 			assert.equal(bound(fresh, storyHead), 'acme/demo#2');

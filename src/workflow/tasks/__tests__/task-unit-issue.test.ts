@@ -23,20 +23,20 @@ function writeHead(repo: string, id: string, rowId: string, status?: string): vo
 	}, null, 2) + '\n');
 }
 
-test("a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head is not resolved through the Plan", () => {
+test("a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head is not resolved through the Plan", async () => {
 	const fx = seed({ pushTasks: false, taskHeads: false });
 	try {
 		const t = fakeTracker();
 		const u = (id: string) => ({ ...unit(id), repoPath: fx.repo });
-		assert.equal(ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port).ok, true);
-		assert.equal(ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port).ok, true);
+		assert.equal((await ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port)).ok, true);
+		assert.equal((await ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port)).ok, true);
 
 		// plan row t2 became Task t4 (a re-plan); row t1 has no Task artifact
 		writeHead(fx.repo, HEAD, 't2');
 		assert.equal(unitLabel(u('t2')), `insrc:unit:${HASH}:s1:t4`, 'the label uses the Task artifact\'s number');
 		assert.equal(unitLabel(u('t1')), `insrc:unit:${HASH}:s1:t1`, 'a row with no Task artifact keeps its row id');
 
-		const made = ensureUnitIssueDetailed(u('t2'), t.port);
+		const made = await ensureUnitIssueDetailed(u('t2'), t.port);
 		assert.ok(made.ok && made.value.created);
 		const ref = made.ok ? made.value.issue : '';
 		assert.equal(readBinding(fx.repo, HEAD)?.reference.entityId, ref, 'bound on the Task head');
@@ -46,17 +46,17 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 		assert.equal(planMeta?.taskRefs?.['t2'], undefined);
 		// a second ensure creates nothing
 		const creates = t.log.creates;
-		assert.equal(ensureUnitIssueDetailed(u('t2'), t.port).ok, true);
+		assert.equal((await ensureUnitIssueDetailed(u('t2'), t.port)).ok, true);
 		assert.equal(t.log.creates, creates);
 
 		// a Task with no head has nowhere to be recorded: nothing is created for it, and nothing is written on the Plan
 		const creates1 = t.log.creates;
-		const old = ensureUnitIssueDetailed(u('t1'), t.port);
+		const old = await ensureUnitIssueDetailed(u('t1'), t.port);
 		assert.equal(old.ok, false);
 		assert.match(old.ok ? '' : old.reason, /no Task artifact yet/);
 		assert.equal(t.log.creates, creates1);
 		assert.equal(readTrackerMeta(fx.plan)?.taskRefs, undefined);
-		assert.equal(resolveUnitIssueLocal(u('t1')), null);
+		assert.equal(await resolveUnitIssueLocal(u('t1')), null);
 		// a withdrawn Task artifact is not the row's Task any more
 		writeHead(fx.repo, HEAD, 't2', 'withdrawn');
 		assert.equal(unitLabel(u('t2')), `insrc:unit:${HASH}:s1:t2`);
@@ -66,7 +66,7 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 	const fy = seed({ pushTasks: false, taskHeads: false });
 	try {
 		const t = fakeTracker();
-		const r = ensureDraftIssues(fy.plan, { readPolicy: teamPolicy, loadTracker: () => ({ ok: true, value: t.port }) });
+		const r = await ensureDraftIssues(fy.plan, { readPolicy: teamPolicy, loadTracker: () => ({ ok: true, value: t.port }) });
 		assert.equal(r.status, 'ready');
 		assert.deepEqual(r.status === 'ready' ? r.units.map(x => x.unit) : null, ['epic', 'story:s1']);
 		assert.equal(t.log.creates, 2);
@@ -77,7 +77,7 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 	try {
 		patchTrackerMeta(fz.plan, { units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } });
 		const before = readFileSync(fz.plan, 'utf8');
-		assert.equal(resolveUnitIssueLocal({ ...unit('t1'), repoPath: fz.repo }), null);
+		assert.equal(await resolveUnitIssueLocal({ ...unit('t1'), repoPath: fz.repo }), null);
 		assert.equal(readFileSync(fz.plan, 'utf8'), before);
 	} finally { fz.cleanup(); }
 });

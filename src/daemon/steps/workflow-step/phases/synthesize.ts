@@ -89,7 +89,7 @@ export async function handleSynthesize(
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
 	writeArtifact(paths.json, JSON.parse(result.finalized.renderedJson), 'content');
 	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
-	const readiness = readinessFields(ensureDraftIssues(paths.json));
+	const readiness = readinessFields(await ensureDraftIssues(paths.json));
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
 		ts:    new Date().toISOString(),
 		event: 'artifact-written',

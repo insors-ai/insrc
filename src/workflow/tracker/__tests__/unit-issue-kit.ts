@@ -42,7 +42,7 @@ export function fakeTracker(over: {
 	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
 	racer?: boolean;
 	/** Runs right after this fake's create commits an issue and before it returns (another daemon acting in between). */
-	afterCreate?: () => void;
+	afterCreate?: () => void | Promise<void>;
 	/** Share the numbering and issues of another fake (two daemons, one tracker). */
 	shared?: { issues: Issue[]; next: { n: number } };
 } = {}) {
@@ -64,7 +64,7 @@ export function fakeTracker(over: {
 		findIssue: find,
 		issueOps: {
 			ensureLabel: (name: string) => { calls.label.push(name); return name !== over.failLabel; },
-			create: (spec: IssueSpec): PortResult<CreatedIssue> => {
+			create: async (spec: IssueSpec): Promise<PortResult<CreatedIssue>> => {
 				calls.create += 1;
 				if (over.failCreate === true && over.commitThenFail !== true) return { ok: false, reason: 'gh rejected the create', kind: 'rejected' };
 				if (over.racer === true) {
@@ -76,7 +76,7 @@ export function fakeTracker(over: {
 				const ref = `acme/demo#${number}`;
 				issues.push({ number, ref, spec, state: 'open' });
 				if (over.commitThenFail === true) { over.commitThenFail = false; over.failCreate = false; return { ok: false, reason: 'timed out after the issue was committed', kind: 'unreachable' }; }
-				over.afterCreate?.();
+				await over.afterCreate?.();
 				return { ok: true, value: { ref, id: 1000 + number, typed: true } };
 			},
 			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => {

@@ -23,7 +23,7 @@ import './helpers/converted-repos.js';
 
 const git = (repo: string, ...args: string[]): string => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
 
-function setup() {
+async function setup() {
 	const fx = seed({ pushTasks: false });
 	git(fx.repo, 'init', '-q', '-b', 'main');
 	git(fx.repo, 'config', 'user.email', 't@example.com');
@@ -40,8 +40,8 @@ function setup() {
 			const doc = JSON.parse(readFileSync(p, 'utf8')); doc.meta.epicCreatedAt = CREATED; writeFileSync(p, JSON.stringify(doc, null, 2) + '\n');
 		}
 	}
-	assert.equal(ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port).ok, true);
-	assert.equal(ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port).ok, true);
+	assert.equal((await ensureUnitIssueDetailed({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, t.port)).ok, true);
+	assert.equal((await ensureUnitIssueDetailed({ unit: 'story', repoPath: fx.repo, epicHash: HASH, storyId: 's1' }, t.port)).ok, true);
 	const buildJson = artifactJsonPath(fx.repo, buildArtifactId(HASH, 's1'));
 	writeFileSync(buildJson, JSON.stringify({ meta: { workflow: 'build', repoPath: fx.repo, epicHash: HASH, storyId: 's1', epicSlug: SLUG, epicCreatedAt: CREATED, createdAt: CREATED, revision: 1 }, body: {} }) + '\n');
 	const mds = {
@@ -55,8 +55,8 @@ function setup() {
 }
 const approvedOf = (path: string) => [{ path, result: {} as never }];
 
-test('the BUILD approval\'s follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing', () => {
-	const { fx, links, mds, buildJson, rel } = setup();
+test('the BUILD approval\'s follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing', async () => {
+	const { fx, links, mds, buildJson, rel } = await setup();
 	try {
 		git(fx.repo, 'add', '--', rel(mds.build), rel(mds.review), rel(mds.tests)); git(fx.repo, 'commit', '-q', '-m', 'records');
 		writeFileSync(mds.tests, '# tests, changed after the commit\n');   // dirty
@@ -75,8 +75,8 @@ test('the BUILD approval\'s follow-on attaches the build, review and test record
 	} finally { fx.cleanup(); }
 });
 
-test('the design document, plan and build, review and test records are attached to the unit\'s issue with a link per revision', () => {
-	const { fx, links, mds, buildJson, rel } = setup();
+test('the design document, plan and build, review and test records are attached to the unit\'s issue with a link per revision', async () => {
+	const { fx, links, mds, buildJson, rel } = await setup();
 	try {
 		git(fx.repo, 'add', '--', rel(mds.build), rel(mds.review), rel(mds.tests)); git(fx.repo, 'commit', '-q', '-m', 'records');
 		// the design document and the plan go through the same attach, with scope 'documents'

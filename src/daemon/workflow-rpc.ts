@@ -347,7 +347,7 @@ export async function runWorkflowServerSide(
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
 	writeArtifact(paths.json, JSON.parse(finalized.renderedJson), 'content');
 	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
-	const readiness = readinessFields(ensureDraftIssues(paths.json));
+	const readiness = readinessFields(await ensureDraftIssues(paths.json));
 	appendRunLog(epicKey, intent.workflow, runId, {
 		ts: new Date().toISOString(), event: 'artifact-written', md: paths.md, json: paths.json, model: opts.modelLabel,
 	});

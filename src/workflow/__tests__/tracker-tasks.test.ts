@@ -138,36 +138,36 @@ function taskBindings(repo: string): Record<string, string> {
 }
 
 /** Push the Epic + Story first so a storyRef exists for the tasks. */
-function pushEpicAndStory(hldJson: string, lldJson: string): void {
-	autoPushEpicOnHld(hldJson);
-	autoPushStoryOnLld(lldJson);
+async function pushEpicAndStory(hldJson: string, lldJson: string): void {
+	await autoPushEpicOnHld(hldJson);
+	await autoPushStoryOnLld(lldJson);
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-test('task push is opt-out by default (pushTasks unset) → skipped, no issues', () => {
+test('task push is opt-out by default (pushTasks unset) → skipped, no issues', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(/* pushTasks */ false);
 	try {
-		pushEpicAndStory(s.hldJson, s.lldJson);
+		await pushEpicAndStory(s.hldJson, s.lldJson);
 		const before = gh.createCount();
-		const r = autoPushTasksOnPlan(s.planJson);
+		const r = await autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'skipped');
 		assert.equal(r.status === 'skipped' && /pushTasks/.test(r.reason), true);
 		assert.equal(gh.createCount(), before);                 // no task issues created
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue', () => {
+test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(/* pushTasks */ true);
 	try {
-		pushEpicAndStory(s.hldJson, s.lldJson);       // epic #1, story #2
-		const r = autoPushTasksOnPlan(s.planJson);
+		await pushEpicAndStory(s.hldJson, s.lldJson);       // epic #1, story #2
+		const r = await autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'created', JSON.stringify(r));
 		// Two Task issues (#3, #4) bound to their Task artifacts, and none recorded on the plan.
 		assert.deepEqual(taskBindings(s.repo), { t1: 'acme/demo#3', t2: 'acme/demo#4' });
@@ -187,13 +187,13 @@ test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue'
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: falls back to an untyped issue when the org lacks the issue type', () => {
+test('pushTasks: falls back to an untyped issue when the org lacks the issue type', async () => {
 	const gh = makeFakeGh({ failOnType: true });
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(true);
 	try {
-		pushEpicAndStory(s.hldJson, s.lldJson);
-		const r = autoPushTasksOnPlan(s.planJson);
+		await pushEpicAndStory(s.hldJson, s.lldJson);
+		const r = await autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'created', JSON.stringify(r));
 		// Both tasks still created (untyped) + bound.
 		assert.deepEqual(taskBindings(s.repo), { t1: 'acme/demo#3', t2: 'acme/demo#4' });
@@ -203,27 +203,27 @@ test('pushTasks: falls back to an untyped issue when the org lacks the issue typ
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: re-push is idempotent (adopts the bound Task issues, no new issues)', () => {
+test('pushTasks: re-push is idempotent (adopts the bound Task issues, no new issues)', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(true);
 	try {
-		pushEpicAndStory(s.hldJson, s.lldJson);
-		autoPushTasksOnPlan(s.planJson);
+		await pushEpicAndStory(s.hldJson, s.lldJson);
+		await autoPushTasksOnPlan(s.planJson);
 		const after1 = gh.createCount();
-		const r = autoPushTasksOnPlan(s.planJson);
+		const r = await autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'already-exists');
 		assert.equal(gh.createCount(), after1);                 // no new creates
 	} finally { s.cleanup(); }
 });
 
-test('pushTasks: makes the Epic and Story issues first when they do not exist yet, then the Tasks', () => {
+test('pushTasks: makes the Epic and Story issues first when they do not exist yet, then the Tasks', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup(true);
 	try {
 		// No epic/story push yet: the plan push ensures both, then creates the Tasks under the Story.
-		const r = autoPushTasksOnPlan(s.planJson);
+		const r = await autoPushTasksOnPlan(s.planJson);
 		assert.equal(r.status, 'created');
 		assert.equal(gh.createCount(), 4, 'the Epic, the Story and the two Tasks');
 		assert.deepEqual(Object.keys((r.status === 'created' ? r.taskRefs : {}) ?? {}).sort(), ['t1', 't2']);

@@ -36,6 +36,7 @@ import { ensureUnitHead, unitHeadId } from './unit-head.js';
 import { taskHeadIdOf } from '../tasks/lookup.js';
 import type { Reference } from '../artifact-core/types.js';
 import type { UnitIssue, UnitRef } from './refs.js';
+import { isToolDenied } from './tool-denied.js';
 
 const log = getLogger('workflow:unit-issue');
 
@@ -178,7 +179,7 @@ function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: U
  * The unit's issue if its binding names one, else null: the binding of the Epic's EPIC head, the Story's STORY head or the Task's
  * artifact. Makes no tracker call and never throws.
  */
-export function resolveUnitIssueLocal(unit: UnitRef, _now: () => string = () => new Date().toISOString()): IssueRef | null {
+export async function resolveUnitIssueLocal(unit: UnitRef, _now: () => string = () => new Date().toISOString()): Promise<IssueRef | null> {
 	try {
 		const recorded = readRecord(unit)?.issue;
 		return nonEmpty(recorded) ? recorded : null;
@@ -210,7 +211,7 @@ type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
  * when everything misses, the labels, the create call and the link to the
  * parent. The created ref is recorded at once.
  */
-export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: EnsureIssueDeps = {}): EnsureResult<EnsuredIssue> {
+export async function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: EnsureIssueDeps = {}): Promise<EnsureResult<EnsuredIssue>> {
 	const now = deps.now ?? (() => new Date().toISOString());
 	// The head that holds the unit's binding has to be readable: a malformed binding makes every store read of it fail, and an
 	// issue that could not be recorded must not be created. Checked before any lookup or create.
@@ -223,9 +224,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	if (unit.unit !== 'task' && !ensureUnitHead(unit, now)) return before(`the head of ${home.artifactId} could not be made (the work item has no creation time, or the file could not be written), so the unit's issue could not be recorded`);
 	try { readBinding(home.repoPath, home.artifactId); }
 	catch (err) { return before(`the head of ${home.artifactId} cannot be read, so the unit's issue could not be recorded: ${(err as Error).message}`); }
-	const local = resolveUnitIssueLocal(unit, now);
+	const local = await resolveUnitIssueLocal(unit, now);
 	if (local !== null) {
-		retryPendingLink(unit, port, local);
+		await retryPendingLink(unit, port, local);
 		return { ok: true, value: { issue: local, created: false, duplicateCheck: 'clean' } };
 	}
 
@@ -259,11 +260,11 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		const parentUnit: UnitRef = unit.unit === 'story'
 			? { unit: 'epic', repoPath: unit.repoPath, epicHash: unit.epicHash }
 			: { unit: 'story', repoPath: unit.repoPath, epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) };
-		parentRef = resolveUnitIssueLocal(parentUnit, now) ?? undefined;
+		parentRef = (await resolveUnitIssueLocal(parentUnit, now)) ?? undefined;
 		if (parentRef === undefined) {
 			let parentLabel: string;
 			try { parentLabel = unitLabel(parentUnit); } catch (err) { return before((err as Error).message); }
-			const parentFound = port.findIssue([membership, parentLabel]);
+			const parentFound = await port.findIssue([membership, parentLabel]);
 			if (!parentFound.ok) return before(`cannot look up the ${parentUnit.unit} issue for ${unitKey(unit)}: ${parentFound.reason}`, parentFound.kind);
 			if (parentFound.value === null) return before(`the ${parentUnit.unit} issue does not exist yet; ensure it before the ${unit.unit}'s`);
 			parentRef = parentFound.value;
@@ -272,11 +273,11 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	}
 
 	// Lookup by the per-unit label (a failed lookup is a failure, never "not found").
-	const found = findSingleIssue(port, [membership, label]);
+	const found = await findSingleIssue(port, [membership, label]);
 	if (!found.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${found.reason}`, found.kind);
 	let adopted: string | undefined = found.value ?? undefined;
 	if (adopted === undefined && unit.unit === 'epic') {
-		const old = findSingleIssue(port, [cfg.epicLabel, membership]);
+		const old = await findSingleIssue(port, [cfg.epicLabel, membership]);
 		if (!old.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${old.reason}`, old.kind);
 		adopted = old.value ?? undefined;
 	}
@@ -284,14 +285,14 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		recordUnit(unit, adopted, now());
 		// An issue found by its label (its create timed out) was never linked under its parent: do it now.
 		// Whether or not every sibling record was written: the unit's own record is what a later ensure resolves from.
-		if (parentRef !== undefined) linkAdopted(unit, port, parentRef, adopted);
+		if (parentRef !== undefined) await linkAdopted(unit, port, parentRef, adopted);
 		return { ok: true, value: { issue: adopted, created: false, duplicateCheck: 'clean' } };
 	}
 
 	// Labels: an issue created without its unit label could not be found again.
 	const kindLabel = unit.unit === 'epic' ? cfg.epicLabel : unit.unit === 'story' ? cfg.storyLabel : cfg.taskLabel;
 	for (const l of [kindLabel, membership, label]) {
-		if (!port.issueOps.ensureLabel(l)) return before(`the label '${l}' could not be created`);
+		if (!(await port.issueOps.ensureLabel(l))) return before(`the label '${l}' could not be created`);
 	}
 
 	let spec: ReturnType<typeof buildSpec>;
@@ -301,32 +302,32 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 
 	// The guard: the issue may exist without our record or label (an older one, or another daemon's). Found by its
 	// title's artifact id, it is adopted; several, or a failed lookup, create nothing.
-	const titled = findExistingUnitIssue(port, membership, label, spec.token);
+	const titled = await findExistingUnitIssue(port, membership, label, spec.token);
 	if (!titled.ok) return before(titled.reason, titled.kind);
 	if (titled.issue !== null) {
 		recordUnit(unit, titled.issue, now());
-		if (parentRef !== undefined) linkAdopted(unit, port, parentRef, titled.issue);
+		if (parentRef !== undefined) await linkAdopted(unit, port, parentRef, titled.issue);
 		return { ok: true, value: { issue: titled.issue, created: false, duplicateCheck: 'clean' } };
 	}
 
-	const created = port.issueOps.create(spec.value);
+	const created = await port.issueOps.create(spec.value);
 	if (!created.ok) {
 		return { ok: false, reason: created.reason, kind: created.kind, phase: 'create' };
 	}
 	const issue = created.value.ref;
 	let pendingLink: UnitIssue['pendingLink'];
 	if (parentRef !== undefined) {
-		const link = port.issueOps.linkSubIssue(parentRef, created.value.id);
+		const link = await port.issueOps.linkSubIssue(parentRef, created.value.id);
 		if (!link.ok) {
 			log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent (retried next time)');
 			pendingLink = { parent: parentRef, childId: created.value.id };
 		}
 	}
 	// The duplicate check comes first, so the unit is recorded once, with the issue that is kept.
-	const decided = decideKept(unit, port, label, issue);
+	const decided = await decideKept(unit, port, label, issue);
 	const kept = decided.issue === issue;
 	const recorded = recordUnit(unit, decided.issue, now(), kept ? pendingLink : undefined);
-	if (!kept && recorded) closeDuplicate(port, label, issue, decided.issue);
+	if (!kept && recorded) await closeDuplicate(port, label, issue, decided.issue);
 	// Without the record, adopting another issue could leave a local ref on a closed duplicate: keep this one.
 	if (!recorded) return { ok: true, value: { issue, created: true, duplicateCheck: 'not-run' } };
 	return { ok: true, value: { issue: decided.issue, created: kept, duplicateCheck: decided.check } };
@@ -341,9 +342,9 @@ export function isUnitSettled(unit: UnitRef): boolean {
 }
 
 /** The tracker's id of an issue; a tracker without the lookup counts as a failed lookup, never a crash. */
-function lookUpIssueId(port: TrackerPort, ref: IssueRef): PortResult<number> {
+async function lookUpIssueId(port: TrackerPort, ref: IssueRef): Promise<PortResult<number>> {
 	if (typeof port.issueOps.resolveIssueId !== 'function') return { ok: false, reason: 'this tracker cannot look up an issue id', kind: 'rejected' };
-	return port.issueOps.resolveIssueId(ref);
+	return await port.issueOps.resolveIssueId(ref);
 }
 
 /** Store the unit's pending link on its own record (the record keeps its revision and marks). */
@@ -355,14 +356,14 @@ function savePendingLink(unit: UnitRef, pendingLink: NonNullable<UnitIssue['pend
 }
 
 /** Link an issue adopted by its label under its parent; any failure leaves a pending link for the next ensure and never fails the ensure. */
-function linkAdopted(unit: UnitRef, port: TrackerPort, parent: IssueRef, child: IssueRef): void {
-	const id = lookUpIssueId(port, child);
+async function linkAdopted(unit: UnitRef, port: TrackerPort, parent: IssueRef, child: IssueRef): Promise<void> {
+	const id = await lookUpIssueId(port, child);
 	if (!id.ok) {
 		log.warn({ unit: unitKey(unit), child, kind: id.kind, reason: id.reason }, 'unit-issue: could not look up the adopted issue id (the link is retried next time)');
 		savePendingLink(unit, { parent, child });
 		return;
 	}
-	const link = port.issueOps.linkSubIssue(parent, id.value);
+	const link = await port.issueOps.linkSubIssue(parent, id.value);
 	if (!link.ok) {
 		log.warn({ unit: unitKey(unit), parent, child, kind: link.kind, reason: link.reason }, 'unit-issue: could not link the adopted issue under its parent (retried next time)');
 		savePendingLink(unit, { parent, childId: id.value });
@@ -370,18 +371,18 @@ function linkAdopted(unit: UnitRef, port: TrackerPort, parent: IssueRef, child: 
 }
 
 /** A link under the parent that failed earlier is retried; on success the record is cleared of it. A record that knows only the child ref looks its id up first. */
-function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): void {
+async function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): Promise<void> {
 	try {
 		const pending = readRecord(unit)?.pendingLink;
 		if (pending === undefined) return;
 		let childId = pending.childId;
 		if (childId === undefined) {
 			if (pending.child === undefined) { log.warn({ unit: unitKey(unit), issue }, 'unit-issue: the pending link names neither a child id nor a child ref'); return; }
-			const id = lookUpIssueId(port, pending.child);
+			const id = await lookUpIssueId(port, pending.child);
 			if (!id.ok) { log.warn({ unit: unitKey(unit), issue, kind: id.kind, reason: id.reason }, 'unit-issue: the pending link\'s child id could not be looked up again'); return; }
 			childId = id.value;
 		}
-		const link = port.issueOps.linkSubIssue(pending.parent, childId);
+		const link = await port.issueOps.linkSubIssue(pending.parent, childId);
 		if (!link.ok) {
 			log.warn({ unit: unitKey(unit), issue, reason: link.reason }, 'unit-issue: the pending link under the parent failed again');
 			// keep the id just found, so the next try does not look it up again
@@ -389,7 +390,11 @@ function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): vo
 			return;
 		}
 		if (!writePendingLink(unit, undefined)) log.warn({ unit: unitKey(unit), issue }, 'unit-issue: the pending link was made but its clearing was not written (it is retried; linking twice is harmless)');
-	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link'); }
+	} catch (err) {
+		// a denied tracker call stops the stage; it is not a link that "could not be retried"
+		if (isToolDenied(err)) throw err;
+		log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link');
+	}
 }
 
 const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?? Number.MAX_SAFE_INTEGER);
@@ -399,8 +404,8 @@ const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?
  * unit's. It is recorded once (the binding refuses a second issue), and this call's own issue is commented on and closed as a
  * duplicate when it is not the lowest. A failed listing keeps the created issue (`not-run`).
  */
-function decideKept(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef): { readonly issue: IssueRef; readonly check: DuplicateCheck } {
-	const list = port.findIssues([label]);
+async function decideKept(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef): Promise<{ readonly issue: IssueRef; readonly check: DuplicateCheck }> {
+	const list = await port.findIssues([label]);
 	if (!list.ok) {
 		log.warn({ unit: unitKey(unit), reason: list.reason }, 'unit-issue: the duplicate check could not list the unit label (the created issue is kept)');
 		return { issue: own, check: 'not-run' };
@@ -412,10 +417,10 @@ function decideKept(unit: UnitRef, port: TrackerPort, label: string, own: IssueR
 }
 
 /** Comment on and close this call's own issue as a duplicate of `kept`. */
-function closeDuplicate(port: TrackerPort, label: string, own: IssueRef, kept: IssueRef): void {
-	const said = port.issueOps.comment(own, `Duplicate of ${kept}: the same unit (${label}) was created twice at once; ${kept} is the one kept.`);
+async function closeDuplicate(port: TrackerPort, label: string, own: IssueRef, kept: IssueRef): Promise<void> {
+	const said = await port.issueOps.comment(own, `Duplicate of ${kept}: the same unit (${label}) was created twice at once; ${kept} is the one kept.`);
 	if (!said.ok) log.warn({ own, reason: said.reason }, 'unit-issue: could not comment on the duplicate');
-	const closed = port.issueOps.close(own);
+	const closed = await port.issueOps.close(own);
 	if (!closed.ok) log.warn({ own, reason: closed.reason }, 'unit-issue: could not close the duplicate (it is adopted away from regardless)');
 }
 
@@ -426,29 +431,29 @@ function closeDuplicate(port: TrackerPort, label: string, own: IssueRef, kept: I
  * failed, mean the caller must create nothing.
  */
 /** The one issue carrying every label, none, or a failure: findIssue answers the first match only, so a second is looked for. */
-export function findSingleIssue(port: TrackerPort, labels: string[]): PortResult<IssueRef | null> {
-	const first = port.findIssue(labels);
+export async function findSingleIssue(port: TrackerPort, labels: string[]): Promise<PortResult<IssueRef | null>> {
+	const first = await port.findIssue(labels);
 	if (!first.ok || first.value === null || typeof port.findIssues !== 'function') return first;
-	const all = port.findIssues(labels);
+	const all = await port.findIssues(labels);
 	if (!all.ok) return all;
 	if (all.value.length > 1) return { ok: false, reason: `${all.value.length} issues carry the labels ${labels.join(', ')} (${all.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
 	return first;
 }
 
-export function findExistingUnitIssue(
+export async function findExistingUnitIssue(
 	port: TrackerPort, membership: string, label: string, token: string,
-): { readonly ok: true; readonly issue: IssueRef | null } | { readonly ok: false; readonly reason: string; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' } {
+): Promise<{ readonly ok: true; readonly issue: IssueRef | null } | { readonly ok: false; readonly reason: string; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' }> {
 	// Every issue carrying the label, so a unit that already has several is refused rather than bound to the first.
 	const labelled = typeof port.findIssues === 'function'
-		? port.findIssues([membership, label])
-		: (() => { const one = port.findIssue([membership, label]); return one.ok ? { ok: true as const, value: one.value === null ? [] : [one.value] } : one; })();
+		? await port.findIssues([membership, label])
+		: await (async () => { const one = await port.findIssue([membership, label]); return one.ok ? { ok: true as const, value: one.value === null ? [] : [one.value] } : one; })();
 	if (!labelled.ok) return { ok: false, reason: `cannot look up the issue by its label '${label}': ${labelled.reason}`, kind: labelled.kind };
 	if (labelled.value.length > 1) {
 		return { ok: false, reason: `${labelled.value.length} issues carry the label '${label}' (${labelled.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
 	}
 	if (labelled.value[0] !== undefined) return { ok: true, issue: labelled.value[0] };
 	if (typeof port.findIssuesByTitleToken !== 'function') return { ok: false, reason: `this tracker cannot look an issue up by its title ${token}`, kind: 'rejected' };
-	const byTitle = port.findIssuesByTitleToken(token);
+	const byTitle = await port.findIssuesByTitleToken(token);
 	if (!byTitle.ok) return { ok: false, reason: `cannot look up the issue titled ${token}: ${byTitle.reason}`, kind: byTitle.kind };
 	if (byTitle.value.length > 1) {
 		return { ok: false, reason: `${byTitle.value.length} issues are titled ${token} (${byTitle.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
@@ -499,8 +504,8 @@ function buildSpec(
  * The HLD's EnsureIssue: the unit's single issue, found or created. A failure
  * carries the sc1 kind and reason; the creation phase stays inside this module.
  */
-export function ensureUnitIssue(unit: UnitRef, port: TrackerPort): PortResult<IssueRef> {
-	const r = ensureUnitIssueDetailed(unit, port);
+export async function ensureUnitIssue(unit: UnitRef, port: TrackerPort): Promise<PortResult<IssueRef>> {
+	const r = await ensureUnitIssueDetailed(unit, port);
 	return r.ok ? { ok: true, value: r.value.issue } : { ok: false, reason: r.reason, kind: r.kind };
 }
 
@@ -512,7 +517,7 @@ export type ExtraName = 'milestone' | 'taskList' | 'designComment' | 'reviewComm
 
 export interface ExtraStep {
 	readonly name: ExtraName;
-	readonly run:  () => PortResult<void>;
+	readonly run:  () => PortResult<void> | Promise<PortResult<void>>;
 	/**
 	 * A comment step names the marker its body carries ({@link postMarker}). Before an unrecorded comment step runs, the issue's
 	 * comments are read and one holding the marker is recorded as already posted instead of posting again. The milestone and the
@@ -535,13 +540,13 @@ export interface ExtrasDeps {
 	/** Writes the step's mark (default: into the unit's binding); `externalId` is the id of a reconciled comment. */
 	readonly mark?: ((unit: UnitRef, name: ExtraName, at: string, externalId?: string) => void) | undefined;
 	/** Reads the issue's comments, for the steps that carry a marker; called at most once per run. */
-	readonly comments?: (() => PortResult<TrackerComment[]>) | undefined;
+	readonly comments?: (() => PortResult<TrackerComment[]> | Promise<PortResult<TrackerComment[]>>) | undefined;
 }
 
 const POSTED_KIND: Readonly<Record<ExtraName, PostedKind>> = { milestone: 'milestone', taskList: 'task-list', designComment: 'design', reviewComment: 'review', planComment: 'plan' };
 
 /** The stable marker a comment of kind `name` carries on the unit's issue: '<!-- insrc:post:<artifactId>:<kind> -->'. */
-export function postMarker(unit: UnitRef, name: ExtraName): string {
+export async function postMarker(unit: UnitRef, name: ExtraName): Promise<string> {
 	return `<!-- insrc:post:${bindingHome(unit)?.artifactId ?? unitKey(unit)}:${POSTED_KIND[name]} -->`;
 }
 
@@ -570,20 +575,20 @@ function markExtra(unit: UnitRef, name: ExtraName, at: string, externalId?: stri
  * unrecorded and reported. A comment list that cannot be read fails the step and posts nothing: an uncertain post is never
  * retried blind. A post whose record fails is reported, and the next run reconciles it by its marker instead of repeating it.
  */
-export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: ExtrasDeps = {}): ExtrasOutcome {
+export async function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: ExtrasDeps = {}): Promise<ExtrasOutcome> {
 	const now = deps.now ?? (() => new Date().toISOString());
 	const mark = deps.mark ?? markExtra;
 	const marks = marksOf(unit);
 	const out: ExtrasOutcome = { done: [], skipped: [], reconciled: [], failed: [] };
 	let comments: PortResult<TrackerComment[]> | undefined;
-	const commentsOnce = (): PortResult<TrackerComment[]> => {
-		comments ??= deps.comments !== undefined ? deps.comments() : { ok: false, kind: 'rejected', reason: 'no way to read the issue\'s comments' };
+	const commentsOnce = async (): Promise<PortResult<TrackerComment[]>> => {
+		comments ??= deps.comments !== undefined ? await deps.comments() : { ok: false, kind: 'rejected', reason: 'no way to read the issue\'s comments' };
 		return comments;
 	};
 	for (const step of steps) {
 		if (marks[step.name] !== undefined) { out.skipped.push(step.name); continue; }
 		if (step.marker !== undefined) {
-			const listed = commentsOnce();
+			const listed = await commentsOnce();
 			if (!listed.ok) {
 				log.warn({ unit: unitKey(unit), step: step.name, reason: listed.reason }, 'unit-issue: the issue\'s comments could not be read (the post is not made; the next approve retries it)');
 				out.failed.push({ name: step.name, reason: `cannot tell whether it was already posted: the comments could not be read (${listed.kind}): ${listed.reason}` });
@@ -596,7 +601,7 @@ export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: 
 				continue;
 			}
 		}
-		const r = step.run();
+		const r = await step.run();
 		if (!r.ok) {
 			log.warn({ unit: unitKey(unit), step: step.name, reason: r.reason }, 'unit-issue: approve-time extra failed (left unrecorded; the next approve retries it)');
 			out.failed.push({ name: step.name, reason: r.reason });

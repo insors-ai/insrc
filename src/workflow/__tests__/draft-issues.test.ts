@@ -107,23 +107,23 @@ function seed(): { repo: string; define: string; hld: string; lld: string; plan:
 
 // ---------------------------------------------------------------------------
 
-test('ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages', () => {
+test('ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages', async () => {
 	const fx = seed();
 	try {
 		// no policy, teamMode false, and a workflow with no claim unit: nothing happens, no tracker is loaded
 		for (const policy of [none, teamOff]) {
 			const h = harness();
-			assert.deepEqual(ensureDraftIssues(fx.define, h.deps(policy)), { status: 'not-applicable', reason: 'no-team-policy' });
+			assert.deepEqual(await ensureDraftIssues(fx.define, h.deps(policy)), { status: 'not-applicable', reason: 'no-team-policy' });
 			assert.equal(h.seen.loads, 0);
 			assert.deepEqual(readinessFields({ status: 'not-applicable', reason: 'no-team-policy' }), {}, 'a repo without a policy sees no new field');
 		}
 		const spec = join(fx.repo, 'spec.json');
 		writeFileSync(spec, JSON.stringify({ meta: { workflow: 'spec', repoPath: fx.repo, epicHash: HASH }, body: {} }));
-		assert.deepEqual(ensureDraftIssues(spec, harness().deps()), { status: 'not-applicable', reason: 'no-claim-unit' });
+		assert.deepEqual(await ensureDraftIssues(spec, harness().deps()), { status: 'not-applicable', reason: 'no-claim-unit' });
 
 		// an unreadable policy creates nothing and says why
 		const h = harness();
-		const broken = ensureDraftIssues(fx.define, h.deps(() => ({ ok: false, reason: 'default branch unknown' })));
+		const broken = await ensureDraftIssues(fx.define, h.deps(() => ({ ok: false, reason: 'default branch unknown' })));
 		assert.equal(broken.status, 'not-ready');
 		assert.deepEqual(broken.status === 'not-ready' ? [broken.kind, broken.outcomeKnown, broken.reason] : null, ['policy-unreadable', true, 'the team policy cannot be read: default branch unknown']);
 		assert.equal(h.seen.loads, 0);
@@ -131,7 +131,7 @@ test('ensureDraftIssues returns not-applicable without a team policy and maps po
 		// each sc1 failure kind from the loader becomes a not-ready message that names the reason
 		for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as const) {
 			const f = harness({ loadFails: { kind, reason: `reason for ${kind}` } });
-			const r = ensureDraftIssues(fx.lld, f.deps());
+			const r = await ensureDraftIssues(fx.lld, f.deps());
 			assert.equal(r.status, 'not-ready');
 			if (r.status !== 'not-ready') continue;
 			assert.equal(r.kind, kind);
@@ -142,24 +142,24 @@ test('ensureDraftIssues returns not-applicable without a team policy and maps po
 	} finally { fx.cleanup(); }
 });
 
-test('Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report', () => {
+test('Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report', async () => {
 	const fx = seed();
 	try {
 		const h = harness();
 		// the Define draft: one Epic issue; the HLD adopts it
-		const d1 = ensureDraftIssues(fx.define, h.deps());
+		const d1 = await ensureDraftIssues(fx.define, h.deps());
 		assert.deepEqual(d1, { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: true }] });
-		assert.deepEqual(ensureDraftIssues(fx.define, h.deps()), { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: false }] });
-		assert.equal(ensureDraftIssues(fx.hld, h.deps()).status, 'ready');
+		assert.deepEqual(await ensureDraftIssues(fx.define, h.deps()), { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: false }] });
+		assert.equal((await ensureDraftIssues(fx.hld, h.deps())).status, 'ready');
 		assert.equal(h.seen.creates, 1);
 
 		// the LLD draft: the Epic is adopted, the Story is created under it; a second write creates none
-		const l1 = ensureDraftIssues(fx.lld, h.deps());
+		const l1 = await ensureDraftIssues(fx.lld, h.deps());
 		assert.deepEqual(l1, { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: false }, { unit: 'story:s1', issue: 'acme/demo#2', created: true }] });
 		assert.equal(h.seen.creates, 2);
 
 		// the plan draft claims the Story only here (the Epic is checked only when the Story has no issue yet): its Tasks get their issues when the plan is approved (s7)
-		const p1 = ensureDraftIssues(fx.plan, h.deps());
+		const p1 = await ensureDraftIssues(fx.plan, h.deps());
 		assert.deepEqual(p1.status === 'ready' ? p1.units.map(u => [u.unit, u.created]) : null, [['story:s1', false]]);
 		assert.equal(h.seen.creates, 2);
 
@@ -174,7 +174,7 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 			const fresh = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
 			delete fresh.meta['tracker'];
 			writeArtifact(path, fresh, 'content');
-			const r = ensureDraftIssues(path, lost);
+			const r = await ensureDraftIssues(path, lost);
 			assert.equal(r.status, 'ready');
 			assert.equal(r.status === 'ready' ? r.units.every(u => !u.created) : false, true);
 		}
@@ -189,7 +189,7 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 	const fy = seed();
 	try {
 		const h = harness({ failCreateAt: 2 });   // the Epic, then the Story fails
-		const r = ensureDraftIssues(fy.plan, h.deps());
+		const r = await ensureDraftIssues(fy.plan, h.deps());
 		assert.equal(r.status, 'not-ready');
 		if (r.status !== 'not-ready') return;
 		assert.equal(r.unit, 'story:s1');
@@ -200,16 +200,16 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 	} finally { fy.cleanup(); }
 });
 
-test('outcomeKnown wording for a failed lookup and for a create that times out', () => {
+test('outcomeKnown wording for a failed lookup and for a create that times out', async () => {
 	const fx = seed();
 	try {
-		const lookup = ensureDraftIssues(fx.define, harness({ failFind: true }).deps());
+		const lookup = await ensureDraftIssues(fx.define, harness({ failFind: true }).deps());
 		assert.equal(lookup.status, 'not-ready');
 		if (lookup.status !== 'not-ready') return;
 		assert.equal(lookup.outcomeKnown, true);
 		assert.match(lookup.message, /^cannot be claimed yet: no issue was created for epic because /);
 
-		const timeout = ensureDraftIssues(fx.define, harness({ failCreateAt: 1 }).deps());
+		const timeout = await ensureDraftIssues(fx.define, harness({ failCreateAt: 1 }).deps());
 		assert.equal(timeout.status, 'not-ready');
 		if (timeout.status !== 'not-ready') return;
 		assert.equal(timeout.outcomeKnown, false);
@@ -219,13 +219,13 @@ test('outcomeKnown wording for a failed lookup and for a create that times out',
 	} finally { fx.cleanup(); }
 });
 
-test('a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready', () => {
+test('a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready', async () => {
 	const fx = seed();
 	try {
 		// the Story (and its record) exist, the Epic ref is nowhere: the plan still resolves with no tracker load
 		seedBoundUnits(fx.repo, HASH, undefined, { s1: 'acme/demo#2' });
 		const h = harness();
-		const r = ensureDraftIssues(fx.plan, h.deps());
+		const r = await ensureDraftIssues(fx.plan, h.deps());
 		assert.equal(r.status, 'ready');
 		assert.equal(h.seen.loads, 0);
 		assert.equal(h.seen.creates, 0);
@@ -236,7 +236,7 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 	try {
 		const h = harness();
 		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o555);
-		const r = ensureDraftIssues(fy.define, h.deps());
+		const r = await ensureDraftIssues(fy.define, h.deps());
 		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755);
 		if (process.getuid?.() === 0) return;   // root ignores the mode
 		assert.equal(r.status, 'not-ready');

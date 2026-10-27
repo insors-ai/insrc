@@ -91,7 +91,7 @@ let hookOverride: ((jsonPath: string) => IssueReadiness) | undefined;
 /** Test seam: replace the hook at the synthesize and workflow.run call sites; call with no argument to reset. */
 export function _setDraftHookForTests(hook?: (jsonPath: string) => IssueReadiness): void { hookOverride = hook; }
 
-export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): IssueReadiness {
+export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): Promise<IssueReadiness> {
 	if (hookOverride !== undefined) return hookOverride(jsonPath);
 	try {
 		const doc = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: DraftMeta | undefined; body?: { tasks?: Array<{ id?: unknown; order?: unknown }> | undefined } | undefined };
@@ -111,12 +111,13 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 
 		if (noTasks) return { status: 'ready', units: [] };
 		// A plan whose Story already has its issue needs no Epic check: the Tasks hang under the Story (team repos only: this may reconcile records).
-		if (meta.workflow === 'plan' && resolveUnitIssueLocal(units[1]!, deps.ensure?.now) !== null) units = units.slice(1);
+		if (meta.workflow === 'plan' && await resolveUnitIssueLocal(units[1]!, deps.ensure?.now) !== null) units = units.slice(1);
 
 		// Fast path: every unit is already recorded, so no tracker is loaded and no command runs.
 		const ready: ReadyUnit[] = [];
 		// settled = recorded on disk with nothing left to retry; a ref whose record could not be saved, or a pending link, goes through the tracker path
-		const local = units.map(u => { const ref = resolveUnitIssueLocal(u, deps.ensure?.now); return ref !== null && isUnitSettled(u) ? ref : null; });
+		const local: Array<IssueRef | null> = [];
+		for (const u of units) { const ref = await resolveUnitIssueLocal(u, deps.ensure?.now); local.push(ref !== null && isUnitSettled(u) ? ref : null); }
 		if (local.every(ref => ref !== null)) {
 			return { status: 'ready', units: units.map((u, i) => ({ unit: unitKey(u), issue: local[i] as IssueRef, created: false })) };
 		}
@@ -128,7 +129,7 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 			return notReady(unitKey(firstMissing), loaded.kind, true, loaded.reason, ready);
 		}
 		for (const unit of units) {
-			const r = ensureUnitIssueDetailed(unit, loaded.value, deps.ensure);
+			const r = await ensureUnitIssueDetailed(unit, loaded.value, deps.ensure);
 			if (!r.ok) return notReady(unitKey(unit), r.kind, r.phase === 'before-create', r.reason, ready);
 			// The issue exists, but if its record could not be saved the next call would not find it locally: say so.
 			if (!isUnitSettled(unit)) {

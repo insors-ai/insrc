@@ -125,12 +125,12 @@ function trackerOf(jsonPath: string): Record<string, unknown> {
 // Tests
 // ---------------------------------------------------------------------------
 
-test('HLD approve creates the Epic issue, binds it on the Epic head and links docs', () => {
+test('HLD approve creates the Epic issue, binds it on the Epic head and links docs', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
 	try {
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'created');
 		assert.equal(r.status === 'created' ? r.epicRef : '', 'acme/demo#1');
 
@@ -150,13 +150,13 @@ test('HLD approve creates the Epic issue, binds it on the Epic head and links do
 	} finally { s.cleanup(); }
 });
 
-test('LLD approve creates the Story issue and binds it on the Story head; links the LLD doc', () => {
+test('LLD approve creates the Story issue and binds it on the Story head; links the LLD doc', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
 	try {
-		autoPushEpicOnHld(s.hldJson);           // epic first (LLD needs the epicRef)
-		const r = autoPushStoryOnLld(s.lldJson);
+		await autoPushEpicOnHld(s.hldJson);           // epic first (LLD needs the epicRef)
+		const r = await autoPushStoryOnLld(s.lldJson);
 		assert.equal(r.status, 'created');
 		assert.equal(r.status === 'created' ? r.storyRef : '', 'acme/demo#2');
 
@@ -166,26 +166,26 @@ test('LLD approve creates the Story issue and binds it on the Story head; links 
 	} finally { s.cleanup(); }
 });
 
-test('re-approving the HLD is idempotent (no second issue)', () => {
+test('re-approving the HLD is idempotent (no second issue)', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
 	try {
-		autoPushEpicOnHld(s.hldJson);
+		await autoPushEpicOnHld(s.hldJson);
 		const before = gh.createCount();
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'already-exists');
 		assert.equal(gh.createCount(), before);   // no new create
 	} finally { s.cleanup(); }
 });
 
-test('duplicate guard adopts an existing Epic issue instead of creating one', () => {
+test('duplicate guard adopts an existing Epic issue instead of creating one', async () => {
 	const gh = makeFakeGh();
 	gh.setFind('9');                             // an epic issue already exists
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
 	try {
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'already-exists');
 		assert.equal(r.status === 'already-exists' ? r.epicRef : '', 'acme/demo#9');
 		assert.equal(gh.createCount(), 0);       // adopted, not created
@@ -193,7 +193,7 @@ test('duplicate guard adopts an existing Epic issue instead of creating one', ()
 	} finally { s.cleanup(); }
 });
 
-test('tracker disabled (no config) skips cleanly', () => {
+test('tracker disabled (no config) skips cleanly', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
@@ -202,24 +202,24 @@ test('tracker disabled (no config) skips cleanly', () => {
 	// making the test non-hermetic — it fails whenever a real tracker is configured.)
 	process.env['INSRC_GITHUB_CONFIG'] = join(s.repo, 'no-such-github.json');
 	try {
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'skipped');
 	} finally { s.cleanup(); }
 });
 
-test('missing required meta fields skip', () => {
+test('missing required meta fields skip', async () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
 	try {
 		writeJson(s.hldJson, { meta: { workflow: 'design.epic', runId: 'h1', repoPath: s.repo }, body: {} });
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'skipped');
 		assert.equal(r.status === 'skipped' && /missing epicHash/.test(r.reason), true);
 	} finally { s.cleanup(); }
 });
 
-test('R4: posts the review report as an issue comment when the artifact carries a lifecycle review', () => {
+test('R4: posts the review report as an issue comment when the artifact carries a lifecycle review', async () => {
 	const s = setup();
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
@@ -233,7 +233,7 @@ test('R4: posts the review report as an issue comment when the artifact carries 
 		});
 		Object.assign(hld.meta, blockedMeta({ report }));
 		writeFileSync(s.hldJson, JSON.stringify(hld, null, 2));
-		autoPushEpicOnHld(s.hldJson);
+		await autoPushEpicOnHld(s.hldJson);
 		const reviewComment = gh.calls
 			.filter(c => c[1] === 'issue' && c[2] === 'comment')
 			.find(c => c.some(a => typeof a === 'string' && a.includes('insrc:review')));
@@ -291,8 +291,8 @@ function shapeOf(call: readonly string[]): string {
 	return args.map(a => (a.startsWith('title=') || a.startsWith('body=') ? `${a.split('=')[0]}=…` : a)).join(' ');
 }
 
-function runAll(s: ReturnType<typeof setupWithPlan>) {
-	return [autoPushEpicOnHld(s.hldJson), autoPushStoryOnLld(s.lldJson), autoPushTasksOnPlan(s.planJson)];
+async function runAll(s: ReturnType<typeof setupWithPlan>) {
+	return [await autoPushEpicOnHld(s.hldJson), await autoPushStoryOnLld(s.lldJson), await autoPushTasksOnPlan(s.planJson)];
 }
 
 const API_ISSUES = 'api -X POST repos/acme/demo/issues';
@@ -304,13 +304,13 @@ const TITLE_LIST = 'api --paginate repos/acme/demo/issues?state=all&per_page=100
 const GATE = ['-C <repo> remote get-url origin', 'auth status'];
 const TYPED = (labels: string[], type: string): string => `${API_ISSUES} -f title=… -f body=… ${labels.map(l => `-f labels[]=${l}`).join(' ')} -f type=${type}`;
 
-test('the three push functions run one path through the adapter: the issues, the sub-issue links, the milestones, the persisted refs and the binding, with failing side effects reported and not thrown', () => {
+test('the three push functions run one path through the adapter: the issues, the sub-issue links, the milestones, the persisted refs and the binding, with failing side effects reported and not thrown', async () => {
 	// Plain run: results, the creates (typed, labelled, linked) and the persisted meta.
 	const gh = makeFailableGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setupWithPlan();
 	try {
-		const [epic, story, tasks] = runAll(s);
+		const [epic, story, tasks] = await runAll(s);
 		assert.deepEqual([epic.status, story.status, tasks.status], ['created', 'created', 'created']);
 		const shapes = gh.calls.filter(c => c[0] === 'gh' || c[0] === 'git').map(shapeOf);
 		assert.ok(shapes.includes(TYPED(['insrc:epic', 'epic:demo-feature', UNIT('')], 'Epic')), 'the Epic is created typed, with its unit label');
@@ -337,7 +337,7 @@ test('the three push functions run one path through the adapter: the issues, the
 	_setTrackerExecForTests(ms.fn);
 	const m = setupWithPlan(true);
 	try {
-		runAll(m);
+		await runAll(m);
 		const shapes = ms.calls.filter(c => c[0] === 'gh').map(shapeOf);
 		assert.ok(shapes.includes('api -X POST repos/acme/demo/milestones -f title=…'));
 		assert.ok(shapes.includes('issue edit 1 --repo acme/demo --milestone demo-feature'));
@@ -354,7 +354,7 @@ test('the three push functions run one path through the adapter: the issues, the
 		_setTrackerExecForTests(f.fn);
 		const x = setupWithPlan(true);
 		try {
-			const results = runAll(x);
+			const results = await runAll(x);
 			assert.deepEqual(results.map(r => r.status), ['created', 'created', 'created'], name);
 			if (name !== 'links') assert.ok(results.some(r => (r.status === 'created' || r.status === 'already-exists') && (r.extrasFailed?.length ?? 0) > 0), `${name} is reported as extrasFailed`);
 		} finally { x.cleanup(); }
@@ -365,7 +365,7 @@ test('the three push functions run one path through the adapter: the issues, the
 	_setTrackerExecForTests(lf.fn);
 	const l = setupWithPlan();
 	try {
-		const r = autoPushEpicOnHld(l.hldJson);
+		const r = await autoPushEpicOnHld(l.hldJson);
 		assert.equal(r.status, 'failed');
 		assert.match(r.status === 'failed' ? r.reason : '', /the label .* could not be created/);
 		assert.ok(!lf.calls.some(c => c.includes('POST') && c.some(a => a.endsWith('/issues'))), 'nothing was created');
@@ -376,18 +376,18 @@ test('the three push functions run one path through the adapter: the issues, the
 	_setTrackerExecForTests(down.fn);
 	const d = setupWithPlan();
 	try {
-		assert.deepEqual(runAll(d).map(r => r.status), ['skipped', 'skipped', 'skipped']);
+		assert.deepEqual((await runAll(d)).map(r => r.status), ['skipped', 'skipped', 'skipped']);
 		assert.equal(down.calls.filter(c => c[0] === 'gh').every(c => c[1] === 'auth'), true);
 		assert.equal((JSON.parse(readFileSync(d.defineJson, 'utf8')) as { meta: { envelope?: unknown } }).meta.envelope, undefined, 'no tracker, no binding');
 	} finally { d.cleanup(); }
 });
 
-test('a failing lookup in front of the create is a failed result, never a throw, and creates nothing', () => {
+test('a failing lookup in front of the create is a failed result, never a throw, and creates nothing', async () => {
 	const gh = makeFailableGh(a => a[0] === 'issue' && a[1] === 'list');
 	_setTrackerExecForTests(gh.fn);
 	const s = setupWithPlan();
 	try {
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'failed');
 		assert.match(r.status === 'failed' ? r.reason : '', /cannot look up the issue for epic/);
 		const shapes = gh.calls.filter(c => c[0] === 'gh').map(shapeOf);
@@ -397,13 +397,13 @@ test('a failing lookup in front of the create is a failed result, never a throw,
 	} finally { s.cleanup(); }
 });
 
-test('a failing create is reported as a failed result, not thrown', () => {
+test('a failing create is reported as a failed result, not thrown', async () => {
 	const failCreate = (label: string) => (a: readonly string[]) => a[0] === 'api' && a.some(x => x === `labels[]=${label}`);
 	const epic = makeFailableGh(failCreate('insrc:epic'));
 	_setTrackerExecForTests(epic.fn);
 	const s = setupWithPlan();
 	try {
-		const r = autoPushEpicOnHld(s.hldJson);
+		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'failed');
 		assert.match(r.status === 'failed' ? r.reason : '', /boom/);
 		assert.deepEqual(trackerOf(s.hldJson), {}, 'nothing persisted for a failed create');
@@ -414,8 +414,8 @@ test('a failing create is reported as a failed result, not thrown', () => {
 	_setTrackerExecForTests(story.fn);
 	const t = setupWithPlan();
 	try {
-		autoPushEpicOnHld(t.hldJson);
-		const r = autoPushStoryOnLld(t.lldJson);
+		await autoPushEpicOnHld(t.hldJson);
+		const r = await autoPushStoryOnLld(t.lldJson);
 		assert.equal(r.status, 'failed');
 		assert.match(r.status === 'failed' ? r.reason : '', /the Story issue could not be ensured: boom/);
 	} finally { t.cleanup(); }
@@ -424,9 +424,9 @@ test('a failing create is reported as a failed result, not thrown', () => {
 	_setTrackerExecForTests(task.fn);
 	const u = setupWithPlan();
 	try {
-		autoPushEpicOnHld(u.hldJson);
-		autoPushStoryOnLld(u.lldJson);
-		const r = autoPushTasksOnPlan(u.planJson);
+		await autoPushEpicOnHld(u.hldJson);
+		await autoPushStoryOnLld(u.lldJson);
+		const r = await autoPushTasksOnPlan(u.planJson);
 		assert.equal(r.status, 'failed');
 		assert.match(r.status === 'failed' ? r.reason : '', /task t1: boom/);
 	} finally { u.cleanup(); }

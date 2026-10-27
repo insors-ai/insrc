@@ -59,7 +59,7 @@ export async function followOnTasksSync(approved: WorkflowApproveResult['approve
 		if (!basename(path).startsWith('PLAN-') || !path.endsWith('.json')) continue;
 		const sync = await syncPlanTasks(path);
 		if ('error' in sync) { out.push({ kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error }); continue; }
-		const push = autoPushTasksOnPlan(path);
+		const push = await autoPushTasksOnPlan(path);
 		const failed = push.status === 'failed';
 		out.push({
 			kind: 'tasks-sync', artifactPath: path, ok: !failed && sync.closeFailed.length === 0,

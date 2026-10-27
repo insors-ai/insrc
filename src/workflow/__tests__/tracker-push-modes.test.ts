@@ -27,19 +27,19 @@ function watched(failFirstLink: boolean) {
 	const port = new Proxy(t.port, { get: (target, key: string) => { if (CLAIM_METHODS.includes(key)) touched.push(key); return (target as unknown as Record<string, unknown>)[key]; } }) as unknown as TrackerPort;
 	return { t, port, touched };
 }
-const viaPort = (port: TrackerPort, policy: PolicyReader) => <T>(run: () => T): T => via({ port } as unknown as ReturnType<typeof fakeTracker>, policy)(run);
+const viaPort = (port: TrackerPort, policy: PolicyReader) => <T>(run: () => T | Promise<T>): Promise<T> => via({ port } as unknown as ReturnType<typeof fakeTracker>, policy)(run);
 
-test('the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding', () => {
+test('the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding', async () => {
 	for (const [mode, policy] of MODES) {
 		const fx = seed({ pushTasks: false });
 		try {
 			const w = watched(true);
-			const run = viaPort(w.port, policy);
-			const epic = run(() => autoPushEpicOnHld(fx.hld));
+			const run = await viaPort(w.port, policy);
+			const epic = await run(async () => await autoPushEpicOnHld(fx.hld));
 			assert.equal(epic.status, 'created', mode);
 
 			// the Story: its first link under the Epic fails, so it stays pending; the issue, the binding and the posts are made
-			const story = run(() => autoPushStoryOnLld(fx.lld));
+			const story = await run(async () => await autoPushStoryOnLld(fx.lld));
 			assert.equal(story.status, 'created', mode);
 			assert.equal(readBinding(fx.repo, `EPIC-${HASH}`)?.reference.entityId, 'acme/demo#1', `${mode}: the Epic is bound`);
 			const binding = readBinding(fx.repo, `STORY-${HASH}-s1`);
@@ -50,13 +50,13 @@ test('the three approve-time pushes run one path in team mode and in individual 
 			assert.deepEqual(story.status === 'created' ? story.extrasFailed : undefined, undefined, `${mode}: no extra failed`);
 
 			// the next approve retries the link and posts nothing again
-			const again = run(() => autoPushStoryOnLld(fx.lld));
+			const again = await run(async () => await autoPushStoryOnLld(fx.lld));
 			assert.equal(again.status, 'already-exists', mode);
 			assert.equal(readBinding(fx.repo, `STORY-${HASH}-s1`)?.pendingLink, undefined, `${mode}: the link was retried and cleared`);
 			assert.equal(posts(), 2, `${mode}: nothing posted twice`);
 
 			// the Task issues: team mode makes one per Task whatever pushTasks says; individual mode keeps the setting
-			const tasks = run(() => autoPushTasksOnPlan(fx.plan));
+			const tasks = await run(async () => await autoPushTasksOnPlan(fx.plan));
 			if (mode === 'team') {
 				assert.equal(tasks.status, 'created', mode);
 				assert.deepEqual(Object.keys(tasks.status === 'created' ? tasks.taskRefs ?? {} : {}).sort(), ['t1', 't2']);
@@ -72,9 +72,9 @@ test('the three approve-time pushes run one path in team mode and in individual 
 	const fx = seed({ pushTasks: true });
 	try {
 		const w = watched(false);
-		const run = viaPort(w.port, nonePolicy);
-		run(() => autoPushEpicOnHld(fx.hld)); run(() => autoPushStoryOnLld(fx.lld));
-		const tasks = run(() => autoPushTasksOnPlan(fx.plan));
+		const run = await viaPort(w.port, nonePolicy);
+		await run(async () => await autoPushEpicOnHld(fx.hld)); await run(async () => await autoPushStoryOnLld(fx.lld));
+		const tasks = await run(async () => await autoPushTasksOnPlan(fx.plan));
 		assert.equal(tasks.status, 'created');
 		assert.deepEqual(Object.keys(tasks.status === 'created' ? tasks.taskRefs ?? {} : {}).sort(), ['t1', 't2']);
 		assert.deepEqual(w.touched, []);
@@ -86,8 +86,8 @@ test('the three approve-time pushes run one path in team mode and in individual 
 		try {
 			writeFileSync(join(none.repo, 'github.json'), JSON.stringify({ repos: { [none.repo]: { type: 'none' } } }));
 			const w = watched(false);
-			const run = viaPort(w.port, policy);
-			const results = [run(() => autoPushEpicOnHld(none.hld)), run(() => autoPushStoryOnLld(none.lld)), run(() => autoPushTasksOnPlan(none.plan))];
+			const run = await viaPort(w.port, policy);
+			const results = [await run(async () => await autoPushEpicOnHld(none.hld)), await run(async () => await autoPushStoryOnLld(none.lld)), await run(async () => await autoPushTasksOnPlan(none.plan))];
 			assert.deepEqual(results.map(r => r.status), ['skipped', 'skipped', 'skipped'], mode);
 			assert.equal(w.t.log.creates, 0, mode);
 			assert.equal(readBinding(none.repo, defineArtifactId(HASH)), undefined, `${mode}: no binding`);

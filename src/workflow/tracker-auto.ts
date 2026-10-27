@@ -51,6 +51,7 @@ import type { ReviewReport } from './review/types.js';
 import { renderResolvedQuestionsSection } from './questions.js';
 import { renderCitationBlock } from './synthesizer.js';
 import type { Citation, QuestionResolution } from './types.js';
+import { isToolDenied } from './tracker/tool-denied.js';
 
 const log = getLogger('workflow:tracker-auto');
 
@@ -139,28 +140,28 @@ function modeFor(meta: MetaShape, deps: AutoPushDeps): Mode {
 	return typeof meta.repoPath === 'string' ? pickMode(meta.repoPath, deps) : 'individual';
 }
 
-export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
+export async function autoPushEpicOnHld(hldJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(hldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return guardedPush(() => pushEpic(hldJsonPath, meta, deps));
+	return await guardedPush(async () => await pushEpic(hldJsonPath, meta, deps));
 }
 
-export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
+export async function autoPushStoryOnLld(lldJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(lldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return guardedPush(() => pushStory(lldJsonPath, meta, deps));
+	return await guardedPush(async () => await pushStory(lldJsonPath, meta, deps));
 }
 
-export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
+export async function autoPushTasksOnPlan(planJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(planJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return guardedPush(() => pushTasks(planJsonPath, meta, deps, mode));
+	return await guardedPush(async () => await pushTasks(planJsonPath, meta, deps, mode));
 }
 
 // ---------------------------------------------------------------------------
@@ -193,9 +194,12 @@ function gateNoAuth(repoPath: string): { cfg: GithubCfg } | { skip: AutoPushResu
 const failedResult = (reason: string): AutoPushResult => ({ status: 'failed', reason });
 
 /** A local write that fails after the remote issue exists is a failed result, not an escaping error. */
-function guardedPush(run: () => AutoPushResult): AutoPushResult {
-	try { return run(); }
-	catch (err) { return failedResult(`the issue exists but a local step failed: ${(err as Error).message}`); }
+async function guardedPush(run: () => AutoPushResult | Promise<AutoPushResult>): Promise<AutoPushResult> {
+	try { return await run(); }
+	catch (err) {
+		// a denied tracker call stops the push (the issue bindings already written stay); it is not "a local step failed"
+		if (isToolDenied(err)) throw err;
+		return failedResult(`the issue exists but a local step failed: ${(err as Error).message}`); }
 }
 
 function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extrasFailed?: ExtrasFailed } {
@@ -204,26 +208,33 @@ function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extr
 
 /** A step whose runner throws (a summary renderer on a malformed body) fails as a step instead of escaping. */
 function guarded(step: ExtraStep): ExtraStep {
-	return { name: step.name, marker: step.marker, run: () => { try { return step.run(); } catch (err) { return { ok: false, reason: (err as Error).message, kind: 'rejected' }; } } };
+	return { name: step.name, marker: step.marker, run: async () => {
+		try { return await step.run(); }
+		catch (err) {
+			// a denied tracker call stops the publication (no later extra runs); it is not a failed step
+			if (isToolDenied(err)) throw err;
+			return { ok: false, reason: (err as Error).message, kind: 'rejected' };
+		}
+	} };
 }
 
 /** The review comment step, only when the artifact carries a review. */
-function reviewStep(ops: IssueOps, ref: string, jsonPath: string, unit: UnitRef): ExtraStep[] {
+async function reviewStep(ops: IssueOps, ref: string, jsonPath: string, unit: UnitRef): Promise<ExtraStep[]> {
 	const review = readReview(jsonPath);
 	if (review === undefined) return [];
-	const marker = postMarker(unit, 'reviewComment');
-	return [{ name: 'reviewComment', marker, run: () => ops.comment(ref, `${marker}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
+	const marker = await postMarker(unit, 'reviewComment');
+	return [{ name: 'reviewComment', marker, run: async () => await ops.comment(ref, `${marker}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
 }
 
 /** The unit's comment lister for runUnitExtras: the issue's comments, or a failure when the tracker cannot list them. */
-const commentsOf = (port: TrackerPort, issue: string) => (): PortResult<TrackerComment[]> =>
-	typeof port.listComments === 'function' ? port.listComments(issue) : { ok: false, kind: 'rejected', reason: 'this tracker cannot list comments' };
+const commentsOf = (port: TrackerPort, issue: string) => async (): Promise<PortResult<TrackerComment[]>> =>
+	typeof port.listComments === 'function' ? await port.listComments(issue) : { ok: false, kind: 'rejected', reason: 'this tracker cannot list comments' };
 
 function milestoneStep(ops: IssueOps, cfg: GithubCfg, ref: string, epicSlug: string): ExtraStep[] {
-	return cfg.useMilestones ? [{ name: 'milestone', run: () => { ops.ensureMilestone(epicSlug); return ops.attachMilestone(ref, epicSlug); } }] : [];
+	return cfg.useMilestones ? [{ name: 'milestone', run: async () => { await ops.ensureMilestone(epicSlug); return await ops.attachMilestone(ref, epicSlug); } }] : [];
 }
 
-function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): AutoPushResult {
+async function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Promise<AutoPushResult> {
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'HLD meta is missing epicHash / epicSlug / repoPath' };
 	}
@@ -237,7 +248,7 @@ function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Aut
 	if ('failed' in anchored) return anchored.failed;
 	const anchor = anchored.anchor;
 
-	const ensured = ensureUnitIssueDetailed(unit, port);
+	const ensured = await ensureUnitIssueDetailed(unit, port);
 	if (!ensured.ok) return failedResult(`the Epic issue could not be ensured: ${ensured.reason}`);
 	const epicRef = ensured.value.issue;
 
@@ -247,16 +258,16 @@ function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Aut
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
 	const ops = port.issueOps;
-	const designMarker = postMarker(unit, 'designComment');
-	const out = runUnitExtras(unit, ([
+	const designMarker = await postMarker(unit, 'designComment');
+	const out = await runUnitExtras(unit, ([
 		...milestoneStep(ops, cfg, epicRef, epicSlug),
-		{ name: 'designComment', marker: designMarker, run: () => ops.comment(epicRef, `${designMarker}\n${renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))}`) },
-		...reviewStep(ops, epicRef, hldJsonPath, unit),
+		{ name: 'designComment', marker: designMarker, run: async () => await ops.comment(epicRef, `${designMarker}\n${renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))}`) },
+		...await reviewStep(ops, epicRef, hldJsonPath, unit),
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, epicRef) });
 	return withExtras(ensured.value.created ? { status: 'created' as const, epicRef } : { status: 'already-exists' as const, epicRef }, out.failed);
 }
 
-function pushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): AutoPushResult {
+async function pushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Promise<AutoPushResult> {
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'LLD meta is missing epicHash / epicSlug / storyId / repoPath' };
 	}
@@ -274,35 +285,35 @@ function pushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Au
 	if ('failed' in anchored) return anchored.failed;
 	const anchor = anchored.anchor;
 
-	const epic = ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
+	const epic = await ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
 	if (!epic.ok) return failedResult(`the Epic issue could not be ensured: ${epic.reason}`);
 	const epicRef = epic.value.issue;
 	const unit: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
-	const ensured = ensureUnitIssueDetailed(unit, port);
+	const ensured = await ensureUnitIssueDetailed(unit, port);
 	if (!ensured.ok) return failedResult(`the Story issue could not be ensured: ${ensured.reason}`);
 	const storyRef = ensured.value.issue;
 
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 
 	const ops = port.issueOps;
-	const out = runUnitExtras(unit, ([
+	const out = await runUnitExtras(unit, ([
 		...milestoneStep(ops, cfg, storyRef, epicSlug),
 		{
 			name: 'taskList',
-			run: (): PortResult<void> => {
-				const current = ops.readBody(epicRef);
+			run: async (): Promise<PortResult<void>> => {
+				const current = await ops.readBody(epicRef);
 				if (!current.ok) return current;
 				const updated = updateEpicTaskList(current.value, storyId, storyRef, story.title);
-				return updated === current.value ? { ok: true, value: undefined } : ops.writeBody(epicRef, updated);
+				return updated === current.value ? { ok: true, value: undefined } : await ops.writeBody(epicRef, updated);
 			},
 		},
-		{ name: 'designComment', marker: postMarker(unit, 'designComment'), run: () => ops.comment(storyRef, `${postMarker(unit, 'designComment')}\n${renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))}`) },
-		...reviewStep(ops, storyRef, lldJsonPath, unit),
+		{ name: 'designComment', marker: await postMarker(unit, 'designComment'), run: async () => await ops.comment(storyRef, `${await postMarker(unit, 'designComment')}\n${renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))}`) },
+		...await reviewStep(ops, storyRef, lldJsonPath, unit),
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, storyRef) });
 	return withExtras(ensured.value.created ? { status: 'created' as const, storyRef } : { status: 'already-exists' as const, storyRef }, out.failed);
 }
 
-function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mode: 'individual' | 'team'): AutoPushResult {
+async function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mode: 'individual' | 'team'): Promise<AutoPushResult> {
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'Plan meta is missing epicHash / epicSlug / storyId / repoPath' };
 	}
@@ -320,15 +331,15 @@ function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mo
 	catch (err) { return failedResult(`cannot read plan tasks: ${(err as Error).message}`); }
 	if (tasks.length === 0) return { status: 'skipped', reason: 'plan has no tasks' };
 
-	const epic = ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
+	const epic = await ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
 	if (!epic.ok) return failedResult(`the Epic issue could not be ensured: ${epic.reason}`);
 	const storyUnit: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
-	const story = ensureUnitIssueDetailed(storyUnit, port);
+	const story = await ensureUnitIssueDetailed(storyUnit, port);
 	if (!story.ok) return failedResult(`the Story issue could not be ensured: ${story.reason}`);
 
 	let createdCount = 0;
 	for (const task of [...tasks].sort((a, b) => a.order - b.order)) {
-		const r = ensureUnitIssueDetailed({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id }, port);
+		const r = await ensureUnitIssueDetailed({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id }, port);
 		if (!r.ok) return failedResult(`task ${task.id}: ${r.reason}`);
 		if (r.value.created) createdCount += 1;
 	}
@@ -336,13 +347,13 @@ function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mo
 	// The plan's review lands on its parent Story issue, once (marked on the Story's record).
 	const review = readReview(planJsonPath);
 	const ops = port.issueOps;
-	const out = runUnitExtras(storyUnit, (review === undefined ? [] : [
-		{ name: 'planComment', marker: postMarker(storyUnit, 'planComment'), run: () => ops.comment(story.value.issue, `${postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
+	const out = await runUnitExtras(storyUnit, (review === undefined ? [] : [
+		{ name: 'planComment', marker: await postMarker(storyUnit, 'planComment'), run: async () => await ops.comment(story.value.issue, `${await postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, story.value.issue) });
 	// each Task's issue, from its binding
 	const taskRefs: Record<string, string> = {};
 	for (const task of tasks) {
-		const ref = resolveUnitIssueLocal({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id });
+		const ref = await resolveUnitIssueLocal({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id });
 		if (ref !== null) taskRefs[task.id] = ref;
 	}
 	return withExtras(createdCount > 0 ? { status: 'created' as const, taskRefs } : { status: 'already-exists' as const, taskRefs }, out.failed);

@@ -106,7 +106,7 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
 
   // The current tier is the one the daemon resolves (ISSUE-07dfdf71974a7c45; src/config/analyze.ts tierSetting
   // + parseTiering, then the registry's dropped effort).
-  const cur = (shown: Array<{ value?: string; description?: string }> | undefined) => shown?.find((x) => x.description?.endsWith('(current)'))?.value;
+  const cur = (shown: Array<{ value?: string | undefined; description?: string | undefined }> | undefined) => shown?.find((x) => x.description?.endsWith('(current)'))?.value;
   // Effort leaf alone: the default tier at that effort.
   r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { effort: 'turbo' } } } } });
   assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], 'the configured effort, not the default lo');

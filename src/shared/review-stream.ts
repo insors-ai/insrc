@@ -356,6 +356,12 @@ function dimensionExtrasValid(value: Record<string, unknown>, dimension: string)
  }
  return true;
 }
+function fallbackReasonValid(value: unknown): boolean {
+ if (value === undefined) return true;
+ if (!record(value)) return false;
+ if (value['kind'] === 'declined' || value['kind'] === 'hollow-grounding') return Object.keys(value).length === 1;
+ return value['kind'] === 'freshness-timeout' && Object.keys(value).length === 5 && integer(value['waitedMs']) && typeof value['inFlight'] === 'boolean' && integer(value['pendingCodeIndexJobs']) && Array.isArray(value['staleFiles']) && value['staleFiles'].every(nonempty);
+}
 function finalControlResult(value: unknown, params: CodeReviewControlParams): CodeReviewStreamResult {
  const result = legacyCodeReviewResult(value), artifact = result.artifact;
  const meta = artifact.meta, body = artifact.body;
@@ -364,6 +370,7 @@ function finalControlResult(value: unknown, params: CodeReviewControlParams): Co
  if (params.operation === 'start' && body.groundingMode !== (params.groundingMode ?? 'full')) protocol('final grounding mode differs from the requested review');
  if (meta.reviewInputSchemaVersion !== REVIEW_INPUT_SCHEMA_VERSION || !isReviewInputFingerprint(meta.reviewInputFingerprint) || meta.reviewInputFingerprint.epicHash !== meta.epicHash || meta.reviewInputFingerprint.storyId !== meta.storyId || meta.reviewInputFingerprint.repoPath !== meta.repoPath || meta.reviewInputFingerprint.author === 'daemon') protocol('final review has invalid input identity or author');
  if (!record(body.subject) || !Array.isArray(body.subject.changedFiles) || !body.subject.changedFiles.every(nonempty) || new Set(body.subject.changedFiles).size !== body.subject.changedFiles.length) protocol('malformed final subject');
+ if (!fallbackReasonValid(body.fallbackReason)) protocol('malformed final fallback reason');
  const counts = body.counts;
  if (!record(counts) || !integer(counts.high) || !integer(counts.med) || !integer(counts.low) || !Array.isArray(body.dimensions) || body.dimensions.length < 4) protocol('malformed final review counts/dimensions');
  for (const key of ['sharedWithExcluded', 'excludedFromScope']) { const paths = (body.subject as unknown as Record<string, unknown>)[key]; if (paths !== undefined && (!Array.isArray(paths) || !paths.every(nonempty))) protocol('malformed final subject paths'); }

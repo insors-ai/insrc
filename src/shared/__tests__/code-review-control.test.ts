@@ -69,7 +69,9 @@ test('DIFF-WAIT-TRANSPORT: pending artifacts, malformed/foreign finals and unkno
  const finding = (extra: Record<string, unknown>) => ({ ...done, result: { ...final, artifact: { ...final.artifact, body: { ...final.artifact.body, counts: { high: 0, med: 0, low: 1 }, dimensions: final.artifact.body.dimensions.map(d => d.dimension === 'quality' ? { ...d, findings: [{ dimension: 'quality', severity: 'LOW', location: 'src/a.ts:1', message: 'quality observation', ...extra }] } : d) } } } });
  const otherHeader = { ...header, repoPath: '/different-repository' };
  const other = { ...otherHeader, digest: identityDigest(canonicalIdentityJson(otherHeader)) };
+ const fallback = (fallbackReason: unknown) => ({ ...done, result: { ...final, artifact: { ...final.artifact, body: { ...final.artifact.body, fallbackReason } } } });
  const bad = [
+  ...[42, {}, { kind: 'invalid' }, { kind: 'declined', extra: true }, { kind: 'freshness-timeout', waitedMs: -1, inFlight: true, pendingCodeIndexJobs: 1, staleFiles: [] }, { kind: 'freshness-timeout', waitedMs: 1, inFlight: 42, pendingCodeIndexJobs: 1, staleFiles: [] }, { kind: 'freshness-timeout', waitedMs: 1, inFlight: true, pendingCodeIndexJobs: 1, staleFiles: [42] }].map(fallback),
   finding({ findingKind: 'invalid' }), finding({ expectationRef: 42 }), finding({ symbolId: 42 }), finding({ counterpartRef: 42 }),
   { ...done, result: { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, repoPath: other.repoPath, reviewInputFingerprint: other } } } },
   { ...pending, artifact: {} }, { ...pending, result: final }, { ...pending, daemonEpoch: '' }, { ...pending, status: 'unknown' },

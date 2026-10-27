@@ -28,6 +28,7 @@ import type { UnitRef } from './tracker/refs.js';
 import { ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, type EnsureIssueDeps } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
+import { isToolDenied } from './tracker/tool-denied.js';
 
 const log = getLogger('workflow:draft-issues');
 
@@ -54,7 +55,7 @@ export type IssueReadiness =
 
 export interface DraftHookDeps {
 	readonly readPolicy?:  PolicyReader | undefined;
-	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>) | undefined;
+	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort> | Promise<PortResult<TrackerPort>>) | undefined;
 	readonly ensure?:      EnsureIssueDeps | undefined;
 }
 
@@ -123,7 +124,7 @@ export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = 
 		}
 		if (units.length === 0) return { status: 'ready', units: [] };
 
-		const loaded = (deps.loadTracker ?? loadTracker)(repoPath, new Set<Capability>(['issue-create']));
+		const loaded = await (deps.loadTracker ?? loadTracker)(repoPath, new Set<Capability>(['issue-create']));
 		if (!loaded.ok) {
 			const firstMissing = units[local.findIndex(ref => ref === null)]!;
 			return notReady(unitKey(firstMissing), loaded.kind, true, loaded.reason, ready);
@@ -140,6 +141,8 @@ export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = 
 		}
 		return { status: 'ready', units: ready };
 	} catch (err) {
+		// a denied tracker call stops the stage; it is not a "not ready" draft
+		if (isToolDenied(err)) throw err;
 		log.warn({ jsonPath, err: (err as Error).message }, 'draft-issues: the draft hook failed unexpectedly');
 		return notReady('the draft', 'rejected', true, (err as Error).message, []);
 	}

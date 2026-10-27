@@ -122,7 +122,7 @@ export function titleMatchesToken(title: string, token: string): boolean {
 	return token.length > 0 && (title === token || title.startsWith(`${token} \u2014 `));
 }
 
-export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>;
+export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort> | Promise<PortResult<TrackerPort>>;
 
 const ALL_CAPABILITIES: readonly Capability[] = ['claim', 'issue-create', 'signoff-request', 'completion'];
 

@@ -22,6 +22,7 @@ import type { Actor } from '../artifact-core/types.js';
 import { writeAtomic } from '../storage.js';
 import { loadTracker } from '../tracker/github-adapter.js';
 import type { Capability, LoadTracker } from '../tracker/port.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
 
 const log = getLogger('identity');
 
@@ -116,14 +117,16 @@ export class IdentityService {
 			const tracker = this.deps.loadTracker ?? loadTracker;
 			const github = async (): Promise<IdentityLookup> => {
 				try {
-					const loaded = tracker(repoPath, new Set<Capability>());
-					const who = loaded.ok ? loaded.value.whoAmI() : undefined;
+					const loaded = await tracker(repoPath, new Set<Capability>());
+					const who = loaded.ok ? await loaded.value.whoAmI() : undefined;
 					if (who?.ok === true && who.value.trim() !== '') {
 						return { source: 'github', status: 'available', identities: [{ source: 'github', authority: 'https://github.com', subject: who.value.trim() }] };
 					}
 					log.info({ reason: loaded.ok ? (who?.ok === false ? who.reason : 'blank login') : loaded.reason }, 'the tracker did not answer whoAmI; falling back to git, then the OS user');
 					return { source: 'github', status: 'unavailable', identities: [] };
 				} catch (err) {
+					// a denied tracker call stops the stage; it is not "the tracker did not answer"
+					if (isToolDenied(err)) throw err;
 					log.info({ reason: (err as Error).message }, 'the tracker did not answer whoAmI; falling back to git, then the OS user');
 					return { source: 'github', status: 'unavailable', identities: [] };
 				}
@@ -136,6 +139,8 @@ export class IdentityService {
 			const lowered = id.toLowerCase();
 			return isNamespacedActorId(lowered) ? lowered : osId();
 		} catch (err) {
+			// a denied tracker call stops the stage; it never becomes the OS user
+			if (isToolDenied(err)) throw err;
 			log.warn({ err: (err as Error).message }, 'could not resolve the acting identity; using the OS user');
 			return osId();
 		}

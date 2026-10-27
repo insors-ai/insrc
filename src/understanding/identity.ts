@@ -55,6 +55,9 @@ function identity(source: LearnerIdentity['source'], host: string, subject: stri
     assurance: source === 'git' ? 'local-config' : source === 'os' ? 'os-local' : 'provider-confirmed', aliases: [] };
 }
 
+/** A denied tool call (workflow/tracker/tool-denied.ts), recognised by name so this module takes no dependency on the workflow layer. */
+const isDenied = (err: unknown): boolean => err instanceof Error && (err.name === 'ToolDenied' || err.name === 'TaskSyncDenied');
+
 export async function resolveLearner(repo: string, deps: IdentityDeps): Promise<ResolvedLearner> {
   const host = text(deps.hostId);
   const os = text(deps.osSubject());
@@ -81,7 +84,9 @@ export async function resolveLearner(repo: string, deps: IdentityDeps): Promise<
       diagnostics.push({ source, status: result.status });
       if (result.status === 'unavailable') incomplete = true;
       for (const item of found) candidates.set(item.key, item);
-    } catch {
+    } catch (err) {
+      // a call the user denied stops the resolution: it is not an unavailable provider that falls back to git or the OS user
+      if (isDenied(err)) throw err;
       incomplete = true;
       diagnostics.push({ source, status: 'unavailable' });
     }

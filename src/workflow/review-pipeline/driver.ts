@@ -22,8 +22,9 @@ import { ModelResponseShapeError } from '../../agent/providers/model-call-error.
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
 import { AtomTooLargeError } from './pack-into-batches.js';
+import { reviewTimerSlice } from './timing.js';
 import { promptChars } from './envelope.js';
-import { applyFailure, applyOutput, deadlineError, nextCalls, result, runStage } from './job.js';
+import { applyFailure, applyOutput, assertJobDeadline, deadlineError, nextCalls, result, runStage } from './job.js';
 import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from './types.js';
 
 const log = getLogger('review-pipeline:driver');
@@ -49,10 +50,12 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 	const signal = opts.signal;
 	while (job.phase !== 'done') {
 		throwIfAborted(signal);
+  assertJobDeadline(job, adapter, now());
 		const calls = nextCalls(job, adapter, now());
 		if (calls.length === 0) {
 			opts.onStage?.(job.stage);
-			job = await runStage(job, adapter, { signal, now });
+			job = job.timing === undefined ? await runStage(job, adapter, { signal, now }) : await ownedTimedWork(job, adapter, s => runStage(job, adapter, { signal: s, now }), signal, now);
+   assertJobDeadline(job, adapter, now());
 			continue;
 		}
 		// Serial: one call at a time, never more than one in flight.
@@ -62,9 +65,11 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		try {
 			const chars = promptChars(call.messages, call.schema);
 			if (chars > job.plan.limitChars) throw new InputTooLargeError(`Review input ${chars} exceeds ${job.plan.limitChars} characters`, '', { actualChars: chars, maxChars: job.plan.limitChars });
-			raw = await untilAborted(send(provider, call, signal, job.plan.limitChars), signal);
+			raw = job.timing === undefined ? await untilAborted(send(provider, call, signal, job.plan.limitChars), signal)
+    : await ownedTimedWork(job, adapter, s => send(provider, call, s, job.plan.limitChars), signal, now, call.execution.mode === 'structured' ? call.execution.timeoutMs : call.execution.deadlineMs);
 		} catch (err) {
 			throwIfAborted(signal);
+   assertJobDeadline(job, adapter, now());
 			if (isAbortError(err) || err instanceof UnsupportedBoundedInputError || (err instanceof Error && 'code' in err && err.code === 'unsupported-bounded-input')) throw err;
 			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
@@ -84,8 +89,49 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		throwIfAborted(signal);
 		job = applyOutput(job, adapter, call.callId, raw, now());
 	}
-	opts.onDone?.(job);
+	throwIfAborted(signal);
+ assertJobDeadline(job, adapter, now());
+ opts.onDone?.(job);
 	return result(job);
+}
+
+/** A shorter per-call limit remains distinct from exhausting the fixed review budget. */
+export class ReviewCallTimeoutError extends Error {
+ constructor(ms: number) { super(`Review call exceeded its per-call limit of ${ms} ms`); this.name = 'ReviewCallTimeoutError'; }
+}
+
+/** Abort owned execution at the deadline, but do not report terminal completion before it settles. */
+async function ownedTimedWork<T>(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, work: (signal: AbortSignal) => Promise<T>, parent: AbortSignal | undefined, now: () => number, perCallMs?: number): Promise<T> {
+ throwIfAborted(parent); assertJobDeadline(job, adapter, now());
+ const controller = new AbortController(), start = now();
+ const reviewEnd = Math.min(job.timing!.deadlineAt, job.timing!.rootDeadlineAt);
+ const end = perCallMs === undefined ? reviewEnd : Math.min(reviewEnd, start + perCallMs);
+ let reason: Error | undefined, timer: ReturnType<typeof setTimeout> | undefined;
+ const timeout = (): Error => end < reviewEnd ? new ReviewCallTimeoutError(perCallMs!) : deadlineError(job, adapter);
+ const abort = (error: Error): void => { reason ??= error; controller.abort(reason); };
+ const onAbort = (): void => abort(abortError());
+ const arm = (): void => {
+  const delay = reviewTimerSlice(end, now());
+  if (delay === 0) { abort(timeout()); return; }
+  timer = setTimeout(() => { if (now() >= end) abort(timeout()); else arm(); }, delay);
+ };
+ parent?.addEventListener('abort', onAbort, { once: true });
+ arm();
+ try {
+  if (reason !== undefined) throw reason;
+  const output = await work(controller.signal);
+  if (reason !== undefined) throw reason;
+  assertJobDeadline(job, adapter, now());
+  if (now() >= end) throw timeout();
+  return output;
+ } catch (err) {
+  if (reason !== undefined) throw reason;
+  assertJobDeadline(job, adapter, now());
+  throw err;
+ } finally {
+  if (timer !== undefined) clearTimeout(timer);
+  parent?.removeEventListener('abort', onAbort);
+ }
 }
 
 /** Make one call with its execution mode; the provider makes exactly one attempt. */

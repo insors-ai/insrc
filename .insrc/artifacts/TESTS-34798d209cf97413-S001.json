@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:04:39.337Z",
+    "updatedAt": "2026-10-27T09:07:38.086Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -981,8 +981,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "59424d934",
-        "ranAt": "2026-10-27T09:04:39.337Z",
+        "commit": "140b1b920",
+        "ranAt": "2026-10-27T09:07:38.086Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1030,6 +1030,11 @@
                 "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
                 "title": "DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
+                "title": "DIFF-REFUSAL-SPAN: unfragmented text singleton is splittable after a lower refusal and retains original parent attribution",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1040,7 +1045,7 @@
             "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 860,
+            "durationMs": 787,
             "titles": [
               {
                 "title": "DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time",
@@ -1053,6 +1058,10 @@
               {
                 "title": "DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result",
                 "result": "pass"
+              },
+              {
+                "title": "DIFF-REFUSAL-SPAN: unfragmented text singleton is splittable after a lower refusal and retains original parent attribution",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1061,7 +1070,7 @@
             "file": "src/workflow/review-pipeline/__tests__/diff-timing.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 523,
+            "durationMs": 482,
             "titles": [
               {
                 "title": "DIFF-TIME-PLAN: real primary plans freeze 1/5/20 chunk budgets and aggregate five model dimensions with deterministic zero counts",
@@ -1082,7 +1091,7 @@
             "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 736,
+            "durationMs": 696,
             "titles": [
               {
                 "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",

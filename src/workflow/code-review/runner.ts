@@ -214,6 +214,7 @@ export async function runCodeReview(
   const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
+   assertReviewTime(timing, now());
 			emit({ phase: 'dimension-start', dimension: slot.dimension });
 			// A frame as each of the dimension's review calls starts, so a long review is seen to progress (ISSUE-1973e125).
 			let calls = 0;
@@ -223,7 +224,9 @@ export async function runCodeReview(
    const result = ready !== undefined && slot.execute !== undefined
     ? await slot.execute(ready, provider, { ...ctx, timing, onCall })
     : await slot.judge(subject, grounding, provider, { ...ctx, onCall });
-			dimensions.push(result);
+			if (opts.signal?.aborted) return fail('aborted', emit);
+   assertReviewTime(timing, now());
+   dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}
 
@@ -246,9 +249,13 @@ export async function runCodeReview(
 
 		// 6. Finalize: write BOTH files (json load-bearing; md a deterministic
 		//    summary). Validation has already passed, so a write here is never partial.
-		emit({ phase: 'finalize' });
+		if (opts.signal?.aborted) return fail('aborted', emit);
+  assertReviewTime(timing, now());
+  emit({ phase: 'finalize' });
+  assertReviewTime(timing, now());
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.createdAtISO, pa.workItemKind, pa.epicSlug);
-		deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+		assertReviewTime(timing, now());
+  deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 		deps.write(paths.md,   renderCodeReviewMd(artifact));
 		log.info({ runId: opts.runId, storyId: subject.storyId, verdict, counts }, 'code-review record written');
 		emit({ phase: 'done' });

@@ -1,0 +1,5 @@
+Task 11 focused verification
+Node 22 TypeScript --noEmit: pass.
+Affected pipeline/dimension/runner and bounded-provider suites: 234 tests, 231 pass, 3 gated live skips, zero failures.
+Timed structured/session dispatch applies min(per-call, child/root remaining), rejects late valid outputs and deterministic completion, and checks immediately before publication. Real Node process-group timeout/cancel fixtures confirm owned close and asynchronous settlement before terminal error. Thirty serial nine-minute scripted calls complete after 4h30m under a frozen 5h root; per-call and stall limits retain separate policies.
+Outer request resumability remains tasks15-17. Full sweep deferred to task22. Daemon validation follows commit.

@@ -227,13 +227,27 @@ function withDeadline(job: ReviewPipelineJob, now: number): ReviewPipelineJob {
  * deadline no call is returned: the adapter's time-limit error is thrown.
  */
 export function nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number = Date.now()): readonly ReviewCall[] {
-	if (job.phase === 'done') return [];
+	assertJobDeadline(job, adapter, now);
+ if (job.phase === 'done') return [];
+ if (job.timing !== undefined) {
+  const remaining = Math.min(job.timing.deadlineAt, job.timing.rootDeadlineAt) - now;
+  return job.pending.map(c => ({ ...c, execution: c.execution.mode === 'structured'
+   ? { ...c.execution, timeoutMs: Math.min(c.execution.timeoutMs ?? remaining, remaining) }
+   : { ...c.execution, deadlineMs: Math.min(c.execution.deadlineMs, remaining) } }));
+ }
 	if (job.deadlineAt === undefined || !job.pending.some(c => c.execution.mode === 'reviewer-session')) return job.pending;
 	const remaining = job.deadlineAt - now;
 	if (remaining <= 0) throw deadlineError(job, adapter);
 	return job.pending.map(c => c.execution.mode !== 'reviewer-session' ? c : {
 		...c, execution: { ...c.execution, deadlineMs: Math.min(remaining, job.sessionLimitMs ?? remaining) },
 	});
+}
+
+/** Timed code reviews enforce their fixed clock at every state transition. Legacy reviews retain their policy. */
+export function assertJobDeadline(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number): void {
+ if (job.timing === undefined) return;
+ if (![now, job.timing.deadlineAt, job.timing.rootDeadlineAt].every(value => Number.isSafeInteger(value) && value >= 0)) throw new Error('Invalid review deadline clock');
+ if (now >= Math.min(job.timing.deadlineAt, job.timing.rootDeadlineAt)) throw deadlineError(job, adapter);
 }
 
 /** The adapter's (today's) time-limit error, else ReviewSessionTimeoutError. */
@@ -258,7 +272,8 @@ export function applyOutput(job: ReviewPipelineJob, adapter: ReviewAdapter<unkno
  * stage when it was its last call.
  */
 export function applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer, now: number = Date.now()): ReviewPipelineJob {
-	const call = pendingCall(job, answer.callId);
+	assertJobDeadline(job, adapter, now);
+ const call = pendingCall(job, answer.callId);
 	if (isGatherRole(call.role)) return applyGatherAnswer(job, adapter, call, answer.answer, now);
 	const stage = currentStage(job, adapter);
 	const checked = validateAgainstSchema<unknown>(call.prompt.schema, answer.answer);
@@ -293,6 +308,7 @@ export function applyFailure(
 ): ReviewPipelineJob {
 	const call = pendingCall(job, callId);
 	const now = more.now ?? Date.now();
+ assertJobDeadline(job, adapter, now);
 	const rest: ReviewPipelineJob = { ...job, pending: job.pending.filter(c => c.callId !== callId) };
 	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
 	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
@@ -387,11 +403,12 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	const stage = currentStage(job, adapter);
 	if (stage.kind !== 'deterministic' || stage.run === undefined) throw new Error(`review ${job.dimension}: stage ${stage.id} is a model stage; its calls are made, not run`);
 	throwIfAborted(opts.signal);
+ assertJobDeadline(job, adapter, opts.now?.() ?? Date.now());
 	let output: unknown;
 	let next = job;
 	try {
 		// Raced against the signal: a stage that ignores it cannot hold the review past a cancel.
-		output = await untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal);
+		output = job.timing !== undefined ? await stage.run(job.outputs, job.snapshot, opts.signal) : await untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal);
 	} catch (err) {
 		throwIfAborted(opts.signal);
 		if (err instanceof Error && err.name === 'AbortError') throw err;
@@ -401,6 +418,7 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 		output = undefined;
 	}
 	throwIfAborted(opts.signal);
+ assertJobDeadline(job, adapter, opts.now?.() ?? Date.now());
 	return commit(next, adapter, stage, output, opts.now?.() ?? Date.now());
 }
 

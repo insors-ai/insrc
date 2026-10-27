@@ -373,6 +373,8 @@ On a create event for a directory with subdirectories, the Watcher unsubscribes 
   - **resolved**: Proceed with the confirmed basis — Same decision the user gave on 2026-10-27 for the earlier wording: the approved issue's fix intent and the user's watcher decision are the scoring basis; the audit stays graded partial. _(2026-10-27T07:41:12.085Z)_
 - `q20632acb` — The approved ISSUE's root cause says the missing watcher event was not established, and its reproduction step 3 and second cause describe a wait deadlock that does not exist; the ISSUE record has not been revised to match the confirmed cause.
   - **resolved**: Revise ISSUE before planning — User chose option 1. The issue stage cannot revise in place, so the corrected record is ISSUE-75eaf053e7b7cddd (approved 2026-10-27, no follow-on chain started). The approved LLD and this plan stay under epic fa396bdf197b8e8b; the old ISSUE-fa396bdf197b8e8b stays on the ledger with its inaccurate text and is superseded by the new one. _(2026-10-27T07:50:02.403Z)_
+- `q467e7938` — No test forces the per-directory subscribe call itself to fail; the unreadable-directory test covers the scan and the no-throw guarantee only.
+  - **resolved**: Inject a subscribe failure — User chose option 1: add a test that forces the per-directory subscribe call to fail through an optional injectable subscribe function on the Watcher (default: the real @parcel/watcher subscribe), and verify the warning, the kept scan and the no-throw guarantee. This is a small production parameter beyond the approved contract's listed signatures; the plan carries it as an explicit task. _(2026-10-27T07:51:44.817Z)_
 
 ## Citations
 

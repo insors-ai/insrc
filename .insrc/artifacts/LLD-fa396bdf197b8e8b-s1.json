@@ -99,6 +99,13 @@
         "choice": "Revise ISSUE before planning",
         "rationale": "User chose option 1. The issue stage cannot revise in place, so the corrected record is ISSUE-75eaf053e7b7cddd (approved 2026-10-27, no follow-on chain started). The approved LLD and this plan stay under epic fa396bdf197b8e8b; the old ISSUE-fa396bdf197b8e8b stays on the ledger with its inaccurate text and is superseded by the new one.",
         "resolvedAt": "2026-10-27T07:50:02.403Z"
+      },
+      "q467e7938": {
+        "question": "No test forces the per-directory subscribe call itself to fail; the unreadable-directory test covers the scan and the no-throw guarantee only.",
+        "status": "resolved",
+        "choice": "Inject a subscribe failure",
+        "rationale": "User chose option 1: add a test that forces the per-directory subscribe call to fail through an optional injectable subscribe function on the Watcher (default: the real @parcel/watcher subscribe), and verify the warning, the kept scan and the no-throw guarantee. This is a small production parameter beyond the approved contract's listed signatures; the plan carries it as an explicit task.",
+        "resolvedAt": "2026-10-27T07:51:44.817Z"
       }
     }
   },

@@ -504,6 +504,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
 
 - `q4cbb87cb` — cd1 (partial): commitAndPushArtifactsViaRegistry, tracker.sync, team.refresh, team.claim, team.release and the replacement-table module are new names this Story creates; the table module's file path and the exact tool or op for each of the 38 wrappers (for example ghFindProjectByTitle, ghAddProjectSingleSelectField, ghEnsureMilestone) are fixed in the tasks.
   - **resolved**: Task-defined mapping — The LLD lists every row; the plan's first task fixes the table file path. _(2026-10-27T14:35:51.497Z)_
+- `qfac4af4e` — ep3 (partial): only the old-wrappers and async-port invariants are directly shown by s1 bundles; the others rest on epic constraints k2 to k5.
+  - **resolved**: Plan explicit verification — One task checks the invariants resting on k2-k5 against the code. _(2026-10-27T14:38:04.394Z)_
 
 ## Citations
 

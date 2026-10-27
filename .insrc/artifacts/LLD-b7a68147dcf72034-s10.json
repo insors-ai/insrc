@@ -97,6 +97,13 @@
         "choice": "Task-defined mapping",
         "rationale": "The LLD lists every row; the plan's first task fixes the table file path.",
         "resolvedAt": "2026-10-27T14:35:51.497Z"
+      },
+      "qfac4af4e": {
+        "question": "ep3 (partial): only the old-wrappers and async-port invariants are directly shown by s1 bundles; the others rest on epic constraints k2 to k5.",
+        "status": "resolved",
+        "choice": "Plan explicit verification",
+        "rationale": "One task checks the invariants resting on k2-k5 against the code.",
+        "resolvedAt": "2026-10-27T14:38:04.394Z"
       }
     }
   },

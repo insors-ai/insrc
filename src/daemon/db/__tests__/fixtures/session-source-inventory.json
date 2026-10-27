@@ -12910,10 +12910,6 @@
           "log.warn"
         ],
         [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "provider-backend",
           "ollama.list"
         ],
@@ -13054,9 +13050,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 185,
-      "sitesDigest": "17e10c1df726588eb5127e903f794144f145325fdfd8e37af76c8af2709e1a08",
-      "sourceDigest": "55ea08d82de8eae018f4c0d653c47d45260d5ae1700500ab51cdf9cd83f244b7",
+      "siteCount": 184,
+      "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
+      "sourceDigest": "0d103f46b2ba5c4e7d437c72f7b2f0bee144a0c702430c8fd40694e45f90fd1d",
       "boundaries": [
         "diagnostic",
         "filesystem-read",

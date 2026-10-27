@@ -225,6 +225,8 @@ function withDeadline(job: ReviewPipelineJob, now: number | undefined): ReviewPi
 	const executionStartedAt = job.executionStartedAt ?? (count > 0 ? now : undefined);
 	if (executionStartedAt === undefined) return job;
 	const deadlineBudgetMs = REVIEW_WORK_UNIT_MS * count;
+	const ids = new Set(job.workUnits.map(unit => unit.id));
+	if (ids.size !== job.workUnits.length || !Number.isSafeInteger(job.workSeq) || job.workSeq < job.workUnits.length || !Number.isSafeInteger(executionStartedAt) || !Number.isSafeInteger(executionStartedAt + deadlineBudgetMs) || job.workUnits.some(unit => unit.parentId !== undefined && (!ids.has(unit.parentId) || unit.parentId === unit.id))) throw new ReviewBudgetError('invalid-budget-policy');
 	return { ...job, executionStartedAt, deadlineBudgetMs, deadlineAt: executionStartedAt + deadlineBudgetMs };
 }
 function assertDeadline(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number): void {
@@ -254,7 +256,7 @@ export function nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown
 /** The adapter's (today's) time-limit error, else ReviewSessionTimeoutError. */
 export function deadlineError(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): Error {
 	const budget = job.deadlineBudgetMs ?? 0;
-	return adapter.deadlineError?.(budget) ?? new ReviewSessionTimeoutError(budget);
+	return Object.assign(adapter.deadlineError?.(budget) ?? new ReviewSessionTimeoutError(budget), { timeoutKind: 'review-job', limitMs: budget });
 }
 
 /**
@@ -414,18 +416,25 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	const stage = currentStage(job, adapter);
 	if (stage.kind !== 'deterministic' || stage.run === undefined) throw new Error(`review ${job.dimension}: stage ${stage.id} is a model stage; its calls are made, not run`);
 	throwIfAborted(opts.signal);
+	const deadlineController = new AbortController();
+	const signal = opts.signal === undefined ? deadlineController.signal : AbortSignal.any([opts.signal, deadlineController.signal]);
+	const remaining = job.deadlineAt === undefined ? undefined : job.deadlineAt - (opts.now?.() ?? Date.now());
+	const timer = remaining === undefined ? undefined : setTimeout(() => deadlineController.abort(), remaining);
 	let output: unknown;
 	let next = job;
 	try {
 		// Raced against the signal: a stage that ignores it cannot hold the review past a cancel.
-		output = await untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal);
+		output = await untilAborted(stage.run(job.outputs, job.snapshot, signal), signal);
 	} catch (err) {
 		throwIfAborted(opts.signal);
+		if (deadlineController.signal.aborted) throw deadlineError(job, adapter);
 		if (err instanceof Error && err.name === 'AbortError') throw err;
 		const detail = err instanceof Error ? err.message : String(err);
 		if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, 'stage-error', detail);
 		next = { ...job, notJudged: [...job.notJudged, { stage: stage.id, key: stage.id, cause: 'stage-error', detail, policy: stage.onCallFailure }] };
 		output = undefined;
+	} finally {
+		if (timer !== undefined) clearTimeout(timer);
 	}
 	throwIfAborted(opts.signal);
 	const completedAt = opts.now?.() ?? Date.now();

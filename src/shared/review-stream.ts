@@ -24,6 +24,12 @@ export type ReviewStreamFailure =
 	| 'aborted';
 
 export class ReviewStreamError extends Error {
+	get timeoutKind(): 'external-review-transport' | 'external-review-idle' | 'review-freshness' | undefined {
+		if (this.reason === CEILING_TIMEOUT) return 'external-review-transport';
+		if (this.reason === IDLE_TIMEOUT) return 'external-review-idle';
+		if (this.reason === 'freshness-timeout') return 'review-freshness';
+		return undefined;
+	}
 	constructor(
 		readonly failure: ReviewStreamFailure,
 		message: string,

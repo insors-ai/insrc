@@ -7,7 +7,7 @@ import type { ReviewBudgetBreakdown } from '../../shared/review-budget.js';
 import type { ReviewCall, ReviewPipelineJob } from './types.js';
 
 export type ReviewCallOutcome = 'start' | 'success' | 'failure' | 'cancel' | 'refused';
-export type ReviewCallErrorCode = 'budget-refused' | 'invalid-answer' | 'size-refusal' | 'stall' | 'transient' | 'timeout' | 'cancelled' | 'call-failed';
+export type ReviewCallErrorCode = 'budget-refused' | 'invalid-answer' | 'size-refusal' | 'stall' | 'transient' | 'timeout' | 'cancelled' | 'call-failed' | 'attempt-timeout' | 'job-timeout';
 export interface ReviewCallEvent {
 	readonly event: ReviewCallOutcome;
 	readonly reviewId?: string | undefined;

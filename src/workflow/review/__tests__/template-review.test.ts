@@ -32,6 +32,10 @@ afterAll(async () => {
 	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
 });
 
+import { designReviewSnapshot, templateAdapter } from '../../review-pipeline/design-review.js';
+import { createTestReviewJob } from '../../review-pipeline/__tests__/test-budget.js';
+import { nextCalls } from '../../review-pipeline/job.js';
+import { REVIEW_CALL_LIMITS } from '../call-limits.js';
 import { CliStallError } from '../../../agent/providers/cli-provider.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { artifactJsonPath } from '../../storage.js';
@@ -285,6 +289,22 @@ test('T16 the first session gets the whole limit, and the limit defaults by inte
 });
 
 test('role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time', async () => {
+	const snapshot = designReviewSnapshot(DESIGN);
+	assert.equal(REVIEW_CALL_LIMITS['code-review'].timeoutMs, 600_000);
+	for (const complexity of ['issue', 'feature', 'epic'] as const) {
+		const cap = reviewDeadlineMs(complexity, DEFAULT_DESIGN_REVIEW_SETTINGS);
+		assert.equal(cap, ({ issue: 12, feature: 18, epic: 24 })[complexity] * MIN);
+		const options = { template: SPEC, stage: 'design.story', repo: '/repo', limitMs: cap, timedOut: (ms: number) => new Error(`total ${ms}`) };
+		const base = templateAdapter(snapshot, options);
+		// Exercise real template envelopes/caps for five independently required source requests.
+		const prompts = Array.from({ length: 5 }, (_, i) => templateAdapter(designReviewSnapshot(`${DESIGN}\nSource ${i}`), options).stagesFor('daemon')[0]!.singleCalls({}, snapshot)[0]!);
+		const adapter = { ...base, stagesFor: () => [{ ...base.stagesFor('daemon')[0]!, singleCalls: () => prompts }] };
+		const job = createTestReviewJob(adapter, 'daemon', snapshot, 384_000, { now: 1000 });
+		assert.equal(job.pending.length, 5);
+		assert.equal(job.deadlineBudgetMs, 50 * MIN);
+		for (const call of nextCalls(job, adapter, 1000)) assert.equal(call.execution.mode === 'reviewer-session' ? call.execution.deadlineMs : 0, cap);
+	}
+
 	const f = fakeProvider([answer(SPEC)]);
 	await run(f, { deadlineMs: 45 * MIN });
 	assert.equal(f.sessions[0]!.deadlineMs, 10 * MIN);

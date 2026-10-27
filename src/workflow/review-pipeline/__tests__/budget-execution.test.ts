@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { test } from 'node:test';
+import { ReviewStreamError } from '../../../shared/review-stream.js';
 import { withReviewExecutionCeiling } from '../../../shared/review-execution-time.js';
 import assert from 'node:assert/strict';
 import type { LLMProvider, StructuredSchema } from '../../../shared/types.js';
@@ -84,6 +85,9 @@ test('successful failed and cancelled calls have exactly one content-free termin
 
 test('effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced', async () => {
 	const { profile, adapter, job } = fixture();
+	assert.equal(new ReviewStreamError('timeout', 'wait', 'ceiling').timeoutKind, 'external-review-transport');
+	assert.equal(new ReviewStreamError('timeout', 'wait', 'idle').timeoutKind, 'external-review-idle');
+	assert.equal(new ReviewStreamError('daemon-error', 'wait', 'freshness-timeout').timeoutKind, 'review-freshness');
 	let sends = 0;
 	let observed: AbortSignal | undefined;
 	const provider = {
@@ -105,4 +109,12 @@ test('effective attempt timer remaining-time clamp and transport-ceiling diagnos
 	const remaining = { ...limited, deadlineAt: Date.now() + 12 };
 	await assert.rejects(runReviewJob(remaining, adapter, provider), /time|limit/i);
 	assert.equal(sends, 2);
+	let deterministicSignal: AbortSignal | undefined;
+	const blocked = { ...adapter, stagesFor: () => [{ id: 'blocked', kind: 'deterministic' as const, after: [], singleCalls: () => [], chunkCalls: () => [], onCallFailure: 'record-observation' as const,
+		run: async (_outputs: unknown, _snapshot: unknown, signal?: AbortSignal) => { deterministicSignal = signal; return new Promise(() => {}); } }] };
+	const events: ReviewCallEvent[] = [];
+	await assert.rejects(runReviewJob({ ...job, stage: 'blocked', pending: [], deadlineAt: Date.now() + 12 }, blocked, provider), e => (e as { timeoutKind: string }).timeoutKind === 'review-job');
+	assert.equal(deterministicSignal?.aborted, true, 'deadline cancels deterministic tool waits');
+	await assert.rejects(runReviewJob(limited, adapter, provider, { onCallEvent: e => events.push(e) }), e => (e as { timeoutKind: string }).timeoutKind === 'review-attempt');
+	assert.equal(events.at(-1)?.errorCode, 'attempt-timeout');
 });

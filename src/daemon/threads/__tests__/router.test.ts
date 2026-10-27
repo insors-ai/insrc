@@ -176,3 +176,19 @@ test('requests held for a class that stops being routed are served in this threa
 	await new Promise(r => setTimeout(r, 20));
 	assert.deepEqual(replies, [{ kind: 'reply', requestId: 'h1', result: { local: 1 } }], 'served here at once, not after the hold');
 });
+
+test('a unary request cancelled while held for a worker ends its activity: the request-ended callback runs, so idle maintenance is not blocked for good', async () => {
+	const registry = new (await import('../registry.js')).TargetRegistry();
+	let inFlight = 0;
+	const router = new Router({
+		classOf, registry, routed: new Set(['admin']), local: directDispatch({}), holdMs: 10_000,
+		onRequest: () => { inFlight++; let ended = false; return () => { if (!ended) { ended = true; inFlight--; } }; },
+	});
+	const replies: unknown[] = [];
+	// No admin worker is registered: the request is held.
+	const cancel = router.forward({ kind: 'request', requestId: 'held-1', method: 'x.echo', params: {}, stream: false }, e => replies.push(e));
+	assert.equal(inFlight, 1);
+	cancel();   // its socket closed while it was held
+	assert.equal(inFlight, 0, 'the held request no longer counts as activity');
+	assert.deepEqual(replies, [], 'no reply for a cancelled request');
+});

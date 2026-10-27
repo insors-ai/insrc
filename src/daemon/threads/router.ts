@@ -100,6 +100,8 @@ export class Router {
 		let finished = false;
 		const finish = (): void => { if (!finished) { finished = true; ended?.(); } };
 		if (request.lifetime) void Promise.all([request.lifetime.completed, request.lifetime.drained]).then(finish);
+		// A request cancelled while still held for a worker gets no reply: its activity ends at the cancel.
+		const dropped = (): void => { if (!request.lifetime) finish(); };
 		const cancel = this.dispatch(cls, request, envelope => {
 			try { deliver(envelope); }
 			finally {
@@ -111,16 +113,16 @@ export class Router {
 					if (!request.lifetime && (stream === 'done' || stream === 'error')) finish();
 				}
 			}
-		});
+		}, dropped);
 		return () => { if (request.stream && !request.lifetime) finish(); cancel(); };
 	};
 
-	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
-		return this.hold(cls, request, deliver);
+		return this.hold(cls, request, deliver, dropped);
 	}
 
 	/**
@@ -220,7 +222,7 @@ export class Router {
 		return () => this.cancel(threadId, request);
 	}
 
-	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
+	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		const held: Held = {
 			cls, request, deliver, cancelled: false,
 			timer: setTimeout(() => {
@@ -239,6 +241,7 @@ export class Router {
 			request.lifetime?.abort();
 			request.lifetime?.complete();
 			this.release(held);
+			dropped();
 		};
 	}
 

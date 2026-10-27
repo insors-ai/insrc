@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793044650921-pb200o",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-26T19:57:30.921Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 43575,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s6",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s6",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/config/__tests__/gateway.test.ts",
+        "vscode-plugin/src/config/gateway.ts",
+        "vscode-plugin/src/config/types.ts",
+        "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+        "vscode-plugin/src/daemon/commands.ts",
+        "vscode-plugin/package.json",
+        "vscode-plugin/scripts/sync-manifest-catalog.mjs",
+        "vscode-plugin/src/config/__tests__/key-map.test.ts",
+        "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+        "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+        "vscode-plugin/src/config/key-map.ts",
+        "vscode-plugin/src/models/__tests__/tier-effort.test.ts",
+        "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts",
+        "vscode-plugin/src/config/sync-engine.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/models/definitions.ts",
+        "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+        "vscode-plugin/src/models/model-tier-picker.ts",
+        "vscode-plugin/src/vscode.d.ts",
+        "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+        "vscode-plugin/src/panels/repo-config.ts",
+        "vscode-plugin/src/panels/types.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/ux-mock.html",
+            "message": "no registered diagram handler for companion type 'ux' ('UX mock') — not judged in this Story",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "ux",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1792924917927-2y1e5h`
 **HLD effective hash:** `c324f041e3e7...`
 
-In VS Code, 'insrc: Set model tier' offers exactly the families, models and effort levels the daemon's model definitions list, and saves a tier as one whole { runner, model, effort } value. A model id the family does not list is checked through its CLI by the daemon; the user sees each effort level's verdict and evidence, and the tier is saved only after they approve and the daemon restarts. The Repo Configuration panel lets a repo choose only which tier each role uses and its core floor. Refusals and 'restart to apply' come from the daemon and are shown with a Restart action — in the picker, the panel and native settings sync alike; the extension no longer carries a runner, model or effort list, or a copy of the settings catalog, and tier settings leave the VS Code Settings UI.
+In VS Code, the valid tier settings come from the daemon's model definitions. 'insrc: Set model tier' offers exactly the families, models and effort levels the definitions list and saves a tier as one whole { runner, model, effort } value. The insrc.models.tiers.* settings stay in the VS Code Settings UI, with no built-in option list: an edit there is checked against the daemon's definitions and saved as the whole tier, or reverted with the reason. A model id the family does not list is checked through its CLI by the daemon via 'insrc: Set model tier'; the user sees each effort level's verdict and evidence, and the tier is saved only after they approve and the daemon restarts. The Repo Configuration panel lets a repo choose only which tier each role uses and its core floor. Refusals and 'restart to apply' come from the daemon and are shown with a Restart action — in the picker, the panel and native settings sync alike; the extension no longer carries a runner, model or effort list, or a copy of the settings catalog.
 
 ## Contents
 
@@ -23,7 +23,6 @@ In VS Code, 'insrc: Set model tier' offers exactly the families, models and effo
 9. [Alternatives considered](#9-alternatives-considered)
 10. [UX](#10-ux)
 11. [References](#11-references)
-12. [Open questions](#12-open-questions)
 
 ## 1. HLD context
 
@@ -129,13 +128,13 @@ buildConfigKeyMap(manifest: ManifestConfiguration = MANIFEST_CONFIGURATION): Con
 **Parameters:**
 - `manifest: ManifestConfiguration` _(optional)_ — The contributes.configuration properties of the extension's package.json (bundled as JSON), default the real manifest; tests pass a fixture.
 
-**Returns:** `ConfigKeyMap` — One entry per insrc.<path> property of the manifest except the plugin-local keys (isPluginLocalKey: insrc.chat.* and insrc.models.tasks.*, the same rule the manifest generator uses — the generator imports the predicate from key-map.ts so the two cannot drift; buildPerRoleKeyMap still builds the per-role entries), with a ConfigOption built from the property's type, enum and default (a string with enum -> 'enum', boolean, number, string), so the sync engine's validation keeps working. key-map.ts no longer imports src/config/config-catalog.ts; MERGED_KEY_MAP and CONFIG_KEY_MAP keep their shape.
+**Returns:** `ConfigKeyMap` — One entry per insrc.<path> property of the manifest except the plugin-local keys (isPluginLocalKey: insrc.chat.* and insrc.models.tasks.*, the same rule the manifest generator uses — the generator imports the predicate from key-map.ts so the two cannot drift; buildPerRoleKeyMap still builds the per-role entries), with a ConfigOption built from the property's type, enum and default (a string with enum -> 'enum', boolean, number, string; the tier rows are plain strings with no enum, validated against the definitions by the sync engine instead), so the sync engine's validation keeps working. key-map.ts no longer imports src/config/config-catalog.ts; MERGED_KEY_MAP and CONFIG_KEY_MAP keep their shape.
 
 **Preconditions:**
 - package.json is generated from the catalog at build time (vscode-plugin/scripts/sync-manifest-catalog.mjs), so it carries every row the sync engine maps.
 
 **Postconditions:**
-- No entry maps a models.tiers.* key or a plugin-local key.
+- No entry maps a plugin-local key; the models.tiers.* keys are mapped as plain string options.
 
 ### 2.6 `restartDaemonAndReport`
 
@@ -157,28 +156,31 @@ restartDaemonAndReport(deps: { controller: DaemonLifecycleController; status: St
 ### 2.7 `createConfigSyncEngine`
 
 ```typescript
-createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine  // vscode-plugin/src/config/sync-engine.ts; ConfigSyncDeps gains onRestartRequired(keys: readonly string[]): void
+createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine  // vscode-plugin/src/config/sync-engine.ts; ConfigSyncDeps gains onRestartRequired(keys: readonly string[]): void and definitions(): Promise<ModelDefinitionsResult>
 ```
 
 **Parameters:**
-- `deps: ConfigSyncDeps` — As today (gateway, settings, notifier, keyMap) plus onRestartRequired, bound in vscode-plugin/src/extension.ts to an information message '<keys> saved — restart the daemon to apply' with a 'Restart daemon' action that calls restartDaemonAndReport.
+- `deps: ConfigSyncDeps` — As today (gateway, settings, notifier, keyMap) plus definitions() (models.definitions over the shared client) and onRestartRequired, bound in vscode-plugin/src/extension.ts to an information message '<keys> saved — restart the daemon to apply' with a 'Restart daemon' action that calls restartDaemonAndReport.
 
-**Returns:** `ConfigSyncEngine` — applyChanges keeps validation, last-synced echo suppression and revert-on-refusal; a refusal now reads 'insrc: daemon rejected '<key>' — <reason>' plus ' — <detail>' when the daemon gives one; after a batch, if any accepted write reported restartRequired, onRestartRequired is called ONCE with those native keys (e.g. a per-role tier or coreFloor change).
+**Returns:** `ConfigSyncEngine` — applyChanges keeps validation, last-synced echo suppression and revert-on-refusal for every key. A change to insrc.models.tiers.<tier>.runner / .model / .effort is handled as a TIER edit: the engine reads the tier's three native values (the changed one plus the other two as currently set), fetches models.definitions, and checks them: the runner is a family of the answer; the model is an id or alias of that family (canonicalised), or empty, in which case the family's default for the tier is used (tierDefaults[tier], else the tool-loop model, else its first model) and an effort the new model does not take is dropped to ''; the effort is '' or one the model accepts. A valid tier is written ONCE with writeKeyPath(['models','tiers',tier], { runner, model, effort }) and the native keys are updated to the written values (echo-suppressed); an invalid one writes nothing and the changed key is reverted with a message naming the problem — an unlisted model of a CLI family says to run 'insrc: Set model tier' to check it, and an unlisted Ollama model says only listed Ollama models can be used. Several tier keys of one tier changed in a batch make one write. A refusal reads 'insrc: daemon rejected '<key>' — <reason>' plus ' — <detail>'; after a batch, if any accepted write reported restartRequired, onRestartRequired is called ONCE with those native keys.
 
 **Errors:**
-- `notifier.error` when refusals and unreachable-daemon writes, as today, with the daemon's detail added.
+- `notifier.error + revert` when a tier edit that fails validation; models.definitions rejecting (daemon not running / older daemon / other error, classified as in runSetModelTier); a config.write refusal or unreachable daemon, as today, with the daemon's detail added.
 
 **Postconditions:**
+- No native write sets part of a tier, an unserved model or an effort the model does not take.
 - No restartRequired answer from a native-settings write is dropped silently.
 
 ## 3. Data model changes
 
-### 3.1 `VS Code native settings manifest (package.json contributes.configuration)` — field-remove
+### 3.1 `VS Code native settings manifest (package.json contributes.configuration)` — field-modify
 
-vscode-plugin/scripts/sync-manifest-catalog.mjs skips the catalog's models.tiers.<tier>.runner / .model / .effort rows, so insrc.models.tiers.* leave the manifest and the Settings UI; every other row is generated as before. Values a user already has under insrc.models.tiers.* in settings.json are no longer read or written (VS Code shows them as unknown); the tiers in ~/.insrc/config.json are unchanged.
+vscode-plugin/scripts/sync-manifest-catalog.mjs still generates the catalog's models.tiers.<tier>.runner / .model / .effort rows but without an enum list or a model-name default (default '' = the definitions' default for the tier; the description says the valid values come from the daemon and an unlisted model is checked with 'insrc: Set model tier'). The keys stay in the Settings UI. Every other row is generated as before. Values a user already has under insrc.models.tiers.* in settings.json keep syncing.
 
 ```
-- insrc.models.tiers.{core,mid,cheap}.{runner,model,effort}
+insrc.models.tiers.{core,mid,cheap}.runner: - enum ['cli-claude','cli-codex','ollama'], default 'cli-claude' -> default ''
+insrc.models.tiers.{core,mid,cheap}.model: default 'opus'|'sonnet'|'haiku' -> default ''
+insrc.models.tiers.{core,mid,cheap}.effort: - enum ['', 'low', ... 'ultra'] (default stays '')
 ```
 
 **Call sites:**
@@ -281,6 +283,14 @@ ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG look
   - Detection: The rpc rejects with a message that is neither 'daemon is not running…', a DaemonDisconnectedError (code 'disconnected'), nor 'unknown method: …'.
   - Response: notify 'insrc: <what> failed: <error text>' with no update or start advice; nothing is written.
   - User impact: The user sees the real error instead of misleading advice.
+- **A native tier setting is edited to a value the definitions do not serve (an unknown runner, a model not of that family, an effort the model does not take).** (recoverable)
+  - Detection: The sync engine's tier check against the models.definitions answer fails before any write.
+  - Response: Revert the changed key to its last synced value and notify the problem; an unlisted CLI model points to 'insrc: Set model tier' to check and approve it.
+  - User impact: Settings cannot save an invalid tier; the user is told how to get an unlisted model approved.
+- **A native tier setting is edited while the daemon is not running (definitions cannot be read).** (recoverable)
+  - Detection: definitions() rejects in the sync engine's tier check.
+  - Response: Revert the changed key and notify 'the daemon is not running — start it to change model tiers' (or the classified error).
+  - User impact: No unvalidated tier is written.
 
 **Edge cases**
 
@@ -291,9 +301,10 @@ ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG look
 | The chosen model does not accept the tier's current effort. | The effort step offers only '' and the model's efforts with none marked current; the whole-tier write carries the chosen value. |
 | The user types an alias of a listed model in 'Enter another model id…'. | It resolves to the canonical id and is saved as a normal pick, with no check. |
 | The answer's family list is empty or a family lists no models. | 'No models available' with Refresh (re-reads models.definitions); nothing is written. |
-| A user's settings.json still has insrc.models.tiers.* values. | They are ignored by the extension (no longer in the manifest or the key map); config.json's tiers are unchanged. |
 | A repo with no byRepo entry is opened in the panel. | Every role shows 'global' and coreFloor 'global'; the first change creates models.byRepo.<repo>.tasks.<role> (or coreFloor) only. |
 | A repo path or role id containing dots. | Written as single literal segments via the array form, as today. |
+| In Settings the user changes only a tier's runner (the model and effort still name the old family's values). | The model is not of the new family, so the engine uses the new family's default for the tier and drops an effort it does not take; the whole tier is written once and the three native keys are updated to the written values. |
+| A user's settings.json already has insrc.models.tiers.* values from before. | They keep syncing; on the next pull the native keys show config.json's tiers (empty means the definitions' default). |
 
 **Invariants to preserve**
 
@@ -313,19 +324,19 @@ ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG look
   - Subjects: `vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's families, its models (with aliases, '(user-approved)' and '(not installed)' marks) and '' plus the chosen model's efforts; a pick makes ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }); an Ollama family offers no 'Enter another model id…'; a typed alias resolves to the canonical id and saves without a check; a stale configured model is marked and not selectable; a refusal shows '<reason> — <detail>' and restartRequired offers 'Restart daemon'; definitions rejecting with 'daemon is not running', a DaemonDisconnectedError, 'unknown method: models.definitions' and a plain handler error each give their own message (only the unknown-method one says to update the daemon) and write nothing`, `vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: unknown model — an unserved CLI id calls check with the family's effort names, shows each level's verdict and evidence, offers only non-rejected levels; Approve calls approve with the chosen levels and writes nothing; the tier is written only after restartDaemon() resolves true; a failed restart writes nothing and a retry does not approve again; Reject calls reject and writes nothing; runs:false or { error } offers no Approve; unknown-check offers 'Check again'; a disconnected approve reports 'outcome unknown'`, `vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config (source scan)`
   - Fixtures: `A fake ModelDefinitionsResult with families 'cli-claude' and 'cli-codex' plus an Ollama family, model ids unlike the shipped file (fx-a, fx-b with alias xb, loc:1), one user-approved and one not-installed model`, `Scripted fake check / approve / reject / restart seams that record calls`
 - **unit** — The Repo Configuration panel and its write handler, the gateway's write result, and the key map built from the manifest.
-  - Subjects: `vscode-plugin/src/panels/__tests__/repo-config.test.ts: the rendered form has a select per taxonomy role (global / core / mid / cheap, preselected from tasks) and a coreFloor select, and no runner, model, effort or tiers field; the handler writes ['models','byRepo',repo,'tasks',roleId] and ['models','byRepo',repo,'coreFloor'] after consent, drops a ['tiers', …] write without prompting, shows a refusal's reason and detail, and calls offerRestart on restartRequired`, `vscode-plugin/src/config/__tests__/gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }`, `vscode-plugin/src/config/__tests__/key-map.test.ts: buildConfigKeyMap over a manifest fixture yields one entry per insrc.<path> row with type / enum / default taken from the manifest, and none for models.tiers.*; key-map.ts does not import src/config/config-catalog.ts`
-- **contract** — The manifest stays in lock-step with the settings catalog minus the tier rows, and the bundle no longer carries the catalog.
-  - Subjects: `vscode-plugin/src/config/__tests__/manifest-catalog.test.ts: package.json contributes every catalog row except models.tiers.*, with the catalog's type, default and enum`, `vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts: the committed manifest is in sync with the generator (which skips the tier rows) and the generator is idempotent`, `vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts: the extension type-checks and bundles, and the bundle contains no settings-catalog rows (no models.tiers.<tier>.runner default or effort enum) and no models definitions file`
+  - Subjects: `vscode-plugin/src/panels/__tests__/repo-config.test.ts: the rendered form has a select per taxonomy role (global / core / mid / cheap, preselected from tasks) and a coreFloor select, and no runner, model, effort or tiers field; the handler writes ['models','byRepo',repo,'tasks',roleId] and ['models','byRepo',repo,'coreFloor'] after consent, drops a ['tiers', …] write without prompting, shows a refusal's reason and detail, and calls offerRestart on restartRequired`, `vscode-plugin/src/config/__tests__/gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }`, `vscode-plugin/src/config/__tests__/key-map.test.ts: buildConfigKeyMap over a manifest fixture yields one entry per insrc.<path> row with type / enum / default taken from the manifest, and the models.tiers.* keys as plain strings without enum; no entry for insrc.chat.* or the per-role keys from the manifest; key-map.ts does not import src/config/config-catalog.ts`
+- **contract** — The manifest stays in lock-step with the settings catalog (tier rows without enum or model default), and the bundle no longer carries the catalog.
+  - Subjects: `vscode-plugin/src/config/__tests__/manifest-catalog.test.ts: package.json contributes every catalog row with the catalog's type, default and enum, except that the models.tiers.* rows carry no enum and default ''`, `vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts: the committed manifest is in sync with the generator (tier rows without enum or model default) and the generator is idempotent`, `vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts: the extension type-checks and bundles, and the bundle contains no settings-catalog rows (no models.tiers.<tier>.runner default or effort enum) and no models definitions file`
 - **integration** — The native settings sync still works with the manifest-built key map.
   - Subjects: `vscode-plugin/src/config/__tests__/sync-engine.test.ts and per-role-engine.test.ts keep passing over their fixture key maps (engine behaviour); the production map is covered by manifest-key-map-engine.test.ts`
 - **integration** — The native sync engine over the REAL manifest-built merged key map, and the restart adapter.
-  - Subjects: `vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts: createConfigSyncEngine with MERGED_KEY_MAP (built from the real package.json) and a fake gateway: a global key write and a per-role write reach config.write at the right path; insrc.models.tiers.* and insrc.chat.* changes are not mapped and write nothing; an out-of-enum value is refused and reverted; a write answering restartRequired calls onRestartRequired once for the batch; a refusal's message carries the daemon's detail`, `vscode-plugin/src/daemon/__tests__/commands.test.ts: restartDaemonAndReport resolves true only for { ok:true, state:'running' }, false for not-ok, a stopped or errored state, or a rejecting controller, and reflects the result on the status surface like the restart command`
+  - Subjects: `vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts: createConfigSyncEngine with MERGED_KEY_MAP (built from the real package.json) and a fake gateway: a global key write and a per-role write reach config.write at the right path; insrc.chat.* changes are not mapped and write nothing; a native tier edit to a served model writes ONE whole tier at ['models','tiers',tier]; a runner-only change writes the new family's default model and drops an untaken effort; an unserved model, a wrong-family model or an untaken effort is reverted with its message and writes nothing; definitions rejecting reverts the edit; an out-of-enum value is refused and reverted; a write answering restartRequired calls onRestartRequired once for the batch; a refusal's message carries the daemon's detail`, `vscode-plugin/src/daemon/__tests__/commands.test.ts: restartDaemonAndReport resolves true only for { ok:true, state:'running' }, false for not-ok, a stopped or errored state, or a rejecting controller, and reflects the result on the status surface like the restart command`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and each pick writes the whole tier`, `model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config`, `key-map.test.ts: no entry for models.tiers.* and no import of the settings catalog`, `manifest-catalog.test.ts: the manifest contributes no models.tiers.* keys`, `vscode-bundle-catalog.test.ts: the bundle contains no settings-catalog rows or definitions file`, `manifest-key-map-engine.test.ts: tier keys are not mapped by the real merged key map and write nothing` |
+| `ac1` | `model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and each pick writes the whole tier`, `model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config`, `key-map.test.ts: tier keys mapped as plain strings and no import of the settings catalog`, `vscode-bundle-catalog.test.ts: the bundle contains no settings-catalog rows or definitions file`, `manifest-catalog.test.ts: the tier rows carry no enum and no model-name default`, `manifest-key-map-engine.test.ts: a native tier edit is validated against the fake definitions and written whole; an unserved value is reverted` |
 | `ac2` | `model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after approval and a successful restart; reject writes nothing; runs:false offers no approve`, `commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again` |
 | `ac3` | `repo-config.test.ts: the form has role tier selects and coreFloor only, and the handler drops any tiers write` |
 
@@ -333,7 +344,7 @@ ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG look
 
 **State before:** The VS Code picker keeps its own runner list and reads tier defaults and effort values from the bundled settings catalog, lists models per provider through providers.listModels and writes a tier field by field (vscode-plugin/src/models/model-tier-picker.ts:25, :74, :198, :285). The bundle imports src/config/config-catalog.ts at run time for the native-settings key map (vscode-plugin/src/config/key-map.ts:12), and the manifest contributes insrc.models.tiers.<tier>.runner/.model/.effort with static enums and model defaults. The gateway drops config.write's reason, detail and restartRequired (vscode-plugin/src/config/gateway.ts:42). The Repo Configuration panel edits per-repo tiers.<tier>.{runner,model}, which the daemon now refuses (vscode-plugin/src/panels/repo-config.ts:93).
 
-**State after:** The picker offers only what models.definitions lists, runs the check / approve / restart flow for an unlisted Claude or Codex id, and writes each tier whole. The bundle imports no settings catalog: the key map is built from the extension's manifest, which no longer contributes the tier keys. Write results carry the daemon's reason, detail and restartRequired, with a Restart action. The Repo Configuration panel offers a tier per role and the core floor only.
+**State after:** The picker offers only what models.definitions lists, runs the check / approve / restart flow for an unlisted Claude or Codex id, and writes each tier whole. The bundle imports no settings catalog: the key map is built from the extension's manifest, which keeps the tier keys without a built-in option list; native tier edits are checked against models.definitions and written whole. Write results carry the daemon's reason, detail and restartRequired, with a Restart action. The Repo Configuration panel offers a tier per role and the core floor only.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
@@ -341,19 +352,19 @@ ModelProvider union, PROVIDERS list, ModelListResult and the CONFIG_CATALOG look
 
 1. Carry config.write's restartRequired, reason and detail through the gateway's ConfigWriteResult; existing callers keep reading ok and reason. — ↩ rollbackable
 2. Add restartDaemonAndReport beside the lifecycle commands, add onRestartRequired to the sync engine's deps and the daemon's refusal detail to its messages, and bind both in extension.ts. — ↩ rollbackable
-3. Build the native-settings key map from the manifest's contributed properties instead of the bundled catalog; stop generating the models.tiers.* rows in the manifest and regenerate package.json; update the manifest / bundle contract tests. — ↩ rollbackable
+3. Build the native-settings key map from the manifest's contributed properties instead of the bundled catalog; generate the models.tiers.* rows without enum or model-name default and regenerate package.json; route native tier edits in the sync engine through a check against models.definitions and a whole-tier write; update the manifest / bundle contract tests. — ↩ rollbackable
 4. Move the model-tier picker onto models.definitions with whole-tier writes and the unknown-model check flow; bind the new seams (definitions, check, approve, reject, restart, input, actioned notify) in extension.ts and extend the vscode.d.ts stub with showInputBox and canPickMany; remove the bundled-effort test. — ↩ rollbackable
 5. Replace the Repo Configuration panel's per-repo tier inputs with role tier and coreFloor selects; the write handler accepts only tasks and coreFloor segments and offers a restart on restartRequired. — ↩ rollbackable
 
-**Backward compat:** No daemon request or config shape changes; config.json keeps the same models.tiers objects (now written whole) and byRepo tasks / coreFloor. Users with insrc.models.tiers.* in their VS Code settings.json see those keys reported as unknown and no longer synced; the tiers in ~/.insrc/config.json, which the daemon uses, are unchanged and are edited with 'insrc: Set model tier'. The extension now needs a daemon that serves models.definitions / models.check (s2, s4): against an older daemon the picker says to update the daemon and writes nothing. Native settings other than the tier keys sync exactly as before.
+**Backward compat:** No daemon request or config shape changes; config.json keeps the same models.tiers objects (now written whole, from the picker and from Settings) and byRepo tasks / coreFloor. The insrc.models.tiers.* settings stay in VS Code Settings and existing values keep syncing; they lose their dropdowns (now free strings validated against the daemon), and an invalid edit is reverted instead of saved. The extension needs a daemon that serves models.definitions / models.check (s2, s4): against an older daemon the picker and native tier edits say to update the daemon and write nothing. Native settings other than the tier keys sync exactly as before.
 
 ## 9. Alternatives considered
 
-### 9.1 a1: Picker and panel on the daemon; tier keys leave native settings; key map from the manifest — **CHOSEN**
+### 9.1 a1: Picker, panel and native tier settings validated against the daemon; key map from the manifest — **CHOSEN**
 
-The picker reads models.definitions and writes whole tiers (with the check flow), the repo panel edits tasks and coreFloor, write results keep the daemon's reason and restartRequired, the native tier keys are dropped, and the key map is built from the extension's own manifest so the bundle no longer imports the settings catalog.
+The picker reads models.definitions and writes whole tiers (with the check flow), the repo panel edits tasks and coreFloor, write results keep the daemon's reason and restartRequired, the native tier keys stay but carry no built-in list and are validated against models.definitions and written whole, and the key map is built from the extension's own manifest so the bundle no longer imports the settings catalog.
 
-runSetModelTier takes a definitions() seam (models.definitions) instead of listModels and the bundled catalog: tier -> family (defs.families) -> model (that family's models with aliases, plus 'Enter another model id…' for a CLI family) -> effort ('' plus the model's efforts), then ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }). The tier's current value comes from config.show (rawConfig) overlaid on the family's tierDefaults from the answer. An id the family does not serve goes through models.check -> a QuickPick of per-effort verdicts with evidence -> a multi-select of the non-rejected levels -> models.approve or models.reject; on approval the user is offered insrc.daemon.restart and the tier is saved only after a successful restart (never re-approving). The Repo Configuration panel renders a select per taxonomy role (tier or 'global') writing ['models','byRepo',repo,'tasks',roleId] (null clears) and a coreFloor select writing ['models','byRepo',repo,'coreFloor'], with no runner or model field. The gateway's ConfigWriteResult becomes { ok:true; restartRequired? } | { ok:false; reason; detail? } from the daemon's answer; the picker and panel show the reason and, on restartRequired, offer insrc.daemon.restart. The manifest generator skips the models.tiers.* rows (tiers are edited only through the picker, whole), and key-map.ts builds its entries from the manifest's contributed properties (type, enum, default) instead of importing CONFIG_CATALOG; the manifest-catalog checks become 'manifest = catalog minus the tier rows'.
+runSetModelTier takes a definitions() seam (models.definitions) instead of listModels and the bundled catalog: tier -> family (defs.families) -> model (that family's models with aliases, plus 'Enter another model id…' for a CLI family) -> effort ('' plus the model's efforts), then ONE writeKeyPath(['models','tiers',tier], { runner, model, effort }). The tier's current value comes from config.show (rawConfig) overlaid on the family's tierDefaults from the answer. An id the family does not serve goes through models.check -> a QuickPick of per-effort verdicts with evidence -> a multi-select of the non-rejected levels -> models.approve or models.reject; on approval the user is offered insrc.daemon.restart and the tier is saved only after a successful restart (never re-approving). The Repo Configuration panel renders a select per taxonomy role (tier or 'global') writing ['models','byRepo',repo,'tasks',roleId] (null clears) and a coreFloor select writing ['models','byRepo',repo,'coreFloor'], with no runner or model field. The gateway's ConfigWriteResult becomes { ok:true; restartRequired? } | { ok:false; reason; detail? } from the daemon's answer; the picker and panel show the reason and, on restartRequired, offer insrc.daemon.restart. The manifest keeps the models.tiers.* rows but the generator writes them without enum or model-name default (an unset value means the definitions' default); a native tier edit is validated by the sync engine against models.definitions and written as the whole tier. key-map.ts builds its entries from the manifest's contributed properties (type, enum, default) instead of importing CONFIG_CATALOG; the manifest-catalog checks keep every row and expect no enum or default on the tier rows.
 
 ### 9.2 a2: Same picker and panel; keep native tier keys; key map from the daemon's config.catalog
 
@@ -361,7 +372,7 @@ As a1 for the picker, panel and write results, but the native tier rows stay in 
 
 The picker, check flow, repo panel and gateway change as in a1. The bundle drops its CONFIG_CATALOG import by building the key map from the config.catalog answer the sync engine already fetches (options carry type, enum and default). The manifest keeps insrc.models.tiers.<tier>.runner/.model/.effort, regenerated from the catalog at build time, so native edits keep writing single tier leaves.
 
-**Rejected because:** Keeps Settings-UI tier editing but violates ac1 and only partially keeps the whole-tier rule; it also makes native sync depend on the daemon at startup.
+**Rejected because:** Keeps Settings-UI tier editing but violates ac1 and only partially keeps the whole-tier rule; it also makes native sync depend on the daemon at startup. (Its native tier keys keep the catalog's static runner / effort enums and single-leaf writes; the chosen a1 also keeps the native tier keys, without those lists and with validated whole-tier writes.)
 
 ### 9.3 a3: Picker and panel only; keep the bundled catalog as a named stopgap
 
@@ -376,32 +387,6 @@ The picker and panel change as in a1 and the gateway keeps the daemon's reason a
 - [UX mock](docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S006/ux-mock.html)
 
 ## 11. References
-
-- **[[c1]]** `prior-artifact` `HLD-ce99b72065d03b1b` — "s6 boundary: the VS Code model-tier picker driven by models.definitions, removing the bundle's import of the settings catalog; the unknown-model check and approval prompt; the Repo Configuration panel"
-- **[[c2]]** `analyze-bundle` `s1 symbol.locate (the VS Code model-tier picker)`
-- **[[c3]]** `code` `vscode-plugin/src/models/model-tier-picker.ts:74` — "const PROVIDERS: ReadonlyArray<{ readonly id: ModelProvider; readonly label: string }> = ["
-- **[[c4]]** `prior-artifact` `DEF-ce99b72065d03b1b` — "c4: the daemon owns model facts; clients reach them only over daemon IPC (k1, k2)."
-- **[[c5]]** `code` `vscode-plugin/src/config/gateway.ts:42`
-- **[[c6]]** `code` `vscode-plugin/src/panels/repo-config.ts:35` — "const TIER_FIELDS = ['runner', 'model'] as const;"
-- **[[c7]]** `code` `src/cli/panes/ModelCheckScreen.tsx`
-- **[[c8]]** `step-output` `s3 alternatives.judge`
-- **[[c9]]** `step-output` `s8 checklist.verify`
-- **[[c10]]** `prior-artifact` `DEF-ce99b72065d03b1b` — "c10: the VS Code plugin's model-tier picker, native settings sync and Repo Configuration panel."
-- **[[c11]]** `code` `vscode-plugin/src/config/key-map.ts:12` — "import { CONFIG_CATALOG, type ConfigOption } from '../../../src/config/config-catalog.js';"
-
-## 12. Open questions
-
-- Checklist alt2 (partial): Each alternative is scored against ac1-ac3 and sc3-sc5; the Epic constraints are covered through those scores (k2 via ac1, k5 via ac2, k6 via ac3) but k1, k3, k4 and k7 have no explicit score entries. k1/k3/k4/k7 concern the daemon and the definitions file, which none of the alternatives touch, so no alternative differs on them.
-- Tier settings leave the VS Code Settings UI (the manifest stops contributing insrc.models.tiers.*): tiers are then edited only through 'insrc: Set model tier', whole. Keeping the native keys would mean a static runner / effort list in the extension and single-leaf tier writes. Confirm removing them?
-
-## Resolved questions
-
-- `q6b52f29d` — Checklist alt2 (partial): Each alternative is scored against ac1-ac3 and sc3-sc5; the Epic constraints are covered through those scores (k2 via ac1, k5 via ac2, k6 via ac3) but k1, k3, k4 and k7 have no explicit score entries. k1/k3/k4/k7 concern the daemon and the definitions file, which none of the alternatives touch, so no alternative differs on them.
-  - **resolved**: Shared invariant assessment — User choice: one assessment covering k1, k3, k4 and k7 for all alternatives — none changes the daemon or the definitions file, so they do not differentiate the alternatives. _(2026-10-26T19:12:55.055Z)_
-- `q7459caf6` — Tier settings leave the VS Code Settings UI (the manifest stops contributing insrc.models.tiers.*): tiers are then edited only through 'insrc: Set model tier', whole. Keeping the native keys would mean a static runner / effort list in the extension and single-leaf tier writes. Confirm removing them?
-  - **resolved**: Keep native tier settings — User choice: s6 is only about which tier values are valid; the insrc.models.tiers.* settings stay in VS Code Settings. They carry no static enum or model-name default; the sync engine validates a tier edit against models.definitions (family, model of that family, effort that model accepts) and writes the whole tier (runner, model, effort from the current native values), reverting an invalid value with a message (an unlisted model points to 'insrc: Set model tier' for the check). No new review cycle (user). _(2026-10-26T19:16:08.660Z)_
-
-## Citations
 
 - **[[c1]]** `prior-artifact` `HLD-ce99b72065d03b1b` — "s6 boundary: the VS Code model-tier picker driven by models.definitions, removing the bundle's import of the settings catalog; the unknown-model check and approval prompt; the Repo Configuration panel"
 - **[[c2]]** `analyze-bundle` `s1 symbol.locate (the VS Code model-tier picker)`

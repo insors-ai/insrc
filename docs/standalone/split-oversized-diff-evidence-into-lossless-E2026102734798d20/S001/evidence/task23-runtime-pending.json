@@ -25,7 +25,7 @@
     "queueDepth": 8,
     "storeFailure": null
   },
-  "requiredAuthorization": "Activate the verified built runtime and restart the shared daemon, then perform the actual S003 retry and independent code review of this Story.",
+  "requiredAuthorization": null,
   "planPath": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/PLAN.md",
   "planConstraint": "No automatic daemon restart or release changes; if activation unavailable preserve pending proof honestly, never script a fake review success.",
   "independentCodeReviewStatus": "not-run; pending corrected runtime to avoid the same admission defect",
@@ -49,5 +49,23 @@
   "requiredAction": "User updates/restarts daemon after the validated path-order correction is committed and pushed; then rerun S003 and the independent code review.",
   "requiredCorrectedSourceSha256": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
   "localPreparationEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-order-fixed-local.json",
-  "updatedAt": "2026-10-27T17:37:45.511195+00:00"
+  "updatedAt": "2026-10-27T17:43:48.131972+00:00",
+  "validatedCorrection": {
+    "commit": "fd6b5fcc9",
+    "taskId": "t12",
+    "daemonValidation": "pass",
+    "targetedTests": {
+      "pass": 27,
+      "fail": 0,
+      "skipped": 0
+    },
+    "node22Build": "pass",
+    "typecheck": "pass"
+  },
+  "smokeValidation": {
+    "taskId": "t23",
+    "passed": false,
+    "testsPassed": false,
+    "reason": "Actual installed-runtime DIFF-S003-RETRY failed before a completed CR; acceptance of honest reporting does not pass the smoke test."
+  }
 }

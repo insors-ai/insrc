@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 137 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -342,7 +342,7 @@ Run at 2026-10-27T09:13:13.967Z on commit `7f3c1889b`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-10-27T09:26:58.551Z on commit `6f8ca43e4`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T17:39:15.019Z on commit `fd6b5fcc9`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-FINGERPRINT-SNAPSHOT**
 
@@ -350,6 +350,8 @@ Run at 2026-10-27T09:26:58.551Z on commit `6f8ca43e4`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
 | pass | DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
+| pass | DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
+| pass | DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint | `src/daemon/__tests__/code-review-publication.test.ts` |
 
 **integration: DIFF-IDENTITY-TESTS**
 
@@ -361,7 +363,8 @@ Run at 2026-10-27T09:26:58.551Z on commit `6f8ca43e4`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 3 | 7.1 s |  |
+| `src/daemon/__tests__/code-review-publication.test.ts` | 0 | 10 | 23.2 s |  |
+| `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 4 | 10.8 s |  |
 
 ## t13
 
@@ -704,3 +707,13 @@ Run at 2026-10-27T14:55:06.829Z on commit `acf8a99fa`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/final-review-verification.test.ts` | 0 | 2 | 0.7 s |  |
+
+## t23
+
+Run at 2026-10-27T17:41:49.843Z on commit `fd6b5fcc9`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: DIFF-S003-RETRY
+
+**smoke: DIFF-S003-RETRY**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-first-runtime-retry.json

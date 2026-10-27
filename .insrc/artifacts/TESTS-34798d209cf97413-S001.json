@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T14:55:06.829Z",
+    "updatedAt": "2026-10-27T17:41:49.843Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1562,8 +1562,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "6f8ca43e4",
-        "ranAt": "2026-10-27T09:26:58.551Z",
+        "commit": "fd6b5fcc9",
+        "ranAt": "2026-10-27T17:39:15.019Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1579,6 +1579,16 @@
               {
                 "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
                 "title": "DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint",
                 "result": "pass"
               }
             ],
@@ -1600,10 +1610,59 @@
         ],
         "files": [
           {
+            "file": "src/daemon/__tests__/code-review-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23181,
+            "titles": [
+              {
+                "title": "DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7082,
+            "durationMs": 10792,
             "titles": [
               {
                 "title": "DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence",
@@ -1615,6 +1674,10 @@
               },
               {
                 "title": "DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS",
                 "result": "pass"
               }
             ],
@@ -3147,6 +3210,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "fd6b5fcc9",
+        "ranAt": "2026-10-27T17:41:49.843Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "DIFF-S003-RETRY",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-first-runtime-retry.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: DIFF-S003-RETRY"
       }
     ]
   }

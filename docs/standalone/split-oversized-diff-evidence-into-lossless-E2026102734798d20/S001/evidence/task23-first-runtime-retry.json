@@ -1,6 +1,5 @@
 {
   "version": 1,
-  "attemptedAt": "2026-10-27T17:22:00Z",
   "installedCommit": "841891ec449d3612c8269b112a9e4d5d3d0b405b",
   "daemonPid": 17075,
   "runtimeExecutable": "/opt/homebrew/Cellar/node/26.5.1/bin/node",
@@ -27,5 +26,7 @@
   ],
   "result": "fail",
   "completedReviewArtifact": false,
-  "diagnosis": "Stable321-file scope is reordered by actual diff preparation; subject admission compared arrays in order. Local regression correction passes without a model review claim."
+  "diagnosis": "Stable321-file scope is reordered by actual diff preparation; subject admission compared arrays in order. Local regression correction passes without a model review claim.",
+  "attemptTimestamp": "Exact request timestamp was not recorded; this record preserves the observed response sequence.",
+  "recordedAt": "2026-10-27T17:43:48.131204+00:00"
 }

@@ -116,6 +116,12 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   // Runner alone: ignored too.
   r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: { models: { tiers: { core: { runner: 'cli-claude' } } } } });
   assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo'], 'a runner alone is ignored');
+  // Model '' leaves the tier unset (its effort leaf still applies to the default).
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { runner: 'cli-claude', model: '', effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], "model '' is the default tier at the effort leaf");
+  // An unknown runner is ignored the same way.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { runner: 'cli-nope', model: 'c-big', effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], 'an unknown runner is the default tier at the effort leaf');
   // Runner + model with no effort: that tier with NO effort, never the default's.
   r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: { models: { tiers: { core: { runner: 'cli-codex', model: 'x-a' } } } } });
   assert.deepEqual([cur(r.shown[2]), cur(r.shown[3])], ['x-a', ''], 'no effort, not the default lo');

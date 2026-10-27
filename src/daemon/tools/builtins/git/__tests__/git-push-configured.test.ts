@@ -6,7 +6,7 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -100,6 +100,17 @@ test(`${T}: configured true runs plain git push with an alternate push remote, a
 	assert.equal(mirrored.success, false);
 	assert.match(mirrored.output, /mirrors refs/);
 	assert.equal(refs(m.other), '');
+	// the key set with no value at all is git's implicit true, and also refused
+	const im = fixture();
+	git(im.work, 'config', 'remote.pushDefault', 'other');
+	appendFileSync(join(im.work, '.git', 'config'), '[remote "other"]\n\tmirror\n');
+	const implicit = await push(im.work, { configured: true });
+	assert.equal(implicit.success, false);
+	assert.match(implicit.output, /mirrors refs/);
+	// mirror = false is fine
+	const nm = fixture();
+	git(nm.work, 'config', 'remote.pushDefault', 'other'); git(nm.work, 'config', 'remote.other.mirror', 'false');
+	assert.equal((await push(nm.work, { configured: true })).success, true);
 	// an ordinary configured refspec is accepted
 	const ok = fixture();
 	git(ok.work, 'config', 'remote.pushDefault', 'other'); git(ok.work, 'config', 'remote.other.push', 'refs/heads/main:refs/heads/mirror');

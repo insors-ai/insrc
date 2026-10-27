@@ -8,6 +8,12 @@
  *     unless forceRaw:true is set (lease is safer)
  *   - warns in the gate content when pushing to a protected-branch
  *     name (main / master / release/*)
+ *
+ * `configured` (Story s10, tool-registry epic): a plain `git push` so the repository's own configuration picks the remote,
+ * refspec and upstream (what the workflow's commit-and-push did before it moved onto this tool). It is an additive input of a
+ * tool Story s4 owns: the owner of s4's tools may object, in which case the push parity moves to a back-flow to s4 before the
+ * s10 build is closed and this input is removed from here. It is never destructive: forced, deleting and mirror configuration
+ * is refused.
  */
 
 import type { TypedTool } from '../../call-tool.js';
@@ -171,9 +177,9 @@ async function pushConfigured(input: ToolInput, cwd: string): Promise<ToolResult
   // the caller must name it, where the force and delete guards and the destructive class apply.
   const specs = await runShell(['git', 'config', '--get-regexp', '^remote\\..*\\.push$'], { cwd, timeoutMs: 15_000 });
   if (specs.spawnError) { return spawnFail('git_push', specs.stderr); }
-  const mirror = await runShell(['git', 'config', '--get-regexp', '^remote\\..*\\.mirror$'], { cwd, timeoutMs: 15_000 });
+  const mirror = await runShell(['git', 'config', '--type=bool', '--get-regexp', '^remote\\..*\\.mirror$'], { cwd, timeoutMs: 15_000 });
   if (mirror.spawnError) { return spawnFail('git_push', mirror.stderr); }
-  const mirrored = mirror.stdout.split('\n').map(l => l.trim()).filter(l => /\s(true|yes|on|1)$/i.test(l));
+  const mirrored = mirror.stdout.split('\n').map(l => l.trim()).filter(l => /\strue$/.test(l));
   if (mirrored.length > 0) {
     return rejectInput('git_push', `configured refused: ${mirrored.map(m => m.split(/\s+/)[0]).join(', ')} mirrors refs (forces updates and deletes refs) -- name the ref explicitly`);
   }

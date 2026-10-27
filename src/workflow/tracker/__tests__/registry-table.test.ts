@@ -5,7 +5,9 @@
 
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool } from '../../../daemon/tools/builtins/gh/issue.js';
@@ -13,6 +15,10 @@ import { ghLabelTool } from '../../../daemon/tools/builtins/gh/resources.js';
 import { ghProjectManageTool } from '../../../daemon/tools/builtins/gh/manage.js';
 import { ghProjectItemAddTool, ghProjectListTool } from '../../../daemon/tools/builtins/gh/project.js';
 import { ghTrackerTool } from '../../../daemon/tools/builtins/gh/tracker.js';
+import { gitLogTool } from '../../../daemon/tools/builtins/git/log.js';
+import { gitLsFilesTool } from '../../../daemon/tools/builtins/git/ls-files.js';
+import { gitRemoteTool } from '../../../daemon/tools/builtins/git/remote.js';
+import { gitStatusTool } from '../../../daemon/tools/builtins/git/status.js';
 import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import { _resetRegistryForTests, registerTool } from '../../../daemon/tools/registry.js';
 import type { ApprovalGate } from '../../../daemon/tools/types.js';
@@ -375,5 +381,66 @@ describe('registry-table.test.ts: one case per organisation, project, scope, log
 		assert.throws(() => soft(call('denied'), 'fallback'), (e: unknown) => e instanceof ToolDenied);
 		assert.throws(() => soft(call('conversion-failed'), 'fallback'), rejectedGh());
 		assert.throws(() => soft(call('schema-mismatch'), 'fallback'), rejectedGh());
+	});
+});
+
+describe('registry-table.test.ts: ghAuthOk form, gitOriginOwnerRepo form and the attach tracked-check rows', () => {
+	const dirs: string[] = [];
+	afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
+	const git = (cwd: string, ...args: string[]): string => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	function repoWith(origin?: string): string {
+		const d = mkdtempSync(join(tmpdir(), 'insrc-table-git-')); dirs.push(d);
+		execFileSync('git', ['init', '-q', '-b', 'main', d]);
+		git(d, 'config', 'user.email', 't@example.com'); git(d, 'config', 'user.name', 't'); git(d, 'config', 'commit.gpgsign', 'false');
+		if (origin !== undefined) git(d, 'remote', 'add', 'origin', origin);
+		return d;
+	}
+	beforeEach(() => { for (const t of [gitRemoteTool, gitStatusTool, gitLogTool, gitLsFilesTool]) registerTool(t); });
+
+	it('ghAuthOk: ok when gh answers for the signed-in user; ok:false with the old reason when it does not; a missing gh is ok:false too', async () => {
+		gh([['*api*user*', '{"login":"octo"}']]);
+		assert.deepEqual(await table().ghAuthOk(), { ok: true });
+		const reason = { ok: false, reason: 'gh CLI not available or not authenticated (run `gh auth login`)' };
+		gh([['*', '', 1, 'To get started with GitHub CLI, please run:  gh auth login']]);
+		assert.deepEqual(await table().ghAuthOk(), reason);
+		bin?.restore(); if (bin) cleanup(bin.dir);
+		const saved = process.env['PATH'];
+		process.env['PATH'] = mkdtempSync(join(tmpdir(), 'insrc-nogh-'));
+		try { assert.deepEqual(await table().ghAuthOk(), reason); } finally { process.env['PATH'] = saved; }
+	});
+
+	it('gitOriginOwnerRepo: owner and repo from https and ssh origins; null with no origin, a non-GitHub origin or a non-repository', async () => {
+		assert.deepEqual(await table().gitOriginOwnerRepo(repoWith('https://github.com/acme/widgets.git')), { owner: 'acme', repo: 'widgets' });
+		assert.deepEqual(await table().gitOriginOwnerRepo(repoWith('git@github.com:acme/gadgets.git')), { owner: 'acme', repo: 'gadgets' });
+		assert.equal(await table().gitOriginOwnerRepo(repoWith()), null);
+		assert.equal(await table().gitOriginOwnerRepo(repoWith('https://gitlab.com/acme/widgets.git')), null);
+		const notRepo = mkdtempSync(join(tmpdir(), 'insrc-notrepo-')); dirs.push(notRepo);
+		assert.equal(await table().gitOriginOwnerRepo(notRepo), null);
+	});
+
+	it('the attach tracked check: a committed file is tracked, clean and has its last commit; an untracked file is not tracked; a modified or staged tracked file has changes', async () => {
+		const d = repoWith();
+		writeFileSync(join(d, 'a.md'), 'one\n');
+		writeFileSync(join(d, 'b.md'), 'two\n');
+		git(d, 'add', 'a.md'); git(d, 'commit', '-q', '-m', 'first');
+		const sha = git(d, 'rev-parse', 'HEAD');
+		const t = table();
+		assert.equal(await t.gitIsTracked(d, 'a.md'), true);
+		assert.equal(await t.gitIsTracked(d, 'b.md'), false, 'untracked: the file list is empty');
+		assert.equal(await t.gitIsTracked(d, 'missing.md'), false);
+		assert.equal(await t.gitHasChanges(d, 'a.md'), false);
+		assert.equal(await t.gitHasChanges(d, 'b.md'), true, 'untracked counts as a change');
+		assert.equal(await t.gitLastCommitOf(d, 'a.md'), sha);
+		assert.equal(await t.gitLastCommitOf(d, 'b.md'), '');
+		writeFileSync(join(d, 'a.md'), 'changed\n');
+		assert.equal(await t.gitHasChanges(d, 'a.md'), true);
+		git(d, 'add', 'a.md');
+		assert.equal(await t.gitHasChanges(d, 'a.md'), true, 'staged counts as a change');
+		git(d, 'commit', '-q', '-m', 'second');
+		assert.equal(await t.gitHasChanges(d, 'a.md'), false);
+		assert.notEqual(await t.gitLastCommitOf(d, 'a.md'), sha);
+		// not a repository: the check fails, it does not read as untracked
+		const notRepo = mkdtempSync(join(tmpdir(), 'insrc-notrepo-')); dirs.push(notRepo);
+		await assert.rejects(t.gitIsTracked(notRepo, 'a.md'), rejectedGh());
 	});
 });

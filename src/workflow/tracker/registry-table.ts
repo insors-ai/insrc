@@ -17,6 +17,11 @@ import type { Static } from '@sinclair/typebox';
 
 import { callTool } from '../../daemon/tools/call-tool.js';
 import type { TypedTool, TypedToolResult } from '../../daemon/tools/call-tool.js';
+import { ghPrCreateTool, ghPrListTool, ghPrViewTool } from '../../daemon/tools/builtins/gh/pr.js';
+import { gitLogTool } from '../../daemon/tools/builtins/git/log.js';
+import { gitLsFilesTool } from '../../daemon/tools/builtins/git/ls-files.js';
+import { gitRemoteTool } from '../../daemon/tools/builtins/git/remote.js';
+import { gitStatusTool } from '../../daemon/tools/builtins/git/status.js';
 import { ghProjectManageTool } from '../../daemon/tools/builtins/gh/manage.js';
 import { ghProjectItemAddTool, ghProjectListTool } from '../../daemon/tools/builtins/gh/project.js';
 import { ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool } from '../../daemon/tools/builtins/gh/issue.js';
@@ -24,12 +29,15 @@ import { ghLabelTool } from '../../daemon/tools/builtins/gh/resources.js';
 import { ghTrackerTool } from '../../daemon/tools/builtins/gh/tracker.js';
 import type { ToolDeps, ToolFailure } from '../../daemon/tools/types.js';
 import { epicMembershipLabel } from './conventions.js';
-import { GhCommandError } from './github.js';
+import { getLogger } from '../../shared/logger.js';
+import { GhCommandError, parseGithubRemoteUrl } from './github.js';
 import type { CreatedIssue, PageRequest, TaskPage, TaskQueryFilters, TrackerTask } from './github.js';
-import type { TrackerComment } from './port.js';
+import type { IssueRef, SignoffRequestRef, SignoffRequestSpec, TrackerComment } from './port.js';
 import { titleMatchesToken } from './port.js';
 import { buildRef, parseIssueRef } from './refs.js';
-import { bestEffortMaySwallow, errorOfFailure } from './tool-denied.js';
+import { bestEffortMaySwallow, errorOfFailure, isToolDenied } from './tool-denied.js';
+
+const log = getLogger('tracker-registry-table');
 
 /** The tool deps of a workflow call: the caller is 'workflow', so hooks and logs see who asked. */
 export function workflowToolDeps(repoPath: string, overrides: Partial<ToolDeps> = {}): ToolDeps {
@@ -132,6 +140,39 @@ function toTrackerTask(n: SearchNode): TrackerTask {
 }
 
 // ---------------------------------------------------------------------------
+// signoff pull request helpers (copied from github-adapter.ts, which keeps its own until the adapter moves onto the table)
+// ---------------------------------------------------------------------------
+
+/** A well-formed `owner/repo#N`; parseIssueRef alone only checks the separators. */
+const ISSUE_REF_RE = /^[^/#\s]+\/[^/#\s]+#[0-9]+(?![\s\S])/;
+const PULL_URL_RE = /https?:\/\/\S+\/pull\/([0-9]+)/;
+
+interface PullReview { author?: { login?: string | null | undefined } | null | undefined; state?: string | undefined; submittedAt?: string | null | undefined }
+
+/** Whether a reviewer's latest decisive review made after `since` asks for changes (times compared as instants). */
+function changesRequestedSince(reviews: readonly PullReview[], since: string): boolean {
+	const sinceMs = Date.parse(since);
+	if (Number.isNaN(sinceMs)) throw new GhCommandError('rejected', `the submission time '${since}' is not a time`);
+	const latest = new Map<string, { review: PullReview; at: number }>();
+	for (const r of reviews) {
+		if (r.state !== 'APPROVED' && r.state !== 'CHANGES_REQUESTED' && r.state !== 'DISMISSED') continue;
+		const at = typeof r.submittedAt === 'string' ? Date.parse(r.submittedAt) : Number.NaN;
+		if (Number.isNaN(at) || at <= sinceMs) continue;
+		const who = r.author?.login ?? '';
+		const seen = latest.get(who);
+		if (seen === undefined || seen.at <= at) latest.set(who, { review: r, at });
+	}
+	return [...latest.values()].some(v => v.review.state === 'CHANGES_REQUESTED');
+}
+
+const sameLogin = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+
+function parseRequestRef(request: SignoffRequestRef): { owner: string; repo: string; number: string } {
+	if (!ISSUE_REF_RE.test(request.ref)) throw new GhCommandError('rejected', `malformed signoff request reference '${request.ref}' (expected owner/repo#N)`);
+	return parseIssueRef(request.ref);
+}
+
+// ---------------------------------------------------------------------------
 // The table
 // ---------------------------------------------------------------------------
 
@@ -155,7 +196,7 @@ export function createRegistryTable(deps: ToolDeps) {
 		};
 	}
 
-	return {
+	const table = {
 		ghCurrentLogin,
 		queryTasks,
 
@@ -332,11 +373,142 @@ export function createRegistryTable(deps: ToolDeps) {
 			return soft(await run(ghProjectItemAddTool, { number: projectNumber, owner: org, url: issueUrl }, deps), undefined) !== undefined;
 		},
 
+		/**
+		 * Whether gh is installed and signed in: the old ghAuthOk result, with its reason text. Read with gh_tracker current_login
+		 * (`gh api user`), which answers only for a signed-in gh and needs no model call; gh_auth status is a text read that needs
+		 * the conversion model, and its --json hosts form needs a newer gh than the one this daemon may run beside.
+		 */
+		async ghAuthOk(): Promise<{ readonly ok: true } | { readonly ok: false; readonly reason: string }> {
+			const d = soft(await run(ghTrackerTool, { op: 'current_login' }, deps), undefined);
+			return d !== undefined ? { ok: true } : { ok: false, reason: 'gh CLI not available or not authenticated (run `gh auth login`)' };
+		},
+
+		/** The owner and repo of the `origin` remote of a work tree, or null (no origin, not a GitHub url, git failed). */
+		async gitOriginOwnerRepo(repoPath: string): Promise<{ readonly owner: string; readonly repo: string } | null> {
+			const d = soft(await run(gitRemoteTool, { cwd: repoPath, op: 'list' }, deps), undefined);
+			const origin = (opData(d ?? { op: 'list', remotes: [] }, 'list')['remotes'] as Array<{ name: string; fetchUrl: string }> | undefined)?.find(r => r.name === 'origin');
+			return origin === undefined ? null : parseGithubRemoteUrl(origin.fetchUrl);
+		},
+
+		// -- attach.ts: the tracked check of a file (git_ls_files, git_status, git_log) --------------------------------------
+
+		/** Whether `relPath` is tracked: the literal path is among the index files git lists (an empty list is untracked). */
+		async gitIsTracked(repoPath: string, relPath: string): Promise<boolean> {
+			const d = must(await run(gitLsFilesTool, { cwd: repoPath, paths: [relPath], cached: true }, deps));
+			return d.files.includes(relPath);
+		},
+
+		/** Whether `relPath` has staged, unstaged, conflicted or untracked changes (the old `git status --porcelain -- path`). */
+		async gitHasChanges(repoPath: string, relPath: string): Promise<boolean> {
+			const d = must(await run(gitStatusTool, { cwd: repoPath }, deps));
+			const touches = (e: { path: string; origPath?: string | undefined }): boolean => e.path === relPath || e.origPath === relPath;
+			return d.staged.some(touches) || d.unstaged.some(touches) || (d.conflicts as Array<{ path: string }>).some(c => c.path === relPath) || d.untracked.includes(relPath);
+		},
+
+		/** The sha of the last commit that touched `relPath`, or '' when none. */
+		async gitLastCommitOf(repoPath: string, relPath: string): Promise<string> {
+			const d = must(await run(gitLogTool, { cwd: repoPath, path: relPath, limit: 1 }, deps));
+			return d.commits[0]?.sha ?? '';
+		},
+
+		// -- github-adapter.ts: the assignee and signoff pull request calls ---------------------------------------------------
+
+		/** The assignee logins of an issue, read live. */
+		async readAssignees(issue: IssueRef): Promise<{ readonly owner: string; readonly repo: string; readonly number: string; readonly logins: string[] }> {
+			if (!ISSUE_REF_RE.test(issue)) throw new GhCommandError('rejected', `malformed issue reference '${issue}' (expected owner/repo#N)`);
+			const { owner, repo, number } = parseIssueRef(issue);
+			const row = must(await run(ghIssueViewTool, { repo: repoArg(owner, repo), number: Number(number) }, deps));
+			const logins = (row.assignees ?? []).map(a => a.login ?? '').filter(l => l.length > 0);
+			return { owner, repo, number, logins };
+		},
+
+		/** The one assignee, or null; more than one is refused. */
+		async readAssignee(issue: IssueRef): Promise<string | null> {
+			const { logins } = await table.readAssignees(issue);
+			if (logins.length > 1) throw new GhCommandError('rejected', `${issue} has more than one assignee (${logins.join(', ')})`);
+			return logins[0] ?? null;
+		},
+
+		/** Read, remove every other assignee, add the requested one (or clear all for null), re-read and compare. No step is retried. */
+		async setAssignee(issue: IssueRef, who: string | null): Promise<void> {
+			const current = await table.readAssignees(issue);
+			const repository = repoArg(current.owner, current.repo);
+			const others = current.logins.filter(l => who === null || !sameLogin(l, who));
+			const hasWho = who !== null && current.logins.some(l => sameLogin(l, who));
+			if (others.length > 0) must(await run(ghIssueEditTool, { repo: repository, number: Number(current.number), removeAssignees: others }, deps));
+			if (who !== null && !hasWho) must(await run(ghIssueEditTool, { repo: repository, number: Number(current.number), addAssignees: [who] }, deps));
+			const after = (await table.readAssignees(issue)).logins;
+			const ok = who === null ? after.length === 0 : after.length === 1 && sameLogin(after[0]!, who);
+			if (!ok) throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the update, expected ${who === null ? 'none' : who}`);
+		},
+
+		/** Add `who` to the assignees (nobody is removed), re-read, and return the assignees read back. */
+		async addAssignee(issue: IssueRef, who: string): Promise<string[]> {
+			const current = await table.readAssignees(issue);
+			if (!current.logins.some(l => sameLogin(l, who))) {
+				must(await run(ghIssueEditTool, { repo: repoArg(current.owner, current.repo), number: Number(current.number), addAssignees: [who] }, deps));
+			}
+			const after = (await table.readAssignees(issue)).logins;
+			if (!after.some(l => sameLogin(l, who))) throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the add, expected ${who} among them`);
+			return after;
+		},
+
+		/** The url of the open pull request from this branch, or undefined when there is none. */
+		async openPullRequestOf(owner: string, repo: string, branch: string): Promise<string | undefined> {
+			const d = must(await run(ghPrListTool, { repo: repoArg(owner, repo), head: branch, state: 'open' }, deps));
+			return d.prs.map(p => p.url).find((u): u is string => typeof u === 'string' && PULL_URL_RE.test(u));
+		},
+
+		/**
+		 * Open the signoff request as a pull request from the branch that holds the committed artifacts (an open one from the branch is
+		 * reused), then link it from the stage's issue with one comment. The pull request is the request: a link comment that fails
+		 * for a gh reason is logged and does not undo it; a DENIED link comment fails the stage (the pull request stays, so a retry reuses it).
+		 */
+		async openSignoffRequest(owner: string, repo: string, spec: SignoffRequestSpec): Promise<SignoffRequestRef> {
+			if (spec.branch.trim().length === 0) throw new GhCommandError('rejected', 'a signoff request needs the branch that holds the committed artifacts');
+			if (!ISSUE_REF_RE.test(spec.issue)) throw new GhCommandError('rejected', `malformed issue reference '${spec.issue}' (expected owner/repo#N)`);
+			const existing = await table.openPullRequestOf(owner, repo, spec.branch);
+			const created = existing ?? must(await run(ghPrCreateTool, { repo: repoArg(owner, repo), head: spec.branch, title: spec.title, body: spec.body }, deps)).url;
+			const match = PULL_URL_RE.exec(created);
+			if (match === null) throw new GhCommandError('rejected', `gh did not print the pull request url: '${created.slice(0, 120)}'`);
+			const url = match[0];
+			const ref = `${owner}/${repo}#${match[1]}`;
+			try {
+				await table.ghPostCommentReturningId(owner, repo, spec.issue, `<!-- insrc:signoff-request:${ref} -->\nSignoff requested: ${url}`);
+			} catch (err) {
+				if (isToolDenied(err)) throw err;
+				log.warn({ ref, issue: spec.issue, err: err instanceof Error ? err.message : String(err) }, 'the signoff request was opened but not linked from its issue');
+			}
+			return { ref, url };
+		},
+
+		/** The state of a request from its pull request: merged is completed; closed unmerged or changes requested is changes-requested; else open. */
+		async readSignoffState(request: SignoffRequestRef, since?: string): Promise<'open' | 'changes-requested' | 'completed'> {
+			const { owner, repo, number } = parseRequestRef(request);
+			const jsonFields = since === undefined ? ['state', 'mergedAt', 'reviewDecision'] as const : ['state', 'mergedAt', 'reviews'] as const;
+			const row = must(await run(ghPrViewTool, { repo: repoArg(owner, repo), number: Number(number), jsonFields: [...jsonFields] }, deps));
+			if (row.state === 'MERGED' || (typeof row.mergedAt === 'string' && row.mergedAt.length > 0)) return 'completed';
+			if (row.state === 'CLOSED') return 'changes-requested';
+			const asked = since === undefined ? row.reviewDecision === 'CHANGES_REQUESTED' : changesRequestedSince(Array.isArray(row.reviews) ? row.reviews as PullReview[] : [], since);
+			return asked ? 'changes-requested' : 'open';
+		},
+
+		/** The branch the request's pull request is from, and whether it is still open. */
+		async readSignoffRequest(request: SignoffRequestRef): Promise<{ branch: string; open: boolean }> {
+			const { owner, repo, number } = parseRequestRef(request);
+			const row = must(await run(ghPrViewTool, { repo: repoArg(owner, repo), number: Number(number), jsonFields: ['headRefName', 'state'] }, deps));
+			if (typeof row.headRefName !== 'string' || row.headRefName.length === 0 || typeof row.state !== 'string') {
+				throw new GhCommandError('rejected', `gh returned no branch or state for ${request.ref}: '${JSON.stringify(row).slice(0, 120)}'`);
+			}
+			return { branch: row.headRefName, open: row.state === 'OPEN' };
+		},
+
 		/** The current user's open tasks. */
 		async listMyOpenTasks(owner: string, repo: string, page?: PageRequest): Promise<TaskPage> {
 			return queryTasks(owner, repo, { owner: await ghCurrentLogin(), state: 'open' }, page);
 		},
 	};
+	return table;
 }
 
 export type RegistryTable = ReturnType<typeof createRegistryTable>;

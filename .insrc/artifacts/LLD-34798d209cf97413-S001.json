@@ -200,7 +200,8 @@
           "postconditions": [
             "Diff-review limit is min(configured limit,384000); budget is never raised automatically.",
             "Every fragment is reviewed; gather retains provenance and existing degraded result cap, scope filtering and independent reviewer stamp.",
-            "Quality fragment calls return evidence notes for their parent-file obligations as well as existing findings/descriptions. A parent-file gather call judges all completed fragment notes and can emit a correctness finding that no individual chunk could establish. Local findings and parent findings are merged and filtered once."
+            "Quality fragment calls return evidence notes for their parent-file obligations as well as existing findings/descriptions. A parent-file gather call judges all completed fragment notes and can emit a correctness finding that no individual chunk could establish. Local findings and parent findings are merged and filtered once.",
+            "For quality material with any diff-fragment parent obligations, set ReviewAdapter.requiresChunking:true. This explicitly forces the measured chunk/gather path even when the complete file would fit a single call. Every fragment then receives note validation and parent-file adjudication; no single-call exemption is claimed."
           ]
         },
         {
@@ -259,12 +260,12 @@
         },
         {
           "name": "runDimensionJob",
-          "signature": "runDimensionJob(build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>, subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined): Promise<DimensionResult>",
+          "signature": "runDimensionJob(build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>, subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined): Promise<DimensionResult>",
           "parameters": [
             {
               "name": "build",
-              "type": "(snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>",
-              "purpose": "Existing adapter factory.",
+              "type": "(snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>",
+              "purpose": "Existing adapter factory extended with the authoritative effective input limit. All five model-dimension factories consume it explicitly.",
               "optional": false
             },
             {
@@ -307,7 +308,8 @@
           ],
           "postconditions": [
             "For degraded diff mode compute effectiveLimitChars=min(reviewLimitChars(),384000,provider.inputBudgetChars when defined). Pass this identical value into adapter creation and createJob, so job.plan.limitChars is the authoritative cap.",
-            "All model/gather calls in a degraded diff job use structured execution with optional inputContext:isolated. The driver maps that execution marker and job.plan.limitChars to the shared boundedInput option. Other execution modes preserve defaults."
+            "All model/gather calls in a degraded diff job use structured execution with optional inputContext:isolated. The driver maps that execution marker and job.plan.limitChars to the shared boundedInput option. Other execution modes preserve defaults.",
+            "Invoke build(snapshot,effectiveLimitChars). Update adherence, conventions, coverage, quality and functional-coverage factories to pass that exact second argument as modelDimensionAdapter's limitChars, instead of taking its independent default. Its duplicate planning, gather note caps and createJob all receive this identical value. The UX/diagram deterministic factories may ignore the additional callback argument because they capture no separate adapter budget; their job still uses the effective cap."
           ]
         },
         {
@@ -493,6 +495,31 @@
             "src/workflow/review-pipeline/adapters/code-review-chunk.ts:183",
             "src/workflow/review-pipeline/adapters/code-review-gather.ts:155"
           ]
+        },
+        {
+          "entity": "Authoritative adapter-factory budget propagation",
+          "change": "field-modify",
+          "details": "runDimensionJob's build callback becomes (snapshot,effectiveLimitChars)=>ReviewAdapter. Compute the limit once and pass it to both adapter construction and createJob. Five model-dimension call sites forward the second argument to modelDimensionAdapter, so gather/reduction/duplicate budgets do not independently re-read configuration. Existing UX and diagram deterministic factories may ignore the additional argument; they capture no separate budget. Direct rg confirms seven production call sites; the usage graph returned zero callers and is explicitly incomplete. [c14]",
+          "schemaDiff": "build: (snapshot:ReviewMaterialSnapshot,effectiveLimitChars:number)=>ReviewAdapter<DimensionResult>",
+          "callSites": [
+            "src/workflow/review-pipeline/code-review.ts:251",
+            "src/workflow/code-review/dimensions/adherence.ts",
+            "src/workflow/code-review/dimensions/conventions.ts",
+            "src/workflow/code-review/dimensions/coverage.ts",
+            "src/workflow/code-review/dimensions/quality.ts",
+            "src/workflow/code-review/dimensions/functional-coverage.ts"
+          ]
+        },
+        {
+          "entity": "Explicit fragment-parent chunk/gather selection",
+          "change": "field-add",
+          "details": "ReviewAdapter gains optional requiresChunking?:boolean|undefined, default false. The quality adapter sets it only for fragmented diff-parent material. At the first model stage, enterStage tests this flag before accepting the single-call fast path: forced jobs use the normal measured planWithin -> issueChunkCalls route and persist plan.single:false, even when planning produces only one chunk. The existing commit path then performs required parent gather. Do not merely initialize plan.single:false with no planned chunks. Ordinary graph/small-file reviews retain the single-call fast path. [c15]",
+          "schemaDiff": "ReviewAdapter + readonly requiresChunking?:boolean|undefined",
+          "callSites": [
+            "src/workflow/review-pipeline/types.ts:163",
+            "src/workflow/review-pipeline/code-review.ts:154",
+            "src/workflow/review-pipeline/job.ts"
+          ]
         }
       ],
       "interactionWithShared": []
@@ -543,6 +570,31 @@
           "src/workflow/review-pipeline/adapters/code-review-chunk.ts:76",
           "src/workflow/review-pipeline/adapters/code-review-chunk.ts:183",
           "src/workflow/review-pipeline/adapters/code-review-gather.ts:155"
+        ]
+      },
+      {
+        "entity": "Authoritative adapter-factory budget propagation",
+        "change": "field-modify",
+        "details": "runDimensionJob's build callback becomes (snapshot,effectiveLimitChars)=>ReviewAdapter. Compute the limit once and pass it to both adapter construction and createJob. Five model-dimension call sites forward the second argument to modelDimensionAdapter, so gather/reduction/duplicate budgets do not independently re-read configuration. Existing UX and diagram deterministic factories may ignore the additional argument; they capture no separate budget. Direct rg confirms seven production call sites; the usage graph returned zero callers and is explicitly incomplete. [c14]",
+        "schemaDiff": "build: (snapshot:ReviewMaterialSnapshot,effectiveLimitChars:number)=>ReviewAdapter<DimensionResult>",
+        "callSites": [
+          "src/workflow/review-pipeline/code-review.ts:251",
+          "src/workflow/code-review/dimensions/adherence.ts",
+          "src/workflow/code-review/dimensions/conventions.ts",
+          "src/workflow/code-review/dimensions/coverage.ts",
+          "src/workflow/code-review/dimensions/quality.ts",
+          "src/workflow/code-review/dimensions/functional-coverage.ts"
+        ]
+      },
+      {
+        "entity": "Explicit fragment-parent chunk/gather selection",
+        "change": "field-add",
+        "details": "ReviewAdapter gains optional requiresChunking?:boolean|undefined, default false. The quality adapter sets it only for fragmented diff-parent material. At the first model stage, enterStage tests this flag before accepting the single-call fast path: forced jobs use the normal measured planWithin -> issueChunkCalls route and persist plan.single:false, even when planning produces only one chunk. The existing commit path then performs required parent gather. Do not merely initialize plan.single:false with no planned chunks. Ordinary graph/small-file reviews retain the single-call fast path. [c15]",
+        "schemaDiff": "ReviewAdapter + readonly requiresChunking?:boolean|undefined",
+        "callSites": [
+          "src/workflow/review-pipeline/types.ts:163",
+          "src/workflow/review-pipeline/code-review.ts:154",
+          "src/workflow/review-pipeline/job.ts"
         ]
       }
     ],
@@ -609,6 +661,10 @@
         {
           "input": "A final gather or correction contains large prior notes/history.",
           "expected": "Existing bounded reduction/gather plans include those actual notes/history in measurement; no hidden accumulated transcript is resumed."
+        },
+        {
+          "input": "Fragmented diff whose complete quality prompt fits one call.",
+          "expected": "requiresChunking explicitly selects measured chunk mode and parent gather; a single planned chunk is still plan.single:false and must produce parent notes."
         }
       ],
       "invariantsToPreserve": [
@@ -671,7 +727,9 @@
             "DIFF-SCALE: many fragments retain sparse sibling connectivity and avoid new quadratic material construction",
             "DIFF-COMPAT: source-symbol and small-file review parity, cancellation, retries, gather/reduction, duplicate comparisons, and lower configured budgets remain supported",
             "DIFF-PARENT-QUALITY: no chunk emits a local finding; a parent correctness finding is produced only when gather receives facts from two separate fragments. Reject missing/foreign/duplicate parent notes and prove reduction preserves both facts and provenance.",
-            "DIFF-READER: through DiffGroundingDeps/git-diff reader, recover truncated per-file input completely or refuse unrecoverable truncation/missing hunks before any model call or completed artifact. Replace the legacy tests that explicitly allow truncated bounded-slice reviews."
+            "DIFF-READER: through DiffGroundingDeps/git-diff reader, recover truncated per-file input completely or refuse unrecoverable truncation/missing hunks before any model call or completed artifact. Replace the legacy tests that explicitly allow truncated bounded-slice reviews.",
+            "DIFF-FACTORY-LIMIT: for each of the five model-dimension factories, a provider cap below configured review size reaches adapter reduction/duplicate budgets, createJob.plan.limitChars and every boundedInput.maxInputChars unchanged. Cover the two deterministic callers without introducing a separate budget.",
+            "DIFF-FITS-ONE-CALL: a file larger than16Ki with complete prompt below128K still forces quality chunk mode, validates one note per fragment and executes parent gather. Ordinary non-fragment input remains single-call compatible."
           ],
           "fixturesNeeded": [
             "Scripted structured model records actual complete calls and emits bounded valid chunk/gather answers; no fake PASS from missing evidence."
@@ -704,7 +762,8 @@
             "DIFF-BUDGET",
             "DIFF-REPAIR",
             "DIFF-TRANSPORT",
-            "DIFF-ADMISSION"
+            "DIFF-ADMISSION",
+            "DIFF-FACTORY-LIMIT"
           ]
         },
         {
@@ -713,7 +772,8 @@
             "DIFF-LARGE",
             "DIFF-GATHER",
             "DIFF-SCALE",
-            "DIFF-PARENT-QUALITY"
+            "DIFF-PARENT-QUALITY",
+            "DIFF-FITS-ONE-CALL"
           ]
         },
         {
@@ -978,6 +1038,29 @@
       "kind": "prior-artifact",
       "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round2.json",
       "quotedText": "Actual headless-browser render and inspected screenshot for the generated companion; control interactions not claimed."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/code-review.ts:251-264",
+      "quotedText": "Current build(snapshot) callback has no limit argument; direct source lookup identifies five model and two deterministic dimension callers."
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/job.ts:108-131",
+      "quotedText": "enterStage currently accepts singleCalls when they fit; fragmented parent obligations need an explicit force-chunk selection contract."
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-round2.json"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.json",
+      "quotedText": "Current companion render evidence after canonical third-round regeneration."
     }
   ]
 }

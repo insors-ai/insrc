@@ -152,16 +152,13 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 	assert.ok(holder.chars <= LIMIT);
 	assert.ok(holder.neighbours.length < crowd.length, 'only the summaries that fit');
 
-	// Divided with no atoms: the single call is over the limit with nothing to chunk; no chunk call is made.
+	// Oversized fixed framing with nothing to review must refuse, never silently complete.
 	const empty = toySnapshot([]);
 	const bloated: ReviewAdapter<ToyResult> = {
 		...toyAdapter(empty),
 		stagesFor: () => [{ ...toyAdapter(empty).stagesFor('daemon')[0]!, singleCalls: () => [{ messages: [{ role: 'user', content: 'x'.repeat(LIMIT) }], schema: TOY_SCHEMA, execution: { mode: 'structured' } }] }],
 	};
-	const none = createReviewJob(bloated, 'daemon', empty, LIMIT);
-	assert.equal(none.plan.single, false);
-	assert.equal(none.phase, 'done');
-	assert.equal(none.issuedHashes.length, 0, 'no call was made');
+	assert.throws(() => createReviewJob(bloated, 'daemon', empty, LIMIT), /fixed framing/);
 });
 
 test('a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats', () => {

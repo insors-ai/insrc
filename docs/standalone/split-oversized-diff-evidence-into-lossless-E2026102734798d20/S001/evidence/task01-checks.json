@@ -14,5 +14,12 @@
     "exitCode": 0
   },
   "fullSweep": "Deferred until all implementation tasks are built, per user instruction",
-  "pending": "Independent daemon build validation; provider normalization/isolation belongs to t2"
+  "pending": "Daemon revalidation of corrected task1",
+  "initialDaemonValidation": {
+    "passed": false,
+    "testsPassed": true,
+    "typecheckClean": true,
+    "reason": "Oversized fixed framing with empty material silently completed; history test did not exercise actual dispatch."
+  },
+  "correction": "Irreducible empty-material framing now refuses; explicit history is checked in every actual serial provider dispatch across divided calls."
 }

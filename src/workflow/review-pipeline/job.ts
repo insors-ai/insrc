@@ -117,7 +117,11 @@ function enterStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, ind
 		} else {
 			// Today's call does not fit: the review is divided, even with no atoms (its obligations go to gather).
 			const b = budgets(next.plan.limitChars);
-			const planned = planWithin(next, adapter, stage, readMaterial(next, adapter), b.soft, b.hard, undefined, undefined);
+			const material = readMaterial(next, adapter);
+			const planned = planWithin(next, adapter, stage, material, b.soft, b.hard, undefined, undefined);
+			if (planned.chunks.length === 0 && (adapter.gather === undefined || material.obligations.length === 0)) {
+				throw new AtomTooLargeError(`the ${stage.id} fixed framing`, Math.max(...singles.map(sentChars)), next.plan.limitChars);
+			}
 			next = { ...planned.job, plan: { ...next.plan, single: false, chunks: planned.chunks, crossRelations: planned.crossRelations } };
 			log.info({ dimension: job.dimension, stage: stage.id, chunks: planned.chunks.length }, 'review pipeline: the single call is over the limit; the review is divided');
 			next = issueChunkCalls(next, stage, next.plan.chunks, undefined);

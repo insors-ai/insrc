@@ -125,3 +125,17 @@ export function diffQualityNotes(answer: StageAnswer, material: ReviewMaterial, 
 		...descriptions.filter(d => !data.fragments.has(d.atomId)).map(d => ({ key: DIFF_DUPLICATION, atomIds: [d.atomId], text: `Duplication-relevant behavior of ${data.rows.get(d.atomId)?.file}: ${d.description}` })),
 	];
 }
+
+/** Primary diff findings use source locations too; fragment IDs are never user-facing counterparts. */
+export function primaryDiffFindingReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
+ const data = index(material);
+ if (data.parents.length === 0) return [];
+ const carried = new Set(call.carries.atomIds.map(id => data.rows.get(id)?.file));
+ const files = [...new Set([...data.rows.values()].map(r => r.file))];
+ const fileOf = (value: string | undefined): string | undefined => files.find(file => value === file || (value?.startsWith(file + ':') && /^:[1-9]\d*(?::[1-9]\d*)?$/.test(value.slice(file.length))));
+ const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
+ return findings.some(f => {
+  const file = fileOf(f.location);
+  return file === undefined || !carried.has(file) || f.location === file || (f.counterpartRef !== undefined && fileOf(f.counterpartRef) === undefined);
+ }) ? ['Primary diff findings must use a carried original source file:line and original reviewed counterpart references, never fragment IDs'] : [];
+}

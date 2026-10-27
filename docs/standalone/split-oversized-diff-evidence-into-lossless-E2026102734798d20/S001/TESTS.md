@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -169,3 +169,26 @@ Run at 2026-10-27T08:27:08.158Z on commit `deea66b58`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts` | 0 | 3 | 1 s |  |
+
+## t7
+
+Run at 2026-10-27T08:40:32.067Z on commit `2c3fde281`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-SCALE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**integration: DIFF-SCALE-DUPLICATES**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-SCALE-DUPLICATES: hundreds of fragments use bounded parent and cross-parent judgments without symbol pair calls | `src/workflow/review-pipeline/__tests__/diff-duplication.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/diff-duplication.test.ts` | 0 | 1 | 1.1 s |  |
+| `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1.1 s |  |

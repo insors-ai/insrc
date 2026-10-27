@@ -26,7 +26,7 @@
  * correction always fits beside the call (s1 leaves out one that would not).
  */
 
-import { parentNoteReasons, type DiffParentDescriptor } from './diff-parent-evidence.js';
+import { primaryDiffFindingReasons, parentNoteReasons, type DiffParentDescriptor } from './diff-parent-evidence.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { ExecutionMode, ReviewCall, ReviewChunk, ReviewMaterial, StageAnswer } from '../types.js';
 
@@ -209,7 +209,7 @@ export function validateChunk(spec: ChunkSpec, answer: unknown, call: ReviewCall
 			const repeated = ids.flatMap((id, i) => ids.indexOf(id) !== i ? [`descriptions[${i}]`] : []);
 			const foreign = ids.flatMap((id, i) => carried.has(id) ? [] : [`descriptions[${i}]`]);
 			return [
-				...((spec.diffParents?.length ?? 0) > 0 ? parentNoteReasons(a.notes ?? [], call, material) : []),
+				...((spec.diffParents?.length ?? 0) > 0 ? [...parentNoteReasons(a.notes ?? [], call, material), ...primaryDiffFindingReasons(answer, call, material)] : []),
 				...(missing.length > 0 ? [`descriptions are missing for symbols in this chunk: ${quoted(missing)}`] : []),
 				...(repeated.length > 0 ? [`${atFault('descriptions repeat a symbol already described', repeated)}`] : []),
 				...(foreign.length > 0 ? [`${atFault('descriptions name an atomId that is no symbol in this chunk', foreign)}; describe exactly: ${quoted(call.carries.atomIds)}`] : []),

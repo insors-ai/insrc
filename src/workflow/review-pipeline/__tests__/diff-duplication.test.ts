@@ -4,7 +4,7 @@ import { buildDiffSymbols } from '../../code-review/grounding.js';
 import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
 import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
-import { applyOutput, createReviewJob, nextCalls, result, runStage } from '../job.js';
+import { applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError, runStage } from '../job.js';
 import { promptChars } from '../envelope.js';
 import { parentFindingReasons } from '../adapters/diff-parent-evidence.js';
 
@@ -24,6 +24,23 @@ test('DIFF-SCALE-DUPLICATES: hundreds of fragments use bounded parent and cross-
  const fragments = material.atoms.filter(a => byId.get(a.id)!.diffFragment !== undefined);
  assert.ok(fragments.length > 200);
  let job = createReviewJob(adapter, 'daemon', snapshot, cap), primaries = 0, reductions = 0, obligations = 0;
+ // Exercise the real primary-answer boundary, including its correction attempt.
+ const primary = nextCalls(job, adapter)[0]!;
+ const validNotes = primary.carries.atomIds.flatMap(id => {
+  const row = byId.get(id)!;
+  return row.diffFragment === undefined ? [] : [{ key: `diff-file-quality:${row.diffFragment.parentId}`, atomIds: [id], note: 'local evidence' }];
+ });
+ for (const invalid of [
+  { location: 'a.json:1', counterpartRef: fragments[0]!.id },
+  { location: 'a.json:1', counterpartRef: 'foreign.ts:1' },
+  { location: fragments[0]!.id, counterpartRef: 'b.json:1' },
+ ]) {
+  const answer = { findings: [{ ...invalid, severity: 'MED', message: 'invalid provenance', confidence: 'breach' }], descriptions: primary.carries.atomIds.map(atomId => ({ atomId, description: 'local' })), notes: validNotes };
+  const retryJob = applyOutput(job, adapter, primary.callId, { callId: primary.callId, answer });
+  const retry = retryJob.pending.find(c => c.attempt === 2)!;
+  assert.ok(retry, 'invalid primary provenance must request correction');
+  assert.throws(() => applyOutput(retryJob, adapter, retry.callId, { callId: retry.callId, answer }), ReviewCallFailedError);
+ }
  const facts = ['WITHIN_ALPHA', 'WITHIN_BETA', 'CROSS_ALPHA', 'CROSS_BETA', 'SMALL_DUPLICATE'];
  const localFacts: string[][] = [];
  while (job.phase !== 'done') {

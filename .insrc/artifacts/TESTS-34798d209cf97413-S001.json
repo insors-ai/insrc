@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:27:08.158Z",
+    "updatedAt": "2026-10-27T08:40:32.067Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -695,6 +695,88 @@
               },
               {
                 "title": "DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts for parent-only correctness judgment",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "2c3fde281",
+        "ranAt": "2026-10-27T08:40:32.067Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-SCALE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-SCALE-DUPLICATES",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-duplication.test.ts",
+                "title": "DIFF-SCALE-DUPLICATES: hundreds of fragments use bounded parent and cross-parent judgments without symbol pair calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-duplication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1100,
+            "titles": [
+              {
+                "title": "DIFF-SCALE-DUPLICATES: hundreds of fragments use bounded parent and cross-parent judgments without symbol pair calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1141,
+            "titles": [
+              {
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
                 "result": "pass"
               }
             ],

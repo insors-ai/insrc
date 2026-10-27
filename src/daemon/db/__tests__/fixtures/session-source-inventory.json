@@ -15635,6 +15635,14 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "unresolved-call",
           "MessageChannel"
         ],
@@ -15643,9 +15651,9 @@
           "worthCompacting"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "c8b5c5debc5c6938d9592728982c909cf36945234a210ecd58e92e9c4ab42311",
-      "sourceDigest": "3a7bd0484c57a13d72bf312ab99b41435b21b94b40eaf4686e840aff63a561a4",
+      "siteCount": 14,
+      "sitesDigest": "7b30c9ebca0497eeb929dd61b2062c0223fbfc1d30adcfb6c0de1445fc658c57",
+      "sourceDigest": "f7b857c993d9f99a7546d78ce3f1fd219a3f55540a932ce3c6279b95c130525c",
       "boundaries": [
         "diagnostic",
         "storage-call",

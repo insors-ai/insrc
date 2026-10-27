@@ -329,12 +329,50 @@ describe('integration', () => {
 		assert.ok(Date.now() - t0 < 5_000);
 		assert.equal(granted, false, 'never granted: no worker was asked to close and nothing was compacted');
 		assert.ok(graphStoreReclaimable() !== undefined, 'the main thread\'s store is still open');
-		await assert.rejects(c.runNow(), /the daemon was not idle in time/, 'daemon.compact gets the not-idle-in-time error');
+		await assert.rejects(c.runNow(), /^MaintenanceNotRunError: daemon\.compact: the daemon did not become idle within 300 ms; try again later$/, 'daemon.compact gets the design\'s not-idle-in-time error');
 		slow.release();
 		await slow.reply;
 		assert.equal((await ask('x.write', { key: 'after-abandon' })).result, 'written');
 		assert.equal((await ask('repo.stats', {})).error, undefined, 'the workers serve as before');
 		assert.equal((await writerOp({ op: 'read-config-and-artifact', tags: ['before'] }))['ok'], true);
+	});
+
+	test('the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted', { timeout: 60_000 }, async () => {
+		// Waiting: a running request holds the lock; health goes bad; maintenance stops waiting.
+		let ok = true;
+		let granted = false;
+		let liveAsked = 0;
+		let compacted = 0;
+		const workers = {
+			live: () => { liveAsked++; return supervisors.flatMap(s => s.liveWorkers()); },
+			created: () => supervisors.reduce((n, s) => n + s.createdCount(), 0),
+		};
+		const compact: MaintenanceDeps['compact'] = async opts => { compacted++; return compactGraphStore(opts); };
+		const waiting = makeController({ pauseLimitMs: 30_000 }, { healthy: () => ok, healthPollMs: 20, workers, compact, onGranted: async () => { granted = true; } });
+		const slow = slowRequest();
+		await until(() => slowEntered, 'the running request');
+		const t0 = Date.now();
+		const ticked = waiting.tick();
+		await sleep(150);
+		ok = false;
+		assert.equal(await ticked, 'abandoned');
+		assert.ok(Date.now() - t0 < 5_000, 'it stopped waiting at once, long before the 30 s pause limit');
+		assert.deepEqual([granted, liveAsked, compacted], [false, 0, 0], 'never granted: no worker asked to close, nothing compacted');
+		ok = true;
+		slow.release();
+		await slow.reply;
+		assert.equal((await ask('x.write', { key: 'after-unhealthy-wait' })).result, 'written', 'the exclusive request was withdrawn');
+
+		// Granted, then health goes bad before the workers are asked to close: nothing closed, nothing compacted.
+		ok = true;
+		liveAsked = 0;
+		compacted = 0;
+		const grantedThenLost = makeController({}, { healthy: () => ok, healthPollMs: 20, workers, compact, onGranted: async () => { ok = false; } });
+		await assert.rejects(grantedThenLost.runNow(), /^MaintenanceNotRunError: maintenance: the graph store is not healthy$/);
+		assert.deepEqual([liveAsked, compacted], [0, 0], 'stopped before closing any handle or compacting');
+		ok = true;
+		assert.equal((await ask('x.write', { key: 'after-unhealthy-grant' })).result, 'written', 'the lock was released');
+		assert.equal((await ask('repo.stats', {})).error, undefined, 'the workers still serve: their handles were never closed');
 	});
 
 	test("the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves", { timeout: 60_000 }, async () => {

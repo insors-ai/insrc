@@ -71,7 +71,12 @@ export interface MaintenanceDeps {
 	readonly ackMs?: number | undefined;
 	/** Tests only: runs once the lock is granted, before the workers are asked to close. */
 	readonly onGranted?: (() => Promise<void>) | undefined;
+	/** How often a maintenance waiting for the lock re-checks store health (default HEALTH_POLL_MS). */
+	readonly healthPollMs?: number | undefined;
 }
+
+/** A maintenance waiting for the lock re-checks store health this often. */
+export const HEALTH_POLL_MS = 250;
 
 export class MaintenanceNotRunError extends Error {
 	override readonly name = 'MaintenanceNotRunError';
@@ -187,15 +192,30 @@ export class MaintenanceController {
 		const pending = new AbortController();
 		this.pending = pending;
 		const { pauseLimitMs } = this.deps.config;
+		// The store losing its locks is terminal: a maintenance still waiting stops waiting and
+		// takes the same path as every other store user (it never closes or compacts).
+		const health = setInterval(() => {
+			if (!this.deps.healthy()) pending.abort(new MaintenanceNotRunError('maintenance: the graph store is not healthy'));
+		}, this.deps.healthPollMs ?? HEALTH_POLL_MS);
+		health.unref();
+		const stopIfUnhealthy = (step: string): void => {
+			if (this.deps.healthy()) return;
+			log.warn({ reason, step }, 'maintenance: the graph store is not healthy; stopped before it changed anything');
+			throw new MaintenanceNotRunError('maintenance: the graph store is not healthy');
+		};
 		try {
 			return await getLockManager().request(MAINTENANCE_LOCK, {
 				mode: 'exclusive', timeoutMs: pauseLimitMs, signal: pending.signal,
 				metadata: { activity: COMPACTION_ACTIVITY, reason },
 			}, async () => {
 				this.pending = undefined;
+				clearInterval(health);
+				stopIfUnhealthy('lock granted');
 				log.info({ pauseAckMs: this.now() - asked, reason }, 'maintenance: every request has finished; closing the graph handles');
 				await this.deps.onGranted?.();
+				stopIfUnhealthy('before closing the graph handles');
 				const closed = await this.closeWorkerHandles();
+				stopIfUnhealthy('before compacting');
 				const result = await this.deps.compact({
 					// Every worker closed its handle and none was started since: the environment is really closed.
 					beforeRename: async () => closed.allClosed && this.deps.workers.created() === closed.workers,
@@ -205,8 +225,13 @@ export class MaintenanceController {
 			});
 		} catch (err) {
 			if (err instanceof LockTimeoutError) {
-				log.warn({ pauseLimitMs, reason }, 'maintenance: a request ran past the pause limit; abandoned, nothing closed');
-				throw new MaintenanceNotRunError(`maintenance: the daemon was not idle in time (requests still running after ${pauseLimitMs} ms); retry later`);
+				log.warn({ pauseLimitMs, reason, holders: err.holders }, 'maintenance: a request ran past the pause limit; abandoned, nothing closed');
+				throw new MaintenanceNotRunError(`daemon.compact: the daemon did not become idle within ${pauseLimitMs} ms; try again later`);
+			}
+			if (err instanceof MaintenanceNotRunError) throw err;
+			if (pending.signal.aborted && pending.signal.reason instanceof MaintenanceNotRunError && !this.stopped) {
+				log.warn({ reason }, 'maintenance: the graph store is not healthy; stopped waiting for the lock');
+				throw pending.signal.reason;
 			}
 			if (pending.signal.aborted) {
 				log.info({ reason }, 'maintenance: abandoned before it started (the daemon is shutting down)');
@@ -215,6 +240,7 @@ export class MaintenanceController {
 			log.error({ err: err instanceof Error ? err.message : String(err), reason }, 'maintenance: compaction failed');
 			throw err;
 		} finally {
+			clearInterval(health);
 			if (this.pending === pending) this.pending = undefined;
 		}
 	}

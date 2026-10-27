@@ -30,7 +30,7 @@ export const CODE_INDEXING_WORKER = 'indexing';
 export const SUMMARY_WORKER = 'document-summary';
 
 export interface IndexingWorkers {
-	/** Both workers' first starts (each logs its own failure). */
+	/** Both workers ready (each first start, or its replacement). */
 	readonly ready: Promise<void>;
 	/** Stop the current code-indexing worker's queue and watcher; settles when it reports its drain, or exits. */
 	stop(): Promise<void>;
@@ -55,12 +55,10 @@ export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedA
 		waitingEnd.delete(self);
 		pushToWorker(started.port, SUMMARY_PORT_OP, end, [end]);
 	};
-	const failed = (what: string) => (err: unknown): void => {
-		log.error({ err: err instanceof Error ? err.message : String(err) }, `${what} worker did not start`);
-	};
 	const block = new IndexingBlock(indexingBlock);
 
-	const code = workers.start({
+	// A worker whose first start fails is replaced like one that exited (rate-limited; past the limit the daemon shuts down).
+	const code = workers.startOrReplace({
 		name: CODE_INDEXING_WORKER, cls: 'indexing', script: 'indexing-worker',
 		extra: () => {
 			const end = endFor(CODE_INDEXING_WORKER, SUMMARY_WORKER);
@@ -68,15 +66,15 @@ export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedA
 		},
 		started: ready(CODE_INDEXING_WORKER, 'code-indexing'),
 		exited: () => block.setCodeBusy(false),
-	}).then(() => {}, failed('code-indexing'));
-	const summary = workers.start({
+	});
+	const summary = workers.startOrReplace({
 		name: SUMMARY_WORKER, script: 'summary-worker',
 		extra: () => {
 			const end = endFor(SUMMARY_WORKER, CODE_INDEXING_WORKER);
 			return { workerData: { summaryPort: end }, transferList: [end] };
 		},
 		started: ready(SUMMARY_WORKER, 'document-summary'),
-	}).then(() => {}, failed('document-summary'));
+	});
 
 	return {
 		ready: code.then(() => summary),

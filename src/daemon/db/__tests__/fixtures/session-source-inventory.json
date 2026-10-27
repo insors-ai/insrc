@@ -13194,6 +13194,10 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "storage-call",
           "initDb"
         ],
@@ -13212,10 +13216,6 @@
         [
           "storage-call",
           "listRepos"
-        ],
-        [
-          "diagnostic",
-          "log.error"
         ],
         [
           "diagnostic",
@@ -13363,8 +13363,8 @@
         ]
       ],
       "siteCount": 66,
-      "sitesDigest": "dc08f1859373c36269cc212c17eed799a303ec32da4d2cd27bc7e8d771ab55a0",
-      "sourceDigest": "91eedf10f298f7412db22e58cd9b92dbfc07e11e7199a424ca83488d3588b12e",
+      "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
+      "sourceDigest": "d85bd789e81b3688cbf1d8ed48e95b16b0735f162650c4571cd49528d3683800",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15507,10 +15507,6 @@
         ],
         [
           "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
           "log.info"
         ],
         [
@@ -15522,9 +15518,9 @@
           "MessageChannel"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "1fda37371216555374ad771942c9b9e3cd5de8982c45eef8431265c664c6abf0",
-      "sourceDigest": "bfaaf82a4e46a6787cab5e26179469220b1a9bd8a4e2427f3a3afe72ead8c866",
+      "siteCount": 4,
+      "sitesDigest": "afc450d4b5c44c553465ed8155e73ad0b68a683308f554b599a0253f5c2e53c8",
+      "sourceDigest": "c899608e2c122a6c61ecabaa1989be5c814f1ad88462d14c5aa030d6079a2e73",
       "boundaries": [
         "diagnostic",
         "unresolved-call"
@@ -15968,6 +15964,10 @@
         ],
         [
           "diagnostic",
+          "log.error"
+        ],
+        [
+          "diagnostic",
           "log.fatal"
         ],
         [
@@ -15975,9 +15975,9 @@
           "log.info"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "7c63c9b58bb03aed6cb2ec32b444dc3cc8e491778547d6441cb9d58e374f4597",
-      "sourceDigest": "871b3503d95bd1b852d2d166fbc74495fe46ab101eb9fd5713f88b4013362a44",
+      "siteCount": 7,
+      "sitesDigest": "45045ace5111bbb10be495d0e0ed950d66d4763a4f5eed7e68704f8469ddde2d",
+      "sourceDigest": "22c1a2136e33cae86993013f2599cb52f8afecdcbaa2a36291042271080ac766",
       "boundaries": [
         "diagnostic"
       ]

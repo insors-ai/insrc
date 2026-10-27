@@ -463,18 +463,13 @@ async function main(): Promise<void> {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
 		threadServices.onShutdown(reason => shutdown(reason));
 		// Admin methods go to the admin worker; a request arriving before it is
-		// ready is held for it. If it cannot start, they are served here again.
+		// ready is held for it (at most 30 s). A first start that fails is replaced
+		// like an exit (rate-limited; past the limit the daemon shuts down).
 		routed.add('admin');
-		supervisor!.start({
+		void supervisor!.startOrReplace({
 			name: 'admin', cls: 'admin', script: 'admin-worker',
 			started: w => log.info({ threadId: w.threadId }, 'admin worker ready'),
-		}).catch(
-			(err: unknown) => {
-				routed.delete('admin');
-				router.targetsChanged();
-				log.error({ err: err instanceof Error ? err.message : String(err) }, 'admin worker did not start; admin methods stay on the main thread');
-			},
-		);
+		});
 	}
 
 	// Initialize chat session pool

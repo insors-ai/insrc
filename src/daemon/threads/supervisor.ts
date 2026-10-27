@@ -84,6 +84,21 @@ export class Supervisor {
 		return started;
 	}
 
+	/**
+	 * Start a worker of `spec`; if its first start fails (it exits or errors before it
+	 * is ready), replace it as after any exit: rate-limited, and past the limit the
+	 * daemon shuts down. Resolves once a worker of `spec` is ready, or the replacing ends.
+	 */
+	async startOrReplace(spec: WorkerSpec): Promise<void> {
+		try {
+			await this.start(spec);
+		} catch (err) {
+			if (this.stopping) return;
+			log.error({ worker: spec.name, err: err instanceof Error ? err.message : String(err) }, 'supervisor: a worker did not start; replacing it');
+			await this.replace(spec);
+		}
+	}
+
 	/** Every ready worker now. */
 	liveWorkers(): StartedWorker[] {
 		return [...this.live.values()];

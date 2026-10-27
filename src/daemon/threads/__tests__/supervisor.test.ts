@@ -201,3 +201,21 @@ test("a dead worker's store-guard permits and named locks are reclaimed before i
 	hold.stop();
 	await hold.terminateAll();
 });
+
+test('a worker whose first start fails is replaced like one that exited (startOrReplace), not given up on', { timeout: 60_000 }, async () => {
+	const reasons: string[] = [];
+	const sup = new Supervisor({ services, router, shutdown: r => { reasons.push(r); } });
+	let attempt = 0;
+	const ready: number[] = [];
+	await sup.startOrReplace({
+		name: 'fail-first', script: '__tests__/helpers/fail-first-worker',
+		extra: () => ({ workerData: { attempt: ++attempt }, transferList: [] }),
+		started: w => { ready.push(w.threadId); },
+	});
+	assert.equal(attempt, 2, 'the first start failed and a replacement was started');
+	assert.equal(ready.length, 1, 'the replacement is ready');
+	assert.ok(sup.current('fail-first') !== undefined);
+	assert.deepEqual(reasons, [], 'no shutdown');
+	sup.stop();
+	await sup.terminateAll();
+});

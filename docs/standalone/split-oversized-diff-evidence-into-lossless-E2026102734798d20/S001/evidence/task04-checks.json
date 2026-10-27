@@ -1,0 +1,15 @@
+{
+  "task": "t4",
+  "tests": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task04-span-tests.txt"
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "invariants": "Ordered half-open UTF16 offsets; deterministic IDs/digests; exact reassembly; no surrogate-pair cuts; original source/diff coordinates; legacy small/binary behavior; changedFiles deduplicated. No graph/test edges invented.",
+  "fullSweep": "Deferred until all implementation completes",
+  "pending": "Daemon build validation"
+}

@@ -506,7 +506,7 @@ test('DIFF-READER: a real file larger than the public tool hard cap is recovered
 		writeFileSync(join(repo, 'large.json'), payload); git('add', 'large.json'); git('commit', '-qm', 'large evidence');
 		const result = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { base });
 		assert.deepEqual(result.changedFiles, ['large.json']);
-		const signature = result.grounding.symbols[0]!.signature;
+		const signature = result.grounding.symbols.filter(s => s.file === 'large.json').map(s => s.signature).join('');
 		assert.ok(signature.includes(`+${payload.trimEnd()}`), 'entire giant line, including its final marker, is retained');
 		assert.ok(!signature.includes('truncated') && !signature.includes('[no hunk text'));
 	} finally { rmSync(repo, { recursive: true, force: true }); }

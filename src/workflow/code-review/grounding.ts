@@ -33,6 +33,7 @@ import type { GitDiffData, GitDiffFileStat } from '../../daemon/tools/builtins/g
 import { runShell } from '../../daemon/tools/shell-helper.js';
 import type { DiffOpts } from '../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
+import { splitDiffRow, validateDiffFragments } from './diff-spans.js';
 import { getLogger } from '../../shared/logger.js';
 import { storyChangeSet, type AttributedStoryChangeSet, type StoryAttribution, type StoryChangeSet } from '../runners/build/story-commits.js';
 
@@ -345,7 +346,7 @@ export async function assembleDiffCodeReviewGrounding(
 		}
 	}
 	const symbols = buildDiffSymbols({ files: [...stats.values()], body: '', truncated: ranged.truncated || working.truncated, hunksByFile: hunks });
-	const changedFiles = symbols.map(s => s.file);
+	const changedFiles = [...new Set(symbols.map(s => s.file))];
 	return {
 		grounding: { symbols }, changedFiles,
 		changeSetAttribution: ranged.attribution ?? 'first-parent-range',
@@ -357,14 +358,14 @@ export async function assembleDiffCodeReviewGrounding(
 /** Turn a resolved diff into one per-file pseudo-`ChangedSymbolSummary`. A binary
  *  file carries a marker in place of hunks; a text file carries its unified-diff
  *  section. Caller/callee/test edges are empty (there is no graph on this path). */
-function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
+export function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 	const byFile = diff.hunksByFile ?? splitDiffByFile(diff.body);
 	if (diff.truncated) throw new DiffUnavailableError('Cannot review a truncated diff');
-	return diff.files.map((f): ChangedSymbolSummary => {
+	const rows = diff.files.flatMap((f): ChangedSymbolSummary[] => {
 		const hunks = f.change === 'binary'
 			? `[binary file changed — no textual hunks]`
 			: (byFile.get(f.path) ?? byFile.get(f.origPath ?? '') ?? `[no hunk text for ${f.path}]`);
-		return {
+		const row: ChangedSymbolSummary = {
 			entityId:      `diff:${f.path}`,
 			file:          f.path,
 			kind:          'file',
@@ -376,7 +377,10 @@ function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 			// A file's hunks carry no symbol: symbol coverage cannot be graded here.
 			coverageEligible: false,
 		};
+		return f.change === 'binary' ? [row] : splitDiffRow(row, f.origPath ?? f.path);
 	});
+	validateDiffFragments(rows);
+	return rows;
 }
 
 /** Split a unified-diff body into per-file sections keyed by the new (`b/`) path.

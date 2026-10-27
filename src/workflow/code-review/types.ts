@@ -101,8 +101,35 @@ export interface DimensionResult {
 // sc2 — daemon-served grounding (structured entity summaries, no raw file text)
 // ---------------------------------------------------------------------------
 
+/** One-based line/UTF16 column in the captured diff and, where available, source. */
+export interface DiffPosition {
+	readonly line: number;
+	readonly column: number;
+	readonly oldLine?: number | undefined;
+	readonly oldColumn?: number | undefined;
+	readonly newLine?: number | undefined;
+	readonly newColumn?: number | undefined;
+}
+
+/** Complete parent evidence owns an ordered partition of half-open UTF16 ranges. */
+export interface DiffFragment {
+	readonly parentId: string;
+	readonly oldFile: string;
+	readonly newFile: string;
+	readonly index: number;
+	readonly count: number;
+	readonly startOffset: number;
+	readonly endOffset: number;
+	readonly parentLength: number;
+	readonly parentDigest: string;
+	readonly contentDigest: string;
+	readonly start: DiffPosition;
+	readonly end: DiffPosition;
+}
+
 /** A structured summary of one changed symbol, assembled from the graph. */
 export interface ChangedSymbolSummary {
+	readonly diffFragment?: DiffFragment | undefined;
 	/** Stable identity of the graph entity (the internal id, stringified). */
 	readonly entityId:  string;
 	readonly file:      string;

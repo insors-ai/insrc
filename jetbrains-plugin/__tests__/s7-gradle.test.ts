@@ -49,3 +49,8 @@ test('SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, deta
 test("UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged", LONG, () => {
 	junitCase('daemon.UnixSocketDaemonRpcParseTest', "parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged");
 });
+
+test('ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures', LONG, () => {
+	junitCase('daemon.ModelDefinitionsGatewayTest', 'modelDefinitions, checkModel and decideModel parse their answers and classify failures');
+	junitCase('daemon.ModelDefinitionsGatewayTest', 'DaemonGatewayService forwards modelDefinitions, checkModel and decideModel to its delegate');
+});

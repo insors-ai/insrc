@@ -781,6 +781,28 @@ interface DaemonGateway {
      * unreachable / the reply is malformed. Never throws.
      */
     fun updateOutcome(): DaemonUpdateOutcomeResult
+
+    /**
+     * Read the daemon's model definitions (Epic ce99b72065d03b1b, s7; sc3
+     * `models.definitions`) — the only source of the runners, models and efforts the
+     * model-tier settings offer. Never throws.
+     */
+    fun modelDefinitions(): ModelDefinitionsResult
+
+    /**
+     * Check a model a CLI family does not list (sc4 `models.check`), trying
+     * [claimedEfforts]. Slow (it runs the CLI): call it off the EDT. Writes nothing.
+     * A check whose model did not run is still [ModelCheckOutcome.Checked], with its
+     * error. Never throws.
+     */
+    fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome
+
+    /**
+     * Record the user's decision on a check (sc4 `models.approve` with the allowed
+     * [efforts] when [approve], else `models.reject`). Applies after a daemon restart.
+     * Never throws.
+     */
+    fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult
 }
 
 /**
@@ -1282,7 +1304,70 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             DaemonActionResult.Failed(e.message ?: "unexpected daemon fault")
         }
 
+    override fun modelDefinitions(): ModelDefinitionsResult =
+        try {
+            val r = rpc.call(METHOD_MODEL_DEFINITIONS, emptyMap())
+            if (!r.ok || r.error != null) {
+                ModelDefinitionsResult.Failed(DaemonFailure.ofError(r.error ?: "models.definitions returned an error"))
+            } else {
+                parseModelDefinitions(r.data)?.let { ModelDefinitionsResult.Loaded(it) }
+                    ?: ModelDefinitionsResult.Failed(DaemonFailure.Other("the daemon's model definitions list no model family"))
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelDefinitionsResult.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelDefinitionsResult.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
+    override fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome =
+        try {
+            // A check that did not run carries its own `error` beside checkId and the
+            // evidence, so the reply is read whole (resultErrorIsFailure = false).
+            val r = rpc.call(
+                METHOD_MODELS_CHECK,
+                mapOf("family" to family, "modelId" to modelId, "claimedEfforts" to claimedEfforts),
+                resultErrorIsFailure = false,
+            )
+            if (!r.ok || r.error != null) {
+                ModelCheckOutcome.Failed(DaemonFailure.ofError(r.error ?: "models.check returned an error"))
+            } else {
+                parseModelCheck(r.data)?.let { ModelCheckOutcome.Checked(it) }
+                    // No checkId: the daemon refused the request ({error, recoverable:false}).
+                    ?: ModelCheckOutcome.Failed(DaemonFailure.Other((r.data["error"] as? String) ?: "models.check returned no check"))
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelCheckOutcome.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelCheckOutcome.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
+    override fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult =
+        try {
+            val r = if (approve) {
+                rpc.call(METHOD_MODELS_APPROVE, mapOf("checkId" to checkId, "efforts" to efforts))
+            } else {
+                rpc.call(METHOD_MODELS_REJECT, mapOf("checkId" to checkId))
+            }
+            when {
+                !r.ok || r.error != null ->
+                    ModelDecisionResult.Failed(DaemonFailure.ofError(r.error ?: "the daemon returned an error"))
+                r.data["ok"] == true -> ModelDecisionResult.Recorded
+                else -> ModelDecisionResult.Refused(
+                    reason = (r.data["reason"] as? String) ?: "refused",
+                    detail = (r.data["detail"] as? String) ?: "",
+                )
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelDecisionResult.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelDecisionResult.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
     companion object {
+        const val METHOD_MODEL_DEFINITIONS = "models.definitions"
+        const val METHOD_MODELS_CHECK = "models.check"
+        const val METHOD_MODELS_APPROVE = "models.approve"
+        const val METHOD_MODELS_REJECT = "models.reject"
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_DEBUG_STATUS = "daemon.debug-status"
         const val METHOD_SHUTDOWN = "daemon.shutdown"

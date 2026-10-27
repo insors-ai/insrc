@@ -63,6 +63,14 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun listModels(provider: String): ModelListResult = delegate.listModels(provider)
 
+    override fun modelDefinitions(): ModelDefinitionsResult = delegate.modelDefinitions()
+
+    override fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome =
+        delegate.checkModel(family, modelId, claimedEfforts)
+
+    override fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult =
+        delegate.decideModel(checkId, approve, efforts)
+
     override fun daemonStatus(): DaemonStatusResult = delegate.daemonStatus()
 
     override fun debugStatus(): DebugStatusResult = delegate.debugStatus()

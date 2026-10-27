@@ -1,0 +1,16 @@
+{
+  "task": "t3",
+  "tests": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task03-reader-tests.txt"
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "behavior": "Public tool limits unchanged. Review reader retries complete exact-path diffs per file, increasing capture up to64MiB then refuses explicitly. Injected incomplete/truncated/missing text refuses before grounding. Real3MiB single-line evidence retained through final marker.",
+  "fullSweep": "Deferred until all implementation tasks complete",
+  "pending": "Daemon build validation"
+}

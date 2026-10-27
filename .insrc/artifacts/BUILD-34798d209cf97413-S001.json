@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T07:31:29.606Z",
+    "updatedAt": "2026-10-27T07:41:52.432Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
@@ -15,9 +15,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Task1 now refuses oversized fixed framing even with no atoms/obligations, counts actual schema at all planning/dispatch boundaries, and preserves explicit correction/history or fails. Both previous daemon findings corrected. Relevant pipeline suite88passed/3live skips; no full sweep yet.",
+    "summary": "Task2 adds enforcing bounded input options/capability, fresh tool-free Claude calls, exact normalized schema guard and terminal unsupported isolation. Codex bounded calls honestly refuse without models until verified zero-tool support exists; ordinary behavior unchanged. Relevant suite132passed/3skips; four bounded contracts pass.",
     "testRecord": {
       "md": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/TESTS.md"
     },
@@ -27,86 +31,149 @@
           "file": ".insrc/artifacts/PLAN-34798d209cf97413-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task01-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task01-pipeline-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/complete-input.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-duplicates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/envelope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/job.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T07:31:29.606Z"
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-bounded-tests.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-checks.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-provider-pipeline-tests.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/bounded-input.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/bounded-input.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/structured-input.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:41:52.432Z"
       }
     ],
-    "commit": "55e892c23"
+    "commit": "bcb286d2c"
   }
 }

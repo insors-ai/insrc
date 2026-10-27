@@ -28,5 +28,10 @@
     "https://raw.githubusercontent.com/openai/codex/rust-v0.164.0/codex-rs/config/src/config_toml.rs"
   ],
   "fullSweep": "Deferred until all implementation tasks finish",
-  "pending": "Daemon task validation; actual live bounded CLI request not run"
+  "pending": "Actual live bounded CLI request not run; Codex bounded mode remains explicitly unsupported",
+  "daemonValidation": {
+    "passed": true,
+    "testsPassed": true,
+    "typecheckClean": true
+  }
 }

@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T07:31:29.606Z",
+    "updatedAt": "2026-10-27T07:41:52.432Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -183,6 +183,77 @@
               },
               {
                 "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bcb286d2c",
+        "ranAt": "2026-10-27T07:41:52.432Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-TRANSPORT",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-TRANSPORT: Codex schema normalization is counted before isolation admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-ADMISSION",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 725,
+            "titles": [
+              {
+                "title": "DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TRANSPORT: Codex schema normalization is counted before isolation admission",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
                 "result": "pass"
               }
             ],

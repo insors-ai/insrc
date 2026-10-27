@@ -28,8 +28,10 @@
  */
 
 import type { ChangeSetAttribution, CodeReviewGrounding, ChangedSymbolSummary } from './types.js';
-import { gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
+import { buildDiffArgv, gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData, GitDiffFileStat } from '../../daemon/tools/builtins/git/diff.js';
+import { runShell } from '../../daemon/tools/shell-helper.js';
+import type { DiffOpts } from '../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { storyChangeSet, type AttributedStoryChangeSet, type StoryAttribution, type StoryChangeSet } from '../runners/build/story-commits.js';
@@ -284,6 +286,14 @@ export async function assembleDiffCodeReviewGrounding(
 	const storyPaths = new Set(ranged.storyPaths ?? ranged.files.map(f => f.path));
 	const rangedHunks = ranged.hunksByFile ?? splitDiffByFile(ranged.body);
 	const workingHunks = working.hunksByFile ?? splitDiffByFile(working.body);
+	if (ranged.truncated || working.truncated) throw new DiffUnavailableError('Incomplete diff capture: complete evidence is required before review');
+	for (const [diff, sections] of [[ranged, rangedHunks], [working, workingHunks]] as const) {
+		for (const file of diff.files) {
+			if (file.change !== 'binary' && !(sections.get(file.path) ?? sections.get(file.origPath ?? ''))) {
+				throw new DiffUnavailableError(`Missing complete diff evidence for ${file.path}`);
+			}
+		}
+	}
 	const stats = new Map<string, GitDiffFileStat>();
 	const hunks = new Map<string, string>();
 	for (const f of ranged.files) {
@@ -317,7 +327,7 @@ export async function assembleDiffCodeReviewGrounding(
  *  section. Caller/callee/test edges are empty (there is no graph on this path). */
 function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 	const byFile = diff.hunksByFile ?? splitDiffByFile(diff.body);
-	const truncNote = diff.truncated ? '\n[diff truncated — reviewed over a bounded slice]' : '';
+	if (diff.truncated) throw new DiffUnavailableError('Cannot review a truncated diff');
 	return diff.files.map((f): ChangedSymbolSummary => {
 		const hunks = f.change === 'binary'
 			? `[binary file changed — no textual hunks]`
@@ -327,7 +337,7 @@ function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 			file:          f.path,
 			kind:          'file',
 			name:          f.path,
-			signature:     hunks + truncNote,
+			signature:     hunks,
 			callers:       [],
 			callees:       [],
 			testsReaching: [],
@@ -420,7 +430,31 @@ async function runDiff(repoPath: string, input: Record<string, unknown>): Promis
 	}
 	const data = res.data as GitDiffData | undefined;
 	if (!data) throw new DiffUnavailableError(`git_diff returned no data for ${repoPath}`);
-	return { files: data.files, body: extractDiffBody(res.output), truncated: data.truncated };
+	const body = extractDiffBody(res.output);
+	const sections = splitDiffByFile(body);
+	if (!data.truncated && data.files.every(f => f.change === 'binary' || sections.has(f.path) || sections.has(f.origPath ?? ''))) {
+		return { files: data.files, body, truncated: false };
+	}
+	// Keep ordinary tool limits unchanged. A review recaptures each exact file with
+	// the same revisions/exclusions, increasing capture only until it is complete.
+	const complete = new Map<string, string>();
+	for (const file of data.files) {
+		if (file.change === 'binary') continue;
+		const opts: DiffOpts = { ...(input as DiffOpts), paths: [...new Set([file.path, ...(file.origPath !== undefined ? [file.origPath] : [])])] };
+		delete opts.path;
+		let captured: string | undefined;
+		for (let maxBytes = 2 * 1024 * 1024; maxBytes <= 64 * 1024 * 1024; maxBytes *= 2) {
+			const out = await runShell(buildDiffArgv(opts).argv, { cwd: repoPath, maxBytes, timeoutMs: 30_000 });
+			if (out.spawnError || out.code !== 0 || out.timedOut) throw new DiffUnavailableError(`Complete diff read failed for ${file.path}`);
+			if (out.stdoutTruncated) continue;
+			const split = splitDiffByFile(out.stdout);
+			captured = split.get(file.path) ?? split.get(file.origPath ?? '');
+			break;
+		}
+		if (!captured) throw new DiffUnavailableError(`Complete diff unavailable for ${file.path}: missing hunks or per-file capture limit exceeded`);
+		complete.set(file.path, captured);
+	}
+	return { files: data.files, body: [...complete.values()].join('\n'), truncated: false, hunksByFile: complete };
 }
 
 /** The `exclude` input for `git_diff`, or nothing at all when there are no

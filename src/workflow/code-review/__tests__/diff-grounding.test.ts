@@ -117,13 +117,14 @@ test('assembler: an empty range and a clean tree => a valid grounding with symbo
 
 // ---- truncated ----
 
-test('assembler: a truncated diff still yields a valid grounding (bounded hunks + a truncation note, review proceeds)', async () => {
-	const { deps } = fakeDeps({
-		range: { files: [fileStat('src/big.ts')], body: diffBody('src/big.ts'), truncated: true },
-	});
-	const { grounding } = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
-	assert.equal(grounding.symbols.length, 1, 'a bounded slice is still reviewable, not an error');
-	assert.match(grounding.symbols[0]!.signature, /diff truncated/);
+test('DIFF-READER: unrecoverable truncated input refuses before any grounding is returned', async () => {
+	const { deps } = fakeDeps({ range: { files: [fileStat('src/big.ts')], body: diffBody('src/big.ts'), truncated: true } });
+	await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, BASE), /Incomplete diff capture/);
+});
+
+test('DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder', async () => {
+	const { deps } = fakeDeps({ range: { files: [fileStat('src/missing.ts')], body: '', truncated: false } });
+	await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, BASE), /Missing complete diff evidence.*src\/missing.ts/);
 });
 
 // ---- git failures propagate ----
@@ -259,7 +260,7 @@ test('an error that is not a diff failure propagates at once', async () => {
 	assert.equal(r.calls.length, 1);
 });
 
-test('T44 (integration, real git): ledger hunks larger than the diff cap that sort before src/ — with the exclusion every source file keeps its diff text; without it the text is lost', async () => {
+test('T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'cr-diff-cap-'));
 	const run = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 	const put = (rel: string, body: string): void => { mkdirSync(join(repo, rel, '..'), { recursive: true }); writeFileSync(join(repo, rel), body); };
@@ -296,7 +297,7 @@ test('T44 (integration, real git): ledger hunks larger than the diff cap that so
 		assert.ok(without.changedFiles.includes('.insrc/artifacts/LLD-x-S001.json'), 'fixture precondition: unexcluded, the ledger file is in the reviewed set');
 		const srcA = without.grounding.symbols.find(s => s.file === 'src/a.ts');
 		assert.ok(srcA !== undefined);
-		assert.ok(!srcA.signature.includes('diff --git a/src/a.ts'), 'fixture precondition: unexcluded, the source file has lost its diff text to the cap');
+		assert.ok(srcA.signature.includes('diff --git a/src/a.ts'), 'the review reader recovers the file after the aggregate capture cap');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -471,8 +472,7 @@ test('a truncated per-unit call marks the grounding truncated and a storyChangeS
 		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
 		rangeDiff:       async () => out,
 	};
-	const res = await assembleDiffCodeReviewGrounding('/repo', deps, { base: 'base' });
-	assert.match(sigOf(res, 'shared.txt'), /\[diff truncated/);
+	await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, { base: 'base' }), /Incomplete diff capture/);
 
 	// An unresolvable base: the real rangeDiff raises DiffUnavailableError, and
 	// so does the assembler; nothing steps down to the last commit (ISSUE-b97752e9).
@@ -499,4 +499,21 @@ test('splitDiffByFile keys a quoted header by its decoded literal path: tab, new
 	for (const [path, marker] of [['src/a\tb.ts', 'TAB'], ['café.ts', 'UTF8'], ['new\tdir/x.ts', 'MIXED']] as const) {
 		assert.ok(map.get(path)?.includes(`+${marker}`), `${JSON.stringify(path)} keeps its hunk`);
 	}
+});
+
+test('DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'cr-complete-large-'));
+	const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	try {
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 'T'); git('config', 'commit.gpgsign', 'false');
+		writeFileSync(join(repo, 'base.txt'), 'base\n'); git('add', '.'); git('commit', '-qm', 'base');
+		const base = git('rev-parse', 'HEAD');
+		const payload = `{"data":"${'x'.repeat(3 * 1024 * 1024)}","last":"COMPLETE-END"}\n`;
+		writeFileSync(join(repo, 'large.json'), payload); git('add', 'large.json'); git('commit', '-qm', 'large evidence');
+		const result = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { base });
+		assert.deepEqual(result.changedFiles, ['large.json']);
+		const signature = result.grounding.symbols[0]!.signature;
+		assert.ok(signature.includes(`+${payload.trimEnd()}`), 'entire giant line, including its final marker, is retained');
+		assert.ok(!signature.includes('truncated') && !signature.includes('[no hunk text'));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

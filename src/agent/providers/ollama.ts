@@ -710,9 +710,10 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
     if (opts.reviewBudget) {
       const profile = this.getReviewBudgetProfile('reviewer-session');
-      const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
+      const messages: LLMMessage[] = [{ role: 'user', content: prompt }, { role: 'user', content: closingInstruction }];
       preflightProviderReviewBudget(opts.reviewBudget, profile, reviewPromptChars(profile, messages), reviewWireSchemaJson(profile, schema));
     }
     const deadlineAt = Date.now() + opts.deadlineMs;
@@ -723,6 +724,7 @@ export class OllamaProvider implements LLMProvider {
     try {
       const loop = await runReadOnlyToolLoop({
         closingSchema: schema,
+        closingInstruction,
         ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider: this,
         messages: [{ role: 'user', content: prompt }],
@@ -742,7 +744,7 @@ export class OllamaProvider implements LLMProvider {
         provider:    this,
         messages:    loop.messages,
         // Structural reference trails the prompt.
-        instruction: 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema),
+        instruction: closingInstruction,
         schema,
         ...(opts.internalRetry !== undefined ? { internalRetry: opts.internalRetry } : {}),
         signal,

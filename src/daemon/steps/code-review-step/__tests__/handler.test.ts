@@ -832,6 +832,8 @@ test('full degraded and confirm-wait controller continuations use complete-frame
 		}
 		assert.deepEqual([...seen], ['adherence', 'conventions', 'coverage', 'quality']);
 		const legacy = await saveState({ runId: 'legacy', startedAtMs: 0, repo: '/repo', epicHash: EPIC, storyId: STORY, subject: subject(), grounding });
+		const oldShape: any = parse(await rawControllerCall({ phase: 'judgements', state: legacy, judgements: judgements() }, deps));
+		assert.equal(oldShape.error.code, 'review-budget-state-stale', 'actual legacy resumes need a fresh start even without new declaration/reply');
 		const old = parse(await rawControllerCall({ ...requestFor(), state: legacy }, deps));
 		assert.ok(old.next === 'error' && old.error.code === 'review-budget-state-stale');
 		assert.equal((await getStepStateStore().read('code-review', legacy))?.token, legacy, 'legacy refusal does not consume other state');
@@ -882,4 +884,29 @@ test('controller dimensions retain independent epochs and reject expired attempt
 	const overflow: any = parse(await rawControllerCall(request(frame, { reviewBudget: { ...CONTROLLER_DECLARATION, hostContextReserveTokens: 200000 } }), deps));
 	assert.equal(overflow.error.code, 'controller-frame-over-budget'); assert.equal(writes.length, 0);
 	assert.equal(parse(await rawControllerCall(request(frame), deps)).next, 'done'); assert.ok(writes.length > 0);
+});
+
+
+test('controller source edits refuse stale answers and persisted run IDs match canonical paired events', async()=>{
+ await reset();
+ const repo=mkdtempSync(join(tmpdir(),'controller-source-fingerprint-'));
+ mkdirSync(join(repo,'src'));writeFileSync(join(repo,'src/a.ts'),'export const a=1;');
+ const current={...subject(),repoPath:repo};
+ const events:{runId:string;event:string}[]=[];
+ const {deps,writes}=makeDeps({resolveSubject:async()=>({ok:true,subject:current}),recordCallEvent:(_repo,runId,event)=>events.push({runId,event:event.event})});
+ const start={phase:'start',epicHash:EPIC,storyId:STORY,repo,reviewBudget:CONTROLLER_DECLARATION};
+ const request=(f:any)=>({phase:'judgements',state:f.state,reviewBudget:CONTROLLER_DECLARATION,reply:{version:1,generation:f.call.generation,callId:f.call.callId,answer:{findings:[]}}});
+ try {
+  let frame:any=parse(await rawControllerCall(start,deps));
+  writeFileSync(join(repo,'src/a.ts'),'export const a=2;');
+  const stale:any=parse(await rawControllerCall(request(frame),deps));
+  assert.equal(stale.error.code,'review-source-changed');assert.equal(writes.length,0);
+  await reset();events.length=0;
+  frame=parse(await rawControllerCall(start,deps));
+  while(frame.next==='emit_judgements')frame=parse(await rawControllerCall(request(frame),deps));
+  assert.equal(frame.next,'done');
+  const record=JSON.parse(writes.find(w=>w.path.endsWith('.json'))!.content);
+  assert.ok(events.some(e=>e.event==='start'));assert.ok(events.some(e=>e.event==='success'));
+  assert.ok(events.every(e=>e.runId===record.meta.runId));
+ }finally{rmSync(repo,{recursive:true,force:true});}
 });

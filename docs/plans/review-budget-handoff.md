@@ -129,3 +129,8 @@ includes the full closing schema, and unsupported original blocks refuse before
 flattening. Call observers cannot replace the review result or original error.
 
 Cycle-2 validation: production build `/tmp/review-budget-cycle2-build.log` and packaged smoke `/tmp/review-budget-cycle2-smoke.log` passed. The affected matrix `/tmp/review-budget-cycle2-final-tests.log` reports 543 tests: 538 pass, five optional skips, zero failures. Existing full-backend baseline limitations remain documented above.
+
+
+Cycle-2 follow-up: frame durations use process-monotonic time across worker handoffs. Controller start/terminal events also append to the canonical per-run evidence stream. Source fingerprints bind code continuations to file bytes and approved design/build inputs; attribution metadata is not source identity. The design persistence guard runs again after the awaited history read. Legacy code continuations refuse stale before requiring new protocol fields. Mandatory correction errors retain `correction-budget-exceeded` under the LLD's specific correction clause; generic dispatch growth keeps its separate code. Managed admission now reserves the complete known closing instruction as well as its native schema before inspection; a final request distinguishes oversized prior history from closing-instruction growth.
+
+Follow-up validation: `/tmp/review-budget-cycle2-r2-final-tests.log` reports 543 tests, 538 pass, five optional skips and zero failures. Production build `/tmp/review-budget-cycle2-r2-build.log` and packaged smoke `/tmp/review-budget-cycle2-r2-smoke.log` pass. Deployment remains pending.

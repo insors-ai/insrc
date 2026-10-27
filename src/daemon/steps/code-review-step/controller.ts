@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { admitControllerTurn, assertControllerAttempt, controllerObservedEvent } from '../../../workflow/review-pipeline/controller.js';
 import { claimReviewTransaction } from '../review-transaction.js';
 import { validateFinding } from '../../../workflow/code-review/controller-validation.js';
@@ -42,18 +45,39 @@ export interface ControllerCodeReviewState extends ControllerReviewProtocol {
 	readonly frameBudget?: ReviewBudgetBreakdown | undefined;
 	readonly frameAttemptMs?: number | undefined;
 	readonly frameStartedAt?: number | undefined;
+ readonly frameMonotonicStartedAt?: number | undefined;
 	readonly frameDeadlineAt?: number | undefined;
 	readonly executionStartedAt?: number | undefined;
 	readonly phase: 'confirm_wait' | 'review';
 	readonly dimensions: readonly ReviewDimension[];
 	readonly results: readonly DimensionResult[];
 	readonly completedBudgetMs: number;
+ readonly sourceDigest?: string | undefined;
 	readonly job?: ReviewPipelineJob | undefined;
 }
 type Payload = CodeReviewStepStatePayload & { readonly controller: ControllerCodeReviewState };
 type Finalize = (payload: CodeReviewStepStatePayload, results: readonly DimensionResult[], deps: CodeReviewStepDeps) => Promise<CodeReviewStepOutput>;
 
 function owner() { return requireReviewOwnerContext(currentStepContext()?.reviewOwner); }
+function codeSourceDigest(subject: CodeReviewSubject): string {
+ const hash=createHash('sha256');
+ hash.update(JSON.stringify({repoPath:subject.repoPath,epicHash:subject.epicHash,storyId:subject.storyId,changedFiles:[...subject.changedFiles].sort(),approvedLld:subject.approvedLld,approvedPlan:subject.approvedPlan,buildRecord:subject.buildRecord,testRecord:subject.testRecord}));
+ for(const file of [...subject.changedFiles].sort()) {
+  hash.update(file);try{hash.update(readFileSync(join(subject.repoPath,file)));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;hash.update('missing');}
+ }
+ for(const kind of ['BUILD','LLD','PLAN','TESTS']) {
+  const file=join(subject.repoPath,'.insrc','artifacts',`${kind}-${subject.epicHash}-${subject.storyId}.json`);
+  try{hash.update(readFileSync(file));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;hash.update(`${kind}:missing`);}
+ }
+ return hash.digest('hex');
+}
+async function assertCodeSource(payload: Payload, deps: CodeReviewStepDeps): Promise<void> {
+ owner().assertActive();
+ const current=await deps.resolveSubject(payload.repo,payload.epicHash,payload.storyId);
+ if(!current.ok || payload.controller.sourceDigest !== codeSourceDigest({...current.subject, changedFiles:payload.subject.changedFiles})) throw new ControllerCodeReviewError('review-source-changed');
+ owner().assertActive();
+}
+
 function adapterFor(payload: Payload, dimension: ReviewDimension): ReviewAdapter<unknown> {
 	const snapshot = payload.controller.job?.snapshot ?? codeReviewSnapshot(payload.subject, payload.grounding!, payload.groundingMode ?? 'full');
 	const policy = payload.controller.policy;
@@ -106,7 +130,7 @@ function emitted(payload: Payload, now: number, stale?: { staleFiles: readonly s
 async function admitted(payload: Payload, declaration: ReviewControllerBudgetDeclaration, deps: CodeReviewStepDeps): Promise<{ payload: Payload; frame: CodeReviewStepOutput }> {
 	// Refuse a reserve-only overflow before attempting evidence repartitioning.
 	admitControllerFrame({}, payload.controller.policy, declaration);
-	let state = await advance(payload, deps);
+	let state = await advance({ ...payload, controller: { ...payload.controller, sourceDigest: payload.controller.sourceDigest ?? codeSourceDigest(payload.subject) } }, deps);
 	for (;;) {
 		const frame = emitted(state, deps.now());
 		try {
@@ -126,12 +150,14 @@ async function admitted(payload: Payload, declaration: ReviewControllerBudgetDec
 	}
 }
 
-function logTransition(payload: Payload, event: 'start' | 'success' | 'failure', now: number, error?: unknown): void {
+function logTransition(payload: Payload, event: 'start' | 'success' | 'failure', deps: CodeReviewStepDeps, error?: unknown): void {
  const c = payload.controller, job = c.job;
  const call = job?.pending.find(value => value.callId === c.callId);
  if (!job || !call || !c.frameBudget) return;
  const code = event === 'failure' ? reviewFailureCode(error) : undefined;
- log.info(controllerObservedEvent(job, call, c, code === 'cancelled' ? 'cancel' : event, now, code), 'controller review: observed protocol transition');
+ const metadata = controllerObservedEvent(job, call, c, code === 'cancelled' ? 'cancel' : event, deps.now(), code);
+ deps.recordCallEvent?.(payload.repo, payload.runId, metadata);
+ log.info(metadata, 'controller review: observed protocol transition');
 }
 
 async function ground(payload: Payload, deps: CodeReviewStepDeps, degraded: boolean, reason?: CodeReviewStepStatePayload['fallbackReason']): Promise<Payload> {
@@ -156,7 +182,7 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 		const next = await admitted(await ground(payload, deps, true, route.reason), d, deps);
 		owner().assertActive();
 		const token = await getStepStateStore().mintReviewState('code-review', next.payload, next.payload.controller);
-		logTransition(next.payload, 'start', deps.now());
+		logTransition(next.payload, 'start', deps);
 		return { ...next.frame, state: token } as CodeReviewStepOutput;
 	}
 	const fresh = await deps.fetchFreshness({ repo: payload.repo, epicHash: payload.epicHash, storyId: payload.storyId, changedFiles: subject.changedFiles });
@@ -166,11 +192,13 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 	else { const next = await admitted(await ground(payload, deps, false), d, deps); payload = next.payload; frame = next.frame; }
 	owner().assertActive();
 	const token = await getStepStateStore().mintReviewState('code-review', payload, payload.controller);
-	logTransition(payload, 'start', deps.now());
+	logTransition(payload, 'start', deps);
 	return { ...frame, state: token } as CodeReviewStepOutput;
 }
 
 export async function resumeControllerCodeReview(step: CodeReviewStepInputStart | CodeReviewStepInputJudgements, deps: CodeReviewStepDeps, finalize: Finalize): Promise<CodeReviewStepOutput> {
+	const saved = await getStepStateStore().read<Payload>('code-review', step.state!);
+ if (saved?.payload && (!saved.payload.controller || saved.payload.controller.version !== 1 || (saved.payload.controller.phase === 'review' && (!saved.payload.controller.sourceDigest || saved.payload.controller.frameMonotonicStartedAt === undefined)))) throw new ReviewBudgetError('review-budget-state-stale');
 	const { declaration } = controllerPolicy(step.reviewBudget);
 	const reply = requireControllerReply(step.reply);
 	const authority = owner();
@@ -200,6 +228,7 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 			payload = await ground(payload, deps, degraded, degraded ? reason : undefined);
 		} else {
 			if (step.phase !== 'judgements') throw new ReviewBudgetError('controller-budget-incompatible');
+			await assertCodeSource(payload, deps);
 			const c = payload.controller;
 			const adapter = adapterFor(payload, c.dimensions[c.results.length]!);
 			assertControllerAttempt(c, deps.now(), () => { if (c.job!.deadlineAt !== undefined && deps.now() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapter); }, () => Object.assign(new ControllerCodeReviewError('review-attempt-timeout'), { timeoutKind: 'review-attempt' }));
@@ -214,6 +243,7 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 		if (payload.controller.results.length === payload.controller.dimensions.length) {
 			const assertFinalActive = (): void => {
 				authority.assertActive();
+    if(payload.controller.sourceDigest !== codeSourceDigest(payload.subject)) throw new ControllerCodeReviewError('review-source-changed');
 				if (deps.signal?.aborted) throw new ReviewStateRefused('review-state-owner-mismatch');
 				const job = payload.controller.job;
 				if (job?.deadlineAt !== undefined && deps.now() >= job.deadlineAt) throw deadlineError(job, adapterFor(payload, job.dimension as ReviewDimension));
@@ -230,6 +260,7 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 					} } };
 				},
 			};
+			await assertCodeSource(payload, deps);
 			const done = await finalize(payload, payload.controller.results, guarded);
 			if (done.next === 'error' && done.error.code === 'bad-judgements') {
 				// This validator returns before the runner or any persistence begins.
@@ -243,18 +274,18 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 			if (done.next !== 'done') throw new ControllerCodeReviewError('review-state-uncertain');
 			authority.assertActive();
 			await claimed.complete({ status: 'completed', callId: reply.callId, artifactId: `CR-${payload.epicHash}-${payload.storyId}`, runId: payload.runId });
-			logTransition(claimed.payload, 'success', deps.now());
+			logTransition(claimed.payload, 'success', deps);
 			return done;
 		}
 		payload = { ...payload, controller: { ...payload.controller, generation: claim.generation + 1 } };
 		const next = await admitted(payload, declaration, deps);
 		authority.assertActive(); effects = true;
 		const committed = await claimed.advance(next.payload, next.payload.controller.callId);
-		logTransition(claimed.payload, 'success', deps.now()); logTransition(next.payload, 'start', deps.now());
+		logTransition(claimed.payload, 'success', deps); logTransition(next.payload, 'start', deps);
 		return { ...next.frame, state: committed.token } as CodeReviewStepOutput;
 	} catch (error) {
-		const terminal = ['review-job', 'review-attempt'].includes(String((error as { timeoutKind?: unknown | undefined } | null)?.timeoutKind));
-		if (effects || terminal) logTransition(claimed.payload, 'failure', deps.now(), error);
+		const terminal = (error instanceof ControllerCodeReviewError && error.code === 'review-source-changed') || ['review-job', 'review-attempt'].includes(String((error as { timeoutKind?: unknown | undefined } | null)?.timeoutKind));
+		if (effects || terminal) logTransition(claimed.payload, 'failure', deps, error);
 		await claimed.fail(error, effects, terminal);
 		throw error;
 	}

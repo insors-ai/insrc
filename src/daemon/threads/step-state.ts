@@ -173,6 +173,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	}
 
 	async commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> {
+		if (!next || (next.status !== 'completed' && next.status !== 'pending')) throw new ReviewStateRefused('review-state-invalid');
 		const entry = this.claimEntry(claim);
 		const generation = claim.generation + 1;
 		if (!Number.isSafeInteger(generation)) throw new ReviewStateRefused('review-state-invalid');

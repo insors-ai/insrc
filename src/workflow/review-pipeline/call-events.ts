@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { REVIEW_WORK_UNIT_MS } from '../../shared/review-execution-time.js';
 import { createHash } from 'node:crypto';
 import type { ReviewBudgetBreakdown } from '../../shared/review-budget.js';
 import type { ReviewCall, ReviewPipelineJob } from './types.js';
@@ -50,7 +51,7 @@ export function reviewCallEvent(job: ReviewPipelineJob, call: ReviewCall, budget
 }
 
 export function reviewTiming(job: ReviewPipelineJob, now: number = Date.now()) {
-	return { currentBudgetChunkCount: job.workUnits.filter(unit => !unit.replaced).length, totalBudgetMs: job.deadlineBudgetMs ?? 0, kind: 'review-execution' as const, timeBudgetUnitMs: 600000, logicalWorkUnits: job.workUnits.filter(unit => !unit.replaced).length + (job.priorWorkBudgetMs ?? 0) / 600000,
+	return { currentBudgetChunkCount: job.workUnits.filter(unit => !unit.replaced).length, totalBudgetMs: job.deadlineBudgetMs ?? 0, kind: 'review-execution' as const, timeBudgetUnitMs: REVIEW_WORK_UNIT_MS, logicalWorkUnits: job.workUnits.filter(unit => !unit.replaced).length + (job.priorWorkBudgetMs ?? 0) / REVIEW_WORK_UNIT_MS,
 		jobBudgetMs: job.deadlineBudgetMs ?? 0, deadlineAt: job.deadlineAt,
 		elapsedMs: job.executionStartedAt === undefined ? 0 : Math.max(0, now - job.executionStartedAt),
 		remainingMs: job.deadlineAt === undefined ? 0 : Math.max(0, job.deadlineAt - now) };
@@ -61,6 +62,6 @@ export function reviewFailureCode(error: unknown): ReviewCallErrorCode {
 	if (value?.timeoutKind === 'review-job' || value?.code === 'review-job-timeout') return 'job-timeout';
 	if (value?.timeoutKind === 'review-attempt' || value?.code === 'review-attempt-timeout') return 'attempt-timeout';
 	if (value?.name === 'AbortError' || value?.name === 'ReviewStateRefused') return 'cancelled';
-	if (value?.name === 'ReviewBudgetError') return 'budget-refused';
+	if (value?.name === 'ReviewBudgetError' || value?.name === 'AtomTooLargeError') return 'budget-refused';
 	return 'call-failed';
 }

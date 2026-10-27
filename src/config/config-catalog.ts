@@ -124,7 +124,7 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
 		// Design-review template (src/workflow/review/template.ts). Provisional defaults —
 		// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
-		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
+		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'estimated total tokens per review request, including serialized prompts, schemas, tools and explicit native/output/inspection reserves; source capacity is lower than total tokens times 3 characters; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
 		{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
 		{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
 		{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for each review attempt of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },

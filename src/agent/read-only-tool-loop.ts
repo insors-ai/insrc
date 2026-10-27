@@ -45,6 +45,7 @@ export interface GatheredToolOutput {
 
 export interface ReadOnlyToolLoopArgs {
  readonly closingSchema?: StructuredSchema | undefined;
+ readonly closingInstruction?: string | undefined;
 	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider: LLMProvider;
@@ -119,7 +120,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		// The signal goes into the call AND bounds the wait for it, so a provider
 		// that is between attempts (a retry backoff) cannot hold the loop past it.
 		const reviewBudget = args.reviewBudget === undefined ? undefined
-			: managedReviewBudget(args.provider, args.reviewBudget, convo, args.tools, args.closingSchema, undefined, turn);
+			: managedReviewBudget(args.provider, args.reviewBudget, convo, args.tools, args.closingSchema, undefined, turn, args.closingInstruction);
 		const work = args.provider.complete(convo, {
 			...(reviewBudget !== undefined ? { reviewBudget, maxTokens: reviewBudget.outputAllowanceTokens } : {}),
 			tools:           [...args.tools],
@@ -196,6 +197,7 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 	const signals = [...new Set([execution?.lifetime.signal, args.signal].filter((value): value is AbortSignal => value !== undefined))];
 	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
 	throwIfAborted(signal);
+	if (args.reviewBudget) managedReviewBudget(args.provider, args.reviewBudget, args.messages, undefined, args.schema, args.maxTokens, 0);
 	const messages: LLMMessage[] = [...args.messages, { role: 'user', content: args.instruction }];
 	const reviewBudget = args.reviewBudget === undefined ? undefined
 		: managedReviewBudget(args.provider, args.reviewBudget, messages, undefined, args.schema, args.maxTokens);
@@ -309,13 +311,14 @@ function abortError(): Error {
 }
 
 /** Review-only preflight: retain every history/tool/schema byte, and refuse instead of trimming. */
-function managedReviewBudget(provider: LLMProvider, budget: ReviewExecutionBudget, messages: readonly LLMMessage[], tools?: readonly ToolDefinition[], schema?: StructuredSchema, maxTokens?: number, turn?: number): ReviewExecutionBudget {
+function managedReviewBudget(provider: LLMProvider, budget: ReviewExecutionBudget, messages: readonly LLMMessage[], tools?: readonly ToolDefinition[], schema?: StructuredSchema, maxTokens?: number, turn?: number, closingInstruction?: string | undefined): ReviewExecutionBudget {
 	if (!provider.getReviewBudgetProfile || budget.policy.executionKind === 'controller') throw new ReviewBudgetError('native-budget-unqualified');
 	const profile = resolveReviewBudgetPolicy(provider, budget.policy.executionKind, budget.policy.totalTokens).profile;
 	if (tools !== undefined && (profile.qualification !== 'managed-estimate' || reviewToolsJson(profile, tools) !== profile.declaredToolsJson)) {
 		throw new ReviewBudgetError('budget-profile-mismatch');
 	}
-	const promptChars = reviewPromptChars(profile, messages);
+	const countedMessages = closingInstruction === undefined ? messages : [...messages, { role: 'user' as const, content: closingInstruction }];
+	const promptChars = reviewPromptChars(profile, countedMessages);
 	const wireSchemaJson = schema === undefined ? '{}' : reviewWireSchemaJson(profile, schema);
 	const declaredToolsJson = tools === undefined ? '[]' : reviewToolsJson(profile, tools);
 	const admitted = measureReviewBudget(budget.policy, { promptChars, wireSchemaJson, phase: 'dispatch', declaredToolsJson });

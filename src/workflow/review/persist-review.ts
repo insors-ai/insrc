@@ -129,6 +129,7 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
    if (!fixStored) input.assertSource?.();
 			const entries = await history.log(artifactId);
 			input.assertActive?.();
+   if (!fixStored) input.assertSource?.();
 			if (entries.some(e => e.id === entryId)) return;
 			await history.appendLog(artifactId, reviewEntryOf({ id: entryId, actor: input.recorder, timestamp: input.report.reviewedAt, report: input.report }));
 		});

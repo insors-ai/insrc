@@ -111,7 +111,7 @@ test('handleVerdicts with a service stores an applied fix through the service an
 	const mdBefore = readFileSync(fx.md, 'utf8');
 	const refused = await verdicts(fx);
 	assert.equal(refused.next, 'error');
-	assert.match(refused.error?.message ?? '', /log-ahead-of-head/);
+	assert.equal(refused.error?.message, 'review-failed');
 	assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), headBefore, 'nothing was recorded');
 	assert.equal(readFileSync(fx.md, 'utf8'), mdBefore);
 });

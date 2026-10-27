@@ -96,7 +96,7 @@ test('review-only admission rechecks accumulated tools and history before every 
 		await assert.rejects(() => runReadOnlyToolLoop({ ...args, reviewBudget: budget, closingSchema: { type: 'object', description: 'schema'.repeat(10000) } }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
 		assert.equal(turns, 0, 'every inspection turn reserves the full closing schema before dispatch');
 		const history = [{ role: 'user' as const, content: huge }];
-		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
+		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
 		assert.equal(finals, 0, 'the final answer has no budget exemption');
 		assert.equal(history[0]!.content, huge);
 		await assert.rejects(() => emitStructuredAnswer({ provider, messages: initial, instruction: 'Answer.', schema: { type: 'object' }, reviewBudget: budget, maxTokens: 65 }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');

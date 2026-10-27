@@ -13,10 +13,18 @@ function connect(store: LocalStepStateStore) {
 	const stop = serveHub(port1, stepStateHubHandlers(store, () => {}));
 	const worker = new Worker(new URL('./helpers/step-state-worker-bootstrap.mjs', import.meta.url), { workerData: { port: port2 }, transferList: [port2] });
 	const inbox: Record<string, unknown>[] = [];
-	const waiting: ((v: Record<string, unknown>) => void)[] = [];
-	worker.on('message', (value: Record<string, unknown>) => { const next = waiting.shift(); if (next) next(value); else inbox.push(value); });
-	const receive = (): Promise<Record<string, unknown>> => inbox.length ? Promise.resolve(inbox.shift()!) : new Promise(resolve => waiting.push(resolve));
-	const ready = receive();
+ const waiting: {resolve:(v:Record<string,unknown>)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}[]=[];
+ let failure:Error|undefined;
+ const fail=(error:Error)=>{failure=error;for(const entry of waiting.splice(0)){clearTimeout(entry.timer);entry.reject(error);}};
+ worker.on('error',fail);worker.on('exit',code=>fail(new Error(`review test worker exited (${code})`)));
+ worker.on('message',(value:Record<string,unknown>)=>{const next=waiting.shift();if(next){clearTimeout(next.timer);next.resolve(value);}else inbox.push(value);});
+ const receive=():Promise<Record<string,unknown>>=>{
+  if(inbox.length)return Promise.resolve(inbox.shift()!);
+  if(failure)return Promise.reject(failure);
+  return new Promise((resolve,reject)=>{const entry={resolve,reject,timer:setTimeout(()=>{const i=waiting.indexOf(entry);if(i>=0)waiting.splice(i,1);reject(new Error('review test worker response timeout'));},30000)};waiting.push(entry);});
+ };
+ const ready=receive();void ready.catch(()=>{});
+
 	return {
 		ask: async (message: Record<string, unknown>) => { await ready; worker.postMessage(message); return receive(); },
 		close: async () => { await worker.terminate(); stop(); port1.close(); },
@@ -47,6 +55,7 @@ test('two actual hub connections cannot consume or persist the same pending call
 			const independent = await right.ask({ op: 'claim', kind, access: { ...recoverAccess, token: independentToken, callId: 'independent' } });
 			assert.equal(independent['ok'], true, 'another token is independent of failed persistence');
 			const independentClaim = (independent['result'] as { claim: ReviewStateClaim }).claim;
+			assert.equal((await right.ask({ op: 'commit', kind, claim: independentClaim, next: { status: 'unexpected', callId: 'second', payload: { n: 2 } } }))['ok'], false, 'malformed status preserves the current exclusive claim');
 			const advanced = await right.ask({ op: 'commit', kind, claim: independentClaim, next: { status: 'pending', callId: 'second', payload: { n: 2 } } });
 			const next = advanced['result'] as { token: string; generation: number };
 			assert.equal(next.generation, 1);

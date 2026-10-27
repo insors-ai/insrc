@@ -518,7 +518,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const before = JSON.stringify(schema);
 			const budget = budgetFor(closing.provider, schema);
 			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
-			assert.equal(closing.bodies.length, 1, 'final closing instruction plus native schema is refused before its model call');
+			assert.equal(closing.bodies.length, 0, 'the full known closing instruction and schema are reserved before inspection starts');
 			assert.equal(JSON.stringify(schema), before, 'the schema is not shortened to fit');
 		} finally { await closing.close(); }
 

@@ -1,3 +1,4 @@
+import { indivisibleReviewRequest } from '../measurement.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -239,7 +240,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const budget = maxChars ?? args.limitChars;
 		for (const h of halves) {
 			const chars = candidateChars(args.budgetPolicy, h.call, budget);
-			if (chars > budget) throw new AtomTooLargeError(`${h.full.label} (in the relation ${caller.label} calls ${callee.label})`, chars, budget);
+			if (chars > budget) throw indivisibleReviewRequest(args.budgetPolicy, h.call, `${h.full.label} (in the relation ${caller.label} calls ${callee.label})`, chars, budget);
 		}
 		return halves.map(h => h.call);
 	};

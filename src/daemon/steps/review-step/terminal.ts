@@ -17,6 +17,7 @@ export interface ReviewTerminalProtocol extends ControllerReviewProtocol {
 	readonly frameBudget?: import('../../../shared/review-budget.js').ReviewBudgetBreakdown | undefined;
 	readonly frameAttemptMs?: number | undefined;
 	readonly frameStartedAt?: number | undefined;
+ readonly frameMonotonicStartedAt?: number | undefined;
 	readonly frameDeadlineAt?: number | undefined;
 	readonly sourceDigest?: string | undefined;
 	readonly schema: Record<string, unknown>;

@@ -25,7 +25,7 @@ test('throwing lifecycle observers cannot change results or replace the exact bu
  assert.deepEqual((await runReviewJob(job,adapter,provider,{onCallEvent:()=>{throw new Error('observer');}}) as {seen:string[]}).seen,['a1']);
  const error=new ReviewBudgetError('dispatch-budget-exceeded',job.pending[0]!.budget);
  await assert.rejects(()=>runReviewJob(job,adapter,{...provider,completeStructured:async()=>{throw error;}} as LLMProvider,{onCallEvent:()=>{throw new Error('observer');}}),e=>e===error);
- const event=controllerObservedEvent(job,job.pending[0]!,{frameStartedAt:100,frameAttemptMs:600000},'success',450);
+ const event=controllerObservedEvent(job,job.pending[0]!,{frameStartedAt:999999,frameMonotonicStartedAt:100,frameAttemptMs:600000},'success',-100,undefined,450);
  assert.equal(event.durationMs,350); assert.equal(event.timing.currentBudgetChunkCount,1); assert.equal(event.timing.totalBudgetMs,600000);
 });
 
@@ -47,4 +47,18 @@ test('review session validation rejects unsupported original blocks before flatt
  const profile={...new CliProvider({kind:'codex',model:'fixture'}).getReviewBudgetProfile('reviewer-session'),providerId:'fixture-ollama',promptDialect:'ollama-chat-v1' as const};
  const policy=createReviewBudgetPolicy(profile,'reviewer-session');
  assert.throws(()=>requestBudget(policy,[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/png',data:'private'}}]}] as never,{type:'object'},'dispatch'),e=>e instanceof ReviewBudgetError && e.code==='native-budget-unqualified');
+});
+
+
+test('invalid envelope without reasons receives a mandatory correction before retry',async()=>{
+ const {applyFailure}=await import('../job.js');
+ const snapshot=toySnapshot([atom(1)]),adapter=toyAdapter(snapshot) as ReviewAdapter<unknown>;
+ const profile=new CliProvider({kind:'codex',model:'fixture'}).getReviewBudgetProfile('structured');
+ const job=createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:createReviewBudgetPolicy(profile,'structured')});
+ const before=job.pending[0]!;
+ const after=applyFailure(job,adapter,before.callId,'invalid-answer').pending[0]!;
+ assert.notEqual(after.callId,before.callId);
+ assert.match(JSON.stringify(after.messages),/previous response did not match the required answer envelope/);
+ const {reviewFailureCode}=await import('../call-events.js');const {AtomTooLargeError}=await import('../pack-into-batches.js');
+ assert.equal(reviewFailureCode(new AtomTooLargeError('private source',100,1)),'budget-refused');
 });

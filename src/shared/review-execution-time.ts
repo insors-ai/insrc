@@ -10,3 +10,6 @@ export function withReviewExecutionCeiling<T>(params: unknown, run: () => T): T 
 	const deadline = Math.min(Date.now() + ms, reviewOuterDeadlineAt() ?? Infinity);
 	return executionCeiling.run(deadline, run);
 }
+
+/** One admitted logical review work unit receives ten minutes. */
+export const REVIEW_WORK_UNIT_MS = 600_000;

@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { REVIEW_WORK_UNIT_MS } from '../../shared/review-execution-time.js';
 import { reviewTiming } from './call-events.js';
 /**
  * The review pipeline's job (Epic 8315a11f s1, sc5): one review unit (a
@@ -255,7 +256,7 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 // -- deadline ----------------------------------------------------------------
 
 /** Ten minutes per admitted logical leaf, measured from one original epoch. */
-export const REVIEW_WORK_UNIT_MS = 600_000;
+export { REVIEW_WORK_UNIT_MS } from '../../shared/review-execution-time.js';
 function withDeadline(job: ReviewPipelineJob, now: number | undefined): ReviewPipelineJob {
 	const count = job.workUnits.filter(unit => !unit.replaced).length;
 	const executionStartedAt = job.executionStartedAt ?? (count > 0 ? now : undefined);
@@ -381,8 +382,9 @@ export function applyFailure(
 	const invalidAnswers = (call.invalidAnswers ?? 0) + (cause === 'invalid-answer' ? 1 : 0);
 	if (call.attempt < (cause === 'stall' ? MAX_STALL_ATTEMPTS : MAX_CALL_ATTEMPTS)) {
 		let prompt = call.prompt;
-		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
-			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
+		if (cause === 'invalid-answer') {
+			const reasons = more.reasons?.length ? more.reasons : ['The previous response did not match the required answer envelope. Return the assigned callId and complete answer schema.'];
+			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, reasons);
 			if (candidateChars(job.budgetPolicy, corrected, job.plan.limitChars, 'dispatch') > job.plan.limitChars) {
 				throw new ReviewBudgetError('correction-budget-exceeded', requestBudget(job.budgetPolicy, envelopeMessages(call.callId, corrected.messages), envelopeSchema(call.callId, corrected.schema), 'dispatch'), { stage: call.stage, callId: call.callId });
 			}
@@ -648,7 +650,7 @@ function reduceBatches(job: ReviewPipelineJob, gather: GatherPlan<unknown>, key:
 		const alone = size([n]);
 		if (alone > hard) {
    const prompt = gather.reduceCall(key, [n]);
-   const b = requestBudget(job.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema), 'dispatch');
+   const b = requestBudget(job.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema), 'planning');
    throw new ReviewBudgetError('required-context-over-budget', b, { unitId: createHash('sha256').update(n.noteId).digest('hex').slice(0,24), shortfallTokens: Math.max(0, -b.remainingTokens) });
   }
 	}

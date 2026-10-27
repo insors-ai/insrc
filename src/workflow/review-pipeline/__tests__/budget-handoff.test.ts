@@ -121,9 +121,12 @@ test('original-size production code and design adapters retain full schemas and 
   for(const adapter of adapters) {
    const mode=adapter===adapters[0]?'structured':'reviewer-session';
    const policy=createReviewBudgetPolicy(new CliProvider({kind:'codex',model:'fixture'}).getReviewBudgetProfile(mode),mode);
-   let job;
-   try { job=createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:policy}); }
-   catch(error) { assert.ok(error instanceof ReviewBudgetError); continue; }
+   const shouldFit=originalChars===225429 && mode==='structured';
+   if(!shouldFit) {
+    assert.throws(()=>createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:policy}),error=>error instanceof ReviewBudgetError && error.code==='mandatory-context-over-budget',`${originalChars}/${mode} must refuse the complete mandatory request`);
+    continue;
+   }
+   const job=createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:policy});
    let calls=0;
    const profile=policy.profile;
    const dispatch=async(text:string,schema:StructuredSchema,opts:{reviewBudget?:ReviewExecutionBudget | undefined})=>{

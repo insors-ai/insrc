@@ -8,6 +8,7 @@ import type { LLMMessage, StructuredSchema } from '../../shared/types.js';
 import { serialiseMessages } from '../../agent/providers/cli-wire.js';
 import { reviewPromptChars, reviewWireSchemaJson } from '../../agent/providers/review-budget.js';
 import { measureReviewBudget, ReviewBudgetError } from './budget.js';
+import { AtomTooLargeError } from './pack-into-batches.js';
 import { envelopeMessages, envelopeSchema } from './envelope.js';
 import type { ChunkPrompt } from './types.js';
 
@@ -30,4 +31,12 @@ export function candidateChars(policy: ReviewBudgetPolicy | undefined, prompt: C
 	const messages = envelopeMessages(id, prompt.messages);
 	const breakdown = requestBudget(policy, messages, envelopeSchema(id, prompt.schema), phase);
 	return Math.max(breakdown.promptChars, Math.ceil(breakdown.estimatedTotalTokens / breakdown.limitTokens * textLimit));
+}
+
+export function indivisibleReviewRequest(policy: ReviewBudgetPolicy | undefined, prompt: ChunkPrompt, unit: string, size: number, limit: number): AtomTooLargeError {
+ if (!policy) throw new ReviewBudgetError('native-budget-unqualified');
+ const id='00000000-0000-0000-0000-000000000000';
+ const b=requestBudget(policy,envelopeMessages(id,prompt.messages),envelopeSchema(id,prompt.schema),'planning');
+ const error=new AtomTooLargeError(unit,size,limit);
+ return Object.assign(error,{breakdown:b,context:{...error.context,shortfallTokens:Math.max(0,-b.remainingTokens)}});
 }

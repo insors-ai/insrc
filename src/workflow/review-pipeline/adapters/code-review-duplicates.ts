@@ -1,3 +1,4 @@
+import { indivisibleReviewRequest } from '../measurement.js';
 import { createHash } from 'node:crypto';
 import { requestBudget } from '../measurement.js';
 import { envelopeMessages, envelopeSchema } from '../envelope.js';
@@ -119,7 +120,7 @@ function compareCalls(first: readonly Described[], second: readonly Described[],
 	}
 	const id = '00000000-0000-0000-0000-000000000000';
  if (!policy) throw new ReviewBudgetError('native-budget-unqualified');
- const b = requestBudget(policy, envelopeMessages(id, call.messages), envelopeSchema(id, call.schema), 'dispatch');
+ const b = requestBudget(policy, envelopeMessages(id, call.messages), envelopeSchema(id, call.schema), 'planning');
  throw new ReviewBudgetError('required-context-over-budget', b, { stage: 'compare', unitId: createHash('sha256').update(JSON.stringify([first.map(d=>d.atomId),second.map(d=>d.atomId)])).digest('hex').slice(0,24), shortfallTokens: Math.max(0,-b.remainingTokens) });
 }
 
@@ -201,7 +202,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 		([[a, b], [b, a]] as const).map(([full, other]) => {
 			const half = build([full], { atom: other, description: describe(other) }, [a, b]);
 			const chars = candidateChars(args.budgetPolicy, half, budget);
-			if (chars > budget) throw new AtomTooLargeError(`${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, budget);
+			if (chars > budget) throw indivisibleReviewRequest(args.budgetPolicy, half, `${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, budget);
 			return half;
 		});
 	return {

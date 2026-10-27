@@ -133,3 +133,13 @@ describe('persist-review', () => {
 		}
 	});
 });
+
+it('source changes while history is awaited refuse immediately before append', async()=>{
+ const r=await rig();let stale=false;
+ const original=r.history.log.bind(r.history);
+ r.history.log=async(...args)=>{const entries=await original(...args);stale=true;return entries;};
+ try {
+  await assert.rejects(persistReview({...r.input,fix:undefined,assertSource:()=>{if(stale)throw new Error('source changed during history wait');}}),error=>error instanceof ReviewPersistError && error.step==='record-review');
+  assert.equal((await original(LLD)).filter(entry=>entry.id===reviewEntryId(LLD,REPORT)).length,0);
+ }finally{r.kit.done();}
+});

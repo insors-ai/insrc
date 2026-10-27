@@ -1,3 +1,4 @@
+import { appendReviewRunEvent } from '../../../workflow/code-review/run-events.js';
 import { safeReviewFailure, reviewTimeoutMessage } from '../../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -89,6 +90,7 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
  *  bound, from config). */
 export interface CodeReviewStepDeps {
+ readonly recordCallEvent?: ((repo: string, runId: string, event: import('../../../workflow/review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
 	readonly fetchGrounding: StepDaemonClient['fetchCodeReviewGrounding'];
 	readonly fetchFreshness: StepDaemonClient['fetchCodeReviewFreshness'];
@@ -136,6 +138,7 @@ function readFreshnessTimeoutMs(): number {
 }
 
 export const DEFAULT_DEPS: CodeReviewStepDeps = {
+ recordCallEvent: appendReviewRunEvent,
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: (params) => stepDaemonClient().fetchCodeReviewGrounding(params),
 	fetchFreshness: (params) => stepDaemonClient().fetchCodeReviewFreshness(params),

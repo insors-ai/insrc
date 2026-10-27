@@ -28,7 +28,7 @@
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
-import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { modelDimensionAdapter, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import { conventionsObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 
 const DIMENSION: ReviewDimension = 'conventions';
@@ -183,5 +183,10 @@ export async function judgeConventions(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(conventionsSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return executeDimensionJob(prepareConventions(subject, grounding, provider, ctx), provider, ctx);
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareConventions(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { return modelDimensionAdapter(conventionsSpec(subject), subject, s, limit); }, subject, grounding, provider, ctx);
 }

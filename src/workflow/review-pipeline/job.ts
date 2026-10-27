@@ -94,7 +94,7 @@ export function createReviewJob(
 		}
 	});
 	const job: ReviewPipelineJob = {
-		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: freeze(structuredClone(snapshot)),
+		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: immutableReviewSnapshot(snapshot),
 		kind: adapter.kind, dimension: adapter.dimension, phase: 'review',
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
 		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, contextReduced: {}, notes: [], noteProvenance: {}, notJudged: [],
@@ -768,6 +768,16 @@ function abortError(): Error {
 
 function throwIfAborted(signal: AbortSignal | undefined): void {
 	if (signal?.aborted === true) throw abortError();
+}
+
+const immutableSnapshots = new WeakSet<ReviewMaterialSnapshot>();
+
+/** Capture nested evidence once; adapters and jobs can safely share the same snapshot. */
+export function immutableReviewSnapshot(snapshot: ReviewMaterialSnapshot): ReviewMaterialSnapshot {
+ if (immutableSnapshots.has(snapshot)) return snapshot;
+ const captured = freeze(structuredClone(snapshot));
+ immutableSnapshots.add(captured);
+ return captured;
 }
 
 function freeze<T>(value: T): T {

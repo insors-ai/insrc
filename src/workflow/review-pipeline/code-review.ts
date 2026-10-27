@@ -34,7 +34,7 @@ import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
-import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
+import { createReviewJob, immutableReviewSnapshot, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
 import { structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
@@ -55,7 +55,7 @@ export function codeReviewSnapshot(subject: CodeReviewSubject, grounding: CodeRe
 	const fileFacts: Record<string, { exists: boolean }> = {};
 	for (const ref of companionsOf(subject)) fileFacts[ref.relPath] = { exists: existsSync(isAbsolute(ref.relPath) ? ref.relPath : join(subject.repoPath, ref.relPath)) };
 	const facts: GroundingFacts = { grounding, groundingMode };
-	return { kind: 'code-review', grounding: facts, fileFacts };
+	return immutableReviewSnapshot({ kind: 'code-review', grounding: facts, fileFacts });
 }
 
 /** Whether a companion file existed at prepare. A file prepare did not record is an error, never a guess. */
@@ -156,7 +156,7 @@ function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: Re
  */
 export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
-	const execution = { mode: 'structured' as const, cwd: subject.repoPath, ...structuredLimits('code-review') };
+	const execution = { mode: 'structured' as const, ...(groundingMode === 'degraded' ? { inputContext: 'isolated' as const } : {}), cwd: subject.repoPath, ...structuredLimits('code-review') };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
 	// obligations and their context. From the snapshot and the saved subject only, so it
 	// is built once and every caller reads the same material: the pipeline asks for it
@@ -262,19 +262,46 @@ export function deterministicDimensionAdapter(spec: DeterministicDimensionSpec, 
 
 /** Run one dimension as a pipeline job on the daemon path: the snapshot from the
  *  run's context (taken once by runCodeReview), else taken now. */
+export interface PreparedDimensionReview {
+ readonly dimension: ReviewDimension;
+ readonly snapshot: ReviewMaterialSnapshot;
+ readonly adapter: ReviewAdapter<unknown>;
+ readonly job: ReviewPipelineJob;
+ readonly primaryChunkCount: number;
+ readonly subject: CodeReviewSubject;
+}
+
+/** The cap is selected once, before material fitting and any model work. */
+export function effectiveDimensionLimit(provider: LLMProvider, mode: 'full' | 'degraded', configured = reviewLimitChars()): number {
+ const cap = mode === 'degraded' ? Math.min(configured, 384_000, provider.inputBudgetChars ?? Infinity) : configured;
+ if (!Number.isSafeInteger(cap) || cap <= 0) throw new Error('Invalid effective review input limit');
+ return cap;
+}
+
+export function prepareDimensionJob(
+ build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>,
+ subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
+): PreparedDimensionReview {
+ const snapshot = immutableReviewSnapshot(ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full'));
+ const limit = effectiveDimensionLimit(provider, ctx?.groundingMode ?? 'full');
+ const adapter = build(snapshot, limit) as unknown as ReviewAdapter<unknown>;
+ const job = createReviewJob(adapter, 'daemon', snapshot, limit);
+ const model = adapter.stagesFor('daemon').some(stage => stage.kind === 'model');
+ const primaryChunkCount = model ? Math.max(1, job.plan.chunks.length) : 0;
+ logPlan('prepared', job, subject);
+ return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, subject });
+}
+
+export async function executeDimensionJob(prepared: PreparedDimensionReview, provider: LLMProvider, ctx?: JudgeContext): Promise<DimensionResult> {
+ return await runReviewJob(prepared.job, prepared.adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, prepared.subject) }) as DimensionResult;
+}
+
+/** Compatibility entry point for callers running one dimension directly. */
 export async function runDimensionJob(
-	build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>,
-	subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
+ build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>,
+ subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
 ): Promise<DimensionResult> {
-	const snapshot = ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full');
-	// The core is written over ReviewAdapter<unknown>; merge's parameter makes R invariant.
-	const adapter = build(snapshot) as unknown as ReviewAdapter<unknown>;
-	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
-	// The plan, as one JSON object in the message (the daemon log is pretty-printed): once as
-	// prepared, so a job that fails still leaves its plan, and once as finished, after any
-	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
-	logPlan('prepared', job, subject);
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+ return executeDimensionJob(prepareDimensionJob(build, subject, grounding, provider, ctx), provider, ctx);
 }
 
 function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {

@@ -48,15 +48,15 @@ import type {
 } from './types.js';
 import { CODE_REVIEW_SCHEMA_VERSION } from './types.js';
 import { assembleCodeReviewGrounding, realGroundingDeps } from './grounding.js';
-import { judgeAdherence } from './dimensions/adherence.js';
-import { judgeConventions } from './dimensions/conventions.js';
-import { judgeCoverage } from './dimensions/coverage.js';
-import { judgeQuality } from './dimensions/quality.js';
-import { judgeFunctionalCoverage } from './dimensions/functional-coverage.js';
-import { judgeDiagram } from './dimensions/diagram/index.js';
-import { judgeUx } from './dimensions/ux/index.js';
+import { judgeAdherence, prepareAdherence } from './dimensions/adherence.js';
+import { judgeConventions, prepareConventions } from './dimensions/conventions.js';
+import { judgeCoverage, prepareCoverage } from './dimensions/coverage.js';
+import { judgeQuality, prepareQuality } from './dimensions/quality.js';
+import { judgeFunctionalCoverage, prepareFunctionalCoverage } from './dimensions/functional-coverage.js';
+import { judgeDiagram, prepareDiagram } from './dimensions/diagram/index.js';
+import { judgeUx, prepareUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
-import { codeReviewSnapshot } from '../review-pipeline/code-review.js';
+import { codeReviewSnapshot, executeDimensionJob, type PreparedDimensionReview } from '../review-pipeline/code-review.js';
 import type { Party } from '../review/party.js';
 
 const log = getLogger('code-review:runner');
@@ -69,6 +69,9 @@ const log = getLogger('code-review:runner');
  *  `(subject, grounding, provider) => Promise<DimensionResult>` signature the
  *  four shipped judges share). */
 export interface JudgeSlot {
+ /** Production slots prepare all evidence before the first model call. Legacy injected judges may omit both seams. */
+ readonly prepare?: ((subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext) => PreparedDimensionReview) | undefined;
+ readonly execute?: ((prepared: PreparedDimensionReview, provider: LLMProvider, ctx: JudgeContext) => Promise<DimensionResult>) | undefined;
 	readonly dimension: ReviewDimension;
 	readonly judge: (
 		subject:   CodeReviewSubject,
@@ -129,13 +132,13 @@ export interface CodeReviewProgress {
  *  computeExpectedDimensions), so non-FR / non-diagram / non-UX work keeps exactly
  *  the base four (absent-safe). */
 const DEFAULT_JUDGES: readonly JudgeSlot[] = [
-	{ dimension: 'adherence',           judge: judgeAdherence },
-	{ dimension: 'conventions',         judge: judgeConventions },
-	{ dimension: 'coverage',            judge: judgeCoverage },
-	{ dimension: 'quality',             judge: judgeQuality },
-	{ dimension: 'functional-coverage', judge: judgeFunctionalCoverage },
-	{ dimension: 'diagram',             judge: judgeDiagram },
-	{ dimension: 'ux',                  judge: judgeUx },
+	{ dimension: 'adherence',           judge: judgeAdherence, prepare: prepareAdherence, execute: executeDimensionJob },
+	{ dimension: 'conventions',         judge: judgeConventions, prepare: prepareConventions, execute: executeDimensionJob },
+	{ dimension: 'coverage',            judge: judgeCoverage, prepare: prepareCoverage, execute: executeDimensionJob },
+	{ dimension: 'quality',             judge: judgeQuality, prepare: prepareQuality, execute: executeDimensionJob },
+	{ dimension: 'functional-coverage', judge: judgeFunctionalCoverage, prepare: prepareFunctionalCoverage, execute: executeDimensionJob },
+	{ dimension: 'diagram',             judge: judgeDiagram, prepare: prepareDiagram, execute: executeDimensionJob },
+	{ dimension: 'ux',                  judge: judgeUx, prepare: prepareUx, execute: executeDimensionJob },
 ];
 
 /** The judge slots that actually run for THIS subject: the base four always, plus
@@ -194,7 +197,13 @@ export async function runCodeReview(
 		// companion file's existence, taken now; no judge reads the disk afterwards.
 		const groundingMode = opts.groundingMode ?? 'full';
 		const ctx: JudgeContext = { groundingMode, snapshot: codeReviewSnapshot(subject, grounding, groundingMode), signal: opts.signal };
-		const dimensions: DimensionResult[] = [];
+		const prepared = new Map<JudgeSlot, PreparedDimensionReview>();
+  for (const slot of judges) {
+   if (opts.signal?.aborted) return fail('aborted', emit);
+   if ((slot.prepare === undefined) !== (slot.execute === undefined)) throw new Error(`Incomplete preparation contract for ${slot.dimension}`);
+   if (slot.prepare !== undefined) prepared.set(slot, slot.prepare(subject, grounding, provider, ctx));
+  }
+  const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
 			emit({ phase: 'dimension-start', dimension: slot.dimension });
@@ -202,7 +211,10 @@ export async function runCodeReview(
 			let calls = 0;
 			const onCall = (call: { readonly stage: string; readonly role: string }): void =>
 				emit({ phase: 'call', dimension: slot.dimension, detail: `${call.stage} ${call.role} #${++calls}` });
-			const result = await slot.judge(subject, grounding, provider, { ...ctx, onCall });
+			const ready = prepared.get(slot);
+   const result = ready !== undefined && slot.execute !== undefined
+    ? await slot.execute(ready, provider, { ...ctx, onCall })
+    : await slot.judge(subject, grounding, provider, { ...ctx, onCall });
 			dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}

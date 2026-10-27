@@ -25,7 +25,7 @@
 import type { LLMMessage, LLMProvider } from '../../../../shared/types.js';
 import { getLogger } from '../../../../shared/logger.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext } from '../../types.js';
-import { deterministicDimensionAdapter, fileExisted, runDimensionJob, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
+import { deterministicDimensionAdapter, fileExisted, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { ErDefinition } from '../../../artifacts/companion/er.js';
 import type { SequenceDefinition } from '../../../artifacts/companion/sequence.js';
@@ -169,7 +169,7 @@ export async function judgeDiagram(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => deterministicDimensionAdapter(diagramSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return executeDimensionJob(prepareDiagram(subject, grounding, provider, ctx), provider, ctx);
 }
 
 /**
@@ -203,4 +203,9 @@ export function buildDiagramPrompt(
 		{ role: 'system', content: system },
 		{ role: 'user',   content: user },
 	];
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareDiagram(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { void limit; return deterministicDimensionAdapter(diagramSpec(subject), subject, s); }, subject, grounding, provider, ctx);
 }

@@ -156,7 +156,7 @@ test('the coverage prompt lists only eligible symbols', async () => {
 
 test('a diff review lists no symbols and grades only the promised tests', async () => {
 	let msgs: ReturnType<typeof buildCoveragePrompt> = [];
-	const provider = { completeStructured: async (m: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { msgs = unenveloped(m); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
+	const provider = { capabilities: { boundedStructuredInput: true }, completeStructured: async (m: ReturnType<typeof buildCoveragePrompt>, schema: unknown) => { msgs = unenveloped(m); return enveloped(schema, { findings: [] }); } } as unknown as LLMProvider;
 	await judgeCoverage(subject(), GROUNDING, provider, { groundingMode: 'degraded' });
 	// includes + a short message, not assert.match: a failing match on the whole
 	// prompt made node:test spin while formatting it.

@@ -43,7 +43,7 @@ import type {
 	DimensionResult, DimensionFinding, JudgeContext, LoweredFinding, ReviewDimension,
 } from '../types.js';
 import { isCoverageEligible } from '../grounding.js';
-import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { modelDimensionAdapter, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import { coverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import { testRecordView } from './test-record-view.js';
 
@@ -335,5 +335,10 @@ export async function judgeCoverage(
 	provider:  LLMProvider,
 	context?:  JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(coverageSpec(subject), subject, s), subject, grounding, provider, context);
+	return executeDimensionJob(prepareCoverage(subject, grounding, provider, context), provider, context);
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareCoverage(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { return modelDimensionAdapter(coverageSpec(subject), subject, s, limit); }, subject, grounding, provider, ctx);
 }

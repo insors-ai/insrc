@@ -26,7 +26,7 @@
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
-import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { modelDimensionAdapter, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import { adherenceObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 
 const DIMENSION: ReviewDimension = 'adherence';
@@ -168,5 +168,10 @@ export async function judgeAdherence(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(adherenceSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return executeDimensionJob(prepareAdherence(subject, grounding, provider, ctx), provider, ctx);
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareAdherence(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { return modelDimensionAdapter(adherenceSpec(subject), subject, s, limit); }, subject, grounding, provider, ctx);
 }

@@ -172,7 +172,7 @@ Run at 2026-10-27T08:27:08.158Z on commit `deea66b58`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-10-27T08:40:32.067Z on commit `2c3fde281`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T08:43:16.365Z on commit `4cc01ce6c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-SCALE**
 

@@ -28,7 +28,7 @@
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
-import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { modelDimensionAdapter, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import { functionalCoverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import type { FunctionalRequirement } from '../../artifacts/functional-definition.js';
 
@@ -176,5 +176,10 @@ export async function judgeFunctionalCoverage(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(functionalCoverageSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return executeDimensionJob(prepareFunctionalCoverage(subject, grounding, provider, ctx), provider, ctx);
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareFunctionalCoverage(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { return modelDimensionAdapter(functionalCoverageSpec(subject), subject, s, limit); }, subject, grounding, provider, ctx);
 }

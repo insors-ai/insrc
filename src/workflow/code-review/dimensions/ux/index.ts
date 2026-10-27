@@ -30,7 +30,7 @@
 
 import type { LLMMessage, LLMProvider } from '../../../../shared/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext } from '../../types.js';
-import { deterministicDimensionAdapter, fileExisted, runDimensionJob, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
+import { deterministicDimensionAdapter, fileExisted, prepareDimensionJob, executeDimensionJob, type PreparedDimensionReview, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { UxDefinition } from '../../../artifacts/companion/ux.js';
 import { uxCompletenessFindings, validateUxDefinition } from '../../../artifacts/companion/ux.js';
@@ -153,7 +153,7 @@ export async function judgeUx(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => deterministicDimensionAdapter(uxSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return executeDimensionJob(prepareUx(subject, grounding, provider, ctx), provider, ctx);
 }
 
 /**
@@ -188,4 +188,9 @@ export function buildUxPrompt(
 		{ role: 'system', content: system },
 		{ role: 'user',   content: user },
 	];
+}
+
+/** Prepare the exact job without invoking a model. */
+export function prepareUx(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx?: JudgeContext): PreparedDimensionReview {
+ return prepareDimensionJob((s, limit) => { void limit; return deterministicDimensionAdapter(uxSpec(subject), subject, s); }, subject, grounding, provider, ctx);
 }

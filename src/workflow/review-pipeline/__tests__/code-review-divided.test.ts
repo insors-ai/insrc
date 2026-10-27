@@ -218,6 +218,7 @@ function scriptedModel(opts: { failObligationTwice?: boolean } = {}): Judged {
 
 function provider(model: Judged): LLMProvider {
 	return {
+  capabilities: { boundedStructuredInput: true },
 		completeStructured: async (messages: LLMMessage[], _schema: StructuredSchema) => {
 			const callId = /This request's id is "([^"]+)"/.exec(text(messages))![1]!;
 			return { callId, answer: model.answer(messages) };

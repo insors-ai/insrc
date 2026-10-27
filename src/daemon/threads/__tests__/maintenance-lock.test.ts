@@ -466,7 +466,7 @@ test('a cancelled stream with no request lifetime keeps its maintenance hold unt
 	await until(() => heldShared() === 0, 'the hold released at the terminal frame');
 });
 
-test('an understanding.watch opened during maintenance waits for it before its first store read, then delivers its first snapshot', { timeout: 60_000 }, async () => {
+test('an understanding.watch or todos.subscribe opened during maintenance is refused at once with the busy error and reads nothing; opened after it, the watch delivers its snapshot', { timeout: 60_000 }, async () => {
 	const owner: Owner = { ownerPrincipal: 'owner', learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'private', assurance: 'local-config', aliases: [] } };
 	const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'b'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
 	let service: InstanceType<typeof UnderstandingService> | undefined;
@@ -493,13 +493,23 @@ test('an understanding.watch opened during maintenance waits for it before its f
 		});
 		await once(socket, 'connect');
 		socket.write(JSON.stringify({ id: 11, method: 'understanding.watch', params: { assessmentId: id }, stream: true }) + '\n');
-		await tick(300);
-		assert.equal(ownerReads, readsBefore, 'no store read while maintenance holds the lock');
-		assert.deepEqual(frames, [], 'nothing delivered yet');
+		await until(() => frames.length > 0, 'the refusal');
+		const busy = new RegExp(`^daemon busy: ${COMPACTION_ACTIVITY} since \\S+ \\(${REASON.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\); retry later$`);
+		assert.equal(frames[0]!.stream, 'error');
+		assert.match((frames[0]!.data as { error?: string }).error ?? '', busy, 'refused with the maintenance activity, reason and start time');
+		assert.equal(ownerReads, readsBefore, 'no store read during maintenance');
+		// todos.subscribe is admitted the same way.
+		const todos: { stream: string; data: { error?: string } }[] = [];
+		const forward = holdingForward((_r, d) => { d({ kind: 'frame', requestId: 'todos-1', frame: { id: 0, stream: 'todos', data: {} } }); return () => {}; });
+		forward({ kind: 'request', requestId: 'todos-1', method: 'todos.subscribe', params: {}, stream: true }, e => todos.push((e as FrameEnvelope).frame as { stream: string; data: { error?: string } }));
+		await until(() => todos.length > 0, 'the todos refusal');
+		assert.equal(todos[0]!.stream, 'error');
+		assert.match(todos[0]!.data.error ?? '', busy);
 		maintenance.release();
 		await maintenance.done;
-		await until(() => frames.length > 0, 'the first snapshot after maintenance');
-		assert.equal(frames[0]!.data.type, 'snapshot');
+		// After maintenance the watch opens and delivers its snapshot.
+		socket.write(JSON.stringify({ id: 12, method: 'understanding.watch', params: { assessmentId: id }, stream: true }) + '\n');
+		await until(() => frames.some(f => f.data.type === 'snapshot'), 'the snapshot after maintenance');
 	} finally {
 		socket?.destroy();
 		routes.stop();

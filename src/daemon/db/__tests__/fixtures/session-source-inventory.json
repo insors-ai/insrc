@@ -18511,11 +18511,15 @@
         [
           "serialization",
           "send"
+        ],
+        [
+          "serialization",
+          "send"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "46e969e4a5b104c3cb0c320e6465d7c9666a475a06f0d23bc218b8206ca254b7",
-      "sourceDigest": "cdcb22f6f79098030ca8a05a0ac3aa8c6504a177392cb86930d9f116b588c77f",
+      "siteCount": 8,
+      "sitesDigest": "4877cf1ef936e1efde2a6d9ca103ac4723ccd9bd026450f278e746e75b524514",
+      "sourceDigest": "2b99e6c961a42b87cc1e277b012491e0713edde48436c38a91d15e72cbca8ffd",
       "boundaries": [
         "diagnostic",
         "serialization",

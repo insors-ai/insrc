@@ -31,7 +31,7 @@ import { FileSidecarStore } from '../../../../workflow/artifact-core/sidecar-sto
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { artifactJsonPath } from '../../../../workflow/storage.js';
 import { lifecycleFor, resetLifecycleRegistry } from '../../../lifecycle-registry.js';
-import { handleReviewStep } from '../handler.js';
+import { fixtureReviewClient as handleReviewStep, rawReviewCall, seedTerminalFixture, CONTROLLER_DECLARATION } from './terminal-client.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
@@ -114,4 +114,51 @@ test('handleVerdicts with a service stores an applied fix through the service an
 	assert.match(refused.error?.message ?? '', /log-ahead-of-head/);
 	assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), headBefore, 'nothing was recorded');
 	assert.equal(readFileSync(fx.md, 'utf8'), mdBefore);
+});
+
+test('exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes', async () => {
+	const { getStepStateStore } = await import('../../../threads/step-state.js');
+	const { loadState } = await import('../state-store.js');
+	const parse = (env: Awaited<ReturnType<typeof rawReviewCall>>) => JSON.parse(env.content[0]!.text) as { next: string; error?: { code: string } };
+	const fx = await fixture();
+	const start = JSON.parse((await rawReviewCall({ phase: 'start', artifact: fx.md, repo: fx.repo })).content[0]!.text) as { state: string };
+	const payload = await loadState(start.state);
+	const first = CLAIMS.claims[0]!;
+	const claims = [first, { ...first, id: 'c-second', text: 'A second complete extracted claim.' }];
+	const state = { ...payload, claims, evidence: [] } as import('../types.js').ReviewStepStatePayload;
+	const good = claims.map(claim => ({ claimId: claim.id, severity: 'LOW', evidence: 'read the source', action: 'none', fixability: 'manual' }));
+	const seeded = await seedTerminalFixture(state, 'verdicts');
+	const beforeHead = readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8');
+	const beforeMd = readFileSync(fx.md, 'utf8');
+	let lifecycleLookups = 0;
+	const deps = { lifecycleFor: () => { lifecycleLookups++; return lifecycleFor(fx.repo).service; } };
+	for (const received of [[], [good[0]!], [good[0]!, good[0]!], [good[0]!, { ...good[1]!, claimId: 'unknown' }], [good[1]!, good[1]!]]) {
+		const out = parse(await rawReviewCall(seeded.input({ verdicts: received }), deps));
+		assert.equal(out.next, 'error'); assert.equal(out.error?.code, 'review-verdict-set-mismatch');
+		assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), beforeHead);
+		assert.equal(readFileSync(fx.md, 'utf8'), beforeMd);
+	}
+	assert.equal(lifecycleLookups, 0, 'exact-set failures precede even inspect/repair');
+	const partial = await seedTerminalFixture(state, 'verdicts', { assignedClaimIds: ['c-second'], completedVerdicts: [] });
+	assert.equal(parse(await rawReviewCall(partial.input({ verdicts: [good[1]!] }), deps)).error?.code, 'review-verdict-set-mismatch', 'a correct assigned subset cannot prematurely complete the full review');
+	const subset = await seedTerminalFixture(state, 'verdicts', { assignedClaimIds: ['c-second'], completedVerdicts: [good[0]!] });
+	assert.equal(parse(await rawReviewCall(subset.input({ verdicts: [good[0]!] }), deps)).error?.code, 'review-verdict-set-mismatch', 'wrong assigned subset refuses even a known claim');
+	const unextracted = await seedTerminalFixture({ ...payload, claims: [], evidence: [] }, 'verdicts', { extractionComplete: false });
+	assert.equal(parse(await rawReviewCall(unextracted.input({ verdicts: [] }), deps)).error?.code, 'review-extraction-incomplete');
+	assert.equal(lifecycleLookups, 0);
+	const missing = parse(await rawReviewCall({ ...seeded.input({ verdicts: good }), reviewBudget: undefined }, deps));
+	assert.equal(missing.error?.code, 'controller-budget-required');
+	const legacy = parse(await rawReviewCall({ phase: 'verdicts', state: seeded.token, reviewBudget: CONTROLLER_DECLARATION, verdicts: { verdicts: good } }, deps));
+	assert.equal(legacy.error?.code, 'controller-budget-incompatible');
+	assert.equal(lifecycleLookups, 0);
+	const done = parse(await rawReviewCall(seeded.input({ verdicts: good }), deps));
+	assert.equal(done.next, 'done');
+	const history = await lifecycleFor(fx.repo).store.readWithHistory(PLAN);
+	const reviewCount = history.changeLog.filter(entry => entry.operation === 'review').length;
+	assert.equal(parse(await rawReviewCall(seeded.input({ verdicts: good }), deps)).next, 'already_completed');
+	assert.equal((await lifecycleFor(fx.repo).store.readWithHistory(PLAN)).changeLog.filter(entry => entry.operation === 'review').length, reviewCount, 'replay writes no second review entry');
+	assert.equal((await getStepStateStore().read('review', seeded.token))!.payload, undefined);
+	assert.equal(parse(await rawReviewCall(subset.input({ verdicts: [good[1]!] }), deps)).next, 'done', 'completed+assigned union is the full immutable set');
+	const empty = await seedTerminalFixture({ ...payload, claims: [], evidence: [] }, 'verdicts', { extractionComplete: true });
+	assert.equal(parse(await rawReviewCall(empty.input({ verdicts: [] }), deps)).next, 'done', 'genuine empty requires completed extraction');
 });

@@ -32,8 +32,11 @@ import type { Claim, Finding, RawFinding, ReviewReport } from '../../../../workf
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
 import { persistReview } from '../../../../workflow/review/persist-review.js';
 import { reviewFixModeFor } from '../../../../workflow/team/approval-gate.js';
-import { loadState, releaseState } from '../state-store.js';
-import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
+import { withReviewTerminal } from '../terminal.js';
+import type { ReviewTerminalGuard } from '../terminal.js';
+import { assertExactReviewIds, validateVerdictCoverage } from '../../../../workflow/review/exact-coverage.js';
+import { ReviewBudgetError } from '../../../../workflow/review-pipeline/budget.js';
+import type { ReviewStepDone, ReviewStepInputVerdicts, ReviewStepOutput, ReviewStepStatePayload, RawVerdict } from '../types.js';
 
 const log = getLogger('mcp:review-step:verdicts');
 
@@ -50,26 +53,24 @@ const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {
 export async function handleVerdicts(
 	input: ReviewStepInputVerdicts,
 	lifecycleFor: (repoPath: string) => LifecycleService,
-): Promise<ReviewStepDone> {
-	if (typeof input.state !== 'string' || input.state.length === 0) {
-		throw new Error(`insrc_review_step[verdicts]: missing \`state\` token from the prior claims response.`);
-	}
-	const state = await loadState(input.state);
+): Promise<ReviewStepOutput> {
+	return withReviewTerminal(input, (state, answer, guard) => persistPremiseVerdicts(state, answer as { verdicts?: readonly RawVerdict[] }, lifecycleFor, guard));
+}
+
+export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answer: { verdicts?: readonly RawVerdict[] }, lifecycleFor: (repoPath: string) => LifecycleService, guard: ReviewTerminalGuard): Promise<ReviewStepDone> {
 	if (state.claims === undefined) {
 		throw new Error(`insrc_review_step[verdicts]: no claims in run state — call phase='claims' before phase='verdicts'.`);
 	}
 
+	const protocol = state.controller;
+	if (!protocol?.expectedClaimIds || !protocol.assignedClaimIds) throw new ReviewBudgetError('review-budget-state-stale');
+	assertExactReviewIds(state.claims.map(claim => claim.id), protocol.expectedClaimIds, 'review-verdict-set-mismatch');
+	const rawVerdicts = validateVerdictCoverage({ expected: protocol.expectedClaimIds, assigned: protocol.assignedClaimIds,
+		completed: protocol.completedVerdicts ?? [], received: answer.verdicts, extractionComplete: protocol.extractionComplete === true });
 	const claimById = new Map<string, Claim>(state.claims.map(c => [c.id, c] as const));
-	const rawVerdicts = input.verdicts?.verdicts ?? [];
-
 	const findings: Finding[] = [];
 	for (const v of rawVerdicts) {
-		if (v === undefined || typeof v.claimId !== 'string') continue;
-		const claim = claimById.get(v.claimId);
-		if (claim === undefined) {
-			log.warn({ claimId: v.claimId }, 'insrc_review_step[verdicts]: verdict references unknown claimId; dropping');
-			continue;
-		}
+		const claim = claimById.get(v.claimId)!;
 		const raw = {
 			severity:    v.severity,
 			evidence:    v.evidence,
@@ -101,14 +102,15 @@ export async function handleVerdicts(
 	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not reviewed until a person resolves it.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	const lifecycle = lifecycleFor(state.repo);
+	guard.beginSideEffects();
 	const seen = await lifecycle.inspect(artifactId);
+	guard.assertActive();
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown; citations?: unknown };
 	// This phase records the CONTROLLER's review, so it does not record one on work
 	// the controller authored. `start` already sends such work to the daemon; this
 	// holds the rule at the point of the record, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
-		await releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
@@ -120,12 +122,11 @@ export async function handleVerdicts(
 	// The one persist path: the auto-fix goes through the store (it answers no feedback), the report becomes the review entry of the
 	// log and the lifecycle review names it, and the markdown is written last.
 	await persistReview({
-		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
 		...(fixed.applied.length > 0 ? { fix: { body: fixed.body as Record<string, unknown>, citations: Array.isArray(artifact.citations) ? artifact.citations : [] } } : {}),
 		markdown: fixed.markdown,
 	});
 	const pending = pendingUserFindings(report).length;
-	await releaseState(input.state);
 
 	log.info(
 		{ runId: state.runId, stage: state.stage, verdict: report.verdict, applied: fixed.applied.length, pending },

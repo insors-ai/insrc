@@ -28,8 +28,12 @@ import {
 } from '../../../../workflow/review/index.js';
 import type { ReviewReport } from '../../../../workflow/review/index.js';
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
-import { loadState, releaseState } from '../state-store.js';
-import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '../types.js';
+import { withReviewTerminal } from '../terminal.js';
+import type { ReviewTerminalGuard } from '../terminal.js';
+import { assertExactReviewIds } from '../../../../workflow/review/exact-coverage.js';
+import { ReviewBudgetError } from '../../../../workflow/review-pipeline/budget.js';
+import type { RawTemplateAnswer } from '../../../../workflow/review/template.js';
+import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings, ReviewStepOutput, ReviewStepStatePayload } from '../types.js';
 import { LifecycleConflictError } from '../../../../workflow/artifact-core/types.js';
 
 const log = getLogger('mcp:review-step:findings');
@@ -43,11 +47,11 @@ const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {
 export async function handleFindings(
 	input: ReviewStepInputFindings,
 	lifecycleFor: (repoPath: string) => LifecycleService,
-): Promise<ReviewStepDone | ReviewStepError> {
-	if (typeof input.state !== 'string' || input.state.length === 0) {
-		throw new Error(`insrc_review_step[findings]: missing \`state\` token from the prior start response.`);
-	}
-	const state = await loadState(input.state);
+): Promise<ReviewStepOutput> {
+	return withReviewTerminal(input, (state, answer, guard) => persistTemplateFindings(state, answer as RawTemplateAnswer, lifecycleFor, guard));
+}
+
+export async function persistTemplateFindings(state: ReviewStepStatePayload, answer: RawTemplateAnswer, lifecycleFor: (repoPath: string) => LifecycleService, guard: ReviewTerminalGuard): Promise<ReviewStepDone | ReviewStepError> {
 	if (state.templateIntent === undefined) {
 		throw new Error(
 			`insrc_review_step[findings]: this run reviews a ${state.stage} artifact, which is not a design document — ` +
@@ -56,7 +60,10 @@ export async function handleFindings(
 	}
 
 	const template = reviewTemplateFor(state.templateIntent);
-	const result = validateTemplateAnswer(template, input.findings);
+	const expected = state.controller?.expectedItemIds;
+	if (!expected) throw new ReviewBudgetError('review-budget-state-stale');
+	assertExactReviewIds(template.items.map(item => item.id), expected, 'review-template-set-mismatch');
+	const result = validateTemplateAnswer(template, answer);
 	if (!result.ok) {
 		log.warn({ runId: state.runId, template: template.id, errors: result.errors.length }, 'insrc_review_step[findings]: answer rejected; nothing recorded');
 		return {
@@ -70,6 +77,9 @@ export async function handleFindings(
 			},
 		};
 	}
+
+	const items = Array.isArray(answer?.items) ? answer.items as { item?: unknown }[] : [];
+	assertExactReviewIds(expected, items.map(item => item?.item), 'review-template-set-mismatch');
 
 	const findings = result.findings;
 	const report: ReviewReport = {
@@ -91,7 +101,9 @@ export async function handleFindings(
 	// The head is checked (and any write a crash left staged is finished) BEFORE it is read, as in the verdicts phase.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	const lifecycle = lifecycleFor(state.repo);
+	guard.beginSideEffects();
 	const seen = await lifecycle.inspect(artifactId);
+	guard.assertActive();
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	// A design is not edited by its review: the report becomes the review entry of its log and the lifecycle review names it; the
 	// body is untouched.
@@ -100,17 +112,15 @@ export async function handleFindings(
 	// the controller authored. `start` already sends such work to the daemon; this
 	// holds the rule at the point of the record, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
-		await releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	await persistReview({
 		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle,
-		report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
+		assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
 	});
 
 	const pending = pendingUserFindings(report).length;
-	await releaseState(input.state);
 
 	log.info(
 		{ runId: state.runId, stage: state.stage, template: template.id, verdict: report.verdict, pending },

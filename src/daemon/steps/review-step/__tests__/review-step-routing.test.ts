@@ -37,7 +37,7 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../../../w
 import { reviewArtifactStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
-import { handleReviewStep } from '../handler.js';
+import { fixtureReviewClient as handleReviewStep } from './terminal-client.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { DESIGN_REVIEW_IDLE_MS, DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.js';
 import { runReviewStream, type ReviewStreamSink } from '../../../../shared/review-stream.js';

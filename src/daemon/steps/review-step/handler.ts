@@ -16,6 +16,11 @@
  * else: `start` asks the daemon to review and returns its verdict as `done`.
  */
 
+import { ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
+import { ReviewCoverageError } from '../../../workflow/review/exact-coverage.js';
+import { ReviewTerminalError } from './terminal.js';
+import { ReviewStateRefused } from '../../threads/review-state-contract.js';
+import { safeReviewId } from '../../../workflow/review-pipeline/call-events.js';
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -42,7 +47,9 @@ export async function handleReviewStep(input: unknown, deps: ReviewStepDeps = {}
 	const result = await dispatch(input, deps);
 	if (TRACE_PATH !== undefined) {
 		try {
-			appendFileSync(TRACE_PATH, JSON.stringify({ input, output: result }) + '\n', 'utf8');
+			const raw = input as { phase?: unknown; reply?: { callId?: unknown } } | null;
+			const phase = typeof raw?.phase === 'string' && ['start', 'claims', 'verdicts', 'findings'].includes(raw.phase) ? raw.phase : 'other';
+			appendFileSync(TRACE_PATH, JSON.stringify({ phase, next: result.next, callId: typeof raw?.reply?.callId === 'string' ? safeReviewId(raw.reply.callId) : undefined, ...(result.next === 'error' ? { errorCode: result.error.code } : {}) }) + '\n', 'utf8');
 		} catch { /* trace is best-effort */ }
 	}
 	return {
@@ -77,6 +84,8 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 				);
 		}
 	} catch (err) {
+		if (err instanceof ReviewBudgetError || err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code, err.code !== 'review-job-timeout' && err.code !== 'review-budget-state-stale');
+		if (err instanceof ReviewStateRefused) return errorResult(err.reason, err.reason, false);
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_review_step: uncaught error');
 		return errorResult(err instanceof SamePartyReviewError ? 'same-party-review' : 'internal', msg, false);

@@ -25,7 +25,7 @@ afterAll(async () => {
 });
 
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
-import { handleReviewStep } from '../handler.js';
+import { fixtureReviewClient as handleReviewStep } from './terminal-client.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';

@@ -18,6 +18,10 @@
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */
 
+import type { ReviewControllerBudgetDeclaration } from '../../../shared/review-budget.js';
+import type { ControllerReviewReply } from '../../../workflow/review-pipeline/controller.js';
+import type { ReviewTerminalProtocol } from './terminal.js';
+import type { ReviewCompletionReceipt } from '../../threads/review-state-contract.js';
 import type { LifecycleService } from '../../../workflow/artifact-core/lifecycle-service.js';
 import type { WorkflowReviewDone } from '../../workflow-review-rpc.js';
 import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../shared/review-stream.js';
@@ -37,6 +41,8 @@ export type ReviewStepPhase = 'start' | 'claims' | 'verdicts' | 'findings';
  *  (or `.html`) path; the canonical `.json` is resolved via `jsonPathForMd`.
  *  A `.json` path is also accepted (its `.md` sibling is derived). */
 export interface ReviewStepInputStart {
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:    'start';
 	readonly artifact: string;
 	readonly repo?:    string | undefined;
@@ -44,6 +50,8 @@ export interface ReviewStepInputStart {
 
 /** The controller's extracted claims (matching `EXTRACT_SCHEMA`). */
 export interface ReviewStepInputClaims {
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:  'claims';
 	readonly claims: { readonly claims?: readonly Claim[] | undefined };
 	readonly state:  string;
@@ -52,8 +60,10 @@ export interface ReviewStepInputClaims {
 /** The controller's per-claim verdicts (one entry per claim, keyed by
  *  `claimId`; each entry is a Finding-without-claimId payload). */
 export interface ReviewStepInputVerdicts {
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:    'verdicts';
-	readonly verdicts: { readonly verdicts?: readonly RawVerdict[] | undefined };
+	readonly verdicts?: { readonly verdicts?: readonly RawVerdict[] | undefined };
 	readonly state:    string;
 }
 
@@ -71,8 +81,10 @@ export interface RawVerdict {
 /** The controller's answer to a design-review template (matching
  *  `TEMPLATE_ANSWER_SCHEMA`): every check item, with the premises examined. */
 export interface ReviewStepInputFindings {
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:    'findings';
-	readonly findings: RawTemplateAnswer;
+	readonly findings?: RawTemplateAnswer | undefined;
 	readonly state:    string;
 }
 
@@ -163,6 +175,7 @@ export type ReviewStepOutput =
 	| ReviewStepEmitFindings
 	| ReviewStepEmitVerdicts
 	| ReviewStepDone
+	| { readonly next: 'already_completed'; readonly receipt: ReviewCompletionReceipt }
 	| ReviewStepError;
 
 // ---------------------------------------------------------------------------
@@ -170,6 +183,7 @@ export type ReviewStepOutput =
 // ---------------------------------------------------------------------------
 
 export interface ReviewStepStatePayload {
+	readonly controller?: ReviewTerminalProtocol | undefined;
 	readonly runId:       string;
 	readonly startedAtMs: number;
 	readonly mdPath:      string;

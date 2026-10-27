@@ -29,7 +29,7 @@ import { buildVerifyPrompt, VERIFY_SCHEMA } from '../../../../workflow/review/ve
 import type { Claim, Evidence, ReviewReport } from '../../../../workflow/review/types.js';
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
-import { handleReviewStep } from '../handler.js';
+import { fixtureReviewClient as handleReviewStep } from './terminal-client.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';

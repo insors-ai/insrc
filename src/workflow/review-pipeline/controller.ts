@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { ReviewBudgetPolicy, ReviewControllerBudgetDeclaration } from '../../shared/review-budget.js';
-import { admitReviewBudget, createReviewBudgetPolicy, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError, validateControllerBudgetDeclaration } from './budget.js';
+import { admitReviewBudget, createReviewBudgetPolicy, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError, validateControllerBudgetDeclaration, validateReviewBudgetPolicy } from './budget.js';
 import { readReviewChunkTokens } from './limit.js';
 import type { ReviewCall } from './types.js';
 
@@ -28,6 +28,7 @@ export function controllerPolicy(declaration: ReviewControllerBudgetDeclaration 
 		completionReserveTokens: Math.max(d.profile.completionReserveTokens, REVIEW_BUDGET_DEFAULTS.completionReserveTokens),
 		inspectionReserveTokens: Math.max(d.profile.inspectionReserveTokens, REVIEW_BUDGET_DEFAULTS.inspectionReserveTokens),
 	};
+	if (pinned) validateReviewBudgetPolicy(pinned);
 	const policy = pinned ?? createReviewBudgetPolicy(profile, 'controller', readReviewChunkTokens());
 	if (JSON.stringify(profile) !== JSON.stringify(policy.profile) || policy.executionKind !== 'controller') throw new ReviewBudgetError('budget-profile-mismatch');
 	return { policy, declaration: d };

@@ -57,6 +57,8 @@ export class ReviewPersistError extends Error {
 }
 
 export interface PersistReviewInput {
+	/** Review-only trusted owner/deadline guard; existing callers retain their contract. */
+	readonly assertActive?: (() => void) | undefined;
 	readonly artifactId: string;
 	readonly jsonPath:   string;
 	readonly mdPath:     string;
@@ -99,7 +101,9 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 	let step: PersistStep = 'inspect';
 	try {
 		// inspect: finishes a write a crash left staged, then the head against its log (its stored hash and its change log)
+		input.assertActive?.();
 		const seen = await input.lifecycle.inspect(artifactId);
+		input.assertActive?.();
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 
 		const meta = (JSON.parse(readFileSync(input.jsonPath, 'utf8')) as { meta?: unknown }).meta;
@@ -109,20 +113,29 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 		let fixStored = false;
 		if (input.fix !== undefined) {
 			// an automated fix is not an answer to a person's feedback: it addresses none
+			input.assertActive?.();
 			fixStored = await input.lifecycle.updateContent(artifactId, input.recorder, input.fix, { addresses: [] });
+			input.assertActive?.();
 			if (fixStored) stored.push('the fix');
 		}
 
 		step = 'record-review';
 		const entryId = reviewEntryId(artifactId, input.report);
+		input.assertActive?.();
 		await store.exclusive(artifactId, async () => {
-			if ((await history.log(artifactId)).some(e => e.id === entryId)) return;
+			input.assertActive?.();
+			const entries = await history.log(artifactId);
+			input.assertActive?.();
+			if (entries.some(e => e.id === entryId)) return;
 			await history.appendLog(artifactId, reviewEntryOf({ id: entryId, actor: input.recorder, timestamp: input.report.reviewedAt, report: input.report }));
 		});
+		input.assertActive?.();
 		stored.push('the review entry');
 		const now = await input.lifecycle.inspect(artifactId);
+		input.assertActive?.();
 		let lifecycleRecorded = false;
 		if (now !== undefined && (now.status === 'draft' || now.status === 'pending-review')) {
+			input.assertActive?.();
 			await input.lifecycle.apply(artifactId, 'review', input.recorder, {
 				review: {
 					reviewer: input.reviewer, party: input.party, verdict: input.report.verdict,
@@ -130,12 +143,14 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 					report: reviewReference(artifactId, entryId),
 				},
 			});
+			input.assertActive?.();
 			lifecycleRecorded = true;
 			stored.push('lifecycle.review');
 		}
 
 		step = 'render';
 		// raw-write: markdown render of the review.
+		input.assertActive?.();
 		writeAtomic(input.mdPath, `${input.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(input.report)}\n`);
 
 		log.info({ artifactId, verdict: input.report.verdict, fixStored, lifecycleRecorded, file: basename(input.mdPath) }, 'review persisted');

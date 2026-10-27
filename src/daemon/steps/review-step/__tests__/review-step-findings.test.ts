@@ -23,7 +23,7 @@ import { handleInsrcSchema } from '../../../../mcp/schema/handler.js';
 import type { InsrcSchemaOk } from '../../../../mcp/schema/schema.js';
 import { buildInsrcMcpServerWithRegistry } from '../../../../mcp/server.js';
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
-import { handleReviewStep } from '../handler.js';
+import { fixtureReviewClient as handleReviewStep, rawReviewCall, seedTerminalFixture, CONTROLLER_DECLARATION } from './terminal-client.js';
 import { FIXTURE_HASH, idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
@@ -131,7 +131,7 @@ test('T13 the findings phase records the review and does not edit the design', a
 
 		// The run is finished: its state token is released.
 		const again = parse(await handleReviewStep({ phase: 'findings', state, findings: answer(SPEC) }));
-		assert.equal(again['next'], 'error');
+		assert.equal(again['next'], 'already_completed');
 	} finally { fx.cleanup(); }
 });
 
@@ -262,4 +262,62 @@ test('review-step-findings.test.ts: the findings phase binds the review to the l
 			assert.ok(log.includes(review.report.fragment), 'the review entry is in the log file');
 		} finally { fx.cleanup(); }
 	}
+});
+
+test('exact template-item coverage and atomic terminal recovery prevent premature or duplicate completion', async () => {
+	const { loadState } = await import('../state-store.js');
+	const { lifecycleFor } = await import('../../../lifecycle-registry.js');
+	const fx = fixture();
+	try {
+		const startFrame = await start(fx);
+		const payload = await loadState(startFrame['state'] as string);
+		const seeded = await seedTerminalFixture(payload, 'findings');
+		const valid = answer(SPEC);
+		const beforeHead = readFileSync(fx.jsonPath, 'utf8'), beforeMd = readFileSync(fx.mdPath, 'utf8');
+		let entered!: () => void, release!: () => void;
+		const enteredWrite = new Promise<void>(resolve => { entered = resolve; });
+		const gate = new Promise<void>(resolve => { release = resolve; });
+		let inspections = 0;
+		const service = lifecycleFor(fx.repo).service;
+		const guarded = new Proxy(service, { get(target, key) {
+			if (key === 'inspect') return async (id: string) => { inspections++; if (inspections === 1) { entered(); await gate; } return target.inspect(id); };
+			const value: unknown = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value;
+		} });
+		const deps = { lifecycleFor: () => guarded };
+		for (const items of [[], valid.items.slice(1), [...valid.items, valid.items[0]!], [{ ...valid.items[0]!, item: 'unknown' }, ...valid.items.slice(1)]]) {
+			const out = parse(await rawReviewCall(seeded.input({ items }), deps));
+			assert.equal(out['next'], 'error'); assert.equal((out['error'] as { code: string }).code, 'invalid-findings');
+		}
+		assert.equal(inspections, 0); assert.equal(readFileSync(fx.jsonPath, 'utf8'), beforeHead); assert.equal(readFileSync(fx.mdPath, 'utf8'), beforeMd);
+		const wrongProfile = parse(await rawReviewCall({ ...seeded.input(valid), reviewBudget: { ...CONTROLLER_DECLARATION, profile: { ...CONTROLLER_DECLARATION.profile, providerId: 'different-controller' } } }, deps));
+		assert.equal((wrongProfile['error'] as { code: string }).code, 'budget-profile-mismatch'); assert.equal(inspections, 0);
+		const rejected = parse(await rawReviewCall(seeded.input(valid), { lifecycleFor: () => { throw new Error('proven failure before inspect or any write'); } }));
+		assert.equal(rejected['next'], 'error'); assert.equal(readFileSync(fx.jsonPath, 'utf8'), beforeHead);
+		const pending = rawReviewCall(seeded.input(valid), deps);
+		await enteredWrite;
+		const duplicate = parse(await rawReviewCall(seeded.input(valid), deps));
+		assert.equal((duplicate['error'] as { code: string }).code, 'review-state-busy');
+		assert.equal(readFileSync(fx.jsonPath, 'utf8'), beforeHead, 'exclusive claim remains held across the awaited inspect');
+		release(); assert.equal(parse(await pending)['next'], 'done');
+		const afterHead = readFileSync(fx.jsonPath, 'utf8'), afterMd = readFileSync(fx.mdPath, 'utf8');
+		assert.equal(parse(await rawReviewCall(seeded.input(valid), deps))['next'], 'already_completed');
+		assert.equal(readFileSync(fx.jsonPath, 'utf8'), afterHead); assert.equal(readFileSync(fx.mdPath, 'utf8'), afterMd);
+
+		// A fresh artifact is pending review, so apply really reaches its write path.
+		const failureFx = fixture();
+		try {
+			const failedPayload = { ...payload, repo: failureFx.repo, mdPath: failureFx.mdPath, jsonPath: failureFx.jsonPath };
+			const failed = await seedTerminalFixture(failedPayload, 'findings');
+			const failedService = lifecycleFor(failureFx.repo).service;
+			let didWrite = false;
+			const actualFailure = new Proxy(failedService, { get(target, key) {
+				if (key === 'apply') return async (...args: Parameters<typeof target.apply>) => { await target.apply(...args); didWrite = true; throw new Error('fixture: failure after lifecycle write'); };
+				const value: unknown = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value;
+			} });
+			assert.equal(parse(await rawReviewCall(failed.input(valid), { lifecycleFor: () => actualFailure }))['next'], 'error');
+			assert.equal(didWrite, true, 'the injected exception follows a real lifecycle write');
+			const retry = parse(await rawReviewCall(failed.input(valid), { lifecycleFor: () => failedService }));
+			assert.equal((retry['error'] as { code: string }).code, 'review-state-uncertain');
+		} finally { failureFx.cleanup(); }
+	} finally { fx.cleanup(); }
 });

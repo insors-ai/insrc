@@ -30,7 +30,10 @@ test('every typebox input schema serialises to the same JSON as the schema it re
 	for (const id of GIT_IDS) {
 		const before = snapshot.find(s => s.id === id);
 		assert.ok(before, `${id} is in the snapshot taken before the rewrite`);
-		assert.deepEqual(JSON.parse(JSON.stringify(live.get(id)?.inputSchema)), before.inputSchema, id);
+		// git_push gained the optional configured input after the snapshot (Story s10); the snapshot stays pinned
+		const schema = JSON.parse(JSON.stringify(live.get(id)?.inputSchema)) as { properties: Record<string, unknown> };
+		if (id === 'git_push') { delete schema.properties['configured']; }
+		assert.deepEqual(schema, before.inputSchema, id);
 	}
 });
 

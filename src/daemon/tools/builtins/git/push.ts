@@ -164,8 +164,23 @@ export const gitPushTool = {
 
 /** configured: a plain `git push`, so git's own configuration picks the remote, the refspec and the upstream. */
 async function pushConfigured(input: ToolInput, cwd: string): Promise<ToolResult> {
-  const clash = ['remote', 'ref', 'setUpstream', 'force', 'forceRaw', 'forceToMain'].filter(k => input[k] !== undefined && input[k] !== false);
+  // present at all, even as false: the combination is refused, not interpreted
+  const clash = ['remote', 'ref', 'setUpstream', 'force', 'forceRaw', 'forceToMain'].filter(k => input[k] !== undefined);
   if (clash.length > 0) { return rejectInput('git_push', `configured cannot be combined with ${clash.join(', ')}`); }
+  // configured is never destructive (approval class common), so a configured refspec that forces or deletes a ref is refused:
+  // the caller must name it, where the force and delete guards and the destructive class apply.
+  const specs = await runShell(['git', 'config', '--get-regexp', '^remote\\..*\\.push$'], { cwd, timeoutMs: 15_000 });
+  if (specs.spawnError) { return spawnFail('git_push', specs.stderr); }
+  const mirror = await runShell(['git', 'config', '--get-regexp', '^remote\\..*\\.mirror$'], { cwd, timeoutMs: 15_000 });
+  if (mirror.spawnError) { return spawnFail('git_push', mirror.stderr); }
+  const mirrored = mirror.stdout.split('\n').map(l => l.trim()).filter(l => /\s(true|yes|on|1)$/i.test(l));
+  if (mirrored.length > 0) {
+    return rejectInput('git_push', `configured refused: ${mirrored.map(m => m.split(/\s+/)[0]).join(', ')} mirrors refs (forces updates and deletes refs) -- name the ref explicitly`);
+  }
+  const unsafe = specs.stdout.split('\n').map(l => l.trim().split(/\s+/).slice(1).join(' ')).filter(v => v.startsWith('+') || v.startsWith(':'));
+  if (unsafe.length > 0) {
+    return rejectInput('git_push', `configured refused: the repository's push refspec ${unsafe.map(u => `\`${u}\``).join(', ')} forces or deletes a ref -- name the ref explicitly`);
+  }
   const dryRun = input['dryRun'] === true;
   const argv = ['git', 'push'];
   if (dryRun) { argv.push('--dry-run'); }

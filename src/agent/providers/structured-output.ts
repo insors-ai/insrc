@@ -28,6 +28,7 @@
  * `JSON.parse(rawText)` to `provider.completeStructured(messages, Schema)`.
  */
 
+import { ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
@@ -210,6 +211,8 @@ export async function withStructuredRetry<T>(
 		try {
 			raw = await call(note);
 		} catch (err) {
+			// Budget admission is not a failed model answer and must never be retried/wrapped.
+			if (err instanceof ReviewBudgetError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.
 			if (err instanceof Error && err.name === 'AbortError') throw err;

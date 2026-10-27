@@ -20,6 +20,11 @@ import {
 	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
+import { admitReviewBudget, createReviewBudgetPolicy, ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
+import { envelopeSchema } from '../../../workflow/review-pipeline/envelope.js';
+import { reviewWireSchemaJson } from '../review-budget.js';
+import type { ReviewExecutionBudget } from '../../../shared/review-budget.js';
+
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
 /**
@@ -39,7 +44,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 let stdin = '';
 for await (const c of process.stdin) stdin += c;
 const calls = join(here, 'calls.jsonl');
-appendFileSync(calls, JSON.stringify({ argv: process.argv.slice(2), cwd: process.cwd(), stdin }) + '\\n');
+const argv = process.argv.slice(2);
+const schemaIndex = argv.indexOf('--output-schema');
+const wireSchema = schemaIndex >= 0 ? readFileSync(argv[schemaIndex + 1], 'utf8') : argv[argv.indexOf('--json-schema') + 1];
+appendFileSync(calls, JSON.stringify({ argv, cwd: process.cwd(), stdin, wireSchema }) + '\\n');
 const n = readFileSync(calls, 'utf8').trim().split('\\n').length;
 const script = JSON.parse(readFileSync(join(here, 'script.json'), 'utf8'));
 const step = script[Math.min(n - 1, script.length - 1)];
@@ -50,7 +58,7 @@ if (step.fail !== undefined) { process.stderr.write(step.fail); process.exit(ste
 process.stdout.write(step.out);
 `;
 
-interface Call { argv: string[]; cwd: string; stdin: string }
+interface Call { argv: string[]; cwd: string; stdin: string; wireSchema?: string }
 
 function fakeCli(script: readonly Record<string, unknown>[]): { bin: string; dir: string; calls: () => Call[]; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-cli-'));
@@ -447,4 +455,49 @@ test("without effort every argv is byte-identical to today's", async () => {
 		await new CliProvider({ kind: 'claude', binPath: c.bin }).complete([{ role: 'user', content: 'hi' }]);
 		assert.deepEqual(c.calls()[0]!.argv, ['--print', '--output-format', 'json']);
 	} finally { c.cleanup(); }
+});
+
+
+test('provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes', async () => {
+	const schema = envelopeSchema('budget-call', SCHEMA);
+	const originalSchema = JSON.stringify(schema);
+	const answer = { callId: 'budget-call', answer: { ok: true } };
+	for (const kind of ['claude', 'codex'] as const) {
+		for (const executionKind of ['structured', 'reviewer-session'] as const) {
+			const f = fakeCli([{ out: kind === 'claude' ? claudeOk(answer) : codexOk(JSON.stringify(answer)) }]);
+			try {
+				const provider = new CliProvider({ kind, binPath: f.bin, model: 'fixture' });
+				const profile = provider.getReviewBudgetProfile(executionKind);
+				assert.ok(Object.isFrozen(profile));
+				assert.equal(profile.qualification, 'reserved-native');
+				assert.equal(profile.inspectionReserveTokens, executionKind === 'reviewer-session' ? 24576 : 0);
+				const policy = createReviewBudgetPolicy(profile, executionKind);
+				const wireSchema = reviewWireSchemaJson(profile, schema);
+				if (kind === 'codex') assert.equal(JSON.parse(wireSchema).additionalProperties, false);
+				const budget: ReviewExecutionBudget = {
+					policy, admitted: admitReviewBudget(policy, { promptChars: 6, wireSchemaJson: wireSchema, phase: 'planning' }),
+					outputAllowanceTokens: 8192, reviewId: 'budget-review', callId: 'budget-call', stage: 'review', role: 'single', attempt: 1,
+				};
+				const config = join(f.dir, 'config.json');
+				writeFileSync(config, '{"unchanged":true}');
+				if (executionKind === 'structured') {
+					assert.deepEqual(await provider.completeStructured([{ role: 'user', content: 'review' }], schema, { cwd: f.dir, reviewBudget: budget, internalRetry: false }), answer);
+				} else {
+					assert.deepEqual(await provider.runReviewSession('review', schema, { cwd: f.dir, deadlineMs: 5000, reviewBudget: budget, internalRetry: false }), answer);
+				}
+				assert.equal(f.calls().length, 1);
+				assert.equal(f.calls()[0]!.wireSchema, wireSchema, 'the actual CLI wire schema is the planned representation');
+				assert.equal(f.calls()[0]!.stdin, 'review');
+				assert.equal(readFileSync(config, 'utf8'), '{"unchanged":true}');
+				assert.ok(!f.calls()[0]!.argv.some(a => /model_context_window|auto_compact/.test(a)));
+				const mismatched = { ...budget, policy: { ...policy, profile: { ...profile, transportVersion: 'other-version' } } };
+				await assert.rejects(() => provider.completeStructured([{ role: 'user', content: 'review' }], schema, { reviewBudget: mismatched, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+				assert.equal(f.calls().length, 1, 'profile mismatch never spawns a CLI');
+				const tinyPolicy = createReviewBudgetPolicy(profile, executionKind, 1);
+				await assert.rejects(() => provider.runReviewSession('review', schema, { cwd: f.dir, deadlineMs: 5000, reviewBudget: { ...budget, policy: tinyPolicy, admitted: { ...budget.admitted, limitTokens: 1 } }, internalRetry: false }), e => e instanceof ReviewBudgetError);
+				assert.equal(f.calls().length, 1, 'overflow never spawns a CLI');
+				assert.equal(JSON.stringify(schema), originalSchema, 'strict conversion never mutates the caller schema');
+			} finally { f.cleanup(); }
+		}
+	}
 });

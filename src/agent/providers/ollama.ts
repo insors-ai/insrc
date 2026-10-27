@@ -14,6 +14,9 @@ import type {
   ToolDefinition,
   ToolCall,
 } from '../../shared/types.js';
+import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
+import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS } from '../../workflow/review-pipeline/budget.js';
+import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
@@ -162,6 +165,18 @@ export const _modelQuirksForTest = modelQuirks;
 
 export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
+
+  getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
+    return freezeReviewBudgetProfile({
+      profileVersion: 1, providerId: `ollama:${this.model}`, transport: 'ollama', transportVersion: 'ollama-chat-review-v1',
+      schemaDialect: 'json-v1', qualification: 'managed-estimate',
+      declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' ? toOllamaTools(getReadOnlyTools()) : []),
+      nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
+      transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
+      completionReserveTokens: REVIEW_BUDGET_DEFAULTS.completionReserveTokens,
+      inspectionReserveTokens: executionKind === 'reviewer-session' ? REVIEW_BUDGET_DEFAULTS.inspectionReserveTokens : 0,
+    });
+  }
   // plans/structured-output.md Phase B.5. Ollama's native structured
   // output is the `format: schema` field on the chat API -- the model
   // is constrained to produce JSON conforming to the schema. Lifted
@@ -585,6 +600,11 @@ export class OllamaProvider implements LLMProvider {
         const msgs = extraSystemNote !== undefined
           ? [...apiMessages, { role: 'user' as const, content: extraSystemNote }]
           : apiMessages;
+        if (opts?.reviewBudget) {
+          const kind = opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured';
+          const profile = this.getReviewBudgetProfile(kind);
+          preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(msgs).length, reviewWireSchemaJson(profile, schema), opts.maxTokens);
+        }
         try {
           // Stream instead of collect-and-parse so we can (a) bridge
           // token deltas to the UI's progress row via opts.onToken and
@@ -601,7 +621,7 @@ export class OllamaProvider implements LLMProvider {
             stream:   true,
             options: {
               num_ctx: this.numCtx,
-              num_predict: opts?.maxTokens ?? 8_192,
+              num_predict: opts?.maxTokens ?? opts?.reviewBudget?.outputAllowanceTokens ?? 8_192,
               ...(opts?.temperature !== undefined ? { temperature: opts.temperature } : {}),
             },
             ...(disableThinking ? { think: false } : {}),

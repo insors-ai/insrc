@@ -67,3 +67,15 @@ export type ReviewBudgetErrorCode =
 	| 'invalid-budget-policy' | 'native-budget-unqualified' | 'budget-profile-mismatch'
 	| 'review-budget-exceeded' | 'required-context-over-budget' | 'correction-budget-exceeded'
 	| 'controller-budget-required' | 'controller-budget-incompatible';
+
+/** Review-only request metadata. Optional on existing provider calls. */
+export interface ReviewExecutionBudget {
+	readonly policy: ReviewBudgetPolicy;
+	readonly admitted: ReviewBudgetBreakdown;
+	readonly outputAllowanceTokens: number;
+	readonly reviewId: string;
+	readonly callId: string;
+	readonly stage: string;
+	readonly role: string;
+	readonly attempt: number;
+}

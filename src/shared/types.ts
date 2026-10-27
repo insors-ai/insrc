@@ -1,3 +1,4 @@
+import type { ReviewExecutionBudget, ReviewExecutionKind, ReviewProviderBudgetProfile } from './review-budget.js';
 /**
  * Core LLM provider abstraction.
  * All agent logic operates against these interfaces —
@@ -87,6 +88,8 @@ export interface LLMResponse {
 }
 
 export interface CompletionOpts {
+  /** Optional immutable per-review admission contract; absent for non-review callers. */
+  readonly reviewBudget?: ReviewExecutionBudget | undefined;
   maxTokens?: number;
   temperature?: number;
   tools?: ToolDefinition[] | undefined;
@@ -184,6 +187,8 @@ export interface CompletionOpts {
 }
 
 export interface LLMProvider {
+  /** Pure preparation before review planning; missing capability refuses budgeted reviews. */
+  getReviewBudgetProfile?(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile;
   complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
   stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string>;
   /** Embed text into a vector. Returns empty array if not supported. */
@@ -241,6 +246,8 @@ export interface LLMProvider {
 
 /** Options for {@link LLMProvider.runReviewSession}. */
 export interface ReviewSessionOpts {
+  /** Optional immutable per-review admission contract; absent for non-review callers. */
+  readonly reviewBudget?: ReviewExecutionBudget | undefined;
   /** The repo root the session reads. */
   readonly cwd:        string;
   /** Time allowed for the whole call, its one possible retry included. */
@@ -289,6 +296,8 @@ export interface ProviderCapabilities {
 export type StructuredSchema = Readonly<Record<string, unknown>>;
 
 export interface StructuredCompletionOpts {
+  /** Optional immutable per-review admission contract; absent for non-review callers. */
+  readonly reviewBudget?: ReviewExecutionBudget | undefined;
   readonly temperature?: number | undefined;
   readonly maxTokens?:   number | undefined;
   /** Default 3. The validation-feedback retry loop's cap. */

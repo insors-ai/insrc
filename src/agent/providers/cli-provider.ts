@@ -55,6 +55,9 @@ import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
+import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
+import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS } from '../../workflow/review-pipeline/budget.js';
+import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 
@@ -278,6 +281,21 @@ export class CliProvider implements LLMProvider {
 	}
 
 
+	getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
+		return freezeReviewBudgetProfile({
+			profileVersion: 1, providerId: `cli-${this.kind}:${this.defaultModel ?? 'default'}`,
+			transport: this.kind, transportVersion: 'cli-review-v1',
+			schemaDialect: this.kind === 'codex' ? 'codex-strict-v1' : 'json-v1',
+			qualification: 'reserved-native',
+			declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' && this.kind === 'claude'
+				? { tools: REVIEW_SESSION_READ_TOOLS, allowedTools: [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS] } : []),
+			nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
+			transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
+			completionReserveTokens: REVIEW_BUDGET_DEFAULTS.completionReserveTokens,
+			inspectionReserveTokens: executionKind === 'reviewer-session' ? REVIEW_BUDGET_DEFAULTS.inspectionReserveTokens : 0,
+		});
+	}
+
 	// -- completeStructured ---------------------------------------------
 
 	async completeStructured<T>(
@@ -319,11 +337,17 @@ export class CliProvider implements LLMProvider {
 		opts?: StructuredCompletionOpts,
 	): Promise<T> {
 		const prompt = serialiseMessages(messages);
+		const wireSchema = opts?.reviewBudget
+			? reviewWireSchemaJson(this.getReviewBudgetProfile('structured'), schema)
+			: this.kind === 'codex' ? codexSchemaJson(schema) : JSON.stringify(schema);
+		if (opts?.reviewBudget) {
+			preflightProviderReviewBudget(opts.reviewBudget, this.getReviewBudgetProfile('structured'), prompt.length, wireSchema, opts.maxTokens);
+		}
 		if (this.kind === 'claude') {
 			const args = [
 				'--print',
 				'--output-format', 'json',
-				'--json-schema', JSON.stringify(schema),
+				'--json-schema', wireSchema,
 				...this.modelArgs(opts),
 			];
 			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
@@ -340,7 +364,7 @@ export class CliProvider implements LLMProvider {
 		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
-			writeFileSync(schemaPath, codexSchemaJson(schema));
+			writeFileSync(schemaPath, wireSchema);
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
 			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal);
 			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
@@ -432,6 +456,10 @@ export class CliProvider implements LLMProvider {
 		for (let attempt = 1; ; attempt++) {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+			if (opts.reviewBudget) {
+				const profile = this.getReviewBudgetProfile('reviewer-session');
+				preflightProviderReviewBudget(opts.reviewBudget, profile, prompt.length, reviewWireSchemaJson(profile, schema));
+			}
 			try {
 				return await this.reviewSessionOnce<T>(prompt, schema, {
 					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,

@@ -430,3 +430,32 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 		await new Promise<void>(r => server.close(() => r()));
 	}
 });
+
+test('explicit managed profile and unsupported native-hard qualification refusal', async () => {
+	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../../../workflow/review-pipeline/budget.js');
+	const { reviewWireSchemaJson } = await import('../review-budget.js');
+	const fixture = await fakeOllama(() => [{ message: { role: 'assistant', content: '{"ok":true}' }, done: true }]);
+	try {
+		const schema = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
+		const profile = fixture.provider.getReviewBudgetProfile('structured');
+		assert.equal(profile.qualification, 'managed-estimate');
+		assert.equal(profile.inspectionReserveTokens, 0);
+		assert.ok(Object.isFrozen(profile));
+		const session = fixture.provider.getReviewBudgetProfile('reviewer-session');
+		assert.equal(session.inspectionReserveTokens, 24576);
+		assert.ok(JSON.parse(session.declaredToolsJson).length > 0);
+		assert.throws(() => createReviewBudgetPolicy({ ...profile, qualification: 'hard-native' as never }, 'structured'), e => e instanceof ReviewBudgetError && e.code === 'native-budget-unqualified');
+		const policy = createReviewBudgetPolicy(profile, 'structured');
+		const messages: LLMMessage[] = [{ role: 'user', content: 'review' }];
+		const wireSchemaJson = reviewWireSchemaJson(profile, schema);
+		const budget = { policy, admitted: admitReviewBudget(policy, { promptChars: 100, wireSchemaJson, phase: 'planning' }), outputAllowanceTokens: 8192, reviewId: 'review', callId: 'call', stage: 'review', role: 'single', attempt: 1 };
+		assert.deepEqual(await fixture.provider.completeStructured(messages, schema, { reviewBudget: budget, internalRetry: false }), { ok: true });
+		assert.equal(fixture.bodies.length, 1);
+		assert.deepEqual((fixture.bodies[0] as unknown as { format: unknown }).format, schema);
+		assert.equal((fixture.bodies[0] as unknown as { options: { num_predict: number } }).options.num_predict, 8192);
+		await assert.rejects(() => fixture.provider.completeStructured(messages, schema, { reviewBudget: { ...budget, policy: { ...policy, profile: { ...profile, transportVersion: 'other' } } }, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+		assert.equal(fixture.bodies.length, 1, 'profile mismatch refuses before HTTP');
+		await assert.rejects(() => fixture.provider.completeStructured(messages, schema, { reviewBudget: budget, maxTokens: 8193, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+		assert.equal(fixture.bodies.length, 1, 'output cannot exceed the reserved allowance');
+	} finally { await fixture.close(); }
+});

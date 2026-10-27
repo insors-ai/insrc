@@ -311,7 +311,7 @@ export async function executeDimensionJob(prepared: PreparedDimensionReview, pro
  const output = await runReviewJob(job, prepared.adapter, provider, { now, signal: ctx?.signal, onCall: ctx?.onCall,
   onMaterialRefusal: (old, adapter, call, reported, at) => {
    if (ctx?.groundingMode !== 'degraded' || call.stage !== 'judge' || (call.role !== 'single' && call.role !== 'chunk')) return undefined;
-   const carried = new Set(call.carries.atomIds);
+   const carried = new Set(call.role === 'single' ? adapter.material().atoms.map(a => a.id) : call.carries.atomIds);
    const text = adapter.material().atoms.some(a => carried.has(a.id) && (JSON.parse(a.text) as ChangedSymbolSummary).diffFragment !== undefined);
    if (!text) return undefined;
    assertReviewTime({ deadlineAt: old.timing!.deadlineAt }, at);

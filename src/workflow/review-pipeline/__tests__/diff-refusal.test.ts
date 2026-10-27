@@ -4,6 +4,7 @@ import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { buildDiffSymbols } from '../../code-review/grounding.js';
 import { validateDiffFragments } from '../../code-review/diff-spans.js';
+import { prepareConventions } from '../../code-review/dimensions/conventions.js';
 import { prepareQuality } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewSubject } from '../../code-review/types.js';
 import { executeDimensionJob, type PreparedDimensionReview } from '../code-review.js';
@@ -65,17 +66,47 @@ test('DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with loss
  assert.ok(audit.descendantRanges.every(r => r.atomId.includes(':revision:')));
 });
 
+test('DIFF-REFUSAL-SPAN: an initially single-call dimension with empty carries rebuilds complete diff evidence after a lower refusal', async () => {
+ let active: ReviewCall, calls = 0;
+ const provider = { inputBudgetChars: 384_000, capabilities: { boundedStructuredInput: true }, completeStructured: async (_m: unknown, schema: unknown) => {
+  calls++;
+  if (calls === 1) { assert.equal(active.role, 'single'); assert.equal(active.carries.atomIds.length, 0); throw new InputTooLargeError('smaller singleton limit', '', { maxChars: 9000 }); }
+  assert.notEqual(active.role, 'single');
+  return enveloped(schema, active.role === 'reduce' ? { text: 'local evidence' } : active.role === 'obligation' ? { findings: [] } : { notes: [] });
+ } } as unknown as LLMProvider;
+ const initial = prepareConventions(subject, grounding(), provider, { groundingMode: 'degraded', now: () => 1000 });
+ assert.equal(initial.job.plan.single, true);
+ const output = await executeDimensionJob(initial, provider, { groundingMode: 'degraded', now: () => 1000, onCall: c => { active = c as ReviewCall; } });
+ assert.ok(calls > 1); assert.equal(output.materialRevisions!.length, 1);
+ const revision = output.materialRevisions![0]!;
+ assert.equal(revision.timing.primaryChunkCount, 1); assert.equal(revision.timing.budgetMs, 600_000);
+ assert.equal(revision.initialPrimary[0]!.id, 'conventions:single');
+ assert.equal(revision.descendantRanges.at(-1)!.endOffset, revision.initialPrimary[0]!.ranges.at(-1)!.endOffset);
+});
+
 test('DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result', async () => {
  for (const expire of [false, true]) {
-  let now = 1000, calls = 0;
-  const limits: number[] = [];
-  const provider = { inputBudgetChars: 16_000, capabilities: { boundedStructuredInput: true }, completeStructured: async (_m: unknown, _s: unknown, opts?: StructuredCompletionOpts) => {
-   calls++; limits.push(opts!.boundedInput!.maxInputChars);
-   if (expire) now = 1_000_000_000;
-   throw new InputTooLargeError('refused repeatedly', '', { maxChars: expire ? 9000 : 100 });
+  let now = 1000, calls = 0, active: ReviewCall, attempts = 0;
+  const limits: number[] = [], completedRevisions: PreparedDimensionReview[] = [], rows = new Map<string, ChangedSymbolSummary>();
+  const provider = { inputBudgetChars: 16_000, capabilities: { boundedStructuredInput: true }, completeStructured: async (_m: unknown, schema: unknown) => {
+   calls++;
+   if (active.role === 'chunk' && active.carries.atomIds.length === 1 && rows.get(active.carries.atomIds[0]!)!.signature.length > 500) {
+    throw new InputTooLargeError('repeated singleton refusal', '', { maxChars: expire || attempts === 0 ? 9000 : attempts === 1 ? 6500 : 100 });
+   }
+   return enveloped(schema, { findings: [], descriptions: active.carries.atomIds.map(atomId => ({ atomId, description: 'local' })), notes: active.carries.atomIds.map(id => ({ key: `diff-file-quality:${rows.get(id)!.diffFragment!.parentId}`, atomIds: [id], note: 'local' })) });
   } } as unknown as LLMProvider;
   const p = prepareQuality(subject, grounding(), provider, { groundingMode: 'degraded', now: () => now });
-  await assert.rejects(executeDimensionJob(p, provider, { groundingMode: 'degraded', now: () => now }), expire ? /deadline exhausted/ : /exceeds|minimum fragment framing|cannot fit|too large/i);
-  assert.ok(calls > 0 && calls < 5); assert.ok(limits.every((v, i) => i === 0 || v <= limits[i - 1]!));
+  const save = (ready: PreparedDimensionReview) => { for (const a of ready.adapter.material().atoms) rows.set(a.id, JSON.parse(a.text) as ChangedSymbolSummary); };
+  save(p);
+  const wrapped = { ...p, reprepare: (limit: number, at: number) => {
+   attempts++; limits.push(limit);
+   const next = p.reprepare(limit, at); completedRevisions.push(next); save(next);
+   if (expire) now = 1_000_000_000;
+   return next;
+  } };
+  await assert.rejects(executeDimensionJob(wrapped, provider, { groundingMode: 'degraded', now: () => now, onCall: c => { active = c as ReviewCall; } }), expire ? /deadline exhausted/ : /exceeds|minimum fragment framing|cannot fit|too large/i);
+  assert.ok(calls > 0 && calls < 30); assert.ok(limits.every((v, i) => i === 0 || v < limits[i - 1]!));
+  if (expire) assert.equal(completedRevisions.length, 1, 'expiry happens after replacement preparation');
+  else { assert.ok(attempts >= 3); assert.equal(completedRevisions.length, 2, 'two successful descendants precede irreducibility'); }
  }
 });

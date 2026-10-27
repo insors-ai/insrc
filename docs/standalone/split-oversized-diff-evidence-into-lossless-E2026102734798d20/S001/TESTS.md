@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -251,3 +251,34 @@ Run at 2026-10-27T08:55:25.019Z on commit `a1a58f0cf`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t10
+
+Run at 2026-10-27T09:01:20.243Z on commit `9fc0d016b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-REPAIR**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` |
+
+**integration: DIFF-TIME-FIXED**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-FIXED: serial children activate on execution and retain their original deadlines through corrections, redivision and gather | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` |
+
+**integration: DIFF-REFUSAL-SPAN**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time | `src/workflow/review-pipeline/__tests__/diff-refusal.test.ts` |
+| pass | DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result | `src/workflow/review-pipeline/__tests__/diff-refusal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/diff-refusal.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` | 0 | 28 | 20.8 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:55:25.019Z",
+    "updatedAt": "2026-10-27T09:01:20.243Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -972,6 +972,219 @@
               },
               {
                 "title": "DIFF-TIME-PLAN: preparation elapsed time is charged before execution and can exhaust the derived root budget without a model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "9fc0d016b",
+        "ranAt": "2026-10-27T09:01:20.243Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-REPAIR",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-TIME-FIXED",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-timing.test.ts",
+                "title": "DIFF-TIME-FIXED: serial children activate on execution and retain their original deadlines through corrections, redivision and gather",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-REFUSAL-SPAN",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
+                "title": "DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
+                "title": "DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 656,
+            "titles": [
+              {
+                "title": "DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-timing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 498,
+            "titles": [
+              {
+                "title": "DIFF-TIME-PLAN: real primary plans freeze 1/5/20 chunk budgets and aggregate five model dimensions with deterministic zero counts",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: serial children activate on execution and retain their original deadlines through corrections, redivision and gather",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-PLAN: preparation elapsed time is charged before execution and can exhaust the derived root budget without a model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 20817,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
                 "result": "pass"
               }
             ],

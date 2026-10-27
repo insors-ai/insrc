@@ -1,0 +1,21 @@
+models.definitions: defaultFamily=cli-claude
+  cli-claude (Claude CLI, cliKind=claude): claude-opus-5-5[opus]{low,medium,high,xhigh,max}, claude-sonnet-5[sonnet]{low,medium,high,xhigh,max}, claude-fable-5-1{low,medium,high,xhigh,max}, claude-haiku-5-5[haiku]{low,medium,high,xhigh,max}
+  cli-codex (Codex CLI, cliKind=codex): gpt-6-astra{low,medium,high,xhigh,max,ultra}, gpt-6.1-sol{low,medium,high,xhigh,max,ultra}, gpt-6-luna{low,medium,high,xhigh,max}, gpt-6-sol{low,medium,high,xhigh,max,ultra}, gpt-5.6-sol{low,medium,high,xhigh,max,ultra}, gpt-5.6-terra{low,medium,high,xhigh,max,ultra}, gpt-5.6-luna{low,medium,high,xhigh,max}
+  ollama (Ollama (local), cliKind=null): qwen3.6:27b{}
+tier core: cli-codex / gpt-6.1-sol / effort 'high'
+  model choices: GPT-6 Astra (gpt-6-astra), GPT-6.1 Sol (gpt-6.1-sol), GPT-6 Luna (gpt-6-luna), GPT-6 Sol (gpt-6-sol), GPT-5.6 Sol (gpt-5.6-sol), GPT-5.6 Terra (gpt-5.6-terra), GPT-5.6 Luna (gpt-5.6-luna)
+  effort choices: CLI default, low, medium, high, xhigh, max, ultra
+tier mid: cli-codex / gpt-6.1-sol / effort 'medium'
+  model choices: GPT-6 Astra (gpt-6-astra), GPT-6.1 Sol (gpt-6.1-sol), GPT-6 Luna (gpt-6-luna), GPT-6 Sol (gpt-6-sol), GPT-5.6 Sol (gpt-5.6-sol), GPT-5.6 Terra (gpt-5.6-terra), GPT-5.6 Luna (gpt-5.6-luna)
+  effort choices: CLI default, low, medium, high, xhigh, max, ultra
+tier cheap: ollama / qwen3.8:27b / effort '' — note: qwen3.8:27b is not listed for Ollama (local) — the daemon runs its default for the tier instead
+  model choices: (current, not listed): qwen3.8:27b, Qwen 3.6 27B (qwen3.6:27b) — not installed
+  effort choices: CLI default
+per-repo rows: /Users/subhagho/work/projects/insors/insrc coreFloor=null tasks={}
+models.check cli-claude s7-live-check-unlisted-model: runs=false error=the claude CLI refused the model: There's an issue with the selected model (s7-live-check-unlisted-model). It may not exist or you may not have access to it. Run --model to pick a different model. inputLimit=null
+  low: recognised-unconfirmed — `claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether s7-live-check-unlisted-model supports low, so only your approval admits it
+  medium: recognised-unconfirmed — `claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether s7-live-check-unlisted-model supports medium, so only your approval admits it
+  high: recognised-unconfirmed — `claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether s7-live-check-unlisted-model supports high, so only your approval admits it
+  xhigh: recognised-unconfirmed — `claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether s7-live-check-unlisted-model supports xhigh, so only your approval admits it
+  max: recognised-unconfirmed — `claude --help` lists --effort values: low, medium, high, xhigh, max; no Claude CLI output shows whether s7-live-check-unlisted-model supports max, so only your approval admits it
+canApprove=false canReject=true message=s7-live-check-unlisted-model did not run — the claude CLI refused the model: There's an issue with the selected model (s7-live-check-unlisted-model). It may not exist or you may not have access to it. Run --model to pick a different model.; it cannot be approved

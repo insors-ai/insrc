@@ -137,6 +137,12 @@
         "choice": "Update s9 after s10 lands",
         "rationale": "User decision: s10 lands first.",
         "resolvedAt": "2026-10-27T14:46:37.184Z"
+      },
+      "qf9c81a27": {
+        "question": "A tool lacking a field a wrapper returns is fixed inside this Story only when no other Story owns that tool; otherwise it is a back-flow. Known now: gh_pr_view lacks the review fields (extended here).",
+        "status": "resolved",
+        "choice": "Targeted extension",
+        "resolvedAt": "2026-10-27T14:47:31.998Z"
       }
     }
   },

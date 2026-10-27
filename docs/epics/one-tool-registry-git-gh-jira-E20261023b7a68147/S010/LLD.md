@@ -516,6 +516,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Defer push retry _(2026-10-27T14:45:21.749Z)_
 - `q126d577f` — Overlap with s9: the async propagation edits daemon files s9 also edits (src/daemon/workflow-rpc.ts and the step phases). s10 lands first; s9's second draft is written against the awaited signatures.
   - **resolved**: Update s9 after s10 lands — User decision: s10 lands first. _(2026-10-27T14:46:37.184Z)_
+- `qf9c81a27` — A tool lacking a field a wrapper returns is fixed inside this Story only when no other Story owns that tool; otherwise it is a back-flow. Known now: gh_pr_view lacks the review fields (extended here).
+  - **resolved**: Targeted extension _(2026-10-27T14:47:31.998Z)_
 
 ## Citations
 

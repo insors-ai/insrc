@@ -1,0 +1,69 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/** Review-only estimates. Native CLI/host history is reserved, never measured or hard-bounded. */
+export type ReviewBudgetQualification = 'managed-estimate' | 'reserved-native' | 'controller-reserved';
+export type ReviewSchemaDialect = 'json-v1' | 'codex-strict-v1' | 'controller-json-v1';
+export type ReviewExecutionKind = 'structured' | 'reviewer-session' | 'controller';
+
+/** Pure serializable provider preparation; one immutable copy belongs to each job. */
+export interface ReviewProviderBudgetProfile {
+	readonly profileVersion: 1;
+	readonly providerId: string;
+	readonly transport: string;
+	readonly transportVersion: string;
+	readonly schemaDialect: ReviewSchemaDialect;
+	readonly qualification: ReviewBudgetQualification;
+	/** Serialized declared tool manifest, including observable wire framing. */
+	readonly declaredToolsJson: string;
+	readonly nativeReserveTokens: number;
+	readonly transportReserveTokens: number;
+	readonly completionReserveTokens: number;
+	readonly inspectionReserveTokens: number;
+}
+
+export interface ReviewBudgetPolicy {
+	readonly policyVersion: 1;
+	readonly estimatorVersion: 'chars-per-token-v1';
+	readonly charsPerToken: 3;
+	readonly totalTokens: number;
+	readonly executionKind: ReviewExecutionKind;
+	readonly retryHeadroomChars: number;
+	readonly profile: ReviewProviderBudgetProfile;
+}
+
+/** Numeric metadata only; the original request and schema are never retained here. */
+export interface ReviewBudgetBreakdown {
+	readonly limitTokens: number;
+	readonly promptChars: number;
+	readonly promptTokens: number;
+	readonly schemaChars: number;
+	readonly schemaTokens: number;
+	readonly declaredToolsChars: number;
+	readonly declaredToolsTokens: number;
+	readonly nativeReserveTokens: number;
+	readonly transportReserveTokens: number;
+	readonly completionReserveTokens: number;
+	readonly inspectionReserveTokens: number;
+	readonly hostContextReserveTokens: number;
+	readonly retryHeadroomTokens: number;
+	readonly estimatedTotalTokens: number;
+	readonly remainingTokens: number;
+	readonly estimatorVersion: 'chars-per-token-v1';
+	readonly qualification: ReviewBudgetQualification;
+}
+
+/** Required only when an external controller will execute the emitted request. */
+export interface ReviewControllerBudgetDeclaration {
+	readonly version: 1;
+	readonly profile: ReviewProviderBudgetProfile;
+	/** Caller estimate of its current conversation. Does not raise the server cap. */
+	readonly hostContextReserveTokens: number;
+}
+
+export type ReviewBudgetErrorCode =
+	| 'invalid-budget-policy' | 'native-budget-unqualified' | 'budget-profile-mismatch'
+	| 'review-budget-exceeded' | 'required-context-over-budget' | 'correction-budget-exceeded'
+	| 'controller-budget-required' | 'controller-budget-incompatible';

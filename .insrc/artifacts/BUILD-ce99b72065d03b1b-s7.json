@@ -1,0 +1,302 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s7",
+    "createdAt": "2026-10-27T05:37:26.069Z",
+    "updatedAt": "2026-10-27T07:35:06.554Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "approvedAt": "2026-10-27T07:35:06.868Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": false
+      }
+    ],
+    "summary": "Live check against the running daemon: the real Model tiers and per-repo sections were built over the live gateway and rendered (evidence PNGs), and a live models.check of an unlisted model ran (did not run → Approve disabled, Reject available). Not a runIde GUI walk: the sandbox IDE needs a person to drive it; approve/reject/restart were not run live because they write the user's real approved-model store.",
+    "testRecord": {
+      "md": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRoleSection.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsWriteGatewayTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/model-tiers-effort-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersWiringSourceScanTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckDialog.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ApplyCompletion.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableRestartTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PerRepoOverridesGatewayTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoOverridesModelTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-live-check.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-model-tiers-live.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-per-repo-live.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/S7LiveRenderTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:35:06.554Z"
+      }
+    ],
+    "commit": "603f4728c"
+  }
+}

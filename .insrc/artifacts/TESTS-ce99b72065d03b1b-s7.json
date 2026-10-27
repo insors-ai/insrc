@@ -1,0 +1,538 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s7",
+    "createdAt": "2026-10-27T05:37:26.069Z",
+    "updatedAt": "2026-10-27T06:15:00.759Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6d1d934c6",
+        "ranAt": "2026-10-27T05:37:26.069Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsWriteGatewayTest.kt: Saved(restartRequired) and Rejected(reason, detail) from config.write",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9759,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ed38d4c1f",
+        "ranAt": "2026-10-27T05:39:45.743Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts; default parse unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15623,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "323802919",
+        "ranAt": "2026-10-27T05:43:00.292Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt: modelDefinitions/checkModel/decideModel parsing and failure classification over a fake DaemonRpc",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22652,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "bc7819da2",
+        "ranAt": "2026-10-27T05:52:19.558Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: choices exactly from a fake definitions answer; current-tier parity with the daemon's resolution; unaccepted stored effort shown as '' and not dirty",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 24281,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5abb2893a",
+        "ranAt": "2026-10-27T05:54:47.781Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: runner switch defaults incl. a local family without tierDefaults; effort cleared on model change; whole-tier writes; not-listed model refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 26259,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "2f0f1ea04",
+        "ranAt": "2026-10-27T06:00:44.538Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersWiringSourceScanTest.kt: no PROVIDERS, no listModels use, no family or model literal in settings sources; definitions read on open and Refresh",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 31911,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "139506814",
+        "ranAt": "2026-10-27T06:04:28.939Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt: approve disabled when not run; reject with the check's id; only ticked non-rejected efforts sent; unknown-check offers check again; no tier write; restart confirmed then definitions re-read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 41049,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh",
+                "result": "pass"
+              },
+              {
+                "title": "ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6c9078bf8",
+        "ranAt": "2026-10-27T06:08:05.862Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableRestartTest.kt: one prompt when any write needed a restart, also with a failure; none otherwise",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 49332,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh",
+                "result": "pass"
+              },
+              {
+                "title": "ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "655cb085b",
+        "ranAt": "2026-10-27T06:12:57.710Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoOverridesModelTest.kt: only coreFloor and tasks state and writes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "PerRepoOverridesModelTest: only coreFloor and tasks state and writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt: per-repo editor has no tier runner/model field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "InsrcSettingsConfigurableTest: per-repo editor has no tier runner or model field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PerRepoOverridesGatewayTest.kt: a tiers leaf is ignored",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+                "title": "PerRepoOverridesGatewayTest: a tiers leaf is ignored",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 60235,
+            "titles": [
+              {
+                "title": "SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write",
+                "result": "pass"
+              },
+              {
+                "title": "UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "ModelDefinitionsGatewayTest: modelDefinitions, checkModel and decideModel parse their answers and classify failures",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh",
+                "result": "pass"
+              },
+              {
+                "title": "ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoOverridesModelTest: only coreFloor and tasks state and writes",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsConfigurableTest: per-repo editor has no tier runner or model field",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoOverridesGatewayTest: a tiers leaf is ignored",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "603f4728c",
+        "ranAt": "2026-10-27T06:15:00.759Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runIde against the live daemon: walk the LLD UX states and record screenshots",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-live-check.txt, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-model-tiers-live.png, docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/evidence/s7-per-repo-live.png (jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/S7LiveRenderTest.kt with INSRC_LIVE_TESTS=1 against the running daemon)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

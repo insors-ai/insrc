@@ -400,7 +400,7 @@ export const GH_INPUTS: readonly GhInputRow[] = [
   { command: "pr view", kind: "positional", name: "number|url|branch", field: "number" },
   { command: "pr view", kind: "flag", name: "--comments", excluded: "Not offered by the existing tool." },
   { command: "pr view", kind: "flag", name: "--jq", excluded: "Output shaping; the tool sets its own fixed --json fields." },
-  { command: "pr view", kind: "synthetic", name: "--json" },
+  { command: "pr view", kind: "synthetic", name: "--json", field: "jsonFields" },
   { command: "pr view", kind: "flag", name: "--template", excluded: "Output shaping; the tool sets its own fixed --json fields." },
   { command: "pr view", kind: "flag", name: "--web", excluded: "Opens a browser; no tool passes --web." },
   { command: "pr view", kind: "synthetic", name: "cwd", field: "cwd" },

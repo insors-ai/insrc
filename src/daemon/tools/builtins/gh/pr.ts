@@ -29,6 +29,8 @@ type RawPr = GhPrRow & { statusCheckRollup?: Array<{ name?: string; state?: stri
 
 const PR_JSON_FIELDS = 'number,title,state,isDraft,author,assignees,reviewRequests,labels,baseRefName,headRefName,url,createdAt,updatedAt,additions,deletions,changedFiles';
 const PR_VIEW_FIELDS = PR_JSON_FIELDS + ',body,mergeable,mergeStateStatus';
+/** The extra fields gh_pr_view can be asked for with jsonFields: added to the default fields, never replacing them. */
+const PR_VIEW_EXTRA_FIELDS = ['state', 'mergedAt', 'reviewDecision', 'reviews', 'headRefName', 'url'] as const;
 const PR_CHECKS_FIELDS = 'statusCheckRollup,number';
 
 // ---------------------------------------------------------------------------
@@ -82,13 +84,20 @@ export const ghPrViewTool = withGhFailureNet({
     cwd: Type.Optional(Type.String()),
     repo: Type.Optional(Type.String()),
     number: Type.Number({ minimum: 1 }),
+    jsonFields: Type.Optional(Type.Array(Type.Union(PR_VIEW_EXTRA_FIELDS.map(f => Type.Literal(f))), {
+      description: 'Extra gh JSON fields to return besides the default ones: state, mergedAt, reviewDecision, reviews, headRefName, url.',
+    })),
   }, { additionalProperties: false }),
   outputSchema: GhPrRowSchema,
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const n = num(input, 'number');
     if (!n) { return fail('gh_pr_view', 'missing number'); }
-    const argv = ['gh', 'pr', 'view', String(n), '--json', PR_VIEW_FIELDS];
+    const extra = strArr(input, 'jsonFields') ?? [];
+    const unknown = extra.filter(f => !(PR_VIEW_EXTRA_FIELDS as readonly string[]).includes(f));
+    if (unknown.length > 0) { return fail('gh_pr_view', `jsonFields not allowed: ${unknown.join(', ')}`); }
+    const fields = [...new Set([...PR_VIEW_FIELDS.split(','), ...extra])].join(',');
+    const argv = ['gh', 'pr', 'view', String(n), '--json', fields];
     if (str(input, 'repo')) { argv.push('-R', str(input, 'repo')!); }
     const r = await ghExec(argv, { cwd: str(input, 'cwd'), key: { toolId: 'gh_pr_view' } });
     const bad = ghFailResult('gh_pr_view', r, false); if (bad) { return bad; }

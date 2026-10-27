@@ -56,6 +56,12 @@ export const GhPrRowSchema = Type.Object({
   additions: Maybe(Type.Number()),
   deletions: Maybe(Type.Number()),
   changedFiles: Maybe(Type.Number()),
+  // Present only when gh_pr_view is asked for them with jsonFields (Story s10).
+  mergedAt: Maybe(Type.String()),
+  reviewDecision: Maybe(Type.String()),
+  reviews: Maybe(Type.Array(Type.Object({
+    author: Maybe(Login), state: Maybe(Type.String()), submittedAt: Maybe(Type.String()), body: Maybe(Type.String()),
+  }))),
 });
 export type GhPrRow = Static<typeof GhPrRowSchema>;
 

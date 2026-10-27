@@ -130,6 +130,13 @@
         "status": "resolved",
         "choice": "Defer push retry",
         "resolvedAt": "2026-10-27T14:45:21.749Z"
+      },
+      "q126d577f": {
+        "question": "Overlap with s9: the async propagation edits daemon files s9 also edits (src/daemon/workflow-rpc.ts and the step phases). s10 lands first; s9's second draft is written against the awaited signatures.",
+        "status": "resolved",
+        "choice": "Update s9 after s10 lands",
+        "rationale": "User decision: s10 lands first.",
+        "resolvedAt": "2026-10-27T14:46:37.184Z"
       }
     }
   },

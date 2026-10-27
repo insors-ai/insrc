@@ -514,6 +514,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Honor the approved transfer — User decision, DEF revision 6. _(2026-10-27T14:43:53.674Z)_
 - `q24b15e66` — Retry of a push that failed after a commit is not designed here (as today); if wanted it is a separate Story.
   - **resolved**: Defer push retry _(2026-10-27T14:45:21.749Z)_
+- `q126d577f` — Overlap with s9: the async propagation edits daemon files s9 also edits (src/daemon/workflow-rpc.ts and the step phases). s10 lands first; s9's second draft is written against the awaited signatures.
+  - **resolved**: Update s9 after s10 lands — User decision: s10 lands first. _(2026-10-27T14:46:37.184Z)_
 
 ## Citations
 

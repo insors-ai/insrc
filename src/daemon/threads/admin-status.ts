@@ -68,8 +68,11 @@ export function createAdminStatus(deps: AdminStatusDeps): AdminStatus {
 		},
 
 		async daemonStatus() {
-			const [info, snap] = [await deps.info(), await deps.snapshot()];
-			const store = await storeSlot(snap);
+			const info = await deps.info();
+			const first = await deps.snapshot();
+			const store = await storeSlot(first);
+			// After a wait for the first publish, the queue is read from a snapshot taken after it.
+			const snap = store === first.store ? first : await deps.snapshot();
 			const published = store.repos !== undefined;
 			const { queueDepth, queueLanes } = queueStatusFromBoard(snap.indexing);
 			const status = await buildDaemonStatus({

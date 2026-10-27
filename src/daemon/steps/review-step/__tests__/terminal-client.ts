@@ -31,18 +31,30 @@ export async function seedTerminalFixture(payload: ReviewStepStatePayload, phase
 	const token = await getStepStateStore().mintReviewState('review', { ...payload, controller: protocol }, protocol);
 	return { token, protocol, input: (answer: unknown) => ({ phase, state: token, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: protocol.generation, callId: protocol.callId, answer } }) };
 }
-const aliases = new Map<string, Awaited<ReturnType<typeof seedTerminalFixture>>>();
+const frames = new Map<string, Record<string, unknown>>();
+function remember(envelope: ReviewStepMcpEnvelope): ReviewStepMcpEnvelope {
+	const frame = JSON.parse(envelope.content[0]!.text) as Record<string, unknown>;
+	if (typeof frame['state'] === 'string') frames.set(frame['state'], frame);
+	return envelope;
+}
 export async function fixtureReviewClient(input: unknown, deps: ReviewStepDeps = {}): Promise<ReviewStepMcpEnvelope> {
 	if (!input || typeof input !== 'object') return rawReviewCall(input, deps);
-	const p = input as { phase?: string; state?: string; findings?: unknown; verdicts?: unknown };
-	if ((p.phase === 'findings' || p.phase === 'verdicts') && p.state) {
-		let seeded = aliases.get(p.state);
-		if (!seeded) {
-			const entry = await getStepStateStore().read<ReviewStepStatePayload>('review', p.state);
-			if (!entry) return rawReviewCall({ ...input, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: 0, callId: randomUUID(), answer: {} } }, deps);
-			seeded = await seedTerminalFixture(entry.payload, p.phase); aliases.set(p.state, seeded);
-		}
-		return rawReviewCall(seeded.input(p.phase === 'findings' ? p.findings : p.verdicts), deps);
+	const p = input as { phase?: string; state?: string; findings?: unknown; verdicts?: { verdicts?: RawVerdict[] }; claims?: unknown };
+	if (p.phase === 'start') return remember(await rawReviewCall({ ...input, reviewBudget: CONTROLLER_DECLARATION }, deps));
+	if (!p.state || !['claims', 'verdicts', 'findings'].includes(p.phase ?? '')) return rawReviewCall(input, deps);
+	let frame = frames.get(p.state);
+	if (!frame) return rawReviewCall({ ...input, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: 0, callId: randomUUID(), answer: {} } }, deps);
+	for (let turns = 0; turns < 100; turns++) {
+		const call = frame['call'] as { generation: number; callId: string; assignedClaimIds?: string[] };
+		const answer = p.phase === 'findings' ? p.findings : p.phase === 'claims' ? p.claims : {
+			verdicts: p.verdicts?.verdicts?.filter(verdict => call.assignedClaimIds?.includes(verdict.claimId)),
+		};
+		const result = remember(await rawReviewCall({ phase: p.phase, state: p.state, reviewBudget: CONTROLLER_DECLARATION,
+			reply: { version: 1, generation: call?.generation ?? 0, callId: call?.callId ?? randomUUID(), answer },
+		}, deps));
+		const next = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+		if (p.phase !== 'verdicts' || next['next'] !== 'emit_verdicts') return result;
+		frame = next;
 	}
-	return rawReviewCall(input, deps);
+	throw new Error('review fixture exceeded its verification turns');
 }

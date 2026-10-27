@@ -18,6 +18,7 @@
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */
 
+import type { EntitiesForRepoReader } from '../../../workflow/review/source-roots.js';
 import type { ReviewControllerBudgetDeclaration } from '../../../shared/review-budget.js';
 import type { ControllerReviewReply } from '../../../workflow/review-pipeline/controller.js';
 import type { ReviewTerminalProtocol } from './terminal.js';
@@ -53,7 +54,7 @@ export interface ReviewStepInputClaims {
 	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
 	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:  'claims';
-	readonly claims: { readonly claims?: readonly Claim[] | undefined };
+	readonly claims?: { readonly claims?: readonly Claim[] | undefined };
 	readonly state:  string;
 }
 
@@ -99,6 +100,8 @@ export type ReviewStepInput =
 // ---------------------------------------------------------------------------
 
 export interface ReviewStepEmitClaims {
+	readonly call?: { readonly version: 1; readonly generation: number; readonly callId: string; readonly policyId: string; readonly stage: string; readonly role: string; readonly assignedClaimIds?: readonly string[] | undefined } | undefined;
+	readonly timing?: Readonly<Record<string, string | number>> | undefined;
 	readonly next:     'emit_claims';
 	readonly guidance: string;
 	readonly stage:    string;
@@ -109,6 +112,8 @@ export interface ReviewStepEmitClaims {
 
 /** `start` on a design document (HLD / LLD): the review template to answer. */
 export interface ReviewStepEmitFindings {
+	readonly call?: { readonly version: 1; readonly generation: number; readonly callId: string; readonly policyId: string; readonly stage: string; readonly role: string; readonly assignedClaimIds?: readonly string[] | undefined } | undefined;
+	readonly timing?: Readonly<Record<string, string | number>> | undefined;
 	readonly next:     'emit_findings';
 	readonly guidance: string;
 	readonly stage:    string;
@@ -120,13 +125,15 @@ export interface ReviewStepEmitFindings {
 }
 
 export interface ReviewStepEmitVerdicts {
+	readonly call?: { readonly version: 1; readonly generation: number; readonly callId: string; readonly policyId: string; readonly stage: string; readonly role: string; readonly assignedClaimIds?: readonly string[] | undefined } | undefined;
+	readonly timing?: Readonly<Record<string, string | number>> | undefined;
 	readonly next:     'emit_verdicts';
 	readonly guidance: string;
 	readonly prompt:   { readonly system: string; readonly user: string };
 	readonly schema:   Record<string, unknown>;
 	/** The DETERMINISTIC evidence the server gathered per claim (ground
 	 *  truth the controller must judge against — nothing else). */
-	readonly evidence: readonly Evidence[];
+	readonly evidence?: readonly Evidence[] | undefined;
 	readonly state:    string;
 }
 
@@ -151,6 +158,8 @@ export interface ReviewStepDone {
 /** The tool's collaborators. Each defaults to the real thing; a test replaces
  *  the daemon request. */
 export interface ReviewStepDeps {
+	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
+	readonly nowMs?: (() => number) | undefined;
 	/** Ask the daemon to review an existing design artifact (`workflow.review`). */
 	readonly reviewByDaemon?: ((params: ReviewArtifactStreamParams, opts: ReviewStreamOpts) => Promise<WorkflowReviewDone>) | undefined;
 	/** The repository's durable LifecycleService for the verdicts phase; the daemon's registry by default. */

@@ -9,8 +9,7 @@
  * 8315a11f), so the review pipeline can offer it too; re-exported here.
  *
  * The engine judges premises ONE at a time (`VERIFY_SCHEMA` = one Finding
- * without its `claimId`). To keep the controller loop to a single turn, the
- * controller emits an ARRAY of those findings — one per claim, each carrying
+ * without its `claimId`). Each controller turn emits an ARRAY containing its assigned finding, carrying
  * its `claimId` so the server can re-key it. This wraps the engine's
  * `VERIFY_SCHEMA` item shape (unchanged) with a required `claimId`.
  */

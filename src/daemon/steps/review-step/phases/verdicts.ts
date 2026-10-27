@@ -17,6 +17,7 @@
  * artifact. That independence is the whole point of this tool.
  */
 
+import { hasControllerDesignJob, resumeControllerDesignReview } from '../controller.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 
@@ -36,7 +37,7 @@ import { withReviewTerminal } from '../terminal.js';
 import type { ReviewTerminalGuard } from '../terminal.js';
 import { assertExactReviewIds, validateVerdictCoverage } from '../../../../workflow/review/exact-coverage.js';
 import { ReviewBudgetError } from '../../../../workflow/review-pipeline/budget.js';
-import type { ReviewStepDone, ReviewStepInputVerdicts, ReviewStepOutput, ReviewStepStatePayload, RawVerdict } from '../types.js';
+import type { ReviewStepDone, ReviewStepInputVerdicts, ReviewStepOutput, ReviewStepDeps, ReviewStepStatePayload, RawVerdict } from '../types.js';
 
 const log = getLogger('mcp:review-step:verdicts');
 
@@ -53,7 +54,9 @@ const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {
 export async function handleVerdicts(
 	input: ReviewStepInputVerdicts,
 	lifecycleFor: (repoPath: string) => LifecycleService,
+	deps: ReviewStepDeps = {},
 ): Promise<ReviewStepOutput> {
+	if (await hasControllerDesignJob(input.state)) return resumeControllerDesignReview(input, { ...deps, lifecycleFor });
 	return withReviewTerminal(input, (state, answer, guard) => persistPremiseVerdicts(state, answer as { verdicts?: readonly RawVerdict[] }, lifecycleFor, guard));
 }
 

@@ -70,14 +70,14 @@ test('T13 start on a design returns the review template with next emit_findings'
 		assert.equal(out['stage'], 'design.story');
 		assert.equal(out['template'], 'design-spec');
 		const prompt = out['prompt'] as { system: string; user: string };
-		assert.ok(prompt.system.includes('insrc analyze'));
+		assert.ok(prompt.user.includes('insrc analyze'));
 		assert.ok(prompt.user.includes('checklist `design-spec`') && prompt.user.includes('`boundaries`'));
 		assert.ok(prompt.user.includes('The design body.'));
 		assert.ok(!prompt.user.includes('OLD REVIEW TEXT'), 'an earlier review is not shown to the reviewer');
-		const schema = out['schema'] as { required?: string[] };
+		const schema = (out['schema'] as { properties: { answer: { required?: string[] } } }).properties.answer;
 		assert.deepEqual(schema.required, ['items']);
 		assert.ok(typeof out['state'] === 'string' && (out['state'] as string).length > 0);
-		assert.ok((out['guidance'] as string).includes('phase="findings"'));
+		assert.ok((out['guidance'] as string).includes("phase='findings'"));
 	} finally { fx.cleanup(); }
 });
 
@@ -171,12 +171,12 @@ test('T13 the two paths do not cross: no claims on a design run, no findings on 
 		const ds = (await start(design))['state'] as string;
 		const claims = parse(await handleReviewStep({ phase: 'claims', state: ds, claims: { claims: [] } }));
 		assert.equal(claims['next'], 'error');
-		assert.match((claims['error'] as { message: string }).message, /call phase='findings'/);
+		assert.match((claims['error'] as { message: string }).message, /review-terminal-incompatible/);
 
 		const ps = (await start(plan))['state'] as string;
 		const findings = parse(await handleReviewStep({ phase: 'findings', state: ps, findings: answer(SPEC) }));
 		assert.equal(findings['next'], 'error');
-		assert.match((findings['error'] as { message: string }).message, /not a design document/);
+		assert.match((findings['error'] as { message: string }).message, /review-terminal-incompatible/);
 		assert.equal(JSON.parse(readFileSync(plan.jsonPath, 'utf8')).meta.review, undefined);
 	} finally { design.cleanup(); plan.cleanup(); }
 });
@@ -189,7 +189,7 @@ test('T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt',
 			const out = await start(fx);
 			assert.equal(out['next'], 'emit_claims', workflow);
 			assert.equal(out['template'], undefined);
-			assert.ok((out['prompt'] as { system: string }).system.includes('LOAD-BEARING PREMISES'));
+			assert.ok((out['prompt'] as { user: string }).user.includes('LOAD-BEARING PREMISES'));
 		} finally { fx.cleanup(); }
 	}
 });

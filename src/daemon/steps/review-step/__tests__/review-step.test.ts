@@ -30,6 +30,8 @@ import type { Claim, Evidence, ReviewReport } from '../../../../workflow/review/
 import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { fixtureReviewClient as handleReviewStep } from './terminal-client.js';
+import { getStepStateStore } from '../../../threads/step-state.js';
+import type { ReviewStepStatePayload } from '../types.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
@@ -135,7 +137,8 @@ test('review-step drives the full loop and records the review with model=client'
 		const claimsOut = parse(await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: state1 }));
 		assert.equal(claimsOut['next'], 'emit_verdicts');
 		assert.equal(claimsOut['state'], state1, 'state token is stable across turns');
-		const evidence = claimsOut['evidence'] as Evidence[];
+		const evidence = (await getStepStateStore().read<ReviewStepStatePayload>('review', state1))!.payload.evidence as Evidence[];
+		assert.equal(claimsOut['evidence'], undefined, 'whole grounding is not appended outside the measured assigned request');
 		assert.ok(Array.isArray(evidence) && evidence.length === 2, 'evidence gathered for both claims');
 		// The deterministic grep re-derived THREE export-const sites.
 		const invEv = evidence.find(e => e.claimId === 'c-inv');
@@ -147,7 +150,7 @@ test('review-step drives the full loop and records the review with model=client'
 		assert.equal(citeEv.reads[0]?.found, true);
 		assert.match(citeEv.reads[0]?.line ?? '', /beta = 2/);
 		const verifyPrompt = claimsOut['prompt'] as { system: string; user: string };
-		assert.ok(verifyPrompt.user.includes('c-inv') && verifyPrompt.user.includes('c-cite'), 'batched prompt names both claims');
+		assert.ok(verifyPrompt.user.includes('c-inv') && !verifyPrompt.user.includes('c-cite'), 'one complete claim and its evidence are assigned per turn');
 
 		// --- verdicts ---
 		const doneOut = parse(await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: state1 }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));

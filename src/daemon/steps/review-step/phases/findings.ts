@@ -15,6 +15,7 @@
  * can correct it and call `findings` again.
  */
 
+import { hasControllerDesignJob, resumeControllerDesignReview } from '../controller.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 
@@ -33,7 +34,7 @@ import type { ReviewTerminalGuard } from '../terminal.js';
 import { assertExactReviewIds } from '../../../../workflow/review/exact-coverage.js';
 import { ReviewBudgetError } from '../../../../workflow/review-pipeline/budget.js';
 import type { RawTemplateAnswer } from '../../../../workflow/review/template.js';
-import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings, ReviewStepOutput, ReviewStepStatePayload } from '../types.js';
+import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings, ReviewStepOutput, ReviewStepDeps, ReviewStepStatePayload } from '../types.js';
 import { LifecycleConflictError } from '../../../../workflow/artifact-core/types.js';
 
 const log = getLogger('mcp:review-step:findings');
@@ -47,7 +48,9 @@ const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {
 export async function handleFindings(
 	input: ReviewStepInputFindings,
 	lifecycleFor: (repoPath: string) => LifecycleService,
+	deps: ReviewStepDeps = {},
 ): Promise<ReviewStepOutput> {
+	if (await hasControllerDesignJob(input.state)) return resumeControllerDesignReview(input, { ...deps, lifecycleFor });
 	return withReviewTerminal(input, (state, answer, guard) => persistTemplateFindings(state, answer as RawTemplateAnswer, lifecycleFor, guard));
 }
 

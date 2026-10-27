@@ -330,24 +330,32 @@ and the tool routes by who authored the artifact:
 - **You authored it (or the author is not recorded):** the tool asks the daemon
   to review, waits, and returns `done` with the daemon's verdict in the same
   call. This can take several minutes (a DEF has measured about 13; the tool
-  waits up to 30). If the daemon is not running, is too old
+  uses its configured outer execution ceiling). If the daemon is not running, is too old
   to know the request, fails, or passes the wait limit, the tool returns an
   error naming the cause. It does NOT fall back to a review by you: fix the
   cause and call again, or tell the user, who can approve with an override
   reason.
 - **The daemon authored it:** you review it, through the loop below.
 
-Your review loop, for a daemon-authored artifact: `phase:'start'` → `claims` →
-`verdicts`. It extracts the artifact's load-bearing premises, the server re-runs
-deterministic probes against real source, and you judge the verdicts against
-that evidence. For a DESIGN document (an HLD or LLD) `start` returns
-`emit_findings` instead of `emit_claims`: a fixed checklist, chosen by whether
-the design answers an ISSUE or a SPEC. Check every item against the real code
-and docs yourself — use insrc analyze for drill-down — then answer once with
-`phase:'findings'`. Report each premise as `holds`, `does-not-hold` or
-`could-not-verify`; only `does-not-hold` blocks approval. An answer that breaks
-the checklist is rejected with the reasons and stamps nothing; correct it and
-send `findings` again.
+For a daemon-authored artifact, supply `reviewBudget` on start and every
+continuation: `{ version: 1, profile, hostContextReserveTokens }`. Look up the
+registered profile fields with `insrc_schema`; use an explicit
+`controller-reserved` profile and refresh the estimate of the host conversation
+every turn. The server owns and pins its cap/profile. These are estimates and
+reserves, not measured host context or a verified hard native ceiling.
+
+The tool returns one admitted assigned request, its versioned reply schema,
+call metadata, timing and opaque state. Execute the complete request and send
+`reply: { version: 1, generation, callId, answer }`, `state`, and a fresh
+`reviewBudget`, using the indicated outer phase: `claims` after `emit_claims`,
+`verdicts` after `emit_verdicts`, or `findings` after `emit_findings`. Continue
+the same run until `done`. Extraction finishes before deterministic probes;
+each verification call owns exactly its assigned claims and all their evidence.
+An HLD/LLD uses its fixed template checklist. Every required claim/item must
+validate before a review is persisted. The server measures the complete
+response, never appends unmeasured whole grounding, and refuses unsupported
+indivisible requests rather than truncating required material. Old raw final
+arrays and stale tokens refuse; a final replay returns `already_completed`.
 
 Either way the review is recorded on the lifecycle, and **approval requires it**: a
 DEF, HLD or LLD with no review, or with a review done by the party that
@@ -386,8 +394,13 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
   review of the diff is recorded as `degraded` and can be `warn` at best. If the
   daemon review does not complete the tool returns an error naming the cause;
   it does NOT fall back to a review by you.
-- **The daemon wrote the code:** `start` returns `emit_judgements` with the
-  dimension prompts + grounding; emit the `{ judgements }` JSON → `done`.
+- **The daemon wrote the code:** declare a versioned `controller-reserved`
+  profile and a fresh `hostContextReserveTokens` as `reviewBudget`. Each
+  `emit_judgements` assigns one complete request and its answer schema. Execute
+  only that request; resume with `reply={version:1,generation,callId,answer}`,
+  the opaque state and a fresh declaration until `done`. Preserve all evidence;
+  never submit an aggregate legacy answer or reuse an older generation. Host
+  context is declared/reserved; external execution is not measured by the daemon.
 
 Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.

@@ -656,27 +656,17 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'the verdicts. Either way the review is recorded on the lifecycle, and approval ' +
 				'REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party ' +
 				'that authored it, is withheld, as is one whose verdict blocks.\n\n' +
-				'Your multi-turn loop (daemon-authored artifacts only):\n\n' +
-				'  1. phase=\'start\' with { artifact, repo? }. `artifact` is the `.md` (or ' +
-				'`.json`) path. Server returns { next: \'emit_claims\', prompt, schema, state }.\n' +
-				'  2. Emit the claims JSON (the artifact\'s load-bearing premises + their ' +
-				'deterministic probes) matching the schema, then phase=\'claims\' with ' +
-				'claims=<your JSON> + state. The server re-runs the probes and returns ' +
-				'{ next: \'emit_verdicts\', prompt, schema, evidence, state } — `evidence` is ' +
-				'the ground truth you MUST judge against.\n' +
-				'  3. Emit the verdicts JSON (one entry per claim, keyed by claimId), then ' +
-				'phase=\'verdicts\' with verdicts=<your JSON> + state. Server returns ' +
-				'{ next: \'done\', verdict, counts, report, applied, pending } once the amended ' +
-				'artifact + stamped review are written to disk.\n\n' +
-				'DESIGN documents (an HLD or LLD) take a shorter path: phase=\'start\' returns ' +
-				'{ next: \'emit_findings\', template, prompt, schema, state } — a fixed review ' +
-				'checklist. Check every item against the real code and docs with your own tools ' +
-				'(use insrc analyze for drill-down), then call phase=\'findings\' with ' +
-				'findings=<your JSON> + state. Each premise is reported as `holds`, ' +
-				'`does-not-hold` or `could-not-verify`; only `does-not-hold` blocks approval. An ' +
-				'answer that breaks the checklist is rejected with the reasons and stamps nothing.\n\n' +
-				'The `guidance` field on each response explains the next call; `prompt` + ' +
-				'`schema` are authoritative. Preserve `state` verbatim between calls.',
+				'Controller review: supply reviewBudget={version:1,profile,hostContextReserveTokens} with an explicit ' +
+				'controller-reserved profile on start and every continuation. Host context is declared/reserved, never measured. ' +
+				'The server returns one complete admitted prompt and its versioned schema, call metadata, timing and state. ' +
+				'Execute only that request and submit reply={version:1,generation,callId,answer} with a fresh reviewBudget and state. ' +
+				'Use phase=\'claims\' after emit_claims, phase=\'verdicts\' after emit_verdicts, or phase=\'findings\' after emit_findings. ' +
+				'Extraction must finish before deterministic evidence gathering; each verification request owns exactly its assigned claims. ' +
+				'Repeat returned continuations until done. All claims/template items must validate before persistence. ' +
+				'Whole grounding is not appended, required evidence is never truncated, and an indivisible oversized request refuses explicitly. ' +
+				'Legacy raw arrays and stale tokens cannot bypass the new contract; completed final-call replay returns already_completed. ' +
+				'The returned prompt, schema and guidance are authoritative.',
+
 			annotations: {
 				readOnlyHint:   false,   // writes the amended artifact + records the review on its lifecycle
 				idempotentHint: false,
@@ -691,6 +681,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
+				reviewBudget: reviewBudgetDeclarationSchema.optional().describe('Required before controller review prompts or continuations: explicit profile and refreshed host-context reserve.'),
+				reply: reviewReplySchema.optional().describe('Versioned answer for the one assigned pending call.'),
 				claims: z.object({ claims: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()
 					.describe('Only for phase=claims. The extracted-claims JSON your LLM emitted (matches the emit_claims schema).')

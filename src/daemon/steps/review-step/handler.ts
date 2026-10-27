@@ -16,6 +16,7 @@
  * else: `start` asks the daemon to review and returns its verdict as `done`.
  */
 
+import { AtomTooLargeError } from '../../../workflow/review-pipeline/pack-into-batches.js';
 import { ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
 import { ReviewCoverageError } from '../../../workflow/review/exact-coverage.js';
 import { ReviewTerminalError } from './terminal.js';
@@ -72,9 +73,9 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 	try {
 		switch (step.phase) {
 			case 'start':    return await handleStart(step, deps);
-			case 'claims':   return await handleClaims(step);
-			case 'verdicts': return await handleVerdicts(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service));
-			case 'findings': return await handleFindings(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service));
+			case 'claims':   return await handleClaims(step, deps);
+			case 'verdicts': return await handleVerdicts(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service), deps);
+			case 'findings': return await handleFindings(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service), deps);
 			default:
 				return errorResult(
 					'bad-phase',
@@ -84,7 +85,9 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 				);
 		}
 	} catch (err) {
-		if (err instanceof ReviewBudgetError || err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code, err.code !== 'review-job-timeout' && err.code !== 'review-budget-state-stale');
+		if (err instanceof ReviewBudgetError || err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code, err.code !== 'review-job-timeout' && err.code !== 'review-budget-state-stale' && err.code !== 'review-source-changed');
+		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', 'review-job-timeout', false);
+		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
 		if (err instanceof ReviewStateRefused) return errorResult(err.reason, err.reason, false);
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_review_step: uncaught error');

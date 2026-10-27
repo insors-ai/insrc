@@ -1,3 +1,4 @@
+import type { ReviewPipelineJob } from '../../../workflow/review-pipeline/types.js';
 import { basename } from 'node:path';
 import type { ControllerReviewProtocol } from '../../../workflow/review-pipeline/controller.js';
 import { controllerPolicy, requireControllerReply } from '../../../workflow/review-pipeline/controller.js';
@@ -11,7 +12,12 @@ import type { ReviewStepInputFindings, ReviewStepInputVerdicts, ReviewStepStateP
 
 /** Additive terminal protocol; full prompt/extraction continuations build on this in t12. */
 export interface ReviewTerminalProtocol extends ControllerReviewProtocol {
-	readonly phase: 'findings' | 'verdicts';
+	readonly phase: 'claims' | 'findings' | 'verdicts';
+	readonly job?: ReviewPipelineJob | undefined;
+	readonly templateLimitMs?: number | undefined;
+	readonly frameBudget?: import('../../../shared/review-budget.js').ReviewBudgetBreakdown | undefined;
+	readonly frameAttemptMs?: number | undefined;
+	readonly sourceDigest?: string | undefined;
 	readonly schema: Record<string, unknown>;
 	readonly deadlineAt: number;
 	readonly budgetMs: number;
@@ -22,7 +28,7 @@ export interface ReviewTerminalProtocol extends ControllerReviewProtocol {
 	readonly expectedItemIds?: readonly string[] | undefined;
 }
 export class ReviewTerminalError extends Error {
-	constructor(readonly code: 'review-job-timeout' | 'review-terminal-incompatible') { super(code); this.name = 'ReviewTerminalError'; }
+	constructor(readonly code: 'review-job-timeout' | 'review-terminal-incompatible' | 'review-source-changed') { super(code); this.name = 'ReviewTerminalError'; }
 }
 export interface ReviewTerminalGuard {
 	assertActive(): void;

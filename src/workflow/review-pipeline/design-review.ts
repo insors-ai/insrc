@@ -10,7 +10,7 @@
  * review), probe (a deterministic stage over the claims), then verify. On the
  * daemon path verify is one call per premise with the design-verify limits and the
  * repo as cwd, and a premise whose call is exhausted is recorded as not judged;
- * on the controller path it is today's one batched verify call. The claims and
+ * on the controller path each turn assigns one whole claim with its evidence. The claims and
  * the evidence enter the snapshot once, and verify reads them from there.
  *
  * Template review (HLD, LLD): one reviewer-session stage whose answer must pass
@@ -21,6 +21,7 @@
  * then a review whose single call is over the limit fails with that reason.
  */
 
+import { assertExactReviewIds, validateVerdictCoverage } from '../review/exact-coverage.js';
 import { buildExtractPrompt, EXTRACT_SCHEMA, normalizeClaimsEnvelope } from '../review/extract.js';
 import { gatherEvidence } from '../review/probe.js';
 import type { EntitiesForRepoReader } from '../review/source-roots.js';
@@ -83,6 +84,15 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-extract') } }];
 		},
 		chunkCalls: () => [],
+		validate: answer => {
+			const raw = (answer as { claims?: readonly Claim[] }).claims;
+			try {
+				if (!Array.isArray(raw)) return ['invalid-extraction-claims'];
+				assertExactReviewIds(raw.map(claim => claim.id), raw.map(claim => claim.id), 'review-verdict-set-mismatch');
+				if (raw.some(claim => claim.id.trim().length === 0 || claim.text.trim().length === 0) || normalizeClaimsEnvelope({ claims: raw }).length !== raw.length) return ['invalid-extraction-claims'];
+				return [];
+			} catch { return ['invalid-extraction-claims']; }
+		},
 		snapshotField: 'claims',
 		toSnapshot: out => normalizeClaimsEnvelope(((out as readonly StageAnswer[])[0]?.answer ?? {}) as Parameters<typeof normalizeClaimsEnvelope>[0]),
 	};
@@ -113,12 +123,20 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 	};
 	const verifyController: AdapterStage = {
 		id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'fail-review',
-		// Today's one batched verify call holding every premise, with the design-verify limits.
-		singleCalls: (_prior, snap) => {
-			const claims = (snap.claims ?? []) as Claim[];
-			if (claims.length === 0) return [];
-			const { system, user } = buildBatchedVerifyPrompt(claims, (snap.evidence ?? []) as Evidence[]);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: VERDICTS_SCHEMA as unknown as StructuredSchema, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-verify') } }];
+		// Each admitted request owns one whole claim and all its required evidence.
+		singleCalls: (_prior, snap) => ((snap.claims ?? []) as Claim[]).map(claim => {
+			const { system, user } = buildBatchedVerifyPrompt([claim], [evidenceFor(snap, claim)]);
+			const schema = structuredClone(VERDICTS_SCHEMA) as { properties: { verdicts: { minItems?: number; maxItems?: number; items: { properties: { claimId: { const?: string } } } } } };
+			schema.properties.verdicts.minItems = 1; schema.properties.verdicts.maxItems = 1;
+			schema.properties.verdicts.items.properties.claimId.const = claim.id;
+			return { key: claim.id, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: schema as unknown as StructuredSchema, execution: { mode: 'structured' as const, cwd: opts.repo, ...structuredLimits('design-verify') } };
+		}),
+		validate: (answer, call) => {
+			try {
+				const assigned = call.carries.key === undefined ? [] : [call.carries.key];
+				validateVerdictCoverage({ expected: assigned, assigned, completed: [], received: (answer as { verdicts?: readonly (RawFinding & { claimId: string })[] }).verdicts, extractionComplete: true });
+				return [];
+			} catch { return ['review-verdict-set-mismatch']; }
 		},
 		chunkCalls: () => [],
 	};
@@ -130,8 +148,10 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 			refuseDivided('premise review', ctx.divided);
 			const claims = normalizeClaimsEnvelope((onlyAnswer(outputs, 'extract') ?? {}) as Parameters<typeof normalizeClaimsEnvelope>[0]);
 			const answers = (outputs['verify'] ?? []) as readonly StageAnswer[];
-			const batched = answers.length === 1 && answers[0]!.key === undefined
-				? new Map(((answers[0]!.answer as { verdicts?: readonly (RawFinding & { claimId: string })[] }).verdicts ?? []).map(v => [v.claimId, v] as const))
+			const batchedAnswers = answers.length > 0 && answers.every(answer => Array.isArray((answer.answer as { verdicts?: unknown }).verdicts));
+			const batched = batchedAnswers
+				? new Map(validateVerdictCoverage({ expected: claims.map(claim => claim.id), assigned: claims.map(claim => claim.id), completed: [],
+					received: answers.flatMap(answer => (answer.answer as { verdicts: readonly (RawFinding & { claimId: string })[] }).verdicts), extractionComplete: true }).map(verdict => [verdict.claimId, verdict]))
 				: undefined;
 			const notJudged = new Map(ctx.notJudged.filter((n: NotJudged) => n.stage === 'verify').map(n => [n.key, n] as const));
 			return claims.map(claim => {

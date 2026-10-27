@@ -121,7 +121,7 @@ test('exact expected claim and assigned subset sets reject empty partial duplica
 	const { loadState } = await import('../state-store.js');
 	const parse = (env: Awaited<ReturnType<typeof rawReviewCall>>) => JSON.parse(env.content[0]!.text) as { next: string; error?: { code: string } };
 	const fx = await fixture();
-	const start = JSON.parse((await rawReviewCall({ phase: 'start', artifact: fx.md, repo: fx.repo })).content[0]!.text) as { state: string };
+	const start = JSON.parse((await rawReviewCall({ phase: 'start', artifact: fx.md, repo: fx.repo, reviewBudget: CONTROLLER_DECLARATION })).content[0]!.text) as { state: string };
 	const payload = await loadState(start.state);
 	const first = CLAIMS.claims[0]!;
 	const claims = [first, { ...first, id: 'c-second', text: 'A second complete extracted claim.' }];

@@ -20,15 +20,14 @@ import { resolveRepoPath } from '../../resolve-repo.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { jsonPathForMd } from '../../../../workflow/gates.js';
 import {
-	authorPartyOf, buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, stripReviewSection,
-	TEMPLATE_ANSWER_SCHEMA,
+	authorPartyOf, isDesignStage, resolveDesignReview, stripReviewSection,
 } from '../../../../workflow/review/index.js';
-import { saveState } from '../state-store.js';
+import { startControllerDesignReview } from '../controller.js';
 import { ReviewStreamError } from '../../../../shared/review-stream.js';
 import { stepDaemonClient } from '../../daemon-client.js';
 import type {
-	ReviewStepDeps, ReviewStepDone, ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepError, ReviewStepInputStart,
-	ReviewStepStatePayload,
+	ReviewStepDeps, ReviewStepDone, ReviewStepError, ReviewStepInputStart,
+	ReviewStepStatePayload, ReviewStepOutput,
 } from '../types.js';
 
 const log = getLogger('mcp:review-step:start');
@@ -36,7 +35,7 @@ const log = getLogger('mcp:review-step:start');
 export async function handleStart(
 	input: ReviewStepInputStart,
 	deps:  ReviewStepDeps = {},
-): Promise<ReviewStepEmitClaims | ReviewStepEmitFindings | ReviewStepDone | ReviewStepError> {
+): Promise<ReviewStepOutput> {
 	const repo = await resolveRepoPath(input.repo);
 	if (repo === undefined) {
 		throw new Error(
@@ -77,21 +76,7 @@ export async function handleStart(
 			markdown:    design,
 			templateIntent: plan.intent,
 		};
-		const designToken = await saveState(designState);
-		log.info({ runId: designState.runId, stage, template: plan.template.id, mdPath }, 'insrc_review_step[start]: emitting review template');
-		return {
-			next:     'emit_findings',
-			guidance:
-				`This is a design document: review it against checklist \`${plan.template.id}\`. Check every item ` +
-				`against the real code and docs with your own tools (use insrc analyze for drill-down), then call ` +
-				`insrc_review_step with phase="findings", findings=<your JSON matching the schema>, ` +
-				`state=<the state field verbatim>.`,
-			stage,
-			template: plan.template.id,
-			prompt:   buildTemplateReviewPrompt(plan.template, design, stage),
-			schema:   TEMPLATE_ANSWER_SCHEMA,
-			state:    designToken,
-		};
+		return startControllerDesignReview(designState, input.reviewBudget, deps, plan.deadlineMs);
 	}
 
 	const state: ReviewStepStatePayload = {
@@ -103,40 +88,14 @@ export async function handleStart(
 		stage,
 		markdown,
 	};
-	const token = await saveState(state);
-
-	const prompt = buildExtractPrompt(markdown, stage);
-	log.info({ runId: state.runId, stage, mdPath }, 'insrc_review_step[start]: emitting extract prompt');
-
-	return {
-		next:     'emit_claims',
-		guidance:
-			`Extract the artifact's load-bearing premises as a claims JSON matching the ` +
-			`schema below, then call insrc_review_step with phase="claims", ` +
-			`claims=<your JSON>, state=<the state field verbatim>.`,
-		stage,
-		prompt,
-		schema:   EXTRACT_SCHEMA as Record<string, unknown>,
-		state:    token,
-	};
+	return startControllerDesignReview(state, input.reviewBudget, deps);
 }
 
 
-/** How long the tool waits for the daemon's review of a design (HLD / LLD).
- *  That review is one reviewer session with a hard limit of 30 minutes, so the
- *  tool waits one minute longer and never gives up on a review that is about to
- *  finish. */
+/** Outer transport ceilings, distinct from the pipeline's dynamic ten-minute
+ * budget per logical model work unit and its bounded per-attempt timers. A
+ * known shorter outer ceiling is surfaced explicitly, never silently extended. */
 export const DESIGN_REVIEW_WAIT_MS = 31 * 60_000;
-
-/** How long the tool waits for the daemon's review of any other artifact (a
- *  DEF). That review goes through the older extract, probe and verify pipeline,
- *  which has no time limit of its own and runs TWICE when the first pass applies
- *  a fix. Measured on 2026-10-05 on a real DEF: 777 s (399 s for the first pass
- *  over 19 premises, then 378 s for the re-review over 21). The 10 minutes this
- *  started at was therefore too short, and 30 minutes left room for a DEF about
- *  twice that size. Tripled to 90 on 2026-10-08 with every other review limit:
- *  a review cut off at its limit costs more than a longer wait. The pipeline
- *  itself is deliberately not changed here. */
 export const PIPELINE_REVIEW_WAIT_MS = 90 * 60_000;
 
 /** How long the tool waits with no frame from the daemon before it gives up.

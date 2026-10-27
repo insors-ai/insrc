@@ -121,7 +121,7 @@ test('T9/T14 daemon-authored work runs the controller loop as before, and the da
 		const d = fakeDaemon();
 		const a = await start(def, d.deps);
 		assert.equal(a['next'], 'emit_claims');
-		assert.ok((a['prompt'] as { system: string }).system.includes('LOAD-BEARING PREMISES'));
+		assert.ok((a['prompt'] as { user: string }).user.includes('LOAD-BEARING PREMISES'));
 		const b = await start(lld, d.deps);
 		assert.equal(b['next'], 'emit_findings');
 		assert.equal(b['template'], 'design-spec');
@@ -360,11 +360,9 @@ test('T12 the verdicts phase refuses a controller-authored DEF and stamps nothin
 	const { fx, state } = await startThenFlip('define', 'controller');
 	try {
 		const claims = parse(await handleReviewStep({ phase: 'claims', state, claims: { claims: [] } }));
-		assert.equal(claims['next'], 'emit_verdicts', JSON.stringify(claims));
+		assert.equal(claims['next'], 'error');
+		assert.equal((claims['error'] as { code: string }).code, 'same-party-review');
 		const before = { json: readFileSync(fx.jsonPath, 'utf8'), md: readFileSync(fx.mdPath, 'utf8') };
-		const out = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
-		assert.equal(out['next'], 'error');
-		assert.equal((out['error'] as { code: string }).code, 'same-party-review');
 		assert.equal(readFileSync(fx.jsonPath, 'utf8'), before.json);
 		assert.equal(readFileSync(fx.mdPath, 'utf8'), before.md);
 	} finally { fx.cleanup(); }
@@ -377,8 +375,7 @@ test('T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, 
 	try {
 		const d = fakeDaemon();
 		const s1 = (await start(def, d.deps))['state'] as string;
-		const claims = parse(await handleReviewStep({ phase: 'claims', state: s1, claims: { claims: [] } }));
-		const done = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
+		const done = parse(await handleReviewStep({ phase: 'claims', state: s1, claims: { claims: [] } }, { lifecycleFor: repo => createRepoLifecycle(repo).service }));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		assert.equal(done['reviewedBy'], undefined, 'the tool reviewed it itself: not a daemon review');
 		const review = readReviewRecordOf(def.jsonPath)!.report;

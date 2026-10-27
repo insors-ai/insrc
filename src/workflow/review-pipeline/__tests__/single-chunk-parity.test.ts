@@ -376,7 +376,7 @@ test("an under-limit HLD review makes one reviewer-session call and gives today'
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test("the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema", async () => {
+test("the controller premise stage plan preserves every premise and its evidence in individually assigned verify calls", async () => {
 	const repo = defRepo();
 	try {
 		const snapshot = designReviewSnapshot(DEF);
@@ -387,15 +387,16 @@ test("the controller premise stage plan under the limit offers one batched verif
 		job = applyOutput(job, adapter, ex[0]!.callId, { callId: ex[0]!.callId, answer: { claims: CLAIMS } });
 		job = await runStage(job, adapter);
 		const verify = nextCalls(job, adapter);
-		assert.equal(verify.length, 1, 'one batched call');
+		assert.equal(verify.length, CLAIMS.length, 'one whole claim per call');
 		const claims = normalizeClaimsEnvelope({ claims: CLAIMS as never });
 		const evidence = await gatherEvidence(claims, repo, { readEntitiesForRepo: noEntities });
-		const b = buildBatchedVerifyPrompt(claims, evidence);
-		assert.deepEqual(verify[0]!.prompt.messages, [{ role: 'system', content: b.system }, { role: 'user', content: b.user }], "today's batched prompt, every premise in it");
-		assert.equal(verify[0]!.prompt.schema, VERDICTS_SCHEMA);
-		// The verdicts come back keyed by claimId and become today's findings.
-		const verdicts = claims.map(c => ({ claimId: c.id, severity: c.id === 'p1' ? 'HIGH' : 'LOW', evidence: 'e', action: 'a', fixability: 'manual' }));
-		job = applyOutput(job, adapter, verify[0]!.callId, { callId: verify[0]!.callId, answer: { verdicts } });
+		for (const call of verify) {
+			const claim = claims.find(c => c.id === call.carries.key)!;
+			const b = buildBatchedVerifyPrompt([claim], evidence.filter(e => e.claimId === claim.id));
+			assert.deepEqual(call.prompt.messages, [{ role: 'system', content: b.system }, { role: 'user', content: b.user }]);
+			const verdicts = [{ claimId: claim.id, severity: claim.id === 'p1' ? 'HIGH' : 'LOW', evidence: 'e', action: 'a', fixability: 'manual' }];
+			job = applyOutput(job, adapter, call.callId, { callId: call.callId, answer: { verdicts } });
+		}
 		assert.deepEqual((result<readonly { claimId: string; severity: string }[]>(job)).map(f => [f.claimId, f.severity]), [['p1', 'HIGH'], ['p2', 'LOW']]);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

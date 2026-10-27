@@ -12,6 +12,12 @@
  * single-document edits queued meanwhile, and reports its sweep's progress,
  * which the code-indexing worker publishes with the summary lane.
  *
+ * The two speak the shared sc3 envelopes: a summary job is a streaming
+ * RequestEnvelope (SUMMARY_JOB) whose frames carry the sweep's progress and
+ * whose ReplyEnvelope ends it (with the error when it failed); an edit taken
+ * back is a unary RequestEnvelope (SUMMARY_TAKE_EDIT) answered by a
+ * ReplyEnvelope carrying the edit or null.
+ *
  * When either worker exits, the other end's port closes: the code-indexing
  * worker fails the job in flight and holds the next until a new summary worker
  * is connected; the summary worker abandons its job (its sweep stops between
@@ -23,6 +29,7 @@ import type { MessagePort } from 'node:worker_threads';
 
 import type { IndexJob } from '../../shared/types.js';
 import type { IndexerQueue } from '../../indexer/index.js';
+import type { ChannelEnvelope, FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './channel.js';
 import type { IndexingBlock } from './indexing-block.js';
 import type { SummarySweepProgress } from './status-board.js';
 
@@ -31,18 +38,18 @@ type DocEdit = { kind: 'doc-summarise-entity'; entityId: string };
 /** The main thread's push to either worker: a port to the other worker's replacement. */
 export const SUMMARY_PORT_OP = 'summary.port';
 
-type ToSummary =
-	| { readonly t: 'job'; readonly id: number; readonly job: IndexJob }
-	| { readonly t: 'edit'; readonly id: number; readonly edit: DocEdit | null };
-type ToCode =
-	| { readonly t: 'done'; readonly id: number; readonly error?: string | undefined }
-	| { readonly t: 'take-edit'; readonly id: number }
-	| { readonly t: 'sweep'; readonly sweep: SummarySweepProgress | null };
+/** The code-indexing worker asks the summary worker to run one summary job (streaming: sweep frames, then the reply). */
+export const SUMMARY_JOB = 'summary.job';
+/** The summary worker asks the code-indexing worker for the next queued single-document edit (unary). */
+export const SUMMARY_TAKE_EDIT = 'summary.takeEdit';
+
+/** A sweep-progress frame of a summary job. */
+type SweepFrame = { readonly stream: 'sweep'; readonly data: SummarySweepProgress | null };
 
 /** The code-indexing worker's end: runs summary jobs on the summary worker. */
 export class SummaryRunner {
 	private seq = 0;
-	private readonly pending = new Map<number, { resolve: () => void; reject: (e: Error) => void }>();
+	private readonly pending = new Map<string, { resolve: () => void; reject: (e: Error) => void }>();
 	private sweep: SummarySweepProgress | undefined;
 	/** The live port to the summary worker; undefined between its exit and its replacement's connection. */
 	private port: MessagePort | undefined;
@@ -69,16 +76,17 @@ export class SummaryRunner {
 
 	private bind(port: MessagePort): void {
 		this.port = port;
-		port.on('message', (m: ToCode) => {
-			if (m.t === 'done') {
-				const p = this.pending.get(m.id);
-				this.pending.delete(m.id);
+		port.on('message', (m: ChannelEnvelope) => {
+			if (m.kind === 'reply') {
+				const p = this.pending.get(m.requestId);
+				this.pending.delete(m.requestId);
 				if (m.error === undefined) p?.resolve(); else p?.reject(new Error(m.error));
-			} else if (m.t === 'take-edit') {
-				port.postMessage({ t: 'edit', id: m.id, edit: this.takeEdit() ?? null } satisfies ToSummary);
-			} else if (m.t === 'sweep') {
-				this.sweep = m.sweep ?? undefined;
+			} else if (m.kind === 'frame') {
+				if (!this.pending.has(m.requestId)) return;
+				this.sweep = (m.frame as SweepFrame).data ?? undefined;
 				this.onSweep();
+			} else if (m.kind === 'request' && m.method === SUMMARY_TAKE_EDIT) {
+				port.postMessage({ kind: 'reply', requestId: m.requestId, result: this.takeEdit() ?? null } satisfies ReplyEnvelope);
 			}
 		});
 		port.on('close', () => {
@@ -97,10 +105,10 @@ export class SummaryRunner {
 	 */
 	async run(job: IndexJob): Promise<void> {
 		const port = this.port ?? await this.connected;
-		const id = ++this.seq;
+		const requestId = `summary-job-${++this.seq}`;
 		return new Promise<void>((resolve, reject) => {
-			this.pending.set(id, { resolve, reject });
-			port.postMessage({ t: 'job', id, job } satisfies ToSummary);
+			this.pending.set(requestId, { resolve, reject });
+			port.postMessage({ kind: 'request', requestId, method: SUMMARY_JOB, params: job, stream: true } satisfies RequestEnvelope);
 		});
 	}
 
@@ -129,7 +137,7 @@ export class SummaryRunner {
  */
 export class SummaryWorkerLink implements IndexerQueue {
 	private seq = 0;
-	private readonly edits = new Map<number, (edit: DocEdit | undefined) => void>();
+	private readonly edits = new Map<string, (edit: DocEdit | undefined) => void>();
 	private port: MessagePort;
 	/** The code-indexing worker that handed over the running job exited: the job stops as on shutdown. */
 	private abandoned = false;
@@ -148,12 +156,12 @@ export class SummaryWorkerLink implements IndexerQueue {
 	}
 
 	private bind(port: MessagePort): void {
-		port.on('message', (m: ToSummary) => {
-			if (m.t === 'edit') {
-				const resolve = this.edits.get(m.id);
-				this.edits.delete(m.id);
-				resolve?.(m.edit ?? undefined);
-			} else if (this.jobs !== undefined) {
+		port.on('message', (m: ChannelEnvelope) => {
+			if (m.kind === 'reply') {
+				const resolve = this.edits.get(m.requestId);
+				this.edits.delete(m.requestId);
+				resolve?.((m.result as DocEdit | null | undefined) ?? undefined);
+			} else if (m.kind === 'request' && m.method === SUMMARY_JOB && this.jobs !== undefined) {
 				this.serveJob(port, m, this.jobs.run, this.jobs.sweep);
 			}
 		});
@@ -170,7 +178,7 @@ export class SummaryWorkerLink implements IndexerQueue {
 		this.jobs = { run, sweep };
 	}
 
-	private serveJob(port: MessagePort, m: Extract<ToSummary, { t: 'job' }>, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
+	private serveJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
 		this.abandoned = false;
 		let last: string | undefined;
 		const report = (): void => {
@@ -178,12 +186,12 @@ export class SummaryWorkerLink implements IndexerQueue {
 			const key = JSON.stringify(now ?? null);
 			if (key === last) return;
 			last = key;
-			port.postMessage({ t: 'sweep', sweep: now ?? null } satisfies ToCode);
+			port.postMessage({ kind: 'frame', requestId: m.requestId, frame: { stream: 'sweep', data: now ?? null } satisfies SweepFrame } satisfies FrameEnvelope);
 		};
 		const ticker = setInterval(report, 200);
-		run(m.job).then(
-			() => { clearInterval(ticker); report(); port.postMessage({ t: 'done', id: m.id } satisfies ToCode); },
-			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ t: 'done', id: m.id, error: err instanceof Error ? err.message : String(err) } satisfies ToCode); },
+		run(m.params as IndexJob).then(
+			() => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId } satisfies ReplyEnvelope); },
+			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, error: err instanceof Error ? err.message : String(err) } satisfies ReplyEnvelope); },
 		);
 	}
 
@@ -192,10 +200,10 @@ export class SummaryWorkerLink implements IndexerQueue {
 		throw new Error('the document-summary worker does not enqueue; jobs come from the code-indexing worker');
 	}
 	takeDocSummaryEdit(): Promise<DocEdit | undefined> {
-		const id = ++this.seq;
+		const requestId = `summary-edit-${++this.seq}`;
 		return new Promise(resolve => {
-			this.edits.set(id, resolve);
-			this.port.postMessage({ t: 'take-edit', id } satisfies ToCode);
+			this.edits.set(requestId, resolve);
+			this.port.postMessage({ kind: 'request', requestId, method: SUMMARY_TAKE_EDIT, params: null, stream: false } satisfies RequestEnvelope);
 		});
 	}
 	get isStopping(): boolean { return this.block.stopping || this.abandoned; }

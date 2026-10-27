@@ -79,8 +79,8 @@ class PerRepoSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                SaveResult.Saved -> model.onSaved(pw.segments)
-                is SaveResult.Rejected -> failures.add("$label: ${result.reason}")
+                is SaveResult.Saved -> model.onSaved(pw.segments)
+                is SaveResult.Rejected -> failures.add("$label: ${result.message}")
                 is SaveResult.Unavailable -> failures.add("$label: ${result.reason}")
             }
         }

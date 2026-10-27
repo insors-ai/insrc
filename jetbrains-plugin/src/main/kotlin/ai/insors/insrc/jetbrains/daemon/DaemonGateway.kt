@@ -251,11 +251,21 @@ sealed interface ModelListResult {
  * false success (k3, ac4, the S001 result.error framing).
  */
 sealed interface SaveResult {
-    /** config.write persisted the change and reloaded active sessions. */
-    data object Saved : SaveResult
+    /**
+     * config.write persisted the change and reloaded active sessions;
+     * [restartRequired] when the daemon says the change applies only after a restart.
+     */
+    data class Saved(val restartRequired: Boolean = false) : SaveResult
 
-    /** The daemon refused the write (ok=false — e.g. an invalid/empty path). */
-    data class Rejected(val reason: String) : SaveResult
+    /**
+     * The daemon refused the write (ok=false — e.g. an invalid/empty path, a rejected
+     * model, a per-repo tier). [reason] is the daemon's reason code (or error text);
+     * [detail] its explanation, when it sent one.
+     */
+    data class Rejected(val reason: String, val detail: String? = null) : SaveResult {
+        /** The reason with the detail, for a failure line. */
+        val message: String get() = if (detail.isNullOrEmpty()) reason else "$reason — $detail"
+    }
 
     /** The daemon was unreachable / errored / a transport fault; [reason] explains. */
     data class Unavailable(val reason: String) : SaveResult
@@ -1032,13 +1042,17 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                 !r.ok || r.error != null ->
                     // An unexpected handler throw framed as an error reply.
                     SaveResult.Rejected(r.error ?: "the daemon rejected the write")
-                r.data["ok"] == true -> SaveResult.Saved
+                r.data["ok"] == true -> SaveResult.Saved(restartRequired = r.data["restartRequired"] == true)
                 else ->
-                    // config.write returned a bare {ok:false} (refused path/value);
-                    // it carries no error string, so fall back to a generic reason —
-                    // never a silent/false success.
-                    SaveResult.Rejected((r.data["error"] as? String)?.takeIf { it.isNotEmpty() }
-                        ?: "the daemon rejected the write")
+                    // config.write returned {ok:false, reason?, detail?}; with no reason
+                    // (a bare {ok:false}) fall back to a generic one — never a
+                    // silent/false success.
+                    SaveResult.Rejected(
+                        reason = (r.data["reason"] as? String)?.takeIf { it.isNotEmpty() }
+                            ?: (r.data["error"] as? String)?.takeIf { it.isNotEmpty() }
+                            ?: "the daemon rejected the write",
+                        detail = (r.data["detail"] as? String)?.takeIf { it.isNotEmpty() },
+                    )
             }
         } catch (e: DaemonUnavailableException) {
             SaveResult.Unavailable(e.message ?: "daemon unavailable")

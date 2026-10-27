@@ -55,6 +55,33 @@ class SettingsWriteGatewayTest {
     }
 
     @Test
+    fun `Saved(restartRequired) and Rejected(reason, detail) from config-write`() {
+        // Epic ce99b72065d03b1b s7/t1: the daemon's own answer is carried through.
+        val restart = DaemonGatewayImpl(FakeDaemonRpc { _, _ -> DaemonResult(ok = true, data = mapOf("ok" to true, "restartRequired" to true)) })
+            .writeSetting(listOf("models", "tiers", "core"), mapOf("runner" to "cli-codex", "model" to "x-a", "effort" to ""))
+        assertEquals(SaveResult.Saved(restartRequired = true), restart)
+
+        val plain = DaemonGatewayImpl(FakeDaemonRpc { _, _ -> DaemonResult(ok = true, data = mapOf("ok" to true)) })
+            .writeSetting(listOf("logLevel"), "debug")
+        assertEquals(SaveResult.Saved(restartRequired = false), plain)
+
+        val refused = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf("ok" to false, "reason" to "rejected-model", "detail" to "models.tiers.core: model 'x-b' is rejected in cli-codex"))
+        }).writeSetting(listOf("models", "tiers", "core"), mapOf("runner" to "cli-codex", "model" to "x-b"))
+        val rejected = assertInstanceOf(SaveResult.Rejected::class.java, refused)
+        assertEquals("rejected-model", rejected.reason)
+        assertEquals("models.tiers.core: model 'x-b' is rejected in cli-codex", rejected.detail)
+        assertEquals("rejected-model — models.tiers.core: model 'x-b' is rejected in cli-codex", rejected.message)
+
+        // Over the real parse too: the daemon's {ok:false, reason, detail} and {ok:true, restartRequired}.
+        val wireRefused = """{"id":1,"result":{"ok":false,"reason":"per-repo-tier","detail":"models.byRepo./r.tiers: per-repo tiers are not allowed"}}"""
+        val w = assertInstanceOf(SaveResult.Rejected::class.java, DaemonGatewayImpl(WireRpc(wireRefused)).writeSetting(listOf("x"), 1))
+        assertEquals("per-repo-tier" to "models.byRepo./r.tiers: per-repo tiers are not allowed", w.reason to w.detail)
+        val wireRestart = """{"id":1,"result":{"ok":true,"restartRequired":true}}"""
+        assertEquals(SaveResult.Saved(restartRequired = true), DaemonGatewayImpl(WireRpc(wireRestart)).writeSetting(listOf("x"), 1))
+    }
+
+    @Test
     fun `clearSetting sends config-write with NO value key and maps daemon ok=true to Saved`() {
         val rpc = FakeDaemonRpc { _, _ -> DaemonResult(ok = true, data = mapOf("ok" to true)) }
         val result = DaemonGatewayImpl(rpc).clearSetting(listOf("models.tasks.design.contract.detail"))

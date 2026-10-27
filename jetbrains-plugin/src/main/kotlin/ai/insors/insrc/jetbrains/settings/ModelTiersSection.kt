@@ -79,8 +79,8 @@ class ModelTiersSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                SaveResult.Saved -> {}
-                is SaveResult.Rejected -> failuresByTier.getOrPut(tier) { mutableListOf() }.add(result.reason)
+                is SaveResult.Saved -> {}
+                is SaveResult.Rejected -> failuresByTier.getOrPut(tier) { mutableListOf() }.add(result.message)
                 is SaveResult.Unavailable -> failuresByTier.getOrPut(tier) { mutableListOf() }.add(result.reason)
             }
         }

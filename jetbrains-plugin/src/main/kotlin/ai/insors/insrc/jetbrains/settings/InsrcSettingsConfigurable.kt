@@ -141,8 +141,8 @@ class InsrcSettingsConfigurable : Configurable {
                     WriteOp.Clear -> gateway.clearSetting(pw.segments)
                 }
                 when (result) {
-                    SaveResult.Saved -> saved.add(path)
-                    is SaveResult.Rejected -> failures.add("$path: ${result.reason}")
+                    is SaveResult.Saved -> saved.add(path)
+                    is SaveResult.Rejected -> failures.add("$path: ${result.message}")
                     is SaveResult.Unavailable -> failures.add("$path: ${result.reason}")
                 }
             }

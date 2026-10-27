@@ -75,8 +75,8 @@ class PerRoleSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                SaveResult.Saved -> model.onSaved(roleId)
-                is SaveResult.Rejected -> failures.add("$roleId: ${result.reason}")
+                is SaveResult.Saved -> model.onSaved(roleId)
+                is SaveResult.Rejected -> failures.add("$roleId: ${result.message}")
                 is SaveResult.Unavailable -> failures.add("$roleId: ${result.reason}")
             }
         }

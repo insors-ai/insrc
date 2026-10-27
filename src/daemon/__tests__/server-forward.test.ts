@@ -172,3 +172,30 @@ test('a method named like an inherited property (toString, constructor) is an un
 		assert.deepEqual(replies.map(r => r.error), [`unknown method: ${method}`], `${method} (stream ${stream})`);
 	}
 });
+
+test('a request line of valid JSON that is not an object (null, a number, an array) is answered, and the server keeps serving', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-server-null-'));
+	const sock = join(dir, 's.sock');
+	const server = new IpcServer(directDispatch({ 'x.ok': async () => 'ok' }), Date.now, sock);
+	await server.listen();
+	try {
+		const socket = connect(sock);
+		const lines: { id: number; error?: string; result?: unknown }[] = [];
+		let pending = '';
+		socket.on('data', d => {
+			pending += d.toString();
+			let end: number;
+			while ((end = pending.indexOf('\n')) >= 0) { lines.push(JSON.parse(pending.slice(0, end))); pending = pending.slice(end + 1); }
+		});
+		await new Promise(r => socket.once('connect', r));
+		socket.write('null\n42\n[]\n' + JSON.stringify({ id: 7, method: 'x.ok', params: {} }) + '\n');
+		const deadline = Date.now() + 5_000;
+		while (lines.length < 4 && Date.now() < deadline) await new Promise(r => setTimeout(r, 10));
+		assert.deepEqual(lines.slice(0, 3).map(l => l.error), ['invalid request', 'invalid request', 'invalid request']);
+		assert.deepEqual(lines[3], { id: 7, result: 'ok' }, 'the connection still serves');
+		socket.destroy();
+	} finally {
+		await server.close();
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

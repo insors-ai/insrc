@@ -344,6 +344,12 @@ export class IpcServer {
       this.send(socket, { id: -1, error: 'invalid JSON' });
       return Promise.resolve();
     }
+    // Valid JSON that is not an object (null, a number, an array) is no request: answered, never thrown
+    // (a throw here would escape the socket's data callback).
+    if (typeof request !== 'object' || request === null || Array.isArray(request)) {
+      this.send(socket, { id: -1, error: 'invalid request' });
+      return Promise.resolve();
+    }
 
     // Update the connection registry from the (validated) client identity +
     // the method just invoked (Story s4). Untrusted wire input is validated

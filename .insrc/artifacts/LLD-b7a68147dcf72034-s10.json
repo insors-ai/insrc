@@ -104,6 +104,13 @@
         "choice": "Plan explicit verification",
         "rationale": "One task checks the invariants resting on k2-k5 against the code.",
         "resolvedAt": "2026-10-27T14:38:04.394Z"
+      },
+      "q54a04be8": {
+        "question": "sbdry4 (partial): test file names in the test strategy are proposals, not existing files.",
+        "status": "resolved",
+        "choice": "Resolve names during planning",
+        "rationale": "Each test maps to an existing file or a named new file.",
+        "resolvedAt": "2026-10-27T14:40:12.116Z"
       }
     }
   },

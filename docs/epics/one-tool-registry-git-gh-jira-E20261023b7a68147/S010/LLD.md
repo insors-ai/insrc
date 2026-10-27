@@ -506,6 +506,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Task-defined mapping — The LLD lists every row; the plan's first task fixes the table file path. _(2026-10-27T14:35:51.497Z)_
 - `qfac4af4e` — ep3 (partial): only the old-wrappers and async-port invariants are directly shown by s1 bundles; the others rest on epic constraints k2 to k5.
   - **resolved**: Plan explicit verification — One task checks the invariants resting on k2-k5 against the code. _(2026-10-27T14:38:04.394Z)_
+- `q54a04be8` — sbdry4 (partial): test file names in the test strategy are proposals, not existing files.
+  - **resolved**: Resolve names during planning — Each test maps to an existing file or a named new file. _(2026-10-27T14:40:12.116Z)_
 
 ## Citations
 
